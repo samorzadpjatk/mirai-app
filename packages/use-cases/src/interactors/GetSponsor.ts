@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { SponsorRepository } from "../ports/SponsorRepository";
+import type { Sponsor } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
  * Input for GetSponsor use case
@@ -27,51 +27,74 @@ export interface GetSponsorOutput {
 }
 
 /**
- * GetSponsor Use Case
+ * Error type when sponsor is not found
+ */
+export class GetSponsorNotFoundError extends Error {
+  readonly _tag = "GetSponsorNotFoundError";
+  constructor() {
+    super("Sponsor not found");
+  }
+}
+
+/**
+ * GetSponsor Use Case (Effect-based)
  *
  * Retrieves a single sponsor by ID.
  * Returns error if sponsor not found.
+ *
+ * ## Effect-based Pattern
+ *
+ * ```typescript
+ * const program = getSponsorUseCase(input).pipe(
+ *   Effect.provideService(SponsorRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetSponsorUseCase {
-  constructor(private sponsorRepository: SponsorRepository) {}
+export function getSponsorUseCase(
+  input: GetSponsorInput,
+): Effect.Effect<
+  GetSponsorOutput,
+  GetSponsorNotFoundError,
+  SponsorRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const sponsorRepo = yield* SponsorRepositoryTag;
 
-  async execute(
-    input: GetSponsorInput,
-  ): Promise<Result<GetSponsorOutput, string>> {
-    const sponsor = await this.sponsorRepository.findById(input.sponsorId);
+    const sponsor = yield* sponsorRepo.findById(input.sponsorId);
 
     if (!sponsor) {
-      return err("Sponsor not found");
+      return yield* Effect.fail(new GetSponsorNotFoundError());
     }
 
-    return ok(this.toOutput(sponsor));
-  }
+    return toOutput(sponsor);
+  });
+}
 
-  private toOutput(sponsor: {
-    id: string;
-    name: string;
-    description: string;
-    logoPath: string;
-    height: number | null;
-    offsetX: number | null;
-    offsetY: number | null;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    hasLogoAdjustments(): boolean;
-  }): GetSponsorOutput {
-    return {
-      id: sponsor.id,
-      name: sponsor.name,
-      description: sponsor.description,
-      logoPath: sponsor.logoPath,
-      height: sponsor.height,
-      offsetX: sponsor.offsetX,
-      offsetY: sponsor.offsetY,
-      isActive: sponsor.isActive,
-      createdAt: sponsor.createdAt,
-      updatedAt: sponsor.updatedAt,
-      hasLogoAdjustments: sponsor.hasLogoAdjustments(),
-    };
-  }
+function toOutput(sponsor: {
+  id: string;
+  name: string;
+  description: string;
+  logoPath: string;
+  height: number | null;
+  offsetX: number | null;
+  offsetY: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  hasLogoAdjustments(): boolean;
+}): GetSponsorOutput {
+  return {
+    id: sponsor.id,
+    name: sponsor.name,
+    description: sponsor.description,
+    logoPath: sponsor.logoPath,
+    height: sponsor.height,
+    offsetX: sponsor.offsetX,
+    offsetY: sponsor.offsetY,
+    isActive: sponsor.isActive,
+    createdAt: sponsor.createdAt,
+    updatedAt: sponsor.updatedAt,
+    hasLogoAdjustments: sponsor.hasLogoAdjustments(),
+  };
 }

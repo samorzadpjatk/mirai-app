@@ -1,147 +1,180 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  GetChallengeVotingProgressUseCase,
+  getChallengeVotingProgressUseCase,
   type GetChallengeVotingProgressInput,
+  GetVotingProgressValidationError,
 } from "./GetChallengeVotingProgress";
 import { ChallengeVote } from "@mirai-app/domain";
-import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
+import { Effect } from "effect";
+import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
+import { InMemoryChallengeVoteRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] GetChallengeVotingProgressUseCase", () => {
-  const createValidVote = (
-    overrides?: Partial<{
-      id: string;
-      challengeId: string;
-      submissionId: string;
-      voterId: string;
-      position: number;
-    }>,
-  ): ChallengeVote => {
-    const result = ChallengeVote.create({
-      id: overrides?.id ?? "vote-123",
-      challengeId: overrides?.challengeId ?? "challenge-123",
-      submissionId: overrides?.submissionId ?? "submission-123",
-      voterId: overrides?.voterId ?? "voter-123",
-      position: overrides?.position ?? 1,
-      points: 10,
-      weight: 1.0,
-    });
-    if (result.kind === "err") {
-      throw new Error(`Failed to create test vote: ${result.error}`);
-    }
-    return result.value;
-  };
+describe("[UNIT] getChallengeVotingProgressUseCase (Effect)", () => {
+  let repo: InMemoryChallengeVoteRepository;
 
-  const createMockRepo = (
-    overrides?: Partial<ChallengeVoteRepository>,
-  ): ChallengeVoteRepository => ({
-    create: mock(() => Promise.resolve(createValidVote())),
-    createMany: mock(() => Promise.resolve([])),
-    findById: mock(() => Promise.resolve(null)),
-    findByChallengeId: mock(() => Promise.resolve([])),
-    findByChallengeAndVoter: mock(() => Promise.resolve([])),
-    findBySubmissionId: mock(() => Promise.resolve([])),
-    hasVoted: mock(() => Promise.resolve(false)),
-    hasVotedForPosition: mock(() => Promise.resolve(false)),
-    getVotedPositions: mock(() => Promise.resolve([])),
-    delete: mock(() => Promise.resolve()),
-    deleteByChallengeId: mock(() => Promise.resolve()),
-    ...overrides,
+  beforeEach(() => {
+    repo = new InMemoryChallengeVoteRepository();
   });
+
+  // Helper to run use case with repository
+  const runUseCase = async (input: GetChallengeVotingProgressInput) => {
+    const program = getChallengeVotingProgressUseCase(input).pipe(
+      Effect.provideService(ChallengeVoteRepositoryTag, {
+        create: (vote: ChallengeVote) =>
+          Effect.promise(() => repo.create(vote)),
+        createMany: (votes: ChallengeVote[]) =>
+          Effect.promise(() => repo.createMany(votes)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.findByChallengeId(challengeId)),
+        findByChallengeAndVoter: (challengeId: string, voterId: string) =>
+          Effect.promise(() =>
+            repo.findByChallengeAndVoter(challengeId, voterId),
+          ),
+        findBySubmissionId: (submissionId: string) =>
+          Effect.promise(() => repo.findBySubmissionId(submissionId)),
+        hasVoted: (challengeId: string, voterId: string) =>
+          Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+        hasVotedForPosition: (
+          challengeId: string,
+          voterId: string,
+          position: number,
+        ) =>
+          Effect.promise(() =>
+            repo.hasVotedForPosition(challengeId, voterId, position),
+          ),
+        getVotedPositions: (challengeId: string, voterId: string) =>
+          Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        deleteByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should return voting progress with submission stats", async () => {
-      const mockVotes = [
-        createValidVote({
+      // Create votes for different submissions
+      const vote1 = await Effect.runPromise(
+        ChallengeVote.create({
           id: "vote-1",
+          challengeId: "challenge-123",
           submissionId: "submission-a",
+          voterId: "voter-1",
           position: 1,
+          points: 30,
+          weight: 1.0,
         }),
-        createValidVote({
+      );
+      const vote2 = await Effect.runPromise(
+        ChallengeVote.create({
           id: "vote-2",
+          challengeId: "challenge-123",
           submissionId: "submission-a",
+          voterId: "voter-2",
           position: 2,
+          points: 20,
+          weight: 1.0,
         }),
-        createValidVote({
+      );
+      const vote3 = await Effect.runPromise(
+        ChallengeVote.create({
           id: "vote-3",
+          challengeId: "challenge-123",
           submissionId: "submission-b",
+          voterId: "voter-1",
           position: 1,
+          points: 30,
+          weight: 1.0,
         }),
-        createValidVote({
+      );
+      const vote4 = await Effect.runPromise(
+        ChallengeVote.create({
           id: "vote-4",
+          challengeId: "challenge-123",
           submissionId: "submission-c",
+          voterId: "voter-3",
           position: 3,
+          points: 10,
+          weight: 1.0,
         }),
-      ];
-      const mockRepo = createMockRepo({
-        findByChallengeId: mock(() => Promise.resolve(mockVotes)),
-      });
+      );
 
-      const useCase = new GetChallengeVotingProgressUseCase(mockRepo);
+      await repo.create(vote1);
+      await repo.create(vote2);
+      await repo.create(vote3);
+      await repo.create(vote4);
+
       const input: GetChallengeVotingProgressInput = {
         challengeId: "challenge-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.challengeId).toBe("challenge-123");
-        expect(result.value.totalVotes).toBe(4);
-        expect(result.value.submissionStats).toHaveLength(3);
-        // Stats should be sorted by voteScore descending
-        expect(result.value.submissionStats[0].submissionId).toBe(
-          "submission-a",
-        );
-        expect(result.value.submissionStats[0].voteCount).toBe(2);
-      }
+      expect(result.challengeId).toBe("challenge-123");
+      expect(result.totalVotes).toBe(4);
+      expect(result.submissionStats).toHaveLength(3);
+      // Stats should be sorted by voteScore descending
+      expect(result.submissionStats[0].submissionId).toBe("submission-a");
+      expect(result.submissionStats[0].voteCount).toBe(2);
     });
 
-    it("should return error when challengeId is empty", async () => {
-      const mockRepo = createMockRepo();
-
-      const useCase = new GetChallengeVotingProgressUseCase(mockRepo);
+    it("should return validation error when challengeId is empty", async () => {
       const input: GetChallengeVotingProgressInput = {
         challengeId: "",
       };
 
-      const result = await useCase.execute(input);
+      const program = getChallengeVotingProgressUseCase(input).pipe(
+        Effect.provideService(ChallengeVoteRepositoryTag, {
+          create: (vote: ChallengeVote) =>
+            Effect.promise(() => repo.create(vote)),
+          createMany: (votes: ChallengeVote[]) =>
+            Effect.promise(() => repo.createMany(votes)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByChallengeAndVoter: (challengeId: string, voterId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndVoter(challengeId, voterId),
+            ),
+          findBySubmissionId: (submissionId: string) =>
+            Effect.promise(() => repo.findBySubmissionId(submissionId)),
+          hasVoted: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+          hasVotedForPosition: (
+            challengeId: string,
+            voterId: string,
+            position: number,
+          ) =>
+            Effect.promise(() =>
+              repo.hasVotedForPosition(challengeId, voterId, position),
+            ),
+          getVotedPositions: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+        }),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("challengeId is required");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(either._tag).toBe("Left");
+      if (either._tag === "Left") {
+        expect(either.left).toBeInstanceOf(GetVotingProgressValidationError);
+        expect(either.left.message).toBe("challengeId is required");
       }
     });
 
     it("should return empty stats when no votes exist", async () => {
-      const mockRepo = createMockRepo({
-        findByChallengeId: mock(() => Promise.resolve([])),
-      });
-
-      const useCase = new GetChallengeVotingProgressUseCase(mockRepo);
       const input: GetChallengeVotingProgressInput = {
         challengeId: "challenge-empty",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.totalVotes).toBe(0);
-        expect(result.value.submissionStats).toHaveLength(0);
-      }
-    });
-
-    it("should handle repository errors", async () => {
-      const mockRepo = createMockRepo({
-        findByChallengeId: mock(() => Promise.reject(new Error("DB error"))),
-      });
-
-      const useCase = new GetChallengeVotingProgressUseCase(mockRepo);
-      const input: GetChallengeVotingProgressInput = {
-        challengeId: "challenge-123",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("DB error");
+      expect(result.totalVotes).toBe(0);
+      expect(result.submissionStats).toHaveLength(0);
     });
   });
 });

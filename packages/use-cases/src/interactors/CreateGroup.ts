@@ -1,7 +1,6 @@
-import { Group, GroupStatus } from "@mirai-app/domain";
-import type { GroupRepository } from "../ports/GroupRepository";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { Group, GroupStatus, ValidationError } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { GroupRepositoryTag } from "../ports/GroupRepository";
 
 /**
  * Input for CreateGroup use case
@@ -35,41 +34,64 @@ export interface CreateGroupOutput {
 }
 
 /**
+ * Error types for CreateGroup use case
+ */
+export class GroupCodeAlreadyExistsError extends Error {
+  readonly _tag = "GroupCodeAlreadyExistsError";
+  constructor() {
+    super("Group code already exists");
+  }
+}
+
+export class GroupCreationError extends Error {
+  readonly _tag = "GroupCreationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * CreateGroup Use Case
  *
  * Creates a new group in the system.
  * Returns error if validation fails or group code already exists.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new CreateGroupUseCase(groupRepository);
+ * const program = Effect.gen(function* () {
+ *   const result = yield* createGroupUseCase(input);
+ *   return result;
+ * });
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("createGroupUseCase");
+ * const runnable = program.pipe(
+ *   Effect.provideService(GroupRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class CreateGroupUseCase {
-  constructor(private groupRepository: GroupRepository) {}
+export function createGroupUseCase(
+  input: CreateGroupInput,
+): Effect.Effect<
+  CreateGroupOutput,
+  GroupCodeAlreadyExistsError | GroupCreationError,
+  GroupRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const groupRepo = yield* GroupRepositoryTag;
 
-  async execute(input: CreateGroupInput): Promise<Result<CreateGroupOutput, string>> {
     // Check if group code already exists
-    let existingGroup: import("@mirai-app/domain").Group | null;
-    try {
-      existingGroup = await this.groupRepository.findByCode(input.code);
-    } catch (_cause) {
-      return err("Failed to check group code");
-    }
+    const existingGroup = yield* groupRepo.findByCode(input.code);
 
     if (existingGroup) {
-      return err("Group code already exists");
+      return yield* Effect.fail(new GroupCodeAlreadyExistsError());
     }
 
-    // Create domain entity
-    const groupResult = Group.create({
+    // Create domain entity using Effect-based static create method
+    const group = yield* Group.create({
       tripId: input.tripId,
       name: input.name,
       description: input.description ?? null,
@@ -78,38 +100,32 @@ export class CreateGroupUseCase {
       code: input.code,
       coins: input.coins ?? 0,
       status: input.status ?? GroupStatus.ACTIVE,
-    });
-
-    if (groupResult.kind === "err") {
-      return err(groupResult.error.message);
-    }
+    }).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new GroupCreationError(validationError.message),
+      ),
+    );
 
     // Save to repository
-    let saved: import("@mirai-app/domain").Group;
-    try {
-      saved = await this.groupRepository.create(groupResult.value);
-    } catch (_cause) {
-      return err("Failed to create group");
-    }
+    const saved = yield* groupRepo.create(group);
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(
-    group: import("@mirai-app/domain").Group,
-  ): CreateGroupOutput {
-    return {
-      id: group.id,
-      tripId: group.tripId,
-      name: group.name,
-      description: group.description,
-      image: group.image,
-      organizerId: group.organizerId,
-      code: group.code,
-      coins: group.coins,
-      status: group.status,
-      createdAt: group.createdAt,
-      updatedAt: group.updatedAt,
-    };
-  }
+function toOutput(group: Group): CreateGroupOutput {
+  return {
+    id: group.id,
+    tripId: group.tripId,
+    name: group.name,
+    description: group.description,
+    image: group.image,
+    organizerId: group.organizerId,
+    code: group.code,
+    coins: group.coins,
+    status: group.status,
+    createdAt: group.createdAt,
+    updatedAt: group.updatedAt,
+  };
 }

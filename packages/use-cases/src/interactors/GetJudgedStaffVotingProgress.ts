@@ -1,6 +1,5 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
+import { Effect } from "effect";
+import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
  * Admin voting progress info
@@ -36,35 +35,79 @@ export interface GetJudgedStaffVotingProgressOutput {
 }
 
 /**
- * GetJudgedStaffVotingProgress Use Case
+ * Error when input validation fails
+ */
+export class GetVotingProgressValidationError extends Error {
+  readonly _tag = "GetVotingProgressValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
+ * Error when repository operation fails
+ */
+export class GetVotingProgressRepositoryError extends Error {
+  readonly _tag = "GetVotingProgressRepositoryError";
+  constructor(
+    public readonly operation: string,
+    public readonly cause?: unknown,
+  ) {
+    super(`Failed to ${operation}`);
+  }
+}
+
+/**
+ * GetJudgedStaffVotingProgress Use Case (Effect-based)
  *
  * Calculates the voting progress for judged staff challenges.
  * Tracks which admins have completed their required voting positions.
+ *
+ * ## Effect-based Pattern
+ *
+ * ```typescript
+ * const program = getJudgedStaffVotingProgressUseCase(input).pipe(
+ *   Effect.provideService(ChallengeVoteRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetJudgedStaffVotingProgressUseCase {
-  constructor(private voteRepository: ChallengeVoteRepository) {}
+export function getJudgedStaffVotingProgressUseCase(
+  input: GetJudgedStaffVotingProgressInput,
+): Effect.Effect<
+  GetJudgedStaffVotingProgressOutput,
+  GetVotingProgressValidationError | GetVotingProgressRepositoryError,
+  ChallengeVoteRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const voteRepo = yield* ChallengeVoteRepositoryTag;
 
-  async execute(
-    input: GetJudgedStaffVotingProgressInput,
-  ): Promise<Result<GetJudgedStaffVotingProgressOutput, string>> {
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
-      return err("challengeId is required");
+      return yield* Effect.fail(
+        new GetVotingProgressValidationError("challengeId is required"),
+      );
     }
 
     if (!input.tripId || input.tripId.trim() === "") {
-      return err("tripId is required");
+      return yield* Effect.fail(
+        new GetVotingProgressValidationError("tripId is required"),
+      );
     }
 
     if (input.requiredPositions <= 0) {
-      return err("requiredPositions must be positive");
+      return yield* Effect.fail(
+        new GetVotingProgressValidationError(
+          "requiredPositions must be positive",
+        ),
+      );
     }
 
     const totalAdmins = input.adminParticipantIds.length;
 
     // Handle case with no admins
     if (totalAdmins === 0) {
-      return ok({
+      return {
         requiredPositions: input.requiredPositions,
         eligibleSubmissionsCount: input.eligibleSubmissionsCount,
         totalAdmins: 0,
@@ -72,7 +115,7 @@ export class GetJudgedStaffVotingProgressUseCase {
         pendingAdmins: 0,
         allAdminsVoted: false,
         adminProgress: [],
-      });
+      };
     }
 
     // Get voting progress for each admin
@@ -80,13 +123,20 @@ export class GetJudgedStaffVotingProgressUseCase {
     let votedAdmins = 0;
 
     for (const participantId of input.adminParticipantIds) {
-      const votedPositions = await this.voteRepository.getVotedPositions(
-        input.challengeId,
-        participantId,
-      );
+      const votedPositions = yield* voteRepo
+        .getVotedPositions(input.challengeId, participantId)
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new GetVotingProgressRepositoryError(
+                "get voted positions",
+                cause,
+              ),
+          ),
+        );
 
       // Check if all required positions are filled
-      const hasVotedAll = this.hasAllRequiredPositions(
+      const hasVotedAll = hasAllRequiredPositions(
         votedPositions,
         input.requiredPositions,
       );
@@ -108,7 +158,7 @@ export class GetJudgedStaffVotingProgressUseCase {
       totalAdmins > 0 &&
       votedAdmins >= totalAdmins;
 
-    return ok({
+    return {
       requiredPositions: input.requiredPositions,
       eligibleSubmissionsCount: input.eligibleSubmissionsCount,
       totalAdmins,
@@ -116,22 +166,22 @@ export class GetJudgedStaffVotingProgressUseCase {
       pendingAdmins,
       allAdminsVoted,
       adminProgress,
-    });
-  }
+    };
+  });
+}
 
-  private hasAllRequiredPositions(
-    positions: number[],
-    requiredPositions: number,
-  ): boolean {
-    if (requiredPositions <= 0) return false;
+function hasAllRequiredPositions(
+  positions: number[],
+  requiredPositions: number,
+): boolean {
+  if (requiredPositions <= 0) return false;
 
-    const positionSet = new Set(positions);
-    for (let position = 1; position <= requiredPositions; position += 1) {
-      if (!positionSet.has(position)) {
-        return false;
-      }
+  const positionSet = new Set(positions);
+  for (let position = 1; position <= requiredPositions; position += 1) {
+    if (!positionSet.has(position)) {
+      return false;
     }
-
-    return true;
   }
+
+  return true;
 }

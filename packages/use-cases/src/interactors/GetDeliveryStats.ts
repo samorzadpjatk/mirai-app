@@ -1,9 +1,8 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type {
-  NotificationDeliveryRepository,
-  DeliveryStats,
-  DeliveryFilters,
+import { Effect } from "effect";
+import {
+  NotificationDeliveryRepositoryTag,
+  type DeliveryStats,
+  type DeliveryFilters,
 } from "../ports/NotificationDeliveryRepository";
 
 /**
@@ -19,24 +18,49 @@ export interface GetDeliveryStatsInput {
 export interface GetDeliveryStatsOutput extends DeliveryStats {}
 
 /**
+ * Error types for GetDeliveryStats use case
+ */
+export class GetDeliveryStatsError extends Error {
+  readonly _tag = "GetDeliveryStatsError";
+  constructor(cause: unknown) {
+    super(
+      `Failed to get delivery stats: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
+  }
+}
+
+/**
  * GetDeliveryStats Use Case
  *
  * Retrieves comprehensive statistics about notification deliveries.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getDeliveryStatsUseCase(input).pipe(
+ *   Effect.provideService(NotificationDeliveryRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetDeliveryStatsUseCase {
-  constructor(private deliveryRepo: NotificationDeliveryRepository) {}
+export function getDeliveryStatsUseCase(
+  input: GetDeliveryStatsInput,
+): Effect.Effect<
+  GetDeliveryStatsOutput,
+  GetDeliveryStatsError,
+  NotificationDeliveryRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationDeliveryRepositoryTag;
 
-  async execute(
-    input: GetDeliveryStatsInput,
-  ): Promise<Result<GetDeliveryStatsOutput, string>> {
-    try {
-      const stats = await this.deliveryRepo.getStats(input.filters);
+    const stats = yield* repo.getStats(input.filters);
 
-      return ok(stats);
-    } catch (error) {
-      return err(
-        `Failed to get delivery stats: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
+    return stats;
+  }).pipe(
+    Effect.catchAllCause((cause) =>
+      Effect.fail(new GetDeliveryStatsError(cause)),
+    ),
+  );
 }

@@ -8,7 +8,7 @@
  */
 
 // =============================================================================
-// Repository Ports
+// Repository Ports - Interfaces
 // =============================================================================
 
 export type { ActivityFeedRepository } from "./ActivityFeedRepository";
@@ -55,14 +55,12 @@ export type {
   PaginatedResult,
 } from "./RewardRepository";
 export type { SponsorRepository } from "./SponsorRepository";
-export type {
-  SubmissionReportRepository,
-} from "./SubmissionReportRepository";
+export type { SubmissionReportRepository } from "./SubmissionReportRepository";
 export type { TripRepository } from "./TripRepository";
 export type { UserRepository } from "./UserRepository";
 
 // =============================================================================
-// Service Ports
+// Service Ports - Interfaces
 // =============================================================================
 
 export type {
@@ -102,3 +100,40 @@ export type {
   TelemetrySeverity,
   TelemetryError,
 } from "./TelemetryPort";
+
+// =============================================================================
+// Repository Ports - Context.Tags
+// =============================================================================
+
+export { ActivityFeedRepositoryTag } from "./ActivityFeedRepository";
+export { ChallengeRepositoryTag } from "./ChallengeRepository";
+export { ChallengeSubmissionRepositoryTag } from "./ChallengeSubmissionRepository";
+export { ChallengeVoteRepositoryTag } from "./ChallengeVoteRepository";
+export { CoinTransactionRepositoryTag } from "./CoinTransactionRepository";
+export { EventRepositoryTag } from "./EventRepository";
+export { GroupRepositoryTag } from "./GroupRepository";
+export { LocationRepositoryTag } from "./LocationRepository";
+export { NotificationDeliveryRepositoryTag } from "./NotificationDeliveryRepository";
+export { NotificationRepositoryTag } from "./NotificationRepository";
+export { NotificationScheduleRepositoryTag } from "./NotificationScheduleRepository";
+export {
+  RewardRepositoryTag,
+  RewardPurchaseRepositoryTag,
+  TripPointsCalculatorTag,
+  GroupCoinsServiceTag,
+  TripAccessCheckerTag,
+} from "./RewardRepository";
+export { SponsorRepositoryTag } from "./SponsorRepository";
+export { SubmissionReportRepositoryTag } from "./SubmissionReportRepository";
+export { TripRepositoryTag } from "./TripRepository";
+export { UserRepositoryTag } from "./UserRepository";
+
+// =============================================================================
+// Service Ports - Context.Tags
+// =============================================================================
+
+export { AuthPortTag } from "./AuthPort";
+export { PubSubServiceTag } from "./PubSubService";
+export { RealtimePortTag } from "./RealtimePort";
+export { StoragePortTag } from "./StoragePort";
+export { TelemetryPortTag } from "./TelemetryPort";

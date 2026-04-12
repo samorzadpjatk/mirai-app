@@ -1,6 +1,7 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, type Location, calculateDistance } from "@mirai-app/domain";
-import type { LocationRepository } from "../ports/LocationRepository";
+import type { Location } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
+import { calculateDistance } from "@mirai-app/domain";
 
 /**
  * Input for ListLocations use case
@@ -39,26 +40,77 @@ export interface ListLocationsOutput {
 }
 
 /**
+ * Helper function to convert Location to output DTO
+ */
+function toOutput(
+  location: Location,
+  input: ListLocationsInput,
+): LocationOutput {
+  const output: LocationOutput = {
+    id: location.id,
+    userId: location.userId,
+    latitude: location.latitude,
+    longitude: location.longitude,
+    accuracy: location.accuracy,
+    altitude: location.altitude,
+    heading: location.heading,
+    speed: location.speed,
+    isSharingLocation: location.isSharingLocation(),
+    timestamp: location.timestamp,
+  };
+
+  // Calculate distance if center point provided
+  if (
+    input.centerLatitude !== undefined &&
+    input.centerLongitude !== undefined &&
+    location.latitude !== null &&
+    location.longitude !== null
+  ) {
+    const dist = calculateDistance(
+      location.latitude,
+      location.longitude,
+      input.centerLatitude,
+      input.centerLongitude,
+    );
+
+    if (dist !== null) {
+      output.distanceKm = dist;
+    }
+  }
+
+  return output;
+}
+
+/**
  * ListLocations Use Case
  *
  * Retrieves locations that a user can view.
  * - If targetUserIds provided, returns those users' locations (if viewable)
  * - If not provided, returns all locations sharing with the viewer
  * - Optionally filters by radius from center point
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = listLocationsUseCase(input).pipe(
+ *   Effect.provideService(LocationRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class ListLocationsUseCase {
-  constructor(private locationRepository: LocationRepository) {}
+export function listLocationsUseCase(
+  input: ListLocationsInput,
+): Effect.Effect<ListLocationsOutput, never, LocationRepositoryTag> {
+  return Effect.gen(function* () {
+    const repo = yield* LocationRepositoryTag;
 
-  async execute(
-    input: ListLocationsInput,
-  ): Promise<Result<ListLocationsOutput, string>> {
     let locations: Location[] = [];
 
     if (input.targetUserIds && input.targetUserIds.length > 0) {
       // Get specific users' locations
-      const allLocations = await this.locationRepository.findByUserIds(
-        input.targetUserIds,
-      );
+      const allLocations = yield* repo.findByUserIds(input.targetUserIds);
       // Filter to only those the viewer can see
       locations = allLocations.filter(
         (loc) =>
@@ -67,9 +119,7 @@ export class ListLocationsUseCase {
       );
     } else {
       // Get all locations sharing with the viewer
-      locations = await this.locationRepository.findSharingWithUser(
-        input.viewerUserId,
-      );
+      locations = yield* repo.findSharingWithUser(input.viewerUserId);
     }
 
     // Apply radius filter if provided
@@ -88,51 +138,11 @@ export class ListLocationsUseCase {
     }
 
     // Map to output DTOs
-    const locationOutputs = locations.map((loc) => this.toOutput(loc, input));
+    const locationOutputs = locations.map((loc) => toOutput(loc, input));
 
-    return ok({
+    return {
       locations: locationOutputs,
       total: locationOutputs.length,
-    });
-  }
-
-  private toOutput(
-    location: Location,
-    input: ListLocationsInput,
-  ): LocationOutput {
-    const output: LocationOutput = {
-      id: location.id,
-      userId: location.userId,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      accuracy: location.accuracy,
-      altitude: location.altitude,
-      heading: location.heading,
-      speed: location.speed,
-      isSharingLocation: location.isSharingLocation(),
-      timestamp: location.timestamp,
     };
-
-    // Calculate distance if center point provided
-    if (
-      input.centerLatitude !== undefined &&
-      input.centerLongitude !== undefined &&
-      location.latitude !== null &&
-      location.longitude !== null
-    ) {
-      // Calculate distance using the calculateDistance function
-      const dist = calculateDistance(
-        location.latitude,
-        location.longitude,
-        input.centerLatitude,
-        input.centerLongitude,
-      );
-
-      if (dist !== null) {
-        output.distanceKm = dist;
-      }
-    }
-
-    return output;
-  }
+  });
 }

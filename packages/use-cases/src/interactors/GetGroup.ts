@@ -1,7 +1,6 @@
-import type { GroupRepository } from "../ports/GroupRepository";
-import type { Group } from "@mirai-app/domain";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { Group } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { GroupRepositoryTag } from "../ports/GroupRepository";
 
 /**
  * Input for GetGroup use case
@@ -30,57 +29,68 @@ export interface GetGroupOutput {
 }
 
 /**
+ * Error type for GetGroup use case
+ */
+export class GetGroupNotFoundError extends Error {
+  readonly _tag = "GetGroupNotFoundError";
+  constructor() {
+    super("Group not found");
+  }
+}
+
+/**
  * GetGroup Use Case
  *
  * Retrieves a group by ID.
  * Returns error if group not found.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new GetGroupUseCase(groupRepository);
+ * const program = Effect.gen(function* () {
+ *   const result = yield* getGroupUseCase({ groupId: "123" });
+ *   return result;
+ * });
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("getGroupUseCase");
+ * const runnable = program.pipe(
+ *   Effect.provideService(GroupRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class GetGroupUseCase {
-  constructor(private groupRepository: GroupRepository) {}
+export function getGroupUseCase(
+  input: GetGroupInput,
+): Effect.Effect<GetGroupOutput, GetGroupNotFoundError, GroupRepositoryTag> {
+  return Effect.gen(function* () {
+    const groupRepo = yield* GroupRepositoryTag;
 
-  async execute(input: GetGroupInput): Promise<Result<GetGroupOutput, string>> {
-    // Load group
-    let group: Group | null;
-    try {
-      group = await this.groupRepository.findById(input.groupId);
-    } catch (_cause) {
-      return err("Failed to load group");
-    }
+    const group = yield* groupRepo.findById(input.groupId);
 
     if (!group) {
-      return err("Group not found");
+      return yield* Effect.fail(new GetGroupNotFoundError());
     }
 
-    return ok(this.toOutput(group));
-  }
+    return toOutput(group);
+  });
+}
 
-  private toOutput(group: Group): GetGroupOutput {
-    return {
-      id: group.id,
-      tripId: group.tripId,
-      name: group.name,
-      description: group.description,
-      image: group.image,
-      organizerId: group.organizerId,
-      code: group.code,
-      coins: group.coins,
-      status: group.status,
-      createdAt: group.createdAt,
-      updatedAt: group.updatedAt,
-      isActive: group.isActive(),
-      summary: group.getSummary(),
-    };
-  }
+function toOutput(group: Group): GetGroupOutput {
+  return {
+    id: group.id,
+    tripId: group.tripId,
+    name: group.name,
+    description: group.description,
+    image: group.image,
+    organizerId: group.organizerId,
+    code: group.code,
+    coins: group.coins,
+    status: group.status,
+    createdAt: group.createdAt,
+    updatedAt: group.updatedAt,
+    isActive: group.isActive(),
+    summary: group.getSummary(),
+  };
 }

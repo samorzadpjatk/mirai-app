@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, SubmissionId } from "@mirai-app/domain";
-import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
+import { SubmissionId } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
 /**
  * Input for ListSubmissionsByChallenge use case
@@ -54,29 +54,74 @@ export interface ListSubmissionsByChallengeOutput {
 }
 
 /**
- * ListSubmissionsByChallenge Use Case
+ * Error types for ListSubmissionsByChallenge use case
+ */
+export class ListSubmissionsRepositoryError extends Error {
+  readonly _tag = "ListSubmissionsRepositoryError";
+  constructor(message: string = "Failed to list submissions") {
+    super(message);
+  }
+}
+
+/**
+ * ListSubmissionsByChallenge Use Case (Effect-based)
  *
  * Lists all submissions for a challenge with pagination and sorting.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* listSubmissionsByChallengeUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(ChallengeSubmissionRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class ListSubmissionsByChallengeUseCase {
-  constructor(private submissionRepository: ChallengeSubmissionRepository) {}
+export function listSubmissionsByChallengeUseCase(
+  input: ListSubmissionsByChallengeInput,
+): Effect.Effect<
+  ListSubmissionsByChallengeOutput,
+  ListSubmissionsRepositoryError,
+  ChallengeSubmissionRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const submissionRepo = yield* ChallengeSubmissionRepositoryTag;
 
-  async execute(
-    input: ListSubmissionsByChallengeInput,
-  ): Promise<Result<ListSubmissionsByChallengeOutput, string>> {
-    const submissions = await this.submissionRepository.findMany({
-      challengeId: input.challengeId,
-      orderBy: input.orderBy ?? "voteScore",
-      orderDirection: input.orderDirection ?? "desc",
-      ...(input.limit !== undefined && { limit: input.limit }),
-      ...(input.offset !== undefined && { offset: input.offset }),
-    });
+    // Fetch submissions
+    const submissions = yield* submissionRepo
+      .findMany({
+        challengeId: input.challengeId,
+        orderBy: input.orderBy ?? "voteScore",
+        orderDirection: input.orderDirection ?? "desc",
+        ...(input.limit !== undefined && { limit: input.limit }),
+        ...(input.offset !== undefined && { offset: input.offset }),
+      })
+      .pipe(
+        Effect.mapError(
+          () =>
+            new ListSubmissionsRepositoryError("Failed to fetch submissions"),
+        ),
+      );
 
-    const totalCount = await this.submissionRepository.countByChallengeId(
-      input.challengeId,
-    );
+    // Count total
+    const totalCount = yield* submissionRepo
+      .countByChallengeId(input.challengeId)
+      .pipe(
+        Effect.mapError(
+          () =>
+            new ListSubmissionsRepositoryError("Failed to count submissions"),
+        ),
+      );
 
-    return ok({
+    return {
       submissions: submissions.map((submission) => ({
         id: submission.id,
         challengeId: submission.challengeId,
@@ -101,6 +146,6 @@ export class ListSubmissionsByChallengeUseCase {
         reviewedBy: submission.reviewedBy,
       })),
       totalCount,
-    });
-  }
+    };
+  });
 }

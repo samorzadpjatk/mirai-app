@@ -1,20 +1,32 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  UpdateSubmissionUseCase,
+  updateSubmissionUseCase,
   type UpdateSubmissionInput,
+  SubmissionUpdateNotFoundError,
+  SubmissionUpdateValidationError,
+  InvalidReviewActionError,
+  UpdateSubmissionRepositoryError,
 } from "./UpdateSubmission";
 import { ChallengeSubmission, SubmissionId } from "@mirai-app/domain";
-import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
+import { Effect, Either } from "effect";
+import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
+import { InMemoryChallengeSubmissionRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] UpdateSubmissionUseCase", () => {
+describe("[UNIT] updateSubmissionUseCase (Effect)", () => {
+  let repo: InMemoryChallengeSubmissionRepository;
+
+  beforeEach(() => {
+    repo = new InMemoryChallengeSubmissionRepository();
+  });
+
+  // Helper to create a valid submission
   const createValidSubmission = (
     overrides?: Partial<{
       id: string;
       challengeId: string;
       groupId: string;
-      status: string;
     }>,
-  ): ChallengeSubmission => {
+  ) => {
     const result = ChallengeSubmission.create({
       id: overrides?.id ?? "submission-123",
       challengeId: overrides?.challengeId ?? "challenge-123",
@@ -33,36 +45,48 @@ describe("[UNIT] UpdateSubmissionUseCase", () => {
     return result.value;
   };
 
-  const createMockRepo = (
-    overrides?: Partial<ChallengeSubmissionRepository>,
-  ): ChallengeSubmissionRepository => ({
-    create: mock(() => Promise.resolve(createValidSubmission() as any)),
-    findById: mock(() => Promise.resolve(null)),
-    findByChallengeAndGroup: mock(() => Promise.resolve(null)),
-    findByChallengeId: mock(() => Promise.resolve([])),
-    findByGroupId: mock(() => Promise.resolve([])),
-    findByStatus: mock(() => Promise.resolve([])),
-    findMany: mock(() => Promise.resolve([])),
-    update: mock(() => Promise.resolve(createValidSubmission() as any)),
-    delete: mock(() => Promise.resolve()),
-    existsForChallengeAndGroup: mock(() => Promise.resolve(false)),
-    countByChallengeId: mock(() => Promise.resolve(0)),
-    countByChallengeAndStatus: mock(() => Promise.resolve(0)),
-    ...overrides,
-  });
+  // Helper to run use case with repository
+  const runUseCase = async (input: UpdateSubmissionInput) => {
+    const program = updateSubmissionUseCase(input).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, {
+        create: (submission: ChallengeSubmission) =>
+          Effect.promise(() => repo.create(submission)),
+        findById: (id: SubmissionId) => Effect.promise(() => repo.findById(id)),
+        findByChallengeAndGroup: (challengeId: string, groupId: string) =>
+          Effect.promise(() =>
+            repo.findByChallengeAndGroup(challengeId, groupId),
+          ),
+        findByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.findByChallengeId(challengeId)),
+        findByGroupId: (groupId: string) =>
+          Effect.promise(() => repo.findByGroupId(groupId)),
+        findByStatus: (status: any) =>
+          Effect.promise(() => repo.findByStatus(status)),
+        findMany: (params: any) => Effect.promise(() => repo.findMany(params)),
+        update: (submission: ChallengeSubmission) =>
+          Effect.promise(() => repo.update(submission)),
+        delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
+        existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
+          Effect.promise(() =>
+            repo.existsForChallengeAndGroup(challengeId, groupId),
+          ),
+        countByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.countByChallengeId(challengeId)),
+        countByChallengeAndStatus: (challengeId: string, status: any) =>
+          Effect.promise(() =>
+            repo.countByChallengeAndStatus(challengeId, status),
+          ),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should update submission content successfully", async () => {
-      const existingSubmission = createValidSubmission({
-        id: "submission-456",
-        status: "PENDING",
-      });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(existingSubmission)),
-        update: mock(() => Promise.resolve(existingSubmission)),
-      });
+      // Arrange
+      const submission = createValidSubmission({ id: "submission-456" });
+      await repo.create(submission);
 
-      const useCase = new UpdateSubmissionUseCase(mockRepo);
       const input: UpdateSubmissionInput = {
         submissionId: SubmissionId.unsafeCreate("submission-456"),
         textContent: "Updated content",
@@ -70,28 +94,28 @@ describe("[UNIT] UpdateSubmissionUseCase", () => {
         longitude: 2.3522,
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("submission-456");
-        expect(result.value.updatedAt).toBeInstanceOf(Date);
-      }
-      expect(mockRepo.findById).toHaveBeenCalledWith("submission-456");
-      expect(mockRepo.update).toHaveBeenCalled();
+      // Assert
+      expect(result.id).toBe("submission-456");
+      expect(result.textContent).toBe("Updated content");
+      expect(result.latitude).toBe(48.8566);
+      expect(result.longitude).toBe(2.3522);
+      expect(result.updatedAt).toBeInstanceOf(Date);
+
+      // Verify stored
+      const stored = await repo.findById(
+        SubmissionId.unsafeCreate("submission-456"),
+      );
+      expect(stored?.textContent).toBe("Updated content");
     });
 
     it("should approve submission successfully", async () => {
-      const existingSubmission = createValidSubmission({
-        id: "submission-456",
-        status: "PENDING",
-      });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(existingSubmission)),
-        update: mock(() => Promise.resolve(existingSubmission)),
-      });
+      // Arrange
+      const submission = createValidSubmission({ id: "submission-456" });
+      await repo.create(submission);
 
-      const useCase = new UpdateSubmissionUseCase(mockRepo);
       const input: UpdateSubmissionInput = {
         submissionId: SubmissionId.unsafeCreate("submission-456"),
         reviewAction: "APPROVE",
@@ -101,23 +125,23 @@ describe("[UNIT] UpdateSubmissionUseCase", () => {
         ranking: 1,
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      expect(mockRepo.update).toHaveBeenCalled();
+      // Assert
+      expect(result.status).toBe("APPROVED");
+      expect(result.awardedPoints).toBe(100);
+      expect(result.bonusPoints).toBe(50);
+      expect(result.ranking).toBe(1);
+      expect(result.reviewedById).toBe("moderator-123");
+      expect(result.reviewedAt).toBeInstanceOf(Date);
     });
 
     it("should reject submission successfully", async () => {
-      const existingSubmission = createValidSubmission({
-        id: "submission-456",
-        status: "PENDING",
-      });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(existingSubmission)),
-        update: mock(() => Promise.resolve(existingSubmission)),
-      });
+      // Arrange
+      const submission = createValidSubmission({ id: "submission-456" });
+      await repo.create(submission);
 
-      const useCase = new UpdateSubmissionUseCase(mockRepo);
       const input: UpdateSubmissionInput = {
         submissionId: SubmissionId.unsafeCreate("submission-456"),
         reviewAction: "REJECT",
@@ -125,69 +149,117 @@ describe("[UNIT] UpdateSubmissionUseCase", () => {
         rejectionReason: "Content does not meet requirements",
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      expect(mockRepo.update).toHaveBeenCalled();
+      // Assert
+      expect(result.status).toBe("REJECTED");
+      expect(result.rejectionReason).toBe("Content does not meet requirements");
+      expect(result.reviewedById).toBe("moderator-123");
+      expect(result.reviewedAt).toBeInstanceOf(Date);
     });
 
     it("should return error when submission not found", async () => {
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(null)),
-      });
-
-      const useCase = new UpdateSubmissionUseCase(mockRepo);
+      // Arrange
       const input: UpdateSubmissionInput = {
         submissionId: SubmissionId.unsafeCreate("non-existent"),
         textContent: "Updated content",
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const program = updateSubmissionUseCase(input).pipe(
+        Effect.provideService(ChallengeSubmissionRepositoryTag, {
+          create: (s: ChallengeSubmission) =>
+            Effect.promise(() => repo.create(s)),
+          findById: (id: SubmissionId) =>
+            Effect.promise(() => repo.findById(id)),
+          findByChallengeAndGroup: (challengeId: string, groupId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndGroup(challengeId, groupId),
+            ),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByGroupId: (groupId: string) =>
+            Effect.promise(() => repo.findByGroupId(groupId)),
+          findByStatus: (status: any) =>
+            Effect.promise(() => repo.findByStatus(status)),
+          findMany: (params: any) =>
+            Effect.promise(() => repo.findMany(params)),
+          update: (s: ChallengeSubmission) =>
+            Effect.promise(() => repo.update(s)),
+          delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
+          existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
+            Effect.promise(() =>
+              repo.existsForChallengeAndGroup(challengeId, groupId),
+            ),
+          countByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.countByChallengeId(challengeId)),
+          countByChallengeAndStatus: (challengeId: string, status: any) =>
+            Effect.promise(() =>
+              repo.countByChallengeAndStatus(challengeId, status),
+            ),
+        }),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Submission not found");
+      // Act & Assert
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SubmissionUpdateNotFoundError);
       }
     });
 
     it("should return error for invalid review action", async () => {
-      const existingSubmission = createValidSubmission({
-        id: "submission-456",
-      });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(existingSubmission)),
-      });
+      // Arrange
+      const submission = createValidSubmission({ id: "submission-456" });
+      await repo.create(submission);
 
-      const useCase = new UpdateSubmissionUseCase(mockRepo);
       const input: UpdateSubmissionInput = {
         submissionId: SubmissionId.unsafeCreate("submission-456"),
         reviewAction: "INVALID" as any,
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const program = updateSubmissionUseCase(input).pipe(
+        Effect.provideService(ChallengeSubmissionRepositoryTag, {
+          create: (s: ChallengeSubmission) =>
+            Effect.promise(() => repo.create(s)),
+          findById: (id: SubmissionId) =>
+            Effect.promise(() => repo.findById(id)),
+          findByChallengeAndGroup: (challengeId: string, groupId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndGroup(challengeId, groupId),
+            ),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByGroupId: (groupId: string) =>
+            Effect.promise(() => repo.findByGroupId(groupId)),
+          findByStatus: (status: any) =>
+            Effect.promise(() => repo.findByStatus(status)),
+          findMany: (params: any) =>
+            Effect.promise(() => repo.findMany(params)),
+          update: (s: ChallengeSubmission) =>
+            Effect.promise(() => repo.update(s)),
+          delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
+          existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
+            Effect.promise(() =>
+              repo.existsForChallengeAndGroup(challengeId, groupId),
+            ),
+          countByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.countByChallengeId(challengeId)),
+          countByChallengeAndStatus: (challengeId: string, status: any) =>
+            Effect.promise(() =>
+              repo.countByChallengeAndStatus(challengeId, status),
+            ),
+        }),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Invalid review action");
+      // Act & Assert
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidReviewActionError);
       }
-    });
-
-    it("should handle repository errors", async () => {
-      const existingSubmission = createValidSubmission({
-        id: "submission-456",
-      });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(existingSubmission)),
-        update: mock(() => Promise.reject(new Error("Update failed"))),
-      });
-
-      const useCase = new UpdateSubmissionUseCase(mockRepo);
-      const input: UpdateSubmissionInput = {
-        submissionId: SubmissionId.unsafeCreate("submission-456"),
-        textContent: "Updated content",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("Update failed");
     });
   });
 });

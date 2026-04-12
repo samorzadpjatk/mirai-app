@@ -1,9 +1,8 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type {
-  NotificationDeliveryRepository,
-  NotificationDelivery,
-  PaginationOptions,
+import { Effect } from "effect";
+import {
+  NotificationDeliveryRepositoryTag,
+  type DeliveryPaginationOptions,
+  type NotificationDelivery,
 } from "../ports/NotificationDeliveryRepository";
 
 /**
@@ -11,7 +10,7 @@ import type {
  */
 export interface GetFailedDeliveriesInput {
   tripId: string;
-  pagination?: Partial<PaginationOptions>;
+  pagination?: Partial<DeliveryPaginationOptions>;
 }
 
 /**
@@ -25,35 +24,60 @@ export interface GetFailedDeliveriesOutput {
 }
 
 /**
+ * Error types for GetFailedDeliveries use case
+ */
+export class GetFailedDeliveriesError extends Error {
+  readonly _tag = "GetFailedDeliveriesError";
+  constructor(cause: unknown) {
+    super(
+      `Failed to get failed deliveries: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
+  }
+}
+
+/**
  * GetFailedDeliveries Use Case
  *
  * Retrieves paginated list of failed or partially failed deliveries.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getFailedDeliveriesUseCase(input).pipe(
+ *   Effect.provideService(NotificationDeliveryRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetFailedDeliveriesUseCase {
-  constructor(private deliveryRepo: NotificationDeliveryRepository) {}
+export function getFailedDeliveriesUseCase(
+  input: GetFailedDeliveriesInput,
+): Effect.Effect<
+  GetFailedDeliveriesOutput,
+  GetFailedDeliveriesError,
+  NotificationDeliveryRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationDeliveryRepositoryTag;
 
-  async execute(
-    input: GetFailedDeliveriesInput,
-  ): Promise<Result<GetFailedDeliveriesOutput, string>> {
-    try {
-      const limit = input.pagination?.limit ?? 20;
-      const offset = input.pagination?.offset ?? 0;
+    const limit = input.pagination?.limit ?? 20;
+    const offset = input.pagination?.offset ?? 0;
 
-      const [deliveries, total] = await Promise.all([
-        this.deliveryRepo.findFailed(input.tripId, { limit, offset }),
-        this.deliveryRepo.countFailed(input.tripId),
-      ]);
+    const [deliveries, total] = yield* Effect.all([
+      repo.findFailed(input.tripId, { limit, offset }),
+      repo.countFailed(input.tripId),
+    ]);
 
-      return ok({
-        deliveries,
-        total,
-        limit,
-        offset,
-      });
-    } catch (error) {
-      return err(
-        `Failed to get failed deliveries: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  }
+    return {
+      deliveries,
+      total,
+      limit,
+      offset,
+    };
+  }).pipe(
+    Effect.catchAllCause((cause) =>
+      Effect.fail(new GetFailedDeliveriesError(cause)),
+    ),
+  );
 }

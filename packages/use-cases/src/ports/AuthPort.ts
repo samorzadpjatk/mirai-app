@@ -21,6 +21,7 @@
 
 import type { Result } from "@mirai-app/domain";
 import type { AuthContext } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 // =============================================================================
 // Domain Errors
@@ -129,3 +130,22 @@ export interface AuthPort {
     sessionId: string,
   ): Promise<Result<AuthContext, AuthError | SessionExpiredError>>;
 }
+
+/**
+ * AuthPort Context.Tag for Effect dependency injection
+ */
+export class AuthPortTag extends Context.Tag("AuthPort")<
+  AuthPortTag,
+  {
+    validateToken: (
+      token: string,
+    ) => Effect.Effect<
+      AuthContext,
+      AuthError | InvalidTokenError | SessionExpiredError,
+      never
+    >;
+    refreshSession: (
+      sessionId: string,
+    ) => Effect.Effect<AuthContext, AuthError | SessionExpiredError, never>;
+  }
+>() {}

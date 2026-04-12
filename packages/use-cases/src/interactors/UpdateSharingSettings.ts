@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, type Location } from "@mirai-app/domain";
-import type { LocationRepository } from "../ports/LocationRepository";
+import { Effect } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
+import type { Location } from "@mirai-app/domain";
 
 /**
  * Input for UpdateSharingSettings use case
@@ -31,36 +31,97 @@ export interface UpdateSharingSettingsOutput {
 }
 
 /**
- * UpdateSharingSettings Use Case
+ * Error when domain validation fails
+ */
+export class UpdateSharingSettingsValidationError extends Error {
+  readonly _tag = "UpdateSharingSettingsValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
+ * Error when repository operation fails
+ */
+export class UpdateSharingSettingsRepositoryError extends Error {
+  readonly _tag = "UpdateSharingSettingsRepositoryError";
+  constructor(
+    public readonly operation: string,
+    public readonly cause?: unknown,
+  ) {
+    super(`Failed to ${operation}`);
+  }
+}
+
+/**
+ * UpdateSharingSettings Use Case (Effect-based)
  *
  * Updates location sharing settings for a user.
  * Creates location record if it doesn't exist.
+ *
+ * ## Effect-based Pattern
+ *
+ * ```typescript
+ * const program = updateSharingSettingsUseCase(input).pipe(
+ *   Effect.provideService(LocationRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class UpdateSharingSettingsUseCase {
-  constructor(private locationRepository: LocationRepository) {}
+export function updateSharingSettingsUseCase(
+  input: UpdateSharingSettingsInput,
+): Effect.Effect<
+  UpdateSharingSettingsOutput,
+  UpdateSharingSettingsValidationError | UpdateSharingSettingsRepositoryError,
+  LocationRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const locationRepo = yield* LocationRepositoryTag;
+    const { Location } = yield* Effect.promise(
+      () => import("@mirai-app/domain"),
+    );
 
-  async execute(
-    input: UpdateSharingSettingsInput,
-  ): Promise<Result<UpdateSharingSettingsOutput, string>> {
     // Find existing location
-    let location = await this.locationRepository.findByUserId(input.userId);
+    let location = yield* locationRepo
+      .findByUserId(input.userId)
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new UpdateSharingSettingsRepositoryError(
+              "find location by user",
+              cause,
+            ),
+        ),
+      );
 
     if (!location) {
       // Create new location if none exists
-      const { Location } = await import("@mirai-app/domain");
-      const createResult = Location.create({
+      const newLocation = yield* Location.create({
         userId: input.userId,
         isSharingLocation: input.isSharingLocation,
         ...(input.usersToShareWith !== undefined && {
           usersToShareWith: input.usersToShareWith,
         }),
-      });
+      }).pipe(
+        Effect.mapError(
+          (error) => new UpdateSharingSettingsValidationError(error.message),
+        ),
+      );
 
-      if (createResult.kind === "err") {
-        return err(createResult.error.message);
-      }
+      // Persist the new location
+      const saved = yield* locationRepo
+        .create(newLocation)
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new UpdateSharingSettingsRepositoryError(
+                "create location",
+                cause,
+              ),
+          ),
+        );
 
-      location = createResult.value;
+      return toOutput(saved);
     } else {
       // Update sharing status
       if (input.isSharingLocation) {
@@ -73,25 +134,34 @@ export class UpdateSharingSettingsUseCase {
       if (input.usersToShareWith !== undefined) {
         const usersResult = location.updateSharingUsers(input.usersToShareWith);
         if (usersResult.kind === "err") {
-          return err(usersResult.error.message);
+          return yield* Effect.fail(
+            new UpdateSharingSettingsValidationError(usersResult.error.message),
+          );
         }
         location = usersResult.value;
       }
     }
 
     // Persist changes
-    const saved = await this.locationRepository.save(location);
+    const saved = yield* locationRepo
+      .save(location)
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new UpdateSharingSettingsRepositoryError("save location", cause),
+        ),
+      );
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(location: Location): UpdateSharingSettingsOutput {
-    return {
-      id: location.id,
-      userId: location.userId,
-      isSharingLocation: location.isSharingLocation(),
-      usersToShareWith: location.usersToShareWith,
-      timestamp: location.timestamp,
-    };
-  }
+function toOutput(location: Location): UpdateSharingSettingsOutput {
+  return {
+    id: location.id,
+    userId: location.userId,
+    isSharingLocation: location.isSharingLocation(),
+    usersToShareWith: location.usersToShareWith,
+    timestamp: location.timestamp,
+  };
 }

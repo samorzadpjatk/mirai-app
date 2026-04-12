@@ -1,88 +1,117 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { GetDeliveriesUseCase } from "./GetDeliveries";
-import type {
-  NotificationDeliveryRepository,
-  NotificationDelivery,
-} from "../ports/NotificationDeliveryRepository";
+import { describe, it, expect, beforeEach } from "bun:test";
+import { getDeliveriesUseCase, type GetDeliveriesInput } from "./GetDeliveries";
+import { Effect } from "effect";
+import { NotificationDeliveryRepositoryTag } from "../ports/NotificationDeliveryRepository";
+import { InMemoryNotificationDeliveryRepository } from "@mirai-app/adapters/gateways/in-memory";
+import type { NotificationDelivery } from "../ports/NotificationDeliveryRepository";
 
-describe("[UNIT] GetDeliveriesUseCase", () => {
-  let mockRepo: NotificationDeliveryRepository;
-  let useCase: GetDeliveriesUseCase;
+describe("[UNIT] getDeliveriesUseCase (Effect)", () => {
+  let repo: InMemoryNotificationDeliveryRepository;
+
+  const createMockDelivery = (
+    overrides?: Partial<NotificationDelivery>,
+  ): NotificationDelivery =>
+    ({
+      id: overrides?.id ?? "delivery-123",
+      notificationId: overrides?.notificationId ?? "notif-123",
+      tripId: overrides?.tripId ?? "trip-123",
+      status: overrides?.status ?? "success",
+      totalRecipients: overrides?.totalRecipients ?? 100,
+      successCount: overrides?.successCount ?? 95,
+      failureCount: overrides?.failureCount ?? 5,
+      deliveryStartedAt:
+        overrides?.deliveryStartedAt ?? new Date("2024-01-01T09:00:00"),
+      deliveryCompletedAt: overrides?.deliveryCompletedAt ?? null,
+      errorLog: overrides?.errorLog ?? null,
+      scheduleId: overrides?.scheduleId ?? null,
+      notification: overrides?.notification ?? null,
+    }) as NotificationDelivery;
 
   beforeEach(() => {
-    mockRepo = {
-      findMany: mock(() =>
-        Promise.resolve([
-          {
-            id: "delivery-1",
-            notificationId: "notif-1",
-            tripId: "trip-1",
-            status: "success",
-            totalRecipients: 10,
-            successCount: 8,
-            failureCount: 2,
-            deliveryStartedAt: new Date(),
-          },
-        ] as NotificationDelivery[]),
-      ),
-      count: mock(() => Promise.resolve(1)),
-    } as unknown as NotificationDeliveryRepository;
-
-    useCase = new GetDeliveriesUseCase(mockRepo);
+    repo = new InMemoryNotificationDeliveryRepository();
   });
 
-  it("should return deliveries with pagination", async () => {
-    const input = {
-      filters: { tripId: "trip-1" },
-      pagination: { limit: 10, offset: 0 },
-    };
-
-    const result = await useCase.execute(input);
-
-    expect(result.kind).toBe("ok");
-    if (result.kind === "ok") {
-      expect(result.value.deliveries).toHaveLength(1);
-      expect(result.value.total).toBe(1);
-      expect(result.value.limit).toBe(10);
-      expect(result.value.offset).toBe(0);
-    }
-  });
-
-  it("should use default pagination", async () => {
-    const input = { filters: { tripId: "trip-1" } };
-
-    const result = await useCase.execute(input);
-
-    expect(result.kind).toBe("ok");
-    if (result.kind === "ok") {
-      expect(result.value.limit).toBe(50);
-      expect(result.value.offset).toBe(0);
-    }
-  });
-
-  it("should filter by status", async () => {
-    const findManyMock = mock(() =>
-      Promise.resolve([] as NotificationDelivery[]),
+  // Helper to run use case with repository
+  const runUseCase = async (input: GetDeliveriesInput) => {
+    const program = getDeliveriesUseCase(input).pipe(
+      Effect.provideService(NotificationDeliveryRepositoryTag, {
+        findMany: (filters, pagination) =>
+          Effect.promise(() => repo.findMany(filters, pagination)),
+        count: (filters) => Effect.promise(() => repo.count(filters)),
+        findByNotificationId: (notificationId) =>
+          Effect.promise(() => repo.findByNotificationId(notificationId)),
+        getStats: (filters) => Effect.promise(() => repo.getStats(filters)),
+        findFailed: (tripId, pagination) =>
+          Effect.promise(() => repo.findFailed(tripId, pagination)),
+        countFailed: (tripId) => Effect.promise(() => repo.countFailed(tripId)),
+      }),
     );
-    mockRepo.findMany = findManyMock;
+    return await Effect.runPromise(program);
+  };
 
-    const input = {
-      filters: { tripId: "trip-1", status: "success" as const },
-    };
+  describe("execute", () => {
+    it("should return deliveries with pagination", async () => {
+      // Arrange
+      repo.seed([
+        createMockDelivery({ id: "delivery-1", tripId: "trip-1" }),
+        createMockDelivery({ id: "delivery-2", tripId: "trip-1" }),
+      ]);
 
-    await useCase.execute(input);
+      const input: GetDeliveriesInput = {
+        filters: { tripId: "trip-1" },
+        pagination: { limit: 10, offset: 0 },
+      };
 
-    expect(findManyMock).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "success" }),
-      expect.any(Object),
-    );
-  });
+      // Act
+      const result = await runUseCase(input);
 
-  it("should return error on repository failure", async () => {
-    mockRepo.findMany = mock(() => Promise.reject(new Error("DB error")));
+      // Assert
+      expect(result.deliveries).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.limit).toBe(10);
+      expect(result.offset).toBe(0);
+    });
 
-    const result = await useCase.execute({ filters: {} });
+    it("should use default pagination", async () => {
+      // Arrange
+      repo.seed([createMockDelivery({ tripId: "trip-1" })]);
 
-    expect(result.kind).toBe("err");
+      const input: GetDeliveriesInput = { filters: { tripId: "trip-1" } };
+
+      // Act
+      const result = await runUseCase(input);
+
+      // Assert
+      expect(result.limit).toBe(50);
+      expect(result.offset).toBe(0);
+    });
+
+    it("should filter by status", async () => {
+      // Arrange
+      repo.seed([
+        createMockDelivery({ id: "d1", tripId: "trip-1", status: "success" }),
+        createMockDelivery({ id: "d2", tripId: "trip-1", status: "failure" }),
+      ]);
+
+      const input: GetDeliveriesInput = {
+        filters: { tripId: "trip-1", status: "success" },
+      };
+
+      // Act
+      const result = await runUseCase(input);
+
+      // Assert
+      expect(result.deliveries).toHaveLength(1);
+      expect(result.deliveries[0].status).toBe("success");
+    });
+
+    it("should return empty list when no deliveries match", async () => {
+      const input: GetDeliveriesInput = { filters: { tripId: "nonexistent" } };
+
+      const result = await runUseCase(input);
+
+      expect(result.deliveries).toHaveLength(0);
+      expect(result.total).toBe(0);
+    });
   });
 });

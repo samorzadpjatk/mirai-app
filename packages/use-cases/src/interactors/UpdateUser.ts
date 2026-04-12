@@ -1,6 +1,6 @@
-import type { UserRepository } from "../ports/UserRepository";
-import type { User, Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import type { User } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { UserRepositoryTag } from "../ports/UserRepository";
 
 /**
  * Input for UpdateUser use case
@@ -27,53 +27,76 @@ export interface UpdateUserOutput {
 }
 
 /**
+ * Error types for UpdateUser use case
+ */
+export class UserNotFoundError extends Error {
+  readonly _tag = "UserNotFoundError";
+  constructor() {
+    super("User not found");
+  }
+}
+
+export class UserUpdateError extends Error {
+  readonly _tag = "UserUpdateError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * UpdateUser Use Case
  *
  * Updates a user's profile information.
  * Returns error if user not found or validation fails.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new UpdateUserUseCase(userRepository);
+ * const program = Effect.gen(function* () {
+ *   const result = yield* updateUserUseCase(input);
+ *   return result;
+ * });
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("updateUserUseCase");
+ * const runnable = program.pipe(
+ *   Effect.provideService(UserRepositoryTag, repository)
+ * );
  * ```
  */
-export class UpdateUserUseCase {
-  constructor(private userRepository: UserRepository) {}
+export function updateUserUseCase(
+  input: UpdateUserInput,
+): Effect.Effect<
+  UpdateUserOutput,
+  UserNotFoundError | UserUpdateError,
+  UserRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const userRepo = yield* UserRepositoryTag;
 
-  async execute(input: UpdateUserInput): Promise<Result<UpdateUserOutput, string>> {
     // Load user
-    let user: User | null;
-    try {
-      user = await this.userRepository.findById(input.userId);
-    } catch (_cause) {
-      return err("Failed to load user");
-    }
+    const user = yield* userRepo.findById(input.userId);
 
     if (!user) {
-      return err("User not found");
+      return yield* Effect.fail(new UserNotFoundError());
     }
 
     let updatedUser: User = user;
 
     // Update name if provided
     if (input.firstName !== undefined || input.lastName !== undefined) {
-      const nameResult = updatedUser.updateName({
-        firstName: input.firstName ?? user.firstName,
-        lastName: input.lastName ?? user.lastName,
-      });
+      const nameResult = yield* updatedUser
+        .updateName({
+          firstName: input.firstName ?? user.firstName,
+          lastName: input.lastName ?? user.lastName,
+        })
+        .pipe(
+          Effect.mapError(
+            (validationError) => new UserUpdateError(validationError.message),
+          ),
+        );
 
-      if (nameResult.kind === "err") {
-        return err(nameResult.error.message);
-      }
-
-      updatedUser = nameResult.value;
+      updatedUser = nameResult;
     }
 
     // Update avatar if provided
@@ -82,26 +105,21 @@ export class UpdateUserUseCase {
     }
 
     // Save updated user
-    let saved: User;
-    try {
-      saved = await this.userRepository.update(updatedUser);
-    } catch (_cause) {
-      return err("Failed to update user");
-    }
+    const saved = yield* userRepo.update(updatedUser);
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(user: User): UpdateUserOutput {
-    return {
-      id: user.id,
-      authUserId: user.authUserId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      fullName: user.getFullName(),
-      role: user.role,
-      hasAvatar: user.hasAvatar,
-      updatedAt: user.updatedAt,
-    };
-  }
+function toOutput(user: User): UpdateUserOutput {
+  return {
+    id: user.id,
+    authUserId: user.authUserId,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    fullName: user.getFullName(),
+    role: user.role,
+    hasAvatar: user.hasAvatar,
+    updatedAt: user.updatedAt,
+  };
 }

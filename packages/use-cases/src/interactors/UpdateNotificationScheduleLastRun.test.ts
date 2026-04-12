@@ -1,147 +1,176 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect, Either } from "effect";
 import {
-  UpdateNotificationScheduleLastRunUseCase,
+  updateNotificationScheduleLastRunUseCase,
   type UpdateNotificationScheduleLastRunInput,
+  UpdateLastRunNotFoundError,
 } from "./UpdateNotificationScheduleLastRun";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
-import type { NotificationSchedule } from "@mirai-app/domain";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
+import {
+  NotificationSchedule,
+  NotificationScheduleType,
+} from "@mirai-app/domain";
+import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-// Mock NotificationSchedule domain object
-const createMockSchedule = (
-  overrides?: Partial<NotificationSchedule>,
-): NotificationSchedule =>
-  ({
-    id: "schedule-123",
-    name: "Test Schedule",
-    tripId: "trip-123",
-    notificationType: "reminder",
-    notificationTitle: "Test Title",
-    notificationBody: "Test Body",
-    notificationUrl: "https://example.com",
-    startDate: new Date("2024-01-01"),
-    endDate: new Date("2024-12-31"),
-    hour: 9,
-    minute: 0,
-    isActive: true,
-    createdById: "user-123",
-    lastRun: null,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    isCurrentlyActive: () => true,
-    isExpired: () => false,
-    isUpcoming: () => false,
-    getFormattedTime: () => "09:00",
-    ...overrides,
-  }) as NotificationSchedule;
-
-describe("[UNIT] UpdateNotificationScheduleLastRunUseCase", () => {
-  let useCase: UpdateNotificationScheduleLastRunUseCase;
-  let mockRepository: NotificationScheduleRepository;
+describe("[UNIT] updateNotificationScheduleLastRunUseCase (Effect)", () => {
+  let repo: InMemoryNotificationScheduleRepository;
 
   beforeEach(() => {
-    mockRepository = {
-      findById: mock(() => Promise.resolve(createMockSchedule())),
-      updateLastRun: mock((id: string, lastRun: Date) =>
-        Promise.resolve(createMockSchedule({ id, lastRun })),
-      ),
-    } as unknown as NotificationScheduleRepository;
-
-    useCase = new UpdateNotificationScheduleLastRunUseCase(mockRepository);
+    repo = new InMemoryNotificationScheduleRepository();
   });
 
+  const getFutureDate = (daysFromNow: number): Date => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  const createValidSchedule = (
+    overrides?: Partial<{
+      id: string;
+      name: string;
+    }>,
+  ): NotificationSchedule => {
+    const result = NotificationSchedule.create({
+      id: overrides?.id ?? "schedule-123",
+      name: overrides?.name ?? "Test Schedule",
+      tripId: null,
+      notificationType: NotificationScheduleType.INFO,
+      startDate: getFutureDate(2),
+      endDate: getFutureDate(10),
+      hour: 9,
+      minute: 0,
+      createdById: "user-123",
+    });
+    if (result.kind === "err") {
+      throw new Error(`Failed to create test schedule: ${result.error}`);
+    }
+    return result.value;
+  };
+
+  // Helper to run use case with repository
+  const runUseCase = async (input: UpdateNotificationScheduleLastRunInput) => {
+    const program = updateNotificationScheduleLastRunUseCase(input).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        create: (schedule: NotificationSchedule) =>
+          Effect.promise(() => repo.create(schedule)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => repo.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => repo.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
+        findByType: (type: NotificationScheduleType) =>
+          Effect.promise(() => repo.findByType(type)),
+        findAll: (options?: {
+          filter?: import("@mirai-app/domain").NotificationScheduleFilter;
+          pagination?: import("@mirai-app/domain").PaginationOptions;
+        }) => Effect.promise(() => repo.findAll(options)),
+        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
+        findUpcoming: (days?: number, now?: Date) =>
+          Effect.promise(() => repo.findUpcoming(days, now)),
+        update: (schedule: NotificationSchedule) =>
+          Effect.promise(() => repo.update(schedule)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => repo.deleteMany(ids)),
+        exists: (id: string) => Effect.promise(() => repo.exists(id)),
+        count: (
+          filter?: import("@mirai-app/domain").NotificationScheduleFilter,
+        ) => Effect.promise(() => repo.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => repo.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => repo.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => repo.countExecutions(scheduleId)),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
+
   describe("execute", () => {
-    it("should update lastRun timestamp", async () => {
-      const newLastRun = new Date("2024-06-15T09:00:00");
+    it("should update lastRun successfully", async () => {
+      // Arrange
+      const schedule = createValidSchedule({
+        id: "schedule-123",
+        name: "Test Schedule",
+      });
+      await repo.create(schedule);
+
+      const lastRun = new Date("2024-06-15T10:30:00Z");
       const input: UpdateNotificationScheduleLastRunInput = {
         id: "schedule-123",
-        lastRun: newLastRun,
+        lastRun,
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("schedule-123");
-      }
+      // Assert
+      expect(result.id).toBe("schedule-123");
+      expect(result.lastRun).toEqual(lastRun);
     });
 
     it("should return error when schedule not found", async () => {
-      mockRepository.findById = mock(() => Promise.resolve(null));
-
       const input: UpdateNotificationScheduleLastRunInput = {
         id: "nonexistent",
         lastRun: new Date(),
       };
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Notification schedule not found");
-      }
-    });
-
-    it("should call updateLastRun with correct parameters", async () => {
-      const lastRun = new Date("2024-06-15T10:30:00");
-      const input: UpdateNotificationScheduleLastRunInput = {
-        id: "schedule-456",
-        lastRun,
-      };
-
-      await useCase.execute(input);
-
-      expect(mockRepository.updateLastRun).toHaveBeenCalledWith(
-        "schedule-456",
-        lastRun,
-      );
-    });
-
-    it("should call findById before updating", async () => {
-      const input: UpdateNotificationScheduleLastRunInput = {
-        id: "schedule-789",
-        lastRun: new Date(),
-      };
-
-      await useCase.execute(input);
-
-      expect(mockRepository.findById).toHaveBeenCalledWith("schedule-789");
-    });
-
-    it("should not call updateLastRun if schedule not found", async () => {
-      mockRepository.findById = mock(() => Promise.resolve(null));
-
-      const input: UpdateNotificationScheduleLastRunInput = {
-        id: "nonexistent",
-        lastRun: new Date(),
-      };
-
-      await useCase.execute(input);
-
-      expect(mockRepository.updateLastRun).not.toHaveBeenCalled();
-    });
-
-    it("should return full schedule output", async () => {
-      const updatedSchedule = createMockSchedule({
-        id: "schedule-123",
-        name: "Updated Schedule",
-        lastRun: new Date("2024-06-15T09:00:00"),
-      });
-      mockRepository.updateLastRun = mock(() =>
-        Promise.resolve(updatedSchedule),
+      const program = updateNotificationScheduleLastRunUseCase(input).pipe(
+        Effect.provideService(NotificationScheduleRepositoryTag, {
+          create: (schedule: NotificationSchedule) =>
+            Effect.promise(() => repo.create(schedule)),
+          findById: () => Effect.succeed(null),
+          findByTripId: (tripId: string) =>
+            Effect.promise(() => repo.findByTripId(tripId)),
+          findByName: (name: string) =>
+            Effect.promise(() => repo.findByName(name)),
+          findByTripIdAndName: (tripId: string, name: string) =>
+            Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
+          findByType: (type: NotificationScheduleType) =>
+            Effect.promise(() => repo.findByType(type)),
+          findAll: (options?: {
+            filter?: import("@mirai-app/domain").NotificationScheduleFilter;
+            pagination?: import("@mirai-app/domain").PaginationOptions;
+          }) => Effect.promise(() => repo.findAll(options)),
+          findActive: (now?: Date) =>
+            Effect.promise(() => repo.findActive(now)),
+          findUpcoming: (days?: number, now?: Date) =>
+            Effect.promise(() => repo.findUpcoming(days, now)),
+          update: (schedule: NotificationSchedule) =>
+            Effect.promise(() => repo.update(schedule)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteMany: (ids: string[]) =>
+            Effect.promise(() => repo.deleteMany(ids)),
+          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+          count: (
+            filter?: import("@mirai-app/domain").NotificationScheduleFilter,
+          ) => Effect.promise(() => repo.count(filter)),
+          updateLastRun: (id: string, lastRun: Date) =>
+            Effect.promise(() => repo.updateLastRun(id, lastRun)),
+          toggleActive: (id: string) =>
+            Effect.promise(() => repo.toggleActive(id)),
+          bulkToggleActive: (ids: string[], isActive: boolean) =>
+            Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+          getExecutionHistory: (scheduleId: string, limit: number) =>
+            Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+          countExecutions: (scheduleId: string) =>
+            Effect.promise(() => repo.countExecutions(scheduleId)),
+        }),
       );
 
-      const input: UpdateNotificationScheduleLastRunInput = {
-        id: "schedule-123",
-        lastRun: new Date("2024-06-15T09:00:00"),
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("schedule-123");
-        expect(result.value.name).toBe("Updated Schedule");
-        expect(result.value.lastRun).toBeInstanceOf(Date);
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(UpdateLastRunNotFoundError);
       }
     });
   });

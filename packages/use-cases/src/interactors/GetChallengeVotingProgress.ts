@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, ChallengeVote, calculateVoteStats } from "@mirai-app/domain";
-import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
+import { Effect } from "effect";
+import { ChallengeVote } from "@mirai-app/domain";
+import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
  * Input for GetChallengeVotingProgress use case
@@ -28,26 +28,63 @@ export interface GetChallengeVotingProgressOutput {
 }
 
 /**
- * GetChallengeVotingProgress Use Case
+ * Error types for GetChallengeVotingProgress use case
+ */
+export class GetVotingProgressValidationError extends Error {
+  readonly _tag = "GetVotingProgressValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class GetVotingProgressRepositoryError extends Error {
+  readonly _tag = "GetVotingProgressRepositoryError";
+  constructor(message: string = "Failed to retrieve voting progress") {
+    super(message);
+  }
+}
+
+/**
+ * GetChallengeVotingProgress Use Case (Effect-based)
  *
  * Retrieves the current voting progress for a challenge,
  * including vote counts and scores per submission.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getChallengeVotingProgressUseCase(input);
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(ChallengeVoteRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class GetChallengeVotingProgressUseCase {
-  constructor(private voteRepository: ChallengeVoteRepository) {}
+export function getChallengeVotingProgressUseCase(
+  input: GetChallengeVotingProgressInput,
+): Effect.Effect<
+  GetChallengeVotingProgressOutput,
+  GetVotingProgressValidationError | GetVotingProgressRepositoryError,
+  ChallengeVoteRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const voteRepo = yield* ChallengeVoteRepositoryTag;
 
-  async execute(
-    input: GetChallengeVotingProgressInput,
-  ): Promise<Result<GetChallengeVotingProgressOutput, string>> {
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
-      return err("challengeId is required");
+      return yield* Effect.fail(
+        new GetVotingProgressValidationError("challengeId is required"),
+      );
     }
 
     // Fetch all votes for the challenge
-    const votes = await this.voteRepository.findByChallengeId(
-      input.challengeId,
-    );
+    const votes = yield* voteRepo
+      .findByChallengeId(input.challengeId)
+      .pipe(Effect.mapError(() => new GetVotingProgressRepositoryError()));
 
     // Calculate stats per submission
     const submissionMap = new Map<string, { count: number; score: number }>();
@@ -72,10 +109,10 @@ export class GetChallengeVotingProgressUseCase {
       }))
       .sort((a, b) => b.voteScore - a.voteScore || b.voteCount - a.voteCount);
 
-    return ok({
+    return {
       challengeId: input.challengeId,
       totalVotes: votes.length,
       submissionStats,
-    });
-  }
+    };
+  });
 }

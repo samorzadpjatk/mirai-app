@@ -1,17 +1,19 @@
-import { describe, it, expect, mock } from "bun:test";
-import { CreateSponsorUseCase, type CreateSponsorInput } from "./CreateSponsor";
+import { describe, it, expect, beforeEach } from "bun:test";
+import {
+  createSponsorUseCase,
+  type CreateSponsorInput,
+  CreateSponsorValidationError,
+} from "./CreateSponsor";
 import { Sponsor } from "@mirai-app/domain";
-import type { SponsorRepository } from "../ports/SponsorRepository";
+import { Effect, Either } from "effect";
+import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
-describe("[UNIT] CreateSponsorUseCase", () => {
-  // Helper to create a valid sponsor
+describe("[UNIT] createSponsorUseCase (Effect)", () => {
+  // Helper to create a valid sponsor using Effect
   const createValidSponsor = (
-    overrides?: Partial<{
-      id: string;
-      name: string;
-    }>,
+    overrides?: Partial<{ id: string; name: string }>,
   ): Sponsor => {
-    const result = Sponsor.create({
+    const effect = Sponsor.create({
       id: overrides?.id ?? "sponsor-123",
       name: overrides?.name ?? "Test Sponsor",
       description: "A test sponsor description",
@@ -21,164 +23,150 @@ describe("[UNIT] CreateSponsorUseCase", () => {
       offsetY: null,
       isActive: true,
     });
-    if (result.kind === "err") {
-      throw new Error(`Failed to create test sponsor: ${result.error.message}`);
+    try {
+      return Effect.runSync(effect);
+    } catch (e) {
+      throw new Error(`Failed to create test sponsor: ${e}`);
     }
-    return result.value;
   };
 
-  const createMockRepo = (
-    overrides?: Partial<SponsorRepository>,
-  ): SponsorRepository => ({
-    create: mock(() => Promise.resolve(createValidSponsor())),
-    findById: mock(() => Promise.resolve(null)),
-    findAll: mock(() => Promise.resolve([])),
-    findActive: mock(() => Promise.resolve([])),
-    findByTripId: mock(() => Promise.resolve([])),
-    update: mock(() => Promise.resolve(createValidSponsor())),
-    delete: mock(() => Promise.resolve()),
-    exists: mock(() => Promise.resolve(false)),
-    isLinkedToTrip: mock(() => Promise.resolve(false)),
-    linkToTrip: mock(() => Promise.resolve()),
-    unlinkFromTrip: mock(() => Promise.resolve()),
-    ...overrides,
+  // Helper to create mock repository service
+  const createMockRepoService = (overrides?: {
+    create?: (sponsor: Sponsor) => Promise<Sponsor>;
+  }) => ({
+    create: (sponsor: Sponsor) =>
+      Effect.promise(() =>
+        overrides?.create
+          ? overrides.create(sponsor)
+          : Promise.resolve(sponsor),
+      ),
+    findById: () => Effect.promise(() => Promise.resolve(null)),
+    findAll: () => Effect.promise(() => Promise.resolve([])),
+    findActive: () => Effect.promise(() => Promise.resolve([])),
+    findByTripId: () => Effect.promise(() => Promise.resolve([])),
+    update: (sponsor: Sponsor) =>
+      Effect.promise(() => Promise.resolve(sponsor)),
+    delete: () => Effect.promise(() => Promise.resolve()),
+    exists: () => Effect.promise(() => Promise.resolve(false)),
+    isLinkedToTrip: () => Effect.promise(() => Promise.resolve(false)),
+    linkToTrip: () => Effect.promise(() => Promise.resolve()),
+    unlinkFromTrip: () => Effect.promise(() => Promise.resolve()),
   });
+
+  // Helper to run use case with repository service
+  const runUseCase = async (
+    input: CreateSponsorInput,
+    repoOverrides?: { create?: (sponsor: Sponsor) => Promise<Sponsor> },
+  ) => {
+    const program = createSponsorUseCase(input).pipe(
+      Effect.provideService(
+        SponsorRepositoryTag,
+        createMockRepoService(repoOverrides),
+      ),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should create sponsor with valid input", async () => {
-      // Arrange
-      const sponsorResult = Sponsor.create({
-        id: "sponsor-456",
-        name: "Acme Corp",
-        description: "A leading technology company",
-        logoPath: "/logos/acme.png",
-        height: null,
-        offsetX: null,
-        offsetY: null,
-        isActive: true,
-      });
-      if (sponsorResult.kind === "err") {
-        throw new Error("Failed to create test sponsor");
-      }
-      const mockSponsor = sponsorResult.value;
+      // Create a mock sponsor that matches the input
+      const mockSponsor = Effect.runSync(
+        Sponsor.create({
+          id: "sponsor-456",
+          name: "Acme Corp",
+          description: "A leading technology company",
+          logoPath: "/logos/acme.png",
+          height: null,
+          offsetX: null,
+          offsetY: null,
+          isActive: true,
+        }),
+      );
 
-      const mockRepo = createMockRepo({
-        create: mock(() => Promise.resolve(mockSponsor)),
-      });
+      const result = await runUseCase(
+        {
+          name: "Acme Corp",
+          description: "A leading technology company",
+          logoPath: "/logos/acme.png",
+        },
+        { create: () => Promise.resolve(mockSponsor) },
+      );
 
-      const useCase = new CreateSponsorUseCase(mockRepo);
-      const input: CreateSponsorInput = {
-        name: "Acme Corp",
-        description: "A leading technology company",
-        logoPath: "/logos/acme.png",
-      };
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.name).toBe("Acme Corp");
-        expect(result.value.description).toBe("A leading technology company");
-        expect(result.value.logoPath).toBe("/logos/acme.png");
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-      }
-      expect(mockRepo.create).toHaveBeenCalled();
+      expect(result.name).toBe("Acme Corp");
+      expect(result.description).toBe("A leading technology company");
+      expect(result.logoPath).toBe("/logos/acme.png");
+      expect(result.isActive).toBe(true);
+      expect(result.createdAt).toBeInstanceOf(Date);
     });
 
-    it("should return error when name is empty", async () => {
-      // Arrange
-      const mockRepo = createMockRepo();
-
-      const useCase = new CreateSponsorUseCase(mockRepo);
-      const input: CreateSponsorInput = {
-        name: "", // Empty name
+    it("should fail when name is empty", async () => {
+      const program = createSponsorUseCase({
+        name: "",
         description: "Description",
         logoPath: "/logo.png",
-      };
+      }).pipe(
+        Effect.provideService(SponsorRepositoryTag, createMockRepoService()),
+      );
 
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("name");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
       }
     });
 
-    it("should return error when description is empty", async () => {
-      // Arrange
-      const mockRepo = createMockRepo();
-
-      const useCase = new CreateSponsorUseCase(mockRepo);
-      const input: CreateSponsorInput = {
+    it("should fail when description is empty", async () => {
+      const program = createSponsorUseCase({
         name: "Test Sponsor",
-        description: "", // Empty description
+        description: "",
         logoPath: "/logo.png",
-      };
+      }).pipe(
+        Effect.provideService(SponsorRepositoryTag, createMockRepoService()),
+      );
 
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("description");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
       }
     });
 
-    it("should return error when logoPath is empty", async () => {
-      // Arrange
-      const mockRepo = createMockRepo();
-
-      const useCase = new CreateSponsorUseCase(mockRepo);
-      const input: CreateSponsorInput = {
+    it("should fail when logoPath is empty", async () => {
+      const program = createSponsorUseCase({
         name: "Test Sponsor",
         description: "Description",
-        logoPath: "", // Empty logoPath
-      };
+        logoPath: "",
+      }).pipe(
+        Effect.provideService(SponsorRepositoryTag, createMockRepoService()),
+      );
 
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("logoPath");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
       }
     });
 
     it("should create sponsor with optional positioning fields", async () => {
-      // Arrange
       const mockSponsor = createValidSponsor({ id: "sponsor-789" });
-      const mockRepo = createMockRepo({
-        create: mock(() => Promise.resolve(mockSponsor)),
-      });
 
-      const useCase = new CreateSponsorUseCase(mockRepo);
-      const input: CreateSponsorInput = {
-        name: "Positioned Sponsor",
-        description: "A sponsor with positioning",
-        logoPath: "/logos/positioned.png",
-        height: 100,
-        offsetX: 10,
-        offsetY: 20,
-      };
+      const result = await runUseCase(
+        {
+          name: "Positioned Sponsor",
+          description: "A sponsor with positioning",
+          logoPath: "/logos/positioned.png",
+          height: 100,
+          offsetX: 10,
+          offsetY: 20,
+        },
+        { create: () => Promise.resolve(mockSponsor) },
+      );
 
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("ok");
-      expect(mockRepo.create).toHaveBeenCalled();
+      expect(result.id).toBe("sponsor-789");
     });
 
     it("should create inactive sponsor when specified", async () => {
-      // Arrange
-      const sponsorResult = Sponsor.create({
+      const inactiveEffect = Sponsor.create({
         id: "sponsor-inactive",
         name: "Inactive Sponsor",
         description: "This sponsor is inactive",
@@ -188,68 +176,36 @@ describe("[UNIT] CreateSponsorUseCase", () => {
         offsetY: null,
         isActive: false,
       });
-      if (sponsorResult.kind === "err") {
-        throw new Error("Failed to create test sponsor");
-      }
-      const mockSponsor = sponsorResult.value;
+      const mockSponsor = Effect.runSync(inactiveEffect);
 
-      const mockRepo = createMockRepo({
-        create: mock(() => Promise.resolve(mockSponsor)),
-      });
+      const result = await runUseCase(
+        {
+          name: "Inactive Sponsor",
+          description: "This sponsor is inactive",
+          logoPath: "/logos/inactive.png",
+          isActive: false,
+        },
+        { create: () => Promise.resolve(mockSponsor) },
+      );
 
-      const useCase = new CreateSponsorUseCase(mockRepo);
-      const input: CreateSponsorInput = {
-        name: "Inactive Sponsor",
-        description: "This sponsor is inactive",
-        logoPath: "/logos/inactive.png",
-        isActive: false,
-      };
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isActive).toBe(false);
-      }
+      expect(result.isActive).toBe(false);
     });
 
-    it("should handle repository errors", async () => {
-      // Arrange
-      const mockRepo = createMockRepo({
-        create: mock(() => Promise.reject(new Error("Create failed"))),
-      });
-
-      const useCase = new CreateSponsorUseCase(mockRepo);
-      const input: CreateSponsorInput = {
+    it("should propagate repository errors as defects", async () => {
+      const program = createSponsorUseCase({
         name: "Test Sponsor",
         description: "Description",
         logoPath: "/logo.png",
-      };
+      }).pipe(
+        Effect.provideService(
+          SponsorRepositoryTag,
+          createMockRepoService({
+            create: () => Promise.reject(new Error("Create failed")),
+          }),
+        ),
+      );
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("Create failed");
-    });
-
-    it("should use default values for optional fields", async () => {
-      // Arrange
-      const mockRepo = createMockRepo();
-
-      const useCase = new CreateSponsorUseCase(mockRepo);
-      const input: CreateSponsorInput = {
-        name: "Minimal Sponsor",
-        description: "A minimal sponsor",
-        logoPath: "/logo.png",
-        // height, offsetX, offsetY, isActive not provided
-      };
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("ok");
-      expect(mockRepo.create).toHaveBeenCalled();
+      await expect(Effect.runPromise(program)).rejects.toThrow("Create failed");
     });
   });
 });

@@ -1,4 +1,5 @@
 import type { Reward, RewardPurchase, RewardId } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * Pagination options for list queries
@@ -91,6 +92,37 @@ export interface RewardRepository {
 }
 
 /**
+ * RewardRepository Context.Tag for Effect dependency injection
+ */
+export class RewardRepositoryTag extends Context.Tag("RewardRepository")<
+  RewardRepositoryTag,
+  {
+    create: (reward: Reward) => Effect.Effect<Reward, never, never>;
+    findById: (id: RewardId) => Effect.Effect<Reward | null, never, never>;
+    findByTripId: (
+      tripId: string,
+      options?: { includeHidden?: boolean } & PaginationOptions,
+    ) => Effect.Effect<PaginatedResult<Reward>, never, never>;
+    findVisibleByTripId: (
+      tripId: string,
+      options?: PaginationOptions,
+    ) => Effect.Effect<PaginatedResult<Reward>, never, never>;
+    update: (reward: Reward) => Effect.Effect<Reward, never, never>;
+    delete: (id: RewardId) => Effect.Effect<void, never, never>;
+    hasPurchases: (id: RewardId) => Effect.Effect<boolean, never, never>;
+    getPurchaseCount: (id: RewardId) => Effect.Effect<number, never, never>;
+    decrementQuantity: (
+      id: RewardId,
+      amount: number,
+    ) => Effect.Effect<Reward, never, never>;
+    incrementQuantity: (
+      id: RewardId,
+      amount: number,
+    ) => Effect.Effect<Reward, never, never>;
+  }
+>() {}
+
+/**
  * RewardPurchaseRepository Port
  *
  * This interface defines operations for reward purchases.
@@ -147,6 +179,44 @@ export interface RewardPurchaseRepository {
 }
 
 /**
+ * RewardPurchaseRepository Context.Tag for Effect dependency injection
+ */
+export class RewardPurchaseRepositoryTag extends Context.Tag(
+  "RewardPurchaseRepository",
+)<
+  RewardPurchaseRepositoryTag,
+  {
+    create: (
+      purchase: RewardPurchase,
+    ) => Effect.Effect<RewardPurchase, never, never>;
+    findById: (
+      id: string,
+    ) => Effect.Effect<RewardPurchase | null, never, never>;
+    findByRewardId: (
+      rewardId: RewardId,
+      options?: PaginationOptions,
+    ) => Effect.Effect<PaginatedResult<RewardPurchase>, never, never>;
+    findByGroupId: (
+      groupId: string,
+      options?: PaginationOptions,
+    ) => Effect.Effect<PaginatedResult<RewardPurchase>, never, never>;
+    findByTripId: (
+      tripId: string,
+      options?: { groupId?: string } & PaginationOptions,
+    ) => Effect.Effect<PaginatedResult<RewardPurchase>, never, never>;
+    updateStatus: (
+      id: string,
+      status: string,
+      updatedById: string,
+      collectionMethod?: string | null,
+    ) => Effect.Effect<RewardPurchase, never, never>;
+    countByRewardId: (
+      rewardId: RewardId,
+    ) => Effect.Effect<number, never, never>;
+  }
+>() {}
+
+/**
  * TripPointsCalculator Port
  *
  * Calculates total available points for a trip (used for dynamic pricing)
@@ -158,6 +228,20 @@ export interface TripPointsCalculator {
    */
   calculateTotalAvailablePoints(tripId: string): Promise<number>;
 }
+
+/**
+ * TripPointsCalculator Context.Tag for Effect dependency injection
+ */
+export class TripPointsCalculatorTag extends Context.Tag(
+  "TripPointsCalculator",
+)<
+  TripPointsCalculatorTag,
+  {
+    calculateTotalAvailablePoints: (
+      tripId: string,
+    ) => Effect.Effect<number, never, never>;
+  }
+>() {}
 
 /**
  * GroupCoinsService Port
@@ -194,6 +278,28 @@ export interface GroupCoinsService {
 }
 
 /**
+ * GroupCoinsService Context.Tag for Effect dependency injection
+ */
+export class GroupCoinsServiceTag extends Context.Tag("GroupCoinsService")<
+  GroupCoinsServiceTag,
+  {
+    getBalance: (groupId: string) => Effect.Effect<number, never, never>;
+    deductCoins: (
+      groupId: string,
+      amount: number,
+      reason: string,
+      adminId: string,
+    ) => Effect.Effect<void, never, never>;
+    addCoins: (
+      groupId: string,
+      amount: number,
+      reason: string,
+      adminId: string,
+    ) => Effect.Effect<void, never, never>;
+  }
+>() {}
+
+/**
  * TripAccessChecker Port
  *
  * Validates access permissions for trip operations
@@ -222,3 +328,27 @@ export interface TripAccessChecker {
    */
   hasTripEnded(tripId: string): Promise<boolean>;
 }
+
+/**
+ * TripAccessChecker Context.Tag for Effect dependency injection
+ */
+export class TripAccessCheckerTag extends Context.Tag("TripAccessChecker")<
+  TripAccessCheckerTag,
+  {
+    isGroupLeader: (
+      userId: string,
+      tripId: string,
+    ) => Effect.Effect<
+      {
+        isLeader: boolean;
+        groupId?: string;
+        groupName?: string;
+        coins?: number;
+      },
+      never,
+      never
+    >;
+    isStaff: (userId: string) => Effect.Effect<boolean, never, never>;
+    hasTripEnded: (tripId: string) => Effect.Effect<boolean, never, never>;
+  }
+>() {}

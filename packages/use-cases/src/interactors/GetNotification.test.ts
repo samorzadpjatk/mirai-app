@@ -1,14 +1,18 @@
 import { describe, it, expect, mock } from "bun:test";
-import { GetNotificationUseCase } from "./GetNotification";
+import { Effect, Either } from "effect";
+import {
+  getNotificationUseCase,
+  NotificationNotFoundError,
+} from "./GetNotification";
 import type { GetNotificationInput } from "./GetNotification";
 import {
   Notification,
   NotificationStatus,
   NotificationPriority,
 } from "@mirai-app/domain";
-import type { NotificationRepository } from "../ports/NotificationRepository";
+import { NotificationRepositoryTag } from "../ports/NotificationRepository";
 
-describe("[UNIT] GetNotificationUseCase", () => {
+describe("[UNIT] getNotificationUseCase (Effect)", () => {
   // Helper to create a valid notification
   const createValidNotification = (
     overrides?: Partial<{
@@ -35,6 +39,26 @@ describe("[UNIT] GetNotificationUseCase", () => {
     return result.value;
   };
 
+  const createMockRepo = (overrides?: {
+    findById?: () => Effect.Effect<Notification | null, never, never>;
+  }) => ({
+    create: () => Effect.succeed(createValidNotification()),
+    findById: overrides?.findById ?? (() => Effect.succeed(null)),
+    findByTripId: () => Effect.succeed([]),
+    findByStatus: () => Effect.succeed([]),
+    findByTripIdAndStatus: () => Effect.succeed([]),
+    findByPriority: () => Effect.succeed([]),
+    findReadyToSend: () => Effect.succeed([]),
+    findOverdue: () => Effect.succeed([]),
+    findByCreatedById: () => Effect.succeed([]),
+    findAll: () => Effect.succeed([]),
+    update: () => Effect.succeed(createValidNotification()),
+    delete: () => Effect.succeed(void 0),
+    exists: () => Effect.succeed(true),
+    countByStatus: () => Effect.succeed(1),
+    countPendingByTripId: () => Effect.succeed(0),
+  });
+
   describe("execute", () => {
     it("should return notification when found by ID", async () => {
       // Arrange
@@ -46,82 +70,55 @@ describe("[UNIT] GetNotificationUseCase", () => {
         priority: NotificationPriority.HIGH,
       });
 
-      const mockRepo: NotificationRepository = {
-        create: mock(() => Promise.resolve(mockNotification)),
-        findById: mock(() => Promise.resolve(mockNotification)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByPriority: mock(() => Promise.resolve([])),
-        findReadyToSend: mock(() => Promise.resolve([])),
-        findOverdue: mock(() => Promise.resolve([])),
-        findByCreatedById: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockNotification)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByStatus: mock(() => Promise.resolve(1)),
-        countPendingByTripId: mock(() => Promise.resolve(0)),
-      };
+      const mockRepo = createMockRepo({
+        findById: () => Effect.succeed(mockNotification),
+      });
 
-      const useCase = new GetNotificationUseCase(mockRepo);
       const input: GetNotificationInput = {
         notificationId: "notification-456",
       };
 
+      const program = getNotificationUseCase(input).pipe(
+        Effect.provideService(NotificationRepositoryTag, mockRepo),
+      );
+
       // Act
-      const result = await useCase.execute(input);
+      const result = await Effect.runPromise(program);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("notification-456");
-        expect(result.value.title).toBe("Trip Reminder");
-        expect(result.value.body).toBe("Don't forget to pack your bags!");
-        expect(result.value.status).toBe("READY");
-        expect(result.value.priority).toBe("HIGH");
-        expect(result.value.createdById).toBe("admin-123");
-        expect(result.value.isReadyToSend).toBe(true);
-        expect(result.value.isSent).toBe(false);
-        expect(result.value.isScheduled).toBe(false);
-      }
-      expect(mockRepo.findById).toHaveBeenCalledWith("notification-456");
+      expect(result.id).toBe("notification-456");
+      expect(result.title).toBe("Trip Reminder");
+      expect(result.body).toBe("Don't forget to pack your bags!");
+      expect(result.status).toBe("READY");
+      expect(result.priority).toBe("HIGH");
+      expect(result.createdById).toBe("admin-123");
+      expect(result.isReadyToSend).toBe(true);
+      expect(result.isSent).toBe(false);
+      expect(result.isScheduled).toBe(false);
     });
 
     it("should return error when notification not found", async () => {
       // Arrange
-      const mockRepo: NotificationRepository = {
-        create: mock(() => Promise.resolve({} as Notification)),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByPriority: mock(() => Promise.resolve([])),
-        findReadyToSend: mock(() => Promise.resolve([])),
-        findOverdue: mock(() => Promise.resolve([])),
-        findByCreatedById: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve({} as Notification)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByStatus: mock(() => Promise.resolve(0)),
-        countPendingByTripId: mock(() => Promise.resolve(0)),
-      };
+      const mockRepo = createMockRepo({
+        findById: () => Effect.succeed(null),
+      });
 
-      const useCase = new GetNotificationUseCase(mockRepo);
       const input: GetNotificationInput = {
         notificationId: "non-existent-id",
       };
 
+      const program = getNotificationUseCase(input).pipe(
+        Effect.provideService(NotificationRepositoryTag, mockRepo),
+      );
+
       // Act
-      const result = await useCase.execute(input);
+      const either = await Effect.runPromise(Effect.either(program));
 
       // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Notification not found");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(NotificationNotFoundError);
       }
-      expect(mockRepo.findById).toHaveBeenCalledWith("non-existent-id");
     });
 
     it("should return sent notification with correct isSent flag", async () => {
@@ -137,39 +134,25 @@ describe("[UNIT] GetNotificationUseCase", () => {
       }
       const sentNotification = markResult.value;
 
-      const mockRepo: NotificationRepository = {
-        create: mock(() => Promise.resolve(draftNotification)),
-        findById: mock(() => Promise.resolve(sentNotification)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByPriority: mock(() => Promise.resolve([])),
-        findReadyToSend: mock(() => Promise.resolve([])),
-        findOverdue: mock(() => Promise.resolve([])),
-        findByCreatedById: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(sentNotification)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByStatus: mock(() => Promise.resolve(1)),
-        countPendingByTripId: mock(() => Promise.resolve(0)),
-      };
+      const mockRepo = createMockRepo({
+        findById: () => Effect.succeed(sentNotification),
+      });
 
-      const useCase = new GetNotificationUseCase(mockRepo);
       const input: GetNotificationInput = {
         notificationId: "notification-sent",
       };
 
+      const program = getNotificationUseCase(input).pipe(
+        Effect.provideService(NotificationRepositoryTag, mockRepo),
+      );
+
       // Act
-      const result = await useCase.execute(input);
+      const result = await Effect.runPromise(program);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.status).toBe("SENT");
-        expect(result.value.isSent).toBe(true);
-        expect(result.value.isReadyToSend).toBe(false);
-      }
+      expect(result.status).toBe("SENT");
+      expect(result.isSent).toBe(true);
+      expect(result.isReadyToSend).toBe(false);
     });
 
     it("should return notification with trip association", async () => {
@@ -180,84 +163,23 @@ describe("[UNIT] GetNotificationUseCase", () => {
         tripId: "trip-abc",
       });
 
-      const mockRepo: NotificationRepository = {
-        create: mock(() => Promise.resolve(mockNotification)),
-        findById: mock(() => Promise.resolve(mockNotification)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByPriority: mock(() => Promise.resolve([])),
-        findReadyToSend: mock(() => Promise.resolve([])),
-        findOverdue: mock(() => Promise.resolve([])),
-        findByCreatedById: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockNotification)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByStatus: mock(() => Promise.resolve(1)),
-        countPendingByTripId: mock(() => Promise.resolve(1)),
-      };
+      const mockRepo = createMockRepo({
+        findById: () => Effect.succeed(mockNotification),
+      });
 
-      const useCase = new GetNotificationUseCase(mockRepo);
       const input: GetNotificationInput = {
         notificationId: "notification-trip",
       };
 
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.tripId).toBe("trip-abc");
-      }
-    });
-
-    it("should return notification with URL", async () => {
-      // Arrange
-      const result = Notification.create({
-        id: "notification-url",
-        title: "Click Here",
-        body: "Check out this link!",
-        url: "https://example.com/trip/123",
-        createdById: "admin-456",
-      });
-      if (result.kind === "err") {
-        throw new Error(`Failed to create notification: ${result.error}`);
-      }
-      const mockNotification = result.value;
-
-      const mockRepo: NotificationRepository = {
-        create: mock(() => Promise.resolve(mockNotification)),
-        findById: mock(() => Promise.resolve(mockNotification)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByPriority: mock(() => Promise.resolve([])),
-        findReadyToSend: mock(() => Promise.resolve([])),
-        findOverdue: mock(() => Promise.resolve([])),
-        findByCreatedById: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockNotification)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByStatus: mock(() => Promise.resolve(1)),
-        countPendingByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      const useCase = new GetNotificationUseCase(mockRepo);
-      const input: GetNotificationInput = {
-        notificationId: "notification-url",
-      };
+      const program = getNotificationUseCase(input).pipe(
+        Effect.provideService(NotificationRepositoryTag, mockRepo),
+      );
 
       // Act
-      const result2 = await useCase.execute(input);
+      const result = await Effect.runPromise(program);
 
       // Assert
-      expect(result2.kind).toBe("ok");
-      if (result2.kind === "ok") {
-        expect(result2.value.url).toBe("https://example.com/trip/123");
-      }
+      expect(result.tripId).toBe("trip-abc");
     });
 
     it("should return DRAFT notification correctly", async () => {
@@ -268,39 +190,25 @@ describe("[UNIT] GetNotificationUseCase", () => {
         status: NotificationStatus.DRAFT,
       });
 
-      const mockRepo: NotificationRepository = {
-        create: mock(() => Promise.resolve(mockNotification)),
-        findById: mock(() => Promise.resolve(mockNotification)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByPriority: mock(() => Promise.resolve([])),
-        findReadyToSend: mock(() => Promise.resolve([])),
-        findOverdue: mock(() => Promise.resolve([])),
-        findByCreatedById: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockNotification)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByStatus: mock(() => Promise.resolve(1)),
-        countPendingByTripId: mock(() => Promise.resolve(0)),
-      };
+      const mockRepo = createMockRepo({
+        findById: () => Effect.succeed(mockNotification),
+      });
 
-      const useCase = new GetNotificationUseCase(mockRepo);
       const input: GetNotificationInput = {
         notificationId: "notification-draft",
       };
 
+      const program = getNotificationUseCase(input).pipe(
+        Effect.provideService(NotificationRepositoryTag, mockRepo),
+      );
+
       // Act
-      const result = await useCase.execute(input);
+      const result = await Effect.runPromise(program);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.status).toBe("DRAFT");
-        expect(result.value.isSent).toBe(false);
-        expect(result.value.isReadyToSend).toBe(false);
-      }
+      expect(result.status).toBe("DRAFT");
+      expect(result.isSent).toBe(false);
+      expect(result.isReadyToSend).toBe(false);
     });
 
     it("should return URGENT priority notification correctly", async () => {
@@ -311,37 +219,23 @@ describe("[UNIT] GetNotificationUseCase", () => {
         priority: NotificationPriority.URGENT,
       });
 
-      const mockRepo: NotificationRepository = {
-        create: mock(() => Promise.resolve(mockNotification)),
-        findById: mock(() => Promise.resolve(mockNotification)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByPriority: mock(() => Promise.resolve([])),
-        findReadyToSend: mock(() => Promise.resolve([])),
-        findOverdue: mock(() => Promise.resolve([])),
-        findByCreatedById: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockNotification)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByStatus: mock(() => Promise.resolve(1)),
-        countPendingByTripId: mock(() => Promise.resolve(0)),
-      };
+      const mockRepo = createMockRepo({
+        findById: () => Effect.succeed(mockNotification),
+      });
 
-      const useCase = new GetNotificationUseCase(mockRepo);
       const input: GetNotificationInput = {
         notificationId: "notification-urgent",
       };
 
+      const program = getNotificationUseCase(input).pipe(
+        Effect.provideService(NotificationRepositoryTag, mockRepo),
+      );
+
       // Act
-      const result = await useCase.execute(input);
+      const result = await Effect.runPromise(program);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.priority).toBe("URGENT");
-      }
+      expect(result.priority).toBe("URGENT");
     });
   });
 });

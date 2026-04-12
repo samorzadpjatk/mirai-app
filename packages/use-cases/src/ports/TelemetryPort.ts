@@ -20,6 +20,7 @@
  */
 
 import type { Result } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 // =============================================================================
 // Domain Errors
@@ -155,3 +156,17 @@ export interface TelemetryPort {
    */
   flush?(): Promise<Result<void, TelemetryError>>;
 }
+
+/**
+ * TelemetryPort Context.Tag for Effect dependency injection
+ */
+export class TelemetryPortTag extends Context.Tag("TelemetryPort")<
+  TelemetryPortTag,
+  {
+    log: (event: TelemetryEvent) => Effect.Effect<void, TelemetryError, never>;
+    logBatch?: (
+      events: TelemetryEvent[],
+    ) => Effect.Effect<void, TelemetryError, never>;
+    flush?: () => Effect.Effect<void, TelemetryError, never>;
+  }
+>() {}

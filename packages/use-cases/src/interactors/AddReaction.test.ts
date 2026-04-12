@@ -1,18 +1,35 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { AddReactionUseCase, type AddReactionInput } from "./AddReaction";
-import type { ActivityFeedRepository } from "../ports/ActivityFeedRepository";
-import type {
+import { describe, it, expect, beforeEach } from "bun:test";
+import {
+  addReactionUseCase,
+  type AddReactionInput,
+  ActivityNotFoundError,
+  ActivityHiddenError,
+  ReactionCreationError,
+  ReactionRepositoryError,
+} from "./AddReaction";
+import {
   ActivityFeed,
-  ActivityId,
   ActivityReaction,
-  ReactionType,
+  type ActivityId,
+  type ReactionType,
 } from "@mirai-app/domain";
+import { ActivityFeedRepositoryTag } from "../ports/ActivityFeedRepository";
+import { Effect, Either } from "effect";
 
 // Mock domain objects
 const createMockActivity = (overrides?: Partial<ActivityFeed>): ActivityFeed =>
   ({
     id: "activity-123" as ActivityId,
     isHidden: false,
+    tripId: "trip-123",
+    activityType: "custom",
+    title: "Test Activity",
+    description: null,
+    imageUrl: null,
+    isPinned: false,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    admin: null,
     ...overrides,
   }) as ActivityFeed;
 
@@ -20,58 +37,194 @@ const createMockReaction = (
   overrides?: Partial<ActivityReaction>,
 ): ActivityReaction =>
   ({
+    id: "reaction-123",
     activityId: "activity-123" as ActivityId,
     userId: "user-123",
     reactionType: "heart" as ReactionType,
+    createdAt: new Date("2024-01-01"),
     ...overrides,
   }) as ActivityReaction;
 
-describe("[UNIT] AddReactionUseCase", () => {
-  let useCase: AddReactionUseCase;
-  let mockActivityFeedRepository: ActivityFeedRepository;
+// Helper to create an in-memory repository for testing
+const createInMemoryRepository = (options?: {
+  initialActivities?: ActivityFeed[];
+  initialReactions?: ActivityReaction[];
+}) => {
+  const activities = [...(options?.initialActivities ?? [])];
+  const reactions = [...(options?.initialReactions ?? [])];
 
-  beforeEach(() => {
-    mockActivityFeedRepository = {
-      findById: mock(() => Promise.resolve(createMockActivity())),
-      findUserReactions: mock(() => Promise.resolve([])),
-      removeReaction: mock(() => Promise.resolve()),
-      addReaction: mock(() => Promise.resolve(createMockReaction())),
-      getReactionCounts: mock(() =>
-        Promise.resolve({
-          total: 1,
-          counts: { heart: 1, fire: 0, clap: 0, star: 0 },
-        }),
-      ),
-    } as unknown as ActivityFeedRepository;
+  return {
+    create: (activity: ActivityFeed) =>
+      Effect.promise(async () => {
+        activities.push(activity);
+        return activity;
+      }),
+    findById: (id: string) =>
+      Effect.promise(async () => {
+        return activities.find((a) => a.id === id) ?? null;
+      }),
+    findByTripId: (
+      tripId: string,
+      options?: {
+        limit?: number;
+        cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
+        includeHidden?: boolean;
+      },
+    ) =>
+      Effect.promise(async () => {
+        const filtered = activities.filter((a) => a.tripId === tripId);
+        return {
+          activities: filtered,
+          nextCursor: null,
+          hasMore: false,
+        };
+      }),
+    findByTripIdPaged: (
+      tripId: string,
+      options: {
+        page: number;
+        pageSize: number;
+        includeHidden?: boolean;
+      },
+    ) =>
+      Effect.promise(async () => {
+        const filtered = activities.filter((a) => a.tripId === tripId);
+        return {
+          activities: filtered,
+          total: filtered.length,
+          page: options.page,
+          pageSize: options.pageSize,
+          totalPages: Math.ceil(filtered.length / options.pageSize),
+          hasMore: false,
+        };
+      }),
+    update: (activity: ActivityFeed) =>
+      Effect.promise(async () => {
+        const index = activities.findIndex((a) => a.id === activity.id);
+        if (index >= 0) {
+          activities[index] = activity;
+        }
+        return activity;
+      }),
+    delete: (id: string) =>
+      Effect.promise(async () => {
+        const index = activities.findIndex((a) => a.id === id);
+        if (index >= 0) {
+          activities.splice(index, 1);
+        }
+      }),
+    exists: (id: string) =>
+      Effect.promise(async () => {
+        return activities.some((a) => a.id === id);
+      }),
+    findReactionsByActivityId: (activityId: string) =>
+      Effect.promise(async () => {
+        return reactions.filter((r) => r.activityId === activityId);
+      }),
+    findUserReactions: (activityId: string, userId: string) =>
+      Effect.promise(async () => {
+        return reactions.filter(
+          (r) => r.activityId === activityId && r.userId === userId,
+        );
+      }),
+    addReaction: (reaction: ActivityReaction) =>
+      Effect.promise(async () => {
+        reactions.push(reaction);
+        return reaction;
+      }),
+    removeReaction: (
+      activityId: string,
+      userId: string,
+      reactionType: string,
+    ) =>
+      Effect.promise(async () => {
+        const index = reactions.findIndex(
+          (r) =>
+            r.activityId === activityId &&
+            r.userId === userId &&
+            r.reactionType === reactionType,
+        );
+        if (index >= 0) {
+          reactions.splice(index, 1);
+        }
+      }),
+    getReactionCounts: (activityId: string) =>
+      Effect.promise(async () => {
+        const activityReactions = reactions.filter(
+          (r) => r.activityId === activityId,
+        );
+        return {
+          total: activityReactions.length,
+          counts: {
+            heart: activityReactions.filter((r) => r.reactionType === "heart")
+              .length,
+            fire: activityReactions.filter((r) => r.reactionType === "fire")
+              .length,
+            clap: activityReactions.filter((r) => r.reactionType === "clap")
+              .length,
+            star: activityReactions.filter((r) => r.reactionType === "star")
+              .length,
+          },
+        };
+      }),
+  };
+};
 
-    useCase = new AddReactionUseCase(mockActivityFeedRepository);
-  });
+describe("[UNIT] addReactionUseCase (Effect)", () => {
+  // Helper to run use case with repository
+  const runUseCase = async (
+    input: AddReactionInput,
+    options?: {
+      initialActivities?: ActivityFeed[];
+      initialReactions?: ActivityReaction[];
+    },
+  ) => {
+    const repo = createInMemoryRepository(options);
+    const program = addReactionUseCase(input).pipe(
+      Effect.provideService(ActivityFeedRepositoryTag, repo),
+    );
+    return await Effect.runPromise(program);
+  };
+
+  // Helper to run use case and get Either for error testing
+  const runUseCaseEither = async (
+    input: AddReactionInput,
+    options?: {
+      initialActivities?: ActivityFeed[];
+      initialReactions?: ActivityReaction[];
+    },
+  ) => {
+    const repo = createInMemoryRepository(options);
+    const program = addReactionUseCase(input).pipe(
+      Effect.provideService(ActivityFeedRepositoryTag, repo),
+    );
+    return await Effect.runPromise(Effect.either(program));
+  };
 
   describe("execute", () => {
     it("should add new reaction when user has no existing reaction of same type", async () => {
+      const activity = createMockActivity();
       const input: AddReactionInput = {
         activityId: "activity-123" as ActivityId,
         userId: "user-123",
         reactionType: "heart" as ReactionType,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, { initialActivities: [activity] });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.activityId).toBe("activity-123");
-        expect(result.value.reactionType).toBe("heart");
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.reactionsSummary.total).toBe(1);
-      }
+      expect(result.activityId).toBe("activity-123");
+      expect(result.reactionType).toBe("heart");
+      expect(result.isActive).toBe(true);
+      expect(result.reactionsSummary.total).toBe(1);
     });
 
     it("should remove reaction when user already has same reaction type", async () => {
-      mockActivityFeedRepository.findUserReactions = mock(() =>
-        Promise.resolve([
-          createMockReaction({ reactionType: "heart" as ReactionType }),
-        ]),
-      );
+      const activity = createMockActivity();
+      const existingReaction = createMockReaction({
+        activityId: "activity-123" as ActivityId,
+        userId: "user-123",
+        reactionType: "heart" as ReactionType,
+      });
 
       const input: AddReactionInput = {
         activityId: "activity-123" as ActivityId,
@@ -79,40 +232,32 @@ describe("[UNIT] AddReactionUseCase", () => {
         reactionType: "heart" as ReactionType,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        initialActivities: [activity],
+        initialReactions: [existingReaction],
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isActive).toBe(false);
-      }
-      expect(mockActivityFeedRepository.removeReaction).toHaveBeenCalledWith(
-        "activity-123",
-        "user-123",
-        "heart",
-      );
+      expect(result.isActive).toBe(false);
+      expect(result.reactionsSummary.total).toBe(0);
     });
 
     it("should return error when activity not found", async () => {
-      mockActivityFeedRepository.findById = mock(() => Promise.resolve(null));
-
       const input: AddReactionInput = {
         activityId: "nonexistent" as ActivityId,
         userId: "user-123",
         reactionType: "heart" as ReactionType,
       };
 
-      const result = await useCase.execute(input);
+      const either = await runUseCaseEither(input);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Activity not found");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(ActivityNotFoundError);
       }
     });
 
     it("should return error when activity is hidden", async () => {
-      mockActivityFeedRepository.findById = mock(() =>
-        Promise.resolve(createMockActivity({ isHidden: true })),
-      );
+      const hiddenActivity = createMockActivity({ isHidden: true });
 
       const input: AddReactionInput = {
         activityId: "activity-123" as ActivityId,
@@ -120,20 +265,23 @@ describe("[UNIT] AddReactionUseCase", () => {
         reactionType: "heart" as ReactionType,
       };
 
-      const result = await useCase.execute(input);
+      const either = await runUseCaseEither(input, {
+        initialActivities: [hiddenActivity],
+      });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Activity is hidden");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(ActivityHiddenError);
       }
     });
 
     it("should add different reaction type even if user has other reaction", async () => {
-      mockActivityFeedRepository.findUserReactions = mock(() =>
-        Promise.resolve([
-          createMockReaction({ reactionType: "fire" as ReactionType }),
-        ]),
-      );
+      const activity = createMockActivity();
+      const existingReaction = createMockReaction({
+        activityId: "activity-123" as ActivityId,
+        userId: "user-123",
+        reactionType: "fire" as ReactionType,
+      });
 
       const input: AddReactionInput = {
         activityId: "activity-123" as ActivityId,
@@ -141,29 +289,39 @@ describe("[UNIT] AddReactionUseCase", () => {
         reactionType: "heart" as ReactionType,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        initialActivities: [activity],
+        initialReactions: [existingReaction],
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.reactionType).toBe("heart");
-      }
-      expect(mockActivityFeedRepository.addReaction).toHaveBeenCalled();
+      expect(result.isActive).toBe(true);
+      expect(result.reactionType).toBe("heart");
     });
 
     it("should return updated reaction counts", async () => {
-      mockActivityFeedRepository.getReactionCounts = mock(() =>
-        Promise.resolve({
-          total: 5,
-          counts: { heart: 2, fire: 1, clap: 1, star: 1 },
+      const activity = createMockActivity();
+      const reactions = [
+        createMockReaction({
+          activityId: "activity-123" as ActivityId,
+          userId: "user-1",
+          reactionType: "heart" as ReactionType,
         }),
-      );
-      mockActivityFeedRepository.findUserReactions = mock(() =>
-        Promise.resolve([
-          createMockReaction({ reactionType: "heart" as ReactionType }),
-          createMockReaction({ reactionType: "fire" as ReactionType }),
-        ]),
-      );
+        createMockReaction({
+          activityId: "activity-123" as ActivityId,
+          userId: "user-2",
+          reactionType: "heart" as ReactionType,
+        }),
+        createMockReaction({
+          activityId: "activity-123" as ActivityId,
+          userId: "user-3",
+          reactionType: "fire" as ReactionType,
+        }),
+        createMockReaction({
+          activityId: "activity-123" as ActivityId,
+          userId: "user-123",
+          reactionType: "fire" as ReactionType,
+        }),
+      ];
 
       const input: AddReactionInput = {
         activityId: "activity-123" as ActivityId,
@@ -171,44 +329,47 @@ describe("[UNIT] AddReactionUseCase", () => {
         reactionType: "heart" as ReactionType,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        initialActivities: [activity],
+        initialReactions: reactions,
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.reactionsSummary.total).toBe(5);
-        expect(result.value.reactionsSummary.counts).toEqual({
-          heart: 2,
-          fire: 1,
-          clap: 1,
-          star: 1,
-        });
-        expect(result.value.reactionsSummary.myReactions).toEqual([
-          "heart",
-          "fire",
-        ]);
-      }
+      expect(result.reactionsSummary.total).toBe(5); // 4 existing + 1 new
+      expect(result.reactionsSummary.counts).toEqual({
+        heart: 3,
+        fire: 2,
+        clap: 0,
+        star: 0,
+      });
+      expect(result.reactionsSummary.myReactions).toContain("heart");
+      expect(result.reactionsSummary.myReactions).toContain("fire");
+      expect(result.reactionsSummary.myReactions).toHaveLength(2);
     });
 
     it("should handle different reaction types", async () => {
+      const activity = createMockActivity();
       const reactionTypes: ReactionType[] = ["heart", "fire", "clap", "star"];
 
       for (const reactionType of reactionTypes) {
-        mockActivityFeedRepository.findUserReactions = mock(() =>
-          Promise.resolve([]),
-        );
+        // Create fresh repo for each iteration
+        const repo = createInMemoryRepository({
+          initialActivities: [activity],
+          initialReactions: [],
+        });
 
         const input: AddReactionInput = {
           activityId: "activity-123" as ActivityId,
-          userId: "user-123",
+          userId: `user-${reactionType}`,
           reactionType,
         };
 
-        const result = await useCase.execute(input);
+        const program = addReactionUseCase(input).pipe(
+          Effect.provideService(ActivityFeedRepositoryTag, repo),
+        );
+        const result = await Effect.runPromise(program);
 
-        expect(result.kind).toBe("ok");
-        if (result.kind === "ok") {
-          expect(result.value.reactionType).toBe(reactionType);
-        }
+        expect(result.reactionType).toBe(reactionType);
+        expect(result.isActive).toBe(true);
       }
     });
   });

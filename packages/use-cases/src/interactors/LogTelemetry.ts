@@ -7,14 +7,14 @@
  * This use case:
  * - Creates structured telemetry events from mobile app metadata
  * - Delegates persistence to TelemetryPort (no direct DB access)
- * - Returns Result type for explicit error handling
+ * - Returns Effect for explicit error handling
  *
  * @module interactors
  */
 
-import type { Result } from "@mirai-app/domain";
-import type { TelemetryPort, TelemetryEvent } from "../ports/TelemetryPort";
-import { TelemetryError } from "../ports/TelemetryPort";
+import { Effect } from "effect";
+import { TelemetryPortTag, TelemetryError } from "../ports/TelemetryPort";
+import type { TelemetryEvent } from "../ports/TelemetryPort";
 
 // =============================================================================
 // DTO Types
@@ -53,123 +53,97 @@ export interface LogTelemetryOutput {
   readonly loggedAt: Date;
 }
 
+/**
+ * Error when telemetry logging fails
+ */
+export class LogTelemetryError extends Error {
+  readonly _tag = "LogTelemetryError";
+  constructor(public readonly cause: unknown) {
+    super("Failed to log telemetry");
+  }
+}
+
 // =============================================================================
 // Use Case
 // =============================================================================
 
 /**
- * LogTelemetry Use Case
+ * LogTelemetry Use Case (Effect-based)
  *
  * Logs telemetry events for mobile app requests.
  * Extracts logging logic from mobileAppMiddleware into a testable use case.
  *
- * ## Constructor Injection Pattern
- *
- * This use case supports both manual instantiation and DI container injection:
+ * ## Effect-based Pattern
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new LogTelemetryUseCase(telemetryPort);
- *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("logTelemetryUseCase");
+ * const program = logTelemetryUseCase(input).pipe(
+ *   Effect.provideService(TelemetryPortTag, telemetryPort)
+ * );
+ * const result = await Effect.runPromise(program);
  * ```
  *
  * ## Error Handling
  *
- * Returns Result<void, TelemetryError> for explicit error handling.
+ * Returns Effect<void, TelemetryError> for explicit error handling.
  * Callers should handle failures gracefully - telemetry failures are typically
  * non-critical and should not block the main request flow.
- *
- * ```typescript
- * const result = await useCase.execute(input);
- * if (isErr(result)) {
- *   // Log locally, but don't fail the request
- *   console.warn("Telemetry logging failed:", result.error);
- * }
- * ```
  */
-export class LogTelemetryUseCase {
-  constructor(private readonly telemetryPort: TelemetryPort) {}
+export function logTelemetryUseCase(
+  input: LogTelemetryInput,
+): Effect.Effect<void, TelemetryError, TelemetryPortTag> {
+  return Effect.gen(function* () {
+    const telemetryPort = yield* TelemetryPortTag;
 
-  /**
-   * Execute telemetry logging
-   *
-   * @param input - Mobile app telemetry data
-   * @returns Result<void, TelemetryError> - success or telemetry error
-   *
-   * @example
-   * ```typescript
-   * const input: LogTelemetryInput = {
-   *   userAgent: "MiraiApp/1.2.3 (iOS 16.0; iPhone14,2)",
-   *   appVersion: "1.2.3",
-   *   platform: "ios",
-   *   timestamp: new Date(),
-   *   userId: "user-123",
-   *   context: { route: "/api/challenges" }
-   * };
-   *
-   * const result = await useCase.execute(input);
-   * if (isOk(result)) {
-   *   console.log("Telemetry logged successfully");
-   * }
-   * ```
-   */
-  async execute(
-    input: LogTelemetryInput,
-  ): Promise<Result<void, TelemetryError>> {
     // Build telemetry event from input
-    const event = this.buildTelemetryEvent(input);
+    const event = buildTelemetryEvent(input);
 
     // Delegate to port for persistence
     // Use case has no knowledge of HOW telemetry is stored
-    return this.telemetryPort.log(event);
+    yield* telemetryPort.log(event);
+  });
+}
+
+/**
+ * Build a structured telemetry event from input DTO
+ *
+ * @param input - Raw telemetry input
+ * @returns TelemetryEvent formatted for the port
+ */
+function buildTelemetryEvent(input: LogTelemetryInput): TelemetryEvent {
+  // Determine severity based on platform/errors
+  const severity = determineSeverity(input);
+
+  // Build context with all metadata
+  const context: Record<string, unknown> = {
+    appVersion: input.appVersion,
+    platform: input.platform,
+    ...input.context,
+  };
+
+  // Add userId to context if present
+  if (input.userId) {
+    context.userId = input.userId;
   }
 
-  /**
-   * Build a structured telemetry event from input DTO
-   *
-   * @private
-   * @param input - Raw telemetry input
-   * @returns TelemetryEvent formatted for the port
-   */
-  private buildTelemetryEvent(input: LogTelemetryInput): TelemetryEvent {
-    // Determine severity based on platform/errors
-    const severity = this.determineSeverity(input);
+  return {
+    type: "log",
+    severity,
+    message: `Mobile app request from ${input.platform} v${input.appVersion}`,
+    context,
+    timestamp: input.timestamp,
+  };
+}
 
-    // Build context with all metadata
-    const context: Record<string, unknown> = {
-      appVersion: input.appVersion,
-      platform: input.platform,
-      ...input.context,
-    };
-
-    // Add userId to context if present
-    if (input.userId) {
-      context.userId = input.userId;
-    }
-
-    return {
-      type: "log",
-      severity,
-      message: `Mobile app request from ${input.platform} v${input.appVersion}`,
-      context,
-      timestamp: input.timestamp,
-    };
-  }
-
-  /**
-   * Determine severity level based on input metadata
-   *
-   * @private
-   * @param input - Telemetry input
-   * @returns Severity level for the event
-   */
-  private determineSeverity(
-    _input: LogTelemetryInput,
-  ): "debug" | "info" | "warn" | "error" | "fatal" {
-    // Default to info for normal mobile app telemetry
-    // Could be extended to detect errors from context
-    return "info";
-  }
+/**
+ * Determine severity level based on input metadata
+ *
+ * @param _input - Telemetry input
+ * @returns Severity level for the event
+ */
+function determineSeverity(
+  _input: LogTelemetryInput,
+): "debug" | "info" | "warn" | "error" | "fatal" {
+  // Default to info for normal mobile app telemetry
+  // Could be extended to detect errors from context
+  return "info";
 }

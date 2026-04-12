@@ -1,7 +1,10 @@
-import type { GroupRepository } from "../ports/GroupRepository";
-import type { Group } from "@mirai-app/domain";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import {
+  Group,
+  StateTransitionError,
+  ValidationError,
+} from "@mirai-app/domain";
+import { Effect } from "effect";
+import { GroupRepositoryTag } from "../ports/GroupRepository";
 
 /**
  * Input for UpdateGroup use case
@@ -34,41 +37,73 @@ export interface UpdateGroupOutput {
 }
 
 /**
+ * Error types for UpdateGroup use case
+ */
+export class UpdateGroupNotFoundError extends Error {
+  readonly _tag = "UpdateGroupNotFoundError";
+  constructor() {
+    super("Group not found");
+  }
+}
+
+export class UpdateGroupDeletedError extends Error {
+  readonly _tag = "UpdateGroupDeletedError";
+  constructor() {
+    super("Cannot update a deleted group");
+  }
+}
+
+export class UpdateGroupValidationError extends Error {
+  readonly _tag = "UpdateGroupValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * UpdateGroup Use Case
  *
  * Updates a group's details.
  * Returns error if group not found, is deleted, or validation fails.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new UpdateGroupUseCase(groupRepository);
+ * const program = Effect.gen(function* () {
+ *   const result = yield* updateGroupUseCase({ groupId: "123", name: "New Name" });
+ *   return result;
+ * });
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("updateGroupUseCase");
+ * const runnable = program.pipe(
+ *   Effect.provideService(GroupRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class UpdateGroupUseCase {
-  constructor(private groupRepository: GroupRepository) {}
+export function updateGroupUseCase(
+  input: UpdateGroupInput,
+): Effect.Effect<
+  UpdateGroupOutput,
+  | UpdateGroupNotFoundError
+  | UpdateGroupDeletedError
+  | UpdateGroupValidationError,
+  GroupRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const groupRepo = yield* GroupRepositoryTag;
 
-  async execute(input: UpdateGroupInput): Promise<Result<UpdateGroupOutput, string>> {
     // Load group
-    let group: Group | null;
-    try {
-      group = await this.groupRepository.findById(input.groupId);
-    } catch (_cause) {
-      return err("Failed to load group");
-    }
+    const group = yield* groupRepo.findById(input.groupId);
 
     if (!group) {
-      return err("Group not found");
+      return yield* Effect.fail(new UpdateGroupNotFoundError());
     }
 
     if (group.isDeleted()) {
-      return err("Cannot update a deleted group");
+      return yield* Effect.fail(new UpdateGroupDeletedError());
     }
 
     let updatedGroup: Group = group;
@@ -79,55 +114,52 @@ export class UpdateGroupUseCase {
       input.description !== undefined ||
       input.image !== undefined
     ) {
-      const detailsResult = updatedGroup.updateDetails({
-        ...(input.name !== undefined && { name: input.name }),
-        ...(input.description !== undefined && {
-          description: input.description,
-        }),
-        ...(input.image !== undefined && { image: input.image }),
-      });
-
-      if (detailsResult.kind === "err") {
-        return err(detailsResult.error.message);
-      }
-
-      updatedGroup = detailsResult.value;
+      updatedGroup = yield* group
+        .updateDetails({
+          ...(input.name !== undefined && { name: input.name }),
+          ...(input.description !== undefined && {
+            description: input.description,
+          }),
+          ...(input.image !== undefined && { image: input.image }),
+        })
+        .pipe(
+          Effect.mapError((error: ValidationError | StateTransitionError) => {
+            return new UpdateGroupValidationError(error.message);
+          }),
+        );
     }
 
     // Update organizer if provided
     if (input.organizerId !== undefined) {
-      const organizerResult = updatedGroup.changeOrganizer(input.organizerId);
-      if (organizerResult.kind === "err") {
-        return err(organizerResult.error.message);
-      }
-      updatedGroup = organizerResult.value;
+      updatedGroup = yield* updatedGroup
+        .changeOrganizer(input.organizerId)
+        .pipe(
+          Effect.mapError((error: ValidationError) => {
+            return new UpdateGroupValidationError(error.message);
+          }),
+        );
     }
 
     // Save updated group
-    let saved: Group;
-    try {
-      saved = await this.groupRepository.update(updatedGroup);
-    } catch (_cause) {
-      return err("Failed to update group");
-    }
+    const saved = yield* groupRepo.update(updatedGroup);
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(group: Group): UpdateGroupOutput {
-    return {
-      id: group.id,
-      tripId: group.tripId,
-      name: group.name,
-      description: group.description,
-      image: group.image,
-      organizerId: group.organizerId,
-      code: group.code,
-      coins: group.coins,
-      status: group.status,
-      updatedAt: group.updatedAt,
-      isActive: group.isActive(),
-      summary: group.getSummary(),
-    };
-  }
+function toOutput(group: Group): UpdateGroupOutput {
+  return {
+    id: group.id,
+    tripId: group.tripId,
+    name: group.name,
+    description: group.description,
+    image: group.image,
+    organizerId: group.organizerId,
+    code: group.code,
+    coins: group.coins,
+    status: group.status,
+    updatedAt: group.updatedAt,
+    isActive: group.isActive(),
+    summary: group.getSummary(),
+  };
 }

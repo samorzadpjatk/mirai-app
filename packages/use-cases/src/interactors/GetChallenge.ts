@@ -1,7 +1,6 @@
-import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import type { Challenge } from "@mirai-app/domain";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { Challenge } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 
 /**
  * Input for GetChallenge use case
@@ -39,66 +38,95 @@ export interface GetChallengeOutput {
 }
 
 /**
+ * Error types for GetChallenge use case
+ */
+export class ChallengeNotFoundError extends Error {
+  readonly _tag = "ChallengeNotFoundError";
+  constructor() {
+    super("Challenge not found");
+  }
+}
+
+export class ChallengeLoadError extends Error {
+  readonly _tag = "ChallengeLoadError";
+  constructor(message: string = "Failed to load challenge") {
+    super(message);
+  }
+}
+
+/**
  * GetChallenge Use Case
  *
  * Retrieves a challenge by ID.
  * Returns error if challenge not found.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new GetChallengeUseCase(challengeRepository);
+ * const program = Effect.gen(function* () {
+ *   const result = yield* getChallengeUseCase(input);
+ *   return result;
+ * });
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("getChallengeUseCase");
+ * const runnable = program.pipe(
+ *   Effect.provideService(ChallengeRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class GetChallengeUseCase {
-  constructor(private challengeRepository: ChallengeRepository) {}
+export function getChallengeUseCase(
+  input: GetChallengeInput,
+): Effect.Effect<
+  GetChallengeOutput,
+  ChallengeNotFoundError | ChallengeLoadError,
+  ChallengeRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const challengeRepo = yield* ChallengeRepositoryTag;
 
-  async execute(input: GetChallengeInput): Promise<Result<GetChallengeOutput, string>> {
     // Load challenge
-    let challenge: Challenge | null;
-    try {
-      challenge = await this.challengeRepository.findById(input.challengeId);
-    } catch (_cause) {
-      return err("Failed to load challenge");
-    }
+    const challenge = yield* challengeRepo
+      .findById(input.challengeId)
+      .pipe(
+        Effect.mapError(
+          () => new ChallengeLoadError("Failed to load challenge"),
+        ),
+      );
 
     if (!challenge) {
-      return err("Challenge not found");
+      return yield* Effect.fail(new ChallengeNotFoundError());
     }
 
-    return ok(this.toOutput(challenge));
-  }
+    return toOutput(challenge);
+  });
+}
 
-  private toOutput(challenge: Challenge): GetChallengeOutput {
-    return {
-      id: challenge.id,
-      tripId: challenge.tripId,
-      name: challenge.name,
-      description: challenge.description,
-      image: challenge.image,
-      submissionType: challenge.submissionType,
-      scoringCategory: challenge.scoringCategory,
-      isRecurring: challenge.isRecurring,
-      basePoints: challenge.basePoints,
-      status: challenge.status,
-      startTime: challenge.startTime,
-      endTime: challenge.endTime,
-      targetLatitude: challenge.targetLatitude,
-      targetLongitude: challenge.targetLongitude,
-      expectedValue: challenge.expectedValue,
-      autoApprove: challenge.autoApprove,
-      createdAt: challenge.createdAt,
-      isActive: challenge.isActive(),
-      isOpenForSubmission: challenge.isOpenForSubmission(),
-      requiresLocation: challenge.requiresLocation(),
-      requiresQRCode: challenge.requiresQRCode(),
-      hasVotingPhase: challenge.hasVotingPhase(),
-    };
-  }
+function toOutput(challenge: Challenge): GetChallengeOutput {
+  return {
+    id: challenge.id,
+    tripId: challenge.tripId,
+    name: challenge.name,
+    description: challenge.description,
+    image: challenge.image,
+    submissionType: challenge.submissionType,
+    scoringCategory: challenge.scoringCategory,
+    isRecurring: challenge.isRecurring,
+    basePoints: challenge.basePoints,
+    status: challenge.status,
+    startTime: challenge.startTime,
+    endTime: challenge.endTime,
+    targetLatitude: challenge.targetLatitude,
+    targetLongitude: challenge.targetLongitude,
+    expectedValue: challenge.expectedValue,
+    autoApprove: challenge.autoApprove,
+    createdAt: challenge.createdAt,
+    isActive: challenge.isActive(),
+    isOpenForSubmission: challenge.isOpenForSubmission(),
+    requiresLocation: challenge.requiresLocation(),
+    requiresQRCode: challenge.requiresQRCode(),
+    hasVotingPhase: challenge.hasVotingPhase(),
+  };
 }

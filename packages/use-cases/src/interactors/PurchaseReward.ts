@@ -1,13 +1,14 @@
 import { RewardPurchase, CoinAmount } from "@mirai-app/domain";
-import type {
-  RewardRepository,
-  RewardPurchaseRepository,
-  TripPointsCalculator,
-  GroupCoinsService,
-  TripAccessChecker,
+import {
+  RewardRepositoryTag,
+  RewardPurchaseRepositoryTag,
+  TripPointsCalculatorTag,
+  GroupCoinsServiceTag,
+  TripAccessCheckerTag,
+  type PaginationOptions,
+  type PaginatedResult,
 } from "../ports/RewardRepository";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { Effect } from "effect";
 import type { RewardId } from "@mirai-app/domain";
 
 /**
@@ -35,6 +36,101 @@ export interface PurchaseRewardOutput {
 }
 
 /**
+ * Error types for PurchaseReward use case
+ */
+export class RewardNotFoundError extends Error {
+  readonly _tag = "RewardNotFoundError";
+  constructor() {
+    super("Reward not found");
+  }
+}
+
+export class TripEndedError extends Error {
+  readonly _tag = "TripEndedError";
+  constructor() {
+    super("Cannot purchase rewards for ended trips");
+  }
+}
+
+export class RewardHiddenError extends Error {
+  readonly _tag = "RewardHiddenError";
+  constructor() {
+    super("Reward is hidden");
+  }
+}
+
+export class InsufficientQuantityError extends Error {
+  readonly _tag = "InsufficientQuantityError";
+  constructor(requested: number, available: number) {
+    super(
+      `Not enough rewards available (requested: ${requested}, available: ${available})`,
+    );
+  }
+}
+
+export class NotGroupLeaderError extends Error {
+  readonly _tag = "NotGroupLeaderError";
+  constructor() {
+    super("Only group leaders can purchase rewards");
+  }
+}
+
+export class InsufficientCoinsError extends Error {
+  readonly _tag = "InsufficientCoinsError";
+  constructor(needed: number, have: number) {
+    super(`Not enough coins (need: ${needed}, have: ${have})`);
+  }
+}
+
+export class RewardRepositoryError extends Error {
+  readonly _tag = "RewardRepositoryError";
+  constructor(message: string = "Failed to load reward") {
+    super(message);
+  }
+}
+
+export class TripAccessCheckerError extends Error {
+  readonly _tag = "TripAccessCheckerError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class TripPointsCalculatorError extends Error {
+  readonly _tag = "TripPointsCalculatorError";
+  constructor(message: string = "Failed to calculate points") {
+    super(message);
+  }
+}
+
+export class GroupCoinsServiceError extends Error {
+  readonly _tag = "GroupCoinsServiceError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class PurchaseCreationError extends Error {
+  readonly _tag = "PurchaseCreationError";
+  constructor(message: string) {
+    super(`Failed to create purchase: ${message}`);
+  }
+}
+
+export type PurchaseRewardError =
+  | RewardNotFoundError
+  | TripEndedError
+  | RewardHiddenError
+  | InsufficientQuantityError
+  | NotGroupLeaderError
+  | InsufficientCoinsError
+  | RewardRepositoryError
+  | TripAccessCheckerError
+  | TripPointsCalculatorError
+  | GroupCoinsServiceError
+  | PurchaseCreationError;
+
+/**
  * PurchaseReward Use Case
  *
  * Handles the purchase of a reward by a group.
@@ -51,138 +147,148 @@ export interface PurchaseRewardOutput {
  * - Creates purchase record
  * - Creates coin transaction record
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new PurchaseRewardUseCase(
- *   rewardRepo,
- *   purchaseRepo,
- *   pointsCalc,
- *   coinsService,
- *   accessChecker
+ * const program = Effect.gen(function* () {
+ *   const result = yield* purchaseRewardUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(RewardRepositoryTag, rewardRepo),
+ *   Effect.provideService(RewardPurchaseRepositoryTag, purchaseRepo),
+ *   Effect.provideService(TripPointsCalculatorTag, pointsCalc),
+ *   Effect.provideService(GroupCoinsServiceTag, coinsService),
+ *   Effect.provideService(TripAccessCheckerTag, accessChecker)
  * );
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("purchaseRewardUseCase");
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class PurchaseRewardUseCase {
-  constructor(
-    private rewardRepository: RewardRepository,
-    private purchaseRepository: RewardPurchaseRepository,
-    private pointsCalculator: TripPointsCalculator,
-    private coinsService: GroupCoinsService,
-    private accessChecker: TripAccessChecker,
-  ) {}
+export function purchaseRewardUseCase(
+  input: PurchaseRewardInput,
+): Effect.Effect<
+  PurchaseRewardOutput,
+  PurchaseRewardError,
+  | RewardRepositoryTag
+  | RewardPurchaseRepositoryTag
+  | TripPointsCalculatorTag
+  | GroupCoinsServiceTag
+  | TripAccessCheckerTag
+> {
+  return Effect.gen(function* () {
+    const rewardRepo = yield* RewardRepositoryTag;
+    const purchaseRepo = yield* RewardPurchaseRepositoryTag;
+    const pointsCalculator = yield* TripPointsCalculatorTag;
+    const coinsService = yield* GroupCoinsServiceTag;
+    const accessChecker = yield* TripAccessCheckerTag;
 
-  async execute(input: PurchaseRewardInput): Promise<Result<PurchaseRewardOutput, string>> {
     // Find the reward
-    let reward: import("@mirai-app/domain").Reward | null;
-    try {
-      reward = await this.rewardRepository.findById(input.rewardId);
-    } catch (_cause) {
-      return err("Failed to load reward");
-    }
-
-    if (!reward) {
-      return err("Reward not found");
-    }
+    const reward = yield* rewardRepo.findById(input.rewardId).pipe(
+      Effect.mapError(() => new RewardRepositoryError("Failed to load reward")),
+      Effect.flatMap((r) =>
+        r === null ? Effect.fail(new RewardNotFoundError()) : Effect.succeed(r),
+      ),
+    );
 
     // Check if trip has ended
-    let hasEnded: boolean;
-    try {
-      hasEnded = await this.accessChecker.hasTripEnded(reward.tripId);
-    } catch (_cause) {
-      return err("Failed to check trip status");
-    }
+    const hasEnded = yield* accessChecker
+      .hasTripEnded(reward.tripId)
+      .pipe(
+        Effect.mapError(
+          () => new TripAccessCheckerError("Failed to check trip status"),
+        ),
+      );
 
     if (hasEnded) {
-      return err("Cannot purchase rewards for ended trips");
+      return yield* Effect.fail(new TripEndedError());
     }
 
     // Check if reward is hidden
     if (reward.isHidden) {
-      return err("Reward is hidden");
+      return yield* Effect.fail(new RewardHiddenError());
     }
 
     // Check if sufficient quantity is available
     if (!reward.canPurchaseQuantity(input.quantity)) {
-      return err(`Not enough rewards available (requested: ${input.quantity}, available: ${reward.availableQuantity})`);
+      return yield* Effect.fail(
+        new InsufficientQuantityError(input.quantity, reward.availableQuantity),
+      );
     }
 
     // Verify user is a group leader for this trip
-    let leaderCheck: {
-      isLeader: boolean;
-      groupId?: string;
-      groupName?: string;
-      coins?: number;
-    };
-    try {
-      leaderCheck = await this.accessChecker.isGroupLeader(
-        input.userId,
-        reward.tripId,
+    const leaderCheck = yield* accessChecker
+      .isGroupLeader(input.userId, reward.tripId)
+      .pipe(
+        Effect.mapError(
+          () => new TripAccessCheckerError("Failed to check leader status"),
+        ),
       );
-    } catch (_cause) {
-      return err("Failed to check leader status");
-    }
 
     if (!leaderCheck.isLeader || !leaderCheck.groupId) {
-      return err("Only group leaders can purchase rewards");
+      return yield* Effect.fail(new NotGroupLeaderError());
     }
 
     // Calculate dynamic coin cost
-    let totalPoints: number;
-    try {
-      totalPoints = await this.pointsCalculator.calculateTotalAvailablePoints(
-        reward.tripId,
+    const totalPoints = yield* pointsCalculator
+      .calculateTotalAvailablePoints(reward.tripId)
+      .pipe(
+        Effect.mapError(
+          () => new TripPointsCalculatorError("Failed to calculate points"),
+        ),
       );
-    } catch (_cause) {
-      return err("Failed to calculate points");
-    }
 
-    const totalCost = reward.calculateTotalCost(input.quantity, totalPoints);
+    // Calculate total cost (returns Effect)
+    const totalCost = yield* reward.calculateTotalCost(
+      input.quantity,
+      totalPoints,
+    );
 
     // Check if group has enough coins
-    let groupCoins: number;
-    try {
-      groupCoins = await this.coinsService.getBalance(leaderCheck.groupId);
-    } catch (_cause) {
-      return err("Failed to get group coins");
-    }
+    const groupCoins = yield* coinsService
+      .getBalance(leaderCheck.groupId)
+      .pipe(
+        Effect.mapError(
+          () => new GroupCoinsServiceError("Failed to get group coins"),
+        ),
+      );
 
     const groupCoinsAmount = CoinAmount.unsafeCreate(groupCoins);
 
     if (!groupCoinsAmount.isGreaterThanOrEqual(totalCost)) {
-      return err(`Not enough coins (need: ${totalCost.toNumber()}, have: ${groupCoins})`);
+      return yield* Effect.fail(
+        new InsufficientCoinsError(totalCost.toNumber(), groupCoins),
+      );
     }
 
     // Execute the purchase steps
 
     // 1. Decrement reward quantity
-    let updatedReward: import("@mirai-app/domain").Reward;
-    try {
-      updatedReward = await this.rewardRepository.decrementQuantity(
-        input.rewardId,
-        input.quantity,
+    const updatedReward = yield* rewardRepo
+      .decrementQuantity(input.rewardId, input.quantity)
+      .pipe(
+        Effect.mapError(
+          () =>
+            new RewardRepositoryError("Failed to decrement reward quantity"),
+        ),
       );
-    } catch (_cause) {
-      return err("Failed to decrement reward quantity");
-    }
 
     // 2. Deduct coins from group
-    try {
-      await this.coinsService.deductCoins(
+    yield* coinsService
+      .deductCoins(
         leaderCheck.groupId,
         totalCost.toNumber(),
         `Claimed ${input.quantity}x ${reward.name}`,
         input.userId,
+      )
+      .pipe(
+        Effect.mapError(
+          () => new GroupCoinsServiceError("Failed to deduct coins"),
+        ),
       );
-    } catch (_cause) {
-      return err("Failed to deduct coins");
-    }
 
     // 3. Create purchase record
     const purchaseResult = RewardPurchase.create({
@@ -195,28 +301,29 @@ export class PurchaseRewardUseCase {
     });
 
     if (purchaseResult.kind === "err") {
-      // This shouldn't happen since we validated everything
-      return err(`Failed to create purchase: ${purchaseResult.error}`);
+      return yield* Effect.fail(
+        new PurchaseCreationError(purchaseResult.error),
+      );
     }
 
-    let savedPurchase: import("@mirai-app/domain").RewardPurchase;
-    try {
-      savedPurchase = await this.purchaseRepository.create(
-        purchaseResult.value,
+    const savedPurchase = yield* purchaseRepo
+      .create(purchaseResult.value)
+      .pipe(
+        Effect.mapError(
+          () => new RewardRepositoryError("Failed to save purchase"),
+        ),
       );
-    } catch (_cause) {
-      return err("Failed to save purchase");
-    }
 
     // 4. Get remaining group coins
-    let remainingCoins: number;
-    try {
-      remainingCoins = await this.coinsService.getBalance(leaderCheck.groupId);
-    } catch (_cause) {
-      return err("Failed to get remaining balance");
-    }
+    const remainingCoins = yield* coinsService
+      .getBalance(leaderCheck.groupId)
+      .pipe(
+        Effect.mapError(
+          () => new GroupCoinsServiceError("Failed to get remaining balance"),
+        ),
+      );
 
-    return ok({
+    return {
       purchaseId: savedPurchase.id,
       rewardId: reward.id,
       groupId: leaderCheck.groupId,
@@ -226,6 +333,6 @@ export class PurchaseRewardUseCase {
       purchasedAt: savedPurchase.purchasedAt,
       remainingGroupCoins: remainingCoins,
       remainingRewardQuantity: updatedReward.availableQuantity,
-    });
-  }
+    };
+  });
 }

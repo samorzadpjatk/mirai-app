@@ -1,44 +1,58 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { RemoveCoinsUseCase } from "./RemoveCoins";
-import type {
-  CoinTransactionRepository,
-  CoinTransaction,
+import {
+  removeCoinsUseCase,
+  type RemoveCoinsInput,
+  GroupNotFoundError,
+  InsufficientCoinsError,
+  GroupDeletedError,
+} from "./RemoveCoins";
+import { Effect, Either } from "effect";
+import {
+  CoinTransactionRepositoryTag,
+  type CoinTransaction,
 } from "../ports/CoinTransactionRepository";
 
-describe("[UNIT] RemoveCoinsUseCase", () => {
-  let mockRepo: CoinTransactionRepository;
-  let useCase: RemoveCoinsUseCase;
-
-  beforeEach(() => {
-    mockRepo = {
-      verifyGroupInTrip: mock(() =>
-        Promise.resolve({
-          exists: true,
-          tripId: "trip-1",
-          isDeleted: false,
-          coins: 500,
-        }),
-      ),
-      decrementGroupCoins: mock(() =>
-        Promise.resolve({ success: true, currentBalance: 400 }),
-      ),
-      create: mock((data) =>
-        Promise.resolve({
-          id: "tx-1",
-          groupId: data.groupId,
-          amount: data.amount,
-          reason: data.reason ?? null,
-          adminId: data.adminId,
-          createdAt: new Date(),
-        } as CoinTransaction),
-      ),
-    } as unknown as CoinTransactionRepository;
-
-    useCase = new RemoveCoinsUseCase(mockRepo);
+describe("[UNIT] removeCoinsUseCase (Effect)", () => {
+  // Helper to create a mock repository
+  const createMockRepo = (overrides?: any) => ({
+    count: mock(() => Effect.succeed(0)),
+    sumAmount: mock(() => Effect.succeed(null)),
+    sumAddedCoins: mock(() => Effect.succeed(null)),
+    sumRemovedCoins: mock(() => Effect.succeed(null)),
+    getMostActiveAdmin: mock(() => Effect.succeed([])),
+    findMany: mock(() => Effect.succeed([])),
+    findRecent: mock(() => Effect.succeed([])),
+    getTotalCoinsByGroup: mock(() => Effect.succeed([])),
+    groupByAdmin: mock(() => Effect.succeed([])),
+    create: mock((data: any) =>
+      Effect.succeed({
+        id: "tx-1",
+        groupId: data.groupId,
+        amount: data.amount,
+        reason: data.reason ?? null,
+        adminId: data.adminId,
+        createdAt: new Date(),
+      } as CoinTransaction),
+    ),
+    incrementGroupCoins: mock(() => Effect.succeed(undefined)),
+    decrementGroupCoins: mock(() =>
+      Effect.succeed({ success: true, currentBalance: 400 }),
+    ),
+    getGroupCoins: mock(() => Effect.succeed(500)),
+    verifyGroupInTrip: mock(() =>
+      Effect.succeed({
+        exists: true,
+        tripId: "trip-1",
+        isDeleted: false,
+        coins: 500,
+      }),
+    ),
+    ...overrides,
   });
 
   it("should remove coins successfully", async () => {
-    const input = {
+    const mockRepo = createMockRepo();
+    const input: RemoveCoinsInput = {
       tripId: "trip-1",
       groupId: "group-1",
       amount: 100,
@@ -46,76 +60,92 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const program = removeCoinsUseCase(input).pipe(
+      Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+    );
 
-    expect(result.kind).toBe("ok");
-    if (result.kind === "ok") {
-      expect(result.value.transaction.amount).toBe(-100); // Negative for removal
-      expect(result.value.transaction.groupId).toBe("group-1");
-    }
+    const result = await Effect.runPromise(program);
+
+    expect(result.transaction.amount).toBe(-100);
+    expect(result.transaction.groupId).toBe("group-1");
   });
 
   it("should return error when group not found", async () => {
-    mockRepo.verifyGroupInTrip = mock(() => Promise.resolve({ exists: false }));
+    const mockRepo = createMockRepo({
+      verifyGroupInTrip: mock(() => Effect.succeed({ exists: false })),
+    });
 
-    const input = {
+    const input: RemoveCoinsInput = {
       tripId: "trip-1",
       groupId: "nonexistent",
       amount: 100,
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const program = removeCoinsUseCase(input).pipe(
+      Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+    );
 
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("Group not found");
+    const either = await Effect.runPromise(Effect.either(program));
+    expect(Either.isLeft(either)).toBe(true);
+    if (Either.isLeft(either)) {
+      expect(either.left).toBeInstanceOf(GroupNotFoundError);
     }
   });
 
   it("should return error when group has insufficient balance", async () => {
-    mockRepo.decrementGroupCoins = mock(() =>
-      Promise.resolve({ success: false, currentBalance: 50 }),
-    );
+    const mockRepo = createMockRepo({
+      decrementGroupCoins: mock(() =>
+        Effect.succeed({ success: false, currentBalance: 50 }),
+      ),
+    });
 
-    const input = {
+    const input: RemoveCoinsInput = {
       tripId: "trip-1",
       groupId: "group-1",
       amount: 100,
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const program = removeCoinsUseCase(input).pipe(
+      Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+    );
 
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("not have enough coins");
+    const either = await Effect.runPromise(Effect.either(program));
+    expect(Either.isLeft(either)).toBe(true);
+    if (Either.isLeft(either)) {
+      expect(either.left).toBeInstanceOf(InsufficientCoinsError);
     }
   });
 
   it("should return error when group is deleted", async () => {
-    mockRepo.verifyGroupInTrip = mock(() =>
-      Promise.resolve({ exists: true, tripId: "trip-1", isDeleted: true }),
-    );
+    const mockRepo = createMockRepo({
+      verifyGroupInTrip: mock(() =>
+        Effect.succeed({ exists: true, tripId: "trip-1", isDeleted: true }),
+      ),
+    });
 
-    const input = {
+    const input: RemoveCoinsInput = {
       tripId: "trip-1",
       groupId: "deleted-group",
       amount: 50,
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const program = removeCoinsUseCase(input).pipe(
+      Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+    );
 
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("deleted");
+    const either = await Effect.runPromise(Effect.either(program));
+    expect(Either.isLeft(either)).toBe(true);
+    if (Either.isLeft(either)) {
+      expect(either.left).toBeInstanceOf(GroupDeletedError);
     }
   });
 
   it("should create transaction with negative amount", async () => {
-    const createMock = mock((data) =>
-      Promise.resolve({
+    const createMock = mock((data: any) =>
+      Effect.succeed({
         id: "tx-1",
         groupId: data.groupId,
         amount: data.amount,
@@ -124,18 +154,22 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
         createdAt: new Date(),
       } as CoinTransaction),
     );
-    mockRepo.create = createMock;
 
-    const input = {
+    const mockRepo = createMockRepo({ create: createMock });
+
+    const input: RemoveCoinsInput = {
       tripId: "trip-1",
       groupId: "group-1",
       amount: 75,
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const program = removeCoinsUseCase(input).pipe(
+      Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+    );
 
-    expect(result.kind).toBe("ok");
+    await Effect.runPromise(program);
+
     expect(createMock).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: -75,

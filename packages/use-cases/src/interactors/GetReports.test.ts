@@ -1,6 +1,7 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { GetReportsUseCase, type GetReportsInput } from "./GetReports";
-import type { SubmissionReportRepository } from "../ports/SubmissionReportRepository";
+import { describe, it, expect, beforeEach } from "bun:test";
+import { getReportsUseCase, type GetReportsInput } from "./GetReports";
+import { Effect } from "effect";
+import { SubmissionReportRepositoryTag } from "../ports/SubmissionReportRepository";
 import type { SubmissionReport } from "@mirai-app/domain";
 
 // Mock SubmissionReport domain object
@@ -26,198 +27,233 @@ const createMockReport = (
     ...overrides,
   }) as SubmissionReport;
 
-describe("[UNIT] GetReportsUseCase", () => {
-  let useCase: GetReportsUseCase;
-  let mockReportRepository: SubmissionReportRepository;
+// Helper to create a mock repository service for Effect
+const createMockRepoService = (overrides?: {
+  findBySubmissionId?: (submissionId: string) => Promise<SubmissionReport[]>;
+  countBySubmissionId?: (submissionId: string) => Promise<number>;
+}) => ({
+  findBySubmissionId: (submissionId: string) =>
+    Effect.promise(() =>
+      overrides?.findBySubmissionId
+        ? overrides.findBySubmissionId(submissionId)
+        : Promise.resolve([]),
+    ),
+  countBySubmissionId: (submissionId: string) =>
+    Effect.promise(() =>
+      overrides?.countBySubmissionId
+        ? overrides.countBySubmissionId(submissionId)
+        : Promise.resolve(0),
+    ),
+  create: () => Effect.promise(() => Promise.resolve(createMockReport())),
+  findById: () => Effect.promise(() => Promise.resolve(null)),
+  findByReporterId: () => Effect.promise(() => Promise.resolve([])),
+  findByReason: () => Effect.promise(() => Promise.resolve([])),
+  findAll: () => Effect.promise(() => Promise.resolve([])),
+  delete: () => Effect.promise(() => Promise.resolve()),
+  exists: () => Effect.promise(() => Promise.resolve(false)),
+  existsBySubmissionAndReporter: () =>
+    Effect.promise(() => Promise.resolve(false)),
+});
 
-  beforeEach(() => {
-    mockReportRepository = {
-      findBySubmissionId: mock(() => Promise.resolve([])),
-      countBySubmissionId: mock(() => Promise.resolve(0)),
-    } as unknown as SubmissionReportRepository;
+describe("[UNIT] getReportsUseCase (Effect)", () => {
+  it("should return empty reports when none exist", async () => {
+    const input: GetReportsInput = { submissionId: "submission-123" };
 
-    useCase = new GetReportsUseCase(mockReportRepository);
+    const program = getReportsUseCase(input).pipe(
+      Effect.provideService(
+        SubmissionReportRepositoryTag,
+        createMockRepoService(),
+      ),
+    );
+
+    const result = await Effect.runPromise(program);
+
+    expect(result.reports).toEqual([]);
+    expect(result.totalCount).toBe(0);
   });
 
-  describe("execute", () => {
-    it("should return empty reports when none exist", async () => {
-      const input: GetReportsInput = { submissionId: "submission-123" };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.reports).toEqual([]);
-        expect(result.value.totalCount).toBe(0);
-      }
-    });
-
-    it("should return reports with reporter info", async () => {
-      const mockReports = [
-        createMockReport({
-          id: "report-1",
-          submissionId: "submission-123",
-          reporterId: "reporter-1",
-          reason: { value: "spam" },
-          getReasonDisplay: () => "Spam",
-          reporter: {
-            participantId: "participant-1",
-            userId: "user-1",
-            firstName: "Alice",
-            lastName: "Smith",
-            email: "alice@example.com",
-            hasAvatar: true,
-          },
-        }),
-        createMockReport({
-          id: "report-2",
-          submissionId: "submission-123",
-          reporterId: "reporter-2",
-          reason: { value: "inappropriate" },
-          getReasonDisplay: () => "Inappropriate Content",
-          reporter: {
-            participantId: "participant-2",
-            userId: "user-2",
-            firstName: "Bob",
-            lastName: "Jones",
-            email: "bob@example.com",
-            hasAvatar: false,
-          },
-        }),
-      ];
-
-      mockReportRepository.findBySubmissionId = mock(() =>
-        Promise.resolve(mockReports),
-      );
-      mockReportRepository.countBySubmissionId = mock(() => Promise.resolve(2));
-
-      const input: GetReportsInput = { submissionId: "submission-123" };
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.reports).toHaveLength(2);
-        expect(result.value.totalCount).toBe(2);
-
-        const report1 = result.value.reports[0];
-        expect(report1.id).toBe("report-1");
-        expect(report1.reason).toBe("spam");
-        expect(report1.reasonDisplay).toBe("Spam");
-        expect(report1.reporter.id).toBe("participant-1");
-        expect(report1.reporter.user.firstName).toBe("Alice");
-        expect(report1.reporter.user.lastName).toBe("Smith");
-        expect(report1.reporter.user.email).toBe("alice@example.com");
-        expect(report1.reporter.user.hasAvatar).toBe(true);
-
-        const report2 = result.value.reports[1];
-        expect(report2.id).toBe("report-2");
-        expect(report2.reporter.user.hasAvatar).toBe(false);
-      }
-    });
-
-    it("should handle report without reporter info", async () => {
-      const mockReport = createMockReport({
+  it("should return reports with reporter info", async () => {
+    const mockReports = [
+      createMockReport({
         id: "report-1",
-        reporter: undefined,
-      });
-
-      mockReportRepository.findBySubmissionId = mock(() =>
-        Promise.resolve([mockReport]),
-      );
-      mockReportRepository.countBySubmissionId = mock(() => Promise.resolve(1));
-
-      const input: GetReportsInput = { submissionId: "submission-123" };
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        const report = result.value.reports[0];
-        expect(report.reporter.id).toBe("reporter-123"); // falls back to reporterId
-        expect(report.reporter.user.firstName).toBe("");
-        expect(report.reporter.user.email).toBeNull();
-      }
-    });
-
-    it("should handle null email in reporter", async () => {
-      const mockReport = createMockReport({
+        submissionId: "submission-123",
+        reporterId: "reporter-1",
+        reason: { value: "spam" },
+        getReasonDisplay: () => "Spam",
         reporter: {
           participantId: "participant-1",
           userId: "user-1",
-          firstName: "John",
-          lastName: "Doe",
-          email: null,
+          firstName: "Alice",
+          lastName: "Smith",
+          email: "alice@example.com",
           hasAvatar: true,
         },
-      });
+      }),
+      createMockReport({
+        id: "report-2",
+        submissionId: "submission-123",
+        reporterId: "reporter-2",
+        reason: { value: "inappropriate" },
+        getReasonDisplay: () => "Inappropriate Content",
+        reporter: {
+          participantId: "participant-2",
+          userId: "user-2",
+          firstName: "Bob",
+          lastName: "Jones",
+          email: "bob@example.com",
+          hasAvatar: false,
+        },
+      }),
+    ];
 
-      mockReportRepository.findBySubmissionId = mock(() =>
-        Promise.resolve([mockReport]),
-      );
-      mockReportRepository.countBySubmissionId = mock(() => Promise.resolve(1));
-
-      const input: GetReportsInput = { submissionId: "submission-123" };
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.reports[0].reporter.user.email).toBeNull();
-      }
+    const repoService = createMockRepoService({
+      findBySubmissionId: () => Promise.resolve(mockReports),
+      countBySubmissionId: () => Promise.resolve(2),
     });
 
-    it("should handle report with null details", async () => {
-      const mockReport = createMockReport({
-        details: null,
-      });
+    const input: GetReportsInput = { submissionId: "submission-123" };
+    const program = getReportsUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
 
-      mockReportRepository.findBySubmissionId = mock(() =>
-        Promise.resolve([mockReport]),
-      );
-      mockReportRepository.countBySubmissionId = mock(() => Promise.resolve(1));
+    const result = await Effect.runPromise(program);
 
-      const input: GetReportsInput = { submissionId: "submission-123" };
-      const result = await useCase.execute(input);
+    expect(result.reports).toHaveLength(2);
+    expect(result.totalCount).toBe(2);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.reports[0].details).toBeNull();
-      }
+    const report1 = result.reports[0];
+    expect(report1.id).toBe("report-1");
+    expect(report1.reason).toBe("spam");
+    expect(report1.reasonDisplay).toBe("Spam");
+    expect(report1.reporter.id).toBe("participant-1");
+    expect(report1.reporter.user.firstName).toBe("Alice");
+    expect(report1.reporter.user.lastName).toBe("Smith");
+    expect(report1.reporter.user.email).toBe("alice@example.com");
+    expect(report1.reporter.user.hasAvatar).toBe(true);
+
+    const report2 = result.reports[1];
+    expect(report2.id).toBe("report-2");
+    expect(report2.reporter.user.hasAvatar).toBe(false);
+  });
+
+  it("should handle report without reporter info", async () => {
+    const mockReport = createMockReport({
+      id: "report-1",
+      reporter: undefined,
     });
 
-    it("should call repository with correct submissionId", async () => {
-      const input: GetReportsInput = { submissionId: "submission-456" };
-
-      await useCase.execute(input);
-
-      expect(mockReportRepository.findBySubmissionId).toHaveBeenCalledWith(
-        "submission-456",
-      );
-      expect(mockReportRepository.countBySubmissionId).toHaveBeenCalledWith(
-        "submission-456",
-      );
+    const repoService = createMockRepoService({
+      findBySubmissionId: () => Promise.resolve([mockReport]),
+      countBySubmissionId: () => Promise.resolve(1),
     });
 
-    it("should handle multiple reports with correct total count", async () => {
-      const mockReports = [
-        createMockReport({ id: "report-1" }),
-        createMockReport({ id: "report-2" }),
-        createMockReport({ id: "report-3" }),
-      ];
+    const input: GetReportsInput = { submissionId: "submission-123" };
+    const program = getReportsUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
 
-      mockReportRepository.findBySubmissionId = mock(() =>
-        Promise.resolve(mockReports),
-      );
-      mockReportRepository.countBySubmissionId = mock(() =>
-        Promise.resolve(10),
-      ); // More than returned
+    const result = await Effect.runPromise(program);
 
-      const input: GetReportsInput = { submissionId: "submission-123" };
-      const result = await useCase.execute(input);
+    const report = result.reports[0];
+    expect(report.reporter.id).toBe("reporter-123"); // falls back to reporterId
+    expect(report.reporter.user.firstName).toBe("");
+    expect(report.reporter.user.email).toBeNull();
+  });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.reports).toHaveLength(3);
-        expect(result.value.totalCount).toBe(10);
-      }
+  it("should handle null email in reporter", async () => {
+    const mockReport = createMockReport({
+      reporter: {
+        participantId: "participant-1",
+        userId: "user-1",
+        firstName: "John",
+        lastName: "Doe",
+        email: null,
+        hasAvatar: true,
+      },
     });
+
+    const repoService = createMockRepoService({
+      findBySubmissionId: () => Promise.resolve([mockReport]),
+      countBySubmissionId: () => Promise.resolve(1),
+    });
+
+    const input: GetReportsInput = { submissionId: "submission-123" };
+    const program = getReportsUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
+
+    const result = await Effect.runPromise(program);
+
+    expect(result.reports[0].reporter.user.email).toBeNull();
+  });
+
+  it("should handle report with null details", async () => {
+    const mockReport = createMockReport({
+      details: null,
+    });
+
+    const repoService = createMockRepoService({
+      findBySubmissionId: () => Promise.resolve([mockReport]),
+      countBySubmissionId: () => Promise.resolve(1),
+    });
+
+    const input: GetReportsInput = { submissionId: "submission-123" };
+    const program = getReportsUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
+
+    const result = await Effect.runPromise(program);
+
+    expect(result.reports[0].details).toBeNull();
+  });
+
+  it("should call repository with correct submissionId", async () => {
+    const findCalls: string[] = [];
+    const countCalls: string[] = [];
+
+    const repoService = createMockRepoService({
+      findBySubmissionId: (id) => {
+        findCalls.push(id);
+        return Promise.resolve([]);
+      },
+      countBySubmissionId: (id) => {
+        countCalls.push(id);
+        return Promise.resolve(0);
+      },
+    });
+
+    const input: GetReportsInput = { submissionId: "submission-456" };
+
+    const program = getReportsUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
+
+    await Effect.runPromise(program);
+
+    expect(findCalls).toContain("submission-456");
+    expect(countCalls).toContain("submission-456");
+  });
+
+  it("should handle multiple reports with correct total count", async () => {
+    const mockReports = [
+      createMockReport({ id: "report-1" }),
+      createMockReport({ id: "report-2" }),
+      createMockReport({ id: "report-3" }),
+    ];
+
+    const repoService = createMockRepoService({
+      findBySubmissionId: () => Promise.resolve(mockReports),
+      countBySubmissionId: () => Promise.resolve(10), // More than returned
+    });
+
+    const input: GetReportsInput = { submissionId: "submission-123" };
+    const program = getReportsUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
+
+    const result = await Effect.runPromise(program);
+
+    expect(result.reports).toHaveLength(3);
+    expect(result.totalCount).toBe(10);
   });
 });

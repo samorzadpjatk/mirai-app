@@ -1,3 +1,5 @@
+import { Context, Effect } from "effect";
+
 /**
  * NotificationDeliveryRepository Port
  *
@@ -50,6 +52,11 @@ export interface PaginationOptions {
   offset: number;
 }
 
+/**
+ * Alias for pagination options in delivery context
+ */
+export type DeliveryPaginationOptions = PaginationOptions;
+
 export interface DeliveryStats {
   totalDeliveries: number;
   totalRecipients: number;
@@ -100,3 +107,32 @@ export interface NotificationDeliveryRepository {
    */
   countFailed(tripId: string): Promise<number>;
 }
+
+/**
+ * NotificationDeliveryRepository Context.Tag for Effect dependency injection
+ */
+export class NotificationDeliveryRepositoryTag extends Context.Tag(
+  "NotificationDeliveryRepository",
+)<
+  NotificationDeliveryRepositoryTag,
+  {
+    findMany: (
+      filters: Partial<DeliveryFilters>,
+      pagination: DeliveryPaginationOptions,
+    ) => Effect.Effect<NotificationDelivery[], never, never>;
+    count: (
+      filters?: Partial<DeliveryFilters>,
+    ) => Effect.Effect<number, never, never>;
+    findByNotificationId: (
+      notificationId: string,
+    ) => Effect.Effect<NotificationDelivery | null, never, never>;
+    getStats: (
+      filters?: Partial<DeliveryFilters>,
+    ) => Effect.Effect<DeliveryStats, never, never>;
+    findFailed: (
+      tripId: string,
+      pagination: DeliveryPaginationOptions,
+    ) => Effect.Effect<NotificationDelivery[], never, never>;
+    countFailed: (tripId: string) => Effect.Effect<number, never, never>;
+  }
+>() {}

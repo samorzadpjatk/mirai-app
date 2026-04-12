@@ -1,6 +1,9 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, NotificationSchedule } from "@mirai-app/domain";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
+import { Effect } from "effect";
+import {
+  NotificationScheduleRepositoryTag,
+  type NotificationScheduleExecutionRecord,
+} from "../ports/NotificationScheduleRepository";
+import type { NotificationSchedule } from "@mirai-app/domain";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
 
 /**
@@ -22,21 +25,82 @@ export interface DuplicateNotificationScheduleOutput {
 }
 
 /**
+ * Error types for DuplicateNotificationSchedule use case
+ */
+export class DuplicateScheduleNotFoundError extends Error {
+  readonly _tag = "DuplicateScheduleNotFoundError";
+  constructor() {
+    super("Notification schedule not found");
+  }
+}
+
+export class DuplicateScheduleError extends Error {
+  readonly _tag = "DuplicateScheduleError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
+ * Helper function to convert NotificationSchedule to output DTO
+ */
+function toOutput(schedule: NotificationSchedule): NotificationScheduleOutput {
+  const now = new Date();
+  return {
+    id: schedule.id,
+    name: schedule.name,
+    tripId: schedule.tripId,
+    notificationType: schedule.notificationType,
+    notificationTitle: schedule.notificationTitle,
+    notificationBody: schedule.notificationBody,
+    notificationUrl: schedule.notificationUrl,
+    startDate: schedule.startDate,
+    endDate: schedule.endDate,
+    hour: schedule.hour,
+    minute: schedule.minute,
+    isActive: schedule.isActive,
+    createdById: schedule.createdById,
+    lastRun: schedule.lastRun,
+    createdAt: schedule.createdAt,
+    updatedAt: schedule.updatedAt,
+    isCurrentlyActive: schedule.isCurrentlyActive(now),
+    isExpired: schedule.isExpired(now),
+    isUpcoming: schedule.isUpcoming(now),
+    formattedTime: schedule.getFormattedTime(),
+  };
+}
+
+/**
  * DuplicateNotificationSchedule Use Case
  *
  * Creates a copy of an existing notification schedule.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = duplicateNotificationScheduleUseCase(input).pipe(
+ *   Effect.provideService(NotificationScheduleRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class DuplicateNotificationScheduleUseCase {
-  constructor(private repository: NotificationScheduleRepository) {}
+export function duplicateNotificationScheduleUseCase(
+  input: DuplicateNotificationScheduleInput,
+): Effect.Effect<
+  DuplicateNotificationScheduleOutput,
+  DuplicateScheduleNotFoundError | DuplicateScheduleError,
+  NotificationScheduleRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationScheduleRepositoryTag;
 
-  async execute(
-    input: DuplicateNotificationScheduleInput,
-  ): Promise<Result<DuplicateNotificationScheduleOutput, string>> {
     // Find the original schedule
-    const original = await this.repository.findById(input.id);
+    const original = yield* repo.findById(input.id);
 
     if (!original) {
-      return err("Notification schedule not found");
+      return yield* Effect.fail(new DuplicateScheduleNotFoundError());
     }
 
     // Create duplicate using domain method
@@ -48,40 +112,16 @@ export class DuplicateNotificationScheduleUseCase {
     });
 
     if (duplicateResult.kind === "err") {
-      return err(duplicateResult.error);
+      return yield* Effect.fail(
+        new DuplicateScheduleError(String(duplicateResult.error)),
+      );
     }
 
     // Save to repository
-    const saved = await this.repository.create(duplicateResult.value);
+    const saved = yield* repo.create(duplicateResult.value);
 
-    return ok({
-      schedule: this.toOutput(saved),
-    });
-  }
-
-  private toOutput(schedule: NotificationSchedule): NotificationScheduleOutput {
-    const now = new Date();
     return {
-      id: schedule.id,
-      name: schedule.name,
-      tripId: schedule.tripId,
-      notificationType: schedule.notificationType,
-      notificationTitle: schedule.notificationTitle,
-      notificationBody: schedule.notificationBody,
-      notificationUrl: schedule.notificationUrl,
-      startDate: schedule.startDate,
-      endDate: schedule.endDate,
-      hour: schedule.hour,
-      minute: schedule.minute,
-      isActive: schedule.isActive,
-      createdById: schedule.createdById,
-      lastRun: schedule.lastRun,
-      createdAt: schedule.createdAt,
-      updatedAt: schedule.updatedAt,
-      isCurrentlyActive: schedule.isCurrentlyActive(now),
-      isExpired: schedule.isExpired(now),
-      isUpcoming: schedule.isUpcoming(now),
-      formattedTime: schedule.getFormattedTime(),
+      schedule: toOutput(saved),
     };
-  }
+  });
 }

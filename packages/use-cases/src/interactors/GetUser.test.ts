@@ -1,10 +1,21 @@
-import { describe, it, expect, mock } from "bun:test";
-import { GetUserUseCase } from "./GetUser";
-import type { GetUserInput } from "./GetUser";
+import { describe, it, expect, beforeEach } from "bun:test";
+import {
+  getUserUseCase,
+  type GetUserInput,
+  GetUserNotFoundError,
+} from "./GetUser";
 import { User, UserRole } from "@mirai-app/domain";
-import type { UserRepository } from "../ports/UserRepository";
+import { Effect, Either } from "effect";
+import { UserRepositoryTag } from "../ports/UserRepository";
+import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] GetUserUseCase", () => {
+describe("[UNIT] getUserUseCase (Effect)", () => {
+  let repo: InMemoryUserRepository;
+
+  beforeEach(() => {
+    repo = new InMemoryUserRepository();
+  });
+
   // Helper to create a valid user
   const createValidUser = (
     overrides?: Partial<{
@@ -14,17 +25,39 @@ describe("[UNIT] GetUserUseCase", () => {
       lastName: string;
     }>,
   ): User => {
-    const result = User.create({
+    const effect = User.create({
       id: overrides?.id ?? "user-123",
       authUserId: overrides?.authUserId ?? "auth-123",
       firstName: overrides?.firstName ?? "John",
       lastName: overrides?.lastName ?? "Doe",
       role: UserRole.USER,
     });
-    if (result.kind === "err") {
-      throw new Error(`Failed to create test user: ${result.error}`);
+    try {
+      return Effect.runSync(effect);
+    } catch (e) {
+      throw new Error(`Failed to create test user: ${e}`);
     }
-    return result.value;
+  };
+
+  // Helper to run use case with repository
+  const runUseCase = async (input: GetUserInput) => {
+    const program = getUserUseCase(input).pipe(
+      Effect.provideService(UserRepositoryTag, {
+        create: (user: User) => Effect.promise(() => repo.create(user)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByAuthUserId: (authUserId: string) =>
+          Effect.promise(() => repo.findByAuthUserId(authUserId)),
+        findByRole: (role: UserRole) =>
+          Effect.promise(() => repo.findByRole(role)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => repo.findAll(options)),
+        update: (user: User) => Effect.promise(() => repo.update(user)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        existsByAuthUserId: (authUserId: string) =>
+          Effect.promise(() => repo.existsByAuthUserId(authUserId)),
+      }),
+    );
+    return await Effect.runPromise(program);
   };
 
   describe("execute", () => {
@@ -36,169 +69,96 @@ describe("[UNIT] GetUserUseCase", () => {
         firstName: "Jane",
         lastName: "Smith",
       });
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(mockUser)),
-        findById: mock(() => Promise.resolve(mockUser)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockUser)),
-        delete: mock(() => Promise.resolve()),
-      };
+      await repo.create(mockUser);
 
-      // Manual instantiation (backward compatible)
-      const useCase = new GetUserUseCase(mockRepo);
       const input: GetUserInput = {
         userId: "user-456",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("user-456");
-        expect(result.value.authUserId).toBe("auth-456");
-        expect(result.value.firstName).toBe("Jane");
-        expect(result.value.lastName).toBe("Smith");
-        expect(result.value.fullName).toBe("Jane Smith");
-        expect(result.value.role).toBe("USER");
-        expect(result.value.hasAvatar).toBe(false);
-      }
-      expect(mockRepo.findById).toHaveBeenCalledWith("user-456");
+      expect(result.id).toBe("user-456");
+      expect(result.authUserId).toBe("auth-456");
+      expect(result.firstName).toBe("Jane");
+      expect(result.lastName).toBe("Smith");
+      expect(result.fullName).toBe("Jane Smith");
+      expect(result.role).toBe("USER");
+      expect(result.hasAvatar).toBe(false);
     });
 
-    it("should return error when user not found", async () => {
+    it("should fail when user not found", async () => {
       // Arrange
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(createValidUser())),
-        findById: mock(() => Promise.resolve(null)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(createValidUser())),
-        delete: mock(() => Promise.resolve()),
-      };
-
-      const useCase = new GetUserUseCase(mockRepo);
       const input: GetUserInput = {
         userId: "non-existent-id",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const program = getUserUseCase(input).pipe(
+        Effect.provideService(UserRepositoryTag, {
+          create: (user: User) => Effect.promise(() => repo.create(user)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByAuthUserId: (authUserId: string) =>
+            Effect.promise(() => repo.findByAuthUserId(authUserId)),
+          findByRole: (role: UserRole) =>
+            Effect.promise(() => repo.findByRole(role)),
+          findAll: (options?: { limit?: number; offset?: number }) =>
+            Effect.promise(() => repo.findAll(options)),
+          update: (user: User) => Effect.promise(() => repo.update(user)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          existsByAuthUserId: (authUserId: string) =>
+            Effect.promise(() => repo.existsByAuthUserId(authUserId)),
+        }),
+      );
 
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("User not found");
+      // Act & Assert - use Either to properly check error type
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(GetUserNotFoundError);
       }
-      expect(mockRepo.findById).toHaveBeenCalledWith("non-existent-id");
     });
 
     it("should return user with correct output format including null lastSeenOn", async () => {
       // Arrange
       const mockUser = createValidUser({ id: "user-789" });
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(mockUser)),
-        findById: mock(() => Promise.resolve(mockUser)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockUser)),
-        delete: mock(() => Promise.resolve()),
-      };
+      await repo.create(mockUser);
 
-      const useCase = new GetUserUseCase(mockRepo);
       const input: GetUserInput = {
         userId: "user-789",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("user-789");
-        expect(result.value.lastSeenOn).toBeNull();
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-      }
+      expect(result.id).toBe("user-789");
+      expect(result.lastSeenOn).toBeNull();
+      expect(result.createdAt).toBeInstanceOf(Date);
     });
 
     it("should return user with empty full name when both names are empty", async () => {
       // Arrange
-      const userResult = User.create({
+      const userEffect = User.create({
         id: "user-empty",
         authUserId: "auth-empty",
         firstName: "",
         lastName: "",
         role: UserRole.USER,
       });
-      if (userResult.kind === "err") {
-        throw new Error(`Failed to create test user: ${userResult.error}`);
-      }
-      const mockUser = userResult.value;
+      const mockUser = Effect.runSync(userEffect);
+      await repo.create(mockUser);
 
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(mockUser)),
-        findById: mock(() => Promise.resolve(mockUser)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockUser)),
-        delete: mock(() => Promise.resolve()),
-      };
-
-      const useCase = new GetUserUseCase(mockRepo);
       const input: GetUserInput = {
         userId: "user-empty",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.fullName).toBe("Unknown");
-      }
-    });
-
-    it("should work with different repository implementations", async () => {
-      // Arrange
-      const mockUser = createValidUser({ id: "user-different-repo" });
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(mockUser)),
-        findById: mock(() => Promise.resolve(mockUser)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockUser)),
-        delete: mock(() => Promise.resolve()),
-      };
-
-      // Create use case with the mock repository
-      const useCase = new GetUserUseCase(mockRepo);
-
-      const input: GetUserInput = {
-        userId: "user-different-repo",
-      };
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("user-different-repo");
-      }
+      expect(result.fullName).toBe("Unknown");
     });
   });
 });

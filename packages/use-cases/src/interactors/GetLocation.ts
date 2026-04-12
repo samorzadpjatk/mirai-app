@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, type Location } from "@mirai-app/domain";
-import type { LocationRepository } from "../ports/LocationRepository";
+import type { Location } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
 
 /**
  * Input for GetLocation use case
@@ -32,40 +32,68 @@ export interface GetLocationOutput {
 }
 
 /**
+ * Error types for GetLocation use case
+ */
+export class LocationNotFoundError extends Error {
+  readonly _tag = "LocationNotFoundError";
+  constructor() {
+    super("Location not found");
+  }
+}
+
+/**
+ * Helper function to convert Location to output DTO
+ */
+function toOutput(location: Location): GetLocationOutput {
+  return {
+    id: location.id,
+    userId: location.userId,
+    latitude: location.latitude,
+    longitude: location.longitude,
+    accuracy: location.accuracy,
+    altitude: location.altitude,
+    altitudeAccuracy: location.altitudeAccuracy,
+    heading: location.heading,
+    speed: location.speed,
+    isSharingLocation: location.isSharingLocation(),
+    timestamp: location.timestamp,
+    usersToShareWith: location.usersToShareWith,
+  };
+}
+
+/**
  * GetLocation Use Case
  *
  * Retrieves a location by user ID.
  * Returns error if location not found.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getLocationUseCase(input).pipe(
+ *   Effect.provideService(LocationRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetLocationUseCase {
-  constructor(private locationRepository: LocationRepository) {}
+export function getLocationUseCase(
+  input: GetLocationInput,
+): Effect.Effect<
+  GetLocationOutput,
+  LocationNotFoundError,
+  LocationRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* LocationRepositoryTag;
 
-  async execute(
-    input: GetLocationInput,
-  ): Promise<Result<GetLocationOutput, string>> {
-    const location = await this.locationRepository.findByUserId(input.userId);
+    const location = yield* repo.findByUserId(input.userId);
 
     if (!location) {
-      return err("Location not found");
+      return yield* Effect.fail(new LocationNotFoundError());
     }
 
-    return ok(this.toOutput(location));
-  }
-
-  private toOutput(location: Location): GetLocationOutput {
-    return {
-      id: location.id,
-      userId: location.userId,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      accuracy: location.accuracy,
-      altitude: location.altitude,
-      altitudeAccuracy: location.altitudeAccuracy,
-      heading: location.heading,
-      speed: location.speed,
-      isSharingLocation: location.isSharingLocation(),
-      timestamp: location.timestamp,
-      usersToShareWith: location.usersToShareWith,
-    };
-  }
+    return toOutput(location);
+  });
 }

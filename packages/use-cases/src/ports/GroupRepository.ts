@@ -1,4 +1,5 @@
 import type { Group, GroupStatus } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * GroupRepository Port
@@ -68,3 +69,32 @@ export interface GroupRepository {
    */
   countByTripId(tripId: string): Promise<number>;
 }
+
+/**
+ * GroupRepository Context.Tag for Effect dependency injection
+ */
+export class GroupRepositoryTag extends Context.Tag("GroupRepository")<
+  GroupRepositoryTag,
+  {
+    create: (group: Group) => Effect.Effect<Group, never, never>;
+    findById: (id: string) => Effect.Effect<Group | null, never, never>;
+    findByTripId: (tripId: string) => Effect.Effect<Group[], never, never>;
+    findByStatus: (status: GroupStatus) => Effect.Effect<Group[], never, never>;
+    findByTripIdAndStatus: (
+      tripId: string,
+      status: GroupStatus,
+    ) => Effect.Effect<Group[], never, never>;
+    findByOrganizerId: (
+      organizerId: string,
+    ) => Effect.Effect<Group[], never, never>;
+    findByCode: (code: string) => Effect.Effect<Group | null, never, never>;
+    findAll: (options?: {
+      limit?: number;
+      offset?: number;
+    }) => Effect.Effect<Group[], never, never>;
+    update: (group: Group) => Effect.Effect<Group, never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    exists: (id: string) => Effect.Effect<boolean, never, never>;
+    countByTripId: (tripId: string) => Effect.Effect<number, never, never>;
+  }
+>() {}

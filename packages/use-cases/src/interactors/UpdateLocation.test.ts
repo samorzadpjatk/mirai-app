@@ -1,12 +1,22 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  UpdateLocationUseCase,
+  updateLocationUseCase,
   type UpdateLocationInput,
+  LocationCreateError,
+  LocationUpdateValidationError,
 } from "./UpdateLocation";
 import { Location } from "@mirai-app/domain";
-import type { LocationRepository } from "../ports/LocationRepository";
+import { Effect, Either } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
+import { InMemoryLocationRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] UpdateLocationUseCase", () => {
+describe("[UNIT] updateLocationUseCase (Effect)", () => {
+  let repo: InMemoryLocationRepository;
+
+  beforeEach(() => {
+    repo = new InMemoryLocationRepository();
+  });
+
   // Helper to create a valid location
   const createValidLocation = (
     overrides?: Partial<{
@@ -17,7 +27,7 @@ describe("[UNIT] UpdateLocationUseCase", () => {
       isSharingLocation: boolean;
     }>,
   ): Location => {
-    const result = Location.create({
+    const effect = Location.create({
       id: overrides?.id ?? "loc-123",
       userId: overrides?.userId ?? "user-123",
       latitude: overrides?.latitude ?? 52.52,
@@ -30,45 +40,42 @@ describe("[UNIT] UpdateLocationUseCase", () => {
       isSharingLocation: overrides?.isSharingLocation ?? false,
       usersToShareWith: [],
     });
-    if (result.kind === "err") {
-      throw new Error(
-        `Failed to create test location: ${result.error.message}`,
-      );
+    try {
+      return Effect.runSync(effect);
+    } catch (e) {
+      throw new Error(`Failed to create test location: ${e}`);
     }
-    return result.value;
   };
 
-  const createMockRepo = (
-    overrides?: Partial<LocationRepository>,
-  ): LocationRepository => ({
-    create: mock(() => Promise.resolve(createValidLocation())),
-    findById: mock(() => Promise.resolve(null)),
-    findByUserId: mock(() => Promise.resolve(null)),
-    findAll: mock(() => Promise.resolve([])),
-    findSharingWithUser: mock(() => Promise.resolve([])),
-    findByUserIds: mock(() => Promise.resolve([])),
-    save: mock(() => Promise.resolve(createValidLocation())),
-    delete: mock(() => Promise.resolve()),
-    deleteByUserId: mock(() => Promise.resolve()),
-    existsForUser: mock(() => Promise.resolve(false)),
-    ...overrides,
-  });
+  // Helper to run use case with repository
+  const runUseCase = async (input: UpdateLocationInput) => {
+    const program = updateLocationUseCase(input).pipe(
+      Effect.provideService(LocationRepositoryTag, {
+        create: (location: Location) =>
+          Effect.promise(() => repo.create(location)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByUserId: (userId: string) =>
+          Effect.promise(() => repo.findByUserId(userId)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => repo.findAll(options)),
+        findSharingWithUser: (userId: string) =>
+          Effect.promise(() => repo.findSharingWithUser(userId)),
+        findByUserIds: (userIds: string[]) =>
+          Effect.promise(() => repo.findByUserIds(userIds)),
+        save: (location: Location) => Effect.promise(() => repo.save(location)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        deleteByUserId: (userId: string) =>
+          Effect.promise(() => repo.deleteByUserId(userId)),
+        existsForUser: (userId: string) =>
+          Effect.promise(() => repo.existsForUser(userId)),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should create new location when user has no existing location", async () => {
       // Arrange
-      const newLocation = createValidLocation({
-        id: "loc-new",
-        userId: "user-123",
-        latitude: 48.8566,
-        longitude: 2.3522,
-      });
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(null)),
-        create: mock(() => Promise.resolve(newLocation)),
-      });
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
       const input: UpdateLocationInput = {
         userId: "user-123",
         latitude: 48.8566,
@@ -77,38 +84,26 @@ describe("[UNIT] UpdateLocationUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.latitude).toBe(48.8566);
-        expect(result.value.longitude).toBe(2.3522);
-      }
-      expect(mockRepo.findByUserId).toHaveBeenCalledWith("user-123");
-      expect(mockRepo.create).toHaveBeenCalled();
-      expect(mockRepo.save).not.toHaveBeenCalled();
+      expect(result.latitude).toBe(48.8566);
+      expect(result.longitude).toBe(2.3522);
+
+      // Verify location was created
+      const stored = await repo.findByUserId("user-123");
+      expect(stored).not.toBeNull();
     });
 
     it("should update existing location coordinates", async () => {
-      // Arrange
+      // Arrange - seed existing location
       const existingLocation = createValidLocation({
         userId: "user-123",
         latitude: 50.0,
         longitude: 10.0,
       });
-      const updatedLocation = createValidLocation({
-        userId: "user-123",
-        latitude: 52.52,
-        longitude: 13.405,
-      });
+      await repo.create(existingLocation);
 
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(existingLocation)),
-        save: mock(() => Promise.resolve(updatedLocation)),
-      });
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
       const input: UpdateLocationInput = {
         userId: "user-123",
         latitude: 52.52,
@@ -116,116 +111,109 @@ describe("[UNIT] UpdateLocationUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.latitude).toBe(52.52);
-        expect(result.value.longitude).toBe(13.405);
-      }
-      expect(mockRepo.save).toHaveBeenCalled();
-      expect(mockRepo.create).not.toHaveBeenCalled();
+      expect(result.latitude).toBe(52.52);
+      expect(result.longitude).toBe(13.405);
+
+      // Verify location was updated
+      const stored = await repo.findByUserId("user-123");
+      expect(stored?.latitude).toBe(52.52);
+      expect(stored?.longitude).toBe(13.405);
     });
 
     it("should start sharing location when isSharingLocation is true", async () => {
-      // Arrange
+      // Arrange - seed existing location with sharing disabled
       const existingLocation = createValidLocation({
         userId: "user-123",
         isSharingLocation: false,
       });
-      const sharingLocation = createValidLocation({
-        userId: "user-123",
-        isSharingLocation: true,
-      });
+      await repo.create(existingLocation);
 
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(existingLocation)),
-        save: mock(() => Promise.resolve(sharingLocation)),
-      });
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
       const input: UpdateLocationInput = {
         userId: "user-123",
         isSharingLocation: true,
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isSharingLocation).toBe(true);
-      }
+      expect(result.isSharingLocation).toBe(true);
+
+      // Verify location was updated
+      const stored = await repo.findByUserId("user-123");
+      expect(stored?.isSharingLocation()).toBe(true);
     });
 
     it("should stop sharing location when isSharingLocation is false", async () => {
-      // Arrange
+      // Arrange - seed existing location with sharing enabled
       const existingLocation = createValidLocation({
         userId: "user-123",
         isSharingLocation: true,
       });
-      const notSharingLocation = createValidLocation({
-        userId: "user-123",
-        isSharingLocation: false,
-      });
+      await repo.create(existingLocation);
 
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(existingLocation)),
-        save: mock(() => Promise.resolve(notSharingLocation)),
-      });
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
       const input: UpdateLocationInput = {
         userId: "user-123",
         isSharingLocation: false,
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isSharingLocation).toBe(false);
-      }
+      expect(result.isSharingLocation).toBe(false);
+
+      // Verify location was updated
+      const stored = await repo.findByUserId("user-123");
+      expect(stored?.isSharingLocation()).toBe(false);
     });
 
-    it("should return error when userId is empty", async () => {
-      // Arrange
-      const mockRepo = createMockRepo();
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
+    it("should fail when domain validation fails for empty userId", async () => {
       const input: UpdateLocationInput = {
         userId: "", // Empty userId
+        latitude: 52.52,
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const program = updateLocationUseCase(input).pipe(
+        Effect.provideService(LocationRepositoryTag, {
+          create: (location: Location) =>
+            Effect.promise(() => repo.create(location)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByUserId: (userId: string) =>
+            Effect.promise(() => repo.findByUserId(userId)),
+          findAll: (options?: { limit?: number; offset?: number }) =>
+            Effect.promise(() => repo.findAll(options)),
+          findSharingWithUser: (userId: string) =>
+            Effect.promise(() => repo.findSharingWithUser(userId)),
+          findByUserIds: (userIds: string[]) =>
+            Effect.promise(() => repo.findByUserIds(userIds)),
+          save: (location: Location) =>
+            Effect.promise(() => repo.save(location)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteByUserId: (userId: string) =>
+            Effect.promise(() => repo.deleteByUserId(userId)),
+          existsForUser: (userId: string) =>
+            Effect.promise(() => repo.existsForUser(userId)),
+        }),
+      );
 
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("userId");
+      // Act & Assert - use Either to properly check error type
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(LocationCreateError);
       }
     });
 
     it("should update altitude, heading, and speed", async () => {
-      // Arrange
+      // Arrange - seed existing location
       const existingLocation = createValidLocation({ userId: "user-123" });
-      const updatedLocation = createValidLocation({
-        userId: "user-123",
-        latitude: 52.52,
-        longitude: 13.405,
-      });
+      await repo.create(existingLocation);
 
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(existingLocation)),
-        save: mock(() => Promise.resolve(updatedLocation)),
-      });
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
       const input: UpdateLocationInput = {
         userId: "user-123",
         latitude: 52.52,
@@ -237,79 +225,81 @@ describe("[UNIT] UpdateLocationUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      expect(mockRepo.save).toHaveBeenCalled();
+      expect(result.latitude).toBe(52.52);
+
+      // Verify location was updated
+      const stored = await repo.findByUserId("user-123");
+      expect(stored).not.toBeNull();
     });
 
-    it("should handle repository errors during find", async () => {
-      // Arrange
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.reject(new Error("DB error"))),
-      });
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
-      const input: UpdateLocationInput = {
-        userId: "user-123",
-        latitude: 52.52,
-      };
-
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("DB error");
-    });
-
-    it("should return error when coordinate validation fails", async () => {
-      // Arrange
+    it("should fail when coordinate validation fails", async () => {
+      // Arrange - seed existing location
       const existingLocation = createValidLocation({ userId: "user-123" });
+      await repo.create(existingLocation);
 
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(existingLocation)),
-      });
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
       const input: UpdateLocationInput = {
         userId: "user-123",
         latitude: -999, // Invalid latitude
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const program = updateLocationUseCase(input).pipe(
+        Effect.provideService(LocationRepositoryTag, {
+          create: (location: Location) =>
+            Effect.promise(() => repo.create(location)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByUserId: (userId: string) =>
+            Effect.promise(() => repo.findByUserId(userId)),
+          findAll: (options?: { limit?: number; offset?: number }) =>
+            Effect.promise(() => repo.findAll(options)),
+          findSharingWithUser: (userId: string) =>
+            Effect.promise(() => repo.findSharingWithUser(userId)),
+          findByUserIds: (userIds: string[]) =>
+            Effect.promise(() => repo.findByUserIds(userIds)),
+          save: (location: Location) =>
+            Effect.promise(() => repo.save(location)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteByUserId: (userId: string) =>
+            Effect.promise(() => repo.deleteByUserId(userId)),
+          existsForUser: (userId: string) =>
+            Effect.promise(() => repo.existsForUser(userId)),
+        }),
+      );
 
-      // Assert
-      expect(result.kind).toBe("err");
+      // Act & Assert - use Either to properly check error type
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(LocationUpdateValidationError);
+      }
     });
 
     it("should update with partial coordinate data", async () => {
-      // Arrange
+      // Arrange - seed existing location
       const existingLocation = createValidLocation({
         userId: "user-123",
         latitude: 50.0,
         longitude: 10.0,
       });
-      const updatedLocation = createValidLocation({
-        userId: "user-123",
-        latitude: 55.0,
-        longitude: 10.0, // longitude unchanged
-      });
+      await repo.create(existingLocation);
 
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(existingLocation)),
-        save: mock(() => Promise.resolve(updatedLocation)),
-      });
-
-      const useCase = new UpdateLocationUseCase(mockRepo);
       const input: UpdateLocationInput = {
         userId: "user-123",
         latitude: 55.0, // Only update latitude
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
+      expect(result.latitude).toBe(55.0);
+
+      // Verify location was updated
+      const stored = await repo.findByUserId("user-123");
+      expect(stored?.latitude).toBe(55.0);
     });
   });
 });

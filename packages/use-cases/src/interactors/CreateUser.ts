@@ -1,7 +1,6 @@
 import { User, UserRole } from "@mirai-app/domain";
-import type { UserRepository } from "../ports/UserRepository";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { UserRepositoryTag } from "../ports/UserRepository";
 
 /**
  * Input for CreateUser use case
@@ -28,72 +27,93 @@ export interface CreateUserOutput {
 }
 
 /**
+ * Error types for CreateUser use case
+ */
+export class UserAlreadyExistsError extends Error {
+  readonly _tag = "UserAlreadyExistsError";
+  constructor() {
+    super("User with this auth ID already exists");
+  }
+}
+
+export class UserCreationError extends Error {
+  readonly _tag = "UserCreationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * CreateUser Use Case
  *
  * Creates a new user in the system.
  * Returns error if user with same authUserId already exists.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new CreateUserUseCase(userRepository);
+ * // With dependency injection
+ * const program = Effect.gen(function* () {
+ *   const result = yield* createUserUseCase(input);
+ *   return result;
+ * });
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("createUserUseCase");
+ * // Provide repository implementation
+ * const runnable = program.pipe(
+ *   Effect.provideService(UserRepositoryTag, repository)
+ * );
+ *
+ * // Run the effect
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class CreateUserUseCase {
-  constructor(private userRepository: UserRepository) {}
+export function createUserUseCase(
+  input: CreateUserInput,
+): Effect.Effect<
+  CreateUserOutput,
+  UserAlreadyExistsError | UserCreationError,
+  UserRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const userRepo = yield* UserRepositoryTag;
 
-  async execute(input: CreateUserInput): Promise<Result<CreateUserOutput, string>> {
     // Check if user already exists
-    let exists: boolean;
-    try {
-      exists = await this.userRepository.existsByAuthUserId(input.authUserId);
-    } catch (_cause) {
-      return err("Failed to check user existence");
-    }
+    const exists = yield* userRepo.existsByAuthUserId(input.authUserId);
 
     if (exists) {
-      return err("User with this auth ID already exists");
+      return yield* Effect.fail(new UserAlreadyExistsError());
     }
 
     // Create domain entity
-    const userResult = User.create({
+    const user = yield* User.create({
       authUserId: input.authUserId,
       firstName: input.firstName,
       lastName: input.lastName,
       role: input.role ?? UserRole.USER,
-    });
-
-    if (userResult.kind === "err") {
-      return err("User name is required");
-    }
+    }).pipe(
+      Effect.mapError(
+        (validationError) => new UserCreationError(validationError.message),
+      ),
+    );
 
     // Save to repository
-    let saved: User;
-    try {
-      saved = await this.userRepository.create(userResult.value);
-    } catch (_cause) {
-      return err("Failed to create user");
-    }
+    const saved = yield* userRepo.create(user);
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(user: User): CreateUserOutput {
-    return {
-      id: user.id,
-      authUserId: user.authUserId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      fullName: user.getFullName(),
-      role: user.role,
-      hasAvatar: user.hasAvatar,
-      createdAt: user.createdAt,
-    };
-  }
+function toOutput(user: User): CreateUserOutput {
+  return {
+    id: user.id,
+    authUserId: user.authUserId,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    fullName: user.getFullName(),
+    role: user.role,
+    hasAvatar: user.hasAvatar,
+    createdAt: user.createdAt,
+  };
 }

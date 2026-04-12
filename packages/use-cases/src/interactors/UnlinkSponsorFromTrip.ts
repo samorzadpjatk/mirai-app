@@ -1,6 +1,5 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { SponsorRepository } from "../ports/SponsorRepository";
+import { Effect } from "effect";
+import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
  * Input for UnlinkSponsorFromTrip use case
@@ -20,23 +19,56 @@ export interface UnlinkSponsorFromTripOutput {
 }
 
 /**
- * UnlinkSponsorFromTrip Use Case
+ * Error when repository operation fails
+ */
+export class UnlinkSponsorRepositoryError extends Error {
+  readonly _tag = "UnlinkSponsorRepositoryError";
+  constructor(
+    public readonly operation: string,
+    public readonly cause?: unknown,
+  ) {
+    super(`Failed to ${operation}`);
+  }
+}
+
+/**
+ * UnlinkSponsorFromTrip Use Case (Effect-based)
  *
  * Removes the link between a sponsor and a trip.
+ *
+ * ## Effect-based Pattern
+ *
+ * ```typescript
+ * const program = unlinkSponsorFromTripUseCase(input).pipe(
+ *   Effect.provideService(SponsorRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class UnlinkSponsorFromTripUseCase {
-  constructor(private sponsorRepository: SponsorRepository) {}
+export function unlinkSponsorFromTripUseCase(
+  input: UnlinkSponsorFromTripInput,
+): Effect.Effect<
+  UnlinkSponsorFromTripOutput,
+  UnlinkSponsorRepositoryError,
+  SponsorRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const sponsorRepo = yield* SponsorRepositoryTag;
 
-  async execute(
-    input: UnlinkSponsorFromTripInput,
-  ): Promise<Result<UnlinkSponsorFromTripOutput, string>> {
     // Unlink sponsor from trip
-    await this.sponsorRepository.unlinkFromTrip(input.sponsorId, input.tripId);
+    yield* sponsorRepo
+      .unlinkFromTrip(input.sponsorId, input.tripId)
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new UnlinkSponsorRepositoryError("unlink sponsor from trip", cause),
+        ),
+      );
 
-    return ok({
+    return {
       sponsorId: input.sponsorId,
       tripId: input.tripId,
       unlinked: true,
-    });
-  }
+    };
+  });
 }

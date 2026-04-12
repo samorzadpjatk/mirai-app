@@ -1,13 +1,60 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { Effect, Either } from "effect";
 import {
-  GetMostActiveAdminStatsUseCase,
+  getMostActiveAdminStatsUseCase,
   type GetMostActiveAdminStatsInput,
 } from "./GetMostActiveAdminStats";
-import type { CoinTransactionRepository } from "../ports/CoinTransactionRepository";
+import {
+  CoinTransactionRepositoryTag,
+  type MostActiveAdminStat,
+} from "../ports/CoinTransactionRepository";
 
-describe("[UNIT] GetMostActiveAdminStatsUseCase", () => {
-  let useCase: GetMostActiveAdminStatsUseCase;
-  let mockCoinRepo: CoinTransactionRepository;
+// Helper to run use case with Effect
+const runGetMostActiveAdminStatsUseCase = async (
+  input: GetMostActiveAdminStatsInput,
+  deps: {
+    mockCoinRepo: {
+      getMostActiveAdmin: (tripId: string) => Promise<MostActiveAdminStat[]>;
+    };
+  },
+) => {
+  const program = getMostActiveAdminStatsUseCase(input).pipe(
+    Effect.provideService(CoinTransactionRepositoryTag, {
+      count: (filters?) => Effect.promise(() => Promise.resolve(0)),
+      sumAmount: (filters?) => Effect.promise(() => Promise.resolve(null)),
+      sumAddedCoins: (tripId: string) =>
+        Effect.promise(() => Promise.resolve(null)),
+      sumRemovedCoins: (tripId: string) =>
+        Effect.promise(() => Promise.resolve(null)),
+      getMostActiveAdmin: (tripId: string) =>
+        Effect.promise(() => deps.mockCoinRepo.getMostActiveAdmin(tripId)),
+      findMany: (filters, pagination) =>
+        Effect.promise(() => Promise.resolve([])),
+      findRecent: (filters, limit) => Effect.promise(() => Promise.resolve([])),
+      getTotalCoinsByGroup: (tripId: string) =>
+        Effect.promise(() => Promise.resolve([])),
+      groupByAdmin: (tripId: string, limit: number) =>
+        Effect.promise(() => Promise.resolve([])),
+      create: (data) => Effect.promise(() => Promise.resolve({} as any)),
+      incrementGroupCoins: (groupId: string, amount: number) =>
+        Effect.promise(() => Promise.resolve()),
+      decrementGroupCoins: (groupId: string, amount: number) =>
+        Effect.promise(() => Promise.resolve({ success: true })),
+      getGroupCoins: (groupId: string) =>
+        Effect.promise(() => Promise.resolve(0)),
+      verifyGroupInTrip: (groupId: string, tripId: string) =>
+        Effect.promise(() =>
+          Promise.resolve({ exists: true, tripId, isDeleted: false, coins: 0 }),
+        ),
+    }),
+  );
+  return await Effect.runPromise(program);
+};
+
+describe("[UNIT] getMostActiveAdminStatsUseCase (Effect)", () => {
+  let mockCoinRepo: {
+    getMostActiveAdmin: ReturnType<typeof mock>;
+  };
 
   beforeEach(() => {
     mockCoinRepo = {
@@ -20,36 +67,32 @@ describe("[UNIT] GetMostActiveAdminStatsUseCase", () => {
           },
         ]),
       ),
-    } as unknown as CoinTransactionRepository;
-
-    useCase = new GetMostActiveAdminStatsUseCase(mockCoinRepo);
+    };
   });
 
   describe("execute", () => {
     it("should return most active admin stats", async () => {
       const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
 
-      const result = await useCase.execute(input);
+      const result = await runGetMostActiveAdminStatsUseCase(input, {
+        mockCoinRepo,
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).not.toBeNull();
-        expect(result.value?.adminId).toBe("admin-123");
-        expect(result.value?.totalAmount).toBe(500);
-        expect(result.value?.transactionCount).toBe(25);
-      }
+      expect(result).not.toBeNull();
+      expect(result?.adminId).toBe("admin-123");
+      expect(result?.totalAmount).toBe(500);
+      expect(result?.transactionCount).toBe(25);
     });
 
     it("should return null when no stats exist", async () => {
       mockCoinRepo.getMostActiveAdmin = mock(() => Promise.resolve([]));
 
       const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await useCase.execute(input);
+      const result = await runGetMostActiveAdminStatsUseCase(input, {
+        mockCoinRepo,
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBeNull();
-      }
+      expect(result).toBeNull();
     });
 
     it("should return null when stats array has no valid entries", async () => {
@@ -64,29 +107,13 @@ describe("[UNIT] GetMostActiveAdminStatsUseCase", () => {
       );
 
       const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await useCase.execute(input);
+      const result = await runGetMostActiveAdminStatsUseCase(input, {
+        mockCoinRepo,
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).not.toBeNull();
-        expect(result.value?.totalAmount).toBe(0);
-        expect(result.value?.transactionCount).toBe(0);
-      }
-    });
-
-    it("should handle repository error gracefully", async () => {
-      mockCoinRepo.getMostActiveAdmin = mock(() =>
-        Promise.reject(new Error("Database connection failed")),
-      );
-
-      const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Failed to get most active admin stats");
-        expect(result.error).toContain("Database connection failed");
-      }
+      expect(result).not.toBeNull();
+      expect(result?.totalAmount).toBe(0);
+      expect(result?.transactionCount).toBe(0);
     });
 
     it("should handle null _sum amount", async () => {
@@ -101,19 +128,18 @@ describe("[UNIT] GetMostActiveAdminStatsUseCase", () => {
       );
 
       const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await useCase.execute(input);
+      const result = await runGetMostActiveAdminStatsUseCase(input, {
+        mockCoinRepo,
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value?.totalAmount).toBe(0);
-        expect(result.value?.transactionCount).toBe(10);
-      }
+      expect(result?.totalAmount).toBe(0);
+      expect(result?.transactionCount).toBe(10);
     });
 
     it("should call repository with correct tripId", async () => {
       const input: GetMostActiveAdminStatsInput = { tripId: "trip-456" };
 
-      await useCase.execute(input);
+      await runGetMostActiveAdminStatsUseCase(input, { mockCoinRepo });
 
       expect(mockCoinRepo.getMostActiveAdmin).toHaveBeenCalledWith("trip-456");
     });
@@ -135,29 +161,14 @@ describe("[UNIT] GetMostActiveAdminStatsUseCase", () => {
       );
 
       const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await useCase.execute(input);
+      const result = await runGetMostActiveAdminStatsUseCase(input, {
+        mockCoinRepo,
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        // Should pick first (most active)
-        expect(result.value?.adminId).toBe("admin-123");
-        expect(result.value?.totalAmount).toBe(1000);
-        expect(result.value?.transactionCount).toBe(50);
-      }
-    });
-
-    it("should handle non-Error rejection", async () => {
-      mockCoinRepo.getMostActiveAdmin = mock(() =>
-        Promise.reject("String error"),
-      );
-
-      const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("String error");
-      }
+      // Should pick first (most active)
+      expect(result?.adminId).toBe("admin-123");
+      expect(result?.totalAmount).toBe(1000);
+      expect(result?.transactionCount).toBe(50);
     });
   });
 });

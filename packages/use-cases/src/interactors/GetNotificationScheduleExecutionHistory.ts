@@ -1,6 +1,5 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
+import { Effect } from "effect";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 
 /**
  * Input for GetNotificationScheduleExecutionHistory use case
@@ -32,30 +31,55 @@ export interface GetNotificationScheduleExecutionHistoryOutput {
 }
 
 /**
+ * Error types for GetNotificationScheduleExecutionHistory use case
+ */
+export class ScheduleNotFoundError extends Error {
+  readonly _tag = "ScheduleNotFoundError";
+  constructor() {
+    super("Notification schedule not found");
+  }
+}
+
+/**
  * GetNotificationScheduleExecutionHistory Use Case
  *
  * Retrieves the execution history for a notification schedule.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
+ *   Effect.provideService(NotificationScheduleRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetNotificationScheduleExecutionHistoryUseCase {
-  constructor(private repository: NotificationScheduleRepository) {}
+export function getNotificationScheduleExecutionHistoryUseCase(
+  input: GetNotificationScheduleExecutionHistoryInput,
+): Effect.Effect<
+  GetNotificationScheduleExecutionHistoryOutput,
+  ScheduleNotFoundError,
+  NotificationScheduleRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationScheduleRepositoryTag;
 
-  async execute(
-    input: GetNotificationScheduleExecutionHistoryInput,
-  ): Promise<Result<GetNotificationScheduleExecutionHistoryOutput, string>> {
     // Check if schedule exists
-    const exists = await this.repository.exists(input.scheduleId);
+    const exists = yield* repo.exists(input.scheduleId);
 
     if (!exists) {
-      return err("Notification schedule not found");
+      return yield* Effect.fail(new ScheduleNotFoundError());
     }
 
-    const executions = await this.repository.getExecutionHistory(
+    const executions = yield* repo.getExecutionHistory(
       input.scheduleId,
       input.limit ?? 20,
     );
 
-    return ok({
+    return {
       executions,
-    });
-  }
+    };
+  });
 }

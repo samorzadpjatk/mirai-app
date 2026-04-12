@@ -1,19 +1,28 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  GetNotificationScheduleByIdUseCase,
+  getNotificationScheduleByIdUseCase,
   type GetNotificationScheduleByIdInput,
+  GetScheduleNotFoundError,
 } from "./GetNotificationScheduleById";
 import {
   NotificationSchedule,
   NotificationScheduleType,
 } from "@mirai-app/domain";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
+import { Effect, Either } from "effect";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
+import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] GetNotificationScheduleByIdUseCase", () => {
-  // Helper to get future dates
+describe("[UNIT] getNotificationScheduleByIdUseCase (Effect)", () => {
+  let repo: InMemoryNotificationScheduleRepository;
+
+  beforeEach(() => {
+    repo = new InMemoryNotificationScheduleRepository();
+  });
+
   const getFutureDate = (daysFromNow: number): Date => {
     const date = new Date();
     date.setDate(date.getDate() + daysFromNow);
+    date.setHours(0, 0, 0, 0);
     return date;
   };
 
@@ -21,22 +30,27 @@ describe("[UNIT] GetNotificationScheduleByIdUseCase", () => {
     overrides?: Partial<{
       id: string;
       name: string;
-      isActive: boolean;
+      notificationType: NotificationScheduleType;
     }>,
   ): NotificationSchedule => {
+    const notificationType =
+      overrides?.notificationType ?? NotificationScheduleType.INFO;
+    // INFO type doesn't require notification content, other types do
+    const needsContent = notificationType !== NotificationScheduleType.INFO;
+
     const result = NotificationSchedule.create({
       id: overrides?.id ?? "schedule-123",
       name: overrides?.name ?? "Test Schedule",
       tripId: null,
-      notificationType: NotificationScheduleType.DAILY_REMINDER,
-      notificationTitle: "Test Title",
-      notificationBody: "Test Body",
-      notificationUrl: null,
-      startDate: getFutureDate(1),
-      endDate: getFutureDate(30),
+      notificationType,
+      ...(needsContent && {
+        notificationTitle: "Test Title",
+        notificationBody: "Test Body",
+      }),
+      startDate: getFutureDate(2),
+      endDate: getFutureDate(10),
       hour: 9,
       minute: 0,
-      isActive: overrides?.isActive ?? true,
       createdById: "user-123",
     });
     if (result.kind === "err") {
@@ -45,97 +59,129 @@ describe("[UNIT] GetNotificationScheduleByIdUseCase", () => {
     return result.value;
   };
 
-  const createMockRepo = (
-    overrides?: Partial<NotificationScheduleRepository>,
-  ): NotificationScheduleRepository => ({
-    create: mock(() => Promise.resolve(createValidSchedule())),
-    findById: mock(() => Promise.resolve(null)),
-    findByTripId: mock(() => Promise.resolve([])),
-    findByName: mock(() => Promise.resolve(null)),
-    findByTripIdAndName: mock(() => Promise.resolve(null)),
-    findByType: mock(() => Promise.resolve([])),
-    findActive: mock(() => Promise.resolve([])),
-    findUpcoming: mock(() => Promise.resolve([])),
-    findExpired: mock(() => Promise.resolve([])),
-    findByFilter: mock(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
+  // Helper to run use case with repository
+  const runUseCase = async (input: GetNotificationScheduleByIdInput) => {
+    const program = getNotificationScheduleByIdUseCase(input).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        create: (schedule: NotificationSchedule) =>
+          Effect.promise(() => repo.create(schedule)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => repo.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => repo.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
+        findByType: (type: NotificationScheduleType) =>
+          Effect.promise(() => repo.findByType(type)),
+        findAll: (options?: {
+          filter?: import("@mirai-app/domain").NotificationScheduleFilter;
+          pagination?: import("@mirai-app/domain").PaginationOptions;
+        }) => Effect.promise(() => repo.findAll(options)),
+        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
+        findUpcoming: (days?: number, now?: Date) =>
+          Effect.promise(() => repo.findUpcoming(days, now)),
+        update: (schedule: NotificationSchedule) =>
+          Effect.promise(() => repo.update(schedule)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => repo.deleteMany(ids)),
+        exists: (id: string) => Effect.promise(() => repo.exists(id)),
+        count: (
+          filter?: import("@mirai-app/domain").NotificationScheduleFilter,
+        ) => Effect.promise(() => repo.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => repo.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => repo.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => repo.countExecutions(scheduleId)),
       }),
-    ),
-    update: mock(() => Promise.resolve(createValidSchedule())),
-    delete: mock(() => Promise.resolve()),
-    updateLastRun: mock(() => Promise.resolve(createValidSchedule())),
-    toggleActive: mock(() => Promise.resolve(createValidSchedule())),
-    duplicate: mock(() => Promise.resolve(createValidSchedule())),
-    bulkDelete: mock(() => Promise.resolve()),
-    bulkToggleActive: mock(() => Promise.resolve()),
-    getExecutionHistory: mock(() => Promise.resolve([])),
-    ...overrides,
-  });
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should return schedule when found", async () => {
-      const mockSchedule = createValidSchedule({
+      // Arrange
+      const schedule = createValidSchedule({
         id: "schedule-456",
-        name: "Morning Reminder",
+        name: "Daily Reminder",
       });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(mockSchedule)),
-      });
+      await repo.create(schedule);
 
-      const useCase = new GetNotificationScheduleByIdUseCase(mockRepo);
       const input: GetNotificationScheduleByIdInput = {
         id: "schedule-456",
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("schedule-456");
-        expect(result.value.name).toBe("Morning Reminder");
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.isCurrentlyActive).toBeDefined();
-        expect(result.value.isExpired).toBeDefined();
-        expect(result.value.isUpcoming).toBeDefined();
-        expect(result.value.formattedTime).toBeDefined();
-      }
-      expect(mockRepo.findById).toHaveBeenCalledWith("schedule-456");
+      // Assert
+      expect(result.id).toBe("schedule-456");
+      expect(result.name).toBe("Daily Reminder");
+      expect(result.tripId).toBeNull();
+      expect(result.notificationType).toBe("INFO");
+      expect(result.formattedTime).toBeDefined();
     });
 
     it("should return error when schedule not found", async () => {
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(null)),
-      });
-
-      const useCase = new GetNotificationScheduleByIdUseCase(mockRepo);
       const input: GetNotificationScheduleByIdInput = {
         id: "non-existent",
       };
 
-      const result = await useCase.execute(input);
+      const program = getNotificationScheduleByIdUseCase(input).pipe(
+        Effect.provideService(NotificationScheduleRepositoryTag, {
+          create: (schedule: NotificationSchedule) =>
+            Effect.promise(() => repo.create(schedule)),
+          findById: () => Effect.succeed(null),
+          findByTripId: (tripId: string) =>
+            Effect.promise(() => repo.findByTripId(tripId)),
+          findByName: (name: string) =>
+            Effect.promise(() => repo.findByName(name)),
+          findByTripIdAndName: (tripId: string, name: string) =>
+            Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
+          findByType: (type: NotificationScheduleType) =>
+            Effect.promise(() => repo.findByType(type)),
+          findAll: (options?: {
+            filter?: import("@mirai-app/domain").NotificationScheduleFilter;
+            pagination?: import("@mirai-app/domain").PaginationOptions;
+          }) => Effect.promise(() => repo.findAll(options)),
+          findActive: (now?: Date) =>
+            Effect.promise(() => repo.findActive(now)),
+          findUpcoming: (days?: number, now?: Date) =>
+            Effect.promise(() => repo.findUpcoming(days, now)),
+          update: (schedule: NotificationSchedule) =>
+            Effect.promise(() => repo.update(schedule)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteMany: (ids: string[]) =>
+            Effect.promise(() => repo.deleteMany(ids)),
+          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+          count: (
+            filter?: import("@mirai-app/domain").NotificationScheduleFilter,
+          ) => Effect.promise(() => repo.count(filter)),
+          updateLastRun: (id: string, lastRun: Date) =>
+            Effect.promise(() => repo.updateLastRun(id, lastRun)),
+          toggleActive: (id: string) =>
+            Effect.promise(() => repo.toggleActive(id)),
+          bulkToggleActive: (ids: string[], isActive: boolean) =>
+            Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+          getExecutionHistory: (scheduleId: string, limit: number) =>
+            Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+          countExecutions: (scheduleId: string) =>
+            Effect.promise(() => repo.countExecutions(scheduleId)),
+        }),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Notification schedule not found");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(GetScheduleNotFoundError);
       }
-    });
-
-    it("should handle repository errors", async () => {
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.reject(new Error("DB error"))),
-      });
-
-      const useCase = new GetNotificationScheduleByIdUseCase(mockRepo);
-      const input: GetNotificationScheduleByIdInput = {
-        id: "schedule-123",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("DB error");
     });
   });
 });

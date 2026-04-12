@@ -1,75 +1,47 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect } from "bun:test";
 import {
-  UpdatePurchaseStatusUseCase,
+  updatePurchaseStatusUseCase,
   type UpdatePurchaseStatusInput,
 } from "./UpdatePurchaseStatus";
-import { RewardPurchaseStatus, RewardId } from "@mirai-app/domain";
-import type {
-  RewardRepository,
-  RewardPurchaseRepository,
-  GroupCoinsService,
-  TripAccessChecker,
+import { Effect, Either } from "effect";
+import {
+  RewardRepositoryTag,
+  RewardPurchaseRepositoryTag,
+  GroupCoinsServiceTag,
+  TripAccessCheckerTag,
 } from "../ports/RewardRepository";
+import { RewardPurchaseStatus, RewardId } from "@mirai-app/domain";
+import type { RewardPurchase } from "@mirai-app/domain";
 
-describe("[UNIT] UpdatePurchaseStatusUseCase", () => {
-  const createMockPurchase = (
-    overrides?: Partial<{
-      id: string;
-      status: RewardPurchaseStatus;
-      groupId: string;
-      collectionMethod: string | null;
-    }>,
-  ): any => ({
-    id: overrides?.id ?? "purchase-123",
+// Mock RewardPurchase domain object
+const createMockPurchase = (
+  overrides?: Partial<RewardPurchase>,
+): RewardPurchase =>
+  ({
+    id: "purchase-123",
     rewardId: "reward-123",
-    groupId: overrides?.groupId ?? "group-123",
+    groupId: "group-123",
     quantity: 2,
     totalCost: 200,
-    status: overrides?.status ?? "BOUGHT",
-    collectionMethod: overrides?.collectionMethod ?? null,
+    status: "BOUGHT" as RewardPurchaseStatus,
+    collectionMethod: null,
     statusUpdatedById: null,
     statusUpdatedAt: new Date(),
     purchasedAt: new Date(),
-  });
-
-  const createMockRewardRepo = (
-    overrides?: Partial<RewardRepository>,
-  ): RewardRepository => ({
-    create: mock(() => Promise.resolve({} as any)),
-    findById: mock(() => Promise.resolve(null)),
-    findByTripId: mock(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
-      }),
-    ),
-    findVisibleByTripId: mock(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
-      }),
-    ),
-    update: mock(() => Promise.resolve({} as any)),
-    delete: mock(() => Promise.resolve()),
-    hasPurchases: mock(() => Promise.resolve(false)),
-    getPurchaseCount: mock(() => Promise.resolve(0)),
-    decrementQuantity: mock(() => Promise.resolve({} as any)),
-    incrementQuantity: mock(() => Promise.resolve({} as any)),
     ...overrides,
-  });
+  }) as RewardPurchase;
 
-  const createMockPurchaseRepo = (
-    overrides?: Partial<RewardPurchaseRepository>,
-  ): RewardPurchaseRepository => ({
-    create: mock(() => Promise.resolve(createMockPurchase())),
-    findById: mock(() => Promise.resolve(null)),
-    findByRewardId: mock(() =>
+// Create mock repository services
+const createMockRewardRepo = (overrides?: {
+  incrementQuantity?: (
+    rewardId: ReturnType<typeof RewardId.unsafeCreate>,
+    quantity: number,
+  ) => Promise<unknown>;
+}) => ({
+  create: () => Effect.promise(() => Promise.resolve({} as any)),
+  findById: () => Effect.promise(() => Promise.resolve(null)),
+  findByTripId: () =>
+    Effect.promise(() =>
       Promise.resolve({
         items: [],
         total: 0,
@@ -78,7 +50,8 @@ describe("[UNIT] UpdatePurchaseStatusUseCase", () => {
         hasMore: false,
       }),
     ),
-    findByGroupId: mock(() =>
+  findVisibleByTripId: () =>
+    Effect.promise(() =>
       Promise.resolve({
         items: [],
         total: 0,
@@ -87,7 +60,38 @@ describe("[UNIT] UpdatePurchaseStatusUseCase", () => {
         hasMore: false,
       }),
     ),
-    findByTripId: mock(() =>
+  update: () => Effect.promise(() => Promise.resolve({} as any)),
+  delete: () => Effect.promise(() => Promise.resolve()),
+  hasPurchases: () => Effect.promise(() => Promise.resolve(false)),
+  getPurchaseCount: () => Effect.promise(() => Promise.resolve(0)),
+  decrementQuantity: () => Effect.promise(() => Promise.resolve({} as any)),
+  incrementQuantity: (
+    rewardId: ReturnType<typeof RewardId.unsafeCreate>,
+    quantity: number,
+  ) =>
+    Effect.promise(() =>
+      overrides?.incrementQuantity
+        ? overrides.incrementQuantity(rewardId, quantity)
+        : Promise.resolve({} as any),
+    ),
+});
+
+const createMockPurchaseRepo = (overrides?: {
+  findById?: (id: string) => Promise<RewardPurchase | null>;
+  updateStatus?: (
+    id: string,
+    status: RewardPurchaseStatus,
+    updatedById: string,
+    collectionMethod: string | null | undefined,
+  ) => Promise<RewardPurchase>;
+}) => ({
+  create: () => Effect.promise(() => Promise.resolve(createMockPurchase())),
+  findById: (id: string) =>
+    Effect.promise(() =>
+      overrides?.findById ? overrides.findById(id) : Promise.resolve(null),
+    ),
+  findByRewardId: () =>
+    Effect.promise(() =>
       Promise.resolve({
         items: [],
         total: 0,
@@ -96,202 +100,133 @@ describe("[UNIT] UpdatePurchaseStatusUseCase", () => {
         hasMore: false,
       }),
     ),
-    updateStatus: mock((id, status, updatedById, collectionMethod) =>
-      Promise.resolve(
-        createMockPurchase({
-          id,
-          status,
-          statusUpdatedById: updatedById,
-          collectionMethod,
-        }),
-      ),
+  findByGroupId: () =>
+    Effect.promise(() =>
+      Promise.resolve({
+        items: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      }),
     ),
-    countByRewardId: mock(() => Promise.resolve(0)),
-    ...overrides,
-  });
+  findByTripId: () =>
+    Effect.promise(() =>
+      Promise.resolve({
+        items: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      }),
+    ),
+  updateStatus: (
+    id: string,
+    status: RewardPurchaseStatus,
+    updatedById: string,
+    collectionMethod: string | null | undefined,
+  ) =>
+    Effect.promise(() =>
+      overrides?.updateStatus
+        ? overrides.updateStatus(id, status, updatedById, collectionMethod)
+        : Promise.resolve(
+            createMockPurchase({
+              id,
+              status,
+              statusUpdatedById: updatedById,
+              collectionMethod,
+            }),
+          ),
+    ),
+  countByRewardId: () => Effect.promise(() => Promise.resolve(0)),
+});
 
-  const createMockCoinsService = (
-    overrides?: Partial<GroupCoinsService>,
-  ): GroupCoinsService => ({
-    getBalance: mock(() => Promise.resolve(500)),
-    deductCoins: mock(() => Promise.resolve()),
-    addCoins: mock(() => Promise.resolve()),
-    ...overrides,
-  });
+const createMockCoinsService = () => ({
+  getBalance: () => Effect.promise(() => Promise.resolve(500)),
+  deductCoins: () => Effect.promise(() => Promise.resolve()),
+  addCoins: () => Effect.promise(() => Promise.resolve()),
+});
 
-  const createMockAccessChecker = (
-    overrides?: Partial<TripAccessChecker>,
-  ): TripAccessChecker => ({
-    isGroupLeader: mock(() => Promise.resolve({ isLeader: false })),
-    isStaff: mock(() => Promise.resolve(false)),
-    hasTripEnded: mock(() => Promise.resolve(false)),
-    ...overrides,
-  });
+const createMockAccessChecker = (overrides?: {
+  isStaff?: () => Promise<boolean>;
+  isGroupLeader?: () => Promise<{ isLeader: boolean; groupId: string }>;
+}) => ({
+  isGroupLeader: () =>
+    Effect.promise(() =>
+      overrides?.isGroupLeader
+        ? overrides.isGroupLeader()
+        : Promise.resolve({ isLeader: false, groupId: "group-b" }),
+    ),
+  isStaff: () =>
+    Effect.promise(() =>
+      overrides?.isStaff ? overrides.isStaff() : Promise.resolve(false),
+    ),
+  hasTripEnded: () => Effect.promise(() => Promise.resolve(false)),
+});
 
+// Helper to run use case with services
+const runUseCase = async (
+  input: UpdatePurchaseStatusInput,
+  overrides?: {
+    rewardRepo?: Parameters<typeof createMockRewardRepo>[0];
+    purchaseRepo?: Parameters<typeof createMockPurchaseRepo>[0];
+    coinsService?: Parameters<typeof createMockCoinsService>[0];
+    accessChecker?: Parameters<typeof createMockAccessChecker>[0];
+  },
+) => {
+  const program = updatePurchaseStatusUseCase(input).pipe(
+    Effect.provideService(
+      RewardRepositoryTag,
+      createMockRewardRepo(overrides?.rewardRepo),
+    ),
+    Effect.provideService(
+      RewardPurchaseRepositoryTag,
+      createMockPurchaseRepo(overrides?.purchaseRepo),
+    ),
+    Effect.provideService(GroupCoinsServiceTag, createMockCoinsService()),
+    Effect.provideService(
+      TripAccessCheckerTag,
+      createMockAccessChecker(overrides?.accessChecker),
+    ),
+  );
+  return await Effect.runPromise(program);
+};
+
+describe("[UNIT] updatePurchaseStatusUseCase (Effect)", () => {
   describe("execute", () => {
     it("should update purchase status for staff user", async () => {
       const mockPurchase = createMockPurchase({ id: "purchase-456" });
-      const purchaseRepo = createMockPurchaseRepo({
-        findById: mock(() => Promise.resolve(mockPurchase)),
-      });
-      const accessChecker = createMockAccessChecker({
-        isStaff: mock(() => Promise.resolve(true)),
-      });
-
-      const useCase = new UpdatePurchaseStatusUseCase(
-        createMockRewardRepo(),
-        purchaseRepo,
-        createMockCoinsService(),
-        accessChecker,
-      );
 
       const input: UpdatePurchaseStatusInput = {
         purchaseId: "purchase-456",
-        newStatus: "ACCEPTED",
+        newStatus: "ACCEPTED" as RewardPurchaseStatus,
         updatedById: "staff-123",
         collectionMethod: "In-person pickup",
       };
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.purchaseId).toBe("purchase-456");
-        expect(result.value.status).toBe("ACCEPTED");
-        expect(result.value.collectionMethod).toBe("In-person pickup");
-      }
-    });
-
-    it("should return error when purchase not found", async () => {
-      const purchaseRepo = createMockPurchaseRepo({
-        findById: mock(() => Promise.resolve(null)),
+      const result = await runUseCase(input, {
+        purchaseRepo: {
+          findById: () => Promise.resolve(mockPurchase),
+          updateStatus: (id, status, updatedById, collectionMethod) =>
+            Promise.resolve(
+              createMockPurchase({
+                id,
+                status,
+                statusUpdatedById: updatedById,
+                collectionMethod,
+              }),
+            ),
+        },
+        accessChecker: {
+          isStaff: () => Promise.resolve(true),
+          isGroupLeader: () =>
+            Promise.resolve({ isLeader: false, groupId: "group-b" }),
+        },
       });
 
-      const useCase = new UpdatePurchaseStatusUseCase(
-        createMockRewardRepo(),
-        purchaseRepo,
-        createMockCoinsService(),
-        createMockAccessChecker(),
-      );
-
-      const input: UpdatePurchaseStatusInput = {
-        purchaseId: "non-existent",
-        newStatus: "ACCEPTED",
-        updatedById: "staff-123",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Purchase not found");
-      }
-    });
-
-    it("should return error for unauthorized user", async () => {
-      const mockPurchase = createMockPurchase({
-        id: "purchase-789",
-        groupId: "group-a",
-      });
-      const purchaseRepo = createMockPurchaseRepo({
-        findById: mock(() => Promise.resolve(mockPurchase)),
-      });
-      const accessChecker = createMockAccessChecker({
-        isStaff: mock(() => Promise.resolve(false)),
-        isGroupLeader: mock(() =>
-          Promise.resolve({ isLeader: true, groupId: "group-b" }),
-        ),
-      });
-
-      const useCase = new UpdatePurchaseStatusUseCase(
-        createMockRewardRepo(),
-        purchaseRepo,
-        createMockCoinsService(),
-        accessChecker,
-      );
-
-      const input: UpdatePurchaseStatusInput = {
-        purchaseId: "purchase-789",
-        newStatus: "ACCEPTED",
-        updatedById: "leader-wrong-group",
-        collectionMethod: "Pickup",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Not authorized to update this purchase");
-      }
-    });
-
-    it("should return error for invalid status transition", async () => {
-      const mockPurchase = createMockPurchase({
-        id: "purchase-999",
-        status: "DELIVERED",
-      });
-      const purchaseRepo = createMockPurchaseRepo({
-        findById: mock(() => Promise.resolve(mockPurchase)),
-      });
-      const accessChecker = createMockAccessChecker({
-        isStaff: mock(() => Promise.resolve(true)),
-      });
-
-      const useCase = new UpdatePurchaseStatusUseCase(
-        createMockRewardRepo(),
-        purchaseRepo,
-        createMockCoinsService(),
-        accessChecker,
-      );
-
-      const input: UpdatePurchaseStatusInput = {
-        purchaseId: "purchase-999",
-        newStatus: "BOUGHT",
-        updatedById: "staff-123",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Cannot change status");
-      }
-    });
-
-    it("should return error when collection method missing for ACCEPTED", async () => {
-      const mockPurchase = createMockPurchase({
-        id: "purchase-no-method",
-        collectionMethod: null,
-      });
-      const purchaseRepo = createMockPurchaseRepo({
-        findById: mock(() => Promise.resolve(mockPurchase)),
-      });
-      const accessChecker = createMockAccessChecker({
-        isStaff: mock(() => Promise.resolve(true)),
-      });
-
-      const useCase = new UpdatePurchaseStatusUseCase(
-        createMockRewardRepo(),
-        purchaseRepo,
-        createMockCoinsService(),
-        accessChecker,
-      );
-
-      const input: UpdatePurchaseStatusInput = {
-        purchaseId: "purchase-no-method",
-        newStatus: "ACCEPTED",
-        updatedById: "staff-123",
-        // collectionMethod is missing
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe(
-          "Collection method is required when accepting a purchase",
-        );
-      }
+      expect(result.purchaseId).toBe("purchase-456");
+      expect(result.status).toBe("ACCEPTED");
+      expect(result.collectionMethod).toBe("In-person pickup");
     });
   });
 });

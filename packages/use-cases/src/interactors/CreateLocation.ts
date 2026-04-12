@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, Location } from "@mirai-app/domain";
-import type { LocationRepository } from "../ports/LocationRepository";
+import { Effect } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
+import { Location } from "@mirai-app/domain";
 
 /**
  * Input for CreateLocation use case
@@ -36,25 +36,68 @@ export interface CreateLocationOutput {
 }
 
 /**
+ * Error types for CreateLocation use case
+ */
+export class LocationAlreadyExistsError extends Error {
+  readonly _tag = "LocationAlreadyExistsError";
+  constructor() {
+    super("Location already exists for this user");
+  }
+}
+
+export class LocationCreationError extends Error {
+  readonly _tag = "LocationCreationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class LocationUpdateError extends Error {
+  readonly _tag = "LocationUpdateError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * CreateLocation Use Case
  *
  * Creates or updates a location for a user (upsert pattern).
  * If location exists for user, updates it; otherwise creates new.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* createLocationUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(LocationRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class CreateLocationUseCase {
-  constructor(private locationRepository: LocationRepository) {}
+export function createLocationUseCase(
+  input: CreateLocationInput,
+): Effect.Effect<
+  CreateLocationOutput,
+  LocationCreationError | LocationUpdateError,
+  LocationRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const locationRepo = yield* LocationRepositoryTag;
 
-  async execute(
-    input: CreateLocationInput,
-  ): Promise<Result<CreateLocationOutput, string>> {
     // Check if location already exists for this user
-    const existingLocation = await this.locationRepository.findByUserId(
-      input.userId,
-    );
+    const existingLocation = yield* locationRepo.findByUserId(input.userId);
 
     if (existingLocation) {
       // Update existing location with new coordinates
-      const updateResult = existingLocation.updateCoordinates({
+      const updateEffect = existingLocation.updateCoordinates({
         ...(input.latitude !== undefined && { latitude: input.latitude }),
         ...(input.longitude !== undefined && { longitude: input.longitude }),
         ...(input.accuracy !== undefined && { accuracy: input.accuracy }),
@@ -63,16 +106,19 @@ export class CreateLocationUseCase {
         ...(input.speed !== undefined && { speed: input.speed }),
       });
 
-      if (updateResult.kind === "err") {
-        return err(updateResult.error.message);
-      }
+      // Run validation effect and map errors
+      const updated = yield* updateEffect.pipe(
+        Effect.mapError(
+          (validationError) => new LocationUpdateError(validationError.message),
+        ),
+      );
 
-      const saved = await this.locationRepository.save(updateResult.value);
-      return ok(this.toOutput(saved));
+      const saved = yield* locationRepo.save(updated);
+      return toOutput(saved);
     }
 
     // Create new location
-    const locationResult = Location.create({
+    const locationEffect = Location.create({
       userId: input.userId,
       ...(input.latitude !== undefined && { latitude: input.latitude }),
       ...(input.longitude !== undefined && { longitude: input.longitude }),
@@ -88,26 +134,28 @@ export class CreateLocationUseCase {
       }),
     });
 
-    if (locationResult.kind === "err") {
-      return err(locationResult.error.message);
-    }
+    // Run validation effect and map errors
+    const location = yield* locationEffect.pipe(
+      Effect.mapError(
+        (validationError) => new LocationCreationError(validationError.message),
+      ),
+    );
 
     // Persist location
-    const saved = await this.locationRepository.create(locationResult.value);
+    const saved = yield* locationRepo.create(location);
+    return toOutput(saved);
+  });
+}
 
-    return ok(this.toOutput(saved));
-  }
-
-  private toOutput(location: Location): CreateLocationOutput {
-    return {
-      id: location.id,
-      userId: location.userId,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      accuracy: location.accuracy,
-      isSharingLocation: location.isSharingLocation(),
-      timestamp: location.timestamp,
-      usersToShareWith: location.usersToShareWith,
-    };
-  }
+function toOutput(location: Location): CreateLocationOutput {
+  return {
+    id: location.id,
+    userId: location.userId,
+    latitude: location.latitude,
+    longitude: location.longitude,
+    accuracy: location.accuracy,
+    isSharingLocation: location.isSharingLocation(),
+    timestamp: location.timestamp,
+    usersToShareWith: location.usersToShareWith,
+  };
 }

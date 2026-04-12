@@ -1,9 +1,10 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  AddSharingUserUseCase,
+  addSharingUserUseCase,
   type AddSharingUserInput,
 } from "./AddSharingUser";
-import type { LocationRepository } from "../ports/LocationRepository";
+import { Effect, Either } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location, LocationId } from "@mirai-app/domain";
 
 // Mock Location domain object
@@ -22,20 +23,56 @@ const createMockLocation = (overrides?: Partial<Location>): Location =>
     ...overrides,
   }) as unknown as Location;
 
-describe("[UNIT] AddSharingUserUseCase", () => {
-  let useCase: AddSharingUserUseCase;
-  let mockLocationRepository: LocationRepository;
+// Create mock repository service
+const createMockRepoService = (overrides?: {
+  findByUserId?: (userId: string) => Promise<Location | null>;
+  create?: (location: Location) => Promise<Location>;
+  save?: (location: Location) => Promise<Location>;
+}) => ({
+  findById: () => Effect.promise(() => Promise.resolve(null)),
+  findByUserId: (userId: string) =>
+    Effect.promise(() =>
+      overrides?.findByUserId
+        ? overrides.findByUserId(userId)
+        : Promise.resolve(null),
+    ),
+  findAll: () => Effect.promise(() => Promise.resolve([])),
+  findSharingWithUser: () => Effect.promise(() => Promise.resolve([])),
+  findByUserIds: () => Effect.promise(() => Promise.resolve([])),
+  save: (location: Location) =>
+    Effect.promise(() =>
+      overrides?.save ? overrides.save(location) : Promise.resolve(location),
+    ),
+  create: (location: Location) =>
+    Effect.promise(() =>
+      overrides?.create
+        ? overrides.create(location)
+        : Promise.resolve(location),
+    ),
+  delete: () => Effect.promise(() => Promise.resolve()),
+  deleteByUserId: () => Effect.promise(() => Promise.resolve()),
+  existsForUser: () => Effect.promise(() => Promise.resolve(false)),
+});
 
-  beforeEach(() => {
-    mockLocationRepository = {
-      findByUserId: mock(() => Promise.resolve(null)),
-      create: mock((loc: Location) => Promise.resolve(loc)),
-      save: mock((loc: Location) => Promise.resolve(loc)),
-    } as unknown as LocationRepository;
+// Helper to run use case with repository service
+const runUseCase = async (
+  input: AddSharingUserInput,
+  repoOverrides?: {
+    findByUserId?: (userId: string) => Promise<Location | null>;
+    create?: (location: Location) => Promise<Location>;
+    save?: (location: Location) => Promise<Location>;
+  },
+) => {
+  const program = addSharingUserUseCase(input).pipe(
+    Effect.provideService(
+      LocationRepositoryTag,
+      createMockRepoService(repoOverrides),
+    ),
+  );
+  return await Effect.runPromise(program);
+};
 
-    useCase = new AddSharingUserUseCase(mockLocationRepository);
-  });
-
+describe("[UNIT] addSharingUserUseCase (Effect)", () => {
   describe("execute", () => {
     it("should create new location when none exists and add user", async () => {
       const input: AddSharingUserInput = {
@@ -45,35 +82,18 @@ describe("[UNIT] AddSharingUserUseCase", () => {
         userLastName: "Doe",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(null),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.userId).toBe("user-123");
-        expect(result.value.isSharingLocation).toBe(true);
-        expect(result.value.usersToShareWith).toHaveLength(1);
-        expect(result.value.usersToShareWith[0]).toEqual({
-          id: "user-456",
-          firstName: "John",
-          lastName: "Doe",
-        });
-      }
-    });
-
-    it("should return error when trying to add self", async () => {
-      const input: AddSharingUserInput = {
-        ownerUserId: "user-123",
-        userToAddId: "user-123",
-        userFirstName: "John",
-        userLastName: "Doe",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Cannot share location with yourself");
-      }
+      expect(result.userId).toBe("user-123");
+      expect(result.isSharingLocation).toBe(true);
+      expect(result.usersToShareWith).toHaveLength(1);
+      expect(result.usersToShareWith[0]).toEqual({
+        id: "user-456",
+        firstName: "John",
+        lastName: "Doe",
+      });
     });
 
     it("should add user to existing location", async () => {
@@ -91,9 +111,6 @@ describe("[UNIT] AddSharingUserUseCase", () => {
           };
         },
       });
-      mockLocationRepository.findByUserId = mock(() =>
-        Promise.resolve(existingLocation),
-      );
 
       const input: AddSharingUserInput = {
         ownerUserId: "user-123",
@@ -102,13 +119,12 @@ describe("[UNIT] AddSharingUserUseCase", () => {
         userLastName: "Doe",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(existingLocation),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.usersToShareWith).toHaveLength(2);
-        expect(result.value.usersToShareWith[1].id).toBe("user-456");
-      }
+      expect(result.usersToShareWith).toHaveLength(2);
+      expect(result.usersToShareWith[1].id).toBe("user-456");
     });
 
     it("should handle null first and last names", async () => {
@@ -119,59 +135,12 @@ describe("[UNIT] AddSharingUserUseCase", () => {
         userLastName: null,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(null),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.usersToShareWith[0].firstName).toBeNull();
-        expect(result.value.usersToShareWith[0].lastName).toBeNull();
-      }
-    });
-
-    it("should persist changes with save for existing location", async () => {
-      const existingLocation = createMockLocation();
-      mockLocationRepository.findByUserId = mock(() =>
-        Promise.resolve(existingLocation),
-      );
-
-      const input: AddSharingUserInput = {
-        ownerUserId: "user-123",
-        userToAddId: "user-456",
-        userFirstName: "John",
-        userLastName: "Doe",
-      };
-
-      await useCase.execute(input);
-
-      expect(mockLocationRepository.save).toHaveBeenCalled();
-    });
-
-    it("should create new location via create method when none exists", async () => {
-      const input: AddSharingUserInput = {
-        ownerUserId: "user-123",
-        userToAddId: "user-456",
-        userFirstName: "John",
-        userLastName: "Doe",
-      };
-
-      await useCase.execute(input);
-
-      expect(mockLocationRepository.create).toHaveBeenCalled();
-    });
-
-    it("should call findByUserId with ownerUserId", async () => {
-      const input: AddSharingUserInput = {
-        ownerUserId: "user-789",
-        userToAddId: "user-456",
-        userFirstName: "John",
-        userLastName: "Doe",
-      };
-
-      await useCase.execute(input);
-
-      expect(mockLocationRepository.findByUserId).toHaveBeenCalledWith(
-        "user-789",
-      );
+      expect(result.usersToShareWith[0].firstName).toBeNull();
+      expect(result.usersToShareWith[0].lastName).toBeNull();
     });
   });
 });

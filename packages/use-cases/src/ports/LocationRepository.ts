@@ -1,5 +1,6 @@
 import type { Location, SharingUserInfo } from "@mirai-app/domain";
 import type { LocationId } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * LocationRepository Port
@@ -64,3 +65,31 @@ export interface LocationRepository {
    */
   existsForUser(userId: string): Promise<boolean>;
 }
+
+/**
+ * LocationRepository Context.Tag for Effect dependency injection
+ */
+export class LocationRepositoryTag extends Context.Tag("LocationRepository")<
+  LocationRepositoryTag,
+  {
+    create: (location: Location) => Effect.Effect<Location, never, never>;
+    findById: (id: LocationId) => Effect.Effect<Location | null, never, never>;
+    findByUserId: (
+      userId: string,
+    ) => Effect.Effect<Location | null, never, never>;
+    findAll: (options?: {
+      limit?: number;
+      offset?: number;
+    }) => Effect.Effect<Location[], never, never>;
+    findSharingWithUser: (
+      userId: string,
+    ) => Effect.Effect<Location[], never, never>;
+    findByUserIds: (
+      userIds: string[],
+    ) => Effect.Effect<Location[], never, never>;
+    save: (location: Location) => Effect.Effect<Location, never, never>;
+    delete: (id: LocationId) => Effect.Effect<void, never, never>;
+    deleteByUserId: (userId: string) => Effect.Effect<void, never, never>;
+    existsForUser: (userId: string) => Effect.Effect<boolean, never, never>;
+  }
+>() {}

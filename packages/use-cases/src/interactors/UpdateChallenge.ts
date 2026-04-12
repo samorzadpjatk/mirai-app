@@ -1,7 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import type { Challenge, ChallengeStatus } from "@mirai-app/domain";
+import { Challenge, ChallengeStatus, ValidationError } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 
 /**
  * Input for UpdateChallenge use case
@@ -40,28 +39,75 @@ export interface UpdateChallengeOutput {
 }
 
 /**
+ * Error types for UpdateChallenge use case
+ */
+export class ChallengeNotFoundError extends Error {
+  readonly _tag = "ChallengeNotFoundError";
+  constructor() {
+    super("Challenge not found");
+  }
+}
+
+export class ChallengeUpdateValidationError extends Error {
+  readonly _tag = "ChallengeUpdateValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class ChallengeTerminalStateError extends Error {
+  readonly _tag = "ChallengeTerminalStateError";
+  constructor() {
+    super("Cannot update a completed or cancelled challenge");
+  }
+}
+
+export class ChallengeUpdateRepositoryError extends Error {
+  readonly _tag = "ChallengeUpdateRepositoryError";
+  constructor(message: string = "Failed to update challenge") {
+    super(message);
+  }
+}
+
+/**
  * UpdateChallenge Use Case
  *
  * Updates a challenge's details.
  * Returns error if challenge not found or validation fails.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection.
  */
-export class UpdateChallengeUseCase {
-  constructor(private challengeRepository: ChallengeRepository) {}
+export function updateChallengeUseCase(
+  input: UpdateChallengeInput,
+): Effect.Effect<
+  UpdateChallengeOutput,
+  | ChallengeNotFoundError
+  | ChallengeUpdateValidationError
+  | ChallengeTerminalStateError
+  | ChallengeUpdateRepositoryError,
+  ChallengeRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const challengeRepo = yield* ChallengeRepositoryTag;
 
-  async execute(
-    input: UpdateChallengeInput,
-  ): Promise<Result<UpdateChallengeOutput, string>> {
     // Find existing challenge
-    const challenge = await this.challengeRepository.findById(
-      input.challengeId,
-    );
+    const challenge = yield* challengeRepo
+      .findById(input.challengeId)
+      .pipe(
+        Effect.mapError(
+          () => new ChallengeUpdateRepositoryError("Failed to load challenge"),
+        ),
+      );
+
     if (!challenge) {
-      return err("Challenge not found");
+      return yield* Effect.fail(new ChallengeNotFoundError());
     }
 
     // Check if challenge is in terminal state
     if (challenge.isTerminal()) {
-      return err("Cannot update a completed or cancelled challenge");
+      return yield* Effect.fail(new ChallengeTerminalStateError());
     }
 
     // Apply updates
@@ -73,19 +119,20 @@ export class UpdateChallengeUseCase {
       input.description !== undefined ||
       input.image !== undefined
     ) {
-      const detailsResult = updatedChallenge.updateDetails({
-        ...(input.name !== undefined && { name: input.name }),
-        ...(input.description !== undefined && {
-          description: input.description,
-        }),
-        ...(input.image !== undefined && { image: input.image }),
-      });
-
-      if (detailsResult.kind === "err") {
-        return err(detailsResult.error.message);
-      }
-
-      updatedChallenge = detailsResult.value;
+      updatedChallenge = yield* updatedChallenge
+        .updateDetails({
+          ...(input.name !== undefined && { name: input.name }),
+          ...(input.description !== undefined && {
+            description: input.description,
+          }),
+          ...(input.image !== undefined && { image: input.image }),
+        })
+        .pipe(
+          Effect.mapError(
+            (validationError: ValidationError) =>
+              new ChallengeUpdateValidationError(validationError.message),
+          ),
+        );
     }
 
     // Update points if provided
@@ -95,24 +142,27 @@ export class UpdateChallengeUseCase {
       input.secondPlacePoints !== undefined ||
       input.thirdPlacePoints !== undefined
     ) {
-      const pointsResult = updatedChallenge.updatePoints({
-        ...(input.basePoints !== undefined && { basePoints: input.basePoints }),
-        ...(input.firstPlacePoints !== undefined && {
-          firstPlacePoints: input.firstPlacePoints,
-        }),
-        ...(input.secondPlacePoints !== undefined && {
-          secondPlacePoints: input.secondPlacePoints,
-        }),
-        ...(input.thirdPlacePoints !== undefined && {
-          thirdPlacePoints: input.thirdPlacePoints,
-        }),
-      });
-
-      if (pointsResult.kind === "err") {
-        return err(pointsResult.error.message);
-      }
-
-      updatedChallenge = pointsResult.value;
+      updatedChallenge = yield* updatedChallenge
+        .updatePoints({
+          ...(input.basePoints !== undefined && {
+            basePoints: input.basePoints,
+          }),
+          ...(input.firstPlacePoints !== undefined && {
+            firstPlacePoints: input.firstPlacePoints,
+          }),
+          ...(input.secondPlacePoints !== undefined && {
+            secondPlacePoints: input.secondPlacePoints,
+          }),
+          ...(input.thirdPlacePoints !== undefined && {
+            thirdPlacePoints: input.thirdPlacePoints,
+          }),
+        })
+        .pipe(
+          Effect.mapError(
+            (validationError: ValidationError) =>
+              new ChallengeUpdateValidationError(validationError.message),
+          ),
+        );
     }
 
     // Update schedule if any time-related fields provided
@@ -122,57 +172,47 @@ export class UpdateChallengeUseCase {
       input.dailyStartTime !== undefined ||
       input.dailyEndTime !== undefined
     ) {
-      const scheduleResult = updatedChallenge.updateSchedule({
-        ...(input.startTime !== undefined && { startTime: input.startTime }),
-        ...(input.endTime !== undefined && { endTime: input.endTime }),
-        ...(input.dailyStartTime !== undefined && {
-          dailyStartTime: input.dailyStartTime,
-        }),
-        ...(input.dailyEndTime !== undefined && {
-          dailyEndTime: input.dailyEndTime,
-        }),
-      });
-
-      if (scheduleResult.kind === "err") {
-        return err(scheduleResult.error.message);
-      }
-
-      updatedChallenge = scheduleResult.value;
-    }
-
-    // Update other fields using the factory pattern (via private update)
-    if (
-      input.targetLatitude !== undefined ||
-      input.targetLongitude !== undefined
-    ) {
-      // Note: target location would need special handling in the entity
-      // For now, we'll skip this or use a copy with new values
-    }
-
-    if (input.expectedValue !== undefined) {
-      // Note: expectedValue would need special handling
-    }
-
-    if (input.autoApprove !== undefined) {
-      // Note: autoApprove would need special handling
+      updatedChallenge = yield* updatedChallenge
+        .updateSchedule({
+          ...(input.startTime !== undefined && { startTime: input.startTime }),
+          ...(input.endTime !== undefined && { endTime: input.endTime }),
+          ...(input.dailyStartTime !== undefined && {
+            dailyStartTime: input.dailyStartTime,
+          }),
+          ...(input.dailyEndTime !== undefined && {
+            dailyEndTime: input.dailyEndTime,
+          }),
+        })
+        .pipe(
+          Effect.mapError(
+            (validationError: ValidationError) =>
+              new ChallengeUpdateValidationError(validationError.message),
+          ),
+        );
     }
 
     // Persist changes
-    const saved = await this.challengeRepository.update(updatedChallenge);
+    const saved = yield* challengeRepo
+      .update(updatedChallenge)
+      .pipe(
+        Effect.mapError(
+          () => new ChallengeUpdateRepositoryError("Failed to save challenge"),
+        ),
+      );
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(challenge: Challenge): UpdateChallengeOutput {
-    return {
-      id: challenge.id,
-      tripId: challenge.tripId,
-      name: challenge.name,
-      description: challenge.description,
-      basePoints: challenge.basePoints,
-      status: challenge.status,
-      updatedAt: challenge.updatedAt,
-      isOpenForSubmission: challenge.isOpenForSubmission(),
-    };
-  }
+function toOutput(challenge: Challenge): UpdateChallengeOutput {
+  return {
+    id: challenge.id,
+    tripId: challenge.tripId,
+    name: challenge.name,
+    description: challenge.description,
+    basePoints: challenge.basePoints,
+    status: challenge.status,
+    updatedAt: challenge.updatedAt,
+    isOpenForSubmission: challenge.isOpenForSubmission(),
+  };
 }

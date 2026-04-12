@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, type RewardId } from "@mirai-app/domain";
-import type { RewardRepository } from "../ports/RewardRepository";
+import { Reward, ValidationError, type RewardId } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { RewardRepositoryTag } from "../ports/RewardRepository";
 
 /**
  * Input for UpdateReward use case
@@ -33,63 +33,111 @@ export interface UpdateRewardOutput {
 }
 
 /**
+ * Error types for UpdateReward use case
+ */
+export class RewardNotFoundError extends Error {
+  readonly _tag = "RewardNotFoundError";
+  constructor(rewardId: string) {
+    super(`Reward not found: ${rewardId}`);
+  }
+}
+
+export class UpdateRewardError extends Error {
+  readonly _tag = "UpdateRewardError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class RewardRepositoryError extends Error {
+  readonly _tag = "RewardRepositoryError";
+  constructor(message: string = "Failed to update reward") {
+    super(message);
+  }
+}
+
+/**
  * UpdateReward Use Case
  *
  * Updates an existing reward.
  * Returns error if reward not found or validation fails.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* updateRewardUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(RewardRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class UpdateRewardUseCase {
-  constructor(private rewardRepository: RewardRepository) {}
+export function updateRewardUseCase(
+  input: UpdateRewardInput,
+): Effect.Effect<
+  UpdateRewardOutput,
+  RewardNotFoundError | UpdateRewardError | RewardRepositoryError,
+  RewardRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const rewardRepo = yield* RewardRepositoryTag;
 
-  async execute(
-    input: UpdateRewardInput,
-  ): Promise<Result<UpdateRewardOutput, string>> {
     // Find existing reward
-    const existing = await this.rewardRepository.findById(input.rewardId);
+    const existing = yield* rewardRepo.findById(input.rewardId);
 
     if (!existing) {
-      return err("Reward not found");
+      return yield* Effect.fail(new RewardNotFoundError(input.rewardId));
     }
 
     // Apply updates to domain entity
-    const updatedResult = existing.update({
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.description !== undefined && {
+    const updated = yield* existing
+      .update({
+        name: input.name,
         description: input.description,
-      }),
-      ...(input.availableQuantity !== undefined && {
         availableQuantity: input.availableQuantity,
-      }),
-      ...(input.images !== undefined && { images: input.images }),
-      ...(input.coinCostPercentage !== undefined && {
+        images: input.images,
         coinCostPercentage: input.coinCostPercentage,
-      }),
-    });
-
-    if (updatedResult.kind === "err") {
-      return err(updatedResult.error);
-    }
+      })
+      .pipe(
+        Effect.mapError(
+          (validationError: ValidationError) =>
+            new UpdateRewardError(validationError.message),
+        ),
+      );
 
     // Persist updated reward
-    const saved = await this.rewardRepository.update(updatedResult.value);
+    const saved = yield* rewardRepo
+      .update(updated)
+      .pipe(
+        Effect.mapError(
+          () => new RewardRepositoryError("Failed to update reward"),
+        ),
+      );
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(reward: import("@mirai-app/domain").Reward): UpdateRewardOutput {
-    return {
-      id: reward.id,
-      name: reward.name,
-      description: reward.description,
-      availableQuantity: reward.availableQuantity,
-      coinCostPercentage: reward.coinCostPercentage.toNumber(),
-      images: reward.images,
-      primaryImage: reward.getPrimaryImage(),
-      isHidden: reward.isHidden,
-      tripId: reward.tripId,
-      updatedAt: reward.updatedAt,
-      isInStock: reward.isInStock(),
-      canBePurchased: reward.canBePurchased(),
-    };
-  }
+function toOutput(reward: Reward): UpdateRewardOutput {
+  return {
+    id: reward.id,
+    name: reward.name,
+    description: reward.description,
+    availableQuantity: reward.availableQuantity,
+    coinCostPercentage: reward.coinCostPercentage.toNumber(),
+    images: reward.images,
+    primaryImage: reward.getPrimaryImage(),
+    isHidden: reward.isHidden,
+    tripId: reward.tripId,
+    updatedAt: reward.updatedAt,
+    isInStock: reward.isInStock(),
+    canBePurchased: reward.canBePurchased(),
+  };
 }

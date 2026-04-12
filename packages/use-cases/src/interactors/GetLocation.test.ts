@@ -1,9 +1,15 @@
 import { describe, it, expect, mock } from "bun:test";
-import { GetLocationUseCase, type GetLocationInput } from "./GetLocation";
+import {
+  getLocationUseCase,
+  type GetLocationInput,
+  LocationNotFoundError,
+} from "./GetLocation";
 import { Location } from "@mirai-app/domain";
-import type { LocationRepository } from "../ports/LocationRepository";
+import { Effect, Either } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
+import type { Location as DomainLocation } from "@mirai-app/domain";
 
-describe("[UNIT] GetLocationUseCase", () => {
+describe("[UNIT] getLocationUseCase (Effect)", () => {
   // Helper to create a valid location
   const createValidLocation = (
     overrides?: Partial<{
@@ -35,21 +41,46 @@ describe("[UNIT] GetLocationUseCase", () => {
     return result.value;
   };
 
-  const createMockRepo = (
-    overrides?: Partial<LocationRepository>,
-  ): LocationRepository => ({
-    create: mock(() => Promise.resolve(createValidLocation())),
-    findById: mock(() => Promise.resolve(null)),
-    findByUserId: mock(() => Promise.resolve(null)),
-    findAll: mock(() => Promise.resolve([])),
-    findSharingWithUser: mock(() => Promise.resolve([])),
-    findByUserIds: mock(() => Promise.resolve([])),
-    save: mock(() => Promise.resolve(createValidLocation())),
-    delete: mock(() => Promise.resolve()),
-    deleteByUserId: mock(() => Promise.resolve()),
-    existsForUser: mock(() => Promise.resolve(false)),
-    ...overrides,
+  const createMockRepoService = (overrides?: {
+    findByUserId?: (userId: string) => Promise<DomainLocation | null>;
+  }) => ({
+    create: (location: DomainLocation) =>
+      Effect.promise(() => Promise.resolve(location)),
+    findById: (id: string) => Effect.promise(() => Promise.resolve(null)),
+    findByUserId: (userId: string) =>
+      Effect.promise(() =>
+        overrides?.findByUserId
+          ? overrides.findByUserId(userId)
+          : Promise.resolve(null),
+      ),
+    findAll: (options?: { limit?: number; offset?: number }) =>
+      Effect.promise(() => Promise.resolve([])),
+    findSharingWithUser: (userId: string) =>
+      Effect.promise(() => Promise.resolve([])),
+    findByUserIds: (userIds: string[]) =>
+      Effect.promise(() => Promise.resolve([])),
+    save: (location: DomainLocation) =>
+      Effect.promise(() => Promise.resolve(location)),
+    delete: (id: string) => Effect.promise(() => Promise.resolve()),
+    deleteByUserId: (userId: string) => Effect.promise(() => Promise.resolve()),
+    existsForUser: (userId: string) =>
+      Effect.promise(() => Promise.resolve(false)),
   });
+
+  const runUseCase = async (
+    input: GetLocationInput,
+    repoOverrides?: {
+      findByUserId?: (userId: string) => Promise<DomainLocation | null>;
+    },
+  ) => {
+    const program = getLocationUseCase(input).pipe(
+      Effect.provideService(
+        LocationRepositoryTag,
+        createMockRepoService(repoOverrides),
+      ),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should return location when found by userId", async () => {
@@ -60,57 +91,43 @@ describe("[UNIT] GetLocationUseCase", () => {
         latitude: 48.8566,
         longitude: 2.3522,
       });
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(mockLocation)),
-      });
-
-      const useCase = new GetLocationUseCase(mockRepo);
-      const input: GetLocationInput = {
-        userId: "user-456",
-      };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(
+        { userId: "user-456" },
+        { findByUserId: () => Promise.resolve(mockLocation) },
+      );
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("loc-456");
-        expect(result.value.userId).toBe("user-456");
-        expect(result.value.latitude).toBe(48.8566);
-        expect(result.value.longitude).toBe(2.3522);
-        expect(result.value.accuracy).toBe(10);
-        expect(result.value.altitude).toBe(100);
-        expect(result.value.altitudeAccuracy).toBe(5);
-        expect(result.value.heading).toBe(90);
-        expect(result.value.speed).toBe(25);
-        expect(result.value.isSharingLocation).toBe(false);
-        expect(result.value.timestamp).toBeInstanceOf(Date);
-        expect(result.value.usersToShareWith).toEqual([]);
-      }
-      expect(mockRepo.findByUserId).toHaveBeenCalledWith("user-456");
+      expect(result.id).toBe("loc-456");
+      expect(result.userId).toBe("user-456");
+      expect(result.latitude).toBe(48.8566);
+      expect(result.longitude).toBe(2.3522);
+      expect(result.accuracy).toBe(10);
+      expect(result.altitude).toBe(100);
+      expect(result.altitudeAccuracy).toBe(5);
+      expect(result.heading).toBe(90);
+      expect(result.speed).toBe(25);
+      expect(result.isSharingLocation).toBe(false);
+      expect(result.timestamp).toBeInstanceOf(Date);
+      expect(result.usersToShareWith).toEqual([]);
     });
 
-    it("should return error when location not found", async () => {
+    it("should fail when location not found", async () => {
       // Arrange
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(null)),
-      });
+      const program = getLocationUseCase({ userId: "non-existent-user" }).pipe(
+        Effect.provideService(
+          LocationRepositoryTag,
+          createMockRepoService({ findByUserId: () => Promise.resolve(null) }),
+        ),
+      );
 
-      const useCase = new GetLocationUseCase(mockRepo);
-      const input: GetLocationInput = {
-        userId: "non-existent-user",
-      };
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Location not found");
+      // Act & Assert - use Either to properly check error type
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(LocationNotFoundError);
       }
-      expect(mockRepo.findByUserId).toHaveBeenCalledWith("non-existent-user");
     });
 
     it("should return location with null coordinates", async () => {
@@ -133,22 +150,17 @@ describe("[UNIT] GetLocationUseCase", () => {
       }
       const mockLocation = locationResult.value;
 
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(mockLocation)),
-      });
-
-      const useCase = new GetLocationUseCase(mockRepo);
-      const input: GetLocationInput = {
-        userId: "user-789",
-      };
-
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(
+        { userId: "user-789" },
+        { findByUserId: () => Promise.resolve(mockLocation) },
+      );
 
       // Assert
-      expect(result.kind).toBe("ok");
-      // Verify repository was called
-      expect(mockRepo.findByUserId).toHaveBeenCalledWith("user-789");
+      expect(result.id).toBe("loc-789");
+      expect(result.userId).toBe("user-789");
+      expect(result.latitude).toBeNull();
+      expect(result.longitude).toBeNull();
     });
 
     it("should return sharing location status correctly", async () => {
@@ -157,23 +169,15 @@ describe("[UNIT] GetLocationUseCase", () => {
         userId: "user-sharing",
         isSharingLocation: true,
       });
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(mockLocation)),
-      });
-
-      const useCase = new GetLocationUseCase(mockRepo);
-      const input: GetLocationInput = {
-        userId: "user-sharing",
-      };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(
+        { userId: "user-sharing" },
+        { findByUserId: () => Promise.resolve(mockLocation) },
+      );
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isSharingLocation).toBe(true);
-      }
+      expect(result.isSharingLocation).toBe(true);
     });
 
     it("should return location with sharing users list", async () => {
@@ -199,40 +203,31 @@ describe("[UNIT] GetLocationUseCase", () => {
       }
       const mockLocation = locationResult.value;
 
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.resolve(mockLocation)),
-      });
-
-      const useCase = new GetLocationUseCase(mockRepo);
-      const input: GetLocationInput = {
-        userId: "user-owner",
-      };
-
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(
+        { userId: "user-owner" },
+        { findByUserId: () => Promise.resolve(mockLocation) },
+      );
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.usersToShareWith).toHaveLength(2);
-        expect(result.value.usersToShareWith[0].firstName).toBe("John");
-        expect(result.value.usersToShareWith[1].firstName).toBe("Jane");
-      }
+      expect(result.usersToShareWith).toHaveLength(2);
+      expect(result.usersToShareWith[0].firstName).toBe("John");
+      expect(result.usersToShareWith[1].firstName).toBe("Jane");
     });
 
-    it("should handle repository errors", async () => {
+    it("should propagate repository errors as defects", async () => {
       // Arrange
-      const mockRepo = createMockRepo({
-        findByUserId: mock(() => Promise.reject(new Error("DB error"))),
-      });
-
-      const useCase = new GetLocationUseCase(mockRepo);
-      const input: GetLocationInput = {
-        userId: "user-123",
-      };
+      const program = getLocationUseCase({ userId: "user-123" }).pipe(
+        Effect.provideService(
+          LocationRepositoryTag,
+          createMockRepoService({
+            findByUserId: () => Promise.reject(new Error("DB error")),
+          }),
+        ),
+      );
 
       // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("DB error");
+      await expect(Effect.runPromise(program)).rejects.toThrow("DB error");
     });
   });
 });

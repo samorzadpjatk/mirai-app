@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
+import { Effect } from "effect";
+import { ChallengeVote } from "@mirai-app/domain";
+import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
  * Input for GetVotesByChallenge use case
@@ -33,26 +33,63 @@ export interface GetVotesByChallengeOutput {
 }
 
 /**
- * GetVotesByChallenge Use Case
+ * Error types for GetVotesByChallenge use case
+ */
+export class GetVotesByChallengeValidationError extends Error {
+  readonly _tag = "GetVotesByChallengeValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class GetVotesByChallengeRepositoryError extends Error {
+  readonly _tag = "GetVotesByChallengeRepositoryError";
+  constructor(message: string = "Failed to retrieve votes") {
+    super(message);
+  }
+}
+
+/**
+ * GetVotesByChallenge Use Case (Effect-based)
  *
  * Retrieves all votes for a specific challenge.
  * Typically used by moderators/admins to view voting results.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getVotesByChallengeUseCase(input);
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(ChallengeVoteRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class GetVotesByChallengeUseCase {
-  constructor(private voteRepository: ChallengeVoteRepository) {}
+export function getVotesByChallengeUseCase(
+  input: GetVotesByChallengeInput,
+): Effect.Effect<
+  GetVotesByChallengeOutput,
+  GetVotesByChallengeValidationError | GetVotesByChallengeRepositoryError,
+  ChallengeVoteRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const voteRepo = yield* ChallengeVoteRepositoryTag;
 
-  async execute(
-    input: GetVotesByChallengeInput,
-  ): Promise<Result<GetVotesByChallengeOutput, string>> {
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
-      return err("challengeId is required");
+      return yield* Effect.fail(
+        new GetVotesByChallengeValidationError("challengeId is required"),
+      );
     }
 
     // Fetch all votes
-    const votes = await this.voteRepository.findByChallengeId(
-      input.challengeId,
-    );
+    const votes = yield* voteRepo
+      .findByChallengeId(input.challengeId)
+      .pipe(Effect.mapError(() => new GetVotesByChallengeRepositoryError()));
 
     // Sort by voterId then position
     const sortedVotes = [...votes].sort((a, b) => {
@@ -65,32 +102,23 @@ export class GetVotesByChallengeUseCase {
     // Count unique voters
     const uniqueVoterIds = new Set(votes.map((v) => v.voterId));
 
-    return ok({
-      votes: sortedVotes.map((v) => this.toDTO(v)),
+    return {
+      votes: sortedVotes.map((v) => toDTO(v)),
       totalVotes: sortedVotes.length,
       uniqueVoters: uniqueVoterIds.size,
-    });
-  }
-
-  private toDTO(vote: {
-    id: string;
-    challengeId: string;
-    submissionId: string;
-    voterId: string;
-    position: { value: number };
-    points: number;
-    weight: { value: number };
-    votedAt: Date;
-  }): ChallengeVoteDTO {
-    return {
-      id: vote.id as string,
-      challengeId: vote.challengeId,
-      submissionId: vote.submissionId,
-      voterId: vote.voterId,
-      votePosition: vote.position.value,
-      votePoints: vote.points,
-      normalizedWeight: vote.weight.value,
-      votedAt: vote.votedAt,
     };
-  }
+  });
+}
+
+function toDTO(vote: ChallengeVote): ChallengeVoteDTO {
+  return {
+    id: vote.id as string,
+    challengeId: vote.challengeId,
+    submissionId: vote.submissionId,
+    voterId: vote.voterId,
+    votePosition: vote.position.value,
+    votePoints: vote.points,
+    normalizedWeight: vote.weight.value,
+    votedAt: vote.votedAt,
+  };
 }

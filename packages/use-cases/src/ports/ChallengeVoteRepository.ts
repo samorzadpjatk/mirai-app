@@ -1,4 +1,5 @@
 import type { ChallengeVote } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * ChallengeVoteRepository Port
@@ -74,3 +75,46 @@ export interface ChallengeVoteRepository {
    */
   deleteByChallengeId(challengeId: string): Promise<void>;
 }
+
+/**
+ * ChallengeVoteRepository Context.Tag for Effect dependency injection
+ */
+export class ChallengeVoteRepositoryTag extends Context.Tag(
+  "ChallengeVoteRepository",
+)<
+  ChallengeVoteRepositoryTag,
+  {
+    create: (vote: ChallengeVote) => Effect.Effect<ChallengeVote, never, never>;
+    createMany: (
+      votes: ChallengeVote[],
+    ) => Effect.Effect<ChallengeVote[], never, never>;
+    findById: (id: string) => Effect.Effect<ChallengeVote | null, never, never>;
+    findByChallengeId: (
+      challengeId: string,
+    ) => Effect.Effect<ChallengeVote[], never, never>;
+    findByChallengeAndVoter: (
+      challengeId: string,
+      voterId: string,
+    ) => Effect.Effect<ChallengeVote[], never, never>;
+    findBySubmissionId: (
+      submissionId: string,
+    ) => Effect.Effect<ChallengeVote[], never, never>;
+    hasVoted: (
+      challengeId: string,
+      voterId: string,
+    ) => Effect.Effect<boolean, never, never>;
+    hasVotedForPosition: (
+      challengeId: string,
+      voterId: string,
+      position: number,
+    ) => Effect.Effect<boolean, never, never>;
+    getVotedPositions: (
+      challengeId: string,
+      voterId: string,
+    ) => Effect.Effect<number[], never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    deleteByChallengeId: (
+      challengeId: string,
+    ) => Effect.Effect<void, never, never>;
+  }
+>() {}

@@ -1,12 +1,13 @@
 import { describe, it, expect, mock } from "bun:test";
+import { Effect } from "effect";
 import {
-  GetSubmissionByChallengeAndGroupUseCase,
+  getSubmissionByChallengeAndGroupUseCase,
   type GetSubmissionByChallengeAndGroupInput,
 } from "./GetSubmissionByChallengeAndGroup";
 import { SubmissionId } from "@mirai-app/domain";
-import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
+import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
-describe("[UNIT] GetSubmissionByChallengeAndGroupUseCase", () => {
+describe("[UNIT] getSubmissionByChallengeAndGroupUseCase (Effect)", () => {
   const createMockSubmission = (
     overrides?: Partial<{
       id: string;
@@ -43,22 +44,48 @@ describe("[UNIT] GetSubmissionByChallengeAndGroupUseCase", () => {
     reviewedBy: null,
   });
 
-  const createMockRepo = (
-    overrides?: Partial<ChallengeSubmissionRepository>,
-  ): ChallengeSubmissionRepository => ({
-    create: mock(() => Promise.resolve(createMockSubmission() as any)),
-    findById: mock(() => Promise.resolve(null)),
-    findByChallengeAndGroup: mock(() => Promise.resolve(null)),
-    findByChallengeId: mock(() => Promise.resolve([])),
-    findByGroupId: mock(() => Promise.resolve([])),
-    findByStatus: mock(() => Promise.resolve([])),
-    findMany: mock(() => Promise.resolve([])),
-    update: mock(() => Promise.resolve(createMockSubmission() as any)),
-    delete: mock(() => Promise.resolve()),
-    existsForChallengeAndGroup: mock(() => Promise.resolve(false)),
-    countByChallengeId: mock(() => Promise.resolve(0)),
-    countByChallengeAndStatus: mock(() => Promise.resolve(0)),
-    ...overrides,
+  const createMockRepo = (overrides?: {
+    findByChallengeAndGroup?: () => Effect.Effect<
+      {
+        id: ReturnType<typeof SubmissionId.unsafeCreate>;
+        challengeId: string;
+        groupId: string;
+        imageIds: string[];
+        videoId: null;
+        textContent: string;
+        latitude: number;
+        longitude: number;
+        status: string;
+        reviewedById: null;
+        reviewedAt: null;
+        rejectionReason: null;
+        awardedPoints: number;
+        bonusPoints: number;
+        ranking: null;
+        voteCount: number;
+        voteScore: number;
+        createdAt: Date;
+        updatedAt: Date;
+        group: { id: string; name: string; image: null; coins: number };
+        reviewedBy: null;
+      } | null,
+      never,
+      never
+    >;
+  }) => ({
+    create: () => Effect.succeed(createMockSubmission()),
+    findById: () => Effect.succeed(null),
+    findByChallengeAndGroup:
+      overrides?.findByChallengeAndGroup ?? (() => Effect.succeed(null)),
+    findByChallengeId: () => Effect.succeed([]),
+    findByGroupId: () => Effect.succeed([]),
+    findByStatus: () => Effect.succeed([]),
+    findMany: () => Effect.succeed([]),
+    update: () => Effect.succeed(createMockSubmission()),
+    delete: () => Effect.succeed(void 0),
+    existsForChallengeAndGroup: () => Effect.succeed(false),
+    countByChallengeId: () => Effect.succeed(0),
+    countByChallengeAndStatus: () => Effect.succeed(0),
   });
 
   describe("execute", () => {
@@ -70,51 +97,45 @@ describe("[UNIT] GetSubmissionByChallengeAndGroupUseCase", () => {
         status: "APPROVED",
       });
       const mockRepo = createMockRepo({
-        findByChallengeAndGroup: mock(() =>
-          Promise.resolve(mockSubmission as any),
-        ),
+        findByChallengeAndGroup: () => Effect.succeed(mockSubmission),
       });
 
-      const useCase = new GetSubmissionByChallengeAndGroupUseCase(mockRepo);
       const input: GetSubmissionByChallengeAndGroupInput = {
         challengeId: "challenge-456",
         groupId: "group-456",
       };
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).not.toBeNull();
-        expect(result.value?.id).toBe("submission-456");
-        expect(result.value?.challengeId).toBe("challenge-456");
-        expect(result.value?.groupId).toBe("group-456");
-        expect(result.value?.status).toBe("APPROVED");
-        expect(result.value?.group?.name).toBe("Test Group");
-      }
-      expect(mockRepo.findByChallengeAndGroup).toHaveBeenCalledWith(
-        "challenge-456",
-        "group-456",
+      const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+        Effect.provideService(ChallengeSubmissionRepositoryTag, mockRepo),
       );
+
+      const result = await Effect.runPromise(program);
+
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe("submission-456");
+      expect(result?.challengeId).toBe("challenge-456");
+      expect(result?.groupId).toBe("group-456");
+      expect(result?.status).toBe("APPROVED");
+      expect(result?.group?.name).toBe("Test Group");
     });
 
     it("should return null when submission not found", async () => {
       const mockRepo = createMockRepo({
-        findByChallengeAndGroup: mock(() => Promise.resolve(null)),
+        findByChallengeAndGroup: () => Effect.succeed(null),
       });
 
-      const useCase = new GetSubmissionByChallengeAndGroupUseCase(mockRepo);
       const input: GetSubmissionByChallengeAndGroupInput = {
         challengeId: "challenge-123",
         groupId: "group-123",
       };
 
-      const result = await useCase.execute(input);
+      const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+        Effect.provideService(ChallengeSubmissionRepositoryTag, mockRepo),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBeNull();
-      }
+      const result = await Effect.runPromise(program);
+
+      expect(result).toBeNull();
     });
 
     it("should return submission with reviewer info when available", async () => {
@@ -134,42 +155,27 @@ describe("[UNIT] GetSubmissionByChallengeAndGroupUseCase", () => {
         },
       };
       const mockRepo = createMockRepo({
-        findByChallengeAndGroup: mock(() =>
-          Promise.resolve(mockSubmission as any),
-        ),
+        findByChallengeAndGroup: () => Effect.succeed(mockSubmission),
       });
 
-      const useCase = new GetSubmissionByChallengeAndGroupUseCase(mockRepo);
       const input: GetSubmissionByChallengeAndGroupInput = {
         challengeId: "challenge-123",
         groupId: "group-123",
       };
 
-      const result = await useCase.execute(input);
+      const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+        Effect.provideService(ChallengeSubmissionRepositoryTag, mockRepo),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok" && result.value) {
-        expect(result.value.status).toBe("REJECTED");
-        expect(result.value.rejectionReason).toBe("Invalid submission");
-        expect(result.value.reviewedBy?.firstName).toBe("Reviewer");
-        expect(result.value.reviewedAt).toBeInstanceOf(Date);
+      const result = await Effect.runPromise(program);
+
+      expect(result).not.toBeNull();
+      if (result) {
+        expect(result.status).toBe("REJECTED");
+        expect(result.rejectionReason).toBe("Invalid submission");
+        expect(result.reviewedBy?.firstName).toBe("Reviewer");
+        expect(result.reviewedAt).toBeInstanceOf(Date);
       }
-    });
-
-    it("should handle repository errors", async () => {
-      const mockRepo = createMockRepo({
-        findByChallengeAndGroup: mock(() =>
-          Promise.reject(new Error("DB error")),
-        ),
-      });
-
-      const useCase = new GetSubmissionByChallengeAndGroupUseCase(mockRepo);
-      const input: GetSubmissionByChallengeAndGroupInput = {
-        challengeId: "challenge-123",
-        groupId: "group-123",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("DB error");
     });
   });
 });

@@ -1,6 +1,5 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { SponsorRepository } from "../ports/SponsorRepository";
+import { Effect } from "effect";
+import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
  * Input for DeleteSponsor use case
@@ -18,30 +17,53 @@ export interface DeleteSponsorOutput {
 }
 
 /**
- * DeleteSponsor Use Case
+ * Error type when sponsor is not found
+ */
+export class DeleteSponsorNotFoundError extends Error {
+  readonly _tag = "DeleteSponsorNotFoundError";
+  constructor() {
+    super("Sponsor not found");
+  }
+}
+
+/**
+ * DeleteSponsor Use Case (Effect-based)
  *
  * Deletes a sponsor by ID.
  * Returns error if sponsor not found.
+ *
+ * ## Effect-based Pattern
+ *
+ * ```typescript
+ * const program = deleteSponsorUseCase(input).pipe(
+ *   Effect.provideService(SponsorRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class DeleteSponsorUseCase {
-  constructor(private sponsorRepository: SponsorRepository) {}
+export function deleteSponsorUseCase(
+  input: DeleteSponsorInput,
+): Effect.Effect<
+  DeleteSponsorOutput,
+  DeleteSponsorNotFoundError,
+  SponsorRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const sponsorRepo = yield* SponsorRepositoryTag;
 
-  async execute(
-    input: DeleteSponsorInput,
-  ): Promise<Result<DeleteSponsorOutput, string>> {
     // Check if sponsor exists
-    const exists = await this.sponsorRepository.exists(input.sponsorId);
+    const exists = yield* sponsorRepo.exists(input.sponsorId);
 
     if (!exists) {
-      return err("Sponsor not found");
+      return yield* Effect.fail(new DeleteSponsorNotFoundError());
     }
 
     // Delete the sponsor
-    await this.sponsorRepository.delete(input.sponsorId);
+    yield* sponsorRepo.delete(input.sponsorId);
 
-    return ok({
+    return {
       id: input.sponsorId,
       deleted: true,
-    });
-  }
+    };
+  });
 }

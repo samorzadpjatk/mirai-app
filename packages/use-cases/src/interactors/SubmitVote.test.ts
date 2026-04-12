@@ -1,184 +1,339 @@
-import { describe, it, expect, mock } from "bun:test";
-import { SubmitVoteUseCase, type SubmitVoteInput } from "./SubmitVote";
-import { ChallengeVote } from "@mirai-app/domain";
-import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
+import { describe, it, expect, beforeEach } from "bun:test";
+import {
+  submitVoteUseCase,
+  type SubmitVoteInput,
+  SubmitVoteValidationError,
+  VotePositionTakenError,
+  AlreadyVotedError,
+  VoteRepositoryError,
+} from "./SubmitVote";
+import { ChallengeVote, ValidationError } from "@mirai-app/domain";
+import { Effect, Either } from "effect";
+import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
+import { InMemoryChallengeVoteRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] SubmitVoteUseCase", () => {
-  const createValidVote = (
-    overrides?: Partial<{
-      id: string;
-      challengeId: string;
-      voterId: string;
-      position: number;
-    }>,
-  ): ChallengeVote => {
-    const result = ChallengeVote.create({
-      id: overrides?.id ?? "vote-123",
-      challengeId: overrides?.challengeId ?? "challenge-123",
-      submissionId: "submission-123",
-      voterId: overrides?.voterId ?? "voter-123",
-      position: overrides?.position ?? 1,
-      points: 10,
-      weight: 1.0,
-    });
-    if (result.kind === "err") {
-      throw new Error(`Failed to create test vote: ${result.error}`);
-    }
-    return result.value;
-  };
+describe("[UNIT] submitVoteUseCase (Effect)", () => {
+  let repo: InMemoryChallengeVoteRepository;
 
-  const createMockRepo = (
-    overrides?: Partial<ChallengeVoteRepository>,
-  ): ChallengeVoteRepository => ({
-    create: mock(() => Promise.resolve(createValidVote())),
-    createMany: mock(() => Promise.resolve([])),
-    findById: mock(() => Promise.resolve(null)),
-    findByChallengeId: mock(() => Promise.resolve([])),
-    findByChallengeAndVoter: mock(() => Promise.resolve([])),
-    findBySubmissionId: mock(() => Promise.resolve([])),
-    hasVoted: mock(() => Promise.resolve(false)),
-    hasVotedForPosition: mock(() => Promise.resolve(false)),
-    getVotedPositions: mock(() => Promise.resolve([])),
-    delete: mock(() => Promise.resolve()),
-    deleteByChallengeId: mock(() => Promise.resolve()),
-    ...overrides,
+  beforeEach(() => {
+    repo = new InMemoryChallengeVoteRepository();
   });
+
+  // Helper to create a valid vote input
+  const createValidInput = (): SubmitVoteInput => ({
+    challengeId: "challenge-123",
+    submissionId: "submission-123",
+    voterId: "voter-123",
+    position: 1,
+    points: 10,
+    normalizedWeight: 1.0,
+  });
+
+  // Helper to run use case with repository
+  const runUseCase = async (input: SubmitVoteInput) => {
+    const program = submitVoteUseCase(input).pipe(
+      Effect.provideService(ChallengeVoteRepositoryTag, {
+        create: (vote: ChallengeVote) =>
+          Effect.promise(() => repo.create(vote)),
+        createMany: (votes: ChallengeVote[]) =>
+          Effect.promise(() => repo.createMany(votes)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.findByChallengeId(challengeId)),
+        findByChallengeAndVoter: (challengeId: string, voterId: string) =>
+          Effect.promise(() =>
+            repo.findByChallengeAndVoter(challengeId, voterId),
+          ),
+        findBySubmissionId: (submissionId: string) =>
+          Effect.promise(() => repo.findBySubmissionId(submissionId)),
+        hasVoted: (challengeId: string, voterId: string) =>
+          Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+        hasVotedForPosition: (
+          challengeId: string,
+          voterId: string,
+          position: number,
+        ) =>
+          Effect.promise(() =>
+            repo.hasVotedForPosition(challengeId, voterId, position),
+          ),
+        getVotedPositions: (challengeId: string, voterId: string) =>
+          Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        deleteByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should submit vote successfully", async () => {
-      const mockVote = createValidVote({
-        id: "vote-456",
-        challengeId: "challenge-456",
-        voterId: "voter-456",
-        position: 2,
-      });
-      const mockRepo = createMockRepo({
-        hasVoted: mock(() => Promise.resolve(false)),
-        hasVotedForPosition: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(mockVote)),
-      });
+      // Arrange
+      const input = createValidInput();
 
-      const useCase = new SubmitVoteUseCase(mockRepo);
-      const input: SubmitVoteInput = {
-        challengeId: "challenge-456",
-        submissionId: "submission-456",
-        voterId: "voter-456",
-        position: 2,
-        points: 15,
-        normalizedWeight: 1.5,
-      };
+      // Act
+      const result = await runUseCase(input);
 
-      const result = await useCase.execute(input);
+      // Assert
+      expect(result.challengeId).toBe("challenge-123");
+      expect(result.voterId).toBe("voter-123");
+      expect(result.submissionId).toBe("submission-123");
+      expect(result.votePosition).toBe(1);
+      expect(result.votePoints).toBe(10);
+      expect(result.normalizedWeight).toBe(1.0);
+      expect(result.votedAt).toBeInstanceOf(Date);
+      expect(result.id).toBeDefined();
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.challengeId).toBe("challenge-456");
-        expect(result.value.voterId).toBe("voter-456");
-        expect(result.value.votePosition).toBe(2);
-        expect(result.value.votedAt).toBeInstanceOf(Date);
-      }
-      expect(mockRepo.create).toHaveBeenCalled();
+      // Verify vote was actually stored
+      const stored = await repo.findByChallengeId("challenge-123");
+      expect(stored).toHaveLength(1);
+      expect(stored[0]?.voterId).toBe("voter-123");
     });
 
     it("should return error when challengeId is empty", async () => {
-      const mockRepo = createMockRepo();
+      // Arrange
+      const input = { ...createValidInput(), challengeId: "" };
 
-      const useCase = new SubmitVoteUseCase(mockRepo);
-      const input: SubmitVoteInput = {
-        challengeId: "",
-        submissionId: "submission-123",
-        voterId: "voter-123",
-        position: 1,
-      };
+      // Act & Assert
+      const program = submitVoteUseCase(input).pipe(
+        Effect.provideService(ChallengeVoteRepositoryTag, {
+          create: (vote: ChallengeVote) =>
+            Effect.promise(() => repo.create(vote)),
+          createMany: (votes: ChallengeVote[]) =>
+            Effect.promise(() => repo.createMany(votes)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByChallengeAndVoter: (challengeId: string, voterId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndVoter(challengeId, voterId),
+            ),
+          findBySubmissionId: (submissionId: string) =>
+            Effect.promise(() => repo.findBySubmissionId(submissionId)),
+          hasVoted: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+          hasVotedForPosition: (
+            challengeId: string,
+            voterId: string,
+            position: number,
+          ) =>
+            Effect.promise(() =>
+              repo.hasVotedForPosition(challengeId, voterId, position),
+            ),
+          getVotedPositions: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+        }),
+      );
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("challengeId is required");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SubmitVoteValidationError);
+        expect(either.left.message).toBe("challengeId is required");
       }
     });
 
     it("should return error when voter has already voted", async () => {
-      const mockRepo = createMockRepo({
-        hasVoted: mock(() => Promise.resolve(true)),
-      });
-
-      const useCase = new SubmitVoteUseCase(mockRepo);
-      const input: SubmitVoteInput = {
+      // Arrange - create an existing vote
+      const existingVote = ChallengeVote.create({
+        id: "existing-vote",
         challengeId: "challenge-123",
-        submissionId: "submission-123",
+        submissionId: "submission-456",
         voterId: "voter-123",
-        position: 1,
-      };
+        position: 2,
+        points: 5,
+        weight: 1.0,
+      });
+      if (existingVote.kind === "err") {
+        throw new Error("Failed to create test vote");
+      }
+      await repo.create(existingVote.value);
 
-      const result = await useCase.execute(input);
+      const input = createValidInput();
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("You have already voted in this challenge");
+      // Act & Assert
+      const program = submitVoteUseCase(input).pipe(
+        Effect.provideService(ChallengeVoteRepositoryTag, {
+          create: (vote: ChallengeVote) =>
+            Effect.promise(() => repo.create(vote)),
+          createMany: (votes: ChallengeVote[]) =>
+            Effect.promise(() => repo.createMany(votes)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByChallengeAndVoter: (challengeId: string, voterId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndVoter(challengeId, voterId),
+            ),
+          findBySubmissionId: (submissionId: string) =>
+            Effect.promise(() => repo.findBySubmissionId(submissionId)),
+          hasVoted: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+          hasVotedForPosition: (
+            challengeId: string,
+            voterId: string,
+            position: number,
+          ) =>
+            Effect.promise(() =>
+              repo.hasVotedForPosition(challengeId, voterId, position),
+            ),
+          getVotedPositions: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+        }),
+      );
+
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(AlreadyVotedError);
       }
     });
 
     it("should allow partial voting when allowPartial is true", async () => {
-      const mockVote = createValidVote({
-        id: "vote-partial",
-        position: 1,
-      });
-      const mockRepo = createMockRepo({
-        hasVoted: mock(() => Promise.resolve(true)),
-        hasVotedForPosition: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(mockVote)),
-      });
-
-      const useCase = new SubmitVoteUseCase(mockRepo);
-      const input: SubmitVoteInput = {
+      // Arrange - create an existing vote for position 2
+      const existingVote = ChallengeVote.create({
+        id: "existing-vote",
         challengeId: "challenge-123",
-        submissionId: "submission-123",
+        submissionId: "submission-456",
         voterId: "voter-123",
+        position: 2,
+        points: 5,
+        weight: 1.0,
+      });
+      if (existingVote.kind === "err") {
+        throw new Error("Failed to create test vote");
+      }
+      await repo.create(existingVote.value);
+
+      // Act - vote for position 1 (partial voting)
+      const input: SubmitVoteInput = {
+        ...createValidInput(),
         position: 1,
         allowPartial: true,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      expect(mockRepo.create).toHaveBeenCalled();
+      // Assert
+      expect(result.votePosition).toBe(1);
+
+      // Verify both votes are stored
+      const stored = await repo.findByChallengeAndVoter(
+        "challenge-123",
+        "voter-123",
+      );
+      expect(stored).toHaveLength(2);
     });
 
     it("should return error for invalid position", async () => {
-      const mockRepo = createMockRepo();
+      // Arrange
+      const input = { ...createValidInput(), position: 5 };
 
-      const useCase = new SubmitVoteUseCase(mockRepo);
-      const input: SubmitVoteInput = {
-        challengeId: "challenge-123",
-        submissionId: "submission-123",
-        voterId: "voter-123",
-        position: 5,
-      };
+      // Act & Assert
+      const program = submitVoteUseCase(input).pipe(
+        Effect.provideService(ChallengeVoteRepositoryTag, {
+          create: (vote: ChallengeVote) =>
+            Effect.promise(() => repo.create(vote)),
+          createMany: (votes: ChallengeVote[]) =>
+            Effect.promise(() => repo.createMany(votes)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByChallengeAndVoter: (challengeId: string, voterId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndVoter(challengeId, voterId),
+            ),
+          findBySubmissionId: (submissionId: string) =>
+            Effect.promise(() => repo.findBySubmissionId(submissionId)),
+          hasVoted: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+          hasVotedForPosition: (
+            challengeId: string,
+            voterId: string,
+            position: number,
+          ) =>
+            Effect.promise(() =>
+              repo.hasVotedForPosition(challengeId, voterId, position),
+            ),
+          getVotedPositions: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+        }),
+      );
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("position must be between 1 and 3");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SubmitVoteValidationError);
+        expect(either.left.message).toBe("position must be between 1 and 3");
       }
     });
 
-    it("should handle repository errors", async () => {
-      const mockRepo = createMockRepo({
-        hasVoted: mock(() => Promise.reject(new Error("DB error"))),
-      });
-
-      const useCase = new SubmitVoteUseCase(mockRepo);
-      const input: SubmitVoteInput = {
+    it("should return error when position is already taken", async () => {
+      // Arrange - create an existing vote for position 1
+      const existingVote = ChallengeVote.create({
+        id: "existing-vote",
         challengeId: "challenge-123",
-        submissionId: "submission-123",
+        submissionId: "submission-456",
         voterId: "voter-123",
         position: 1,
-      };
+        points: 10,
+        weight: 1.0,
+      });
+      if (existingVote.kind === "err") {
+        throw new Error("Failed to create test vote");
+      }
+      await repo.create(existingVote.value);
 
-      await expect(useCase.execute(input)).rejects.toThrow("DB error");
+      const input = { ...createValidInput(), allowPartial: true };
+
+      // Act & Assert
+      const program = submitVoteUseCase(input).pipe(
+        Effect.provideService(ChallengeVoteRepositoryTag, {
+          create: (vote: ChallengeVote) =>
+            Effect.promise(() => repo.create(vote)),
+          createMany: (votes: ChallengeVote[]) =>
+            Effect.promise(() => repo.createMany(votes)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByChallengeAndVoter: (challengeId: string, voterId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndVoter(challengeId, voterId),
+            ),
+          findBySubmissionId: (submissionId: string) =>
+            Effect.promise(() => repo.findBySubmissionId(submissionId)),
+          hasVoted: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+          hasVotedForPosition: (
+            challengeId: string,
+            voterId: string,
+            position: number,
+          ) =>
+            Effect.promise(() =>
+              repo.hasVotedForPosition(challengeId, voterId, position),
+            ),
+          getVotedPositions: (challengeId: string, voterId: string) =>
+            Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          deleteByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+        }),
+      );
+
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(VotePositionTakenError);
+      }
     });
   });
 });

@@ -1,6 +1,10 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, ChallengeSubmission, SubmissionId } from "@mirai-app/domain";
-import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
+import {
+  ChallengeSubmission,
+  SubmissionId,
+  ValidationError,
+} from "@mirai-app/domain";
+import { Effect } from "effect";
+import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
 /**
  * Input for CreateSubmission use case
@@ -37,28 +41,78 @@ export interface CreateSubmissionOutput {
 }
 
 /**
- * CreateSubmission Use Case
+ * Error types for CreateSubmission use case
+ */
+export class SubmissionCreationError extends Error {
+  readonly _tag = "SubmissionCreationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class DuplicateSubmissionError extends Error {
+  readonly _tag = "DuplicateSubmissionError";
+  constructor(
+    message: string = "Submission already exists for this challenge and group",
+  ) {
+    super(message);
+  }
+}
+
+export class SubmissionRepositoryError extends Error {
+  readonly _tag = "SubmissionRepositoryError";
+  constructor(message: string = "Failed to create submission") {
+    super(message);
+  }
+}
+
+/**
+ * CreateSubmission Use Case (Effect-based)
  *
  * Creates a new challenge submission for a group.
  * Returns error if submission already exists for this challenge and group.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* createSubmissionUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(ChallengeSubmissionRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class CreateSubmissionUseCase {
-  constructor(private submissionRepository: ChallengeSubmissionRepository) {}
+export function createSubmissionUseCase(
+  input: CreateSubmissionInput,
+): Effect.Effect<
+  CreateSubmissionOutput,
+  | SubmissionCreationError
+  | DuplicateSubmissionError
+  | SubmissionRepositoryError,
+  ChallengeSubmissionRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const submissionRepo = yield* ChallengeSubmissionRepositoryTag;
 
-  async execute(
-    input: CreateSubmissionInput,
-  ): Promise<Result<CreateSubmissionOutput, string>> {
     // Check if submission already exists
-    const exists = await this.submissionRepository.existsForChallengeAndGroup(
+    const exists = yield* submissionRepo.existsForChallengeAndGroup(
       input.challengeId,
       input.groupId,
     );
+
     if (exists) {
-      return err("Submission already exists for this challenge and group");
+      return yield* Effect.fail(new DuplicateSubmissionError());
     }
 
-    // Create domain entity
-    const submissionResult = ChallengeSubmission.create({
+    // Create domain entity using Effect-based static create method
+    const submission = yield* ChallengeSubmission.create({
       challengeId: input.challengeId,
       groupId: input.groupId,
       ...(input.imageIds !== undefined && { imageIds: input.imageIds }),
@@ -68,37 +122,42 @@ export class CreateSubmissionUseCase {
       }),
       ...(input.latitude !== undefined && { latitude: input.latitude }),
       ...(input.longitude !== undefined && { longitude: input.longitude }),
-    });
-
-    if (submissionResult.kind === "err") {
-      return err(submissionResult.error.message);
-    }
-
-    // Persist submission
-    const saved = await this.submissionRepository.create(
-      submissionResult.value,
+    }).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new SubmissionCreationError(validationError.message),
+      ),
     );
 
-    return ok(this.toOutput(saved));
-  }
+    // Persist submission
+    const saved = yield* submissionRepo
+      .create(submission)
+      .pipe(
+        Effect.mapError(
+          () => new SubmissionRepositoryError("Failed to create submission"),
+        ),
+      );
 
-  private toOutput(submission: ChallengeSubmission): CreateSubmissionOutput {
-    return {
-      id: submission.id,
-      challengeId: submission.challengeId,
-      groupId: submission.groupId,
-      imageIds: submission.imageIds,
-      videoId: submission.videoId,
-      textContent: submission.textContent,
-      latitude: submission.latitude,
-      longitude: submission.longitude,
-      status: submission.status,
-      awardedPoints: submission.awardedPoints,
-      bonusPoints: submission.bonusPoints,
-      ranking: submission.ranking,
-      voteCount: submission.voteCount,
-      voteScore: submission.voteScore,
-      createdAt: submission.createdAt,
-    };
-  }
+    return toOutput(saved);
+  });
+}
+
+function toOutput(submission: ChallengeSubmission): CreateSubmissionOutput {
+  return {
+    id: submission.id,
+    challengeId: submission.challengeId,
+    groupId: submission.groupId,
+    imageIds: submission.imageIds,
+    videoId: submission.videoId,
+    textContent: submission.textContent,
+    latitude: submission.latitude,
+    longitude: submission.longitude,
+    status: submission.status,
+    awardedPoints: submission.awardedPoints,
+    bonusPoints: submission.bonusPoints,
+    ranking: submission.ranking,
+    voteCount: submission.voteCount,
+    voteScore: submission.voteScore,
+    createdAt: submission.createdAt,
+  };
 }

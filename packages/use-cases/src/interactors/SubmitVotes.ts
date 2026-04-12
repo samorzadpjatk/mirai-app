@@ -1,7 +1,10 @@
-import { ChallengeVote, validateVoteSet } from "@mirai-app/domain";
-import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { Effect } from "effect";
+import {
+  ChallengeVote,
+  ValidationError,
+  validateVoteSet,
+} from "@mirai-app/domain";
+import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
  * Single vote input for batch submission
@@ -46,7 +49,38 @@ export interface SubmitVotesOutput {
 }
 
 /**
- * SubmitVotes Use Case
+ * Error types for SubmitVotes use case
+ */
+export class SubmitVotesValidationError extends Error {
+  readonly _tag = "SubmitVotesValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class BatchAlreadyVotedError extends Error {
+  readonly _tag = "BatchAlreadyVotedError";
+  constructor(message: string = "You have already voted in this challenge") {
+    super(message);
+  }
+}
+
+export class InvalidVoteSetError extends Error {
+  readonly _tag = "InvalidVoteSetError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class BatchVoteRepositoryError extends Error {
+  readonly _tag = "BatchVoteRepositoryError";
+  constructor(message: string = "Failed to save votes") {
+    super(message);
+  }
+}
+
+/**
+ * SubmitVotes Use Case (Effect-based)
  *
  * Submits multiple votes for a challenge in a single transaction.
  * Validates that:
@@ -55,48 +89,57 @@ export interface SubmitVotesOutput {
  * - All submissions are unique
  * - Required positions are filled
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new SubmitVotesUseCase(voteRepository);
+ * const program = submitVotesUseCase(input);
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("submitVotesUseCase");
+ * const runnable = program.pipe(
+ *   Effect.provideService(ChallengeVoteRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class SubmitVotesUseCase {
-  constructor(private voteRepository: ChallengeVoteRepository) {}
+export function submitVotesUseCase(
+  input: SubmitVotesInput,
+): Effect.Effect<
+  SubmitVotesOutput,
+  | SubmitVotesValidationError
+  | BatchAlreadyVotedError
+  | InvalidVoteSetError
+  | BatchVoteRepositoryError,
+  ChallengeVoteRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const voteRepo = yield* ChallengeVoteRepositoryTag;
 
-  async execute(input: SubmitVotesInput): Promise<Result<SubmitVotesOutput, string>> {
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
-      return err("Challenge ID is required");
+      return yield* Effect.fail(
+        new SubmitVotesValidationError("Challenge ID is required"),
+      );
     }
 
     if (!input.voterId || input.voterId.trim() === "") {
-      return err("Voter ID is required");
+      return yield* Effect.fail(
+        new SubmitVotesValidationError("Voter ID is required"),
+      );
     }
 
     if (!input.votes || input.votes.length === 0) {
-      return err("At least one vote is required");
+      return yield* Effect.fail(
+        new SubmitVotesValidationError("At least one vote is required"),
+      );
     }
 
     // Check if voter has already voted
-    let hasVoted: boolean;
-    try {
-      hasVoted = await this.voteRepository.hasVoted(
-        input.challengeId,
-        input.voterId,
-      );
-    } catch (_cause) {
-      return err("Failed to check if user has voted");
-    }
+    const hasVoted = yield* voteRepo.hasVoted(input.challengeId, input.voterId);
 
     if (hasVoted) {
-      return err("You have already voted in this challenge");
+      return yield* Effect.fail(new BatchAlreadyVotedError());
     }
 
     // Validate vote set (pure validation - no async)
@@ -109,13 +152,15 @@ export class SubmitVotesUseCase {
     );
 
     if (!validation.isValid) {
-      return err(validation.error ?? "Invalid vote set");
+      return yield* Effect.fail(
+        new InvalidVoteSetError(validation.error ?? "Invalid vote set"),
+      );
     }
 
     // Create domain entities
     const voteEntities: ChallengeVote[] = [];
     for (const voteInput of input.votes) {
-      const voteResult = ChallengeVote.create({
+      const vote = yield* ChallengeVote.create({
         challengeId: input.challengeId,
         submissionId: voteInput.submissionId,
         voterId: input.voterId,
@@ -124,39 +169,41 @@ export class SubmitVotesUseCase {
         ...(voteInput.normalizedWeight !== undefined && {
           weight: voteInput.normalizedWeight,
         }),
-      });
+      }).pipe(
+        Effect.mapError(
+          (validationError: ValidationError) =>
+            new SubmitVotesValidationError(validationError.message),
+        ),
+      );
 
-      if (voteResult.kind === "err") {
-        return err(`Failed to create vote: ${voteResult.error}`);
-      }
-
-      voteEntities.push(voteResult.value);
+      voteEntities.push(vote);
     }
 
     // Persist votes
-    let savedVotes: ChallengeVote[];
-    try {
-      savedVotes = await this.voteRepository.createMany(voteEntities);
-    } catch (_cause) {
-      return err("Failed to save votes");
-    }
+    const savedVotes = yield* voteRepo
+      .createMany(voteEntities)
+      .pipe(
+        Effect.mapError(
+          () => new BatchVoteRepositoryError("Failed to save votes"),
+        ),
+      );
 
-    return ok({
-      votes: savedVotes.map((v) => this.toOutput(v)),
-      totalVotesCast: savedVotes.length,
-    });
-  }
-
-  private toOutput(vote: ChallengeVote): VoteOutput {
     return {
-      id: vote.id as string,
-      challengeId: vote.challengeId,
-      submissionId: vote.submissionId,
-      voterId: vote.voterId,
-      votePosition: vote.position.value,
-      votePoints: vote.points,
-      normalizedWeight: vote.weight.value,
-      votedAt: vote.votedAt,
+      votes: savedVotes.map((v) => toOutput(v)),
+      totalVotesCast: savedVotes.length,
     };
-  }
+  });
+}
+
+function toOutput(vote: ChallengeVote): VoteOutput {
+  return {
+    id: vote.id as string,
+    challengeId: vote.challengeId,
+    submissionId: vote.submissionId,
+    voterId: vote.voterId,
+    votePosition: vote.position.value,
+    votePoints: vote.points,
+    normalizedWeight: vote.weight.value,
+    votedAt: vote.votedAt,
+  };
 }

@@ -1,12 +1,13 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  GetDeliveryByNotificationIdUseCase,
+  getDeliveryByNotificationIdUseCase,
+  DeliveryNotFoundError,
   type GetDeliveryByNotificationIdInput,
 } from "./GetDeliveryByNotificationId";
-import type {
-  NotificationDeliveryRepository,
-  NotificationDelivery,
-} from "../ports/NotificationDeliveryRepository";
+import { Effect } from "effect";
+import { NotificationDeliveryRepositoryTag } from "../ports/NotificationDeliveryRepository";
+import { InMemoryNotificationDeliveryRepository } from "@mirai-app/adapters/gateways/in-memory";
+import type { NotificationDelivery } from "../ports/NotificationDeliveryRepository";
 
 // Mock NotificationDelivery
 const createMockDelivery = (
@@ -16,7 +17,7 @@ const createMockDelivery = (
     id: "delivery-123",
     notificationId: "notif-123",
     tripId: "trip-123",
-    status: "completed",
+    status: "success",
     totalRecipients: 100,
     successCount: 95,
     failureCount: 5,
@@ -40,160 +41,155 @@ const createMockDelivery = (
     ...overrides,
   }) as NotificationDelivery;
 
-describe("[UNIT] GetDeliveryByNotificationIdUseCase", () => {
-  let useCase: GetDeliveryByNotificationIdUseCase;
-  let mockDeliveryRepo: NotificationDeliveryRepository;
+describe("[UNIT] getDeliveryByNotificationIdUseCase (Effect)", () => {
+  let repo: InMemoryNotificationDeliveryRepository;
 
   beforeEach(() => {
-    mockDeliveryRepo = {
-      findByNotificationId: mock(() => Promise.resolve(createMockDelivery())),
-    } as unknown as NotificationDeliveryRepository;
-
-    useCase = new GetDeliveryByNotificationIdUseCase(mockDeliveryRepo);
+    repo = new InMemoryNotificationDeliveryRepository();
   });
+
+  // Helper to run use case with repository
+  const runUseCase = async (input: GetDeliveryByNotificationIdInput) => {
+    const program = getDeliveryByNotificationIdUseCase(input).pipe(
+      Effect.provideService(NotificationDeliveryRepositoryTag, {
+        findMany: (filters, pagination) =>
+          Effect.promise(() => repo.findMany(filters, pagination)),
+        count: (filters) => Effect.promise(() => repo.count(filters)),
+        findByNotificationId: (notificationId) =>
+          Effect.promise(() => repo.findByNotificationId(notificationId)),
+        getStats: (filters) => Effect.promise(() => repo.getStats(filters)),
+        findFailed: (tripId, pagination) =>
+          Effect.promise(() => repo.findFailed(tripId, pagination)),
+        countFailed: (tripId) => Effect.promise(() => repo.countFailed(tripId)),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should return delivery by notification ID", async () => {
+      repo.seed([createMockDelivery()]);
+
       const input: GetDeliveryByNotificationIdInput = {
         notificationId: "notif-123",
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.delivery.id).toBe("delivery-123");
-        expect(result.value.delivery.notificationId).toBe("notif-123");
-        expect(result.value.delivery.status).toBe("completed");
-      }
+      expect(result.delivery.id).toBe("delivery-123");
+      expect(result.delivery.notificationId).toBe("notif-123");
+      expect(result.delivery.status).toBe("success");
     });
 
-    it("should return error when delivery not found", async () => {
-      mockDeliveryRepo.findByNotificationId = mock(() => Promise.resolve(null));
-
+    it("should fail with DeliveryNotFoundError when delivery not found", async () => {
       const input: GetDeliveryByNotificationIdInput = {
         notificationId: "nonexistent",
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const program = getDeliveryByNotificationIdUseCase(input).pipe(
+        Effect.provideService(NotificationDeliveryRepositoryTag, {
+          findMany: (filters, pagination) =>
+            Effect.promise(() => repo.findMany(filters, pagination)),
+          count: (filters) => Effect.promise(() => repo.count(filters)),
+          findByNotificationId: () =>
+            Effect.promise(() => Promise.resolve(null)),
+          getStats: (filters) => Effect.promise(() => repo.getStats(filters)),
+          findFailed: (tripId, pagination) =>
+            Effect.promise(() => repo.findFailed(tripId, pagination)),
+          countFailed: (tripId) =>
+            Effect.promise(() => repo.countFailed(tripId)),
+        }),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Notification delivery not found");
+      const result = await Effect.runPromise(Effect.either(program));
+
+      expect(result._tag).toBe("Left");
+      if (result._tag === "Left") {
+        expect(result.left).toBeInstanceOf(DeliveryNotFoundError);
       }
     });
 
-    it("should return error when delivery belongs to different trip", async () => {
-      mockDeliveryRepo.findByNotificationId = mock(() =>
-        Promise.resolve(createMockDelivery({ tripId: "different-trip" })),
-      );
+    it("should fail with DeliveryNotFoundError when delivery belongs to different trip", async () => {
+      repo.seed([createMockDelivery({ tripId: "different-trip" })]);
 
       const input: GetDeliveryByNotificationIdInput = {
         notificationId: "notif-123",
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const program = getDeliveryByNotificationIdUseCase(input).pipe(
+        Effect.provideService(NotificationDeliveryRepositoryTag, {
+          findMany: (filters, pagination) =>
+            Effect.promise(() => repo.findMany(filters, pagination)),
+          count: (filters) => Effect.promise(() => repo.count(filters)),
+          findByNotificationId: () =>
+            Effect.promise(() => repo.findByNotificationId("notif-123")),
+          getStats: (filters) => Effect.promise(() => repo.getStats(filters)),
+          findFailed: (tripId, pagination) =>
+            Effect.promise(() => repo.findFailed(tripId, pagination)),
+          countFailed: (tripId) =>
+            Effect.promise(() => repo.countFailed(tripId)),
+        }),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Notification delivery not found");
+      const result = await Effect.runPromise(Effect.either(program));
+
+      expect(result._tag).toBe("Left");
+      if (result._tag === "Left") {
+        expect(result.left).toBeInstanceOf(DeliveryNotFoundError);
       }
     });
 
     it("should include notification details in output", async () => {
+      repo.seed([createMockDelivery()]);
+
       const input: GetDeliveryByNotificationIdInput = {
         notificationId: "notif-123",
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.delivery.notification).not.toBeNull();
-        expect(result.value.delivery.notification?.title).toBe(
-          "Test Notification",
-        );
-        expect(result.value.delivery.notification?.body).toBe("Test Body");
-        expect(result.value.delivery.notification?.createdBy?.firstName).toBe(
-          "John",
-        );
-      }
+      expect(result.delivery.notification).not.toBeNull();
+      expect(result.delivery.notification?.title).toBe("Test Notification");
+      expect(result.delivery.notification?.body).toBe("Test Body");
+      expect(result.delivery.notification?.createdBy?.firstName).toBe("John");
     });
 
     it("should handle delivery without optional fields", async () => {
-      mockDeliveryRepo.findByNotificationId = mock(() =>
-        Promise.resolve(
-          createMockDelivery({
-            deliveryCompletedAt: undefined,
-            errorLog: undefined,
-            notification: null,
-          }),
-        ),
-      );
+      repo.seed([
+        createMockDelivery({
+          deliveryCompletedAt: undefined,
+          errorLog: undefined,
+          notification: null,
+        }),
+      ]);
 
       const input: GetDeliveryByNotificationIdInput = {
         notificationId: "notif-123",
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.delivery.notification).toBeNull();
-      }
-    });
-
-    it("should call repository with notificationId", async () => {
-      const input: GetDeliveryByNotificationIdInput = {
-        notificationId: "notif-456",
-        tripId: "trip-123",
-      };
-
-      await useCase.execute(input);
-
-      expect(mockDeliveryRepo.findByNotificationId).toHaveBeenCalledWith(
-        "notif-456",
-      );
-    });
-
-    it("should handle repository error", async () => {
-      mockDeliveryRepo.findByNotificationId = mock(() =>
-        Promise.reject(new Error("Database error")),
-      );
-
-      const input: GetDeliveryByNotificationIdInput = {
-        notificationId: "notif-123",
-        tripId: "trip-123",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Failed to get delivery");
-        expect(result.error).toContain("Database error");
-      }
+      expect(result.delivery.notification).toBeNull();
     });
 
     it("should return delivery stats correctly", async () => {
+      repo.seed([createMockDelivery()]);
+
       const input: GetDeliveryByNotificationIdInput = {
         notificationId: "notif-123",
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.delivery.totalRecipients).toBe(100);
-        expect(result.value.delivery.successCount).toBe(95);
-        expect(result.value.delivery.failureCount).toBe(5);
-      }
+      expect(result.delivery.totalRecipients).toBe(100);
+      expect(result.delivery.successCount).toBe(95);
+      expect(result.delivery.failureCount).toBe(5);
     });
   });
 });

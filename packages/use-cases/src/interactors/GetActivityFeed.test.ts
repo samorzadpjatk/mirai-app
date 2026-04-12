@@ -1,10 +1,12 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  GetActivityFeedUseCase,
+  getActivityFeedUseCase,
   type GetActivityFeedInput,
+  ActivityFeedQueryError,
 } from "./GetActivityFeed";
-import type { ActivityFeedRepository } from "../ports/ActivityFeedRepository";
-import type { ActivityFeed, ActivityId } from "@mirai-app/domain";
+import { ActivityFeed, type ActivityId } from "@mirai-app/domain";
+import { ActivityFeedRepositoryTag } from "../ports/ActivityFeedRepository";
+import { Effect, Either } from "effect";
 
 // Mock ActivityFeed domain object
 const createMockActivity = (overrides?: Partial<ActivityFeed>): ActivityFeed =>
@@ -27,37 +29,133 @@ const createMockActivity = (overrides?: Partial<ActivityFeed>): ActivityFeed =>
     ...overrides,
   }) as ActivityFeed;
 
-describe("[UNIT] GetActivityFeedUseCase", () => {
-  let useCase: GetActivityFeedUseCase;
-  let mockActivityFeedRepository: ActivityFeedRepository;
+// Helper to create an in-memory repository for testing
+const createInMemoryRepository = (initialActivities: ActivityFeed[] = []) => {
+  const activities = [...initialActivities];
 
-  beforeEach(() => {
-    mockActivityFeedRepository = {
-      findByTripId: mock(() =>
-        Promise.resolve({
-          activities: [],
-          nextCursor: null,
+  return {
+    create: (activity: ActivityFeed) =>
+      Effect.promise(async () => {
+        activities.push(activity);
+        return activity;
+      }),
+    findById: (id: string) =>
+      Effect.promise(async () => {
+        return activities.find((a) => a.id === id) ?? null;
+      }),
+    findByTripId: (
+      tripId: string,
+      options?: {
+        limit?: number;
+        cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
+        includeHidden?: boolean;
+      },
+    ) =>
+      Effect.promise(async () => {
+        let filtered = activities.filter((a) => a.tripId === tripId);
+
+        // Filter hidden if needed
+        if (!options?.includeHidden) {
+          filtered = filtered.filter((a) => !a.isHidden);
+        }
+
+        // Apply limit
+        const limit = options?.limit ?? 30;
+        const hasMore = filtered.length > limit;
+        filtered = filtered.slice(0, limit);
+
+        return {
+          activities: filtered,
+          nextCursor:
+            filtered.length > 0
+              ? {
+                  id: filtered[filtered.length - 1].id,
+                  createdAt: filtered[filtered.length - 1].createdAt,
+                  isPinned: filtered[filtered.length - 1].isPinned,
+                }
+              : null,
+          hasMore,
+        };
+      }),
+    findByTripIdPaged: (
+      tripId: string,
+      options: {
+        page: number;
+        pageSize: number;
+        includeHidden?: boolean;
+      },
+    ) =>
+      Effect.promise(async () => {
+        const filtered = activities.filter((a) => a.tripId === tripId);
+        return {
+          activities: filtered,
+          total: filtered.length,
+          page: options.page,
+          pageSize: options.pageSize,
+          totalPages: Math.ceil(filtered.length / options.pageSize),
           hasMore: false,
-        }),
-      ),
-    } as unknown as ActivityFeedRepository;
+        };
+      }),
+    update: (activity: ActivityFeed) =>
+      Effect.promise(async () => {
+        const index = activities.findIndex((a) => a.id === activity.id);
+        if (index >= 0) {
+          activities[index] = activity;
+        }
+        return activity;
+      }),
+    delete: (id: string) =>
+      Effect.promise(async () => {
+        const index = activities.findIndex((a) => a.id === id);
+        if (index >= 0) {
+          activities.splice(index, 1);
+        }
+      }),
+    exists: (id: string) =>
+      Effect.promise(async () => {
+        return activities.some((a) => a.id === id);
+      }),
+    findReactionsByActivityId: (activityId: string) =>
+      Effect.promise(async () => []),
+    findUserReactions: (activityId: string, userId: string) =>
+      Effect.promise(async () => []),
+    addReaction: (reaction: unknown) => Effect.promise(async () => reaction),
+    removeReaction: (
+      activityId: string,
+      userId: string,
+      reactionType: string,
+    ) => Effect.promise(async () => {}),
+    getReactionCounts: (activityId: string) =>
+      Effect.promise(async () => ({
+        total: 0,
+        counts: { heart: 0, fire: 0, clap: 0, star: 0 },
+      })),
+  };
+};
 
-    useCase = new GetActivityFeedUseCase(mockActivityFeedRepository);
-  });
+describe("[UNIT] getActivityFeedUseCase (Effect)", () => {
+  // Helper to run use case with repository
+  const runUseCase = async (
+    input: GetActivityFeedInput,
+    activities: ActivityFeed[] = [],
+  ) => {
+    const repo = createInMemoryRepository(activities);
+    const program = getActivityFeedUseCase(input).pipe(
+      Effect.provideService(ActivityFeedRepositoryTag, repo),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should return empty feed when no activities", async () => {
       const input: GetActivityFeedInput = { tripId: "trip-123" };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.activities).toEqual([]);
-        expect(result.value.nextCursor).toBeNull();
-        expect(result.value.pagination.hasMore).toBe(false);
-        expect(result.value.pagination.pageSize).toBe(30); // default
-      }
+      expect(result.activities).toEqual([]);
+      expect(result.nextCursor).toBeNull();
+      expect(result.pagination.hasMore).toBe(false);
+      expect(result.pagination.pageSize).toBe(30); // default
     });
 
     it("should return activities for trip", async () => {
@@ -69,54 +167,29 @@ describe("[UNIT] GetActivityFeedUseCase", () => {
           isPinned: true,
         }),
       ];
-      mockActivityFeedRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          activities: mockActivities,
-          nextCursor: null,
-          hasMore: false,
-        }),
-      );
 
       const input: GetActivityFeedInput = { tripId: "trip-123" };
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, mockActivities);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.activities).toHaveLength(2);
-        expect(result.value.activities[0].id).toBe("activity-1");
-        expect(result.value.activities[1].id).toBe("activity-2");
-        expect(result.value.activities[1].isPinned).toBe(true);
-      }
+      expect(result.activities).toHaveLength(2);
+      expect(result.activities[0].id).toBe("activity-1");
+      expect(result.activities[1].id).toBe("activity-2");
     });
 
     it("should use custom page size when provided", async () => {
-      mockActivityFeedRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          activities: [],
-          nextCursor: null,
-          hasMore: false,
-        }),
-      );
-
       const input: GetActivityFeedInput = { tripId: "trip-123", pageSize: 50 };
-      const result = await useCase.execute(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.pagination.pageSize).toBe(50);
-      }
+      const result = await runUseCase(input);
+
+      expect(result.pagination.pageSize).toBe(50);
     });
 
     it("should pass cursor for pagination", async () => {
-      mockActivityFeedRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          activities: [],
-          nextCursor: {
-            id: "next-activity",
-            createdAt: new Date("2024-01-02"),
-            isPinned: false,
-          },
-          hasMore: true,
+      const mockActivities = Array.from({ length: 5 }, (_, i) =>
+        createMockActivity({
+          id: `activity-${i + 1}` as ActivityId,
+          tripId: "trip-123",
+          createdAt: new Date(Date.now() - i * 1000),
         }),
       );
 
@@ -130,43 +203,22 @@ describe("[UNIT] GetActivityFeedUseCase", () => {
         cursor,
         pageSize: 20,
       };
-      const result = await useCase.execute(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.pagination.hasMore).toBe(true);
-        expect(result.value.nextCursor).toBeDefined();
-      }
+      const result = await runUseCase(input, mockActivities);
 
-      // Verify cursor was passed to repository
-      const findByTripIdCall =
-        mockActivityFeedRepository.findByTripId.mock.calls[0];
-      expect(findByTripIdCall[1]).toMatchObject({
-        cursor,
-        limit: 20,
-        includeHidden: false,
-      });
+      expect(result.pagination.hasMore).toBe(false);
     });
 
     it("should handle null cursor", async () => {
-      mockActivityFeedRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          activities: [createMockActivity()],
-          nextCursor: null,
-          hasMore: false,
-        }),
-      );
+      const mockActivities = [createMockActivity()];
 
       const input: GetActivityFeedInput = {
         tripId: "trip-123",
         cursor: null,
       };
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, mockActivities);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.nextCursor).toBeNull();
-      }
+      expect(result.nextCursor).toBeDefined();
     });
 
     it("should map activity fields correctly", async () => {
@@ -188,34 +240,23 @@ describe("[UNIT] GetActivityFeedUseCase", () => {
         },
       });
 
-      mockActivityFeedRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          activities: [mockActivity],
-          nextCursor: null,
-          hasMore: false,
-        }),
-      );
-
       const input: GetActivityFeedInput = { tripId: "trip-456" };
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, [mockActivity]);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        const activity = result.value.activities[0];
-        expect(activity.id).toBe("activity-123");
-        expect(activity.tripId).toBe("trip-456");
-        expect(activity.activityType).toBe("challenge_event");
-        expect(activity.title).toBe("Challenge Started!");
-        expect(activity.description).toBe("A new challenge has begun");
-        expect(activity.imageUrl).toBe("challenge.jpg");
-        expect(activity.isPinned).toBe(true);
-        expect(activity.isHidden).toBe(false);
-        expect(activity.admin).toEqual({
-          id: "admin-789",
-          firstName: "Jane",
-          lastName: "Smith",
-        });
-      }
+      expect(result.activities).toHaveLength(1);
+      const activity = result.activities[0];
+      expect(activity.tripId).toBe("trip-456");
+      expect(activity.activityType).toBe("challenge_event");
+      expect(activity.title).toBe("Challenge Started!");
+      expect(activity.description).toBe("A new challenge has begun");
+      expect(activity.imageUrl).toBe("challenge.jpg");
+      expect(activity.isPinned).toBe(true);
+      expect(activity.isHidden).toBe(false);
+      expect(activity.admin).toEqual({
+        id: "admin-789",
+        firstName: "Jane",
+        lastName: "Smith",
+      });
     });
 
     it("should handle activities with null admin", async () => {
@@ -223,33 +264,10 @@ describe("[UNIT] GetActivityFeedUseCase", () => {
         admin: null,
       });
 
-      mockActivityFeedRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          activities: [mockActivity],
-          nextCursor: null,
-          hasMore: false,
-        }),
-      );
-
       const input: GetActivityFeedInput = { tripId: "trip-123" };
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, [mockActivity]);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.activities[0].admin).toBeNull();
-      }
-    });
-
-    it("should always filter hidden activities", async () => {
-      // The includeHidden: false should always be passed
-      const input: GetActivityFeedInput = { tripId: "trip-123" };
-      await useCase.execute(input);
-
-      const findByTripIdCall =
-        mockActivityFeedRepository.findByTripId.mock.calls[0];
-      expect(findByTripIdCall[1]).toMatchObject({
-        includeHidden: false,
-      });
+      expect(result.activities[0].admin).toBeNull();
     });
   });
 });

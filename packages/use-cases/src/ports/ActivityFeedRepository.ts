@@ -1,4 +1,9 @@
-import type { ActivityFeed, ActivityReaction, ActivityId } from "@mirai-app/domain";
+import type {
+  ActivityFeed,
+  ActivityReaction,
+  ActivityId,
+} from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * ActivityFeedRepository Port
@@ -113,3 +118,83 @@ export interface ActivityFeedRepository {
     counts: { heart: number; fire: number; clap: number; star: number };
   }>;
 }
+
+/**
+ * ActivityFeedRepository Context.Tag for Effect dependency injection
+ */
+export class ActivityFeedRepositoryTag extends Context.Tag(
+  "ActivityFeedRepository",
+)<
+  ActivityFeedRepositoryTag,
+  {
+    findById: (
+      id: ActivityId,
+    ) => Effect.Effect<ActivityFeed | null, never, never>;
+    findByTripId: (
+      tripId: string,
+      options?: {
+        limit?: number;
+        cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
+        includeHidden?: boolean;
+      },
+    ) => Effect.Effect<
+      {
+        activities: ActivityFeed[];
+        nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
+        hasMore: boolean;
+      },
+      never,
+      never
+    >;
+    findByTripIdPaged: (
+      tripId: string,
+      options: {
+        page: number;
+        pageSize: number;
+        includeHidden?: boolean;
+      },
+    ) => Effect.Effect<
+      {
+        activities: ActivityFeed[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+        hasMore: boolean;
+      },
+      never,
+      never
+    >;
+    create: (
+      activity: ActivityFeed,
+    ) => Effect.Effect<ActivityFeed, never, never>;
+    update: (
+      activity: ActivityFeed,
+    ) => Effect.Effect<ActivityFeed, never, never>;
+    delete: (id: ActivityId) => Effect.Effect<void, never, never>;
+    exists: (id: ActivityId) => Effect.Effect<boolean, never, never>;
+    findReactionsByActivityId: (
+      activityId: ActivityId,
+    ) => Effect.Effect<ActivityReaction[], never, never>;
+    findUserReactions: (
+      activityId: ActivityId,
+      userId: string,
+    ) => Effect.Effect<ActivityReaction[], never, never>;
+    addReaction: (
+      reaction: ActivityReaction,
+    ) => Effect.Effect<ActivityReaction, never, never>;
+    removeReaction: (
+      activityId: ActivityId,
+      userId: string,
+      reactionType: string,
+    ) => Effect.Effect<void, never, never>;
+    getReactionCounts: (activityId: ActivityId) => Effect.Effect<
+      {
+        total: number;
+        counts: { heart: number; fire: number; clap: number; star: number };
+      },
+      never,
+      never
+    >;
+  }
+>() {}

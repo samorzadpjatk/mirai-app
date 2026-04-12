@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok } from "@mirai-app/domain";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
+import type { NotificationSchedule } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
 
 /**
@@ -16,49 +16,63 @@ export interface GetActiveNotificationSchedulesInput {
 export type GetActiveNotificationSchedulesOutput = NotificationScheduleOutput[];
 
 /**
+ * Helper function to convert NotificationSchedule to output DTO
+ */
+function toOutput(schedule: NotificationSchedule): NotificationScheduleOutput {
+  const now = new Date();
+  return {
+    id: schedule.id,
+    name: schedule.name,
+    tripId: schedule.tripId,
+    notificationType: schedule.notificationType,
+    notificationTitle: schedule.notificationTitle,
+    notificationBody: schedule.notificationBody,
+    notificationUrl: schedule.notificationUrl,
+    startDate: schedule.startDate,
+    endDate: schedule.endDate,
+    hour: schedule.hour,
+    minute: schedule.minute,
+    isActive: schedule.isActive,
+    createdById: schedule.createdById,
+    lastRun: schedule.lastRun,
+    createdAt: schedule.createdAt,
+    updatedAt: schedule.updatedAt,
+    isCurrentlyActive: schedule.isCurrentlyActive(now),
+    isExpired: schedule.isExpired(now),
+    isUpcoming: schedule.isUpcoming(now),
+    formattedTime: schedule.getFormattedTime(),
+  };
+}
+
+/**
  * GetActiveNotificationSchedules Use Case
  *
  * Retrieves currently active notification schedules.
  * A schedule is active if:
  * - isActive flag is true
  * - current time is within the schedule window (startDate <= now <= endDate)
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getActiveNotificationSchedulesUseCase().pipe(
+ *   Effect.provideService(NotificationScheduleRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetActiveNotificationSchedulesUseCase {
-  constructor(private repository: NotificationScheduleRepository) {}
+export function getActiveNotificationSchedulesUseCase(): Effect.Effect<
+  GetActiveNotificationSchedulesOutput,
+  never,
+  NotificationScheduleRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationScheduleRepositoryTag;
 
-  async execute(): Promise<Result<NotificationScheduleOutput[], string>> {
-    const schedules = await this.repository.findActive();
+    const schedules = yield* repo.findActive();
 
-    const now = new Date();
-
-    return ok(schedules.map((schedule) => this.toOutput(schedule, now)));
-  }
-
-  private toOutput(
-    schedule: import("@mirai-app/domain").NotificationSchedule,
-    now: Date,
-  ): NotificationScheduleOutput {
-    return {
-      id: schedule.id,
-      name: schedule.name,
-      tripId: schedule.tripId,
-      notificationType: schedule.notificationType,
-      notificationTitle: schedule.notificationTitle,
-      notificationBody: schedule.notificationBody,
-      notificationUrl: schedule.notificationUrl,
-      startDate: schedule.startDate,
-      endDate: schedule.endDate,
-      hour: schedule.hour,
-      minute: schedule.minute,
-      isActive: schedule.isActive,
-      createdById: schedule.createdById,
-      lastRun: schedule.lastRun,
-      createdAt: schedule.createdAt,
-      updatedAt: schedule.updatedAt,
-      isCurrentlyActive: schedule.isCurrentlyActive(now),
-      isExpired: schedule.isExpired(now),
-      isUpcoming: schedule.isUpcoming(now),
-      formattedTime: schedule.getFormattedTime(),
-    };
-  }
+    return schedules.map((schedule) => toOutput(schedule));
+  });
 }

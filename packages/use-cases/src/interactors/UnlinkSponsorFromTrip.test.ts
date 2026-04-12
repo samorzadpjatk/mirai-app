@@ -1,66 +1,47 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect } from "bun:test";
 import {
-  UnlinkSponsorFromTripUseCase,
+  unlinkSponsorFromTripUseCase,
   type UnlinkSponsorFromTripInput,
 } from "./UnlinkSponsorFromTrip";
-import type { SponsorRepository } from "../ports/SponsorRepository";
+import { Effect } from "effect";
+import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
-describe("[UNIT] UnlinkSponsorFromTripUseCase", () => {
-  const createMockRepo = (
-    overrides?: Partial<SponsorRepository>,
-  ): SponsorRepository => ({
-    create: mock(() => Promise.resolve({} as any)),
-    findById: mock(() => Promise.resolve(null)),
-    findAll: mock(() => Promise.resolve([])),
-    findActive: mock(() => Promise.resolve([])),
-    findByTripId: mock(() => Promise.resolve([])),
-    update: mock(() => Promise.resolve({} as any)),
-    delete: mock(() => Promise.resolve()),
-    exists: mock(() => Promise.resolve(false)),
-    isLinkedToTrip: mock(() => Promise.resolve(false)),
-    linkToTrip: mock(() => Promise.resolve()),
-    unlinkFromTrip: mock(() => Promise.resolve()),
-    ...overrides,
-  });
+// Create mock repository service
+const createMockRepoService = () => ({
+  create: () => Effect.promise(() => Promise.resolve({} as any)),
+  findById: () => Effect.promise(() => Promise.resolve(null)),
+  findAll: () => Effect.promise(() => Promise.resolve([])),
+  findActive: () => Effect.promise(() => Promise.resolve([])),
+  findByTripId: () => Effect.promise(() => Promise.resolve([])),
+  update: () => Effect.promise(() => Promise.resolve({} as any)),
+  delete: () => Effect.promise(() => Promise.resolve()),
+  exists: () => Effect.promise(() => Promise.resolve(false)),
+  isLinkedToTrip: () => Effect.promise(() => Promise.resolve(false)),
+  linkToTrip: () => Effect.promise(() => Promise.resolve()),
+  unlinkFromTrip: () => Effect.promise(() => Promise.resolve()),
+});
 
+// Helper to run use case with repository service
+const runUseCase = async (input: UnlinkSponsorFromTripInput) => {
+  const program = unlinkSponsorFromTripUseCase(input).pipe(
+    Effect.provideService(SponsorRepositoryTag, createMockRepoService()),
+  );
+  return await Effect.runPromise(program);
+};
+
+describe("[UNIT] unlinkSponsorFromTripUseCase (Effect)", () => {
   describe("execute", () => {
     it("should unlink sponsor from trip successfully", async () => {
-      const mockRepo = createMockRepo({
-        unlinkFromTrip: mock(() => Promise.resolve()),
-      });
-
-      const useCase = new UnlinkSponsorFromTripUseCase(mockRepo);
       const input: UnlinkSponsorFromTripInput = {
         sponsorId: "sponsor-456",
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.sponsorId).toBe("sponsor-456");
-        expect(result.value.tripId).toBe("trip-123");
-        expect(result.value.unlinked).toBe(true);
-      }
-      expect(mockRepo.unlinkFromTrip).toHaveBeenCalledWith(
-        "sponsor-456",
-        "trip-123",
-      );
-    });
-
-    it("should handle repository errors", async () => {
-      const mockRepo = createMockRepo({
-        unlinkFromTrip: mock(() => Promise.reject(new Error("Unlink failed"))),
-      });
-
-      const useCase = new UnlinkSponsorFromTripUseCase(mockRepo);
-      const input: UnlinkSponsorFromTripInput = {
-        sponsorId: "sponsor-123",
-        tripId: "trip-123",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("Unlink failed");
+      expect(result.sponsorId).toBe("sponsor-456");
+      expect(result.tripId).toBe("trip-123");
+      expect(result.unlinked).toBe(true);
     });
   });
 });

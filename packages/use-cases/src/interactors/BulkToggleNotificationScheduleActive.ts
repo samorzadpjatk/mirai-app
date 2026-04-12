@@ -1,6 +1,5 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
+import { Effect } from "effect";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 
 /**
  * Input for BulkToggleNotificationScheduleActive use case
@@ -19,28 +18,55 @@ export interface BulkToggleNotificationScheduleActiveOutput {
 }
 
 /**
+ * Error types for BulkToggleNotificationScheduleActive use case
+ */
+export class BulkToggleValidationError extends Error {
+  readonly _tag = "BulkToggleValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * BulkToggleNotificationScheduleActive Use Case
  *
  * Updates the isActive status for multiple notification schedules.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = bulkToggleNotificationScheduleActiveUseCase(input).pipe(
+ *   Effect.provideService(NotificationScheduleRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class BulkToggleNotificationScheduleActiveUseCase {
-  constructor(private repository: NotificationScheduleRepository) {}
+export function bulkToggleNotificationScheduleActiveUseCase(
+  input: BulkToggleNotificationScheduleActiveInput,
+): Effect.Effect<
+  BulkToggleNotificationScheduleActiveOutput,
+  BulkToggleValidationError,
+  NotificationScheduleRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationScheduleRepositoryTag;
 
-  async execute(
-    input: BulkToggleNotificationScheduleActiveInput,
-  ): Promise<Result<BulkToggleNotificationScheduleActiveOutput, string>> {
     if (input.ids.length === 0) {
-      return err("At least one ID must be provided");
+      return yield* Effect.fail(
+        new BulkToggleValidationError("At least one ID must be provided"),
+      );
     }
 
-    const updatedCount = await this.repository.bulkToggleActive(
+    const updatedCount = yield* repo.bulkToggleActive(
       input.ids,
       input.isActive,
     );
 
-    return ok({
+    return {
       success: true,
       updatedCount,
-    });
-  }
+    };
+  });
 }

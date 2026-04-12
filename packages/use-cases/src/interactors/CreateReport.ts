@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, SubmissionReport } from "@mirai-app/domain";
-import type { SubmissionReportRepository } from "../ports/SubmissionReportRepository";
+import { Effect, Data } from "effect";
+import { SubmissionReport } from "@mirai-app/domain";
+import { SubmissionReportRepositoryTag } from "../ports/SubmissionReportRepository";
 
 /**
  * Input for CreateReport use case
@@ -26,55 +26,99 @@ export interface CreateReportOutput {
 }
 
 /**
+ * Error types for CreateReport use case
+ */
+export class DuplicateReportError extends Data.TaggedError(
+  "DuplicateReportError",
+)<{
+  message: string;
+}> {
+  constructor() {
+    super({ message: "You have already reported this submission" });
+  }
+}
+
+export class CreateReportValidationError extends Data.TaggedError(
+  "CreateReportValidationError",
+)<{
+  message: string;
+}> {
+  constructor(message: string) {
+    super({ message });
+  }
+}
+
+/**
  * CreateReport Use Case
  *
  * Creates a new submission report.
  * Returns error if validation fails.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * // With dependency injection
+ * const program = createReportUseCase(input);
+ *
+ * // Provide repository implementation
+ * const runnable = program.pipe(
+ *   Effect.provideService(SubmissionReportRepositoryTag, repository)
+ * );
+ *
+ * // Run the effect
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class CreateReportUseCase {
-  constructor(private reportRepository: SubmissionReportRepository) {}
+export function createReportUseCase(
+  input: CreateReportInput,
+): Effect.Effect<
+  CreateReportOutput,
+  DuplicateReportError | CreateReportValidationError,
+  SubmissionReportRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const reportRepo = yield* SubmissionReportRepositoryTag;
 
-  async execute(
-    input: CreateReportInput,
-  ): Promise<Result<CreateReportOutput, string>> {
     // Check if reporter already reported this submission
-    const alreadyExists =
-      await this.reportRepository.existsBySubmissionAndReporter(
-        input.submissionId,
-        input.reporterId,
-      );
+    const alreadyExists = yield* reportRepo.existsBySubmissionAndReporter(
+      input.submissionId,
+      input.reporterId,
+    );
 
     if (alreadyExists) {
-      return err("You have already reported this submission");
+      return yield* Effect.fail(new DuplicateReportError());
     }
 
-    // Create domain entity
-    const reportResult = SubmissionReport.create({
+    // Create domain entity - returns Effect from domain
+    const report = yield* SubmissionReport.create({
       submissionId: input.submissionId,
       reporterId: input.reporterId,
       reason: input.reason,
       ...(input.details !== undefined && { details: input.details }),
-    });
-
-    if (reportResult.kind === "err") {
-      return err(reportResult.error);
-    }
+    }).pipe(
+      Effect.mapError(
+        (validationError) =>
+          new CreateReportValidationError(validationError.message),
+      ),
+    );
 
     // Persist report
-    const saved = await this.reportRepository.create(reportResult.value);
+    const saved = yield* reportRepo.create(report);
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(report: SubmissionReport): CreateReportOutput {
-    return {
-      id: report.id,
-      submissionId: report.submissionId,
-      reporterId: report.reporterId,
-      reason: report.reason.value,
-      reasonDisplay: report.getReasonDisplay(),
-      details: report.details,
-      createdAt: report.createdAt,
-    };
-  }
+function toOutput(report: SubmissionReport): CreateReportOutput {
+  return {
+    id: report.id,
+    submissionId: report.submissionId,
+    reporterId: report.reporterId,
+    reason: report.reason.value,
+    reasonDisplay: report.getReasonDisplay(),
+    details: report.details,
+    createdAt: report.createdAt,
+  };
 }

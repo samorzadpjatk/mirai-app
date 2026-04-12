@@ -4,6 +4,7 @@ import type {
   SubmissionType,
   ScoringCategory,
 } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * ChallengeRepository Port
@@ -96,3 +97,43 @@ export interface ChallengeRepository {
    */
   countByTripId(tripId: string): Promise<number>;
 }
+
+/**
+ * ChallengeRepository Context.Tag for Effect dependency injection
+ */
+export class ChallengeRepositoryTag extends Context.Tag("ChallengeRepository")<
+  ChallengeRepositoryTag,
+  {
+    create: (challenge: Challenge) => Effect.Effect<Challenge, never, never>;
+    findById: (id: string) => Effect.Effect<Challenge | null, never, never>;
+    findByTripId: (tripId: string) => Effect.Effect<Challenge[], never, never>;
+    findByStatus: (
+      status: ChallengeStatus,
+    ) => Effect.Effect<Challenge[], never, never>;
+    findByTripIdAndStatus: (
+      tripId: string,
+      status: ChallengeStatus,
+    ) => Effect.Effect<Challenge[], never, never>;
+    findBySubmissionType: (
+      type: SubmissionType,
+    ) => Effect.Effect<Challenge[], never, never>;
+    findByScoringCategory: (
+      category: ScoringCategory,
+    ) => Effect.Effect<Challenge[], never, never>;
+    findActive: () => Effect.Effect<Challenge[], never, never>;
+    findOpenForSubmission: () => Effect.Effect<Challenge[], never, never>;
+    findRecurring: () => Effect.Effect<Challenge[], never, never>;
+    findAll: (options?: {
+      limit?: number;
+      offset?: number;
+    }) => Effect.Effect<Challenge[], never, never>;
+    update: (challenge: Challenge) => Effect.Effect<Challenge, never, never>;
+    updateStatus: (
+      id: string,
+      status: ChallengeStatus,
+    ) => Effect.Effect<Challenge, never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    exists: (id: string) => Effect.Effect<boolean, never, never>;
+    countByTripId: (tripId: string) => Effect.Effect<number, never, never>;
+  }
+>() {}

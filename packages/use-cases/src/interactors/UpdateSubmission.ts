@@ -1,6 +1,10 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, ChallengeSubmission, SubmissionId } from "@mirai-app/domain";
-import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
+import {
+  ChallengeSubmission,
+  SubmissionId,
+  ValidationError,
+} from "@mirai-app/domain";
+import { Effect } from "effect";
+import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
 /**
  * Input for UpdateSubmission use case
@@ -47,23 +51,84 @@ export interface UpdateSubmissionOutput {
 }
 
 /**
- * UpdateSubmission Use Case
+ * Error types for UpdateSubmission use case
+ */
+export class SubmissionUpdateNotFoundError extends Error {
+  readonly _tag = "SubmissionUpdateNotFoundError";
+  constructor(message: string = "Submission not found") {
+    super(message);
+  }
+}
+
+export class SubmissionUpdateValidationError extends Error {
+  readonly _tag = "SubmissionUpdateValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class InvalidReviewActionError extends Error {
+  readonly _tag = "InvalidReviewActionError";
+  constructor(message: string = "Invalid review action") {
+    super(message);
+  }
+}
+
+export class UpdateSubmissionRepositoryError extends Error {
+  readonly _tag = "UpdateSubmissionRepositoryError";
+  constructor(message: string = "Failed to update submission") {
+    super(message);
+  }
+}
+
+/**
+ * UpdateSubmission Use Case (Effect-based)
  *
  * Updates a submission's content (when pending) or reviews it (moderator action).
  * Returns error if submission not found or update not allowed.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* updateSubmissionUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(ChallengeSubmissionRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class UpdateSubmissionUseCase {
-  constructor(private submissionRepository: ChallengeSubmissionRepository) {}
+export function updateSubmissionUseCase(
+  input: UpdateSubmissionInput,
+): Effect.Effect<
+  UpdateSubmissionOutput,
+  | SubmissionUpdateNotFoundError
+  | SubmissionUpdateValidationError
+  | InvalidReviewActionError
+  | UpdateSubmissionRepositoryError,
+  ChallengeSubmissionRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const submissionRepo = yield* ChallengeSubmissionRepositoryTag;
 
-  async execute(
-    input: UpdateSubmissionInput,
-  ): Promise<Result<UpdateSubmissionOutput, string>> {
     // Find existing submission
-    const existing = await this.submissionRepository.findById(
-      input.submissionId,
-    );
+    const existing = yield* submissionRepo
+      .findById(input.submissionId)
+      .pipe(
+        Effect.mapError(
+          () =>
+            new UpdateSubmissionRepositoryError("Failed to find submission"),
+        ),
+      );
+
     if (!existing) {
-      return err("Submission not found");
+      return yield* Effect.fail(new SubmissionUpdateNotFoundError());
     }
 
     let updatedSubmission: ChallengeSubmission;
@@ -71,78 +136,94 @@ export class UpdateSubmissionUseCase {
     // Handle review actions
     if (input.reviewAction) {
       if (input.reviewAction === "APPROVE") {
-        const approveResult = existing.approve({
-          reviewedById: input.reviewedById ?? "",
-          ...(input.awardedPoints !== undefined && {
-            awardedPoints: input.awardedPoints,
-          }),
-          ...(input.bonusPoints !== undefined && {
-            bonusPoints: input.bonusPoints,
-          }),
-          ...(input.ranking !== undefined && { ranking: input.ranking }),
-        });
-
-        if (approveResult.kind === "err") {
-          return err(approveResult.error.message);
-        }
-        updatedSubmission = approveResult.value;
+        const approved = yield* existing
+          .approve({
+            reviewedById: input.reviewedById ?? "",
+            ...(input.awardedPoints !== undefined && {
+              awardedPoints: input.awardedPoints,
+            }),
+            ...(input.bonusPoints !== undefined && {
+              bonusPoints: input.bonusPoints,
+            }),
+            ...(input.ranking !== undefined && { ranking: input.ranking }),
+          })
+          .pipe(
+            Effect.mapError(
+              (validationError: ValidationError) =>
+                new SubmissionUpdateValidationError(validationError.message),
+            ),
+          );
+        updatedSubmission = approved;
       } else if (input.reviewAction === "REJECT") {
-        const rejectResult = existing.reject({
-          reviewedById: input.reviewedById ?? "",
-          reason: input.rejectionReason ?? "",
-        });
-
-        if (rejectResult.kind === "err") {
-          return err(rejectResult.error.message);
-        }
-        updatedSubmission = rejectResult.value;
+        const rejected = yield* existing
+          .reject({
+            reviewedById: input.reviewedById ?? "",
+            reason: input.rejectionReason ?? "",
+          })
+          .pipe(
+            Effect.mapError(
+              (validationError: ValidationError) =>
+                new SubmissionUpdateValidationError(validationError.message),
+            ),
+          );
+        updatedSubmission = rejected;
       } else {
-        return err("Invalid review action");
+        return yield* Effect.fail(new InvalidReviewActionError());
       }
     } else {
       // Handle content updates
-      const updateResult = existing.updateContent({
-        ...(input.imageIds !== undefined && { imageIds: input.imageIds }),
-        ...(input.videoId !== undefined && { videoId: input.videoId }),
-        ...(input.textContent !== undefined && {
-          textContent: input.textContent,
-        }),
-        ...(input.latitude !== undefined && { latitude: input.latitude }),
-        ...(input.longitude !== undefined && { longitude: input.longitude }),
-      });
-
-      if (updateResult.kind === "err") {
-        return err(updateResult.error.message);
-      }
-      updatedSubmission = updateResult.value;
+      const updated = yield* existing
+        .updateContent({
+          ...(input.imageIds !== undefined && { imageIds: input.imageIds }),
+          ...(input.videoId !== undefined && { videoId: input.videoId }),
+          ...(input.textContent !== undefined && {
+            textContent: input.textContent,
+          }),
+          ...(input.latitude !== undefined && { latitude: input.latitude }),
+          ...(input.longitude !== undefined && { longitude: input.longitude }),
+        })
+        .pipe(
+          Effect.mapError(
+            (validationError: ValidationError) =>
+              new SubmissionUpdateValidationError(validationError.message),
+          ),
+        );
+      updatedSubmission = updated;
     }
 
     // Persist updated submission
-    const saved = await this.submissionRepository.update(updatedSubmission);
+    const saved = yield* submissionRepo
+      .update(updatedSubmission)
+      .pipe(
+        Effect.mapError(
+          () =>
+            new UpdateSubmissionRepositoryError("Failed to update submission"),
+        ),
+      );
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(submission: ChallengeSubmission): UpdateSubmissionOutput {
-    return {
-      id: submission.id,
-      challengeId: submission.challengeId,
-      groupId: submission.groupId,
-      imageIds: submission.imageIds,
-      videoId: submission.videoId,
-      textContent: submission.textContent,
-      latitude: submission.latitude,
-      longitude: submission.longitude,
-      status: submission.status,
-      reviewedById: submission.reviewedById,
-      reviewedAt: submission.reviewedAt,
-      rejectionReason: submission.rejectionReason,
-      awardedPoints: submission.awardedPoints,
-      bonusPoints: submission.bonusPoints,
-      ranking: submission.ranking,
-      voteCount: submission.voteCount,
-      voteScore: submission.voteScore,
-      updatedAt: submission.updatedAt,
-    };
-  }
+function toOutput(submission: ChallengeSubmission): UpdateSubmissionOutput {
+  return {
+    id: submission.id,
+    challengeId: submission.challengeId,
+    groupId: submission.groupId,
+    imageIds: submission.imageIds,
+    videoId: submission.videoId,
+    textContent: submission.textContent,
+    latitude: submission.latitude,
+    longitude: submission.longitude,
+    status: submission.status,
+    reviewedById: submission.reviewedById,
+    reviewedAt: submission.reviewedAt,
+    rejectionReason: submission.rejectionReason,
+    awardedPoints: submission.awardedPoints,
+    bonusPoints: submission.bonusPoints,
+    ranking: submission.ranking,
+    voteCount: submission.voteCount,
+    voteScore: submission.voteScore,
+    updatedAt: submission.updatedAt,
+  };
 }

@@ -21,6 +21,7 @@
  */
 
 import type { Result } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 // =============================================================================
 // Domain Errors
@@ -236,3 +237,30 @@ export interface RealtimePort {
    */
   getConnectionState(): ConnectionState;
 }
+
+/**
+ * RealtimePort Context.Tag for Effect dependency injection
+ */
+export class RealtimePortTag extends Context.Tag("RealtimePort")<
+  RealtimePortTag,
+  {
+    subscribe: (
+      channel: string,
+      config: ChannelConfig,
+    ) => Effect.Effect<
+      RealtimeSubscription,
+      RealtimeError | SubscriptionError,
+      never
+    >;
+    broadcast: (
+      channel: string,
+      event: string,
+      payload: unknown,
+    ) => Effect.Effect<void, RealtimeError, never>;
+    trackPresence: (
+      channel: string,
+      state: PresenceState,
+    ) => Effect.Effect<void, RealtimeError, never>;
+    getConnectionState: () => ConnectionState;
+  }
+>() {}

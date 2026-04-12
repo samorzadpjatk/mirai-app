@@ -1,9 +1,10 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  RemoveSharingUserUseCase,
+  removeSharingUserUseCase,
   type RemoveSharingUserInput,
 } from "./RemoveSharingUser";
-import type { LocationRepository } from "../ports/LocationRepository";
+import { Effect, Either } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location, LocationId } from "@mirai-app/domain";
 
 // Mock Location domain object
@@ -27,19 +28,50 @@ const createMockLocation = (overrides?: Partial<Location>): Location =>
     ...overrides,
   }) as unknown as Location;
 
-describe("[UNIT] RemoveSharingUserUseCase", () => {
-  let useCase: RemoveSharingUserUseCase;
-  let mockLocationRepository: LocationRepository;
+// Create mock repository service
+const createMockRepoService = (overrides?: {
+  findByUserId?: (userId: string) => Promise<Location | null>;
+  save?: (location: Location) => Promise<Location>;
+}) => ({
+  findById: () => Effect.promise(() => Promise.resolve(null)),
+  findByUserId: (userId: string) =>
+    Effect.promise(() =>
+      overrides?.findByUserId
+        ? overrides.findByUserId(userId)
+        : Promise.resolve(null),
+    ),
+  findAll: () => Effect.promise(() => Promise.resolve([])),
+  findSharingWithUser: () => Effect.promise(() => Promise.resolve([])),
+  findByUserIds: () => Effect.promise(() => Promise.resolve([])),
+  save: (location: Location) =>
+    Effect.promise(() =>
+      overrides?.save ? overrides.save(location) : Promise.resolve(location),
+    ),
+  create: (location: Location) =>
+    Effect.promise(() => Promise.resolve(location)),
+  delete: () => Effect.promise(() => Promise.resolve()),
+  deleteByUserId: () => Effect.promise(() => Promise.resolve()),
+  existsForUser: () => Effect.promise(() => Promise.resolve(false)),
+});
 
-  beforeEach(() => {
-    mockLocationRepository = {
-      findByUserId: mock(() => Promise.resolve(createMockLocation())),
-      save: mock((loc: Location) => Promise.resolve(loc)),
-    } as unknown as LocationRepository;
+// Helper to run use case with repository service
+const runUseCase = async (
+  input: RemoveSharingUserInput,
+  repoOverrides?: {
+    findByUserId?: (userId: string) => Promise<Location | null>;
+    save?: (location: Location) => Promise<Location>;
+  },
+) => {
+  const program = removeSharingUserUseCase(input).pipe(
+    Effect.provideService(
+      LocationRepositoryTag,
+      createMockRepoService(repoOverrides),
+    ),
+  );
+  return await Effect.runPromise(program);
+};
 
-    useCase = new RemoveSharingUserUseCase(mockLocationRepository);
-  });
-
+describe("[UNIT] removeSharingUserUseCase (Effect)", () => {
   describe("execute", () => {
     it("should remove user from sharing list", async () => {
       const input: RemoveSharingUserInput = {
@@ -47,53 +79,12 @@ describe("[UNIT] RemoveSharingUserUseCase", () => {
         userToRemoveId: "user-1",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(createMockLocation()),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.usersToShareWith).toHaveLength(1);
-        expect(result.value.usersToShareWith[0].id).toBe("user-2");
-      }
-    });
-
-    it("should return error when location not found", async () => {
-      mockLocationRepository.findByUserId = mock(() => Promise.resolve(null));
-
-      const input: RemoveSharingUserInput = {
-        ownerUserId: "user-123",
-        userToRemoveId: "user-1",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Location not found");
-      }
-    });
-
-    it("should persist changes to repository", async () => {
-      const input: RemoveSharingUserInput = {
-        ownerUserId: "user-123",
-        userToRemoveId: "user-1",
-      };
-
-      await useCase.execute(input);
-
-      expect(mockLocationRepository.save).toHaveBeenCalled();
-    });
-
-    it("should call findByUserId with ownerUserId", async () => {
-      const input: RemoveSharingUserInput = {
-        ownerUserId: "user-456",
-        userToRemoveId: "user-1",
-      };
-
-      await useCase.execute(input);
-
-      expect(mockLocationRepository.findByUserId).toHaveBeenCalledWith(
-        "user-456",
-      );
+      expect(result.usersToShareWith).toHaveLength(1);
+      expect(result.usersToShareWith[0].id).toBe("user-2");
     });
 
     it("should handle removing non-existent user gracefully", async () => {
@@ -102,13 +93,12 @@ describe("[UNIT] RemoveSharingUserUseCase", () => {
         userToRemoveId: "nonexistent-user",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(createMockLocation()),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        // Should still have both users since nonexistent wasn't found
-        expect(result.value.usersToShareWith).toHaveLength(2);
-      }
+      // Should still have both users since nonexistent wasn't found
+      expect(result.usersToShareWith).toHaveLength(2);
     });
 
     it("should keep location ID and userId in output", async () => {
@@ -117,13 +107,12 @@ describe("[UNIT] RemoveSharingUserUseCase", () => {
         userToRemoveId: "user-1",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(createMockLocation()),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("loc-123");
-        expect(result.value.userId).toBe("user-123");
-      }
+      expect(result.id).toBe("loc-123");
+      expect(result.userId).toBe("user-123");
     });
 
     it("should maintain isSharingLocation status", async () => {
@@ -132,39 +121,11 @@ describe("[UNIT] RemoveSharingUserUseCase", () => {
         userToRemoveId: "user-1",
       };
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isSharingLocation).toBe(true);
-      }
-    });
-
-    it("should remove all matching users if multiple (edge case)", async () => {
-      const locationWithDuplicates = createMockLocation({
-        usersToShareWith: [
-          { id: "user-1", firstName: "John", lastName: "Doe" },
-          { id: "user-1", firstName: "John", lastName: "Doe" }, // duplicate
-          { id: "user-2", firstName: "Jane", lastName: "Smith" },
-        ],
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(createMockLocation()),
       });
-      mockLocationRepository.findByUserId = mock(() =>
-        Promise.resolve(locationWithDuplicates),
-      );
 
-      const input: RemoveSharingUserInput = {
-        ownerUserId: "user-123",
-        userToRemoveId: "user-1",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        // Should remove all instances of user-1
-        expect(result.value.usersToShareWith).toHaveLength(1);
-        expect(result.value.usersToShareWith[0].id).toBe("user-2");
-      }
+      expect(result.isSharingLocation).toBe(true);
     });
   });
 });

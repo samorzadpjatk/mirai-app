@@ -1,6 +1,8 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { NotificationDeliveryRepository } from "../ports/NotificationDeliveryRepository";
+import { Effect } from "effect";
+import {
+  NotificationDeliveryRepositoryTag,
+  type NotificationDelivery,
+} from "../ports/NotificationDeliveryRepository";
 
 /**
  * Input for GetDeliveryByNotificationId use case
@@ -43,49 +45,92 @@ export interface GetDeliveryByNotificationIdOutput {
 }
 
 /**
+ * Error types for GetDeliveryByNotificationId use case
+ */
+export class DeliveryNotFoundError extends Error {
+  readonly _tag = "DeliveryNotFoundError";
+  constructor() {
+    super("Notification delivery not found");
+  }
+}
+
+export class GetDeliveryError extends Error {
+  readonly _tag = "GetDeliveryError";
+  constructor(cause: unknown) {
+    super(
+      `Failed to get delivery: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
+  }
+}
+
+/**
+ * Helper function to convert NotificationDelivery to output DTO
+ */
+function toOutput(
+  delivery: NotificationDelivery,
+): GetDeliveryByNotificationIdOutput {
+  return {
+    delivery: {
+      id: delivery.id,
+      notificationId: delivery.notificationId,
+      tripId: delivery.tripId,
+      status: delivery.status,
+      totalRecipients: delivery.totalRecipients,
+      successCount: delivery.successCount,
+      failureCount: delivery.failureCount,
+      deliveryStartedAt: delivery.deliveryStartedAt,
+      ...(delivery.deliveryCompletedAt !== undefined && {
+        deliveryCompletedAt: delivery.deliveryCompletedAt,
+      }),
+      ...(delivery.errorLog !== undefined && {
+        errorLog: delivery.errorLog,
+      }),
+      notification: delivery.notification ?? null,
+    },
+  };
+}
+
+/**
  * GetDeliveryByNotificationId Use Case
  *
  * Retrieves a single delivery by notification ID.
  * Verifies that the delivery belongs to the specified trip.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getDeliveryByNotificationIdUseCase(input).pipe(
+ *   Effect.provideService(NotificationDeliveryRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetDeliveryByNotificationIdUseCase {
-  constructor(private deliveryRepo: NotificationDeliveryRepository) {}
+export function getDeliveryByNotificationIdUseCase(
+  input: GetDeliveryByNotificationIdInput,
+): Effect.Effect<
+  GetDeliveryByNotificationIdOutput,
+  DeliveryNotFoundError | GetDeliveryError,
+  NotificationDeliveryRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationDeliveryRepositoryTag;
 
-  async execute(
-    input: GetDeliveryByNotificationIdInput,
-  ): Promise<Result<GetDeliveryByNotificationIdOutput, string>> {
-    try {
-      const delivery = await this.deliveryRepo.findByNotificationId(
-        input.notificationId,
-      );
+    const delivery = yield* repo.findByNotificationId(input.notificationId);
 
-      if (!delivery || delivery.tripId !== input.tripId) {
-        return err("Notification delivery not found");
-      }
-
-      return ok({
-        delivery: {
-          id: delivery.id,
-          notificationId: delivery.notificationId,
-          tripId: delivery.tripId,
-          status: delivery.status,
-          totalRecipients: delivery.totalRecipients,
-          successCount: delivery.successCount,
-          failureCount: delivery.failureCount,
-          deliveryStartedAt: delivery.deliveryStartedAt,
-          ...(delivery.deliveryCompletedAt !== undefined && {
-            deliveryCompletedAt: delivery.deliveryCompletedAt,
-          }),
-          ...(delivery.errorLog !== undefined && {
-            errorLog: delivery.errorLog,
-          }),
-          notification: delivery.notification ?? null,
-        },
-      });
-    } catch (error) {
-      return err(
-        `Failed to get delivery: ${error instanceof Error ? error.message : String(error)}`,
-      );
+    if (!delivery || delivery.tripId !== input.tripId) {
+      return yield* Effect.fail(new DeliveryNotFoundError());
     }
-  }
+
+    return toOutput(delivery);
+  }).pipe(
+    Effect.catchAll((error) => {
+      // Don't wrap DeliveryNotFoundError in GetDeliveryError
+      if (error instanceof DeliveryNotFoundError) {
+        return Effect.fail(error);
+      }
+      return Effect.fail(new GetDeliveryError(error));
+    }),
+  );
 }

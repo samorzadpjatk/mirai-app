@@ -5,34 +5,32 @@
  * This use case acts as an orchestrator between the framework layer (tRPC middleware)
  * and the authentication port (Supabase Auth, JWT, etc.).
  *
- * ## Responsibility
- * - Accepts a raw authentication token
- * - Delegates validation to the AuthPort
- * - Returns Result<AuthContext, AuthError> for explicit error handling
+ * ## Effect-based Pattern
  *
- * ## Design Decisions
- * - Uses Result type for explicit error handling (no exceptions)
- * - Framework-agnostic (no tRPC dependencies)
- * - Promise-based (async/await), not Effect
- * - Delegates to AuthPort for actual authentication mechanism
- *
- * ## Constructor Injection Pattern
- *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new AuthenticateUserUseCase(authPort);
+ * // With dependency injection
+ * const program = authenticateUserUseCase(input);
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("authenticateUserUseCase");
+ * // Provide auth port implementation
+ * const runnable = program.pipe(
+ *   Effect.provideService(AuthPortTag, authPort)
+ * );
+ *
+ * // Run the effect
+ * const result = await Effect.runPromise(runnable);
  * ```
- *
- * @module interactors
  */
 
-import type { Result, AuthContext } from "@mirai-app/domain";
-import type { AuthPort, AuthError, InvalidTokenError, SessionExpiredError } from "../ports/AuthPort";
+import { Effect } from "effect";
+import type { AuthContext } from "@mirai-app/domain";
+import {
+  AuthPortTag,
+  AuthError,
+  InvalidTokenError,
+  SessionExpiredError,
+} from "../ports/AuthPort";
 
 /**
  * Input for AuthenticateUser use case
@@ -46,7 +44,7 @@ export interface AuthenticateUserInput {
  * Output DTO for AuthenticateUser use case
  *
  * Contains the authentication context on success.
- * Errors are returned as Result.err(), not thrown.
+ * Errors are returned as Effect.fail(), not thrown.
  */
 export interface AuthenticateUserOutput {
   /** Unique identifier of the authenticated user */
@@ -66,49 +64,39 @@ export interface AuthenticateUserOutput {
  *
  * @example
  * ```typescript
- * const useCase = new AuthenticateUserUseCase(authPort);
- * const result = await useCase.execute({ token: "jwt-token-string" });
+ * const program = authenticateUserUseCase({ token: "jwt-token-string" });
+ * const runnable = program.pipe(Effect.provideService(AuthPortTag, authPort));
  *
- * if (isOk(result)) {
- *   const context = result.value;
- *   console.log(`User ${context.userId} authenticated with role ${context.role}`);
- * } else {
- *   // Handle error: result.error
- *   console.error(`Authentication failed: ${result.error.message}`);
+ * try {
+ *   const result = await Effect.runPromise(runnable);
+ *   console.log(`User ${result.userId} authenticated with role ${result.role}`);
+ * } catch (error) {
+ *   // Handle error
+ *   if (error instanceof InvalidTokenError) {
+ *     console.error("Invalid token");
+ *   }
  * }
  * ```
  */
-export class AuthenticateUserUseCase {
-  constructor(private readonly authPort: AuthPort) {}
+export function authenticateUserUseCase(
+  input: AuthenticateUserInput,
+): Effect.Effect<
+  AuthenticateUserOutput,
+  AuthError | InvalidTokenError | SessionExpiredError,
+  AuthPortTag
+> {
+  return Effect.gen(function* () {
+    const authPort = yield* AuthPortTag;
 
-  /**
-   * Execute the authentication use case
-   *
-   * @param input - Object containing the token to validate
-   * @returns Result<AuthContext, AuthError | InvalidTokenError>
-   *
-   * @example
-   * ```typescript
-   * const result = await useCase.execute({ token: "my-jwt-token" });
-   *
-   * if (isOk(result)) {
-   *   // Access auth context
-   *   const { userId, role, isAdmin } = result.value;
-   * } else {
-   *   // Handle specific error types
-   *   if (result.error._tag === "InvalidTokenError") {
-   *     // Token is malformed or invalid
-   *   } else if (result.error._tag === "AuthError") {
-   *     // General auth failure
-   *   }
-   * }
-   * ```
-   */
-  async execute(
-    input: AuthenticateUserInput,
-  ): Promise<Result<AuthContext, AuthError | InvalidTokenError | SessionExpiredError>> {
     // Delegate validation to the auth port
     // The port handles the actual authentication mechanism (Supabase, JWT, etc.)
-    return this.authPort.validateToken(input.token);
-  }
+    const authContext = yield* authPort.validateToken(input.token);
+
+    return {
+      userId: authContext.userId,
+      role: authContext.role,
+      authenticatedAt: authContext.authenticatedAt,
+      sessionId: authContext.sessionId,
+    };
+  });
 }

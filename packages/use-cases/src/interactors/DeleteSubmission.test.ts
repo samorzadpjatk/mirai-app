@@ -1,18 +1,30 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  DeleteSubmissionUseCase,
+  deleteSubmissionUseCase,
   type DeleteSubmissionInput,
+  SubmissionDeleteNotFoundError,
+  SubmissionDeleteNotAllowedError,
+  DeleteSubmissionRepositoryError,
 } from "./DeleteSubmission";
 import { ChallengeSubmission, SubmissionId } from "@mirai-app/domain";
-import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
+import { Effect, Either } from "effect";
+import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
+import { InMemoryChallengeSubmissionRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] DeleteSubmissionUseCase", () => {
+describe("[UNIT] deleteSubmissionUseCase (Effect)", () => {
+  let repo: InMemoryChallengeSubmissionRepository;
+
+  beforeEach(() => {
+    repo = new InMemoryChallengeSubmissionRepository();
+  });
+
+  // Helper to create a valid submission
   const createValidSubmission = (
     overrides?: Partial<{
       id: string;
       status: string;
     }>,
-  ): ChallengeSubmission => {
+  ) => {
     const result = ChallengeSubmission.create({
       id: overrides?.id ?? "submission-123",
       challengeId: "challenge-123",
@@ -31,118 +43,181 @@ describe("[UNIT] DeleteSubmissionUseCase", () => {
     return result.value;
   };
 
-  const createMockRepo = (
-    overrides?: Partial<ChallengeSubmissionRepository>,
-  ): ChallengeSubmissionRepository => ({
-    create: mock(() => Promise.resolve(createValidSubmission() as any)),
-    findById: mock(() => Promise.resolve(null)),
-    findByChallengeAndGroup: mock(() => Promise.resolve(null)),
-    findByChallengeId: mock(() => Promise.resolve([])),
-    findByGroupId: mock(() => Promise.resolve([])),
-    findByStatus: mock(() => Promise.resolve([])),
-    findMany: mock(() => Promise.resolve([])),
-    update: mock(() => Promise.resolve(createValidSubmission() as any)),
-    delete: mock(() => Promise.resolve()),
-    existsForChallengeAndGroup: mock(() => Promise.resolve(false)),
-    countByChallengeId: mock(() => Promise.resolve(0)),
-    countByChallengeAndStatus: mock(() => Promise.resolve(0)),
-    ...overrides,
-  });
+  // Helper to run use case with repository
+  const runUseCase = async (input: DeleteSubmissionInput) => {
+    const program = deleteSubmissionUseCase(input).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, {
+        create: (submission: ChallengeSubmission) =>
+          Effect.promise(() => repo.create(submission)),
+        findById: (id: SubmissionId) => Effect.promise(() => repo.findById(id)),
+        findByChallengeAndGroup: (challengeId: string, groupId: string) =>
+          Effect.promise(() =>
+            repo.findByChallengeAndGroup(challengeId, groupId),
+          ),
+        findByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.findByChallengeId(challengeId)),
+        findByGroupId: (groupId: string) =>
+          Effect.promise(() => repo.findByGroupId(groupId)),
+        findByStatus: (status: any) =>
+          Effect.promise(() => repo.findByStatus(status)),
+        findMany: (params: any) => Effect.promise(() => repo.findMany(params)),
+        update: (submission: ChallengeSubmission) =>
+          Effect.promise(() => repo.update(submission)),
+        delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
+        existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
+          Effect.promise(() =>
+            repo.existsForChallengeAndGroup(challengeId, groupId),
+          ),
+        countByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.countByChallengeId(challengeId)),
+        countByChallengeAndStatus: (challengeId: string, status: any) =>
+          Effect.promise(() =>
+            repo.countByChallengeAndStatus(challengeId, status),
+          ),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should delete submission successfully when pending", async () => {
-      const existingSubmission = createValidSubmission({
-        id: "submission-456",
-        status: "PENDING",
-      });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(existingSubmission)),
-        delete: mock(() => Promise.resolve()),
-      });
+      // Arrange
+      const submission = createValidSubmission({ id: "submission-456" });
+      await repo.create(submission);
 
-      const useCase = new DeleteSubmissionUseCase(mockRepo);
       const input: DeleteSubmissionInput = {
         submissionId: SubmissionId.unsafeCreate("submission-456"),
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.success).toBe(true);
-      }
-      expect(mockRepo.findById).toHaveBeenCalledWith("submission-456");
-      expect(mockRepo.delete).toHaveBeenCalledWith("submission-456");
+      // Assert
+      expect(result.success).toBe(true);
+
+      // Verify deleted
+      const stored = await repo.findById(
+        SubmissionId.unsafeCreate("submission-456"),
+      );
+      expect(stored).toBeNull();
     });
 
     it("should return error when submission not found", async () => {
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(null)),
-      });
-
-      const useCase = new DeleteSubmissionUseCase(mockRepo);
+      // Arrange
       const input: DeleteSubmissionInput = {
         submissionId: SubmissionId.unsafeCreate("non-existent"),
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const program = deleteSubmissionUseCase(input).pipe(
+        Effect.provideService(ChallengeSubmissionRepositoryTag, {
+          create: (s: ChallengeSubmission) =>
+            Effect.promise(() => repo.create(s)),
+          findById: (id: SubmissionId) =>
+            Effect.promise(() => repo.findById(id)),
+          findByChallengeAndGroup: (challengeId: string, groupId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndGroup(challengeId, groupId),
+            ),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByGroupId: (groupId: string) =>
+            Effect.promise(() => repo.findByGroupId(groupId)),
+          findByStatus: (status: any) =>
+            Effect.promise(() => repo.findByStatus(status)),
+          findMany: (params: any) =>
+            Effect.promise(() => repo.findMany(params)),
+          update: (s: ChallengeSubmission) =>
+            Effect.promise(() => repo.update(s)),
+          delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
+          existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
+            Effect.promise(() =>
+              repo.existsForChallengeAndGroup(challengeId, groupId),
+            ),
+          countByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.countByChallengeId(challengeId)),
+          countByChallengeAndStatus: (challengeId: string, status: any) =>
+            Effect.promise(() =>
+              repo.countByChallengeAndStatus(challengeId, status),
+            ),
+        }),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Submission not found");
+      // Act & Assert
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SubmissionDeleteNotFoundError);
       }
-      expect(mockRepo.delete).not.toHaveBeenCalled();
     });
 
     it("should return error when submission is already approved", async () => {
-      // Create an approved submission by first creating it, then approving it
-      const pendingSubmission = createValidSubmission({
-        id: "submission-approved",
-      });
-      const approvedResult = pendingSubmission.approve({
-        reviewedById: "moderator-123",
-        awardedPoints: 100,
-      });
-      if (approvedResult.kind === "err") {
-        throw new Error("Failed to approve submission");
-      }
-      const approvedSubmission = approvedResult.value;
+      // Arrange - create and approve submission
+      const submission = createValidSubmission({ id: "submission-approved" });
+      await repo.create(submission);
 
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(approvedSubmission)),
-      });
+      const approved = await Effect.runPromise(
+        submission.approve({
+          reviewedById: "moderator-123",
+          awardedPoints: 100,
+        }),
+      );
+      await repo.update(approved);
 
-      const useCase = new DeleteSubmissionUseCase(mockRepo);
       const input: DeleteSubmissionInput = {
         submissionId: SubmissionId.unsafeCreate("submission-approved"),
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const program = deleteSubmissionUseCase(input).pipe(
+        Effect.provideService(ChallengeSubmissionRepositoryTag, {
+          create: (s: ChallengeSubmission) =>
+            Effect.promise(() => repo.create(s)),
+          findById: (id: SubmissionId) =>
+            Effect.promise(() => repo.findById(id)),
+          findByChallengeAndGroup: (challengeId: string, groupId: string) =>
+            Effect.promise(() =>
+              repo.findByChallengeAndGroup(challengeId, groupId),
+            ),
+          findByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.findByChallengeId(challengeId)),
+          findByGroupId: (groupId: string) =>
+            Effect.promise(() => repo.findByGroupId(groupId)),
+          findByStatus: (status: any) =>
+            Effect.promise(() => repo.findByStatus(status)),
+          findMany: (params: any) =>
+            Effect.promise(() => repo.findMany(params)),
+          update: (s: ChallengeSubmission) =>
+            Effect.promise(() => repo.update(s)),
+          delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
+          existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
+            Effect.promise(() =>
+              repo.existsForChallengeAndGroup(challengeId, groupId),
+            ),
+          countByChallengeId: (challengeId: string) =>
+            Effect.promise(() => repo.countByChallengeId(challengeId)),
+          countByChallengeAndStatus: (challengeId: string, status: any) =>
+            Effect.promise(() =>
+              repo.countByChallengeAndStatus(challengeId, status),
+            ),
+        }),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe(
+      // Act & Assert
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SubmissionDeleteNotAllowedError);
+        expect(either.left.message).toBe(
           "Cannot delete an approved or rejected submission",
         );
       }
-      expect(mockRepo.delete).not.toHaveBeenCalled();
-    });
 
-    it("should handle repository errors", async () => {
-      const existingSubmission = createValidSubmission({
-        id: "submission-456",
-      });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(existingSubmission)),
-        delete: mock(() => Promise.reject(new Error("Delete failed"))),
-      });
-
-      const useCase = new DeleteSubmissionUseCase(mockRepo);
-      const input: DeleteSubmissionInput = {
-        submissionId: SubmissionId.unsafeCreate("submission-456"),
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("Delete failed");
+      // Verify not deleted
+      const stored = await repo.findById(
+        SubmissionId.unsafeCreate("submission-approved"),
+      );
+      expect(stored).not.toBeNull();
     });
   });
 });

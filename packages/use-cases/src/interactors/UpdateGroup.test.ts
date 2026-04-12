@@ -1,9 +1,23 @@
-import { describe, it, expect, mock } from "bun:test";
-import { UpdateGroupUseCase, type UpdateGroupInput } from "./UpdateGroup";
+import { describe, it, expect, beforeEach } from "bun:test";
+import {
+  updateGroupUseCase,
+  type UpdateGroupInput,
+  UpdateGroupNotFoundError,
+  UpdateGroupDeletedError,
+  UpdateGroupValidationError,
+} from "./UpdateGroup";
 import { Group, GroupStatus } from "@mirai-app/domain";
-import type { GroupRepository } from "../ports/GroupRepository";
+import { Effect, Either } from "effect";
+import { GroupRepositoryTag } from "../ports/GroupRepository";
+import { InMemoryGroupRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] UpdateGroupUseCase", () => {
+describe("[UNIT] updateGroupUseCase (Effect)", () => {
+  let repo: InMemoryGroupRepository;
+
+  beforeEach(() => {
+    repo = new InMemoryGroupRepository();
+  });
+
   // Helper to create a valid group
   const createValidGroup = (
     overrides?: Partial<{
@@ -33,6 +47,34 @@ describe("[UNIT] UpdateGroupUseCase", () => {
     return result.value;
   };
 
+  // Helper to run use case with repository
+  const runUseCase = async (input: UpdateGroupInput) => {
+    const program = updateGroupUseCase(input).pipe(
+      Effect.provideService(GroupRepositoryTag, {
+        create: (group: Group) => Effect.promise(() => repo.create(group)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => repo.findByTripId(tripId)),
+        findByStatus: (status: GroupStatus) =>
+          Effect.promise(() => repo.findByStatus(status)),
+        findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
+          Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+        findByOrganizerId: (organizerId: string) =>
+          Effect.promise(() => repo.findByOrganizerId(organizerId)),
+        findByCode: (code: string) =>
+          Effect.promise(() => repo.findByCode(code)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => repo.findAll(options)),
+        update: (group: Group) => Effect.promise(() => repo.update(group)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        exists: (id: string) => Effect.promise(() => repo.exists(id)),
+        countByTripId: (tripId: string) =>
+          Effect.promise(() => repo.countByTripId(tripId)),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
+
   describe("execute", () => {
     it("should update group name successfully", async () => {
       // Arrange
@@ -40,69 +82,30 @@ describe("[UNIT] UpdateGroupUseCase", () => {
         id: "group-456",
         name: "Old Name",
       });
-      const updatedGroup = createValidGroup({
-        id: "group-456",
-        name: "New Name",
-      });
+      await repo.create(existingGroup);
 
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(existingGroup)),
-        findById: mock(() => Promise.resolve(existingGroup)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(updatedGroup)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByTripId: mock(() => Promise.resolve(1)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
       const input: UpdateGroupInput = {
         groupId: "group-456",
         name: "New Name",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.name).toBe("New Name");
-        expect(result.value.id).toBe("group-456");
-      }
-      expect(mockRepo.findById).toHaveBeenCalledWith("group-456");
-      expect(mockRepo.update).toHaveBeenCalled();
+      expect(result.name).toBe("New Name");
+      expect(result.id).toBe("group-456");
+
+      // Verify in repository
+      const stored = await repo.findById("group-456");
+      expect(stored?.name).toBe("New Name");
     });
 
     it("should update group description and image", async () => {
       // Arrange
       const existingGroup = createValidGroup({ id: "group-456" });
-      const updatedGroup = createValidGroup({
-        id: "group-456",
-        name: "Test Group",
-      });
+      await repo.create(existingGroup);
 
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(existingGroup)),
-        findById: mock(() => Promise.resolve(existingGroup)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(updatedGroup)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByTripId: mock(() => Promise.resolve(1)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
       const input: UpdateGroupInput = {
         groupId: "group-456",
         description: "Updated description",
@@ -110,11 +113,11 @@ describe("[UNIT] UpdateGroupUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      expect(mockRepo.update).toHaveBeenCalled();
+      expect(result.description).toBe("Updated description");
+      expect(result.image).toBe("https://example.com/new-image.png");
     });
 
     it("should update organizerId successfully", async () => {
@@ -123,77 +126,65 @@ describe("[UNIT] UpdateGroupUseCase", () => {
         id: "group-456",
         organizerId: "user-old",
       });
-      const updatedGroup = createValidGroup({
-        id: "group-456",
-        organizerId: "user-new",
-      });
+      await repo.create(existingGroup);
 
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(existingGroup)),
-        findById: mock(() => Promise.resolve(existingGroup)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(updatedGroup)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByTripId: mock(() => Promise.resolve(1)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
       const input: UpdateGroupInput = {
         groupId: "group-456",
         organizerId: "user-new",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.organizerId).toBe("user-new");
-      }
+      expect(result.organizerId).toBe("user-new");
+
+      // Verify in repository
+      const stored = await repo.findById("group-456");
+      expect(stored?.organizerId).toBe("user-new");
     });
 
-    it("should return error when group not found", async () => {
+    it("should fail when group not found", async () => {
       // Arrange
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(createValidGroup())),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(createValidGroup())),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
       const input: UpdateGroupInput = {
         groupId: "non-existent-id",
         name: "New Name",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const program = updateGroupUseCase(input).pipe(
+        Effect.provideService(GroupRepositoryTag, {
+          create: (group: Group) => Effect.promise(() => repo.create(group)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByTripId: (tripId: string) =>
+            Effect.promise(() => repo.findByTripId(tripId)),
+          findByStatus: (status: GroupStatus) =>
+            Effect.promise(() => repo.findByStatus(status)),
+          findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
+            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+          findByOrganizerId: (organizerId: string) =>
+            Effect.promise(() => repo.findByOrganizerId(organizerId)),
+          findByCode: (code: string) =>
+            Effect.promise(() => repo.findByCode(code)),
+          findAll: (options?: { limit?: number; offset?: number }) =>
+            Effect.promise(() => repo.findAll(options)),
+          update: (group: Group) => Effect.promise(() => repo.update(group)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+          countByTripId: (tripId: string) =>
+            Effect.promise(() => repo.countByTripId(tripId)),
+        }),
+      );
 
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Group not found");
+      // Act & Assert
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(UpdateGroupNotFoundError);
       }
-      expect(mockRepo.update).not.toHaveBeenCalled();
     });
 
-    it("should return error when group is deleted", async () => {
+    it("should fail when group is deleted", async () => {
       // Arrange
       const groupResult = Group.create({
         id: "group-deleted",
@@ -210,139 +201,87 @@ describe("[UNIT] UpdateGroupUseCase", () => {
         throw new Error("Failed to create test group");
       }
       const deletedGroup = groupResult.value;
+      await repo.create(deletedGroup);
 
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(deletedGroup)),
-        findById: mock(() => Promise.resolve(deletedGroup)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(deletedGroup)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByTripId: mock(() => Promise.resolve(1)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
       const input: UpdateGroupInput = {
         groupId: "group-deleted",
         name: "New Name",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const program = updateGroupUseCase(input).pipe(
+        Effect.provideService(GroupRepositoryTag, {
+          create: (group: Group) => Effect.promise(() => repo.create(group)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByTripId: (tripId: string) =>
+            Effect.promise(() => repo.findByTripId(tripId)),
+          findByStatus: (status: GroupStatus) =>
+            Effect.promise(() => repo.findByStatus(status)),
+          findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
+            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+          findByOrganizerId: (organizerId: string) =>
+            Effect.promise(() => repo.findByOrganizerId(organizerId)),
+          findByCode: (code: string) =>
+            Effect.promise(() => repo.findByCode(code)),
+          findAll: (options?: { limit?: number; offset?: number }) =>
+            Effect.promise(() => repo.findAll(options)),
+          update: (group: Group) => Effect.promise(() => repo.update(group)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+          countByTripId: (tripId: string) =>
+            Effect.promise(() => repo.countByTripId(tripId)),
+        }),
+      );
 
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Cannot update a deleted group");
-      }
-      expect(mockRepo.update).not.toHaveBeenCalled();
-    });
-
-    it("should return error when repository fails to load", async () => {
-      // Arrange
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(createValidGroup())),
-        findById: mock(() => Promise.reject(new Error("DB error"))),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(createValidGroup())),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
-      const input: UpdateGroupInput = {
-        groupId: "group-123",
-        name: "New Name",
-      };
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Failed to load group");
+      // Act & Assert
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(UpdateGroupDeletedError);
       }
     });
 
-    it("should return error when repository fails to update", async () => {
+    it("should fail when name validation fails", async () => {
       // Arrange
       const existingGroup = createValidGroup({ id: "group-456" });
+      await repo.create(existingGroup);
 
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(existingGroup)),
-        findById: mock(() => Promise.resolve(existingGroup)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.reject(new Error("DB error"))),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByTripId: mock(() => Promise.resolve(1)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
-      const input: UpdateGroupInput = {
-        groupId: "group-456",
-        name: "New Name",
-      };
-
-      // Act
-      const result = await useCase.execute(input);
-
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Failed to update group");
-      }
-    });
-
-    it("should return error when name validation fails", async () => {
-      // Arrange
-      const existingGroup = createValidGroup({ id: "group-456" });
-
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(existingGroup)),
-        findById: mock(() => Promise.resolve(existingGroup)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(existingGroup)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByTripId: mock(() => Promise.resolve(1)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
       const input: UpdateGroupInput = {
         groupId: "group-456",
         name: "", // Invalid empty name
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const program = updateGroupUseCase(input).pipe(
+        Effect.provideService(GroupRepositoryTag, {
+          create: (group: Group) => Effect.promise(() => repo.create(group)),
+          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          findByTripId: (tripId: string) =>
+            Effect.promise(() => repo.findByTripId(tripId)),
+          findByStatus: (status: GroupStatus) =>
+            Effect.promise(() => repo.findByStatus(status)),
+          findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
+            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+          findByOrganizerId: (organizerId: string) =>
+            Effect.promise(() => repo.findByOrganizerId(organizerId)),
+          findByCode: (code: string) =>
+            Effect.promise(() => repo.findByCode(code)),
+          findAll: (options?: { limit?: number; offset?: number }) =>
+            Effect.promise(() => repo.findAll(options)),
+          update: (group: Group) => Effect.promise(() => repo.update(group)),
+          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+          countByTripId: (tripId: string) =>
+            Effect.promise(() => repo.countByTripId(tripId)),
+        }),
+      );
 
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("name");
+      // Act & Assert
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(UpdateGroupValidationError);
+        expect(either.left.message).toContain("name");
       }
     });
 
@@ -352,74 +291,37 @@ describe("[UNIT] UpdateGroupUseCase", () => {
         id: "group-456",
         name: "Original Name",
       });
+      await repo.create(existingGroup);
 
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(existingGroup)),
-        findById: mock(() => Promise.resolve(existingGroup)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(existingGroup)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByTripId: mock(() => Promise.resolve(1)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
       const input: UpdateGroupInput = {
         groupId: "group-456",
         // No fields to update
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.name).toBe("Original Name");
-      }
-      expect(mockRepo.update).toHaveBeenCalled();
+      expect(result.name).toBe("Original Name");
     });
 
     it("should include isActive and summary in output", async () => {
       // Arrange
       const existingGroup = createValidGroup({ id: "group-456" });
+      await repo.create(existingGroup);
 
-      const mockRepo: GroupRepository = {
-        create: mock(() => Promise.resolve(existingGroup)),
-        findById: mock(() => Promise.resolve(existingGroup)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findByOrganizerId: mock(() => Promise.resolve([])),
-        findByCode: mock(() => Promise.resolve(null)),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(existingGroup)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(true)),
-        countByTripId: mock(() => Promise.resolve(1)),
-      };
-
-      const useCase = new UpdateGroupUseCase(mockRepo);
       const input: UpdateGroupInput = {
         groupId: "group-456",
         name: "Updated Name",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.summary).toBeDefined();
-        expect(result.value.updatedAt).toBeInstanceOf(Date);
-      }
+      expect(result.isActive).toBe(true);
+      expect(result.summary).toBeDefined();
+      expect(result.updatedAt).toBeInstanceOf(Date);
     });
   });
 });

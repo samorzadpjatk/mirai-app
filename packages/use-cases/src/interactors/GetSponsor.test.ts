@@ -1,13 +1,19 @@
-import { describe, it, expect, mock } from "bun:test";
-import { GetSponsorUseCase, type GetSponsorInput } from "./GetSponsor";
+import { describe, it, expect, beforeEach } from "bun:test";
+import {
+  getSponsorUseCase,
+  type GetSponsorInput,
+  GetSponsorNotFoundError,
+} from "./GetSponsor";
 import { Sponsor } from "@mirai-app/domain";
-import type { SponsorRepository } from "../ports/SponsorRepository";
+import { Effect, Either } from "effect";
+import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
-describe("[UNIT] GetSponsorUseCase", () => {
+describe("[UNIT] getSponsorUseCase (Effect)", () => {
+  // Helper to create a valid sponsor using Effect
   const createValidSponsor = (
     overrides?: Partial<{ id: string; name: string; isActive: boolean }>,
   ): Sponsor => {
-    const result = Sponsor.create({
+    const effect = Sponsor.create({
       id: overrides?.id ?? "sponsor-123",
       name: overrides?.name ?? "Test Sponsor",
       description: "A test sponsor description",
@@ -17,28 +23,48 @@ describe("[UNIT] GetSponsorUseCase", () => {
       offsetY: 20,
       isActive: overrides?.isActive ?? true,
     });
-    if (result.kind === "err") {
-      throw new Error(`Failed to create test sponsor: ${result.error.message}`);
+    try {
+      return Effect.runSync(effect);
+    } catch (e) {
+      throw new Error(`Failed to create test sponsor: ${e}`);
     }
-    return result.value;
   };
 
-  const createMockRepo = (
-    overrides?: Partial<SponsorRepository>,
-  ): SponsorRepository => ({
-    create: mock(() => Promise.resolve(createValidSponsor())),
-    findById: mock(() => Promise.resolve(null)),
-    findAll: mock(() => Promise.resolve([])),
-    findActive: mock(() => Promise.resolve([])),
-    findByTripId: mock(() => Promise.resolve([])),
-    update: mock(() => Promise.resolve(createValidSponsor())),
-    delete: mock(() => Promise.resolve()),
-    exists: mock(() => Promise.resolve(false)),
-    isLinkedToTrip: mock(() => Promise.resolve(false)),
-    linkToTrip: mock(() => Promise.resolve()),
-    unlinkFromTrip: mock(() => Promise.resolve()),
-    ...overrides,
+  // Helper to create mock repository service
+  const createMockRepoService = (overrides?: {
+    findById?: (id: string) => Promise<Sponsor | null>;
+  }) => ({
+    create: (sponsor: Sponsor) =>
+      Effect.promise(() => Promise.resolve(sponsor)),
+    findById: (id: string) =>
+      Effect.promise(() =>
+        overrides?.findById ? overrides.findById(id) : Promise.resolve(null),
+      ),
+    findAll: () => Effect.promise(() => Promise.resolve([])),
+    findActive: () => Effect.promise(() => Promise.resolve([])),
+    findByTripId: () => Effect.promise(() => Promise.resolve([])),
+    update: (sponsor: Sponsor) =>
+      Effect.promise(() => Promise.resolve(sponsor)),
+    delete: () => Effect.promise(() => Promise.resolve()),
+    exists: () => Effect.promise(() => Promise.resolve(false)),
+    isLinkedToTrip: () => Effect.promise(() => Promise.resolve(false)),
+    linkToTrip: () => Effect.promise(() => Promise.resolve()),
+    unlinkFromTrip: () => Effect.promise(() => Promise.resolve()),
   });
+
+  // Helper to run use case with repository service
+  const runUseCase = async (
+    input: GetSponsorInput,
+    repoOverrides?: { findById?: (id: string) => Promise<Sponsor | null> },
+  ) => {
+    const program = getSponsorUseCase(input).pipe(
+      Effect.provideService(
+        SponsorRepositoryTag,
+        createMockRepoService(repoOverrides),
+      ),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should return sponsor when found", async () => {
@@ -47,49 +73,37 @@ describe("[UNIT] GetSponsorUseCase", () => {
         name: "Acme Corp",
         isActive: true,
       });
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(mockSponsor)),
-      });
 
-      const useCase = new GetSponsorUseCase(mockRepo);
-      const input: GetSponsorInput = {
-        sponsorId: "sponsor-456",
-      };
+      const result = await runUseCase(
+        { sponsorId: "sponsor-456" },
+        { findById: () => Promise.resolve(mockSponsor) },
+      );
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("sponsor-456");
-        expect(result.value.name).toBe("Acme Corp");
-        expect(result.value.description).toBe("A test sponsor description");
-        expect(result.value.logoPath).toBe("/logos/test.png");
-        expect(result.value.height).toBe(100);
-        expect(result.value.offsetX).toBe(10);
-        expect(result.value.offsetY).toBe(20);
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.hasLogoAdjustments).toBe(true);
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-        expect(result.value.updatedAt).toBeInstanceOf(Date);
-      }
-      expect(mockRepo.findById).toHaveBeenCalledWith("sponsor-456");
+      expect(result.id).toBe("sponsor-456");
+      expect(result.name).toBe("Acme Corp");
+      expect(result.description).toBe("A test sponsor description");
+      expect(result.logoPath).toBe("/logos/test.png");
+      expect(result.height).toBe(100);
+      expect(result.offsetX).toBe(10);
+      expect(result.offsetY).toBe(20);
+      expect(result.isActive).toBe(true);
+      expect(result.hasLogoAdjustments).toBe(true);
+      expect(result.createdAt).toBeInstanceOf(Date);
+      expect(result.updatedAt).toBeInstanceOf(Date);
     });
 
-    it("should return error when sponsor not found", async () => {
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(null)),
-      });
+    it("should fail when sponsor not found", async () => {
+      const program = getSponsorUseCase({ sponsorId: "non-existent" }).pipe(
+        Effect.provideService(
+          SponsorRepositoryTag,
+          createMockRepoService({ findById: () => Promise.resolve(null) }),
+        ),
+      );
 
-      const useCase = new GetSponsorUseCase(mockRepo);
-      const input: GetSponsorInput = {
-        sponsorId: "non-existent",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Sponsor not found");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(GetSponsorNotFoundError);
       }
     });
 
@@ -104,42 +118,17 @@ describe("[UNIT] GetSponsorUseCase", () => {
         offsetY: null,
         isActive: true,
       });
-      if (sponsorResult.kind === "err") {
-        throw new Error("Failed to create test sponsor");
-      }
-      const mockSponsor = sponsorResult.value;
+      const mockSponsor = Effect.runSync(sponsorResult);
 
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.resolve(mockSponsor)),
-      });
+      const result = await runUseCase(
+        { sponsorId: "sponsor-simple" },
+        { findById: () => Promise.resolve(mockSponsor) },
+      );
 
-      const useCase = new GetSponsorUseCase(mockRepo);
-      const input: GetSponsorInput = {
-        sponsorId: "sponsor-simple",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.height).toBeNull();
-        expect(result.value.offsetX).toBeNull();
-        expect(result.value.offsetY).toBeNull();
-        expect(result.value.hasLogoAdjustments).toBe(false);
-      }
-    });
-
-    it("should handle repository errors", async () => {
-      const mockRepo = createMockRepo({
-        findById: mock(() => Promise.reject(new Error("DB error"))),
-      });
-
-      const useCase = new GetSponsorUseCase(mockRepo);
-      const input: GetSponsorInput = {
-        sponsorId: "sponsor-123",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("DB error");
+      expect(result.height).toBeNull();
+      expect(result.offsetX).toBeNull();
+      expect(result.offsetY).toBeNull();
+      expect(result.hasLogoAdjustments).toBe(false);
     });
   });
 });

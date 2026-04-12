@@ -1,6 +1,6 @@
-import type { Result, ActivityFeed, ActivityId } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { ActivityFeedRepository } from "../ports/ActivityFeedRepository";
+import { ActivityFeed, type ActivityId } from "@mirai-app/domain";
+import { Effect, Data } from "effect";
+import { ActivityFeedRepositoryTag } from "../ports/ActivityFeedRepository";
 
 /**
  * Input for GetActivityFeed use case
@@ -53,51 +53,85 @@ export interface GetActivityFeedOutput {
 }
 
 /**
+ * Error types for GetActivityFeed use case
+ */
+export class ActivityFeedQueryError extends Data.TaggedError(
+  "ActivityFeedQueryError",
+)<{ message: string }> {}
+
+/**
  * GetActivityFeed Use Case
  *
  * Retrieves activities for a trip with cursor-based pagination.
  * Returns only visible activities (not hidden).
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* getActivityFeedUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(ActivityFeedRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class GetActivityFeedUseCase {
-  constructor(private activityFeedRepository: ActivityFeedRepository) {}
+export function getActivityFeedUseCase(
+  input: GetActivityFeedInput,
+): Effect.Effect<
+  GetActivityFeedOutput,
+  ActivityFeedQueryError,
+  ActivityFeedRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const activityRepo = yield* ActivityFeedRepositoryTag;
 
-  async execute(
-    input: GetActivityFeedInput,
-  ): Promise<Result<GetActivityFeedOutput, string>> {
     const pageSize = input.pageSize ?? 30;
 
-    const result = await this.activityFeedRepository.findByTripId(
-      input.tripId,
-      {
+    const result = yield* activityRepo
+      .findByTripId(input.tripId, {
         limit: pageSize,
-        ...(input.cursor !== undefined && { cursor: input.cursor }),
+        cursor: input.cursor ?? undefined,
         includeHidden: false,
-      },
-    );
+      })
+      .pipe(
+        Effect.mapError(
+          () =>
+            new ActivityFeedQueryError({
+              message: "Failed to fetch activity feed",
+            }),
+        ),
+      );
 
-    return ok({
-      activities: result.activities.map((activity) => this.toOutput(activity)),
+    return {
+      activities: result.activities.map((activity) => toOutput(activity)),
       nextCursor: result.nextCursor,
       pagination: {
         pageSize,
         hasMore: result.hasMore,
       },
-    });
-  }
-
-  private toOutput(activity: ActivityFeed): ActivityOutput {
-    return {
-      id: activity.id,
-      tripId: activity.tripId,
-      activityType: activity.activityType,
-      title: activity.title,
-      description: activity.description,
-      imageUrl: activity.imageUrl,
-      isPinned: activity.isPinned,
-      isHidden: activity.isHidden,
-      createdAt: activity.createdAt,
-      updatedAt: activity.updatedAt,
-      admin: activity.admin,
     };
-  }
+  });
+}
+
+function toOutput(activity: ActivityFeed): ActivityOutput {
+  return {
+    id: activity.id,
+    tripId: activity.tripId,
+    activityType: activity.activityType,
+    title: activity.title,
+    description: activity.description,
+    imageUrl: activity.imageUrl,
+    isPinned: activity.isPinned,
+    isHidden: activity.isHidden,
+    createdAt: activity.createdAt,
+    updatedAt: activity.updatedAt,
+    admin: activity.admin,
+  };
 }

@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, ChallengeStatus } from "@mirai-app/domain";
-import type { ChallengeRepository } from "../ports/ChallengeRepository";
+import { Effect } from "effect";
+import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
+import { ChallengeStatus } from "@mirai-app/domain";
 import type { Challenge } from "@mirai-app/domain";
 
 /**
@@ -24,31 +24,76 @@ export interface UpdateChallengeStatusOutput {
 }
 
 /**
- * UpdateChallengeStatus Use Case
+ * Error when challenge is not found
+ */
+export class ChallengeNotFoundError extends Error {
+  readonly _tag = "ChallengeNotFoundError";
+  constructor() {
+    super("Challenge not found");
+  }
+}
+
+/**
+ * Error when status transition is invalid
+ */
+export class InvalidStatusTransitionError extends Error {
+  readonly _tag = "InvalidStatusTransitionError";
+  constructor(
+    public readonly fromStatus: string,
+    public readonly toStatus: string,
+  ) {
+    super(`Invalid status transition from ${fromStatus} to ${toStatus}`);
+  }
+}
+
+/**
+ * Error when challenge update fails
+ */
+export class ChallengeUpdateError extends Error {
+  readonly _tag = "ChallengeUpdateError";
+  constructor(public readonly cause: unknown) {
+    super("Failed to update challenge");
+  }
+}
+
+/**
+ * UpdateChallengeStatus Use Case (Effect-based)
  *
  * Updates a challenge's status with workflow validation.
  * Returns error if challenge not found or transition is invalid.
+ *
+ * ## Effect-based Pattern
+ *
+ * ```typescript
+ * const program = updateChallengeStatusUseCase(input).pipe(
+ *   Effect.provideService(ChallengeRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class UpdateChallengeStatusUseCase {
-  constructor(private challengeRepository: ChallengeRepository) {}
+export function updateChallengeStatusUseCase(
+  input: UpdateChallengeStatusInput,
+): Effect.Effect<
+  UpdateChallengeStatusOutput,
+  ChallengeNotFoundError | InvalidStatusTransitionError | ChallengeUpdateError,
+  ChallengeRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const challengeRepo = yield* ChallengeRepositoryTag;
 
-  async execute(
-    input: UpdateChallengeStatusInput,
-  ): Promise<Result<UpdateChallengeStatusOutput, string>> {
     // Find existing challenge
-    const challenge = await this.challengeRepository.findById(
-      input.challengeId,
-    );
+    const challenge = yield* challengeRepo.findById(input.challengeId);
+
     if (!challenge) {
-      return err("Challenge not found");
+      return yield* Effect.fail(new ChallengeNotFoundError());
     }
 
     const previousStatus = challenge.status;
 
     // Check if transition is valid
     if (!challenge.canTransitionTo(input.newStatus)) {
-      return err(
-        `Invalid status transition from ${previousStatus} to ${input.newStatus}`,
+      return yield* Effect.fail(
+        new InvalidStatusTransitionError(previousStatus, input.newStatus),
       );
     }
 
@@ -56,19 +101,19 @@ export class UpdateChallengeStatusUseCase {
     const updateResult = challenge.updateStatus(input.newStatus);
 
     if (updateResult.kind === "err") {
-      return err(updateResult.error.message);
+      return yield* Effect.fail(new ChallengeUpdateError(updateResult.error));
     }
 
     // Persist changes
-    const saved = await this.challengeRepository.update(updateResult.value);
+    const saved = yield* challengeRepo.update(updateResult.value);
 
-    return ok({
+    return {
       id: saved.id,
       tripId: saved.tripId,
       name: saved.name,
       previousStatus,
       newStatus: saved.status,
       updatedAt: saved.updatedAt,
-    });
-  }
+    };
+  });
 }

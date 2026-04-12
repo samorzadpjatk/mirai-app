@@ -1,15 +1,16 @@
 import { describe, it, expect, mock } from "bun:test";
 import {
-  GetCoinTransactionsUseCase,
+  getCoinTransactionsUseCase,
   type GetCoinTransactionsInput,
 } from "./GetCoinTransactions";
-import type {
-  CoinTransactionRepository,
-  CoinTransaction,
-  PaginationOptions,
+import { Effect, Either } from "effect";
+import {
+  CoinTransactionRepositoryTag,
+  type CoinTransaction,
+  type PaginationOptions,
 } from "../ports/CoinTransactionRepository";
 
-describe("[UNIT] GetCoinTransactionsUseCase", () => {
+describe("[UNIT] getCoinTransactionsUseCase (Effect)", () => {
   const createMockTransaction = (
     overrides?: Partial<CoinTransaction>,
   ): CoinTransaction => ({
@@ -18,20 +19,25 @@ describe("[UNIT] GetCoinTransactionsUseCase", () => {
     groupId: overrides?.groupId ?? "group-123",
     amount: overrides?.amount ?? 100,
     reason: overrides?.reason ?? "Test transaction",
-    createdById: overrides?.createdById ?? "user-123",
+    adminId: overrides?.adminId ?? "user-123",
     createdAt: overrides?.createdAt ?? new Date("2026-01-01"),
   });
 
-  const createMockRepo = (
-    overrides?: Partial<CoinTransactionRepository>,
-  ): CoinTransactionRepository => ({
-    findMany: mock(() => Promise.resolve([])),
-    findById: mock(() => Promise.resolve(null)),
-    findByGroupId: mock(() => Promise.resolve([])),
-    findByTripId: mock(() => Promise.resolve([])),
-    create: mock(() => Promise.resolve(createMockTransaction())),
-    count: mock(() => Promise.resolve(0)),
-    getBalance: mock(() => Promise.resolve(0)),
+  const createMockRepo = (overrides?: any) => ({
+    count: mock(() => Effect.succeed(0)),
+    sumAmount: mock(() => Effect.succeed(null)),
+    sumAddedCoins: mock(() => Effect.succeed(null)),
+    sumRemovedCoins: mock(() => Effect.succeed(null)),
+    getMostActiveAdmin: mock(() => Effect.succeed([])),
+    findMany: mock(() => Effect.succeed([])),
+    findRecent: mock(() => Effect.succeed([])),
+    getTotalCoinsByGroup: mock(() => Effect.succeed([])),
+    groupByAdmin: mock(() => Effect.succeed([])),
+    create: mock(() => Effect.succeed(createMockTransaction())),
+    incrementGroupCoins: mock(() => Effect.succeed(undefined)),
+    decrementGroupCoins: mock(() => Effect.succeed({ success: true })),
+    getGroupCoins: mock(() => Effect.succeed(0)),
+    verifyGroupInTrip: mock(() => Effect.succeed({ exists: true })),
     ...overrides,
   });
 
@@ -43,115 +49,123 @@ describe("[UNIT] GetCoinTransactionsUseCase", () => {
         createMockTransaction({ id: "tx-3", amount: 200 }),
       ];
       const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.resolve(mockTransactions)),
-        count: mock(() => Promise.resolve(3)),
+        findMany: mock(() => Effect.succeed(mockTransactions)),
+        count: mock(() => Effect.succeed(3)),
       });
 
-      const useCase = new GetCoinTransactionsUseCase(mockRepo);
       const input: GetCoinTransactionsInput = {
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const program = getCoinTransactionsUseCase(input).pipe(
+        Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.transactions).toHaveLength(3);
-        expect(result.value.pagination.total).toBe(3);
-        expect(result.value.pagination.limit).toBe(50);
-        expect(result.value.pagination.offset).toBe(0);
-        expect(result.value.pagination.hasMore).toBe(false);
-      }
+      const result = await Effect.runPromise(program);
+
+      expect(result.transactions).toHaveLength(3);
+      expect(result.pagination.total).toBe(3);
+      expect(result.pagination.limit).toBe(50);
+      expect(result.pagination.offset).toBe(0);
+      expect(result.pagination.hasMore).toBe(false);
     });
 
     it("should filter by group when groupId provided", async () => {
       const mockTransactions = [
         createMockTransaction({ id: "tx-1", groupId: "group-456" }),
       ];
+      const findManyMock = mock((filters: any) => {
+        expect(filters.groupId).toBe("group-456");
+        return Effect.succeed(mockTransactions);
+      });
       const mockRepo = createMockRepo({
-        findMany: mock((filters: any) => {
-          expect(filters.groupId).toBe("group-456");
-          return Promise.resolve(mockTransactions);
-        }),
-        count: mock(() => Promise.resolve(1)),
+        findMany: findManyMock,
+        count: mock(() => Effect.succeed(1)),
       });
 
-      const useCase = new GetCoinTransactionsUseCase(mockRepo);
       const input: GetCoinTransactionsInput = {
         tripId: "trip-123",
         groupId: "group-456",
       };
 
-      const result = await useCase.execute(input);
+      const program = getCoinTransactionsUseCase(input).pipe(
+        Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.transactions).toHaveLength(1);
-      }
+      const result = await Effect.runPromise(program);
+
+      expect(result.transactions).toHaveLength(1);
     });
 
     it("should apply pagination options", async () => {
-      const mockRepo = createMockRepo({
-        findMany: mock((filters: any, pagination: PaginationOptions) => {
+      const findManyMock = mock(
+        (filters: any, pagination: PaginationOptions) => {
           expect(pagination.limit).toBe(10);
           expect(pagination.offset).toBe(20);
-          return Promise.resolve([]);
-        }),
-        count: mock(() => Promise.resolve(100)),
+          return Effect.succeed([]);
+        },
+      );
+      const mockRepo = createMockRepo({
+        findMany: findManyMock,
+        count: mock(() => Effect.succeed(100)),
       });
 
-      const useCase = new GetCoinTransactionsUseCase(mockRepo);
       const input: GetCoinTransactionsInput = {
         tripId: "trip-123",
         pagination: { limit: 10, offset: 20 },
       };
 
-      const result = await useCase.execute(input);
+      const program = getCoinTransactionsUseCase(input).pipe(
+        Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.pagination.limit).toBe(10);
-        expect(result.value.pagination.offset).toBe(20);
-        expect(result.value.pagination.hasMore).toBe(true); // 20 + 10 < 100
-      }
+      const result = await Effect.runPromise(program);
+
+      expect(result.pagination.limit).toBe(10);
+      expect(result.pagination.offset).toBe(20);
+      expect(result.pagination.hasMore).toBe(true);
     });
 
     it("should return empty list when no transactions", async () => {
       const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.resolve([])),
-        count: mock(() => Promise.resolve(0)),
+        findMany: mock(() => Effect.succeed([])),
+        count: mock(() => Effect.succeed(0)),
       });
 
-      const useCase = new GetCoinTransactionsUseCase(mockRepo);
       const input: GetCoinTransactionsInput = {
         tripId: "trip-empty",
       };
 
-      const result = await useCase.execute(input);
+      const program = getCoinTransactionsUseCase(input).pipe(
+        Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.transactions).toHaveLength(0);
-        expect(result.value.pagination.total).toBe(0);
-        expect(result.value.pagination.hasMore).toBe(false);
-      }
+      const result = await Effect.runPromise(program);
+
+      expect(result.transactions).toHaveLength(0);
+      expect(result.pagination.total).toBe(0);
+      expect(result.pagination.hasMore).toBe(false);
     });
 
     it("should handle repository errors", async () => {
       const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.reject(new Error("DB error"))),
+        findMany: mock(() => Effect.fail(new Error("DB error"))),
       });
 
-      const useCase = new GetCoinTransactionsUseCase(mockRepo);
       const input: GetCoinTransactionsInput = {
         tripId: "trip-123",
       };
 
-      const result = await useCase.execute(input);
+      const program = getCoinTransactionsUseCase(input).pipe(
+        Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Failed to get coin transactions");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left.message).toContain(
+          "Failed to get coin transactions",
+        );
       }
     });
   });

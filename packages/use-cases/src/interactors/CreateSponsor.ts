@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, Sponsor } from "@mirai-app/domain";
-import type { SponsorRepository } from "../ports/SponsorRepository";
+import { Sponsor } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
  * Input for CreateSponsor use case
@@ -31,19 +31,42 @@ export interface CreateSponsorOutput {
 }
 
 /**
- * CreateSponsor Use Case
+ * Error type for CreateSponsor use case
+ */
+export class CreateSponsorValidationError extends Error {
+  readonly _tag = "CreateSponsorValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
+ * CreateSponsor Use Case (Effect-based)
  *
  * Creates a new sponsor.
  * Returns error if validation fails.
+ *
+ * ## Effect-based Pattern
+ *
+ * ```typescript
+ * const program = createSponsorUseCase(input).pipe(
+ *   Effect.provideService(SponsorRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class CreateSponsorUseCase {
-  constructor(private sponsorRepository: SponsorRepository) {}
+export function createSponsorUseCase(
+  input: CreateSponsorInput,
+): Effect.Effect<
+  CreateSponsorOutput,
+  CreateSponsorValidationError,
+  SponsorRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const sponsorRepo = yield* SponsorRepositoryTag;
 
-  async execute(
-    input: CreateSponsorInput,
-  ): Promise<Result<CreateSponsorOutput, string>> {
     // Create domain entity
-    const sponsorResult = Sponsor.create({
+    const sponsorEffect = Sponsor.create({
       name: input.name,
       description: input.description,
       logoPath: input.logoPath,
@@ -53,27 +76,32 @@ export class CreateSponsorUseCase {
       ...(input.isActive !== undefined && { isActive: input.isActive }),
     });
 
-    if (sponsorResult.kind === "err") {
-      return err(sponsorResult.error.message);
-    }
+    // Run validation effect and convert validation errors to Effect.fail
+    const sponsor = yield* Effect.catchAll(sponsorEffect, (error) =>
+      Effect.fail(
+        new CreateSponsorValidationError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      ),
+    );
 
     // Persist sponsor
-    const saved = await this.sponsorRepository.create(sponsorResult.value);
+    const saved = yield* sponsorRepo.create(sponsor);
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(sponsor: Sponsor): CreateSponsorOutput {
-    return {
-      id: sponsor.id,
-      name: sponsor.name,
-      description: sponsor.description,
-      logoPath: sponsor.logoPath,
-      height: sponsor.height,
-      offsetX: sponsor.offsetX,
-      offsetY: sponsor.offsetY,
-      isActive: sponsor.isActive,
-      createdAt: sponsor.createdAt,
-    };
-  }
+function toOutput(sponsor: Sponsor): CreateSponsorOutput {
+  return {
+    id: sponsor.id,
+    name: sponsor.name,
+    description: sponsor.description,
+    logoPath: sponsor.logoPath,
+    height: sponsor.height,
+    offsetX: sponsor.offsetX,
+    offsetY: sponsor.offsetY,
+    isActive: sponsor.isActive,
+    createdAt: sponsor.createdAt,
+  };
 }

@@ -1,6 +1,12 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { CreateReportUseCase, type CreateReportInput } from "./CreateReport";
-import type { SubmissionReportRepository } from "../ports/SubmissionReportRepository";
+import { describe, it, expect, beforeEach } from "bun:test";
+import {
+  createReportUseCase,
+  type CreateReportInput,
+  DuplicateReportError,
+  CreateReportValidationError,
+} from "./CreateReport";
+import { Effect, Either } from "effect";
+import { SubmissionReportRepositoryTag } from "../ports/SubmissionReportRepository";
 import { SubmissionReport } from "@mirai-app/domain";
 
 // Mock SubmissionReport domain object
@@ -18,169 +24,234 @@ const createMockReport = (
     ...overrides,
   }) as SubmissionReport;
 
-describe("[UNIT] CreateReportUseCase", () => {
-  let useCase: CreateReportUseCase;
-  let mockReportRepository: SubmissionReportRepository;
+// Helper to create a mock repository service for Effect
+const createMockRepoService = (overrides?: {
+  existsBySubmissionAndReporter?: (
+    submissionId: string,
+    reporterId: string,
+  ) => Promise<boolean>;
+  create?: (report: SubmissionReport) => Promise<SubmissionReport>;
+}) => ({
+  existsBySubmissionAndReporter: (submissionId: string, reporterId: string) =>
+    Effect.promise(() =>
+      overrides?.existsBySubmissionAndReporter
+        ? overrides.existsBySubmissionAndReporter(submissionId, reporterId)
+        : Promise.resolve(false),
+    ),
+  create: (report: SubmissionReport) =>
+    Effect.promise(() =>
+      overrides?.create
+        ? overrides.create(report)
+        : Promise.resolve(createMockReport()),
+    ),
+  findById: () => Effect.promise(() => Promise.resolve(null)),
+  findBySubmissionId: () => Effect.promise(() => Promise.resolve([])),
+  findByReporterId: () => Effect.promise(() => Promise.resolve([])),
+  findByReason: () => Effect.promise(() => Promise.resolve([])),
+  findAll: () => Effect.promise(() => Promise.resolve([])),
+  countBySubmissionId: () => Effect.promise(() => Promise.resolve(0)),
+  delete: () => Effect.promise(() => Promise.resolve()),
+  exists: () => Effect.promise(() => Promise.resolve(false)),
+});
 
-  beforeEach(() => {
-    mockReportRepository = {
-      existsBySubmissionAndReporter: mock(() => Promise.resolve(false)),
-      create: mock(() => Promise.resolve(createMockReport())),
-    } as unknown as SubmissionReportRepository;
+describe("[UNIT] createReportUseCase (Effect)", () => {
+  it("should create report with minimal input", async () => {
+    const input: CreateReportInput = {
+      submissionId: "submission-123",
+      reporterId: "reporter-123",
+      reason: "inappropriate",
+    };
 
-    useCase = new CreateReportUseCase(mockReportRepository);
+    const program = createReportUseCase(input).pipe(
+      Effect.provideService(
+        SubmissionReportRepositoryTag,
+        createMockRepoService(),
+      ),
+    );
+
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBe("report-123");
+    expect(result.submissionId).toBe("submission-123");
+    expect(result.reporterId).toBe("reporter-123");
+    expect(result.reason).toBe("inappropriate");
+    expect(result.reasonDisplay).toBe("Inappropriate Content");
   });
 
-  describe("execute", () => {
-    it("should create report with minimal input", async () => {
-      const input: CreateReportInput = {
-        submissionId: "submission-123",
-        reporterId: "reporter-123",
-        reason: "inappropriate",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("report-123");
-        expect(result.value.submissionId).toBe("submission-123");
-        expect(result.value.reporterId).toBe("reporter-123");
-        expect(result.value.reason).toBe("inappropriate");
-        expect(result.value.reasonDisplay).toBe("Inappropriate Content");
-      }
+  it("should create report with details", async () => {
+    const mockReport = createMockReport({
+      details: "Detailed explanation of the issue",
     });
 
-    it("should create report with details", async () => {
+    const repoService = createMockRepoService({
+      create: () => Promise.resolve(mockReport),
+    });
+
+    const input: CreateReportInput = {
+      submissionId: "submission-123",
+      reporterId: "reporter-123",
+      reason: "spam",
+      details: "Detailed explanation of the issue",
+    };
+
+    const program = createReportUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
+
+    const result = await Effect.runPromise(program);
+
+    expect(result.details).toBe("Detailed explanation of the issue");
+  });
+
+  it("should return error when user already reported submission", async () => {
+    const repoService = createMockRepoService({
+      existsBySubmissionAndReporter: () => Promise.resolve(true),
+    });
+
+    const input: CreateReportInput = {
+      submissionId: "submission-123",
+      reporterId: "reporter-123",
+      reason: "inappropriate",
+    };
+
+    const program = createReportUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
+
+    const either = await Effect.runPromise(Effect.either(program));
+    expect(Either.isLeft(either)).toBe(true);
+    if (Either.isLeft(either)) {
+      expect(either.left).toBeInstanceOf(DuplicateReportError);
+    }
+  });
+
+  it("should handle different report reasons", async () => {
+    const reasons = [
+      "inappropriate",
+      "spam",
+      "harassment",
+      "copyright",
+      "other",
+    ];
+
+    for (const reason of reasons) {
       const mockReport = createMockReport({
-        details: "Detailed explanation of the issue",
+        reason: { value: reason },
+        getReasonDisplay: () => reason,
       });
-      mockReportRepository.create = mock(() => Promise.resolve(mockReport));
+
+      const repoService = createMockRepoService({
+        create: () => Promise.resolve(mockReport),
+      });
 
       const input: CreateReportInput = {
         submissionId: "submission-123",
         reporterId: "reporter-123",
-        reason: "spam",
-        details: "Detailed explanation of the issue",
+        reason,
       };
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.details).toBe("Detailed explanation of the issue");
-      }
-    });
-
-    it("should return error when user already reported submission", async () => {
-      mockReportRepository.existsBySubmissionAndReporter = mock(() =>
-        Promise.resolve(true),
+      const program = createReportUseCase(input).pipe(
+        Effect.provideService(SubmissionReportRepositoryTag, repoService),
       );
 
-      const input: CreateReportInput = {
-        submissionId: "submission-123",
-        reporterId: "reporter-123",
-        reason: "inappropriate",
-      };
+      const result = await Effect.runPromise(program);
+      expect(result.reason).toBe(reason);
+    }
+  });
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("You have already reported this submission");
-      }
-      expect(mockReportRepository.create).not.toHaveBeenCalled();
+  it("should handle null details", async () => {
+    const mockReport = createMockReport({
+      details: null,
     });
 
-    it("should handle different report reasons", async () => {
-      const reasons = [
-        "inappropriate",
-        "spam",
-        "harassment",
-        "copyright",
-        "other",
-      ];
-
-      for (const reason of reasons) {
-        mockReportRepository.existsBySubmissionAndReporter = mock(() =>
-          Promise.resolve(false),
-        );
-        const mockReport = createMockReport({
-          reason: { value: reason },
-          getReasonDisplay: () => reason,
-        });
-        mockReportRepository.create = mock(() => Promise.resolve(mockReport));
-
-        const input: CreateReportInput = {
-          submissionId: "submission-123",
-          reporterId: "reporter-123",
-          reason,
-        };
-
-        const result = await useCase.execute(input);
-
-        expect(result.kind).toBe("ok");
-        if (result.kind === "ok") {
-          expect(result.value.reason).toBe(reason);
-        }
-      }
+    const repoService = createMockRepoService({
+      create: () => Promise.resolve(mockReport),
     });
 
-    it("should handle null details", async () => {
-      const mockReport = createMockReport({
-        details: null,
-      });
-      mockReportRepository.create = mock(() => Promise.resolve(mockReport));
+    const input: CreateReportInput = {
+      submissionId: "submission-123",
+      reporterId: "reporter-123",
+      reason: "inappropriate",
+      details: null,
+    };
 
-      const input: CreateReportInput = {
-        submissionId: "submission-123",
-        reporterId: "reporter-123",
-        reason: "inappropriate",
-        details: null,
-      };
+    const program = createReportUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
 
-      const result = await useCase.execute(input);
+    const result = await Effect.runPromise(program);
+    expect(result.details).toBeNull();
+  });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.details).toBeNull();
-      }
+  it("should verify duplicate check is called with correct params", async () => {
+    const checkCalls: Array<[string, string]> = [];
+
+    const repoService = createMockRepoService({
+      existsBySubmissionAndReporter: (submissionId, reporterId) => {
+        checkCalls.push([submissionId, reporterId]);
+        return Promise.resolve(false);
+      },
     });
 
-    it("should verify duplicate check is called with correct params", async () => {
-      const input: CreateReportInput = {
-        submissionId: "submission-456",
-        reporterId: "reporter-789",
-        reason: "spam",
-      };
+    const input: CreateReportInput = {
+      submissionId: "submission-456",
+      reporterId: "reporter-789",
+      reason: "spam",
+    };
 
-      await useCase.execute(input);
+    const program = createReportUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
 
-      expect(
-        mockReportRepository.existsBySubmissionAndReporter,
-      ).toHaveBeenCalledWith("submission-456", "reporter-789");
+    await Effect.runPromise(program);
+
+    expect(checkCalls).toContainEqual(["submission-456", "reporter-789"]);
+  });
+
+  it("should map reason display correctly", async () => {
+    const mockReport = createMockReport({
+      reason: { value: "harassment" },
+      getReasonDisplay: () => "Harassment or Bullying",
     });
 
-    it("should map reason display correctly", async () => {
-      const mockReport = createMockReport({
-        reason: { value: "harassment" },
-        getReasonDisplay: () => "Harassment or Bullying",
-      });
-      mockReportRepository.create = mock(() => Promise.resolve(mockReport));
-
-      const input: CreateReportInput = {
-        submissionId: "submission-123",
-        reporterId: "reporter-123",
-        reason: "harassment",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.reason).toBe("harassment");
-        expect(result.value.reasonDisplay).toBe("Harassment or Bullying");
-      }
+    const repoService = createMockRepoService({
+      create: () => Promise.resolve(mockReport),
     });
+
+    const input: CreateReportInput = {
+      submissionId: "submission-123",
+      reporterId: "reporter-123",
+      reason: "harassment",
+    };
+
+    const program = createReportUseCase(input).pipe(
+      Effect.provideService(SubmissionReportRepositoryTag, repoService),
+    );
+
+    const result = await Effect.runPromise(program);
+
+    expect(result.reason).toBe("harassment");
+    expect(result.reasonDisplay).toBe("Harassment or Bullying");
+  });
+
+  it("should return validation error for invalid reason", async () => {
+    const input: CreateReportInput = {
+      submissionId: "submission-123",
+      reporterId: "reporter-123",
+      reason: "ab", // Too short - must be at least 3 characters
+    };
+
+    const program = createReportUseCase(input).pipe(
+      Effect.provideService(
+        SubmissionReportRepositoryTag,
+        createMockRepoService(),
+      ),
+    );
+
+    const either = await Effect.runPromise(Effect.either(program));
+    expect(Either.isLeft(either)).toBe(true);
+    if (Either.isLeft(either)) {
+      expect(either.left).toBeInstanceOf(CreateReportValidationError);
+    }
   });
 });

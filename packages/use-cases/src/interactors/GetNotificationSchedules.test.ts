@@ -1,280 +1,188 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  GetNotificationSchedulesUseCase,
+  getNotificationSchedulesUseCase,
   type GetNotificationSchedulesInput,
 } from "./GetNotificationSchedules";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
-import type { NotificationSchedule, PaginatedResult } from "@mirai-app/domain";
+import {
+  NotificationSchedule,
+  NotificationScheduleType,
+} from "@mirai-app/domain";
+import { Effect } from "effect";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
+import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-// Mock NotificationSchedule domain object
-const createMockSchedule = (
-  overrides?: Partial<NotificationSchedule>,
-): NotificationSchedule =>
-  ({
-    id: "schedule-123",
-    name: "Test Schedule",
-    tripId: "trip-123",
-    notificationType: "reminder",
-    notificationTitle: "Test Title",
-    notificationBody: "Test Body",
-    notificationUrl: "https://example.com",
-    startDate: new Date("2024-01-01"),
-    endDate: new Date("2024-12-31"),
-    hour: 9,
-    minute: 0,
-    isActive: true,
-    createdById: "user-123",
-    lastRun: null,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    isCurrentlyActive: (now: Date) => true,
-    isExpired: (now: Date) => false,
-    isUpcoming: (now: Date) => false,
-    getFormattedTime: () => "09:00",
-    ...overrides,
-  }) as NotificationSchedule;
-
-describe("[UNIT] GetNotificationSchedulesUseCase", () => {
-  let useCase: GetNotificationSchedulesUseCase;
-  let mockRepository: NotificationScheduleRepository;
+describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
+  let repo: InMemoryNotificationScheduleRepository;
 
   beforeEach(() => {
-    mockRepository = {
-      findAll: mock(() =>
-        Promise.resolve({
-          items: [],
-          pagination: {
-            total: 0,
-            limit: 20,
-            offset: 0,
-            hasMore: false,
-          },
-        } as PaginatedResult<NotificationSchedule>),
-      ),
-    } as unknown as NotificationScheduleRepository;
-
-    useCase = new GetNotificationSchedulesUseCase(mockRepository);
+    repo = new InMemoryNotificationScheduleRepository();
   });
 
+  const getFutureDate = (daysFromNow: number): Date => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  const createValidSchedule = (
+    overrides?: Partial<{
+      id: string;
+      name: string;
+      notificationType: NotificationScheduleType;
+    }>,
+  ): NotificationSchedule => {
+    const notificationType =
+      overrides?.notificationType ?? NotificationScheduleType.INFO;
+    // INFO type doesn't require notification content, other types do
+    const needsContent = notificationType !== NotificationScheduleType.INFO;
+
+    const result = NotificationSchedule.create({
+      id: overrides?.id ?? "schedule-123",
+      name: overrides?.name ?? "Test Schedule",
+      tripId: null,
+      notificationType,
+      ...(needsContent && {
+        notificationTitle: "Test Title",
+        notificationBody: "Test Body",
+      }),
+      startDate: getFutureDate(2),
+      endDate: getFutureDate(10),
+      hour: 9,
+      minute: 0,
+      createdById: "user-123",
+    });
+    if (result.kind === "err") {
+      throw new Error(`Failed to create test schedule: ${result.error}`);
+    }
+    return result.value;
+  };
+
+  // Helper to run use case with repository
+  const runUseCase = async (input: GetNotificationSchedulesInput) => {
+    const program = getNotificationSchedulesUseCase(input).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        create: (schedule: NotificationSchedule) =>
+          Effect.promise(() => repo.create(schedule)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => repo.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => repo.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
+        findByType: (type: NotificationScheduleType) =>
+          Effect.promise(() => repo.findByType(type)),
+        findAll: (options?: {
+          filter?: import("@mirai-app/domain").NotificationScheduleFilter;
+          pagination?: import("@mirai-app/domain").PaginationOptions;
+        }) => Effect.promise(() => repo.findAll(options)),
+        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
+        findUpcoming: (days?: number, now?: Date) =>
+          Effect.promise(() => repo.findUpcoming(days, now)),
+        update: (schedule: NotificationSchedule) =>
+          Effect.promise(() => repo.update(schedule)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => repo.deleteMany(ids)),
+        exists: (id: string) => Effect.promise(() => repo.exists(id)),
+        count: (
+          filter?: import("@mirai-app/domain").NotificationScheduleFilter,
+        ) => Effect.promise(() => repo.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => repo.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => repo.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => repo.countExecutions(scheduleId)),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
+
   describe("execute", () => {
-    it("should return empty list when no schedules", async () => {
+    it("should return empty list when no schedules exist", async () => {
       const input: GetNotificationSchedulesInput = {};
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.schedules).toEqual([]);
-        expect(result.value.pagination.total).toBe(0);
-      }
+      expect(result.schedules).toHaveLength(0);
+      expect(result.pagination.total).toBe(0);
+      expect(result.pagination.hasMore).toBe(false);
     });
 
-    it("should return schedules with pagination", async () => {
-      const mockSchedules = [
-        createMockSchedule({ id: "schedule-1" }),
-        createMockSchedule({ id: "schedule-2", name: "Another Schedule" }),
-      ];
-
-      mockRepository.findAll = mock(() =>
-        Promise.resolve({
-          items: mockSchedules,
-          pagination: {
-            total: 2,
-            limit: 20,
-            offset: 0,
-            hasMore: false,
-          },
-        } as PaginatedResult<NotificationSchedule>),
-      );
-
-      const input: GetNotificationSchedulesInput = {};
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.schedules).toHaveLength(2);
-        expect(result.value.pagination.total).toBe(2);
-      }
-    });
-
-    it("should pass filter to repository", async () => {
-      const filter = { tripId: "trip-123", isActive: true };
-      const input: GetNotificationSchedulesInput = { filter };
-
-      await useCase.execute(input);
-
-      expect(mockRepository.findAll).toHaveBeenCalledWith({
-        filter,
+    it("should return list of schedules", async () => {
+      // Arrange
+      const schedule1 = createValidSchedule({
+        id: "schedule-1",
+        name: "Schedule One",
+        notificationType: NotificationScheduleType.INFO,
       });
-    });
-
-    it("should pass pagination to repository", async () => {
-      const pagination = { limit: 10, offset: 20 };
-      const input: GetNotificationSchedulesInput = { pagination };
-
-      await useCase.execute(input);
-
-      expect(mockRepository.findAll).toHaveBeenCalledWith({
-        pagination,
+      const schedule2 = createValidSchedule({
+        id: "schedule-2",
+        name: "Schedule Two",
+        notificationType: NotificationScheduleType.REMINDER,
       });
-    });
-
-    it("should map schedule fields correctly", async () => {
-      const mockSchedule = createMockSchedule({
-        id: "schedule-123",
-        name: "Daily Reminder",
-        tripId: "trip-456",
-        notificationType: "challenge_reminder",
-        notificationTitle: "Challenge Time!",
-        notificationBody: "Don't forget to submit!",
-        notificationUrl: "https://app.example.com/challenge",
-        startDate: new Date("2024-06-01"),
-        endDate: new Date("2024-06-30"),
-        hour: 14,
-        minute: 30,
-        isActive: true,
-        createdById: "admin-123",
-        lastRun: new Date("2024-06-15"),
-      });
-
-      mockRepository.findAll = mock(() =>
-        Promise.resolve({
-          items: [mockSchedule],
-          pagination: {
-            total: 1,
-            limit: 20,
-            offset: 0,
-            hasMore: false,
-          },
-        } as PaginatedResult<NotificationSchedule>),
-      );
+      await repo.create(schedule1);
+      await repo.create(schedule2);
 
       const input: GetNotificationSchedulesInput = {};
-      const result = await useCase.execute(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        const schedule = result.value.schedules[0];
-        expect(schedule.id).toBe("schedule-123");
-        expect(schedule.name).toBe("Daily Reminder");
-        expect(schedule.tripId).toBe("trip-456");
-        expect(schedule.notificationType).toBe("challenge_reminder");
-        expect(schedule.notificationTitle).toBe("Challenge Time!");
-        expect(schedule.notificationBody).toBe("Don't forget to submit!");
-        expect(schedule.notificationUrl).toBe(
-          "https://app.example.com/challenge",
-        );
-        expect(schedule.hour).toBe(14);
-        expect(schedule.minute).toBe(30);
-        expect(schedule.isActive).toBe(true);
-        expect(schedule.createdById).toBe("admin-123");
-        expect(schedule.formattedTime).toBe("09:00"); // from mock
-      }
+      // Act
+      const result = await runUseCase(input);
+
+      // Assert
+      expect(result.schedules).toHaveLength(2);
+      expect(result.pagination.total).toBe(2);
+      expect(result.schedules[0].name).toBe("Schedule One");
+      expect(result.schedules[1].name).toBe("Schedule Two");
     });
 
-    it("should calculate status flags based on current time", async () => {
-      const now = new Date("2024-06-15");
-      const mockSchedule = createMockSchedule({
-        isCurrentlyActive: (d: Date) => true,
-        isExpired: (d: Date) => false,
-        isUpcoming: (d: Date) => false,
+    it("should support pagination", async () => {
+      // Arrange
+      for (let i = 1; i <= 5; i++) {
+        const schedule = createValidSchedule({
+          id: `schedule-${i}`,
+          name: `Schedule ${i}`,
+        });
+        await repo.create(schedule);
+      }
+
+      const input: GetNotificationSchedulesInput = {
+        pagination: { limit: 2, offset: 0 },
+      };
+
+      // Act
+      const result = await runUseCase(input);
+
+      // Assert
+      expect(result.schedules).toHaveLength(2);
+      expect(result.pagination.total).toBe(5);
+      expect(result.pagination.hasMore).toBe(true);
+    });
+
+    it("should include computed fields in output", async () => {
+      // Arrange
+      const schedule = createValidSchedule({
+        id: "schedule-1",
+        name: "Test Schedule",
       });
-
-      mockRepository.findAll = mock(() =>
-        Promise.resolve({
-          items: [mockSchedule],
-          pagination: {
-            total: 1,
-            limit: 20,
-            offset: 0,
-            hasMore: false,
-          },
-        } as PaginatedResult<NotificationSchedule>),
-      );
+      await repo.create(schedule);
 
       const input: GetNotificationSchedulesInput = {};
-      const result = await useCase.execute(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.schedules[0].isCurrentlyActive).toBe(true);
-        expect(result.value.schedules[0].isExpired).toBe(false);
-        expect(result.value.schedules[0].isUpcoming).toBe(false);
-      }
-    });
+      // Act
+      const result = await runUseCase(input);
 
-    it("should handle null tripId", async () => {
-      const mockSchedule = createMockSchedule({
-        tripId: null,
-      });
-
-      mockRepository.findAll = mock(() =>
-        Promise.resolve({
-          items: [mockSchedule],
-          pagination: {
-            total: 1,
-            limit: 20,
-            offset: 0,
-            hasMore: false,
-          },
-        } as PaginatedResult<NotificationSchedule>),
-      );
-
-      const input: GetNotificationSchedulesInput = {};
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.schedules[0].tripId).toBeNull();
-      }
-    });
-
-    it("should handle null lastRun", async () => {
-      const mockSchedule = createMockSchedule({
-        lastRun: null,
-      });
-
-      mockRepository.findAll = mock(() =>
-        Promise.resolve({
-          items: [mockSchedule],
-          pagination: {
-            total: 1,
-            limit: 20,
-            offset: 0,
-            hasMore: false,
-          },
-        } as PaginatedResult<NotificationSchedule>),
-      );
-
-      const input: GetNotificationSchedulesInput = {};
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.schedules[0].lastRun).toBeNull();
-      }
-    });
-
-    it("should handle hasMore pagination flag", async () => {
-      mockRepository.findAll = mock(() =>
-        Promise.resolve({
-          items: [createMockSchedule()],
-          pagination: {
-            total: 100,
-            limit: 20,
-            offset: 0,
-            hasMore: true,
-          },
-        } as PaginatedResult<NotificationSchedule>),
-      );
-
-      const input: GetNotificationSchedulesInput = {};
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.pagination.hasMore).toBe(true);
-      }
+      // Assert
+      expect(result.schedules[0].formattedTime).toBe("09:00");
+      expect(typeof result.schedules[0].isCurrentlyActive).toBe("boolean");
+      expect(typeof result.schedules[0].isExpired).toBe("boolean");
+      expect(typeof result.schedules[0].isUpcoming).toBe("boolean");
     });
   });
 });

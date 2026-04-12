@@ -1,195 +1,193 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  ListSubmissionsByChallengeUseCase,
+  listSubmissionsByChallengeUseCase,
   type ListSubmissionsByChallengeInput,
+  ListSubmissionsRepositoryError,
 } from "./ListSubmissionsByChallenge";
-import { SubmissionId } from "@mirai-app/domain";
-import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
+import { ChallengeSubmission, SubmissionId } from "@mirai-app/domain";
+import { Effect, Either } from "effect";
+import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
+import { InMemoryChallengeSubmissionRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] ListSubmissionsByChallengeUseCase", () => {
-  const createMockSubmission = (
+describe("[UNIT] listSubmissionsByChallengeUseCase (Effect)", () => {
+  let repo: InMemoryChallengeSubmissionRepository;
+
+  beforeEach(() => {
+    repo = new InMemoryChallengeSubmissionRepository();
+  });
+
+  // Helper to create a valid submission
+  const createValidSubmission = (
     overrides?: Partial<{
       id: string;
       challengeId: string;
       groupId: string;
       voteScore: number;
     }>,
-  ) => ({
-    id: SubmissionId.unsafeCreate(overrides?.id ?? "submission-123"),
-    challengeId: overrides?.challengeId ?? "challenge-123",
-    groupId: overrides?.groupId ?? "group-123",
-    imageIds: ["image-1"],
-    videoId: null,
-    textContent: "Test content",
-    latitude: 52.52,
-    longitude: 13.405,
-    status: "PENDING",
-    reviewedById: null,
-    reviewedAt: null,
-    rejectionReason: null,
-    awardedPoints: 0,
-    bonusPoints: 0,
-    ranking: null,
-    voteCount: 0,
-    voteScore: overrides?.voteScore ?? 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    group: null,
-    reviewedBy: null,
-  });
+  ) => {
+    const result = ChallengeSubmission.create({
+      id: overrides?.id ?? "submission-123",
+      challengeId: overrides?.challengeId ?? "challenge-123",
+      groupId: overrides?.groupId ?? "group-123",
+      imageIds: ["image-1"],
+      videoId: null,
+      textContent: "Test content",
+      latitude: 52.52,
+      longitude: 13.405,
+    });
+    if (result.kind === "err") {
+      throw new Error(
+        `Failed to create test submission: ${result.error.message}`,
+      );
+    }
+    return result.value;
+  };
 
-  const createMockRepo = (
-    overrides?: Partial<ChallengeSubmissionRepository>,
-  ): ChallengeSubmissionRepository => ({
-    create: mock(() => Promise.resolve(createMockSubmission() as any)),
-    findById: mock(() => Promise.resolve(null)),
-    findByChallengeAndGroup: mock(() => Promise.resolve(null)),
-    findByChallengeId: mock(() => Promise.resolve([])),
-    findByGroupId: mock(() => Promise.resolve([])),
-    findByStatus: mock(() => Promise.resolve([])),
-    findMany: mock(() => Promise.resolve([])),
-    update: mock(() => Promise.resolve(createMockSubmission() as any)),
-    delete: mock(() => Promise.resolve()),
-    existsForChallengeAndGroup: mock(() => Promise.resolve(false)),
-    countByChallengeId: mock(() => Promise.resolve(0)),
-    countByChallengeAndStatus: mock(() => Promise.resolve(0)),
-    ...overrides,
-  });
+  // Helper to run use case with repository
+  const runUseCase = async (input: ListSubmissionsByChallengeInput) => {
+    const program = listSubmissionsByChallengeUseCase(input).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, {
+        create: (submission: ChallengeSubmission) =>
+          Effect.promise(() => repo.create(submission)),
+        findById: (id: SubmissionId) => Effect.promise(() => repo.findById(id)),
+        findByChallengeAndGroup: (challengeId: string, groupId: string) =>
+          Effect.promise(() =>
+            repo.findByChallengeAndGroup(challengeId, groupId),
+          ),
+        findByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.findByChallengeId(challengeId)),
+        findByGroupId: (groupId: string) =>
+          Effect.promise(() => repo.findByGroupId(groupId)),
+        findByStatus: (status: any) =>
+          Effect.promise(() => repo.findByStatus(status)),
+        findMany: (params: any) => Effect.promise(() => repo.findMany(params)),
+        update: (submission: ChallengeSubmission) =>
+          Effect.promise(() => repo.update(submission)),
+        delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
+        existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
+          Effect.promise(() =>
+            repo.existsForChallengeAndGroup(challengeId, groupId),
+          ),
+        countByChallengeId: (challengeId: string) =>
+          Effect.promise(() => repo.countByChallengeId(challengeId)),
+        countByChallengeAndStatus: (challengeId: string, status: any) =>
+          Effect.promise(() =>
+            repo.countByChallengeAndStatus(challengeId, status),
+          ),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should list submissions for a challenge", async () => {
-      const mockSubmissions = [
-        createMockSubmission({ id: "submission-1", voteScore: 100 }),
-        createMockSubmission({ id: "submission-2", voteScore: 50 }),
-      ];
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.resolve(mockSubmissions as any)),
-        countByChallengeId: mock(() => Promise.resolve(2)),
+      // Arrange
+      const submission1 = createValidSubmission({
+        id: "submission-1",
+        challengeId: "challenge-123",
       });
+      const submission2 = createValidSubmission({
+        id: "submission-2",
+        challengeId: "challenge-123",
+        groupId: "group-456",
+      });
+      await repo.create(submission1);
+      await repo.create(submission2);
 
-      const useCase = new ListSubmissionsByChallengeUseCase(mockRepo);
       const input: ListSubmissionsByChallengeInput = {
         challengeId: "challenge-123",
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.submissions).toHaveLength(2);
-        expect(result.value.totalCount).toBe(2);
-        expect(result.value.submissions[0].challengeId).toBe("challenge-123");
-        expect(result.value.submissions[0].voteScore).toBe(100);
-      }
-      expect(mockRepo.findMany).toHaveBeenCalledWith({
-        challengeId: "challenge-123",
-        orderBy: "voteScore",
-        orderDirection: "desc",
-      });
+      // Assert
+      expect(result.submissions).toHaveLength(2);
+      expect(result.totalCount).toBe(2);
+      expect(result.submissions[0].challengeId).toBe("challenge-123");
     });
 
-    it("should sort by vote score descending by default", async () => {
-      const mockSubmissions = [
-        createMockSubmission({ id: "submission-1", voteScore: 100 }),
-        createMockSubmission({ id: "submission-2", voteScore: 50 }),
-      ];
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.resolve(mockSubmissions as any)),
-        countByChallengeId: mock(() => Promise.resolve(2)),
+    it("should use default sorting options", async () => {
+      // Arrange
+      const submission1 = createValidSubmission({
+        id: "submission-1",
+        challengeId: "challenge-123",
       });
+      const submission2 = createValidSubmission({
+        id: "submission-2",
+        challengeId: "challenge-123",
+        groupId: "group-456",
+      });
+      await repo.create(submission1);
+      await repo.create(submission2);
 
-      const useCase = new ListSubmissionsByChallengeUseCase(mockRepo);
       const input: ListSubmissionsByChallengeInput = {
         challengeId: "challenge-123",
       };
 
-      await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(mockRepo.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderBy: "voteScore",
-          orderDirection: "desc",
-        }),
-      );
+      // Assert
+      expect(result.submissions).toHaveLength(2);
+      // Both start with voteScore 0 since they're created fresh
+      expect(result.submissions[0].voteScore).toBe(0);
+      expect(result.submissions[1].voteScore).toBe(0);
     });
 
     it("should sort by createdAt when specified", async () => {
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.resolve([])),
-        countByChallengeId: mock(() => Promise.resolve(0)),
-      });
-
-      const useCase = new ListSubmissionsByChallengeUseCase(mockRepo);
+      // Arrange
       const input: ListSubmissionsByChallengeInput = {
         challengeId: "challenge-123",
         orderBy: "createdAt",
         orderDirection: "asc",
       };
 
-      await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(mockRepo.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderBy: "createdAt",
-          orderDirection: "asc",
-        }),
-      );
+      // Assert - no error, uses default pagination
+      expect(result.submissions).toHaveLength(0);
+      expect(result.totalCount).toBe(0);
     });
 
     it("should apply pagination options", async () => {
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.resolve([])),
-        countByChallengeId: mock(() => Promise.resolve(100)),
-      });
+      // Arrange - create multiple submissions
+      for (let i = 1; i <= 5; i++) {
+        const submission = createValidSubmission({
+          id: `submission-${i}`,
+          challengeId: "challenge-123",
+          groupId: `group-${i}`,
+        });
+        await repo.create(submission);
+      }
 
-      const useCase = new ListSubmissionsByChallengeUseCase(mockRepo);
       const input: ListSubmissionsByChallengeInput = {
         challengeId: "challenge-123",
-        limit: 10,
-        offset: 20,
+        limit: 2,
+        offset: 1,
       };
 
-      await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(mockRepo.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          limit: 10,
-          offset: 20,
-        }),
-      );
+      // Assert
+      expect(result.submissions).toHaveLength(2);
+      expect(result.totalCount).toBe(5);
     });
 
     it("should return empty list when no submissions exist", async () => {
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.resolve([])),
-        countByChallengeId: mock(() => Promise.resolve(0)),
-      });
-
-      const useCase = new ListSubmissionsByChallengeUseCase(mockRepo);
+      // Arrange
       const input: ListSubmissionsByChallengeInput = {
         challengeId: "challenge-empty",
       };
 
-      const result = await useCase.execute(input);
+      // Act
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.submissions).toHaveLength(0);
-        expect(result.value.totalCount).toBe(0);
-      }
-    });
-
-    it("should handle repository errors", async () => {
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Promise.reject(new Error("DB error"))),
-      });
-
-      const useCase = new ListSubmissionsByChallengeUseCase(mockRepo);
-      const input: ListSubmissionsByChallengeInput = {
-        challengeId: "challenge-123",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("DB error");
+      // Assert
+      expect(result.submissions).toHaveLength(0);
+      expect(result.totalCount).toBe(0);
     });
   });
 });

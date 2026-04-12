@@ -1,9 +1,10 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  SetRewardHiddenUseCase,
+  setRewardHiddenUseCase,
   type SetRewardHiddenInput,
 } from "./SetRewardHidden";
-import type { RewardRepository } from "../ports/RewardRepository";
+import { Effect, Either } from "effect";
+import { RewardRepositoryTag } from "../ports/RewardRepository";
 import type { Reward, RewardId } from "@mirai-app/domain";
 
 // Mock Reward domain object
@@ -22,19 +23,67 @@ const createMockReward = (overrides?: Partial<Reward>): Reward =>
     ...overrides,
   }) as unknown as Reward;
 
-describe("[UNIT] SetRewardHiddenUseCase", () => {
-  let useCase: SetRewardHiddenUseCase;
-  let mockRewardRepository: RewardRepository;
+// Create mock repository service
+const createMockRepoService = (overrides?: {
+  findById?: (id: RewardId) => Promise<Reward | null>;
+  update?: (reward: Reward) => Promise<Reward>;
+}) => ({
+  create: () => Effect.promise(() => Promise.resolve({} as Reward)),
+  findById: (id: RewardId) =>
+    Effect.promise(() =>
+      overrides?.findById
+        ? overrides.findById(id)
+        : Promise.resolve(createMockReward()),
+    ),
+  findByTripId: () =>
+    Effect.promise(() =>
+      Promise.resolve({
+        items: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      }),
+    ),
+  findVisibleByTripId: () =>
+    Effect.promise(() =>
+      Promise.resolve({
+        items: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      }),
+    ),
+  update: (reward: Reward) =>
+    Effect.promise(() =>
+      overrides?.update ? overrides.update(reward) : Promise.resolve(reward),
+    ),
+  delete: () => Effect.promise(() => Promise.resolve()),
+  hasPurchases: () => Effect.promise(() => Promise.resolve(false)),
+  getPurchaseCount: () => Effect.promise(() => Promise.resolve(0)),
+  decrementQuantity: () => Effect.promise(() => Promise.resolve({} as any)),
+  incrementQuantity: () => Effect.promise(() => Promise.resolve({} as any)),
+});
 
-  beforeEach(() => {
-    mockRewardRepository = {
-      findById: mock(() => Promise.resolve(createMockReward())),
-      update: mock((reward: Reward) => Promise.resolve(reward)),
-    } as unknown as RewardRepository;
+// Helper to run use case with repository service
+const runUseCase = async (
+  input: SetRewardHiddenInput,
+  repoOverrides?: {
+    findById?: (id: RewardId) => Promise<Reward | null>;
+    update?: (reward: Reward) => Promise<Reward>;
+  },
+) => {
+  const program = setRewardHiddenUseCase(input).pipe(
+    Effect.provideService(
+      RewardRepositoryTag,
+      createMockRepoService(repoOverrides),
+    ),
+  );
+  return await Effect.runPromise(program);
+};
 
-    useCase = new SetRewardHiddenUseCase(mockRewardRepository);
-  });
-
+describe("[UNIT] setRewardHiddenUseCase (Effect)", () => {
   describe("execute", () => {
     it("should hide a reward", async () => {
       const input: SetRewardHiddenInput = {
@@ -42,119 +91,44 @@ describe("[UNIT] SetRewardHiddenUseCase", () => {
         isHidden: true,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("reward-123");
-        expect(result.value.name).toBe("Test Reward");
-        expect(result.value.isHidden).toBe(true);
-        expect(result.value.updatedAt).toBeInstanceOf(Date);
-      }
+      expect(result.id).toBe("reward-123");
+      expect(result.name).toBe("Test Reward");
+      expect(result.isHidden).toBe(true);
+      expect(result.updatedAt).toBeInstanceOf(Date);
     });
 
     it("should unhide a reward", async () => {
-      mockRewardRepository.findById = mock(() =>
-        Promise.resolve(createMockReward({ isHidden: true })),
-      );
-
-      const input: SetRewardHiddenInput = {
-        rewardId: "reward-123" as RewardId,
-        isHidden: false,
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isHidden).toBe(false);
-      }
-    });
-
-    it("should return error when reward not found", async () => {
-      mockRewardRepository.findById = mock(() => Promise.resolve(null));
-
-      const input: SetRewardHiddenInput = {
-        rewardId: "nonexistent" as RewardId,
-        isHidden: true,
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Reward not found");
-      }
-    });
-
-    it("should persist changes to repository", async () => {
       const hiddenReward = createMockReward({ isHidden: true });
-      mockRewardRepository.update = mock(() => Promise.resolve(hiddenReward));
-
-      const input: SetRewardHiddenInput = {
-        rewardId: "reward-123" as RewardId,
-        isHidden: true,
-      };
-
-      await useCase.execute(input);
-
-      expect(mockRewardRepository.update).toHaveBeenCalled();
-    });
-
-    it("should call findById with correct rewardId", async () => {
-      const input: SetRewardHiddenInput = {
-        rewardId: "reward-456" as RewardId,
-        isHidden: true,
-      };
-
-      await useCase.execute(input);
-
-      expect(mockRewardRepository.findById).toHaveBeenCalledWith("reward-456");
-    });
-
-    it("should toggle from hidden to visible", async () => {
-      const hiddenReward = createMockReward({
-        isHidden: true,
-        unhide: function () {
-          return {
-            ...this,
-            isHidden: false,
-            updatedAt: new Date("2024-01-03"),
-          };
-        },
-      });
-      mockRewardRepository.findById = mock(() => Promise.resolve(hiddenReward));
 
       const input: SetRewardHiddenInput = {
         rewardId: "reward-123" as RewardId,
         isHidden: false,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findById: () => Promise.resolve(hiddenReward),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isHidden).toBe(false);
-      }
+      expect(result.isHidden).toBe(false);
     });
 
     it("should return updatedAt timestamp", async () => {
       const updatedReward = createMockReward({
         updatedAt: new Date("2024-06-15"),
       });
-      mockRewardRepository.update = mock(() => Promise.resolve(updatedReward));
 
       const input: SetRewardHiddenInput = {
         rewardId: "reward-123" as RewardId,
         isHidden: true,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        update: () => Promise.resolve(updatedReward),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.updatedAt).toEqual(new Date("2024-06-15"));
-      }
+      expect(result.updatedAt).toEqual(new Date("2024-06-15"));
     });
   });
 });

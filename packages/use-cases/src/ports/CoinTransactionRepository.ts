@@ -1,3 +1,5 @@
+import { Context, Effect } from "effect";
+
 /**
  * CoinTransactionRepository Port
  *
@@ -161,3 +163,88 @@ export interface CoinTransactionRepository {
     coins?: number;
   }>;
 }
+
+/**
+ * CoinTransactionRepository Context.Tag for Effect dependency injection
+ */
+export class CoinTransactionRepositoryTag extends Context.Tag(
+  "CoinTransactionRepository",
+)<
+  CoinTransactionRepositoryTag,
+  {
+    count: (
+      filters?: Partial<CoinTransactionFilters>,
+    ) => Effect.Effect<number, never, never>;
+    sumAmount: (
+      filters?: Partial<CoinTransactionFilters>,
+    ) => Effect.Effect<number | null, never, never>;
+    sumAddedCoins: (
+      tripId: string,
+    ) => Effect.Effect<number | null, never, never>;
+    sumRemovedCoins: (
+      tripId: string,
+    ) => Effect.Effect<number | null, never, never>;
+    getMostActiveAdmin: (
+      tripId: string,
+    ) => Effect.Effect<MostActiveAdminStat[], never, never>;
+    findMany: (
+      filters: Partial<CoinTransactionFilters>,
+      pagination: CoinTransactionPaginationOptions,
+    ) => Effect.Effect<CoinTransaction[], never, never>;
+    findRecent: (
+      filters: Partial<CoinTransactionFilters>,
+      limit: number,
+    ) => Effect.Effect<CoinTransaction[], never, never>;
+    getTotalCoinsByGroup: (tripId: string) => Effect.Effect<
+      Array<{
+        groupId: string;
+        _sum: { amount: number | null };
+      }>,
+      never,
+      never
+    >;
+    groupByAdmin: (
+      tripId: string,
+      limit: number,
+    ) => Effect.Effect<
+      Array<{
+        adminId: string;
+        _count: { id: number };
+      }>,
+      never,
+      never
+    >;
+    create: (data: {
+      groupId: string;
+      amount: number;
+      reason?: string;
+      adminId: string;
+    }) => Effect.Effect<CoinTransaction, never, never>;
+    incrementGroupCoins: (
+      groupId: string,
+      amount: number,
+    ) => Effect.Effect<void, never, never>;
+    decrementGroupCoins: (
+      groupId: string,
+      amount: number,
+    ) => Effect.Effect<
+      { success: boolean; currentBalance?: number },
+      never,
+      never
+    >;
+    getGroupCoins: (groupId: string) => Effect.Effect<number, never, never>;
+    verifyGroupInTrip: (
+      groupId: string,
+      tripId: string,
+    ) => Effect.Effect<
+      {
+        exists: boolean;
+        tripId?: string;
+        isDeleted?: boolean;
+        coins?: number;
+      },
+      never,
+      never
+    >;
+  }
+>() {}

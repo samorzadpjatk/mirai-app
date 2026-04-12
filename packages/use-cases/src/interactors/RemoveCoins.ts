@@ -2,8 +2,8 @@ import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { CoinTransactionRepositoryTag } from "../ports/CoinTransactionRepository";
+import { Effect } from "effect";
 
 /**
  * Input for RemoveCoins use case
@@ -24,83 +24,124 @@ export interface RemoveCoinsOutput {
 }
 
 /**
+ * Error types for RemoveCoins use case
+ */
+export class GroupNotFoundError extends Error {
+  readonly _tag = "GroupNotFoundError";
+  constructor() {
+    super("Group not found");
+  }
+}
+
+export class GroupNotInTripError extends Error {
+  readonly _tag = "GroupNotInTripError";
+  constructor() {
+    super("Group does not belong to this trip");
+  }
+}
+
+export class GroupDeletedError extends Error {
+  readonly _tag = "GroupDeletedError";
+  constructor() {
+    super("Group has been deleted");
+  }
+}
+
+export class DecrementCoinsError extends Error {
+  readonly _tag = "DecrementCoinsError";
+  constructor() {
+    super("Failed to decrement group coins");
+  }
+}
+
+export class InsufficientCoinsError extends Error {
+  readonly _tag = "InsufficientCoinsError";
+  constructor() {
+    super("Group does not have enough coins");
+  }
+}
+
+export class CreateTransactionError extends Error {
+  readonly _tag = "CreateTransactionError";
+  constructor() {
+    super("Failed to create transaction");
+  }
+}
+
+/**
  * RemoveCoins Use Case
  *
  * Removes coins from a group within a trip.
  * Validates that the group exists, belongs to the trip, and has sufficient balance.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new RemoveCoinsUseCase(coinRepo);
+ * // With dependency injection
+ * const program = removeCoinsUseCase(input);
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("removeCoinsUseCase");
+ * // Provide repository implementation
+ * const runnable = program.pipe(
+ *   Effect.provideService(CoinTransactionRepositoryTag, repository)
+ * );
+ *
+ * // Run the effect
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class RemoveCoinsUseCase {
-  constructor(private coinRepo: CoinTransactionRepository) {}
+export function removeCoinsUseCase(
+  input: RemoveCoinsInput,
+): Effect.Effect<
+  RemoveCoinsOutput,
+  | GroupNotFoundError
+  | GroupNotInTripError
+  | GroupDeletedError
+  | InsufficientCoinsError
+  | DecrementCoinsError
+  | CreateTransactionError,
+  CoinTransactionRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const coinRepo = yield* CoinTransactionRepositoryTag;
 
-  async execute(input: RemoveCoinsInput): Promise<Result<RemoveCoinsOutput, string>> {
     // Verify group belongs to trip and is not deleted
-    let groupCheck: {
-      exists: boolean;
-      tripId?: string;
-      isDeleted?: boolean;
-      coins?: number;
-    };
-    try {
-      groupCheck = await this.coinRepo.verifyGroupInTrip(
-        input.groupId,
-        input.tripId,
-      );
-    } catch (_cause) {
-      return err("Failed to verify group");
-    }
+    const groupCheck = yield* coinRepo.verifyGroupInTrip(
+      input.groupId,
+      input.tripId,
+    );
 
     if (!groupCheck.exists) {
-      return err("Group not found");
+      return yield* Effect.fail(new GroupNotFoundError());
     }
 
     if (groupCheck.tripId !== input.tripId) {
-      return err("Group does not belong to this trip");
+      return yield* Effect.fail(new GroupNotInTripError());
     }
 
     if (groupCheck.isDeleted) {
-      return err("Group has been deleted");
+      return yield* Effect.fail(new GroupDeletedError());
     }
 
     // Check sufficient balance and decrement
-    let decrementResult: { success: boolean };
-    try {
-      decrementResult = await this.coinRepo.decrementGroupCoins(
-        input.groupId,
-        input.amount,
-      );
-    } catch (_cause) {
-      return err("Failed to decrement group coins");
-    }
+    const decrementResult = yield* coinRepo.decrementGroupCoins(
+      input.groupId,
+      input.amount,
+    );
 
     if (!decrementResult.success) {
-      return err("Group does not have enough coins");
+      return yield* Effect.fail(new InsufficientCoinsError());
     }
 
     // Create transaction record (negative amount for removal)
-    let transaction: CoinTransaction;
-    try {
-      transaction = await this.coinRepo.create({
-        groupId: input.groupId,
-        amount: -input.amount,
-        ...(input.reason !== undefined && { reason: input.reason }),
-        adminId: input.adminId,
-      });
-    } catch (_cause) {
-      return err("Failed to create transaction");
-    }
+    const transaction = yield* coinRepo.create({
+      groupId: input.groupId,
+      amount: -input.amount,
+      ...(input.reason !== undefined && { reason: input.reason }),
+      adminId: input.adminId,
+    });
 
-    return ok({ transaction });
-  }
+    return { transaction };
+  });
 }

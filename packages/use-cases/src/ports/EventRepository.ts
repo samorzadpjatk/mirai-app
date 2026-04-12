@@ -1,4 +1,5 @@
 import type { Event } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * EventRepository Port
@@ -159,3 +160,78 @@ export interface EventRepository {
    */
   countEnlisted(eventId: string): Promise<number>;
 }
+
+/**
+ * EventRepository Context.Tag for Effect dependency injection
+ */
+export class EventRepositoryTag extends Context.Tag("EventRepository")<
+  EventRepositoryTag,
+  {
+    create: (event: Event) => Effect.Effect<Event, never, never>;
+    findById: (id: string) => Effect.Effect<Event | null, never, never>;
+    findByCreatorId: (
+      creatorId: string,
+    ) => Effect.Effect<Event[], never, never>;
+    findByOrganizerGroupId: (
+      groupId: string,
+    ) => Effect.Effect<Event[], never, never>;
+    findByIds: (ids: string[]) => Effect.Effect<Event[], never, never>;
+    findAll: (options?: {
+      limit?: number;
+      offset?: number;
+      orderBy?: { column: string; direction: "asc" | "desc" };
+    }) => Effect.Effect<Event[], never, never>;
+    findUpcoming: () => Effect.Effect<Event[], never, never>;
+    findOngoing: () => Effect.Effect<Event[], never, never>;
+    findPast: () => Effect.Effect<Event[], never, never>;
+    findStartingBetween: (
+      start: Date,
+      end: Date,
+    ) => Effect.Effect<Event[], never, never>;
+    update: (event: Event) => Effect.Effect<Event, never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    exists: (id: string) => Effect.Effect<boolean, never, never>;
+    count: () => Effect.Effect<number, never, never>;
+    countByOrganizerGroupId: (
+      groupId: string,
+    ) => Effect.Effect<number, never, never>;
+    markInterested: (
+      userId: string,
+      eventId: string,
+    ) => Effect.Effect<void, never, never>;
+    markEnlisted: (
+      userId: string,
+      eventId: string,
+    ) => Effect.Effect<void, never, never>;
+    removeInterest: (
+      userId: string,
+      eventId: string,
+    ) => Effect.Effect<void, never, never>;
+    removeEnlistment: (
+      userId: string,
+      eventId: string,
+    ) => Effect.Effect<void, never, never>;
+    isInterested: (
+      userId: string,
+      eventId: string,
+    ) => Effect.Effect<boolean, never, never>;
+    isEnlisted: (
+      userId: string,
+      eventId: string,
+    ) => Effect.Effect<boolean, never, never>;
+    getInterestedUsers: (
+      eventId: string,
+    ) => Effect.Effect<string[], never, never>;
+    getEnlistedUsers: (
+      eventId: string,
+    ) => Effect.Effect<string[], never, never>;
+    getInterestedEventsForUser: (
+      userId: string,
+    ) => Effect.Effect<Event[], never, never>;
+    getEnlistedEventsForUser: (
+      userId: string,
+    ) => Effect.Effect<Event[], never, never>;
+    countInterested: (eventId: string) => Effect.Effect<number, never, never>;
+    countEnlisted: (eventId: string) => Effect.Effect<number, never, never>;
+  }
+>() {}

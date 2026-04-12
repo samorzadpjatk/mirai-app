@@ -1,15 +1,28 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect, Either } from "effect";
 import {
-  PurchaseRewardUseCase,
+  purchaseRewardUseCase,
   type PurchaseRewardInput,
+  RewardNotFoundError,
+  TripEndedError,
+  RewardHiddenError,
+  InsufficientQuantityError,
+  NotGroupLeaderError,
+  InsufficientCoinsError,
 } from "./PurchaseReward";
-import { Reward, RewardPurchase, CoinAmount } from "@mirai-app/domain";
-import type {
-  RewardRepository,
-  RewardPurchaseRepository,
-  TripPointsCalculator,
-  GroupCoinsService,
-  TripAccessChecker,
+import {
+  Reward,
+  RewardPurchase,
+  CoinAmount,
+  RewardId,
+} from "@mirai-app/domain";
+import {
+  RewardRepositoryTag,
+  RewardPurchaseRepositoryTag,
+  TripPointsCalculatorTag,
+  GroupCoinsServiceTag,
+  TripAccessCheckerTag,
+  type PaginatedResult,
 } from "../ports/RewardRepository";
 import {
   InMemoryRewardRepository,
@@ -17,7 +30,7 @@ import {
 } from "@mirai-app/adapters/gateways/in-memory";
 
 // Simple in-memory implementations for testing
-class InMemoryTripPointsCalculator implements TripPointsCalculator {
+class InMemoryTripPointsCalculator {
   private points = new Map<string, number>();
 
   setPoints(tripId: string, points: number): void {
@@ -29,7 +42,7 @@ class InMemoryTripPointsCalculator implements TripPointsCalculator {
   }
 }
 
-class InMemoryGroupCoinsService implements GroupCoinsService {
+class InMemoryGroupCoinsService {
   private balances = new Map<string, number>();
   private transactions: Array<{
     groupId: string;
@@ -77,7 +90,7 @@ class InMemoryGroupCoinsService implements GroupCoinsService {
   }
 }
 
-class InMemoryTripAccessChecker implements TripAccessChecker {
+class InMemoryTripAccessChecker {
   private leaders = new Map<string, { groupId: string; coins: number }>();
   private staff = new Set<string>();
   private endedTrips = new Set<string>();
@@ -130,14 +143,9 @@ class InMemoryTripAccessChecker implements TripAccessChecker {
   }
 }
 
-// Helper to unwrap Result
-const unwrap = <T, E>(
-  result: { kind: "ok"; value: T } | { kind: "err"; error: E },
-): T => {
-  if (result.kind === "err") {
-    throw new Error(`Unexpected error: ${String(result.error)}`);
-  }
-  return result.value;
+// Helper to unwrap Effect or Result
+const unwrap = <T>(effect: Effect.Effect<T, unknown, never>): T => {
+  return Effect.runSync(effect);
 };
 
 // Helper to create a valid reward
@@ -153,13 +161,223 @@ const createValidReward = (quantity: number = 10): Reward => {
   return unwrap(result);
 };
 
-describe("[UNIT] PurchaseRewardUseCase", () => {
+// Helper to build use case program without running
+const buildPurchaseRewardProgram = (
+  input: PurchaseRewardInput,
+  deps: {
+    rewardRepo: InMemoryRewardRepository;
+    purchaseRepo: InMemoryRewardPurchaseRepository;
+    pointsCalc: InMemoryTripPointsCalculator;
+    coinsService: InMemoryGroupCoinsService;
+    accessChecker: InMemoryTripAccessChecker;
+  },
+) => {
+  return purchaseRewardUseCase(input).pipe(
+    Effect.provideService(RewardRepositoryTag, {
+      create: (reward: Reward) =>
+        Effect.promise(() => deps.rewardRepo.create(reward)),
+      findById: (id: RewardId) =>
+        Effect.promise(() => deps.rewardRepo.findById(id)),
+      findByTripId: (tripId: string, options?) =>
+        Effect.promise(() => deps.rewardRepo.findByTripId(tripId, options)),
+      findVisibleByTripId: (tripId: string, options?) =>
+        Effect.promise(() =>
+          deps.rewardRepo.findVisibleByTripId(tripId, options),
+        ),
+      update: (reward: Reward) =>
+        Effect.promise(() => deps.rewardRepo.update(reward)),
+      delete: (id: RewardId) =>
+        Effect.promise(() => deps.rewardRepo.delete(id)),
+      hasPurchases: (id: RewardId) =>
+        Effect.promise(() => deps.rewardRepo.hasPurchases(id)),
+      getPurchaseCount: (id: RewardId) =>
+        Effect.promise(() => deps.rewardRepo.getPurchaseCount(id)),
+      decrementQuantity: (id: RewardId, amount: number) =>
+        Effect.promise(() => deps.rewardRepo.decrementQuantity(id, amount)),
+      incrementQuantity: (id: RewardId, amount: number) =>
+        Effect.promise(() => deps.rewardRepo.incrementQuantity(id, amount)),
+    }),
+    Effect.provideService(RewardPurchaseRepositoryTag, {
+      create: (purchase: RewardPurchase) =>
+        Effect.promise(() => deps.purchaseRepo.create(purchase)),
+      findById: (id: string) =>
+        Effect.promise(() => deps.purchaseRepo.findById(id)),
+      findByRewardId: (rewardId: RewardId, options?) =>
+        Effect.promise(() =>
+          deps.purchaseRepo.findByRewardId(rewardId, options),
+        ),
+      findByGroupId: (groupId: string, options?) =>
+        Effect.promise(() => deps.purchaseRepo.findByGroupId(groupId, options)),
+      findByTripId: (tripId: string, options?) =>
+        Effect.promise(() => deps.purchaseRepo.findByTripId(tripId, options)),
+      updateStatus: (
+        id: string,
+        status: string,
+        updatedById: string,
+        collectionMethod?,
+      ) =>
+        Effect.promise(() =>
+          deps.purchaseRepo.updateStatus(
+            id,
+            status,
+            updatedById,
+            collectionMethod,
+          ),
+        ),
+      countByRewardId: (rewardId: RewardId) =>
+        Effect.promise(() => deps.purchaseRepo.countByRewardId(rewardId)),
+    }),
+    Effect.provideService(TripPointsCalculatorTag, {
+      calculateTotalAvailablePoints: (tripId: string) =>
+        Effect.promise(() =>
+          deps.pointsCalc.calculateTotalAvailablePoints(tripId),
+        ),
+    }),
+    Effect.provideService(GroupCoinsServiceTag, {
+      getBalance: (groupId: string) =>
+        Effect.promise(() => deps.coinsService.getBalance(groupId)),
+      deductCoins: (
+        groupId: string,
+        amount: number,
+        reason: string,
+        adminId: string,
+      ) =>
+        Effect.promise(() =>
+          deps.coinsService.deductCoins(groupId, amount, reason, adminId),
+        ),
+      addCoins: (
+        groupId: string,
+        amount: number,
+        reason: string,
+        adminId: string,
+      ) =>
+        Effect.promise(() =>
+          deps.coinsService.addCoins(groupId, amount, reason, adminId),
+        ),
+    }),
+    Effect.provideService(TripAccessCheckerTag, {
+      isGroupLeader: (userId: string, tripId: string) =>
+        Effect.promise(() => deps.accessChecker.isGroupLeader(userId, tripId)),
+      isStaff: (userId: string) =>
+        Effect.promise(() => deps.accessChecker.isStaff(userId)),
+      hasTripEnded: (tripId: string) =>
+        Effect.promise(() => deps.accessChecker.hasTripEnded(tripId)),
+    }),
+  );
+};
+
+// Helper to run use case with Effect
+const runPurchaseRewardUseCase = async (
+  input: PurchaseRewardInput,
+  deps: {
+    rewardRepo: InMemoryRewardRepository;
+    purchaseRepo: InMemoryRewardPurchaseRepository;
+    pointsCalc: InMemoryTripPointsCalculator;
+    coinsService: InMemoryGroupCoinsService;
+    accessChecker: InMemoryTripAccessChecker;
+  },
+) => {
+  const program = purchaseRewardUseCase(input).pipe(
+    Effect.provideService(RewardRepositoryTag, {
+      create: (reward: Reward) =>
+        Effect.promise(() => deps.rewardRepo.create(reward)),
+      findById: (id: RewardId) =>
+        Effect.promise(() => deps.rewardRepo.findById(id)),
+      findByTripId: (tripId: string, options?) =>
+        Effect.promise(() => deps.rewardRepo.findByTripId(tripId, options)),
+      findVisibleByTripId: (tripId: string, options?) =>
+        Effect.promise(() =>
+          deps.rewardRepo.findVisibleByTripId(tripId, options),
+        ),
+      update: (reward: Reward) =>
+        Effect.promise(() => deps.rewardRepo.update(reward)),
+      delete: (id: RewardId) =>
+        Effect.promise(() => deps.rewardRepo.delete(id)),
+      hasPurchases: (id: RewardId) =>
+        Effect.promise(() => deps.rewardRepo.hasPurchases(id)),
+      getPurchaseCount: (id: RewardId) =>
+        Effect.promise(() => deps.rewardRepo.getPurchaseCount(id)),
+      decrementQuantity: (id: RewardId, amount: number) =>
+        Effect.promise(() => deps.rewardRepo.decrementQuantity(id, amount)),
+      incrementQuantity: (id: RewardId, amount: number) =>
+        Effect.promise(() => deps.rewardRepo.incrementQuantity(id, amount)),
+    }),
+    Effect.provideService(RewardPurchaseRepositoryTag, {
+      create: (purchase: RewardPurchase) =>
+        Effect.promise(() => deps.purchaseRepo.create(purchase)),
+      findById: (id: string) =>
+        Effect.promise(() => deps.purchaseRepo.findById(id)),
+      findByRewardId: (rewardId: RewardId, options?) =>
+        Effect.promise(() =>
+          deps.purchaseRepo.findByRewardId(rewardId, options),
+        ),
+      findByGroupId: (groupId: string, options?) =>
+        Effect.promise(() => deps.purchaseRepo.findByGroupId(groupId, options)),
+      findByTripId: (tripId: string, options?) =>
+        Effect.promise(() => deps.purchaseRepo.findByTripId(tripId, options)),
+      updateStatus: (
+        id: string,
+        status: string,
+        updatedById: string,
+        collectionMethod?,
+      ) =>
+        Effect.promise(() =>
+          deps.purchaseRepo.updateStatus(
+            id,
+            status,
+            updatedById,
+            collectionMethod,
+          ),
+        ),
+      countByRewardId: (rewardId: RewardId) =>
+        Effect.promise(() => deps.purchaseRepo.countByRewardId(rewardId)),
+    }),
+    Effect.provideService(TripPointsCalculatorTag, {
+      calculateTotalAvailablePoints: (tripId: string) =>
+        Effect.promise(() =>
+          deps.pointsCalc.calculateTotalAvailablePoints(tripId),
+        ),
+    }),
+    Effect.provideService(GroupCoinsServiceTag, {
+      getBalance: (groupId: string) =>
+        Effect.promise(() => deps.coinsService.getBalance(groupId)),
+      deductCoins: (
+        groupId: string,
+        amount: number,
+        reason: string,
+        adminId: string,
+      ) =>
+        Effect.promise(() =>
+          deps.coinsService.deductCoins(groupId, amount, reason, adminId),
+        ),
+      addCoins: (
+        groupId: string,
+        amount: number,
+        reason: string,
+        adminId: string,
+      ) =>
+        Effect.promise(() =>
+          deps.coinsService.addCoins(groupId, amount, reason, adminId),
+        ),
+    }),
+    Effect.provideService(TripAccessCheckerTag, {
+      isGroupLeader: (userId: string, tripId: string) =>
+        Effect.promise(() => deps.accessChecker.isGroupLeader(userId, tripId)),
+      isStaff: (userId: string) =>
+        Effect.promise(() => deps.accessChecker.isStaff(userId)),
+      hasTripEnded: (tripId: string) =>
+        Effect.promise(() => deps.accessChecker.hasTripEnded(tripId)),
+    }),
+  );
+  return await Effect.runPromise(program);
+};
+
+describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
   let rewardRepo: InMemoryRewardRepository;
   let purchaseRepo: InMemoryRewardPurchaseRepository;
   let pointsCalc: InMemoryTripPointsCalculator;
   let coinsService: InMemoryGroupCoinsService;
   let accessChecker: InMemoryTripAccessChecker;
-  let useCase: PurchaseRewardUseCase;
 
   beforeEach(() => {
     rewardRepo = new InMemoryRewardRepository();
@@ -167,13 +385,6 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
     pointsCalc = new InMemoryTripPointsCalculator();
     coinsService = new InMemoryGroupCoinsService();
     accessChecker = new InMemoryTripAccessChecker();
-    useCase = new PurchaseRewardUseCase(
-      rewardRepo,
-      purchaseRepo,
-      pointsCalc,
-      coinsService,
-      accessChecker,
-    );
   });
 
   describe("execute", () => {
@@ -194,17 +405,20 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runPurchaseRewardUseCase(input, {
+        rewardRepo,
+        purchaseRepo,
+        pointsCalc,
+        coinsService,
+        accessChecker,
+      });
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.rewardId).toBe(mockReward.id);
-        expect(result.value.groupId).toBe("group-123");
-        expect(result.value.quantity).toBe(2);
-        expect(result.value.totalCost).toBe(200); // 2 * (10% of 1000)
-        expect(result.value.status).toBe("BOUGHT");
-      }
+      expect(result.rewardId).toBe(mockReward.id);
+      expect(result.groupId).toBe("group-123");
+      expect(result.quantity).toBe(2);
+      expect(result.totalCost).toBe(200); // 2 * (10% of 1000)
+      expect(result.status).toBe("BOUGHT");
 
       // Verify reward quantity was decremented
       const updatedReward = await rewardRepo.findById(mockReward.id);
@@ -221,17 +435,26 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
 
     it("should reject purchase when reward not found", async () => {
       const input: PurchaseRewardInput = {
-        rewardId:
-          "nonexistent-id" as unknown as import("@mirai-app/domain").RewardId,
+        rewardId: RewardId.unsafeCreate("nonexistent-id"),
         quantity: 2,
         userId: "user-123",
       };
 
-      // Act
-      const result = await useCase.execute(input);
+      // Act - use Either to properly check error type
+      const program = buildPurchaseRewardProgram(input, {
+        rewardRepo,
+        purchaseRepo,
+        pointsCalc,
+        coinsService,
+        accessChecker,
+      });
+      const either = await Effect.runPromise(Effect.either(program));
 
       // Assert
-      expect(result.kind).toBe("err");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(RewardNotFoundError);
+      }
     });
 
     it("should reject purchase when user is not group leader", async () => {
@@ -248,11 +471,21 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      // Act
-      const result = await useCase.execute(input);
+      // Act - use Either to properly check error type
+      const program = buildPurchaseRewardProgram(input, {
+        rewardRepo,
+        purchaseRepo,
+        pointsCalc,
+        coinsService,
+        accessChecker,
+      });
+      const either = await Effect.runPromise(Effect.either(program));
 
       // Assert
-      expect(result.kind).toBe("err");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(NotGroupLeaderError);
+      }
     });
 
     it("should reject purchase when insufficient quantity", async () => {
@@ -270,11 +503,21 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      // Act
-      const result = await useCase.execute(input);
+      // Act - use Either to properly check error type
+      const program = buildPurchaseRewardProgram(input, {
+        rewardRepo,
+        purchaseRepo,
+        pointsCalc,
+        coinsService,
+        accessChecker,
+      });
+      const either = await Effect.runPromise(Effect.either(program));
 
       // Assert
-      expect(result.kind).toBe("err");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InsufficientQuantityError);
+      }
     });
 
     it("should reject purchase when insufficient coins", async () => {
@@ -292,11 +535,21 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      // Act
-      const result = await useCase.execute(input);
+      // Act - use Either to properly check error type
+      const program = buildPurchaseRewardProgram(input, {
+        rewardRepo,
+        purchaseRepo,
+        pointsCalc,
+        coinsService,
+        accessChecker,
+      });
+      const either = await Effect.runPromise(Effect.either(program));
 
       // Assert
-      expect(result.kind).toBe("err");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InsufficientCoinsError);
+      }
     });
 
     it("should reject purchase when trip has ended", async () => {
@@ -315,11 +568,21 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      // Act
-      const result = await useCase.execute(input);
+      // Act - use Either to properly check error type
+      const program = buildPurchaseRewardProgram(input, {
+        rewardRepo,
+        purchaseRepo,
+        pointsCalc,
+        coinsService,
+        accessChecker,
+      });
+      const either = await Effect.runPromise(Effect.either(program));
 
       // Assert
-      expect(result.kind).toBe("err");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(TripEndedError);
+      }
     });
 
     it("should reject purchase when reward is hidden", async () => {
@@ -346,11 +609,21 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      // Act
-      const result = await useCase.execute(input);
+      // Act - use Either to properly check error type
+      const program = buildPurchaseRewardProgram(input, {
+        rewardRepo,
+        purchaseRepo,
+        pointsCalc,
+        coinsService,
+        accessChecker,
+      });
+      const either = await Effect.runPromise(Effect.either(program));
 
       // Assert
-      expect(result.kind).toBe("err");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(RewardHiddenError);
+      }
     });
   });
 });

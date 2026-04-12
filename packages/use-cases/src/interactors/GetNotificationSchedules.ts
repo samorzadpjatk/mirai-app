@@ -1,10 +1,10 @@
 import type {
-  Result,
   NotificationScheduleFilter,
   PaginationOptions,
 } from "@mirai-app/domain";
-import { ok, err, NotificationSchedule } from "@mirai-app/domain";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
+import { NotificationSchedule } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 
 /**
  * Input for GetNotificationSchedules use case
@@ -54,54 +54,72 @@ export interface GetNotificationSchedulesOutput {
 }
 
 /**
+ * Helper function to convert NotificationSchedule to output DTO
+ */
+function toOutput(
+  schedule: NotificationSchedule,
+  now: Date,
+): NotificationScheduleOutput {
+  return {
+    id: schedule.id,
+    name: schedule.name,
+    tripId: schedule.tripId,
+    notificationType: schedule.notificationType,
+    notificationTitle: schedule.notificationTitle,
+    notificationBody: schedule.notificationBody,
+    notificationUrl: schedule.notificationUrl,
+    startDate: schedule.startDate,
+    endDate: schedule.endDate,
+    hour: schedule.hour,
+    minute: schedule.minute,
+    isActive: schedule.isActive,
+    createdById: schedule.createdById,
+    lastRun: schedule.lastRun,
+    createdAt: schedule.createdAt,
+    updatedAt: schedule.updatedAt,
+    isCurrentlyActive: schedule.isCurrentlyActive(now),
+    isExpired: schedule.isExpired(now),
+    isUpcoming: schedule.isUpcoming(now),
+    formattedTime: schedule.getFormattedTime(),
+  };
+}
+
+/**
  * GetNotificationSchedules Use Case
  *
  * Retrieves a list of notification schedules with optional filtering and pagination.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getNotificationSchedulesUseCase(input).pipe(
+ *   Effect.provideService(NotificationScheduleRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetNotificationSchedulesUseCase {
-  constructor(private repository: NotificationScheduleRepository) {}
+export function getNotificationSchedulesUseCase(
+  input: GetNotificationSchedulesInput,
+): Effect.Effect<
+  GetNotificationSchedulesOutput,
+  never,
+  NotificationScheduleRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationScheduleRepositoryTag;
 
-  async execute(
-    input: GetNotificationSchedulesInput,
-  ): Promise<Result<GetNotificationSchedulesOutput, string>> {
-    const result = await this.repository.findAll({
+    const result = yield* repo.findAll({
       ...(input.filter !== undefined && { filter: input.filter }),
       ...(input.pagination !== undefined && { pagination: input.pagination }),
     });
 
     const now = new Date();
 
-    return ok({
-      schedules: result.items.map((schedule) => this.toOutput(schedule, now)),
-      pagination: result.pagination,
-    });
-  }
-
-  private toOutput(
-    schedule: NotificationSchedule,
-    now: Date,
-  ): NotificationScheduleOutput {
     return {
-      id: schedule.id,
-      name: schedule.name,
-      tripId: schedule.tripId,
-      notificationType: schedule.notificationType,
-      notificationTitle: schedule.notificationTitle,
-      notificationBody: schedule.notificationBody,
-      notificationUrl: schedule.notificationUrl,
-      startDate: schedule.startDate,
-      endDate: schedule.endDate,
-      hour: schedule.hour,
-      minute: schedule.minute,
-      isActive: schedule.isActive,
-      createdById: schedule.createdById,
-      lastRun: schedule.lastRun,
-      createdAt: schedule.createdAt,
-      updatedAt: schedule.updatedAt,
-      isCurrentlyActive: schedule.isCurrentlyActive(now),
-      isExpired: schedule.isExpired(now),
-      isUpcoming: schedule.isUpcoming(now),
-      formattedTime: schedule.getFormattedTime(),
+      schedules: result.items.map((schedule) => toOutput(schedule, now)),
+      pagination: result.pagination,
     };
-  }
+  });
 }

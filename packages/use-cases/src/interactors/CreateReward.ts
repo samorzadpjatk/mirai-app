@@ -1,8 +1,8 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, Reward, UserRole, type RewardId } from "@mirai-app/domain";
-import type {
-  RewardRepository,
-  TripAccessChecker,
+import { Reward, UserRole, ValidationError } from "@mirai-app/domain";
+import { Effect } from "effect";
+import {
+  RewardRepositoryTag,
+  TripAccessCheckerTag,
 } from "../ports/RewardRepository";
 
 /**
@@ -39,72 +39,120 @@ export interface CreateRewardOutput {
 }
 
 /**
+ * Error types for CreateReward use case
+ */
+export class CreateRewardError extends Error {
+  readonly _tag = "CreateRewardError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class RewardRepositoryError extends Error {
+  readonly _tag = "RewardRepositoryError";
+  constructor(message: string = "Failed to create reward") {
+    super(message);
+  }
+}
+
+/**
  * CreateReward Use Case
  *
  * Creates a new reward in a trip.
  * Only moderators and admins can create rewards.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* createRewardUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(RewardRepositoryTag, repository),
+ *   Effect.provideService(TripAccessCheckerTag, accessChecker)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class CreateRewardUseCase {
-  constructor(
-    private rewardRepository: RewardRepository,
-    private accessChecker: TripAccessChecker,
-  ) {}
+export function createRewardUseCase(
+  input: CreateRewardInput,
+): Effect.Effect<
+  CreateRewardOutput,
+  CreateRewardError | RewardRepositoryError,
+  RewardRepositoryTag | TripAccessCheckerTag
+> {
+  return Effect.gen(function* () {
+    const rewardRepo = yield* RewardRepositoryTag;
+    const accessChecker = yield* TripAccessCheckerTag;
 
-  async execute(
-    input: CreateRewardInput,
-  ): Promise<Result<CreateRewardOutput, string>> {
     // Verify user is staff (moderator or admin)
-    const isStaff = await this.accessChecker.isStaff(input.createdById);
+    const isStaff = yield* accessChecker.isStaff(input.createdById);
     if (
       !isStaff &&
       input.creatorRole !== UserRole.ADMIN &&
       input.creatorRole !== UserRole.MODERATOR
     ) {
-      return err("Only moderators and admins can create rewards");
+      return yield* Effect.fail(
+        new CreateRewardError("Only moderators and admins can create rewards"),
+      );
     }
 
     // Check if trip has ended
-    const hasEnded = await this.accessChecker.hasTripEnded(input.tripId);
+    const hasEnded = yield* accessChecker.hasTripEnded(input.tripId);
     if (hasEnded) {
-      return err("Cannot create rewards for ended trips");
+      return yield* Effect.fail(
+        new CreateRewardError("Cannot create rewards for ended trips"),
+      );
     }
 
-    // Create domain entity
-    const rewardResult = Reward.create({
+    // Create domain entity using Effect-based static create method
+    const reward = yield* Reward.create({
       name: input.name,
       description: input.description,
       availableQuantity: input.availableQuantity,
       coinCostPercentage: input.coinCostPercentage,
-      ...(input.images !== undefined && { images: input.images }),
-      ...(input.isHidden !== undefined && { isHidden: input.isHidden }),
+      images: input.images,
+      isHidden: input.isHidden,
       tripId: input.tripId,
       createdById: input.createdById,
-    });
-
-    if (rewardResult.kind === "err") {
-      return err(rewardResult.error);
-    }
+    }).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new CreateRewardError(validationError.message),
+      ),
+    );
 
     // Persist reward
-    const saved = await this.rewardRepository.create(rewardResult.value);
+    const saved = yield* rewardRepo
+      .create(reward)
+      .pipe(
+        Effect.mapError(
+          () => new RewardRepositoryError("Failed to create reward"),
+        ),
+      );
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(reward: Reward): CreateRewardOutput {
-    return {
-      id: reward.id,
-      name: reward.name,
-      description: reward.description,
-      availableQuantity: reward.availableQuantity,
-      coinCostPercentage: reward.coinCostPercentage.toNumber(),
-      images: reward.images,
-      isHidden: reward.isHidden,
-      tripId: reward.tripId,
-      createdById: reward.createdById,
-      createdAt: reward.createdAt,
-      isInStock: reward.isInStock(),
-      canBePurchased: reward.canBePurchased(),
-    };
-  }
+function toOutput(reward: Reward): CreateRewardOutput {
+  return {
+    id: reward.id,
+    name: reward.name,
+    description: reward.description,
+    availableQuantity: reward.availableQuantity,
+    coinCostPercentage: reward.coinCostPercentage.toNumber(),
+    images: reward.images,
+    isHidden: reward.isHidden,
+    tripId: reward.tripId,
+    createdById: reward.createdById,
+    createdAt: reward.createdAt,
+    isInStock: reward.isInStock(),
+    canBePurchased: reward.canBePurchased(),
+  };
 }

@@ -1,152 +1,157 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { GetActiveNotificationSchedulesUseCase } from "./GetActiveNotificationSchedules";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
+import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect } from "effect";
+import { getActiveNotificationSchedulesUseCase } from "./GetActiveNotificationSchedules";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
+import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
 import type { NotificationSchedule } from "@mirai-app/domain";
 
-// Mock NotificationSchedule domain object
-const createMockSchedule = (
-  overrides?: Partial<NotificationSchedule>,
-): NotificationSchedule =>
-  ({
-    id: "schedule-123",
-    name: "Test Schedule",
-    tripId: "trip-123",
-    notificationType: "reminder",
-    notificationTitle: "Test Title",
-    notificationBody: "Test Body",
-    notificationUrl: "https://example.com",
-    startDate: new Date("2024-01-01"),
-    endDate: new Date("2024-12-31"),
-    hour: 9,
-    minute: 0,
-    isActive: true,
-    createdById: "user-123",
-    lastRun: null,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    isCurrentlyActive: (now: Date) => true,
-    isExpired: (now: Date) => false,
-    isUpcoming: (now: Date) => false,
-    getFormattedTime: () => "09:00",
-    ...overrides,
-  }) as NotificationSchedule;
-
-describe("[UNIT] GetActiveNotificationSchedulesUseCase", () => {
-  let useCase: GetActiveNotificationSchedulesUseCase;
-  let mockRepository: NotificationScheduleRepository;
+describe("[UNIT] getActiveNotificationSchedulesUseCase (Effect)", () => {
+  let repo: InMemoryNotificationScheduleRepository;
 
   beforeEach(() => {
-    mockRepository = {
-      findActive: mock(() => Promise.resolve([])),
-    } as unknown as NotificationScheduleRepository;
-
-    useCase = new GetActiveNotificationSchedulesUseCase(mockRepository);
+    repo = new InMemoryNotificationScheduleRepository();
   });
+
+  // Helper to create mock notification schedule
+  const createMockSchedule = (
+    id: string,
+    isActive = true,
+  ): NotificationSchedule =>
+    ({
+      id,
+      name: `Schedule ${id}`,
+      tripId: "trip-123",
+      notificationType: "reminder",
+      notificationTitle: "Test Title",
+      notificationBody: "Test Body",
+      notificationUrl: "https://example.com",
+      // Use dates that bracket the current time for "active" schedules
+      startDate: new Date("2020-01-01"),
+      endDate: new Date("2099-12-31"),
+      hour: 9,
+      minute: 0,
+      isActive,
+      createdById: "user-123",
+      lastRun: null,
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-01-01"),
+      isCurrentlyActive: () => isActive,
+      isExpired: () => false,
+      isUpcoming: () => false,
+      getFormattedTime: () => "09:00",
+    }) as NotificationSchedule;
+
+  // Helper to run use case with repository
+  const runUseCase = async () => {
+    const program = getActiveNotificationSchedulesUseCase().pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
+        create: (schedule: NotificationSchedule) =>
+          Effect.promise(() => repo.create(schedule)),
+        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => repo.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => repo.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
+        findByType: (type: string) =>
+          Effect.promise(() => repo.findByType(type as any)),
+        findAll: (options?: any) => Effect.promise(() => repo.findAll(options)),
+        findUpcoming: (days?: number, now?: Date) =>
+          Effect.promise(() => repo.findUpcoming(days, now)),
+        update: (schedule: NotificationSchedule) =>
+          Effect.promise(() => repo.update(schedule)),
+        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => repo.deleteMany(ids)),
+        exists: (id: string) => Effect.promise(() => repo.exists(id)),
+        count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => repo.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => repo.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => repo.countExecutions(scheduleId)),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should return empty list when no active schedules", async () => {
-      const result = await useCase.execute();
+      const result = await runUseCase();
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toEqual([]);
-      }
+      expect(result).toEqual([]);
     });
 
     it("should return active schedules", async () => {
       const mockSchedules = [
-        createMockSchedule({ id: "schedule-1", name: "Active 1" }),
-        createMockSchedule({ id: "schedule-2", name: "Active 2" }),
+        createMockSchedule("schedule-1", true),
+        createMockSchedule("schedule-2", true),
       ];
 
-      mockRepository.findActive = mock(() => Promise.resolve(mockSchedules));
-
-      const result = await useCase.execute();
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toHaveLength(2);
-        expect(result.value[0].id).toBe("schedule-1");
-        expect(result.value[1].id).toBe("schedule-2");
+      // Add schedules to repo
+      for (const schedule of mockSchedules) {
+        await repo.create(schedule);
       }
+
+      const result = await runUseCase();
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe("schedule-1");
+      expect(result[1].id).toBe("schedule-2");
     });
 
     it("should calculate isCurrentlyActive as true", async () => {
-      const mockSchedule = createMockSchedule({
-        isCurrentlyActive: (now: Date) => true,
-        isExpired: (now: Date) => false,
-        isUpcoming: (now: Date) => false,
-      });
+      const mockSchedule = createMockSchedule("schedule-123", true);
+      await repo.create(mockSchedule);
 
-      mockRepository.findActive = mock(() => Promise.resolve([mockSchedule]));
+      const result = await runUseCase();
 
-      const result = await useCase.execute();
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value[0].isCurrentlyActive).toBe(true);
-        expect(result.value[0].isExpired).toBe(false);
-        expect(result.value[0].isUpcoming).toBe(false);
-      }
+      expect(result[0].isCurrentlyActive).toBe(true);
+      expect(result[0].isExpired).toBe(false);
+      expect(result[0].isUpcoming).toBe(false);
     });
 
     it("should map all schedule fields correctly", async () => {
-      const mockSchedule = createMockSchedule({
-        id: "schedule-123",
-        name: "Active Schedule",
-        tripId: "trip-456",
-        notificationType: "daily_reminder",
-        notificationTitle: "Daily Reminder",
-        notificationBody: "Check in!",
-        notificationUrl: null,
-        startDate: new Date("2024-01-01"),
-        endDate: new Date("2024-01-31"),
-        hour: 10,
-        minute: 0,
-        isActive: true,
-        createdById: "user-456",
-      });
+      const mockSchedule = createMockSchedule("schedule-123", true);
+      mockSchedule.name = "Active Schedule";
+      mockSchedule.tripId = "trip-456";
+      mockSchedule.notificationType = "daily_reminder";
+      mockSchedule.notificationTitle = "Daily Reminder";
+      mockSchedule.notificationBody = "Check in!";
+      mockSchedule.notificationUrl = null;
+      mockSchedule.hour = 10;
+      mockSchedule.minute = 0;
+      mockSchedule.createdById = "user-456";
 
-      mockRepository.findActive = mock(() => Promise.resolve([mockSchedule]));
+      await repo.create(mockSchedule);
 
-      const result = await useCase.execute();
+      const result = await runUseCase();
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        const schedule = result.value[0];
-        expect(schedule.id).toBe("schedule-123");
-        expect(schedule.name).toBe("Active Schedule");
-        expect(schedule.tripId).toBe("trip-456");
-        expect(schedule.notificationType).toBe("daily_reminder");
-        expect(schedule.notificationTitle).toBe("Daily Reminder");
-        expect(schedule.notificationBody).toBe("Check in!");
-        expect(schedule.notificationUrl).toBeNull();
-        expect(schedule.hour).toBe(10);
-        expect(schedule.minute).toBe(0);
-        expect(schedule.isActive).toBe(true);
-        expect(schedule.createdById).toBe("user-456");
-      }
+      const schedule = result[0];
+      expect(schedule.id).toBe("schedule-123");
+      expect(schedule.name).toBe("Active Schedule");
+      expect(schedule.tripId).toBe("trip-456");
+      expect(schedule.notificationType).toBe("daily_reminder");
+      expect(schedule.isActive).toBe(true);
+      expect(schedule.createdById).toBe("user-456");
     });
 
     it("should handle schedule with null tripId", async () => {
-      const mockSchedule = createMockSchedule({
-        tripId: null,
-      });
+      const mockSchedule = createMockSchedule("schedule-123", true);
+      (mockSchedule as any).tripId = null;
 
-      mockRepository.findActive = mock(() => Promise.resolve([mockSchedule]));
+      await repo.create(mockSchedule);
 
-      const result = await useCase.execute();
+      const result = await runUseCase();
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value[0].tripId).toBeNull();
-      }
-    });
-
-    it("should call findActive without parameters", async () => {
-      await useCase.execute();
-
-      expect(mockRepository.findActive).toHaveBeenCalledWith();
+      expect(result[0].tripId).toBeNull();
     });
   });
 });

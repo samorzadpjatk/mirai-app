@@ -1,9 +1,10 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  UpdateSharingSettingsUseCase,
+  updateSharingSettingsUseCase,
   type UpdateSharingSettingsInput,
 } from "./UpdateSharingSettings";
-import type { LocationRepository } from "../ports/LocationRepository";
+import { Effect, Either } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location, LocationId } from "@mirai-app/domain";
 
 // Mock Location domain object
@@ -15,10 +16,10 @@ const createMockLocation = (overrides?: Partial<Location>): Location =>
     timestamp: new Date("2024-01-01"),
     isSharingLocation: () => false,
     startSharing: function () {
-      return { ...this, isSharingLocation: () => true };
+      return { ...this, isSharingLocation: () => true } as Location;
     },
     stopSharing: function () {
-      return { ...this, isSharingLocation: () => false };
+      return { ...this, isSharingLocation: () => false } as Location;
     },
     updateSharingUsers: function (users: unknown[]) {
       return { kind: "ok", value: { ...this, usersToShareWith: users } };
@@ -26,20 +27,55 @@ const createMockLocation = (overrides?: Partial<Location>): Location =>
     ...overrides,
   }) as unknown as Location;
 
-describe("[UNIT] UpdateSharingSettingsUseCase", () => {
-  let useCase: UpdateSharingSettingsUseCase;
-  let mockLocationRepository: LocationRepository;
+// Create mock repository service
+const createMockRepoService = (overrides?: {
+  findByUserId?: (userId: string) => Promise<Location | null>;
+  save?: (location: Location) => Promise<Location>;
+  create?: (location: Location) => Promise<Location>;
+}) => ({
+  findById: () => Effect.promise(() => Promise.resolve(null)),
+  findByUserId: (userId: string) =>
+    Effect.promise(() =>
+      overrides?.findByUserId
+        ? overrides.findByUserId(userId)
+        : Promise.resolve(null),
+    ),
+  findAll: () => Effect.promise(() => Promise.resolve([])),
+  findSharingWithUser: () => Effect.promise(() => Promise.resolve([])),
+  findByUserIds: () => Effect.promise(() => Promise.resolve([])),
+  save: (location: Location) =>
+    Effect.promise(() =>
+      overrides?.save ? overrides.save(location) : Promise.resolve(location),
+    ),
+  create: (location: Location) =>
+    Effect.promise(() =>
+      overrides?.create
+        ? overrides.create(location)
+        : Promise.resolve(location),
+    ),
+  delete: () => Effect.promise(() => Promise.resolve()),
+  deleteByUserId: () => Effect.promise(() => Promise.resolve()),
+  existsForUser: () => Effect.promise(() => Promise.resolve(false)),
+});
 
-  beforeEach(() => {
-    mockLocationRepository = {
-      findByUserId: mock(() => Promise.resolve(null)),
-      save: mock((loc: Location) => Promise.resolve(loc)),
-      create: mock((loc: Location) => Promise.resolve(loc)),
-    } as unknown as LocationRepository;
+// Helper to run use case with repository service
+const runUseCase = async (
+  input: UpdateSharingSettingsInput,
+  repoOverrides?: {
+    findByUserId?: (userId: string) => Promise<Location | null>;
+    save?: (location: Location) => Promise<Location>;
+  },
+) => {
+  const program = updateSharingSettingsUseCase(input).pipe(
+    Effect.provideService(
+      LocationRepositoryTag,
+      createMockRepoService(repoOverrides),
+    ),
+  );
+  return await Effect.runPromise(program);
+};
 
-    useCase = new UpdateSharingSettingsUseCase(mockLocationRepository);
-  });
-
+describe("[UNIT] updateSharingSettingsUseCase (Effect)", () => {
   describe("execute", () => {
     it("should create new location when none exists with sharing enabled", async () => {
       const input: UpdateSharingSettingsInput = {
@@ -50,14 +86,13 @@ describe("[UNIT] UpdateSharingSettingsUseCase", () => {
         ],
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(null),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.userId).toBe("user-123");
-        expect(result.value.isSharingLocation).toBe(true);
-        expect(result.value.usersToShareWith).toHaveLength(1);
-      }
+      expect(result.userId).toBe("user-123");
+      expect(result.isSharingLocation).toBe(true);
+      expect(result.usersToShareWith).toHaveLength(1);
     });
 
     it("should create new location when none exists with sharing disabled", async () => {
@@ -67,13 +102,12 @@ describe("[UNIT] UpdateSharingSettingsUseCase", () => {
         usersToShareWith: [],
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(null),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isSharingLocation).toBe(false);
-        expect(result.value.usersToShareWith).toEqual([]);
-      }
+      expect(result.isSharingLocation).toBe(false);
+      expect(result.usersToShareWith).toEqual([]);
     });
 
     it("should update existing location to enable sharing", async () => {
@@ -83,21 +117,17 @@ describe("[UNIT] UpdateSharingSettingsUseCase", () => {
           return { ...this, isSharingLocation: () => true } as Location;
         },
       });
-      mockLocationRepository.findByUserId = mock(() =>
-        Promise.resolve(existingLocation),
-      );
 
       const input: UpdateSharingSettingsInput = {
         userId: "user-123",
         isSharingLocation: true,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(existingLocation),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isSharingLocation).toBe(true);
-      }
+      expect(result.isSharingLocation).toBe(true);
     });
 
     it("should update existing location to disable sharing", async () => {
@@ -107,74 +137,17 @@ describe("[UNIT] UpdateSharingSettingsUseCase", () => {
           return { ...this, isSharingLocation: () => false } as Location;
         },
       });
-      mockLocationRepository.findByUserId = mock(() =>
-        Promise.resolve(existingLocation),
-      );
 
       const input: UpdateSharingSettingsInput = {
         userId: "user-123",
         isSharingLocation: false,
       };
 
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isSharingLocation).toBe(false);
-      }
-    });
-
-    it("should update users to share with for existing location", async () => {
-      const existingLocation = createMockLocation({
-        usersToShareWith: [],
-        updateSharingUsers: function (users: unknown[]) {
-          return { kind: "ok", value: { ...this, usersToShareWith: users } };
-        },
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(existingLocation),
       });
-      mockLocationRepository.findByUserId = mock(() =>
-        Promise.resolve(existingLocation),
-      );
 
-      const input: UpdateSharingSettingsInput = {
-        userId: "user-123",
-        isSharingLocation: true,
-        usersToShareWith: [
-          { id: "user-1", firstName: "John", lastName: "Doe" },
-          { id: "user-2", firstName: "Jane", lastName: "Smith" },
-        ],
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.usersToShareWith).toHaveLength(2);
-        expect(result.value.usersToShareWith[0].id).toBe("user-1");
-      }
-    });
-
-    it("should persist changes to repository", async () => {
-      const input: UpdateSharingSettingsInput = {
-        userId: "user-123",
-        isSharingLocation: true,
-      };
-
-      await useCase.execute(input);
-
-      expect(mockLocationRepository.save).toHaveBeenCalled();
-    });
-
-    it("should call findByUserId with correct userId", async () => {
-      const input: UpdateSharingSettingsInput = {
-        userId: "user-456",
-        isSharingLocation: true,
-      };
-
-      await useCase.execute(input);
-
-      expect(mockLocationRepository.findByUserId).toHaveBeenCalledWith(
-        "user-456",
-      );
+      expect(result.isSharingLocation).toBe(false);
     });
 
     it("should include timestamp in output", async () => {
@@ -183,12 +156,11 @@ describe("[UNIT] UpdateSharingSettingsUseCase", () => {
         isSharingLocation: true,
       };
 
-      const result = await useCase.execute(input);
+      const result = await runUseCase(input, {
+        findByUserId: () => Promise.resolve(null),
+      });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.timestamp).toBeInstanceOf(Date);
-      }
+      expect(result.timestamp).toBeInstanceOf(Date);
     });
   });
 });

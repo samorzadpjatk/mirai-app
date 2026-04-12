@@ -1,6 +1,5 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { CoinTransactionRepository } from "../ports/CoinTransactionRepository";
+import { Effect } from "effect";
+import { CoinTransactionRepositoryTag } from "../ports/CoinTransactionRepository";
 
 /**
  * Input for GetCoinQuickStats use case
@@ -17,7 +16,6 @@ export interface GetCoinQuickStatsOutput {
   totalGroups: number;
   averageCoinsPerGroup: number;
   richestGroupId?: string;
-  richestGroupName?: string;
   time: Date;
 }
 
@@ -26,60 +24,72 @@ export interface GetCoinQuickStatsOutput {
  *
  * Retrieves quick statistics about coin distribution for a trip.
  * Includes total coins, total groups, average, and richest group.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = getCoinQuickStatsUseCase(input).pipe(
+ *   Effect.provideService(CoinTransactionRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class GetCoinQuickStatsUseCase {
-  constructor(private coinRepo: CoinTransactionRepository) {}
+export function getCoinQuickStatsUseCase(
+  input: GetCoinQuickStatsInput,
+): Effect.Effect<
+  GetCoinQuickStatsOutput | null,
+  never,
+  CoinTransactionRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* CoinTransactionRepositoryTag;
 
-  async execute(
-    input: GetCoinQuickStatsInput,
-  ): Promise<Result<GetCoinQuickStatsOutput | null, string>> {
-    try {
-      const totalSum = await this.coinRepo.sumAmount({ tripId: input.tripId });
+    const totalSum = yield* repo.sumAmount({ tripId: input.tripId });
 
-      if (totalSum === null || totalSum === undefined) {
-        return ok(null);
-      }
+    if (totalSum === null || totalSum === undefined) {
+      return null;
+    }
 
-      const totalCoins = totalSum;
-      const transactionCount = await this.coinRepo.count({
-        tripId: input.tripId,
-      });
-      const totalGroups = transactionCount;
+    const totalCoins = totalSum;
+    const transactionCount = yield* repo.count({
+      tripId: input.tripId,
+    });
+    const totalGroups = transactionCount;
 
-      const averageCoinsPerGroup =
-        totalGroups > 0 ? Math.round(totalCoins / totalGroups) : 0;
+    const averageCoinsPerGroup =
+      totalGroups > 0 ? Math.round(totalCoins / totalGroups) : 0;
 
-      const groupsByCoins = await this.coinRepo.getTotalCoinsByGroup(
-        input.tripId,
-      );
+    const groupsByCoins = yield* repo.getTotalCoinsByGroup(input.tripId);
 
-      if (!groupsByCoins || groupsByCoins.length === 0) {
-        return ok({
-          totalCoins,
-          totalGroups,
-          averageCoinsPerGroup,
-          time: new Date(),
-        });
-      }
-
-      // Find richest group
-      const richest = groupsByCoins.reduce((max, current) => {
-        const currentAmount = current._sum.amount ?? 0;
-        const maxAmount = max?._sum.amount ?? 0;
-        return currentAmount > maxAmount ? current : max;
-      }, groupsByCoins[0]);
-
-      return ok({
+    if (!groupsByCoins || groupsByCoins.length === 0) {
+      return {
         totalCoins,
         totalGroups,
         averageCoinsPerGroup,
-        richestGroupId: richest?.groupId,
         time: new Date(),
-      });
-    } catch (error) {
-      return err(
-        `Failed to get quick stats: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      };
     }
-  }
+
+    // Find richest group
+    const richest = groupsByCoins.reduce((max, current) => {
+      const currentAmount = current._sum.amount ?? 0;
+      const maxAmount = max?._sum.amount ?? 0;
+      return currentAmount > maxAmount ? current : max;
+    }, groupsByCoins[0]);
+
+    const output: GetCoinQuickStatsOutput = {
+      totalCoins,
+      totalGroups,
+      averageCoinsPerGroup,
+      time: new Date(),
+    };
+
+    if (richest?.groupId) {
+      output.richestGroupId = richest.groupId;
+    }
+
+    return output;
+  });
 }

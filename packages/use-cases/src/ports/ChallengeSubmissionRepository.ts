@@ -3,6 +3,7 @@ import type {
   SubmissionId,
   SubmissionStatus,
 } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * ChallengeSubmissionRepository Port
@@ -94,3 +95,57 @@ export interface ChallengeSubmissionRepository {
     status: SubmissionStatus,
   ): Promise<number>;
 }
+
+/**
+ * ChallengeSubmissionRepository Context.Tag for Effect dependency injection
+ */
+export class ChallengeSubmissionRepositoryTag extends Context.Tag(
+  "ChallengeSubmissionRepository",
+)<
+  ChallengeSubmissionRepositoryTag,
+  {
+    create: (
+      submission: ChallengeSubmission,
+    ) => Effect.Effect<ChallengeSubmission, never, never>;
+    findById: (
+      id: SubmissionId,
+    ) => Effect.Effect<ChallengeSubmission | null, never, never>;
+    findByChallengeAndGroup: (
+      challengeId: string,
+      groupId: string,
+    ) => Effect.Effect<ChallengeSubmission | null, never, never>;
+    findByChallengeId: (
+      challengeId: string,
+    ) => Effect.Effect<ChallengeSubmission[], never, never>;
+    findByGroupId: (
+      groupId: string,
+    ) => Effect.Effect<ChallengeSubmission[], never, never>;
+    findByStatus: (
+      status: SubmissionStatus,
+    ) => Effect.Effect<ChallengeSubmission[], never, never>;
+    findMany: (params: {
+      challengeId?: string;
+      groupId?: string;
+      status?: SubmissionStatus;
+      orderBy?: "voteScore" | "createdAt";
+      orderDirection?: "asc" | "desc";
+      limit?: number;
+      offset?: number;
+    }) => Effect.Effect<ChallengeSubmission[], never, never>;
+    update: (
+      submission: ChallengeSubmission,
+    ) => Effect.Effect<ChallengeSubmission, never, never>;
+    delete: (id: SubmissionId) => Effect.Effect<void, never, never>;
+    existsForChallengeAndGroup: (
+      challengeId: string,
+      groupId: string,
+    ) => Effect.Effect<boolean, never, never>;
+    countByChallengeId: (
+      challengeId: string,
+    ) => Effect.Effect<number, never, never>;
+    countByChallengeAndStatus: (
+      challengeId: string,
+      status: SubmissionStatus,
+    ) => Effect.Effect<number, never, never>;
+  }
+>() {}

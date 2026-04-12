@@ -1,94 +1,113 @@
-import { describe, it, expect, mock } from "bun:test";
-import { DeleteSponsorUseCase, type DeleteSponsorInput } from "./DeleteSponsor";
-import type { SponsorRepository } from "../ports/SponsorRepository";
+import { describe, it, expect, beforeEach } from "bun:test";
+import {
+  deleteSponsorUseCase,
+  type DeleteSponsorInput,
+  DeleteSponsorNotFoundError,
+} from "./DeleteSponsor";
+import { Sponsor } from "@mirai-app/domain";
+import { Effect, Either } from "effect";
+import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
-describe("[UNIT] DeleteSponsorUseCase", () => {
-  const createMockRepo = (
-    overrides?: Partial<SponsorRepository>,
-  ): SponsorRepository => ({
-    create: mock(() => Promise.resolve({} as any)),
-    findById: mock(() => Promise.resolve(null)),
-    findAll: mock(() => Promise.resolve([])),
-    findActive: mock(() => Promise.resolve([])),
-    findByTripId: mock(() => Promise.resolve([])),
-    update: mock(() => Promise.resolve({} as any)),
-    delete: mock(() => Promise.resolve()),
-    exists: mock(() => Promise.resolve(false)),
-    isLinkedToTrip: mock(() => Promise.resolve(false)),
-    linkToTrip: mock(() => Promise.resolve()),
-    unlinkFromTrip: mock(() => Promise.resolve()),
-    ...overrides,
+describe("[UNIT] deleteSponsorUseCase (Effect)", () => {
+  // Helper to create mock repository service
+  const createMockRepoService = (overrides?: {
+    exists?: (id: string) => Promise<boolean>;
+    delete?: (id: string) => Promise<void>;
+  }) => ({
+    create: (sponsor: Sponsor) =>
+      Effect.promise(() => Promise.resolve(sponsor)),
+    findById: () => Effect.promise(() => Promise.resolve(null)),
+    findAll: () => Effect.promise(() => Promise.resolve([])),
+    findActive: () => Effect.promise(() => Promise.resolve([])),
+    findByTripId: () => Effect.promise(() => Promise.resolve([])),
+    update: (sponsor: Sponsor) =>
+      Effect.promise(() => Promise.resolve(sponsor)),
+    delete: (id: string) =>
+      Effect.promise(() =>
+        overrides?.delete ? overrides.delete(id) : Promise.resolve(),
+      ),
+    exists: (id: string) =>
+      Effect.promise(() =>
+        overrides?.exists ? overrides.exists(id) : Promise.resolve(false),
+      ),
+    isLinkedToTrip: () => Effect.promise(() => Promise.resolve(false)),
+    linkToTrip: () => Effect.promise(() => Promise.resolve()),
+    unlinkFromTrip: () => Effect.promise(() => Promise.resolve()),
   });
+
+  // Helper to run use case with repository service
+  const runUseCase = async (
+    input: DeleteSponsorInput,
+    repoOverrides?: {
+      exists?: (id: string) => Promise<boolean>;
+      delete?: (id: string) => Promise<void>;
+    },
+  ) => {
+    const program = deleteSponsorUseCase(input).pipe(
+      Effect.provideService(
+        SponsorRepositoryTag,
+        createMockRepoService(repoOverrides),
+      ),
+    );
+    return await Effect.runPromise(program);
+  };
 
   describe("execute", () => {
     it("should delete sponsor successfully", async () => {
-      const mockRepo = createMockRepo({
-        exists: mock(() => Promise.resolve(true)),
-        delete: mock(() => Promise.resolve()),
-      });
+      const result = await runUseCase(
+        { sponsorId: "sponsor-456" },
+        {
+          exists: () => Promise.resolve(true),
+          delete: () => Promise.resolve(),
+        },
+      );
 
-      const useCase = new DeleteSponsorUseCase(mockRepo);
-      const input: DeleteSponsorInput = {
-        sponsorId: "sponsor-456",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("sponsor-456");
-        expect(result.value.deleted).toBe(true);
-      }
-      expect(mockRepo.exists).toHaveBeenCalledWith("sponsor-456");
-      expect(mockRepo.delete).toHaveBeenCalledWith("sponsor-456");
+      expect(result.id).toBe("sponsor-456");
+      expect(result.deleted).toBe(true);
     });
 
-    it("should return error when sponsor not found", async () => {
-      const mockRepo = createMockRepo({
-        exists: mock(() => Promise.resolve(false)),
-      });
+    it("should fail when sponsor not found", async () => {
+      const program = deleteSponsorUseCase({ sponsorId: "non-existent" }).pipe(
+        Effect.provideService(
+          SponsorRepositoryTag,
+          createMockRepoService({ exists: () => Promise.resolve(false) }),
+        ),
+      );
 
-      const useCase = new DeleteSponsorUseCase(mockRepo);
-      const input: DeleteSponsorInput = {
-        sponsorId: "non-existent",
-      };
-
-      const result = await useCase.execute(input);
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Sponsor not found");
+      const either = await Effect.runPromise(Effect.either(program));
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(DeleteSponsorNotFoundError);
       }
-      expect(mockRepo.delete).not.toHaveBeenCalled();
     });
 
-    it("should handle repository errors during exists check", async () => {
-      const mockRepo = createMockRepo({
-        exists: mock(() => Promise.reject(new Error("Exists check failed"))),
-      });
+    it("should propagate repository errors during exists check as defects", async () => {
+      const program = deleteSponsorUseCase({ sponsorId: "sponsor-123" }).pipe(
+        Effect.provideService(
+          SponsorRepositoryTag,
+          createMockRepoService({
+            exists: () => Promise.reject(new Error("Exists check failed")),
+          }),
+        ),
+      );
 
-      const useCase = new DeleteSponsorUseCase(mockRepo);
-      const input: DeleteSponsorInput = {
-        sponsorId: "sponsor-123",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow(
+      await expect(Effect.runPromise(program)).rejects.toThrow(
         "Exists check failed",
       );
     });
 
-    it("should handle repository errors during delete", async () => {
-      const mockRepo = createMockRepo({
-        exists: mock(() => Promise.resolve(true)),
-        delete: mock(() => Promise.reject(new Error("Delete failed"))),
-      });
+    it("should propagate repository errors during delete as defects", async () => {
+      const program = deleteSponsorUseCase({ sponsorId: "sponsor-123" }).pipe(
+        Effect.provideService(
+          SponsorRepositoryTag,
+          createMockRepoService({
+            exists: () => Promise.resolve(true),
+            delete: () => Promise.reject(new Error("Delete failed")),
+          }),
+        ),
+      );
 
-      const useCase = new DeleteSponsorUseCase(mockRepo);
-      const input: DeleteSponsorInput = {
-        sponsorId: "sponsor-123",
-      };
-
-      await expect(useCase.execute(input)).rejects.toThrow("Delete failed");
+      await expect(Effect.runPromise(program)).rejects.toThrow("Delete failed");
     });
   });
 });

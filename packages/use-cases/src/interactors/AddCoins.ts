@@ -2,8 +2,8 @@ import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { CoinTransactionRepositoryTag } from "../ports/CoinTransactionRepository";
+import { Effect } from "effect";
 
 /**
  * Input for AddCoins use case
@@ -24,75 +24,109 @@ export interface AddCoinsOutput {
 }
 
 /**
+ * Error types for AddCoins use case
+ */
+export class GroupNotFoundError extends Error {
+  readonly _tag = "GroupNotFoundError";
+  constructor() {
+    super("Group not found");
+  }
+}
+
+export class GroupNotInTripError extends Error {
+  readonly _tag = "GroupNotInTripError";
+  constructor() {
+    super("Group does not belong to this trip");
+  }
+}
+
+export class GroupDeletedError extends Error {
+  readonly _tag = "GroupDeletedError";
+  constructor() {
+    super("Group has been deleted");
+  }
+}
+
+export class IncrementCoinsError extends Error {
+  readonly _tag = "IncrementCoinsError";
+  constructor() {
+    super("Failed to increment group coins");
+  }
+}
+
+export class CreateTransactionError extends Error {
+  readonly _tag = "CreateTransactionError";
+  constructor() {
+    super("Failed to create transaction");
+  }
+}
+
+/**
  * AddCoins Use Case
  *
  * Adds coins to a group within a trip.
  * Validates that the group exists and belongs to the trip.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new AddCoinsUseCase(coinRepo);
+ * // With dependency injection
+ * const program = addCoinsUseCase(input);
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("addCoinsUseCase");
+ * // Provide repository implementation
+ * const runnable = program.pipe(
+ *   Effect.provideService(CoinTransactionRepositoryTag, repository)
+ * );
+ *
+ * // Run the effect
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class AddCoinsUseCase {
-  constructor(private coinRepo: CoinTransactionRepository) {}
+export function addCoinsUseCase(
+  input: AddCoinsInput,
+): Effect.Effect<
+  AddCoinsOutput,
+  | GroupNotFoundError
+  | GroupNotInTripError
+  | GroupDeletedError
+  | IncrementCoinsError
+  | CreateTransactionError,
+  CoinTransactionRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const coinRepo = yield* CoinTransactionRepositoryTag;
 
-  async execute(input: AddCoinsInput): Promise<Result<AddCoinsOutput, string>> {
     // Verify group belongs to trip and is not deleted
-    let groupCheck: {
-      exists: boolean;
-      tripId?: string;
-      isDeleted?: boolean;
-      coins?: number;
-    };
-    try {
-      groupCheck = await this.coinRepo.verifyGroupInTrip(
-        input.groupId,
-        input.tripId,
-      );
-    } catch (_cause) {
-      return err("Failed to verify group");
-    }
+    const groupCheck = yield* coinRepo.verifyGroupInTrip(
+      input.groupId,
+      input.tripId,
+    );
 
     if (!groupCheck.exists) {
-      return err("Group not found");
+      return yield* Effect.fail(new GroupNotFoundError());
     }
 
     if (groupCheck.tripId !== input.tripId) {
-      return err("Group does not belong to this trip");
+      return yield* Effect.fail(new GroupNotInTripError());
     }
 
     if (groupCheck.isDeleted) {
-      return err("Group has been deleted");
+      return yield* Effect.fail(new GroupDeletedError());
     }
 
     // Increment group coins
-    try {
-      await this.coinRepo.incrementGroupCoins(input.groupId, input.amount);
-    } catch (_cause) {
-      return err("Failed to increment group coins");
-    }
+    yield* coinRepo.incrementGroupCoins(input.groupId, input.amount);
 
     // Create transaction record
-    let transaction: CoinTransaction;
-    try {
-      transaction = await this.coinRepo.create({
-        groupId: input.groupId,
-        amount: input.amount,
-        ...(input.reason !== undefined && { reason: input.reason }),
-        adminId: input.adminId,
-      });
-    } catch (_cause) {
-      return err("Failed to create transaction");
-    }
+    const transaction = yield* coinRepo.create({
+      groupId: input.groupId,
+      amount: input.amount,
+      ...(input.reason !== undefined && { reason: input.reason }),
+      adminId: input.adminId,
+    });
 
-    return ok({ transaction });
-  }
+    return { transaction };
+  });
 }

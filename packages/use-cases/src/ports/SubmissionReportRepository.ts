@@ -1,4 +1,5 @@
 import type { SubmissionReport } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * SubmissionReportRepository Port
@@ -64,3 +65,42 @@ export interface SubmissionReportRepository {
    */
   exists(id: string): Promise<boolean>;
 }
+
+/**
+ * SubmissionReportRepository Context.Tag for Effect dependency injection
+ */
+export class SubmissionReportRepositoryTag extends Context.Tag(
+  "SubmissionReportRepository",
+)<
+  SubmissionReportRepositoryTag,
+  {
+    create: (
+      report: SubmissionReport,
+    ) => Effect.Effect<SubmissionReport, never, never>;
+    findById: (
+      id: string,
+    ) => Effect.Effect<SubmissionReport | null, never, never>;
+    findBySubmissionId: (
+      submissionId: string,
+    ) => Effect.Effect<SubmissionReport[], never, never>;
+    findByReporterId: (
+      reporterId: string,
+    ) => Effect.Effect<SubmissionReport[], never, never>;
+    findByReason: (
+      reason: string,
+    ) => Effect.Effect<SubmissionReport[], never, never>;
+    findAll: (options?: {
+      limit?: number;
+      offset?: number;
+    }) => Effect.Effect<SubmissionReport[], never, never>;
+    countBySubmissionId: (
+      submissionId: string,
+    ) => Effect.Effect<number, never, never>;
+    existsBySubmissionAndReporter: (
+      submissionId: string,
+      reporterId: string,
+    ) => Effect.Effect<boolean, never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    exists: (id: string) => Effect.Effect<boolean, never, never>;
+  }
+>() {}

@@ -1,4 +1,5 @@
 import type { User, UserRole } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * UserRepository Port
@@ -53,3 +54,27 @@ export interface UserRepository {
    */
   existsByAuthUserId(authUserId: string): Promise<boolean>;
 }
+
+/**
+ * UserRepository Context.Tag for Effect dependency injection
+ */
+export class UserRepositoryTag extends Context.Tag("UserRepository")<
+  UserRepositoryTag,
+  {
+    create: (user: User) => Effect.Effect<User, never, never>;
+    findById: (id: string) => Effect.Effect<User | null, never, never>;
+    findByAuthUserId: (
+      authUserId: string,
+    ) => Effect.Effect<User | null, never, never>;
+    findByRole: (role: UserRole) => Effect.Effect<User[], never, never>;
+    findAll: (options?: {
+      limit?: number;
+      offset?: number;
+    }) => Effect.Effect<User[], never, never>;
+    update: (user: User) => Effect.Effect<User, never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    existsByAuthUserId: (
+      authUserId: string,
+    ) => Effect.Effect<boolean, never, never>;
+  }
+>() {}

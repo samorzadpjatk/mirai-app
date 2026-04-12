@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, ActivityFeed } from "@mirai-app/domain";
-import type { ActivityFeedRepository } from "../ports/ActivityFeedRepository";
+import { ActivityFeed, ValidationError } from "@mirai-app/domain";
+import { Effect, Data } from "effect";
+import { ActivityFeedRepositoryTag } from "../ports/ActivityFeedRepository";
 
 /**
  * Input for CreateActivity use case
@@ -72,26 +72,56 @@ export interface CreateActivityOutput {
 }
 
 /**
+ * Error types for CreateActivity use case
+ */
+export class ActivityCreationError extends Data.TaggedError(
+  "ActivityCreationError",
+)<{ message: string }> {}
+
+export class ActivityRepositoryError extends Data.TaggedError(
+  "ActivityRepositoryError",
+)<{ message: string }> {}
+
+/**
  * CreateActivity Use Case
  *
  * Creates a new activity in the feed.
  * Validates that the trip exists.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* createActivityUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(ActivityFeedRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class CreateActivityUseCase {
-  constructor(private activityFeedRepository: ActivityFeedRepository) {}
+export function createActivityUseCase(
+  input: CreateActivityInput,
+): Effect.Effect<
+  CreateActivityOutput,
+  ActivityCreationError | ActivityRepositoryError,
+  ActivityFeedRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const activityRepo = yield* ActivityFeedRepositoryTag;
 
-  async execute(
-    input: CreateActivityInput,
-  ): Promise<Result<CreateActivityOutput, string>> {
-    // Create domain entity
-    const activityResult = ActivityFeed.create({
+    // Create domain entity using Effect-based static create method
+    const activity = yield* ActivityFeed.create({
       tripId: input.tripId,
       activityType: input.activityType,
       title: input.title,
-      ...(input.description !== undefined && {
-        description: input.description,
-      }),
-      ...(input.imageUrl !== undefined && { imageUrl: input.imageUrl }),
+      description: input.description ?? null,
+      imageUrl: input.imageUrl ?? null,
       isPinned: input.isPinned ?? false,
       createdByAdmin: input.createdByAdmin ?? null,
       submissionActivity: input.submissionActivity
@@ -118,32 +148,40 @@ export class CreateActivityUseCase {
         : null,
       rankChangeActivity: input.rankChangeActivity ?? null,
       userPost: input.userPost ?? null,
-    });
-
-    if (activityResult.kind === "err") {
-      return err(activityResult.error.message);
-    }
-
-    // Persist activity
-    const saved = await this.activityFeedRepository.create(
-      activityResult.value,
+    }).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new ActivityCreationError({
+            message: validationError.message,
+          }),
+      ),
     );
 
-    return ok(this.toOutput(saved));
-  }
+    // Save to repository
+    const saved = yield* activityRepo.create(activity).pipe(
+      Effect.mapError(
+        () =>
+          new ActivityRepositoryError({
+            message: "Failed to create activity",
+          }),
+      ),
+    );
 
-  private toOutput(activity: ActivityFeed): CreateActivityOutput {
-    return {
-      id: activity.id,
-      tripId: activity.tripId,
-      activityType: activity.activityType,
-      title: activity.title,
-      description: activity.description,
-      imageUrl: activity.imageUrl,
-      isPinned: activity.isPinned,
-      isHidden: activity.isHidden,
-      createdAt: activity.createdAt,
-      updatedAt: activity.updatedAt,
-    };
-  }
+    return toOutput(saved);
+  });
+}
+
+function toOutput(activity: ActivityFeed): CreateActivityOutput {
+  return {
+    id: activity.id,
+    tripId: activity.tripId,
+    activityType: activity.activityType,
+    title: activity.title,
+    description: activity.description,
+    imageUrl: activity.imageUrl,
+    isPinned: activity.isPinned,
+    isHidden: activity.isHidden,
+    createdAt: activity.createdAt,
+    updatedAt: activity.updatedAt,
+  };
 }

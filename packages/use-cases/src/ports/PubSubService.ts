@@ -1,3 +1,5 @@
+import { Context, Effect } from "effect";
+
 /**
  * PubSubService - Publish/Subscribe Port Interface
  *
@@ -172,3 +174,19 @@ export interface PubSubService {
    */
   unsubscribeAll(): void;
 }
+
+/**
+ * PubSubService Context.Tag for Effect dependency injection
+ */
+export class PubSubServiceTag extends Context.Tag("PubSubService")<
+  PubSubServiceTag,
+  {
+    subscribe: <T>(channel: string) => {
+      asyncIterable: AsyncIterable<T>;
+      unsubscribe: () => void;
+    };
+    publish: <T>(channel: string, payload: T) => void;
+    unsubscribe: (channel: string) => void;
+    unsubscribeAll: () => void;
+  }
+>() {}

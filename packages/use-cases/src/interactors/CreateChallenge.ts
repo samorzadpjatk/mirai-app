@@ -3,10 +3,10 @@ import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
+  ValidationError,
 } from "@mirai-app/domain";
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { ChallengeRepository } from "../ports/ChallengeRepository";
+import { Effect } from "effect";
+import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 
 /**
  * Input for CreateChallenge use case
@@ -50,101 +50,107 @@ export interface CreateChallengeOutput {
 }
 
 /**
+ * Error types for CreateChallenge use case
+ */
+export class ChallengeCreationError extends Error {
+  readonly _tag = "ChallengeCreationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class ChallengeRepositoryError extends Error {
+  readonly _tag = "ChallengeRepositoryError";
+  constructor(message: string = "Failed to create challenge") {
+    super(message);
+  }
+}
+
+/**
  * CreateChallenge Use Case
  *
  * Creates a new challenge.
  * Returns error if validation fails.
  *
- * ## Constructor Injection Pattern
+ * ## Effect-based Pattern
  *
- * This use case supports both manual instantiation and DI container injection:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * // Manual instantiation (backward compatible)
- * const useCase = new CreateChallengeUseCase(challengeRepository);
+ * const program = Effect.gen(function* () {
+ *   const result = yield* createChallengeUseCase(input);
+ *   return result;
+ * });
  *
- * // DI container injection (awilix-modular)
- * const useCase = container.resolve("createChallengeUseCase");
+ * const runnable = program.pipe(
+ *   Effect.provideService(ChallengeRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
-export class CreateChallengeUseCase {
-  constructor(private challengeRepository: ChallengeRepository) {}
+export function createChallengeUseCase(
+  input: CreateChallengeInput,
+): Effect.Effect<
+  CreateChallengeOutput,
+  ChallengeCreationError | ChallengeRepositoryError,
+  ChallengeRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const challengeRepo = yield* ChallengeRepositoryTag;
 
-  async execute(input: CreateChallengeInput): Promise<Result<CreateChallengeOutput, string>> {
-    // Create domain entity
-    const challengeResult = Challenge.create({
+    // Create domain entity using Effect-based static create method
+    const challenge = yield* Challenge.create({
       tripId: input.tripId,
       name: input.name,
-      ...(input.description !== undefined && {
-        description: input.description,
-      }),
-      ...(input.image !== undefined && { image: input.image }),
+      description: input.description ?? null,
+      image: input.image ?? null,
       submissionType: input.submissionType,
       scoringCategory: input.scoringCategory,
-      ...(input.isRecurring !== undefined && {
-        isRecurring: input.isRecurring,
-      }),
-      ...(input.dailyStartTime !== undefined && {
-        dailyStartTime: input.dailyStartTime,
-      }),
-      ...(input.dailyEndTime !== undefined && {
-        dailyEndTime: input.dailyEndTime,
-      }),
-      ...(input.basePoints !== undefined && { basePoints: input.basePoints }),
-      ...(input.firstPlacePoints !== undefined && {
-        firstPlacePoints: input.firstPlacePoints,
-      }),
-      ...(input.secondPlacePoints !== undefined && {
-        secondPlacePoints: input.secondPlacePoints,
-      }),
-      ...(input.thirdPlacePoints !== undefined && {
-        thirdPlacePoints: input.thirdPlacePoints,
-      }),
+      isRecurring: input.isRecurring ?? false,
+      dailyStartTime: input.dailyStartTime ?? null,
+      dailyEndTime: input.dailyEndTime ?? null,
+      basePoints: input.basePoints ?? 0,
+      firstPlacePoints: input.firstPlacePoints ?? null,
+      secondPlacePoints: input.secondPlacePoints ?? null,
+      thirdPlacePoints: input.thirdPlacePoints ?? null,
       status: input.status ?? ChallengeStatus.HIDDEN,
-      ...(input.startTime !== undefined && { startTime: input.startTime }),
-      ...(input.endTime !== undefined && { endTime: input.endTime }),
-      ...(input.targetLatitude !== undefined && {
-        targetLatitude: input.targetLatitude,
-      }),
-      ...(input.targetLongitude !== undefined && {
-        targetLongitude: input.targetLongitude,
-      }),
-      ...(input.expectedValue !== undefined && {
-        expectedValue: input.expectedValue,
-      }),
-      ...(input.autoApprove !== undefined && {
-        autoApprove: input.autoApprove,
-      }),
-    });
-
-    if (challengeResult.kind === "err") {
-      return err(challengeResult.error.message);
-    }
+      startTime: input.startTime ?? null,
+      endTime: input.endTime ?? null,
+      targetLatitude: input.targetLatitude ?? null,
+      targetLongitude: input.targetLongitude ?? null,
+      expectedValue: input.expectedValue ?? null,
+      autoApprove: input.autoApprove ?? false,
+    }).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new ChallengeCreationError(validationError.message),
+      ),
+    );
 
     // Save to repository
-    let saved: import("@mirai-app/domain").Challenge;
-    try {
-      saved = await this.challengeRepository.create(challengeResult.value);
-    } catch (_cause) {
-      return err("Failed to create challenge");
-    }
+    const saved = yield* challengeRepo
+      .create(challenge)
+      .pipe(
+        Effect.mapError(
+          () => new ChallengeRepositoryError("Failed to create challenge"),
+        ),
+      );
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(
-    challenge: import("@mirai-app/domain").Challenge,
-  ): CreateChallengeOutput {
-    return {
-      id: challenge.id,
-      tripId: challenge.tripId,
-      name: challenge.name,
-      description: challenge.description,
-      submissionType: challenge.submissionType,
-      scoringCategory: challenge.scoringCategory,
-      status: challenge.status,
-      basePoints: challenge.basePoints,
-      createdAt: challenge.createdAt,
-    };
-  }
+function toOutput(challenge: Challenge): CreateChallengeOutput {
+  return {
+    id: challenge.id,
+    tripId: challenge.tripId,
+    name: challenge.name,
+    description: challenge.description,
+    submissionType: challenge.submissionType,
+    scoringCategory: challenge.scoringCategory,
+    status: challenge.status,
+    basePoints: challenge.basePoints,
+    createdAt: challenge.createdAt,
+  };
 }

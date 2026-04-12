@@ -3,6 +3,7 @@ import type {
   NotificationStatus,
   NotificationPriority,
 } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * NotificationRepository Port
@@ -93,3 +94,51 @@ export interface NotificationRepository {
    */
   countPendingByTripId(tripId: string): Promise<number>;
 }
+
+/**
+ * NotificationRepository Context.Tag for Effect dependency injection
+ */
+export class NotificationRepositoryTag extends Context.Tag(
+  "NotificationRepository",
+)<
+  NotificationRepositoryTag,
+  {
+    create: (
+      notification: Notification,
+    ) => Effect.Effect<Notification, never, never>;
+    findById: (id: string) => Effect.Effect<Notification | null, never, never>;
+    findByTripId: (
+      tripId: string,
+    ) => Effect.Effect<Notification[], never, never>;
+    findByStatus: (
+      status: NotificationStatus,
+    ) => Effect.Effect<Notification[], never, never>;
+    findByTripIdAndStatus: (
+      tripId: string,
+      status: NotificationStatus,
+    ) => Effect.Effect<Notification[], never, never>;
+    findByPriority: (
+      priority: NotificationPriority,
+    ) => Effect.Effect<Notification[], never, never>;
+    findReadyToSend: () => Effect.Effect<Notification[], never, never>;
+    findOverdue: () => Effect.Effect<Notification[], never, never>;
+    findByCreatedById: (
+      createdById: string,
+    ) => Effect.Effect<Notification[], never, never>;
+    findAll: (options?: {
+      limit?: number;
+      offset?: number;
+    }) => Effect.Effect<Notification[], never, never>;
+    update: (
+      notification: Notification,
+    ) => Effect.Effect<Notification, never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    exists: (id: string) => Effect.Effect<boolean, never, never>;
+    countByStatus: (
+      status: NotificationStatus,
+    ) => Effect.Effect<number, never, never>;
+    countPendingByTripId: (
+      tripId: string,
+    ) => Effect.Effect<number, never, never>;
+  }
+>() {}

@@ -22,6 +22,7 @@ export type { GroupRepository } from "./ports/GroupRepository";
 export type { ActivityFeedRepository } from "./ports/ActivityFeedRepository";
 export type { ChallengeSubmissionRepository } from "./ports/ChallengeSubmissionRepository";
 export type { LocationRepository } from "./ports/LocationRepository";
+export { LocationRepositoryTag } from "./ports/LocationRepository";
 export type { ChallengeVoteRepository } from "./ports/ChallengeVoteRepository";
 export type { SponsorRepository } from "./ports/SponsorRepository";
 export type { SubmissionReportRepository } from "./ports/SubmissionReportRepository";
@@ -34,6 +35,11 @@ export type {
   TripAccessChecker,
   PaginationOptions,
   PaginatedResult,
+} from "./ports/RewardRepository";
+export {
+  RewardRepositoryTag,
+  TripPointsCalculatorTag,
+  TripAccessCheckerTag,
 } from "./ports/RewardRepository";
 export type {
   CoinTransactionRepository,
@@ -54,6 +60,7 @@ export type {
   NotificationScheduleRepository,
   NotificationScheduleExecutionRecord,
 } from "./ports/NotificationScheduleRepository";
+export { NotificationScheduleRepositoryTag } from "./ports/NotificationScheduleRepository";
 
 // =============================================================================
 // Auth & Telemetry Ports (for DDD architecture)
@@ -120,330 +127,491 @@ export {
   getUseCaseErrorCode,
 } from "./errors";
 
-// Interactors (Use Case Implementations)
+// User Use Cases (Effect-based)
 export {
-  GetUserUseCase,
-  type GetUserInput,
-  type GetUserOutput,
-} from "./interactors/GetUser";
-export {
-  CreateUserUseCase,
+  createUserUseCase,
   type CreateUserInput,
   type CreateUserOutput,
+  UserAlreadyExistsError,
+  UserCreationError,
 } from "./interactors/CreateUser";
 export {
-  UpdateUserUseCase,
+  updateUserUseCase,
   type UpdateUserInput,
   type UpdateUserOutput,
+  UserNotFoundError,
+  UserUpdateError,
 } from "./interactors/UpdateUser";
 export {
-  AuthenticateUserUseCase,
+  getUserUseCase,
+  type GetUserInput,
+  type GetUserOutput,
+  GetUserNotFoundError,
+} from "./interactors/GetUser";
+export {
+  deleteUserUseCase,
+  type DeleteUserInput,
+  type DeleteUserOutput,
+  DeleteUserNotFoundError,
+  DeleteUserError,
+} from "./interactors/DeleteUser";
+export {
+  authenticateUserUseCase,
   type AuthenticateUserInput,
   type AuthenticateUserOutput,
 } from "./interactors/AuthenticateUser";
 
 export {
-  GetChallengeUseCase,
+  getChallengeUseCase,
   type GetChallengeInput,
   type GetChallengeOutput,
+  ChallengeNotFoundError,
+  ChallengeLoadError,
 } from "./interactors/GetChallenge";
 export {
-  CreateChallengeUseCase,
+  createChallengeUseCase,
   type CreateChallengeInput,
   type CreateChallengeOutput,
+  ChallengeCreationError,
+  ChallengeRepositoryError,
 } from "./interactors/CreateChallenge";
 export {
-  UpdateChallengeUseCase,
+  updateChallengeUseCase,
   type UpdateChallengeInput,
   type UpdateChallengeOutput,
+  ChallengeNotFoundError as UpdateChallengeNotFoundError,
+  ChallengeUpdateValidationError,
+  ChallengeTerminalStateError,
+  ChallengeUpdateRepositoryError,
 } from "./interactors/UpdateChallenge";
 export {
-  UpdateChallengeStatusUseCase,
+  updateChallengeStatusUseCase,
   type UpdateChallengeStatusInput,
   type UpdateChallengeStatusOutput,
+  ChallengeNotFoundError as UpdateChallengeStatusNotFoundError,
+  InvalidStatusTransitionError,
+  ChallengeUpdateError,
 } from "./interactors/UpdateChallengeStatus";
 
-// Group Domain Use Cases
+// Group Domain Use Cases (Effect-based)
 export {
-  GetGroupUseCase,
+  getGroupUseCase,
   type GetGroupInput,
   type GetGroupOutput,
+  GetGroupNotFoundError,
 } from "./interactors/GetGroup";
 export {
-  CreateGroupUseCase,
+  createGroupUseCase,
   type CreateGroupInput,
   type CreateGroupOutput,
+  GroupCodeAlreadyExistsError,
+  GroupCreationError,
 } from "./interactors/CreateGroup";
 export {
-  UpdateGroupUseCase,
+  updateGroupUseCase,
   type UpdateGroupInput,
   type UpdateGroupOutput,
+  UpdateGroupNotFoundError,
+  UpdateGroupDeletedError,
+  UpdateGroupValidationError,
 } from "./interactors/UpdateGroup";
+export {
+  deleteGroupUseCase,
+  type DeleteGroupInput,
+  type DeleteGroupOutput,
+  DeleteGroupNotFoundError,
+  DeleteGroupError,
+} from "./interactors/DeleteGroup";
 
 export {
-  GetNotificationUseCase,
+  getNotificationUseCase,
   type GetNotificationInput,
   type GetNotificationOutput,
+  NotificationNotFoundError,
 } from "./interactors/GetNotification";
 
 export {
-  GetActivityFeedUseCase,
+  getActivityFeedUseCase,
   type GetActivityFeedInput,
   type GetActivityFeedOutput,
 } from "./interactors/GetActivityFeed";
 
 export {
-  CreateActivityUseCase,
+  createActivityUseCase,
   type CreateActivityInput,
   type CreateActivityOutput,
 } from "./interactors/CreateActivity";
 
 export {
-  AddReactionUseCase,
+  addReactionUseCase,
   type AddReactionInput,
   type AddReactionOutput,
 } from "./interactors/AddReaction";
 
-// Challenge Submission Use Cases
+// Challenge Submission Use Cases (Effect-based)
 export {
-  CreateSubmissionUseCase,
+  createSubmissionUseCase,
   type CreateSubmissionInput,
   type CreateSubmissionOutput,
+  SubmissionCreationError,
+  DuplicateSubmissionError,
+  SubmissionRepositoryError,
 } from "./interactors/CreateSubmission";
 export {
-  GetSubmissionUseCase,
+  getSubmissionUseCase,
   type GetSubmissionInput,
   type GetSubmissionOutput,
+  SubmissionNotFoundError,
+  GetSubmissionRepositoryError,
 } from "./interactors/GetSubmission";
 export {
-  GetSubmissionByChallengeAndGroupUseCase,
+  getSubmissionByChallengeAndGroupUseCase,
   type GetSubmissionByChallengeAndGroupInput,
   type GetSubmissionByChallengeAndGroupOutput,
 } from "./interactors/GetSubmissionByChallengeAndGroup";
 export {
-  UpdateSubmissionUseCase,
+  updateSubmissionUseCase,
   type UpdateSubmissionInput,
   type UpdateSubmissionOutput,
+  SubmissionUpdateNotFoundError,
+  SubmissionUpdateValidationError,
+  InvalidReviewActionError,
+  UpdateSubmissionRepositoryError,
 } from "./interactors/UpdateSubmission";
 export {
-  DeleteSubmissionUseCase,
+  deleteSubmissionUseCase,
   type DeleteSubmissionInput,
   type DeleteSubmissionOutput,
+  SubmissionDeleteNotFoundError,
+  SubmissionDeleteNotAllowedError,
+  DeleteSubmissionRepositoryError,
 } from "./interactors/DeleteSubmission";
 export {
-  ListSubmissionsByChallengeUseCase,
+  listSubmissionsByChallengeUseCase,
   type ListSubmissionsByChallengeInput,
   type ListSubmissionsByChallengeOutput,
+  ListSubmissionsRepositoryError,
 } from "./interactors/ListSubmissionsByChallenge";
 
 // Location Use Cases
 export {
-  GetLocationUseCase,
+  getLocationUseCase,
   type GetLocationInput,
   type GetLocationOutput,
+  LocationNotFoundError,
 } from "./interactors/GetLocation";
 export {
-  CreateLocationUseCase,
+  createLocationUseCase,
   type CreateLocationInput,
   type CreateLocationOutput,
+  LocationCreationError,
+  LocationUpdateError,
 } from "./interactors/CreateLocation";
 export {
-  UpdateLocationUseCase,
+  updateLocationUseCase,
   type UpdateLocationInput,
   type UpdateLocationOutput,
+  LocationCreateError,
+  LocationUpdateValidationError,
 } from "./interactors/UpdateLocation";
 export {
-  ListLocationsUseCase,
+  listLocationsUseCase,
   type ListLocationsInput,
   type ListLocationsOutput,
   type LocationOutput,
 } from "./interactors/ListLocations";
 export {
-  UpdateSharingSettingsUseCase,
+  updateSharingSettingsUseCase,
   type UpdateSharingSettingsInput,
   type UpdateSharingSettingsOutput,
+  UpdateSharingSettingsValidationError,
+  UpdateSharingSettingsRepositoryError,
 } from "./interactors/UpdateSharingSettings";
 export {
-  AddSharingUserUseCase,
+  addSharingUserUseCase,
   type AddSharingUserInput,
   type AddSharingUserOutput,
+  CannotShareWithSelfError,
+  AddSharingUserValidationError,
+  AddSharingUserRepositoryError,
 } from "./interactors/AddSharingUser";
 export {
-  RemoveSharingUserUseCase,
+  removeSharingUserUseCase,
   type RemoveSharingUserInput,
   type RemoveSharingUserOutput,
+  LocationNotFoundError as RemoveSharingUserLocationNotFoundError,
+  RemoveSharingUserRepositoryError,
 } from "./interactors/RemoveSharingUser";
 export {
-  GetSharingSettingsUseCase,
+  getSharingSettingsUseCase,
   type GetSharingSettingsInput,
   type GetSharingSettingsOutput,
+  GetSharingSettingsRepositoryError,
 } from "./interactors/GetSharingSettings";
 
-// Notification Delivery Use Cases
+// Notification Delivery Use Cases (Effect-based)
 export {
-  GetDeliveriesUseCase,
+  getDeliveriesUseCase,
   type GetDeliveriesInput,
   type GetDeliveriesOutput,
+  GetDeliveriesError,
 } from "./interactors/GetDeliveries";
 export {
-  GetDeliveryByNotificationIdUseCase,
+  getDeliveryByNotificationIdUseCase,
   type GetDeliveryByNotificationIdInput,
   type GetDeliveryByNotificationIdOutput,
+  DeliveryNotFoundError,
+  GetDeliveryError,
 } from "./interactors/GetDeliveryByNotificationId";
 export {
-  GetDeliveryStatsUseCase,
+  getDeliveryStatsUseCase,
   type GetDeliveryStatsInput,
   type GetDeliveryStatsOutput,
+  GetDeliveryStatsError,
 } from "./interactors/GetDeliveryStats";
 export {
-  GetFailedDeliveriesUseCase,
+  getFailedDeliveriesUseCase,
   type GetFailedDeliveriesInput,
   type GetFailedDeliveriesOutput,
+  GetFailedDeliveriesError,
 } from "./interactors/GetFailedDeliveries";
 
-// Reward Use Cases
+// Reward Use Cases (Effect-based)
 export {
-  GetRewardUseCase,
+  getRewardUseCase,
   type GetRewardInput,
   type GetRewardOutput,
+  RewardNotFoundError as GetRewardNotFoundError,
+  RewardRepositoryError as GetRewardRepositoryError,
 } from "./interactors/GetReward";
 export {
-  CreateRewardUseCase,
+  createRewardUseCase,
   type CreateRewardInput,
   type CreateRewardOutput,
+  CreateRewardError,
+  RewardRepositoryError as CreateRewardRepositoryError,
 } from "./interactors/CreateReward";
 export {
-  UpdateRewardUseCase,
+  updateRewardUseCase,
   type UpdateRewardInput,
   type UpdateRewardOutput,
+  RewardNotFoundError as UpdateRewardNotFoundError,
+  UpdateRewardError,
+  RewardRepositoryError as UpdateRewardRepositoryError,
 } from "./interactors/UpdateReward";
 export {
-  SetRewardHiddenUseCase,
+  setRewardHiddenUseCase,
   type SetRewardHiddenInput,
   type SetRewardHiddenOutput,
+  RewardNotFoundError as SetRewardHiddenNotFoundError,
+  SetRewardHiddenRepositoryError,
 } from "./interactors/SetRewardHidden";
 export {
-  DeleteRewardUseCase,
+  deleteRewardUseCase,
   type DeleteRewardInput,
   type DeleteRewardOutput,
+  RewardNotFoundError as DeleteRewardNotFoundError,
+  RewardHasPurchasesError,
 } from "./interactors/DeleteReward";
 export {
-  ListRewardsUseCase,
+  listRewardsUseCase,
   type ListRewardsInput,
   type ListRewardsOutput,
   type RewardWithCalculations,
+  ListRewardsError,
+  RewardRepositoryError as ListRewardRepositoryError,
+  TripPointsCalculatorError as ListRewardsTripPointsCalculatorError,
 } from "./interactors/ListRewards";
 export {
-  PurchaseRewardUseCase,
+  purchaseRewardUseCase,
   type PurchaseRewardInput,
   type PurchaseRewardOutput,
+  RewardNotFoundError,
+  TripEndedError,
+  RewardHiddenError,
+  InsufficientQuantityError,
+  NotGroupLeaderError,
+  InsufficientCoinsError,
+  RewardRepositoryError,
+  TripAccessCheckerError,
+  TripPointsCalculatorError,
+  GroupCoinsServiceError,
+  PurchaseCreationError,
+  type PurchaseRewardError,
 } from "./interactors/PurchaseReward";
 export {
-  UpdatePurchaseStatusUseCase,
+  updatePurchaseStatusUseCase,
   type UpdatePurchaseStatusInput,
   type UpdatePurchaseStatusOutput,
+  PurchaseNotFoundError,
+  NotAuthorizedError,
+  InvalidPurchaseStatusTransitionError,
+  UpdatePurchaseValidationError,
+  UpdatePurchaseOperationError,
 } from "./interactors/UpdatePurchaseStatus";
 export {
-  UpdateMyPurchaseStatusUseCase,
+  updateMyPurchaseStatusUseCase,
   type UpdateMyPurchaseStatusInput,
   type UpdateMyPurchaseStatusOutput,
+  MyPurchaseNotFoundError,
+  NotGroupLeaderError as UpdateMyPurchaseNotGroupLeaderError,
+  InvalidUserStatusTransitionError,
+  InvalidCancellationError,
+  UpdateMyPurchaseOperationError,
 } from "./interactors/UpdateMyPurchaseStatus";
 export {
-  GetPurchaseHistoryUseCase,
+  getPurchaseHistoryUseCase,
   type GetPurchaseHistoryInput,
   type GetPurchaseHistoryOutput,
   type PurchaseWithDetails,
+  NoGroupAccessError,
+  PurchaseRepositoryError,
+  type GetPurchaseHistoryError,
 } from "./interactors/GetPurchaseHistory";
 
 // Coin Transaction Use Cases
 export {
-  GetCoinStatisticsUseCase,
+  getCoinStatisticsUseCase,
   type GetCoinStatisticsInput,
   type GetCoinStatisticsOutput,
 } from "./interactors/GetCoinStatistics";
 export {
-  GetMostActiveAdminStatsUseCase,
+  getMostActiveAdminStatsUseCase,
   type GetMostActiveAdminStatsInput,
   type GetMostActiveAdminStatsOutput,
+  CoinTransactionRepositoryError,
+  type GetMostActiveAdminStatsError,
 } from "./interactors/GetMostActiveAdminStats";
 export {
-  GetCoinTransactionsUseCase,
+  getCoinTransactionsUseCase,
   type GetCoinTransactionsInput,
   type GetCoinTransactionsOutput,
 } from "./interactors/GetCoinTransactions";
 export {
-  GetCoinQuickStatsUseCase,
+  getCoinQuickStatsUseCase,
   type GetCoinQuickStatsInput,
   type GetCoinQuickStatsOutput,
 } from "./interactors/GetCoinQuickStats";
 export {
-  GetCoinAdditionalInsightsUseCase,
+  getCoinAdditionalInsightsUseCase,
   type GetCoinAdditionalInsightsInput,
   type GetCoinAdditionalInsightsOutput,
   type FormattedUser,
 } from "./interactors/GetCoinAdditionalInsights";
 export {
-  AddCoinsUseCase,
+  addCoinsUseCase,
   type AddCoinsInput,
   type AddCoinsOutput,
 } from "./interactors/AddCoins";
 export {
-  RemoveCoinsUseCase,
+  removeCoinsUseCase,
   type RemoveCoinsInput,
   type RemoveCoinsOutput,
 } from "./interactors/RemoveCoins";
 
-// Challenge Vote Use Cases
+// Challenge Vote Use Cases (Effect-based)
 export {
-  GetMyVotesUseCase,
-  type GetMyVotesInput,
-  type GetMyVotesOutput,
-  type VoteDTO,
-} from "./interactors/GetMyVotes";
-export {
-  GetVotesByChallengeUseCase,
-  type GetVotesByChallengeInput,
-  type GetVotesByChallengeOutput,
-  type ChallengeVoteDTO,
-} from "./interactors/GetVotesByChallenge";
-export {
-  GetChallengeVotingProgressUseCase,
-  type GetChallengeVotingProgressInput,
-  type GetChallengeVotingProgressOutput,
-  type SubmissionVoteCount,
-} from "./interactors/GetChallengeVotingProgress";
-export {
-  GetJudgedStaffVotingProgressUseCase,
-  type GetJudgedStaffVotingProgressInput,
-  type GetJudgedStaffVotingProgressOutput,
-  type AdminVotingInfo,
-} from "./interactors/GetJudgedStaffVotingProgress";
-export {
-  SubmitVoteUseCase,
+  submitVoteUseCase,
   type SubmitVoteInput,
   type SubmitVoteOutput,
+  SubmitVoteValidationError,
+  VotePositionTakenError,
+  AlreadyVotedError,
+  VoteRepositoryError,
 } from "./interactors/SubmitVote";
 export {
-  SubmitVotesUseCase,
+  submitVotesUseCase,
   type SubmitVotesInput,
   type SubmitVotesOutput,
   type VoteInput,
   type VoteOutput,
+  SubmitVotesValidationError,
+  BatchAlreadyVotedError,
+  InvalidVoteSetError,
+  BatchVoteRepositoryError,
 } from "./interactors/SubmitVotes";
 export {
-  ForceEndVotingUseCase,
+  getMyVotesUseCase,
+  type GetMyVotesInput,
+  type GetMyVotesOutput,
+  type VoteDTO,
+  GetMyVotesValidationError,
+  GetMyVotesRepositoryError,
+} from "./interactors/GetMyVotes";
+export {
+  getVotesByChallengeUseCase,
+  type GetVotesByChallengeInput,
+  type GetVotesByChallengeOutput,
+  type ChallengeVoteDTO,
+  GetVotesByChallengeValidationError,
+  GetVotesByChallengeRepositoryError,
+} from "./interactors/GetVotesByChallenge";
+export {
+  getChallengeVotingProgressUseCase,
+  type GetChallengeVotingProgressInput,
+  type GetChallengeVotingProgressOutput,
+  type SubmissionVoteCount,
+  GetVotingProgressValidationError,
+  GetVotingProgressRepositoryError,
+} from "./interactors/GetChallengeVotingProgress";
+export {
+  getJudgedStaffVotingProgressUseCase,
+  type GetJudgedStaffVotingProgressInput,
+  type GetJudgedStaffVotingProgressOutput,
+  type AdminVotingInfo,
+  GetVotingProgressValidationError as GetJudgedStaffVotingProgressValidationError,
+  GetVotingProgressRepositoryError as GetJudgedStaffVotingProgressRepositoryError,
+} from "./interactors/GetJudgedStaffVotingProgress";
+export {
+  forceEndVotingUseCase,
   type ForceEndVotingInput,
   type ForceEndVotingOutput,
+  ForceEndChallengeNotFoundError,
+  ForceEndValidationError,
+  ChallengeWrongTripError,
+  ForceEndOperationError,
 } from "./interactors/ForceEndVoting";
+
+// Individual Challenge Vote Operations (Effect-based)
+export {
+  createChallengeVoteUseCase,
+  type CreateChallengeVoteInput,
+  type CreateChallengeVoteOutput,
+  ChallengeVoteCreationError,
+  ChallengeVoteAlreadyExistsError,
+  ChallengeVoteRepositoryError,
+} from "./interactors/CreateChallengeVote";
+export {
+  updateChallengeVoteUseCase,
+  type UpdateChallengeVoteInput,
+  type UpdateChallengeVoteOutput,
+  ChallengeVoteNotFoundError,
+  ChallengeVoteValidationError,
+  ChallengeVoteUpdateRepositoryError,
+} from "./interactors/UpdateChallengeVote";
+export {
+  deleteChallengeVoteUseCase,
+  type DeleteChallengeVoteInput,
+  type DeleteChallengeVoteOutput,
+  ChallengeVoteNotFoundError as DeleteChallengeVoteNotFoundError,
+  ChallengeVoteDeleteRepositoryError,
+} from "./interactors/DeleteChallengeVote";
+export {
+  getChallengeVoteByIdUseCase,
+  type GetChallengeVoteByIdInput,
+  type GetChallengeVoteByIdOutput,
+  ChallengeVoteNotFoundError as GetChallengeVoteNotFoundError,
+  ChallengeVoteGetRepositoryError,
+} from "./interactors/GetChallengeVoteById";
 
 // Submission Report Use Cases
 export {
-  CreateReportUseCase,
+  createReportUseCase,
   type CreateReportInput,
   type CreateReportOutput,
 } from "./interactors/CreateReport";
 export {
-  GetReportsUseCase,
+  getReportsUseCase,
   type GetReportsInput,
   type GetReportsOutput,
   type ReporterOutput,
@@ -452,109 +620,131 @@ export {
 
 // Sponsor Use Cases
 export {
-  CreateSponsorUseCase,
+  createSponsorUseCase,
   type CreateSponsorInput,
   type CreateSponsorOutput,
+  CreateSponsorValidationError,
 } from "./interactors/CreateSponsor";
 export {
-  GetSponsorUseCase,
+  getSponsorUseCase,
   type GetSponsorInput,
   type GetSponsorOutput,
+  GetSponsorNotFoundError,
 } from "./interactors/GetSponsor";
 export {
-  UpdateSponsorUseCase,
+  updateSponsorUseCase,
   type UpdateSponsorInput,
   type UpdateSponsorOutput,
+  UpdateSponsorNotFoundError,
+  UpdateSponsorValidationError,
 } from "./interactors/UpdateSponsor";
 export {
-  DeleteSponsorUseCase,
+  deleteSponsorUseCase,
   type DeleteSponsorInput,
   type DeleteSponsorOutput,
+  DeleteSponsorNotFoundError,
 } from "./interactors/DeleteSponsor";
 export {
-  ListSponsorsUseCase,
+  listSponsorsUseCase,
   type ListSponsorsInput,
   type ListSponsorsOutput,
   type SponsorListItem,
 } from "./interactors/ListSponsors";
 export {
-  LinkSponsorToTripUseCase,
+  linkSponsorToTripUseCase,
   type LinkSponsorToTripInput,
   type LinkSponsorToTripOutput,
+  LinkSponsorNotFoundError,
+  SponsorAlreadyLinkedError,
+  LinkSponsorRepositoryError,
 } from "./interactors/LinkSponsorToTrip";
 export {
-  UnlinkSponsorFromTripUseCase,
+  unlinkSponsorFromTripUseCase,
   type UnlinkSponsorFromTripInput,
   type UnlinkSponsorFromTripOutput,
+  UnlinkSponsorRepositoryError,
 } from "./interactors/UnlinkSponsorFromTrip";
 
 // Notification Schedule Use Cases
 export {
-  GetNotificationSchedulesUseCase,
+  getNotificationSchedulesUseCase,
   type GetNotificationSchedulesInput,
   type GetNotificationSchedulesOutput,
   type NotificationScheduleOutput,
 } from "./interactors/GetNotificationSchedules";
 export {
-  GetNotificationScheduleByIdUseCase,
+  getNotificationScheduleByIdUseCase,
   type GetNotificationScheduleByIdInput,
   type GetNotificationScheduleByIdOutput,
+  GetScheduleNotFoundError,
 } from "./interactors/GetNotificationScheduleById";
 export {
-  CreateNotificationScheduleUseCase,
+  createNotificationScheduleUseCase,
   type CreateNotificationScheduleInput,
   type CreateNotificationScheduleOutput,
+  DuplicateScheduleNameError,
+  ScheduleValidationError,
 } from "./interactors/CreateNotificationSchedule";
 export {
-  UpdateNotificationScheduleUseCase,
+  updateNotificationScheduleUseCase,
   type UpdateNotificationScheduleInput,
   type UpdateNotificationScheduleOutput,
+  UpdateScheduleNotFoundError,
+  UpdateScheduleValidationError,
 } from "./interactors/UpdateNotificationSchedule";
 export {
-  DeleteNotificationScheduleUseCase,
+  deleteNotificationScheduleUseCase,
   type DeleteNotificationScheduleInput,
   type DeleteNotificationScheduleOutput,
+  DeleteScheduleNotFoundError,
 } from "./interactors/DeleteNotificationSchedule";
 export {
-  GetActiveNotificationSchedulesUseCase,
+  getActiveNotificationSchedulesUseCase,
   type GetActiveNotificationSchedulesInput,
   type GetActiveNotificationSchedulesOutput,
 } from "./interactors/GetActiveNotificationSchedules";
 export {
-  GetUpcomingNotificationSchedulesUseCase,
+  getUpcomingNotificationSchedulesUseCase,
   type GetUpcomingNotificationSchedulesInput,
   type GetUpcomingNotificationSchedulesOutput,
 } from "./interactors/GetUpcomingNotificationSchedules";
 export {
-  UpdateNotificationScheduleLastRunUseCase,
+  updateNotificationScheduleLastRunUseCase,
   type UpdateNotificationScheduleLastRunInput,
   type UpdateNotificationScheduleLastRunOutput,
+  UpdateLastRunNotFoundError,
 } from "./interactors/UpdateNotificationScheduleLastRun";
 export {
-  ToggleNotificationScheduleActiveUseCase,
+  toggleNotificationScheduleActiveUseCase,
   type ToggleNotificationScheduleActiveInput,
   type ToggleNotificationScheduleActiveOutput,
+  ToggleScheduleNotFoundError,
 } from "./interactors/ToggleNotificationScheduleActive";
 export {
-  BulkToggleNotificationScheduleActiveUseCase,
+  bulkToggleNotificationScheduleActiveUseCase,
   type BulkToggleNotificationScheduleActiveInput,
   type BulkToggleNotificationScheduleActiveOutput,
+  BulkToggleValidationError,
 } from "./interactors/BulkToggleNotificationScheduleActive";
 export {
-  BulkDeleteNotificationSchedulesUseCase,
+  bulkDeleteNotificationSchedulesUseCase,
   type BulkDeleteNotificationSchedulesInput,
   type BulkDeleteNotificationSchedulesOutput,
+  BulkDeleteValidationError,
 } from "./interactors/BulkDeleteNotificationSchedules";
 export {
-  DuplicateNotificationScheduleUseCase,
+  duplicateNotificationScheduleUseCase,
   type DuplicateNotificationScheduleInput,
   type DuplicateNotificationScheduleOutput,
+  DuplicateScheduleNotFoundError,
+  DuplicateScheduleError,
 } from "./interactors/DuplicateNotificationSchedule";
 export {
-  GetNotificationScheduleExecutionHistoryUseCase,
+  getNotificationScheduleExecutionHistoryUseCase,
   type GetNotificationScheduleExecutionHistoryInput,
   type GetNotificationScheduleExecutionHistoryOutput,
   type ExecutionHistoryItem,
+  ScheduleNotFoundError as ExecutionHistoryScheduleNotFoundError,
 } from "./interactors/GetNotificationScheduleExecutionHistory";
 
 // Utilities
@@ -588,13 +778,11 @@ export { UserRole } from "@mirai-app/domain";
 
 // Authorization Use Cases
 export {
-  AuthorizeAdminUseCase,
   authorizeAdminUseCase,
   type AuthorizeAdminInput,
   type AuthorizeAdminOutput,
 } from "./interactors/AuthorizeAdmin";
 export {
-  AuthorizeModeratorUseCase,
   authorizeModeratorUseCase,
   type AuthorizeModeratorInput,
   type AuthorizeModeratorOutput,
@@ -602,7 +790,35 @@ export {
 
 // Telemetry Use Case
 export {
-  LogTelemetryUseCase,
+  logTelemetryUseCase,
   type LogTelemetryInput,
   type LogTelemetryOutput,
 } from "./interactors/LogTelemetry";
+
+// Trip CRUD Use Cases (Effect-based)
+export {
+  createTripUseCase,
+  type CreateTripInput,
+  type CreateTripOutput,
+  TripCreationError,
+} from "./interactors/CreateTrip";
+export {
+  updateTripUseCase,
+  type UpdateTripInput,
+  type UpdateTripOutput,
+  UpdateTripNotFoundError,
+  UpdateTripValidationError,
+  UpdateTripStateError,
+} from "./interactors/UpdateTrip";
+export {
+  getTripByIdUseCase,
+  type GetTripByIdInput,
+  type GetTripByIdOutput,
+  GetTripByIdNotFoundError,
+} from "./interactors/GetTripById";
+export {
+  deleteTripUseCase,
+  type DeleteTripInput,
+  type DeleteTripOutput,
+  DeleteTripNotFoundError,
+} from "./interactors/DeleteTrip";

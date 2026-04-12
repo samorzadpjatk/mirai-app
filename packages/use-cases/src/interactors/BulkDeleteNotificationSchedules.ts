@@ -1,6 +1,5 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
+import { Effect } from "effect";
+import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 
 /**
  * Input for BulkDeleteNotificationSchedules use case
@@ -20,18 +19,45 @@ export interface BulkDeleteNotificationSchedulesOutput {
 }
 
 /**
+ * Error types for BulkDeleteNotificationSchedules use case
+ */
+export class BulkDeleteValidationError extends Error {
+  readonly _tag = "BulkDeleteValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * BulkDeleteNotificationSchedules Use Case
  *
  * Deletes multiple notification schedules by ID.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
+ *   Effect.provideService(NotificationScheduleRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class BulkDeleteNotificationSchedulesUseCase {
-  constructor(private repository: NotificationScheduleRepository) {}
+export function bulkDeleteNotificationSchedulesUseCase(
+  input: BulkDeleteNotificationSchedulesInput,
+): Effect.Effect<
+  BulkDeleteNotificationSchedulesOutput,
+  BulkDeleteValidationError,
+  NotificationScheduleRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* NotificationScheduleRepositoryTag;
 
-  async execute(
-    input: BulkDeleteNotificationSchedulesInput,
-  ): Promise<Result<BulkDeleteNotificationSchedulesOutput, string>> {
     if (input.ids.length === 0) {
-      return err("At least one ID must be provided");
+      return yield* Effect.fail(
+        new BulkDeleteValidationError("At least one ID must be provided"),
+      );
     }
 
     // Check which IDs exist
@@ -39,7 +65,7 @@ export class BulkDeleteNotificationSchedulesUseCase {
     const notFoundIds: string[] = [];
 
     for (const id of input.ids) {
-      const exists = await this.repository.exists(id);
+      const exists = yield* repo.exists(id);
       if (exists) {
         existingIds.push(id);
       } else {
@@ -50,14 +76,19 @@ export class BulkDeleteNotificationSchedulesUseCase {
     // Delete the existing ones
     let deletedCount = 0;
     if (existingIds.length > 0) {
-      deletedCount = await this.repository.deleteMany(existingIds);
+      deletedCount = yield* repo.deleteMany(existingIds);
     }
 
-    return ok({
+    const output: BulkDeleteNotificationSchedulesOutput = {
       success: true,
       deletedCount,
       requestedCount: input.ids.length,
-      ...(notFoundIds.length > 0 && { notFoundIds }),
-    });
-  }
+    };
+
+    if (notFoundIds.length > 0) {
+      output.notFoundIds = notFoundIds;
+    }
+
+    return output;
+  });
 }

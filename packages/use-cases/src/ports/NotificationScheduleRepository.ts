@@ -5,6 +5,7 @@ import type {
   PaginationOptions,
   PaginatedResult,
 } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * Record of a notification schedule execution
@@ -136,3 +137,71 @@ export interface NotificationScheduleRepository {
    */
   countExecutions(scheduleId: string): Promise<number>;
 }
+
+/**
+ * NotificationScheduleRepository Context.Tag for Effect dependency injection
+ */
+export class NotificationScheduleRepositoryTag extends Context.Tag(
+  "NotificationScheduleRepository",
+)<
+  NotificationScheduleRepositoryTag,
+  {
+    create: (
+      schedule: NotificationSchedule,
+    ) => Effect.Effect<NotificationSchedule, never, never>;
+    findById: (
+      id: string,
+    ) => Effect.Effect<NotificationSchedule | null, never, never>;
+    findByTripId: (
+      tripId: string,
+    ) => Effect.Effect<NotificationSchedule[], never, never>;
+    findByName: (
+      name: string,
+    ) => Effect.Effect<NotificationSchedule | null, never, never>;
+    findByTripIdAndName: (
+      tripId: string,
+      name: string,
+    ) => Effect.Effect<NotificationSchedule | null, never, never>;
+    findByType: (
+      type: NotificationScheduleType,
+    ) => Effect.Effect<NotificationSchedule[], never, never>;
+    findAll: (options?: {
+      filter?: NotificationScheduleFilter;
+      pagination?: PaginationOptions;
+    }) => Effect.Effect<PaginatedResult<NotificationSchedule>, never, never>;
+    findActive: (
+      now?: Date,
+    ) => Effect.Effect<NotificationSchedule[], never, never>;
+    findUpcoming: (
+      days?: number,
+      now?: Date,
+    ) => Effect.Effect<NotificationSchedule[], never, never>;
+    update: (
+      schedule: NotificationSchedule,
+    ) => Effect.Effect<NotificationSchedule, never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    deleteMany: (ids: string[]) => Effect.Effect<number, never, never>;
+    exists: (id: string) => Effect.Effect<boolean, never, never>;
+    count: (
+      filter?: NotificationScheduleFilter,
+    ) => Effect.Effect<number, never, never>;
+    updateLastRun: (
+      id: string,
+      lastRun: Date,
+    ) => Effect.Effect<NotificationSchedule, never, never>;
+    toggleActive: (
+      id: string,
+    ) => Effect.Effect<NotificationSchedule, never, never>;
+    bulkToggleActive: (
+      ids: string[],
+      isActive: boolean,
+    ) => Effect.Effect<number, never, never>;
+    getExecutionHistory: (
+      scheduleId: string,
+      limit: number,
+    ) => Effect.Effect<NotificationScheduleExecutionRecord[], never, never>;
+    countExecutions: (
+      scheduleId: string,
+    ) => Effect.Effect<number, never, never>;
+  }
+>() {}

@@ -1,6 +1,7 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, type Location } from "@mirai-app/domain";
-import type { LocationRepository } from "../ports/LocationRepository";
+import { Effect } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
+import { Location } from "@mirai-app/domain";
+import type { Location as LocationType } from "@mirai-app/domain";
 
 /**
  * Input for UpdateLocation use case
@@ -40,25 +41,69 @@ export interface UpdateLocationOutput {
 }
 
 /**
+ * Error types for UpdateLocation use case
+ */
+export class LocationNotFoundError extends Error {
+  readonly _tag = "LocationNotFoundError";
+  constructor() {
+    super("Location not found");
+  }
+}
+
+export class LocationUpdateValidationError extends Error {
+  readonly _tag = "LocationUpdateValidationError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class LocationCreateError extends Error {
+  readonly _tag = "LocationCreateError";
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * UpdateLocation Use Case
  *
  * Updates an existing location.
  * Creates new location if none exists for the user.
  * Returns error if validation fails.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const result = yield* updateLocationUseCase(input);
+ *   return result;
+ * });
+ *
+ * const runnable = program.pipe(
+ *   Effect.provideService(LocationRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
+ * ```
  */
-export class UpdateLocationUseCase {
-  constructor(private locationRepository: LocationRepository) {}
+export function updateLocationUseCase(
+  input: UpdateLocationInput,
+): Effect.Effect<
+  UpdateLocationOutput,
+  LocationUpdateValidationError | LocationCreateError,
+  LocationRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const locationRepo = yield* LocationRepositoryTag;
 
-  async execute(
-    input: UpdateLocationInput,
-  ): Promise<Result<UpdateLocationOutput, string>> {
     // Find existing location
-    let location = await this.locationRepository.findByUserId(input.userId);
+    const location = yield* locationRepo.findByUserId(input.userId);
 
     if (!location) {
       // Create new location if none exists
-      const { Location } = await import("@mirai-app/domain");
-      const createResult = Location.create({
+      const createEffect = Location.create({
         userId: input.userId,
         ...(input.latitude !== undefined && { latitude: input.latitude }),
         ...(input.longitude !== undefined && { longitude: input.longitude }),
@@ -74,16 +119,19 @@ export class UpdateLocationUseCase {
         }),
       });
 
-      if (createResult.kind === "err") {
-        return err(createResult.error.message);
-      }
+      // Run validation effect and map errors
+      const newLocation = yield* createEffect.pipe(
+        Effect.mapError(
+          (validationError) => new LocationCreateError(validationError.message),
+        ),
+      );
 
-      const saved = await this.locationRepository.create(createResult.value);
-      return ok(this.toOutput(saved));
+      const saved = yield* locationRepo.create(newLocation);
+      return toOutput(saved);
     }
 
     // Apply updates
-    let updatedLocation: Location = location;
+    let updatedLocation: LocationType = location;
 
     // Update coordinates if provided
     if (
@@ -94,7 +142,7 @@ export class UpdateLocationUseCase {
       input.heading !== undefined ||
       input.speed !== undefined
     ) {
-      const coordResult = updatedLocation.updateCoordinates({
+      const coordEffect = updatedLocation.updateCoordinates({
         ...(input.latitude !== undefined && { latitude: input.latitude }),
         ...(input.longitude !== undefined && { longitude: input.longitude }),
         ...(input.accuracy !== undefined && { accuracy: input.accuracy }),
@@ -103,11 +151,13 @@ export class UpdateLocationUseCase {
         ...(input.speed !== undefined && { speed: input.speed }),
       });
 
-      if (coordResult.kind === "err") {
-        return err(coordResult.error.message);
-      }
-
-      updatedLocation = coordResult.value;
+      // Run validation effect and map errors
+      updatedLocation = yield* coordEffect.pipe(
+        Effect.mapError(
+          (validationError) =>
+            new LocationUpdateValidationError(validationError.message),
+        ),
+      );
     }
 
     // Update sharing status if provided
@@ -120,25 +170,25 @@ export class UpdateLocationUseCase {
     }
 
     // Persist changes
-    const saved = await this.locationRepository.save(updatedLocation);
+    const saved = yield* locationRepo.save(updatedLocation);
 
-    return ok(this.toOutput(saved));
-  }
+    return toOutput(saved);
+  });
+}
 
-  private toOutput(location: Location): UpdateLocationOutput {
-    return {
-      id: location.id,
-      userId: location.userId,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      accuracy: location.accuracy,
-      altitude: location.altitude,
-      altitudeAccuracy: location.altitudeAccuracy,
-      heading: location.heading,
-      speed: location.speed,
-      isSharingLocation: location.isSharingLocation(),
-      timestamp: location.timestamp,
-      usersToShareWith: location.usersToShareWith,
-    };
-  }
+function toOutput(location: LocationType): UpdateLocationOutput {
+  return {
+    id: location.id,
+    userId: location.userId,
+    latitude: location.latitude,
+    longitude: location.longitude,
+    accuracy: location.accuracy,
+    altitude: location.altitude,
+    altitudeAccuracy: location.altitudeAccuracy,
+    heading: location.heading,
+    speed: location.speed,
+    isSharingLocation: location.isSharingLocation(),
+    timestamp: location.timestamp,
+    usersToShareWith: location.usersToShareWith,
+  };
 }

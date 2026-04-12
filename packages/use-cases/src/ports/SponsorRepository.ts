@@ -1,4 +1,5 @@
 import type { Sponsor } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 /**
  * SponsorRepository
@@ -62,3 +63,35 @@ export interface SponsorRepository {
    */
   unlinkFromTrip(sponsorId: string, tripId: string): Promise<void>;
 }
+
+/**
+ * SponsorRepository Context.Tag for Effect dependency injection
+ */
+export class SponsorRepositoryTag extends Context.Tag("SponsorRepository")<
+  SponsorRepositoryTag,
+  {
+    create: (sponsor: Sponsor) => Effect.Effect<Sponsor, never, never>;
+    findById: (id: string) => Effect.Effect<Sponsor | null, never, never>;
+    findAll: (options?: {
+      limit?: number;
+      offset?: number;
+    }) => Effect.Effect<Sponsor[], never, never>;
+    findActive: () => Effect.Effect<Sponsor[], never, never>;
+    findByTripId: (tripId: string) => Effect.Effect<Sponsor[], never, never>;
+    update: (sponsor: Sponsor) => Effect.Effect<Sponsor, never, never>;
+    delete: (id: string) => Effect.Effect<void, never, never>;
+    exists: (id: string) => Effect.Effect<boolean, never, never>;
+    isLinkedToTrip: (
+      sponsorId: string,
+      tripId: string,
+    ) => Effect.Effect<boolean, never, never>;
+    linkToTrip: (
+      sponsorId: string,
+      tripId: string,
+    ) => Effect.Effect<void, never, never>;
+    unlinkFromTrip: (
+      sponsorId: string,
+      tripId: string,
+    ) => Effect.Effect<void, never, never>;
+  }
+>() {}

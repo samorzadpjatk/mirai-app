@@ -22,6 +22,7 @@
  */
 
 import type { Result } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
 
 // =============================================================================
 // Domain Errors
@@ -280,7 +281,9 @@ export interface StoragePort {
   download(
     bucket: string,
     path: string,
-  ): Promise<Result<DownloadResult, StorageError | FileNotFoundError | DownloadError>>;
+  ): Promise<
+    Result<DownloadResult, StorageError | FileNotFoundError | DownloadError>
+  >;
 
   /**
    * Delete one or more files from storage
@@ -338,3 +341,39 @@ export interface StoragePort {
     expiresInSeconds: number,
   ): Promise<Result<SignedUrlInfo, StorageError | FileNotFoundError>>;
 }
+
+/**
+ * StoragePort Context.Tag for Effect dependency injection
+ */
+export class StoragePortTag extends Context.Tag("StoragePort")<
+  StoragePortTag,
+  {
+    upload: (
+      bucket: string,
+      path: string,
+      file: Buffer | Blob,
+      options?: UploadOptions,
+    ) => Effect.Effect<
+      FileMetadata,
+      StorageError | UploadError | BucketNotFoundError,
+      never
+    >;
+    download: (
+      bucket: string,
+      path: string,
+    ) => Effect.Effect<
+      DownloadResult,
+      StorageError | FileNotFoundError | DownloadError,
+      never
+    >;
+    delete: (
+      bucket: string,
+      paths: string[],
+    ) => Effect.Effect<void, StorageError | DeleteError, never>;
+    createSignedUrl: (
+      bucket: string,
+      path: string,
+      expiresInSeconds: number,
+    ) => Effect.Effect<SignedUrlInfo, StorageError | FileNotFoundError, never>;
+  }
+>() {}

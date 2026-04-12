@@ -1,6 +1,6 @@
-import type { Result } from "@mirai-app/domain";
-import { ok, err, type RewardId } from "@mirai-app/domain";
-import type { RewardRepository } from "../ports/RewardRepository";
+import { Effect } from "effect";
+import { RewardRepositoryTag } from "../ports/RewardRepository";
+import type { RewardId } from "@mirai-app/domain";
 
 /**
  * Input for DeleteReward use case
@@ -17,35 +17,65 @@ export interface DeleteRewardOutput {
 }
 
 /**
+ * Error types for DeleteReward use case
+ */
+export class RewardNotFoundError extends Error {
+  readonly _tag = "RewardNotFoundError";
+  constructor() {
+    super("Reward not found");
+  }
+}
+
+export class RewardHasPurchasesError extends Error {
+  readonly _tag = "RewardHasPurchasesError";
+  constructor() {
+    super("Cannot delete reward with existing purchases");
+  }
+}
+
+/**
  * DeleteReward Use Case
  *
  * Deletes a reward. Only allowed if the reward has no purchases.
+ *
+ * ## Effect-based Pattern
+ *
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ *
+ * ```typescript
+ * const program = deleteRewardUseCase(input).pipe(
+ *   Effect.provideService(RewardRepositoryTag, repository)
+ * );
+ * const result = await Effect.runPromise(program);
+ * ```
  */
-export class DeleteRewardUseCase {
-  constructor(private rewardRepository: RewardRepository) {}
+export function deleteRewardUseCase(
+  input: DeleteRewardInput,
+): Effect.Effect<
+  DeleteRewardOutput,
+  RewardNotFoundError | RewardHasPurchasesError,
+  RewardRepositoryTag
+> {
+  return Effect.gen(function* () {
+    const repo = yield* RewardRepositoryTag;
 
-  async execute(
-    input: DeleteRewardInput,
-  ): Promise<Result<DeleteRewardOutput, string>> {
     // Check if reward exists
-    const existing = await this.rewardRepository.findById(input.rewardId);
+    const existing = yield* repo.findById(input.rewardId);
 
     if (!existing) {
-      return err("Reward not found");
+      return yield* Effect.fail(new RewardNotFoundError());
     }
 
     // Check if reward has purchases
-    const hasPurchases = await this.rewardRepository.hasPurchases(
-      input.rewardId,
-    );
+    const hasPurchases = yield* repo.hasPurchases(input.rewardId);
 
     if (hasPurchases) {
-      return err("Cannot delete reward with existing purchases");
+      return yield* Effect.fail(new RewardHasPurchasesError());
     }
 
     // Delete reward
-    await this.rewardRepository.delete(input.rewardId);
+    yield* repo.delete(input.rewardId);
 
-    return ok({ success: true });
-  }
+    return { success: true };
+  });
 }
