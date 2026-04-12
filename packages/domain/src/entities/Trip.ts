@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
@@ -65,66 +63,42 @@ export class Trip {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<Trip, ValidationError, never> {
-    // Validate name
-    const name = validate.string(props.name, "name", {
-      required: true,
-      maxLength: 200,
-      trim: true,
-    });
-    if (isError(name)) {
-      return Effect.fail(
-        new ValidationError({
-          message: name.error.message,
-          field: "name",
-        }),
-      );
-    }
-
-    // Validate description (optional)
-    const description = validate.string(
-      props.description ?? "",
-      "description",
-      {
-        required: false,
-        maxLength: 2000,
+    return Effect.gen(function* () {
+      // Validate name
+      const name = yield* validate.string(props.name, "name", {
+        required: true,
+        maxLength: 200,
         trim: true,
-      },
-    );
-    if (isError(description)) {
-      return Effect.fail(
-        new ValidationError({
-          message: description.error.message,
-          field: "description",
-        }),
+      });
+
+      // Validate description (optional)
+      const description = yield* validate.string(
+        props.description ?? "",
+        "description",
+        {
+          required: false,
+          maxLength: 2000,
+          trim: true,
+        },
       );
-    }
 
-    // Validate date range
-    const dateRangeResult = validate.dateRange(props.startDate, props.endDate);
-    if (isError(dateRangeResult)) {
-      return Effect.fail(
-        new ValidationError({
-          message: "endDate must be after startDate",
-          field: "endDate",
-        }),
-      );
-    }
+      // Validate date range
+      yield* validate.dateRange(props.startDate, props.endDate);
 
-    const ts = timestamps(props);
+      const ts = timestamps(props);
 
-    return Effect.succeed(
-      new Trip(
+      return new Trip(
         props.id ?? crypto.randomUUID(),
-        name.value,
-        description.value || null,
+        name,
+        description || null,
         props.startDate,
         props.endDate,
         props.backgroundImagePath ?? null,
         props.status ?? TripStatus.PLANNING,
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -147,35 +121,28 @@ export class Trip {
       );
     }
 
-    const updates: Partial<Trip> = {};
+    return Effect.gen(function* () {
+      const updates: Partial<Trip> = {};
 
-    // Validate name if provided
-    if (props.name !== undefined) {
-      const validated = validate.string(props.name, "name", {
-        required: true,
-        maxLength: 200,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "name",
-          }),
-        );
+      // Validate name if provided
+      if (props.name !== undefined) {
+        updates.name = yield* validate.string(props.name, "name", {
+          required: true,
+          maxLength: 200,
+          trim: true,
+        });
       }
-      updates.name = validated.value;
-    }
 
-    if (props.description !== undefined) {
-      updates.description = props.description;
-    }
+      if (props.description !== undefined) {
+        updates.description = props.description;
+      }
 
-    if (props.backgroundImagePath !== undefined) {
-      updates.backgroundImagePath = props.backgroundImagePath;
-    }
+      if (props.backgroundImagePath !== undefined) {
+        updates.backgroundImagePath = props.backgroundImagePath;
+      }
 
-    return Effect.succeed(updateEntity(this, updates, Trip));
+      return updateEntity(this, updates, Trip);
+    });
   }
 
   /**
@@ -200,22 +167,16 @@ export class Trip {
     const newStartDate = props.startDate ?? this.startDate;
     const newEndDate = props.endDate ?? this.endDate;
 
-    // Validate date range
-    const dateRangeResult = validate.dateRange(newStartDate, newEndDate);
-    if (isError(dateRangeResult)) {
-      return Effect.fail(
-        new ValidationError({
-          message: "endDate must be after startDate",
-          field: "endDate",
-        }),
-      );
-    }
+    return Effect.gen(function* () {
+      // Validate date range
+      yield* validate.dateRange(newStartDate, newEndDate);
 
-    const updates: Partial<Trip> = {};
-    if (props.startDate !== undefined) updates.startDate = props.startDate;
-    if (props.endDate !== undefined) updates.endDate = props.endDate;
+      const updates: Partial<Trip> = {};
+      if (props.startDate !== undefined) updates.startDate = props.startDate;
+      if (props.endDate !== undefined) updates.endDate = props.endDate;
 
-    return Effect.succeed(updateEntity(this, updates, Trip));
+      return updateEntity(this, updates, Trip);
+    });
   }
 
   /**
@@ -380,23 +341,32 @@ export class Trip {
 
     return Effect.succeed(updateEntity(this, { status: newStatus }, Trip));
   }
-}
 
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace TripCompat {
   /**
-   * @deprecated Use Trip.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
+   * Reconstitute a Trip from persistence (no validation)
+   * Only use when loading from database
    */
-  export function createSync(
-    props: Parameters<typeof Trip.create>[0],
-  ): Result<Trip, ValidationError> {
-    const effect = Trip.create(props);
-    try {
-      const trip = Effect.runSync(effect);
-      return ok(trip);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
+  static reconstitute(data: {
+    id: string;
+    name: string;
+    description: string | null;
+    startDate: Date;
+    endDate: Date;
+    backgroundImagePath: string | null;
+    status: TripStatus;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Trip {
+    return new Trip(
+      data.id,
+      data.name,
+      data.description,
+      data.startDate,
+      data.endDate,
+      data.backgroundImagePath,
+      data.status,
+      data.createdAt,
+      data.updatedAt,
+    );
   }
 }

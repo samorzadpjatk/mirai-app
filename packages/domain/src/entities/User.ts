@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { timestamps, updateEntity } from "../utils/immutable";
 import { ValidationError } from "../errors/effect-errors";
@@ -62,81 +60,55 @@ export class User {
     updatedAt?: Date;
     lastSeenOn?: Date | null;
   }): Effect.Effect<User, ValidationError, never> {
-    // Validate authUserId
-    const authUserId = validate.id(props.authUserId, "authUserId");
-    if (isError(authUserId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: authUserId.error.message,
-          field: "authUserId",
-        }),
-      );
-    }
+    return Effect.gen(function* () {
+      // Validate authUserId
+      const authUserId = yield* validate.id(props.authUserId, "authUserId");
 
-    // Validate firstName (allow empty, but validate if non-empty)
-    let firstName = props.firstName.trim();
-    if (firstName.length > 0) {
-      const firstNameValidated = validate.string(firstName, "firstName", {
-        trim: true,
-        minLength: 2,
-        maxLength: 100,
-      });
-      if (isError(firstNameValidated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: firstNameValidated.error.message,
-            field: "firstName",
-          }),
-        );
+      // Validate firstName (allow empty, but validate if non-empty)
+      let firstName = props.firstName.trim();
+      if (firstName.length > 0) {
+        firstName = yield* validate.string(firstName, "firstName", {
+          trim: true,
+          minLength: 2,
+          maxLength: 100,
+        });
+
+        // Check for digits
+        if (/\d/.test(firstName)) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "firstName cannot contain digits",
+              field: "firstName",
+            }),
+          );
+        }
       }
-      firstName = firstNameValidated.value;
 
-      // Check for digits
-      if (/\d/.test(firstName)) {
-        return Effect.fail(
-          new ValidationError({
-            message: "firstName cannot contain digits",
-            field: "firstName",
-          }),
-        );
+      // Validate lastName (allow empty, but validate if non-empty)
+      let lastName = props.lastName.trim();
+      if (lastName.length > 0) {
+        lastName = yield* validate.string(lastName, "lastName", {
+          trim: true,
+          minLength: 2,
+          maxLength: 100,
+        });
+
+        // Check for digits
+        if (/\d/.test(lastName)) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "lastName cannot contain digits",
+              field: "lastName",
+            }),
+          );
+        }
       }
-    }
 
-    // Validate lastName (allow empty, but validate if non-empty)
-    let lastName = props.lastName.trim();
-    if (lastName.length > 0) {
-      const lastNameValidated = validate.string(lastName, "lastName", {
-        trim: true,
-        minLength: 2,
-        maxLength: 100,
-      });
-      if (isError(lastNameValidated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: lastNameValidated.error.message,
-            field: "lastName",
-          }),
-        );
-      }
-      lastName = lastNameValidated.value;
+      const ts = timestamps(props);
 
-      // Check for digits
-      if (/\d/.test(lastName)) {
-        return Effect.fail(
-          new ValidationError({
-            message: "lastName cannot contain digits",
-            field: "lastName",
-          }),
-        );
-      }
-    }
-
-    const ts = timestamps(props);
-
-    return Effect.succeed(
-      new User(
+      return new User(
         props.id ?? crypto.randomUUID(),
-        authUserId.value,
+        authUserId,
         firstName,
         lastName,
         props.role,
@@ -144,8 +116,8 @@ export class User {
         ts.createdAt,
         ts.updatedAt,
         props.lastSeenOn ?? null,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -156,65 +128,49 @@ export class User {
     firstName: string;
     lastName: string;
   }): Effect.Effect<User, ValidationError, never> {
-    // Validate firstName (allow empty, but validate if non-empty)
-    let firstName = props.firstName.trim();
-    if (firstName.length > 0) {
-      const firstNameValidated = validate.string(firstName, "firstName", {
-        trim: true,
-        minLength: 2,
-        maxLength: 100,
-      });
-      if (isError(firstNameValidated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: firstNameValidated.error.message,
-            field: "firstName",
-          }),
-        );
-      }
-      firstName = firstNameValidated.value;
+    return Effect.gen(function* () {
+      // Validate firstName (allow empty, but validate if non-empty)
+      let firstName = props.firstName.trim();
+      if (firstName.length > 0) {
+        firstName = yield* validate.string(firstName, "firstName", {
+          trim: true,
+          minLength: 2,
+          maxLength: 100,
+        });
 
-      // Check for digits
-      if (/\d/.test(firstName)) {
-        return Effect.fail(
-          new ValidationError({
-            message: "firstName cannot contain digits",
-            field: "firstName",
-          }),
-        );
+        // Check for digits
+        if (/\d/.test(firstName)) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "firstName cannot contain digits",
+              field: "firstName",
+            }),
+          );
+        }
       }
-    }
 
-    // Validate lastName (allow empty, but validate if non-empty)
-    let lastName = props.lastName.trim();
-    if (lastName.length > 0) {
-      const lastNameValidated = validate.string(lastName, "lastName", {
-        trim: true,
-        minLength: 2,
-        maxLength: 100,
-      });
-      if (isError(lastNameValidated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: lastNameValidated.error.message,
-            field: "lastName",
-          }),
-        );
+      // Validate lastName (allow empty, but validate if non-empty)
+      let lastName = props.lastName.trim();
+      if (lastName.length > 0) {
+        lastName = yield* validate.string(lastName, "lastName", {
+          trim: true,
+          minLength: 2,
+          maxLength: 100,
+        });
+
+        // Check for digits
+        if (/\d/.test(lastName)) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "lastName cannot contain digits",
+              field: "lastName",
+            }),
+          );
+        }
       }
-      lastName = lastNameValidated.value;
 
-      // Check for digits
-      if (/\d/.test(lastName)) {
-        return Effect.fail(
-          new ValidationError({
-            message: "lastName cannot contain digits",
-            field: "lastName",
-          }),
-        );
-      }
-    }
-
-    return Effect.succeed(updateEntity(this, { firstName, lastName }, User));
+      return updateEntity(this, { firstName, lastName }, User);
+    });
   }
 
   /**
@@ -307,23 +263,32 @@ export class User {
     const last = this.lastName?.charAt(0)?.toUpperCase() ?? "";
     return first + last || "?";
   }
-}
 
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace UserCompat {
   /**
-   * @deprecated Use User.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
+   * Reconstitute a User from persistence (no validation)
+   * Only use when loading from database
    */
-  export function createSync(
-    props: Parameters<typeof User.create>[0],
-  ): Result<User, ValidationError> {
-    const effect = User.create(props);
-    try {
-      const user = Effect.runSync(effect);
-      return ok(user);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
+  static reconstitute(data: {
+    id: string;
+    authUserId: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    hasAvatar: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    lastSeenOn: Date | null;
+  }): User {
+    return new User(
+      data.id,
+      data.authUserId,
+      data.firstName,
+      data.lastName,
+      data.role,
+      data.hasAvatar,
+      data.createdAt,
+      data.updatedAt,
+      data.lastSeenOn,
+    );
   }
 }
