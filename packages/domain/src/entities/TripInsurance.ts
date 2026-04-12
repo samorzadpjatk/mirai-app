@@ -1,8 +1,9 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * Insurance step interface - represents a single step in emergency procedure
@@ -45,6 +46,8 @@ export class TripInsurance {
   /**
    * Factory method to create a new TripInsurance
    * Validates all input data
+   *
+   * Returns Effect<TripInsurance, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -62,10 +65,17 @@ export class TripInsurance {
     steps?: InsuranceStep[];
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<TripInsurance, ValidationError> {
+  }): Effect.Effect<TripInsurance, ValidationError, never> {
     // Validate tripId
     const tripId = validate.id(props.tripId, "tripId");
-    if (isError(tripId)) return err(tripId.error);
+    if (isError(tripId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: tripId.error.message,
+          field: "tripId",
+        }),
+      );
+    }
 
     // Validate label
     const label = validate.string(props.label, "label", {
@@ -73,7 +83,14 @@ export class TripInsurance {
       maxLength: 100,
       trim: true,
     });
-    if (isError(label)) return err(label.error);
+    if (isError(label)) {
+      return Effect.fail(
+        new ValidationError({
+          message: label.error.message,
+          field: "label",
+        }),
+      );
+    }
 
     // Validate phoneNumber
     const phoneNumber = validate.string(props.phoneNumber, "phoneNumber", {
@@ -81,7 +98,14 @@ export class TripInsurance {
       maxLength: 50,
       trim: true,
     });
-    if (isError(phoneNumber)) return err(phoneNumber.error);
+    if (isError(phoneNumber)) {
+      return Effect.fail(
+        new ValidationError({
+          message: phoneNumber.error.message,
+          field: "phoneNumber",
+        }),
+      );
+    }
 
     // Validate phoneDisplay
     const phoneDisplay = validate.string(props.phoneDisplay, "phoneDisplay", {
@@ -89,7 +113,14 @@ export class TripInsurance {
       maxLength: 50,
       trim: true,
     });
-    if (isError(phoneDisplay)) return err(phoneDisplay.error);
+    if (isError(phoneDisplay)) {
+      return Effect.fail(
+        new ValidationError({
+          message: phoneDisplay.error.message,
+          field: "phoneDisplay",
+        }),
+      );
+    }
 
     // Validate policyNumber
     const policyNumber = validate.string(props.policyNumber, "policyNumber", {
@@ -97,7 +128,14 @@ export class TripInsurance {
       maxLength: 100,
       trim: true,
     });
-    if (isError(policyNumber)) return err(policyNumber.error);
+    if (isError(policyNumber)) {
+      return Effect.fail(
+        new ValidationError({
+          message: policyNumber.error.message,
+          field: "policyNumber",
+        }),
+      );
+    }
 
     // Validate contractNumber
     const contractNumber = validate.string(
@@ -109,7 +147,14 @@ export class TripInsurance {
         trim: true,
       },
     );
-    if (isError(contractNumber)) return err(contractNumber.error);
+    if (isError(contractNumber)) {
+      return Effect.fail(
+        new ValidationError({
+          message: contractNumber.error.message,
+          field: "contractNumber",
+        }),
+      );
+    }
 
     // Validate providerName
     const providerName = validate.string(props.providerName, "providerName", {
@@ -117,7 +162,14 @@ export class TripInsurance {
       maxLength: 100,
       trim: true,
     });
-    if (isError(providerName)) return err(providerName.error);
+    if (isError(providerName)) {
+      return Effect.fail(
+        new ValidationError({
+          message: providerName.error.message,
+          field: "providerName",
+        }),
+      );
+    }
 
     // Validate optional hospital fields
     if (props.hospitalName) {
@@ -125,7 +177,14 @@ export class TripInsurance {
         required: false,
         maxLength: 200,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "hospitalName",
+          }),
+        );
+      }
     }
 
     if (props.hospitalAddress) {
@@ -137,7 +196,14 @@ export class TripInsurance {
           maxLength: 500,
         },
       );
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "hospitalAddress",
+          }),
+        );
+      }
     }
 
     if (props.hospitalDistance) {
@@ -149,18 +215,30 @@ export class TripInsurance {
           maxLength: 100,
         },
       );
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "hospitalDistance",
+          }),
+        );
+      }
     }
 
     // Validate steps array (max 20 steps)
     const steps = props.steps ?? [];
     if (steps.length > 20) {
-      return err(new ValidationError("Maximum 20 steps allowed", "steps"));
+      return Effect.fail(
+        new ValidationError({
+          message: "Maximum 20 steps allowed",
+          field: "steps",
+        }),
+      );
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new TripInsurance(
         props.id ?? crypto.randomUUID(),
         tripId.value,
@@ -183,6 +261,8 @@ export class TripInsurance {
   /**
    * Update insurance details
    * Returns a new TripInsurance instance (immutable)
+   *
+   * Returns Effect<TripInsurance, ValidationError, never>
    */
   updateDetails(props: {
     label?: string;
@@ -191,7 +271,7 @@ export class TripInsurance {
     policyNumber?: string;
     contractNumber?: string;
     providerName?: string;
-  }): Result<TripInsurance, ValidationError> {
+  }): Effect.Effect<TripInsurance, ValidationError, never> {
     const updates: Partial<TripInsurance> = {};
 
     // Validate label if provided
@@ -201,7 +281,14 @@ export class TripInsurance {
         maxLength: 100,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "label",
+          }),
+        );
+      }
       updates.label = validated.value;
     }
 
@@ -212,7 +299,14 @@ export class TripInsurance {
         maxLength: 50,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "phoneNumber",
+          }),
+        );
+      }
       updates.phoneNumber = validated.value;
     }
 
@@ -223,7 +317,14 @@ export class TripInsurance {
         maxLength: 50,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "phoneDisplay",
+          }),
+        );
+      }
       updates.phoneDisplay = validated.value;
     }
 
@@ -234,7 +335,14 @@ export class TripInsurance {
         maxLength: 100,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "policyNumber",
+          }),
+        );
+      }
       updates.policyNumber = validated.value;
     }
 
@@ -249,7 +357,14 @@ export class TripInsurance {
           trim: true,
         },
       );
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "contractNumber",
+          }),
+        );
+      }
       updates.contractNumber = validated.value;
     }
 
@@ -260,22 +375,31 @@ export class TripInsurance {
         maxLength: 100,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "providerName",
+          }),
+        );
+      }
       updates.providerName = validated.value;
     }
 
-    return ok(updateEntity(this, updates, TripInsurance));
+    return Effect.succeed(updateEntity(this, updates, TripInsurance));
   }
 
   /**
    * Update hospital information
    * Returns a new TripInsurance instance (immutable)
+   *
+   * Returns Effect<TripInsurance, ValidationError, never>
    */
   updateHospitalInfo(props: {
     hospitalName?: string | null;
     hospitalAddress?: string | null;
     hospitalDistance?: string | null;
-  }): Result<TripInsurance, ValidationError> {
+  }): Effect.Effect<TripInsurance, ValidationError, never> {
     const updates: Partial<TripInsurance> = {};
 
     // Validate hospitalName if provided
@@ -284,7 +408,14 @@ export class TripInsurance {
         required: false,
         maxLength: 200,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "hospitalName",
+          }),
+        );
+      }
       updates.hospitalName = validated.value;
     } else if (props.hospitalName === null) {
       updates.hospitalName = null;
@@ -300,7 +431,14 @@ export class TripInsurance {
           maxLength: 500,
         },
       );
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "hospitalAddress",
+          }),
+        );
+      }
       updates.hospitalAddress = validated.value;
     } else if (props.hospitalAddress === null) {
       updates.hospitalAddress = null;
@@ -316,23 +454,37 @@ export class TripInsurance {
             maxLength: 100,
           },
         );
-        if (isError(validated)) return err(validated.error);
+        if (isError(validated)) {
+          return Effect.fail(
+            new ValidationError({
+              message: validated.error.message,
+              field: "hospitalDistance",
+            }),
+          );
+        }
       }
       updates.hospitalDistance = props.hospitalDistance;
     }
 
-    return ok(updateEntity(this, updates, TripInsurance));
+    return Effect.succeed(updateEntity(this, updates, TripInsurance));
   }
 
   /**
    * Add a new step to the insurance procedure
    * Returns a new TripInsurance instance (immutable)
+   *
+   * Returns Effect<TripInsurance, ValidationError, never>
    */
   addStep(
     step: Omit<InsuranceStep, "stepNumber">,
-  ): Result<TripInsurance, ValidationError> {
+  ): Effect.Effect<TripInsurance, ValidationError, never> {
     if (this.steps.length >= 20) {
-      return err(new ValidationError("Maximum 20 steps allowed", "steps"));
+      return Effect.fail(
+        new ValidationError({
+          message: "Maximum 20 steps allowed",
+          field: "steps",
+        }),
+      );
     }
 
     // Validate step title
@@ -341,7 +493,14 @@ export class TripInsurance {
       maxLength: 200,
       trim: true,
     });
-    if (isError(title)) return err(title.error);
+    if (isError(title)) {
+      return Effect.fail(
+        new ValidationError({
+          message: title.error.message,
+          field: "title",
+        }),
+      );
+    }
 
     // Validate step text
     const text = validate.string(step.text, "text", {
@@ -349,7 +508,14 @@ export class TripInsurance {
       maxLength: 2000,
       trim: true,
     });
-    if (isError(text)) return err(text.error);
+    if (isError(text)) {
+      return Effect.fail(
+        new ValidationError({
+          message: text.error.message,
+          field: "text",
+        }),
+      );
+    }
 
     const stepNumber = this.steps.length + 1;
     const newStep: InsuranceStep = {
@@ -359,7 +525,7 @@ export class TripInsurance {
       text: text.value,
     };
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         { steps: Object.freeze([...this.steps, newStep]) },
@@ -387,15 +553,20 @@ export class TripInsurance {
   /**
    * Update an existing step
    * Returns a new TripInsurance instance (immutable)
+   *
+   * Returns Effect<TripInsurance, ValidationError, never>
    */
   updateStep(
     stepNumber: number,
     updates: Partial<Omit<InsuranceStep, "stepNumber">>,
-  ): Result<TripInsurance, ValidationError> {
+  ): Effect.Effect<TripInsurance, ValidationError, never> {
     const step = this.steps.find((s) => s.stepNumber === stepNumber);
     if (!step) {
-      return err(
-        new ValidationError(`Step ${stepNumber} not found`, "stepNumber"),
+      return Effect.fail(
+        new ValidationError({
+          message: `Step ${stepNumber} not found`,
+          field: "stepNumber",
+        }),
       );
     }
 
@@ -408,7 +579,14 @@ export class TripInsurance {
         maxLength: 200,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "title",
+          }),
+        );
+      }
       finalUpdates.title = validated.value;
     }
 
@@ -419,7 +597,14 @@ export class TripInsurance {
         maxLength: 2000,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "text",
+          }),
+        );
+      }
       finalUpdates.text = validated.value;
     }
 
@@ -437,7 +622,7 @@ export class TripInsurance {
       s.stepNumber === stepNumber ? { ...s, ...finalUpdates } : s,
     );
 
-    return ok(
+    return Effect.succeed(
       updateEntity(this, { steps: Object.freeze(newSteps) }, TripInsurance),
     );
   }
@@ -472,5 +657,24 @@ export class TripInsurance {
    */
   getEmergencyContact(): string {
     return `${this.label}: ${this.phoneDisplay} (${this.providerName})`;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace TripInsuranceCompat {
+  /**
+   * @deprecated Use TripInsurance.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof TripInsurance.create>[0],
+  ): Result<TripInsurance, ValidationError> {
+    const effect = TripInsurance.create(props);
+    try {
+      const insurance = Effect.runSync(effect);
+      return ok(insurance);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

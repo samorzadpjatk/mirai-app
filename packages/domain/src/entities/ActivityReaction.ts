@@ -1,8 +1,9 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { timestamps } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 import { REACTION_TYPES } from "./ActivityFeed";
 
 /**
@@ -23,6 +24,8 @@ export class ActivityReaction {
   /**
    * Factory method to create a new ActivityReaction
    * Validates all input data
+   *
+   * Returns Effect<ActivityReaction, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -30,14 +33,28 @@ export class ActivityReaction {
     userId: string;
     reactionType: string;
     createdAt?: Date;
-  }): Result<ActivityReaction, ValidationError> {
+  }): Effect.Effect<ActivityReaction, ValidationError, never> {
     // Validate activityId
     const activityId = validate.id(props.activityId, "activityId");
-    if (isError(activityId)) return err(activityId.error);
+    if (isError(activityId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: activityId.error.message,
+          field: "activityId",
+        }),
+      );
+    }
 
     // Validate userId
     const userId = validate.id(props.userId, "userId");
-    if (isError(userId)) return err(userId.error);
+    if (isError(userId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: userId.error.message,
+          field: "userId",
+        }),
+      );
+    }
 
     // Validate reactionType
     const reactionType = validate.string(props.reactionType, "reactionType", {
@@ -45,7 +62,14 @@ export class ActivityReaction {
       maxLength: 50,
       trim: true,
     });
-    if (isError(reactionType)) return err(reactionType.error);
+    if (isError(reactionType)) {
+      return Effect.fail(
+        new ValidationError({
+          message: reactionType.error.message,
+          field: "reactionType",
+        }),
+      );
+    }
 
     // Validate reaction type is one of the allowed types
     if (
@@ -53,17 +77,17 @@ export class ActivityReaction {
         reactionType.value as (typeof REACTION_TYPES)[number],
       )
     ) {
-      return err(
-        new ValidationError(
-          `Invalid reaction type: ${reactionType.value}. Must be one of: ${REACTION_TYPES.join(", ")}`,
-          "reactionType",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: `Invalid reaction type: ${reactionType.value}. Must be one of: ${REACTION_TYPES.join(", ")}`,
+          field: "reactionType",
+        }),
       );
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new ActivityReaction(
         props.id ?? crypto.randomUUID(),
         activityId.value,
@@ -131,5 +155,24 @@ export class ActivityReaction {
       this.userId === userId &&
       this.reactionType.toLowerCase() === reactionType.toLowerCase()
     );
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace ActivityReactionCompat {
+  /**
+   * @deprecated Use ActivityReaction.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof ActivityReaction.create>[0],
+  ): Result<ActivityReaction, ValidationError> {
+    const effect = ActivityReaction.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

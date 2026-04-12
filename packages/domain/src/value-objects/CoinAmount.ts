@@ -1,4 +1,6 @@
+import { Effect } from "effect";
 import { type Result, ok, err } from "../utils/result";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * CoinAmount - Value object representing a coin amount
@@ -17,20 +19,37 @@ export class CoinAmount {
    * Create a CoinAmount from a number
    * Validates that the amount is a non-negative integer within bounds
    */
-  static create(amount: number): Result<CoinAmount, string> {
+  static create(
+    amount: number,
+  ): Effect.Effect<CoinAmount, ValidationError, never> {
     if (!Number.isInteger(amount)) {
-      return err("Coin amount must be an integer");
+      return Effect.fail(
+        new ValidationError({
+          message: "Coin amount must be an integer",
+          field: "general",
+        }),
+      );
     }
 
     if (amount < this.MIN_COINS) {
-      return err(`Coin amount cannot be negative (minimum: ${this.MIN_COINS})`);
+      return Effect.fail(
+        new ValidationError({
+          message: `Coin amount cannot be negative (minimum: ${this.MIN_COINS})`,
+          field: "general",
+        }),
+      );
     }
 
     if (amount > this.MAX_COINS) {
-      return err(`Coin amount exceeds maximum (${this.MAX_COINS})`);
+      return Effect.fail(
+        new ValidationError({
+          message: `Coin amount exceeds maximum (${this.MAX_COINS})`,
+          field: "general",
+        }),
+      );
     }
 
-    return ok(new CoinAmount(amount));
+    return Effect.succeed(new CoinAmount(amount));
   }
 
   /**
@@ -52,7 +71,7 @@ export class CoinAmount {
    * Add another CoinAmount to this one
    * Returns a new CoinAmount (immutable)
    */
-  add(other: CoinAmount): Result<CoinAmount, string> {
+  add(other: CoinAmount): Effect.Effect<CoinAmount, ValidationError, never> {
     return CoinAmount.create(this.value + other.value);
   }
 
@@ -60,16 +79,23 @@ export class CoinAmount {
    * Subtract another CoinAmount from this one
    * Returns error if result would be negative
    */
-  subtract(other: CoinAmount): Result<CoinAmount, string> {
+  subtract(
+    other: CoinAmount,
+  ): Effect.Effect<CoinAmount, ValidationError, never> {
     return CoinAmount.create(this.value - other.value);
   }
 
   /**
    * Multiply by a positive integer factor
    */
-  multiply(factor: number): Result<CoinAmount, string> {
+  multiply(factor: number): Effect.Effect<CoinAmount, ValidationError, never> {
     if (!Number.isInteger(factor) || factor < 0) {
-      return err("Factor must be a non-negative integer");
+      return Effect.fail(
+        new ValidationError({
+          message: "Factor must be a non-negative integer",
+          field: "general",
+        }),
+      );
     }
     return CoinAmount.create(this.value * factor);
   }
@@ -107,5 +133,24 @@ export class CoinAmount {
    */
   toNumber(): number {
     return this.value;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace CoinAmountCompat {
+  /**
+   * @deprecated Use CoinAmount.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof CoinAmount.create>[0],
+  ): Result<CoinAmount, ValidationError> {
+    const effect = CoinAmount.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

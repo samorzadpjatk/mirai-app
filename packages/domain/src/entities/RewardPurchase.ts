@@ -1,9 +1,10 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestampsWithNow } from "../utils/immutable";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 /**
  * RewardPurchaseStatus - represents the status of a reward purchase
@@ -66,6 +67,8 @@ export class RewardPurchase {
   /**
    * Factory method to create a new RewardPurchase
    * Validates all input data
+   *
+   * Returns Effect<RewardPurchase, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -79,14 +82,28 @@ export class RewardPurchase {
     statusUpdatedById?: string | null;
     statusUpdatedAt?: Date;
     purchasedAt?: Date;
-  }): Result<RewardPurchase, ValidationError> {
+  }): Effect.Effect<RewardPurchase, ValidationError, never> {
     // Validate rewardId
     const rewardId = validate.id(props.rewardId, "rewardId");
-    if (isError(rewardId)) return err(rewardId.error);
+    if (isError(rewardId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: rewardId.error.message,
+          field: "rewardId",
+        }),
+      );
+    }
 
     // Validate groupId
     const groupId = validate.id(props.groupId, "groupId");
-    if (isError(groupId)) return err(groupId.error);
+    if (isError(groupId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: groupId.error.message,
+          field: "groupId",
+        }),
+      );
+    }
 
     // Validate quantity
     const quantity = validate.number(props.quantity, "quantity", {
@@ -94,18 +111,39 @@ export class RewardPurchase {
       min: 1,
       integer: true,
     });
-    if (isError(quantity)) return err(quantity.error);
+    if (isError(quantity)) {
+      return Effect.fail(
+        new ValidationError({
+          message: quantity.error.message,
+          field: "quantity",
+        }),
+      );
+    }
 
     // Validate totalCost
     const totalCost = validate.number(props.totalCost, "totalCost", {
       required: true,
       min: 0,
     });
-    if (isError(totalCost)) return err(totalCost.error);
+    if (isError(totalCost)) {
+      return Effect.fail(
+        new ValidationError({
+          message: totalCost.error.message,
+          field: "totalCost",
+        }),
+      );
+    }
 
     // Validate purchasedById
     const purchasedById = validate.id(props.purchasedById, "purchasedById");
-    if (isError(purchasedById)) return err(purchasedById.error);
+    if (isError(purchasedById)) {
+      return Effect.fail(
+        new ValidationError({
+          message: purchasedById.error.message,
+          field: "purchasedById",
+        }),
+      );
+    }
 
     // Validate collectionMethod if provided
     let collectionMethod: string | null = null;
@@ -118,7 +156,14 @@ export class RewardPurchase {
           maxLength: 200,
         },
       );
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "collectionMethod",
+          }),
+        );
+      }
       collectionMethod = validated.value;
     }
 
@@ -128,7 +173,7 @@ export class RewardPurchase {
       updatedAt: props.statusUpdatedAt,
     });
 
-    return ok(
+    return Effect.succeed(
       new RewardPurchase(
         props.id ?? crypto.randomUUID(),
         rewardId.value,
@@ -147,20 +192,37 @@ export class RewardPurchase {
 
   /**
    * Update status
-   * Returns a Result with new RewardPurchase instance or error
+   * Returns an Effect with new RewardPurchase instance or error
    */
   updateStatus(
     newStatus: RewardPurchaseStatus,
     updatedById: string,
-  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
+  ): Effect.Effect<
+    RewardPurchase,
+    ValidationError | StateTransitionError,
+    never
+  > {
     if (!stateMachine.canTransition(this.status, newStatus)) {
-      return err(new StateTransitionError(this.status, newStatus));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: newStatus,
+          entityType: "RewardPurchase",
+        }),
+      );
     }
 
     const validated = validate.id(updatedById, "updatedById");
-    if (isError(validated)) return err(validated.error);
+    if (isError(validated)) {
+      return Effect.fail(
+        new ValidationError({
+          message: validated.error.message,
+          field: "updatedById",
+        }),
+      );
+    }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         {
@@ -178,7 +240,11 @@ export class RewardPurchase {
    */
   accept(
     updatedById: string,
-  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
+  ): Effect.Effect<
+    RewardPurchase,
+    ValidationError | StateTransitionError,
+    never
+  > {
     return this.updateStatus(RewardPurchaseStatus.ACCEPTED, updatedById);
   }
 
@@ -187,7 +253,11 @@ export class RewardPurchase {
    */
   startDelivery(
     updatedById: string,
-  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
+  ): Effect.Effect<
+    RewardPurchase,
+    ValidationError | StateTransitionError,
+    never
+  > {
     return this.updateStatus(RewardPurchaseStatus.IN_DELIVERY, updatedById);
   }
 
@@ -196,7 +266,11 @@ export class RewardPurchase {
    */
   deliver(
     updatedById: string,
-  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
+  ): Effect.Effect<
+    RewardPurchase,
+    ValidationError | StateTransitionError,
+    never
+  > {
     return this.updateStatus(RewardPurchaseStatus.DELIVERED, updatedById);
   }
 
@@ -205,26 +279,39 @@ export class RewardPurchase {
    */
   cancel(
     updatedById: string,
-  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
+  ): Effect.Effect<
+    RewardPurchase,
+    ValidationError | StateTransitionError,
+    never
+  > {
     return this.updateStatus(RewardPurchaseStatus.CANCELLED, updatedById);
   }
 
   /**
    * Update collection method
-   * Returns a Result with new RewardPurchase instance or ValidationError
+   * Returns an Effect with new RewardPurchase instance or ValidationError
    */
   updateCollectionMethod(
     method: string | null,
-  ): Result<RewardPurchase, ValidationError> {
+  ): Effect.Effect<RewardPurchase, ValidationError, never> {
     if (method !== null) {
       const validated = validate.string(method, "collectionMethod", {
         required: false,
         maxLength: 200,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "collectionMethod",
+          }),
+        );
+      }
     }
 
-    return ok(updateEntity(this, { collectionMethod: method }, RewardPurchase));
+    return Effect.succeed(
+      updateEntity(this, { collectionMethod: method }, RewardPurchase),
+    );
   }
 
   /**
@@ -297,4 +384,23 @@ export function canTransitionPurchaseStatus(
 ): boolean {
   if (from === to) return true;
   return stateMachine.canTransition(from, to);
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace RewardPurchaseCompat {
+  /**
+   * @deprecated Use RewardPurchase.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof RewardPurchase.create>[0],
+  ): Result<RewardPurchase, ValidationError> {
+    const effect = RewardPurchase.create(props);
+    try {
+      const purchase = Effect.runSync(effect);
+      return ok(purchase);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
+  }
 }

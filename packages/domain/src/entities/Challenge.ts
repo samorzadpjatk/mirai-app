@@ -1,9 +1,8 @@
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
+import { Effect } from "effect";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 /**
  * Challenge submission types
@@ -141,10 +140,10 @@ export class Challenge {
     autoApprove?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Challenge, ValidationError> {
+  }): Effect.Effect<Challenge, ValidationError, never> {
     // Validate tripId
     const tripId = validate.id(props.tripId, "tripId");
-    if (isError(tripId)) return err(tripId.error);
+    if (tripId.kind === "err") return Effect.fail(tripId.error);
 
     // Validate name
     const name = validate.string(props.name, "name", {
@@ -152,7 +151,7 @@ export class Challenge {
       maxLength: 200,
       trim: true,
     });
-    if (isError(name)) return err(name.error);
+    if (name.kind === "err") return Effect.fail(name.error);
 
     // Validate description (optional)
     const description = validate.string(
@@ -164,7 +163,7 @@ export class Challenge {
         trim: true,
       },
     );
-    if (isError(description)) return err(description.error);
+    if (description.kind === "err") return Effect.fail(description.error);
 
     // Validate basePoints
     const basePoints = validate.number(props.basePoints ?? 0, "basePoints", {
@@ -172,7 +171,7 @@ export class Challenge {
       min: 0,
       max: 10000,
     });
-    if (isError(basePoints)) return err(basePoints.error);
+    if (basePoints.kind === "err") return Effect.fail(basePoints.error);
 
     // Validate firstPlacePoints
     let firstPlacePoints: number | null = null;
@@ -188,7 +187,7 @@ export class Challenge {
           min: 0,
         },
       );
-      if (isError(result)) return err(result.error);
+      if (result.kind === "err") return Effect.fail(result.error);
       firstPlacePoints = result.value;
     }
 
@@ -206,7 +205,7 @@ export class Challenge {
           min: 0,
         },
       );
-      if (isError(result)) return err(result.error);
+      if (result.kind === "err") return Effect.fail(result.error);
       secondPlacePoints = result.value;
     }
 
@@ -224,16 +223,19 @@ export class Challenge {
           min: 0,
         },
       );
-      if (isError(result)) return err(result.error);
+      if (result.kind === "err") return Effect.fail(result.error);
       thirdPlacePoints = result.value;
     }
 
     // Validate date range
     if (props.startTime && props.endTime) {
       const rangeResult = validate.dateRange(props.startTime, props.endTime);
-      if (isError(rangeResult)) {
-        return err(
-          new ValidationError("endTime must be after startTime", "endTime"),
+      if (rangeResult.kind === "err") {
+        return Effect.fail(
+          new ValidationError({
+            message: "endTime must be after startTime",
+            field: "endTime",
+          }),
         );
       }
     }
@@ -242,11 +244,11 @@ export class Challenge {
     let dailyStartTime: string | null = null;
     if (props.dailyStartTime) {
       if (!DAILY_TIME_FORMAT.test(props.dailyStartTime)) {
-        return err(
-          new ValidationError(
-            "dailyStartTime must be in HH:MM format",
-            "dailyStartTime",
-          ),
+        return Effect.fail(
+          new ValidationError({
+            message: "dailyStartTime must be in HH:MM format",
+            field: "dailyStartTime",
+          }),
         );
       }
       dailyStartTime = props.dailyStartTime;
@@ -255,11 +257,11 @@ export class Challenge {
     let dailyEndTime: string | null = null;
     if (props.dailyEndTime) {
       if (!DAILY_TIME_FORMAT.test(props.dailyEndTime)) {
-        return err(
-          new ValidationError(
-            "dailyEndTime must be in HH:MM format",
-            "dailyEndTime",
-          ),
+        return Effect.fail(
+          new ValidationError({
+            message: "dailyEndTime must be in HH:MM format",
+            field: "dailyEndTime",
+          }),
         );
       }
       dailyEndTime = props.dailyEndTime;
@@ -267,7 +269,7 @@ export class Challenge {
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new Challenge(
         props.id ?? crypto.randomUUID(),
         tripId.value,
@@ -306,7 +308,7 @@ export class Challenge {
     name?: string;
     description?: string | null;
     image?: string | null;
-  }): Result<Challenge, ValidationError> {
+  }): Effect.Effect<Challenge, ValidationError, never> {
     const updates: Partial<Challenge> = {};
 
     // Validate name if provided
@@ -316,7 +318,7 @@ export class Challenge {
         maxLength: 200,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (validated.kind === "err") return Effect.fail(validated.error);
       updates.name = validated.value;
     }
 
@@ -327,7 +329,7 @@ export class Challenge {
         maxLength: 2000,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (validated.kind === "err") return Effect.fail(validated.error);
       updates.description = validated.value;
     } else if (props.description === null) {
       updates.description = null;
@@ -337,21 +339,27 @@ export class Challenge {
       updates.image = props.image;
     }
 
-    return ok(updateEntity(this, updates, Challenge));
+    return Effect.succeed(updateEntity(this, updates, Challenge));
   }
 
   /**
    * Update challenge status
-   * Returns a Result with new Challenge instance or StateTransitionError
+   * Returns an Effect with new Challenge instance or StateTransitionError
    */
   updateStatus(
     newStatus: ChallengeStatus,
-  ): Result<Challenge, StateTransitionError> {
+  ): Effect.Effect<Challenge, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, newStatus)) {
-      return err(new StateTransitionError(this.status, newStatus));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: newStatus,
+          entityType: "Challenge",
+        }),
+      );
     }
 
-    return ok(updateEntity(this, { status: newStatus }, Challenge));
+    return Effect.succeed(updateEntity(this, { status: newStatus }, Challenge));
   }
 
   /**
@@ -363,7 +371,7 @@ export class Challenge {
     firstPlacePoints?: number | null;
     secondPlacePoints?: number | null;
     thirdPlacePoints?: number | null;
-  }): Result<Challenge, ValidationError> {
+  }): Effect.Effect<Challenge, ValidationError, never> {
     const updates: Partial<Challenge> = {};
 
     // Validate basePoints if provided
@@ -373,7 +381,7 @@ export class Challenge {
         min: 0,
         max: 10000,
       });
-      if (isError(validated)) return err(validated.error);
+      if (validated.kind === "err") return Effect.fail(validated.error);
       updates.basePoints = validated.value;
     }
 
@@ -388,7 +396,7 @@ export class Challenge {
             min: 0,
           },
         );
-        if (isError(validated)) return err(validated.error);
+        if (validated.kind === "err") return Effect.fail(validated.error);
       }
       updates.firstPlacePoints = props.firstPlacePoints;
     }
@@ -404,7 +412,7 @@ export class Challenge {
             min: 0,
           },
         );
-        if (isError(validated)) return err(validated.error);
+        if (validated.kind === "err") return Effect.fail(validated.error);
       }
       updates.secondPlacePoints = props.secondPlacePoints;
     }
@@ -420,12 +428,12 @@ export class Challenge {
             min: 0,
           },
         );
-        if (isError(validated)) return err(validated.error);
+        if (validated.kind === "err") return Effect.fail(validated.error);
       }
       updates.thirdPlacePoints = props.thirdPlacePoints;
     }
 
-    return ok(updateEntity(this, updates, Challenge));
+    return Effect.succeed(updateEntity(this, updates, Challenge));
   }
 
   /**
@@ -439,7 +447,7 @@ export class Challenge {
     votingEndTime?: Date | null;
     dailyStartTime?: string | null;
     dailyEndTime?: string | null;
-  }): Result<Challenge, ValidationError> {
+  }): Effect.Effect<Challenge, ValidationError, never> {
     const updates: Partial<Challenge> = {};
 
     const newStartTime =
@@ -450,9 +458,12 @@ export class Challenge {
     // Validate time range
     if (newStartTime && newEndTime) {
       const rangeResult = validate.dateRange(newStartTime, newEndTime);
-      if (isError(rangeResult)) {
-        return err(
-          new ValidationError("endTime must be after startTime", "endTime"),
+      if (rangeResult.kind === "err") {
+        return Effect.fail(
+          new ValidationError({
+            message: "endTime must be after startTime",
+            field: "endTime",
+          }),
         );
       }
     }
@@ -467,11 +478,11 @@ export class Challenge {
     // Validate daily time format
     if (props.dailyStartTime !== undefined && props.dailyStartTime !== null) {
       if (!DAILY_TIME_FORMAT.test(props.dailyStartTime)) {
-        return err(
-          new ValidationError(
-            "dailyStartTime must be in HH:MM format",
-            "dailyStartTime",
-          ),
+        return Effect.fail(
+          new ValidationError({
+            message: "dailyStartTime must be in HH:MM format",
+            field: "dailyStartTime",
+          }),
         );
       }
       updates.dailyStartTime = props.dailyStartTime;
@@ -481,11 +492,11 @@ export class Challenge {
 
     if (props.dailyEndTime !== undefined && props.dailyEndTime !== null) {
       if (!DAILY_TIME_FORMAT.test(props.dailyEndTime)) {
-        return err(
-          new ValidationError(
-            "dailyEndTime must be in HH:MM format",
-            "dailyEndTime",
-          ),
+        return Effect.fail(
+          new ValidationError({
+            message: "dailyEndTime must be in HH:MM format",
+            field: "dailyEndTime",
+          }),
         );
       }
       updates.dailyEndTime = props.dailyEndTime;
@@ -493,7 +504,7 @@ export class Challenge {
       updates.dailyEndTime = null;
     }
 
-    return ok(updateEntity(this, updates, Challenge));
+    return Effect.succeed(updateEntity(this, updates, Challenge));
   }
 
   /**

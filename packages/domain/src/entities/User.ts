@@ -1,8 +1,9 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { timestamps, updateEntity } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * User roles in the system
@@ -47,6 +48,8 @@ export class User {
   /**
    * Factory method to create a new User
    * Validates all input data
+   *
+   * Returns Effect<User, ValidationError, never> - pure synchronous effect
    */
   static create(props: {
     id?: string;
@@ -58,10 +61,17 @@ export class User {
     createdAt?: Date;
     updatedAt?: Date;
     lastSeenOn?: Date | null;
-  }): Result<User, ValidationError> {
+  }): Effect.Effect<User, ValidationError, never> {
     // Validate authUserId
     const authUserId = validate.id(props.authUserId, "authUserId");
-    if (isError(authUserId)) return err(authUserId.error);
+    if (isError(authUserId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: authUserId.error.message,
+          field: "authUserId",
+        }),
+      );
+    }
 
     // Validate firstName (allow empty, but validate if non-empty)
     let firstName = props.firstName.trim();
@@ -71,13 +81,23 @@ export class User {
         minLength: 2,
         maxLength: 100,
       });
-      if (isError(firstNameValidated)) return err(firstNameValidated.error);
+      if (isError(firstNameValidated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: firstNameValidated.error.message,
+            field: "firstName",
+          }),
+        );
+      }
       firstName = firstNameValidated.value;
 
       // Check for digits
       if (/\d/.test(firstName)) {
-        return err(
-          new ValidationError("firstName cannot contain digits", "firstName"),
+        return Effect.fail(
+          new ValidationError({
+            message: "firstName cannot contain digits",
+            field: "firstName",
+          }),
         );
       }
     }
@@ -90,20 +110,30 @@ export class User {
         minLength: 2,
         maxLength: 100,
       });
-      if (isError(lastNameValidated)) return err(lastNameValidated.error);
+      if (isError(lastNameValidated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: lastNameValidated.error.message,
+            field: "lastName",
+          }),
+        );
+      }
       lastName = lastNameValidated.value;
 
       // Check for digits
       if (/\d/.test(lastName)) {
-        return err(
-          new ValidationError("lastName cannot contain digits", "lastName"),
+        return Effect.fail(
+          new ValidationError({
+            message: "lastName cannot contain digits",
+            field: "lastName",
+          }),
         );
       }
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new User(
         props.id ?? crypto.randomUUID(),
         authUserId.value,
@@ -125,7 +155,7 @@ export class User {
   updateName(props: {
     firstName: string;
     lastName: string;
-  }): Result<User, ValidationError> {
+  }): Effect.Effect<User, ValidationError, never> {
     // Validate firstName (allow empty, but validate if non-empty)
     let firstName = props.firstName.trim();
     if (firstName.length > 0) {
@@ -134,13 +164,23 @@ export class User {
         minLength: 2,
         maxLength: 100,
       });
-      if (isError(firstNameValidated)) return err(firstNameValidated.error);
+      if (isError(firstNameValidated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: firstNameValidated.error.message,
+            field: "firstName",
+          }),
+        );
+      }
       firstName = firstNameValidated.value;
 
       // Check for digits
       if (/\d/.test(firstName)) {
-        return err(
-          new ValidationError("firstName cannot contain digits", "firstName"),
+        return Effect.fail(
+          new ValidationError({
+            message: "firstName cannot contain digits",
+            field: "firstName",
+          }),
         );
       }
     }
@@ -153,18 +193,28 @@ export class User {
         minLength: 2,
         maxLength: 100,
       });
-      if (isError(lastNameValidated)) return err(lastNameValidated.error);
+      if (isError(lastNameValidated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: lastNameValidated.error.message,
+            field: "lastName",
+          }),
+        );
+      }
       lastName = lastNameValidated.value;
 
       // Check for digits
       if (/\d/.test(lastName)) {
-        return err(
-          new ValidationError("lastName cannot contain digits", "lastName"),
+        return Effect.fail(
+          new ValidationError({
+            message: "lastName cannot contain digits",
+            field: "lastName",
+          }),
         );
       }
     }
 
-    return ok(updateEntity(this, { firstName, lastName }, User));
+    return Effect.succeed(updateEntity(this, { firstName, lastName }, User));
   }
 
   /**
@@ -256,5 +306,24 @@ export class User {
     const first = this.firstName?.charAt(0)?.toUpperCase() ?? "";
     const last = this.lastName?.charAt(0)?.toUpperCase() ?? "";
     return first + last || "?";
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace UserCompat {
+  /**
+   * @deprecated Use User.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof User.create>[0],
+  ): Result<User, ValidationError> {
+    const effect = User.create(props);
+    try {
+      const user = Effect.runSync(effect);
+      return ok(user);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

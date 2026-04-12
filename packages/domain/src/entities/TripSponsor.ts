@@ -1,3 +1,5 @@
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
 
@@ -24,25 +26,40 @@ export class TripSponsor {
     tripId: string;
     sponsorId: string;
     createdAt?: Date;
-  }): Result<TripSponsor, string> {
+  }): Effect.Effect<TripSponsor, ValidationError, never> {
     // Validate tripId
     if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "tripId is required",
+          field: "tripId",
+        }),
+      );
     }
 
     // Validate sponsorId
     if (!props.sponsorId || props.sponsorId.trim() === "") {
-      return err("sponsorId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "sponsorId is required",
+          field: "sponsorId",
+        }),
+      );
     }
 
     // Check that tripId and sponsorId are not the same
     if (props.tripId.trim() === props.sponsorId.trim()) {
-      return err("tripId and sponsorId must be different");
+      return Effect.fail(
+        new ValidationError({
+          message: "tripId and sponsorId must be different",
+          field: "tripId",
+        }),
+      );
     }
 
     const now = new Date();
 
-    return ok(
+    return Effect.succeed(
       new TripSponsor(
         props.id ?? crypto.randomUUID(),
         props.tripId.trim(),
@@ -78,5 +95,24 @@ export class TripSponsor {
    */
   isForSponsor(sponsorId: string): boolean {
     return this.sponsorId === sponsorId;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace TripSponsorCompat {
+  /**
+   * @deprecated Use TripSponsor.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof TripSponsor.create>[0],
+  ): Result<TripSponsor, ValidationError> {
+    const effect = TripSponsor.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

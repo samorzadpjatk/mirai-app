@@ -1,9 +1,10 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 /**
  * Group status
@@ -48,6 +49,8 @@ export class Group {
   /**
    * Factory method to create a new Group
    * Validates all input data
+   *
+   * Returns Effect<Group, ValidationError, never> - pure synchronous effect
    */
   static create(props: {
     id?: string;
@@ -61,10 +64,17 @@ export class Group {
     status?: GroupStatus;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Group, ValidationError> {
+  }): Effect.Effect<Group, ValidationError, never> {
     // Validate tripId
     const tripId = validate.id(props.tripId, "tripId");
-    if (isError(tripId)) return err(tripId.error);
+    if (isError(tripId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: tripId.error.message,
+          field: "tripId",
+        }),
+      );
+    }
 
     // Validate name
     const name = validate.string(props.name, "name", {
@@ -72,11 +82,25 @@ export class Group {
       maxLength: 100,
       trim: true,
     });
-    if (isError(name)) return err(name.error);
+    if (isError(name)) {
+      return Effect.fail(
+        new ValidationError({
+          message: name.error.message,
+          field: "name",
+        }),
+      );
+    }
 
     // Validate organizerId
     const organizerId = validate.id(props.organizerId, "organizerId");
-    if (isError(organizerId)) return err(organizerId.error);
+    if (isError(organizerId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: organizerId.error.message,
+          field: "organizerId",
+        }),
+      );
+    }
 
     // Validate code
     const code = validate.string(props.code, "code", {
@@ -84,14 +108,28 @@ export class Group {
       maxLength: 50,
       trim: true,
     });
-    if (isError(code)) return err(code.error);
+    if (isError(code)) {
+      return Effect.fail(
+        new ValidationError({
+          message: code.error.message,
+          field: "code",
+        }),
+      );
+    }
 
     // Validate coins
     const coins = validate.number(props.coins ?? 0, "coins", {
       required: true,
       min: 0,
     });
-    if (isError(coins)) return err(coins.error);
+    if (isError(coins)) {
+      return Effect.fail(
+        new ValidationError({
+          message: coins.error.message,
+          field: "coins",
+        }),
+      );
+    }
 
     // Validate description (optional)
     const description = validate.string(
@@ -103,11 +141,18 @@ export class Group {
         trim: true,
       },
     );
-    if (isError(description)) return err(description.error);
+    if (isError(description)) {
+      return Effect.fail(
+        new ValidationError({
+          message: description.error.message,
+          field: "description",
+        }),
+      );
+    }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new Group(
         props.id ?? crypto.randomUUID(),
         tripId.value,
@@ -133,10 +178,16 @@ export class Group {
     name?: string;
     description?: string | null;
     image?: string | null;
-  }): Result<Group, ValidationError | StateTransitionError> {
+  }): Effect.Effect<Group, ValidationError | StateTransitionError, never> {
     // Cannot update deleted group
     if (this.isDeleted()) {
-      return err(new StateTransitionError(this.status, this.status));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: this.status,
+          entityType: "Group",
+        }),
+      );
     }
 
     const updates: Partial<Group> = {};
@@ -148,7 +199,14 @@ export class Group {
         maxLength: 100,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "name",
+          }),
+        );
+      }
       updates.name = validated.value;
     }
 
@@ -159,7 +217,14 @@ export class Group {
         maxLength: 500,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "description",
+          }),
+        );
+      }
       updates.description = validated.value;
     } else if (props.description === null) {
       updates.description = null;
@@ -169,32 +234,52 @@ export class Group {
       updates.image = props.image;
     }
 
-    return ok(updateEntity(this, updates, Group));
+    return Effect.succeed(updateEntity(this, updates, Group));
   }
 
   /**
    * Change group organizer
-   * Returns a Result with new Group instance or ValidationError
+   * Returns an Effect with new Group instance or ValidationError
    */
-  changeOrganizer(newOrganizerId: string): Result<Group, ValidationError> {
+  changeOrganizer(
+    newOrganizerId: string,
+  ): Effect.Effect<Group, ValidationError, never> {
     const organizerId = validate.id(newOrganizerId, "organizerId");
-    if (isError(organizerId)) return err(organizerId.error);
+    if (isError(organizerId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: organizerId.error.message,
+          field: "organizerId",
+        }),
+      );
+    }
 
-    return ok(updateEntity(this, { organizerId: organizerId.value }, Group));
+    return Effect.succeed(
+      updateEntity(this, { organizerId: organizerId.value }, Group),
+    );
   }
 
   /**
    * Add coins to group balance
-   * Returns a Result with new Group instance or ValidationError
+   * Returns an Effect with new Group instance or ValidationError
    */
-  addCoins(amount: number): Result<Group, ValidationError> {
+  addCoins(amount: number): Effect.Effect<Group, ValidationError, never> {
     const validated = validate.number(amount, "amount", {
       required: true,
       min: 0,
     });
-    if (isError(validated)) return err(validated.error);
+    if (isError(validated)) {
+      return Effect.fail(
+        new ValidationError({
+          message: validated.error.message,
+          field: "amount",
+        }),
+      );
+    }
 
-    return ok(updateEntity(this, { coins: this.coins + amount }, Group));
+    return Effect.succeed(
+      updateEntity(this, { coins: this.coins + amount }, Group),
+    );
   }
 
   /**
@@ -202,35 +287,52 @@ export class Group {
    * Returns a new Group instance (immutable)
    * Returns error if insufficient balance
    */
-  spendCoins(amount: number): Result<Group, ValidationError> {
+  spendCoins(amount: number): Effect.Effect<Group, ValidationError, never> {
     const validated = validate.number(amount, "amount", {
       required: true,
       min: 0,
     });
-    if (isError(validated)) return err(validated.error);
-
-    if (amount > this.coins) {
-      return err(
-        new ValidationError(
-          `Insufficient balance: ${this.coins} coins available, ${amount} required`,
-          "coins",
-        ),
+    if (isError(validated)) {
+      return Effect.fail(
+        new ValidationError({
+          message: validated.error.message,
+          field: "amount",
+        }),
       );
     }
 
-    return ok(updateEntity(this, { coins: this.coins - amount }, Group));
+    if (amount > this.coins) {
+      return Effect.fail(
+        new ValidationError({
+          message: `Insufficient balance: ${this.coins} coins available, ${amount} required`,
+          field: "coins",
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      updateEntity(this, { coins: this.coins - amount }, Group),
+    );
   }
 
   /**
    * Mark group as deleted (soft delete)
-   * Returns a Result with new Group instance or StateTransitionError
+   * Returns an Effect with new Group instance or StateTransitionError
    */
-  markAsDeleted(): Result<Group, StateTransitionError> {
+  markAsDeleted(): Effect.Effect<Group, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, GroupStatus.DELETED)) {
-      return err(new StateTransitionError(this.status, GroupStatus.DELETED));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: GroupStatus.DELETED,
+          entityType: "Group",
+        }),
+      );
     }
 
-    return ok(updateEntity(this, { status: GroupStatus.DELETED }, Group));
+    return Effect.succeed(
+      updateEntity(this, { status: GroupStatus.DELETED }, Group),
+    );
   }
 
   /**
@@ -266,5 +368,24 @@ export class Group {
    */
   getSummary(): string {
     return `${this.name} (${this.code}) - ${this.coins} coins`;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace GroupCompat {
+  /**
+   * @deprecated Use Group.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof Group.create>[0],
+  ): Result<Group, ValidationError> {
+    const effect = Group.create(props);
+    try {
+      const group = Effect.runSync(effect);
+      return ok(group);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

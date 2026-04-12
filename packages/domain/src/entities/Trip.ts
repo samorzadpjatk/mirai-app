@@ -1,9 +1,10 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 /**
  * Trip status
@@ -50,6 +51,8 @@ export class Trip {
   /**
    * Factory method to create a new Trip
    * Validates all input data
+   *
+   * Returns Effect<Trip, ValidationError, never> - pure synchronous effect
    */
   static create(props: {
     id?: string;
@@ -61,14 +64,21 @@ export class Trip {
     status?: TripStatus;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Trip, ValidationError> {
+  }): Effect.Effect<Trip, ValidationError, never> {
     // Validate name
     const name = validate.string(props.name, "name", {
       required: true,
       maxLength: 200,
       trim: true,
     });
-    if (isError(name)) return err(name.error);
+    if (isError(name)) {
+      return Effect.fail(
+        new ValidationError({
+          message: name.error.message,
+          field: "name",
+        }),
+      );
+    }
 
     // Validate description (optional)
     const description = validate.string(
@@ -80,19 +90,29 @@ export class Trip {
         trim: true,
       },
     );
-    if (isError(description)) return err(description.error);
+    if (isError(description)) {
+      return Effect.fail(
+        new ValidationError({
+          message: description.error.message,
+          field: "description",
+        }),
+      );
+    }
 
     // Validate date range
     const dateRangeResult = validate.dateRange(props.startDate, props.endDate);
     if (isError(dateRangeResult)) {
-      return err(
-        new ValidationError("endDate must be after startDate", "endDate"),
+      return Effect.fail(
+        new ValidationError({
+          message: "endDate must be after startDate",
+          field: "endDate",
+        }),
       );
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new Trip(
         props.id ?? crypto.randomUUID(),
         name.value,
@@ -115,10 +135,16 @@ export class Trip {
     name?: string;
     description?: string | null;
     backgroundImagePath?: string | null;
-  }): Result<Trip, ValidationError | StateTransitionError> {
+  }): Effect.Effect<Trip, ValidationError | StateTransitionError, never> {
     // Cannot update completed or cancelled trips
     if (this.isTerminal()) {
-      return err(new StateTransitionError(this.status, this.status));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: this.status,
+          entityType: "Trip",
+        }),
+      );
     }
 
     const updates: Partial<Trip> = {};
@@ -130,7 +156,14 @@ export class Trip {
         maxLength: 200,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "name",
+          }),
+        );
+      }
       updates.name = validated.value;
     }
 
@@ -142,7 +175,7 @@ export class Trip {
       updates.backgroundImagePath = props.backgroundImagePath;
     }
 
-    return ok(updateEntity(this, updates, Trip));
+    return Effect.succeed(updateEntity(this, updates, Trip));
   }
 
   /**
@@ -152,10 +185,16 @@ export class Trip {
   updateDates(props: {
     startDate?: Date;
     endDate?: Date;
-  }): Result<Trip, ValidationError | StateTransitionError> {
+  }): Effect.Effect<Trip, ValidationError | StateTransitionError, never> {
     // Cannot update completed or cancelled trips
     if (this.isTerminal()) {
-      return err(new StateTransitionError(this.status, this.status));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: this.status,
+          entityType: "Trip",
+        }),
+      );
     }
 
     const newStartDate = props.startDate ?? this.startDate;
@@ -164,8 +203,11 @@ export class Trip {
     // Validate date range
     const dateRangeResult = validate.dateRange(newStartDate, newEndDate);
     if (isError(dateRangeResult)) {
-      return err(
-        new ValidationError("endDate must be after startDate", "endDate"),
+      return Effect.fail(
+        new ValidationError({
+          message: "endDate must be after startDate",
+          field: "endDate",
+        }),
       );
     }
 
@@ -173,43 +215,67 @@ export class Trip {
     if (props.startDate !== undefined) updates.startDate = props.startDate;
     if (props.endDate !== undefined) updates.endDate = props.endDate;
 
-    return ok(updateEntity(this, updates, Trip));
+    return Effect.succeed(updateEntity(this, updates, Trip));
   }
 
   /**
    * Start the trip
-   * Returns a Result with new Trip instance or StateTransitionError
+   * Returns an Effect with new Trip instance or StateTransitionError
    */
-  start(): Result<Trip, StateTransitionError> {
+  start(): Effect.Effect<Trip, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, TripStatus.ACTIVE)) {
-      return err(new StateTransitionError(this.status, TripStatus.ACTIVE));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: TripStatus.ACTIVE,
+          entityType: "Trip",
+        }),
+      );
     }
 
-    return ok(updateEntity(this, { status: TripStatus.ACTIVE }, Trip));
+    return Effect.succeed(
+      updateEntity(this, { status: TripStatus.ACTIVE }, Trip),
+    );
   }
 
   /**
    * Complete the trip
-   * Returns a Result with new Trip instance or StateTransitionError
+   * Returns an Effect with new Trip instance or StateTransitionError
    */
-  complete(): Result<Trip, StateTransitionError> {
+  complete(): Effect.Effect<Trip, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, TripStatus.COMPLETED)) {
-      return err(new StateTransitionError(this.status, TripStatus.COMPLETED));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: TripStatus.COMPLETED,
+          entityType: "Trip",
+        }),
+      );
     }
 
-    return ok(updateEntity(this, { status: TripStatus.COMPLETED }, Trip));
+    return Effect.succeed(
+      updateEntity(this, { status: TripStatus.COMPLETED }, Trip),
+    );
   }
 
   /**
    * Cancel the trip
-   * Returns a Result with new Trip instance or StateTransitionError
+   * Returns an Effect with new Trip instance or StateTransitionError
    */
-  cancel(): Result<Trip, StateTransitionError> {
+  cancel(): Effect.Effect<Trip, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, TripStatus.CANCELLED)) {
-      return err(new StateTransitionError(this.status, TripStatus.CANCELLED));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: TripStatus.CANCELLED,
+          entityType: "Trip",
+        }),
+      );
     }
 
-    return ok(updateEntity(this, { status: TripStatus.CANCELLED }, Trip));
+    return Effect.succeed(
+      updateEntity(this, { status: TripStatus.CANCELLED }, Trip),
+    );
   }
 
   /**
@@ -297,13 +363,40 @@ export class Trip {
 
   /**
    * Update the trip status with validation
-   * Returns a Result with new Trip instance or StateTransitionError
+   * Returns an Effect with new Trip instance or StateTransitionError
    */
-  updateStatus(newStatus: TripStatus): Result<Trip, StateTransitionError> {
+  updateStatus(
+    newStatus: TripStatus,
+  ): Effect.Effect<Trip, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, newStatus)) {
-      return err(new StateTransitionError(this.status, newStatus));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: newStatus,
+          entityType: "Trip",
+        }),
+      );
     }
 
-    return ok(updateEntity(this, { status: newStatus }, Trip));
+    return Effect.succeed(updateEntity(this, { status: newStatus }, Trip));
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace TripCompat {
+  /**
+   * @deprecated Use Trip.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof Trip.create>[0],
+  ): Result<Trip, ValidationError> {
+    const effect = Trip.create(props);
+    try {
+      const trip = Effect.runSync(effect);
+      return ok(trip);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

@@ -1,9 +1,10 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import type { SponsorId } from "../value-objects/SponsorId";
 import { validate } from "../utils/entity-validation";
 import { timestamps, updateEntity } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * Sponsor entity - represents a sponsor with logo and contact information
@@ -28,6 +29,8 @@ export class Sponsor {
   /**
    * Factory method to create a new Sponsor
    * Validates all input data
+   *
+   * Returns Effect<Sponsor, ValidationError, never>
    */
   static create(props: {
     id?: SponsorId;
@@ -40,14 +43,21 @@ export class Sponsor {
     isActive?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Sponsor, ValidationError> {
+  }): Effect.Effect<Sponsor, ValidationError, never> {
     // Validate name
     const nameResult = validate.string(props.name, "name", {
       required: true,
       maxLength: 200,
       trim: true,
     });
-    if (isError(nameResult)) return err(nameResult.error);
+    if (isError(nameResult)) {
+      return Effect.fail(
+        new ValidationError({
+          message: nameResult.error.message,
+          field: "name",
+        }),
+      );
+    }
 
     // Validate description
     const descriptionResult = validate.string(
@@ -59,14 +69,28 @@ export class Sponsor {
         trim: true,
       },
     );
-    if (isError(descriptionResult)) return err(descriptionResult.error);
+    if (isError(descriptionResult)) {
+      return Effect.fail(
+        new ValidationError({
+          message: descriptionResult.error.message,
+          field: "description",
+        }),
+      );
+    }
 
     // Validate logoPath
     const logoPathResult = validate.string(props.logoPath, "logoPath", {
       required: true,
       trim: true,
     });
-    if (isError(logoPathResult)) return err(logoPathResult.error);
+    if (isError(logoPathResult)) {
+      return Effect.fail(
+        new ValidationError({
+          message: logoPathResult.error.message,
+          field: "logoPath",
+        }),
+      );
+    }
 
     // Validate height (only if provided and not null)
     let height: number | null = null;
@@ -74,7 +98,14 @@ export class Sponsor {
       const heightResult = validate.number(props.height, "height", {
         min: 0,
       });
-      if (isError(heightResult)) return err(heightResult.error);
+      if (isError(heightResult)) {
+        return Effect.fail(
+          new ValidationError({
+            message: heightResult.error.message,
+            field: "height",
+          }),
+        );
+      }
       height = heightResult.value;
     }
 
@@ -84,7 +115,14 @@ export class Sponsor {
       const offsetXResult = validate.number(props.offsetX, "offsetX", {
         min: 0,
       });
-      if (isError(offsetXResult)) return err(offsetXResult.error);
+      if (isError(offsetXResult)) {
+        return Effect.fail(
+          new ValidationError({
+            message: offsetXResult.error.message,
+            field: "offsetX",
+          }),
+        );
+      }
       offsetX = offsetXResult.value;
     }
 
@@ -94,7 +132,14 @@ export class Sponsor {
       const offsetYResult = validate.number(props.offsetY, "offsetY", {
         min: 0,
       });
-      if (isError(offsetYResult)) return err(offsetYResult.error);
+      if (isError(offsetYResult)) {
+        return Effect.fail(
+          new ValidationError({
+            message: offsetYResult.error.message,
+            field: "offsetY",
+          }),
+        );
+      }
       offsetY = offsetYResult.value;
     }
 
@@ -103,7 +148,7 @@ export class Sponsor {
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new Sponsor(
         id,
         nameResult.value,
@@ -122,6 +167,8 @@ export class Sponsor {
   /**
    * Update sponsor properties
    * Returns a new Sponsor instance (immutable)
+   *
+   * Returns Effect<Sponsor, ValidationError, never>
    */
   update(props: {
     name?: string;
@@ -131,7 +178,7 @@ export class Sponsor {
     offsetX?: number | null;
     offsetY?: number | null;
     isActive?: boolean;
-  }): Result<Sponsor, ValidationError> {
+  }): Effect.Effect<Sponsor, ValidationError, never> {
     const updates: Partial<Sponsor> = {};
 
     // Validate name if provided
@@ -141,7 +188,14 @@ export class Sponsor {
         maxLength: 200,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "name",
+          }),
+        );
+      }
       updates.name = validated.value;
     }
 
@@ -152,7 +206,14 @@ export class Sponsor {
         maxLength: 2000,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "description",
+          }),
+        );
+      }
       updates.description = validated.value;
     }
 
@@ -162,7 +223,14 @@ export class Sponsor {
         required: true,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "logoPath",
+          }),
+        );
+      }
       updates.logoPath = validated.value;
     }
 
@@ -172,7 +240,14 @@ export class Sponsor {
         const validated = validate.number(props.height, "height", {
           min: 0,
         });
-        if (isError(validated)) return err(validated.error);
+        if (isError(validated)) {
+          return Effect.fail(
+            new ValidationError({
+              message: validated.error.message,
+              field: "height",
+            }),
+          );
+        }
       }
       updates.height = props.height;
     }
@@ -183,7 +258,14 @@ export class Sponsor {
         const validated = validate.number(props.offsetX, "offsetX", {
           min: 0,
         });
-        if (isError(validated)) return err(validated.error);
+        if (isError(validated)) {
+          return Effect.fail(
+            new ValidationError({
+              message: validated.error.message,
+              field: "offsetX",
+            }),
+          );
+        }
       }
       updates.offsetX = props.offsetX;
     }
@@ -194,7 +276,14 @@ export class Sponsor {
         const validated = validate.number(props.offsetY, "offsetY", {
           min: 0,
         });
-        if (isError(validated)) return err(validated.error);
+        if (isError(validated)) {
+          return Effect.fail(
+            new ValidationError({
+              message: validated.error.message,
+              field: "offsetY",
+            }),
+          );
+        }
       }
       updates.offsetY = props.offsetY;
     }
@@ -203,7 +292,7 @@ export class Sponsor {
       updates.isActive = props.isActive;
     }
 
-    return ok(updateEntity(this, updates, Sponsor));
+    return Effect.succeed(updateEntity(this, updates, Sponsor));
   }
 
   /**
@@ -241,5 +330,24 @@ export class Sponsor {
    */
   isCurrentlyActive(): boolean {
     return this.isActive;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace SponsorCompat {
+  /**
+   * @deprecated Use Sponsor.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof Sponsor.create>[0],
+  ): Result<Sponsor, ValidationError> {
+    const effect = Sponsor.create(props);
+    try {
+      const sponsor = Effect.runSync(effect);
+      return ok(sponsor);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

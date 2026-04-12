@@ -1,156 +1,153 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import { CoinTransaction } from "./CoinTransaction";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 describe("[UNIT] CoinTransaction Entity", () => {
   describe("CoinTransaction.create", () => {
     it("should create with valid positive amount", () => {
-      const result = CoinTransaction.create({
-        groupId: "group-123",
-        amount: 100,
-        adminId: "admin-456",
-      });
+      const transaction = Effect.runSync(
+        CoinTransaction.create({
+          groupId: "group-123",
+          amount: 100,
+          adminId: "admin-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBeDefined();
-        expect(result.value.groupId).toBe("group-123");
-        expect(result.value.amount).toBe(100);
-        expect(result.value.isCredit()).toBe(true);
-        expect(result.value.isDebit()).toBe(false);
-        expect(result.value.getAbsoluteAmount()).toBe(100);
-      }
+      expect(transaction.id).toBeDefined();
+      expect(transaction.groupId).toBe("group-123");
+      expect(transaction.amount).toBe(100);
+      expect(transaction.isCredit()).toBe(true);
+      expect(transaction.isDebit()).toBe(false);
+      expect(transaction.getAbsoluteAmount()).toBe(100);
     });
 
     it("should create with valid negative amount", () => {
-      const result = CoinTransaction.create({
-        groupId: "group-123",
-        amount: -50,
-        adminId: "admin-456",
-      });
+      const transaction = Effect.runSync(
+        CoinTransaction.create({
+          groupId: "group-123",
+          amount: -50,
+          adminId: "admin-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.amount).toBe(-50);
-        expect(result.value.isCredit()).toBe(false);
-        expect(result.value.isDebit()).toBe(true);
-        expect(result.value.getAbsoluteAmount()).toBe(50);
-      }
+      expect(transaction.amount).toBe(-50);
+      expect(transaction.isCredit()).toBe(false);
+      expect(transaction.isDebit()).toBe(true);
+      expect(transaction.getAbsoluteAmount()).toBe(50);
     });
 
     it("should create with reason", () => {
-      const result = CoinTransaction.create({
-        groupId: "group-123",
-        amount: 100,
-        reason: "Challenge completion bonus",
-        adminId: "admin-456",
-      });
+      const transaction = Effect.runSync(
+        CoinTransaction.create({
+          groupId: "group-123",
+          amount: 100,
+          reason: "Challenge completion bonus",
+          adminId: "admin-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.reason).toBe("Challenge completion bonus");
-        expect(result.value.hasReason()).toBe(true);
-      }
+      expect(transaction.reason).toBe("Challenge completion bonus");
+      expect(transaction.hasReason()).toBe(true);
     });
 
     it("should reject zero amount", () => {
-      const result = CoinTransaction.create({
+      const effect = CoinTransaction.create({
         groupId: "group-123",
         amount: 0,
         adminId: "admin-456",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("amount");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("amount");
       }
     });
 
     it("should reject empty groupId", () => {
-      const result = CoinTransaction.create({
+      const effect = CoinTransaction.create({
         groupId: "",
         amount: 100,
         adminId: "admin-456",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("groupId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("groupId");
       }
     });
 
     it("should reject empty adminId", () => {
-      const result = CoinTransaction.create({
+      const effect = CoinTransaction.create({
         groupId: "group-123",
         amount: 100,
         adminId: "",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("adminId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("adminId");
       }
     });
   });
 
   describe("CoinTransaction.getFormattedAmount", () => {
     it("should format positive amount", () => {
-      const result = CoinTransaction.create({
-        groupId: "group-123",
-        amount: 100,
-        adminId: "admin-456",
-      });
+      const transaction = Effect.runSync(
+        CoinTransaction.create({
+          groupId: "group-123",
+          amount: 100,
+          adminId: "admin-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.getFormattedAmount()).toBe("+100 coins");
-      }
+      expect(transaction.getFormattedAmount()).toBe("+100 coins");
     });
 
     it("should format negative amount", () => {
-      const result = CoinTransaction.create({
-        groupId: "group-123",
-        amount: -50,
-        adminId: "admin-456",
-      });
+      const transaction = Effect.runSync(
+        CoinTransaction.create({
+          groupId: "group-123",
+          amount: -50,
+          adminId: "admin-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.getFormattedAmount()).toBe("-50 coins");
-      }
+      expect(transaction.getFormattedAmount()).toBe("-50 coins");
     });
   });
 
   describe("CoinTransaction.isForGroup / isProcessedBy", () => {
     it("should check if for specific group", () => {
-      const result = CoinTransaction.create({
-        groupId: "group-123",
-        amount: 100,
-        adminId: "admin-456",
-      });
+      const transaction = Effect.runSync(
+        CoinTransaction.create({
+          groupId: "group-123",
+          amount: 100,
+          adminId: "admin-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isForGroup("group-123")).toBe(true);
-        expect(result.value.isForGroup("other-group")).toBe(false);
-      }
+      expect(transaction.isForGroup("group-123")).toBe(true);
+      expect(transaction.isForGroup("other-group")).toBe(false);
     });
 
     it("should check if processed by specific admin", () => {
-      const result = CoinTransaction.create({
-        groupId: "group-123",
-        amount: 100,
-        adminId: "admin-456",
-      });
+      const transaction = Effect.runSync(
+        CoinTransaction.create({
+          groupId: "group-123",
+          amount: 100,
+          adminId: "admin-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isProcessedBy("admin-456")).toBe(true);
-        expect(result.value.isProcessedBy("other-admin")).toBe(false);
-      }
+      expect(transaction.isProcessedBy("admin-456")).toBe(true);
+      expect(transaction.isProcessedBy("other-admin")).toBe(false);
     });
   });
 });

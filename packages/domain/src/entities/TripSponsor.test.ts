@@ -1,117 +1,120 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import { TripSponsor } from "./TripSponsor";
+import { ValidationError } from "../errors/effect-errors";
 
 describe("[UNIT] TripSponsor Entity", () => {
   describe("TripSponsor.create", () => {
     it("should create trip sponsor with valid data", () => {
-      const result = TripSponsor.create({
-        tripId: "trip-123",
-        sponsorId: "sponsor-456",
-      });
+      const sponsor = Effect.runSync(
+        TripSponsor.create({
+          tripId: "trip-123",
+          sponsorId: "sponsor-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBeDefined();
-        expect(result.value.tripId).toBe("trip-123");
-        expect(result.value.sponsorId).toBe("sponsor-456");
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-      }
+      expect(sponsor.id).toBeDefined();
+      expect(sponsor.tripId).toBe("trip-123");
+      expect(sponsor.sponsorId).toBe("sponsor-456");
+      expect(sponsor.createdAt).toBeInstanceOf(Date);
     });
 
     it("should reject empty tripId", () => {
-      const result = TripSponsor.create({
+      const effect = TripSponsor.create({
         tripId: "",
         sponsorId: "sponsor-456",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("tripId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("tripId");
       }
     });
 
     it("should reject empty sponsorId", () => {
-      const result = TripSponsor.create({
+      const effect = TripSponsor.create({
         tripId: "trip-123",
         sponsorId: "",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("sponsorId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("sponsorId");
       }
     });
 
     it("should reject same tripId and sponsorId", () => {
-      const result = TripSponsor.create({
+      const effect = TripSponsor.create({
         tripId: "same-id",
         sponsorId: "same-id",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("different");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.message).toContain("different");
       }
     });
   });
 
   describe("TripSponsor.getCompositeId", () => {
     it("should return composite identifier", () => {
-      const result = TripSponsor.create({
-        tripId: "trip-123",
-        sponsorId: "sponsor-456",
-      });
+      const sponsor = Effect.runSync(
+        TripSponsor.create({
+          tripId: "trip-123",
+          sponsorId: "sponsor-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.getCompositeId()).toBe("trip-123:sponsor-456");
-      }
+      expect(sponsor.getCompositeId()).toBe("trip-123:sponsor-456");
     });
   });
 
   describe("TripSponsor.matches", () => {
     it("should match correct trip and sponsor", () => {
-      const result = TripSponsor.create({
-        tripId: "trip-123",
-        sponsorId: "sponsor-456",
-      });
+      const sponsor = Effect.runSync(
+        TripSponsor.create({
+          tripId: "trip-123",
+          sponsorId: "sponsor-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.matches("trip-123", "sponsor-456")).toBe(true);
-        expect(result.value.matches("trip-123", "other")).toBe(false);
-        expect(result.value.matches("other", "sponsor-456")).toBe(false);
-      }
+      expect(sponsor.matches("trip-123", "sponsor-456")).toBe(true);
+      expect(sponsor.matches("trip-123", "other")).toBe(false);
+      expect(sponsor.matches("other", "sponsor-456")).toBe(false);
     });
   });
 
   describe("TripSponsor.isForTrip", () => {
     it("should check if for specific trip", () => {
-      const result = TripSponsor.create({
-        tripId: "trip-123",
-        sponsorId: "sponsor-456",
-      });
+      const sponsor = Effect.runSync(
+        TripSponsor.create({
+          tripId: "trip-123",
+          sponsorId: "sponsor-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isForTrip("trip-123")).toBe(true);
-        expect(result.value.isForTrip("other-trip")).toBe(false);
-      }
+      expect(sponsor.isForTrip("trip-123")).toBe(true);
+      expect(sponsor.isForTrip("other-trip")).toBe(false);
     });
   });
 
   describe("TripSponsor.isForSponsor", () => {
     it("should check if for specific sponsor", () => {
-      const result = TripSponsor.create({
-        tripId: "trip-123",
-        sponsorId: "sponsor-456",
-      });
+      const sponsor = Effect.runSync(
+        TripSponsor.create({
+          tripId: "trip-123",
+          sponsorId: "sponsor-456",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isForSponsor("sponsor-456")).toBe(true);
-        expect(result.value.isForSponsor("other-sponsor")).toBe(false);
-      }
+      expect(sponsor.isForSponsor("sponsor-456")).toBe(true);
+      expect(sponsor.isForSponsor("other-sponsor")).toBe(false);
     });
   });
 });

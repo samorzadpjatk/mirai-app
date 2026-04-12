@@ -1,3 +1,5 @@
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
 
@@ -54,21 +56,36 @@ export class TripParticipant {
     role?: TripParticipantRole;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<TripParticipant, string> {
+  }): Effect.Effect<TripParticipant, ValidationError, never> {
     // Validate userId
     if (!props.userId || props.userId.trim() === "") {
-      return err("userId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "userId is required",
+          field: "general",
+        }),
+      );
     }
 
     // Validate tripId
     if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "tripId is required",
+          field: "general",
+        }),
+      );
     }
 
     // Validate role
     const role = props.role ?? TripParticipantRole.MEMBER;
     if (!Object.values(TripParticipantRole).includes(role)) {
-      return err(`Invalid role: ${role}. Must be MEMBER or LEADER`);
+      return Effect.fail(
+        new ValidationError({
+          message: `Invalid role: ${role}. Must be MEMBER or LEADER`,
+          field: "role",
+        }),
+      );
     }
 
     // Validate wristNumber if provided
@@ -76,8 +93,11 @@ export class TripParticipant {
       props.wristNumber &&
       props.wristNumber.length > VALIDATION_RULES.wristNumber.maxLength
     ) {
-      return err(
-        `wristNumber must be at most ${VALIDATION_RULES.wristNumber.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `wristNumber must be at most ${VALIDATION_RULES.wristNumber.maxLength} characters`,
+          field: "wristNumber",
+        }),
       );
     }
 
@@ -86,14 +106,17 @@ export class TripParticipant {
       props.houseNumber &&
       props.houseNumber.length > VALIDATION_RULES.houseNumber.maxLength
     ) {
-      return err(
-        `houseNumber must be at most ${VALIDATION_RULES.houseNumber.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `houseNumber must be at most ${VALIDATION_RULES.houseNumber.maxLength} characters`,
+          field: "houseNumber",
+        }),
       );
     }
 
     const now = new Date();
 
-    return ok(
+    return Effect.succeed(
       new TripParticipant(
         props.id ?? crypto.randomUUID(),
         props.userId.trim(),
@@ -112,12 +135,19 @@ export class TripParticipant {
    * Assign participant to a group
    * Returns a new TripParticipant instance (immutable)
    */
-  assignToGroup(groupId: string): Result<TripParticipant, string> {
+  assignToGroup(
+    groupId: string,
+  ): Effect.Effect<TripParticipant, ValidationError, never> {
     if (!groupId || groupId.trim() === "") {
-      return err("groupId cannot be empty");
+      return Effect.fail(
+        new ValidationError({
+          message: "groupId cannot be empty",
+          field: "general",
+        }),
+      );
     }
 
-    return ok(
+    return Effect.succeed(
       new TripParticipant(
         this.id,
         this.userId,
@@ -174,17 +204,20 @@ export class TripParticipant {
    */
   assignWristNumber(
     wristNumber: string | null,
-  ): Result<TripParticipant, string> {
+  ): Effect.Effect<TripParticipant, ValidationError, never> {
     if (
       wristNumber !== null &&
       wristNumber.length > VALIDATION_RULES.wristNumber.maxLength
     ) {
-      return err(
-        `wristNumber must be at most ${VALIDATION_RULES.wristNumber.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `wristNumber must be at most ${VALIDATION_RULES.wristNumber.maxLength} characters`,
+          field: "wristNumber",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       new TripParticipant(
         this.id,
         this.userId,
@@ -205,17 +238,20 @@ export class TripParticipant {
    */
   assignHouseNumber(
     houseNumber: string | null,
-  ): Result<TripParticipant, string> {
+  ): Effect.Effect<TripParticipant, ValidationError, never> {
     if (
       houseNumber !== null &&
       houseNumber.length > VALIDATION_RULES.houseNumber.maxLength
     ) {
-      return err(
-        `houseNumber must be at most ${VALIDATION_RULES.houseNumber.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `houseNumber must be at most ${VALIDATION_RULES.houseNumber.maxLength} characters`,
+          field: "houseNumber",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       new TripParticipant(
         this.id,
         this.userId,
@@ -277,5 +313,24 @@ export class TripParticipant {
    */
   demoteToMember(): TripParticipant {
     return this.updateRole(TripParticipantRole.MEMBER);
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace TripParticipantCompat {
+  /**
+   * @deprecated Use TripParticipant.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof TripParticipant.create>[0],
+  ): Result<TripParticipant, ValidationError> {
+    const effect = TripParticipant.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

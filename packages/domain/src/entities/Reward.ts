@@ -1,6 +1,9 @@
-import { type Result, ok, err } from "../utils/result";
+import { Effect } from "effect";
+import type { Result } from "../utils/result";
+import { ok, err } from "../utils/result";
 import type { RewardId } from "../value-objects/RewardId";
 import { CoinAmount } from "../value-objects/CoinAmount";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * Reward Purchase Status
@@ -85,6 +88,8 @@ export class Reward {
   /**
    * Factory method to create a new Reward
    * Validates all input data
+   *
+   * Returns Effect<Reward, ValidationError, never>
    */
   static create(props: {
     id?: RewardId;
@@ -98,87 +103,124 @@ export class Reward {
     createdById: string;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Reward, string> {
-    // Validate name
-    const nameValidation = validateName(props.name);
-    if (nameValidation.kind === "err") {
-      return err(nameValidation.error);
-    }
-
-    // Validate description
-    const descriptionValidation = validateDescription(props.description);
-    if (descriptionValidation.kind === "err") {
-      return err(descriptionValidation.error);
-    }
-
-    // Validate quantity
-    if (
-      !Number.isInteger(props.availableQuantity) ||
-      props.availableQuantity < VALIDATION_RULES.quantity.min ||
-      props.availableQuantity > VALIDATION_RULES.quantity.max
-    ) {
-      return err(
-        `Quantity must be an integer between ${VALIDATION_RULES.quantity.min} and ${VALIDATION_RULES.quantity.max}`,
-      );
-    }
-
-    // Validate coin cost percentage
-    if (
-      !Number.isInteger(props.coinCostPercentage) ||
-      props.coinCostPercentage < 1 ||
-      props.coinCostPercentage > 100
-    ) {
-      return err("Coin cost percentage must be between 1 and 100");
-    }
-
-    const coinCostResult = CoinAmount.create(props.coinCostPercentage);
-    if (coinCostResult.kind === "err") {
-      return err(coinCostResult.error);
-    }
-
-    // Validate tripId
-    if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
-    }
-
-    // Validate createdById
-    if (!props.createdById || props.createdById.trim() === "") {
-      return err("createdById is required");
-    }
-
-    // Validate images
-    const images = props.images ?? [];
-    if (images.length > VALIDATION_RULES.images.maxCount) {
-      return err(`Maximum ${VALIDATION_RULES.images.maxCount} images allowed`);
-    }
-    for (const image of images) {
-      if (image.length > VALIDATION_RULES.images.maxUrlLength) {
-        return err("Image URL too long");
+  }): Effect.Effect<Reward, ValidationError, never> {
+    return Effect.gen(function* () {
+      // Validate name
+      const nameValidation = validateName(props.name);
+      if (nameValidation.kind === "err") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: nameValidation.error,
+            field: "name",
+          }),
+        );
       }
-    }
 
-    const now = new Date();
+      // Validate description
+      const descriptionValidation = validateDescription(props.description);
+      if (descriptionValidation.kind === "err") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: descriptionValidation.error,
+            field: "description",
+          }),
+        );
+      }
 
-    return ok(
-      new Reward(
+      // Validate quantity
+      if (
+        !Number.isInteger(props.availableQuantity) ||
+        props.availableQuantity < VALIDATION_RULES.quantity.min ||
+        props.availableQuantity > VALIDATION_RULES.quantity.max
+      ) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: `Quantity must be an integer between ${VALIDATION_RULES.quantity.min} and ${VALIDATION_RULES.quantity.max}`,
+            field: "availableQuantity",
+          }),
+        );
+      }
+
+      // Validate coin cost percentage
+      if (
+        !Number.isInteger(props.coinCostPercentage) ||
+        props.coinCostPercentage < 1 ||
+        props.coinCostPercentage > 100
+      ) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Coin cost percentage must be between 1 and 100",
+            field: "coinCostPercentage",
+          }),
+        );
+      }
+
+      const coinCostResult = yield* CoinAmount.create(props.coinCostPercentage);
+
+      // Validate tripId
+      if (!props.tripId || props.tripId.trim() === "") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "tripId is required",
+            field: "tripId",
+          }),
+        );
+      }
+
+      // Validate createdById
+      if (!props.createdById || props.createdById.trim() === "") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "createdById is required",
+            field: "createdById",
+          }),
+        );
+      }
+
+      // Validate images
+      const images = props.images ?? [];
+      if (images.length > VALIDATION_RULES.images.maxCount) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: `Maximum ${VALIDATION_RULES.images.maxCount} images allowed`,
+            field: "images",
+          }),
+        );
+      }
+      for (const image of images) {
+        if (image.length > VALIDATION_RULES.images.maxUrlLength) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "Image URL too long",
+              field: "images",
+            }),
+          );
+        }
+      }
+
+      const now = new Date();
+
+      return new Reward(
         props.id ?? (crypto.randomUUID() as RewardId),
         nameValidation.value,
         descriptionValidation.value,
         props.availableQuantity,
-        coinCostResult.value,
+        coinCostResult,
         images.map((i) => i.trim()).filter((i) => i.length > 0),
         props.isHidden ?? false,
         props.tripId.trim(),
         props.createdById.trim(),
         props.createdAt ?? now,
         props.updatedAt ?? now,
-      ),
-    );
+      );
+    });
   }
 
   /**
    * Update reward details
    * Returns a new Reward instance (immutable)
+   *
+   * Returns Effect<Reward, ValidationError, never>
    */
   update(props: {
     name?: string;
@@ -186,92 +228,115 @@ export class Reward {
     availableQuantity?: number;
     images?: string[];
     coinCostPercentage?: number;
-  }): Result<Reward, string> {
-    // Validate name if provided
-    let finalName = this.name;
-    if (props.name !== undefined) {
-      const nameValidation = validateName(props.name);
-      if (nameValidation.kind === "err") {
-        return err(nameValidation.error);
-      }
-      finalName = nameValidation.value;
-    }
-
-    // Validate description if provided
-    let finalDescription = this.description;
-    if (props.description !== undefined) {
-      const descValidation = validateDescription(props.description);
-      if (descValidation.kind === "err") {
-        return err(descValidation.error);
-      }
-      finalDescription = descValidation.value;
-    }
-
-    // Validate quantity if provided
-    let finalQuantity = this.availableQuantity;
-    if (props.availableQuantity !== undefined) {
-      if (
-        !Number.isInteger(props.availableQuantity) ||
-        props.availableQuantity < VALIDATION_RULES.quantity.min ||
-        props.availableQuantity > VALIDATION_RULES.quantity.max
-      ) {
-        return err(
-          `Quantity must be an integer between ${VALIDATION_RULES.quantity.min} and ${VALIDATION_RULES.quantity.max}`,
-        );
-      }
-      finalQuantity = props.availableQuantity;
-    }
-
-    // Validate images if provided
-    let finalImages = this.images;
-    if (props.images !== undefined) {
-      if (props.images.length > VALIDATION_RULES.images.maxCount) {
-        return err(
-          `Maximum ${VALIDATION_RULES.images.maxCount} images allowed`,
-        );
-      }
-      for (const image of props.images) {
-        if (image.length > VALIDATION_RULES.images.maxUrlLength) {
-          return err("Image URL too long");
+  }): Effect.Effect<Reward, ValidationError, never> {
+    const self = this;
+    return Effect.gen(function* () {
+      // Validate name if provided
+      let finalName = self.name;
+      if (props.name !== undefined) {
+        const nameValidation = validateName(props.name);
+        if (nameValidation.kind === "err") {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: nameValidation.error,
+              field: "name",
+            }),
+          );
         }
+        finalName = nameValidation.value;
       }
-      finalImages = props.images
-        .map((i) => i.trim())
-        .filter((i) => i.length > 0);
-    }
 
-    // Validate coin cost percentage if provided
-    let finalCoinCost = this.coinCostPercentage;
-    if (props.coinCostPercentage !== undefined) {
-      if (
-        !Number.isInteger(props.coinCostPercentage) ||
-        props.coinCostPercentage < 1 ||
-        props.coinCostPercentage > 100
-      ) {
-        return err("Coin cost percentage must be between 1 and 100");
+      // Validate description if provided
+      let finalDescription = self.description;
+      if (props.description !== undefined) {
+        const descValidation = validateDescription(props.description);
+        if (descValidation.kind === "err") {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: descValidation.error,
+              field: "description",
+            }),
+          );
+        }
+        finalDescription = descValidation.value;
       }
-      const coinCostResult = CoinAmount.create(props.coinCostPercentage);
-      if (coinCostResult.kind === "err") {
-        return err(coinCostResult.error);
-      }
-      finalCoinCost = coinCostResult.value;
-    }
 
-    return ok(
-      new Reward(
-        this.id,
+      // Validate quantity if provided
+      let finalQuantity = self.availableQuantity;
+      if (props.availableQuantity !== undefined) {
+        if (
+          !Number.isInteger(props.availableQuantity) ||
+          props.availableQuantity < VALIDATION_RULES.quantity.min ||
+          props.availableQuantity > VALIDATION_RULES.quantity.max
+        ) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: `Quantity must be an integer between ${VALIDATION_RULES.quantity.min} and ${VALIDATION_RULES.quantity.max}`,
+              field: "availableQuantity",
+            }),
+          );
+        }
+        finalQuantity = props.availableQuantity;
+      }
+
+      // Validate images if provided
+      let finalImages = self.images;
+      if (props.images !== undefined) {
+        if (props.images.length > VALIDATION_RULES.images.maxCount) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: `Maximum ${VALIDATION_RULES.images.maxCount} images allowed`,
+              field: "images",
+            }),
+          );
+        }
+        for (const image of props.images) {
+          if (image.length > VALIDATION_RULES.images.maxUrlLength) {
+            return yield* Effect.fail(
+              new ValidationError({
+                message: "Image URL too long",
+                field: "images",
+              }),
+            );
+          }
+        }
+        finalImages = props.images
+          .map((i) => i.trim())
+          .filter((i) => i.length > 0);
+      }
+
+      // Validate coin cost percentage if provided
+      let finalCoinCost = self.coinCostPercentage;
+      if (props.coinCostPercentage !== undefined) {
+        if (
+          !Number.isInteger(props.coinCostPercentage) ||
+          props.coinCostPercentage < 1 ||
+          props.coinCostPercentage > 100
+        ) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "Coin cost percentage must be between 1 and 100",
+              field: "coinCostPercentage",
+            }),
+          );
+        }
+        finalCoinCost = yield* CoinAmount.create(props.coinCostPercentage);
+      }
+
+      return new Reward(
+        self.id,
         finalName,
         finalDescription,
         finalQuantity,
         finalCoinCost,
         finalImages,
-        this.isHidden,
-        this.tripId,
-        this.createdById,
-        this.createdAt,
+        self.isHidden,
+        self.tripId,
+        self.createdById,
+        self.createdAt,
         new Date(), // updatedAt
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -317,19 +382,31 @@ export class Reward {
   /**
    * Decrease available quantity (when a purchase is made)
    * Returns error if not enough quantity available
+   *
+   * Returns Effect<Reward, ValidationError, never>
    */
-  decrementQuantity(amount: number): Result<Reward, string> {
+  decrementQuantity(
+    amount: number,
+  ): Effect.Effect<Reward, ValidationError, never> {
     if (!Number.isInteger(amount) || amount < 1) {
-      return err("Amount must be a positive integer");
-    }
-
-    if (this.availableQuantity < amount) {
-      return err(
-        `Not enough rewards available (requested: ${amount}, available: ${this.availableQuantity})`,
+      return Effect.fail(
+        new ValidationError({
+          message: "Amount must be a positive integer",
+          field: "amount",
+        }),
       );
     }
 
-    return ok(
+    if (this.availableQuantity < amount) {
+      return Effect.fail(
+        new ValidationError({
+          message: `Not enough rewards available (requested: ${amount}, available: ${this.availableQuantity})`,
+          field: "amount",
+        }),
+      );
+    }
+
+    return Effect.succeed(
       new Reward(
         this.id,
         this.name,
@@ -348,20 +425,32 @@ export class Reward {
 
   /**
    * Increase available quantity (when a purchase is cancelled/refunded)
+   *
+   * Returns Effect<Reward, ValidationError, never>
    */
-  incrementQuantity(amount: number): Result<Reward, string> {
+  incrementQuantity(
+    amount: number,
+  ): Effect.Effect<Reward, ValidationError, never> {
     if (!Number.isInteger(amount) || amount < 1) {
-      return err("Amount must be a positive integer");
+      return Effect.fail(
+        new ValidationError({
+          message: "Amount must be a positive integer",
+          field: "amount",
+        }),
+      );
     }
 
     const newQuantity = this.availableQuantity + amount;
     if (newQuantity > VALIDATION_RULES.quantity.max) {
-      return err(
-        `Quantity would exceed maximum (${VALIDATION_RULES.quantity.max})`,
+      return Effect.fail(
+        new ValidationError({
+          message: `Quantity would exceed maximum (${VALIDATION_RULES.quantity.max})`,
+          field: "amount",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       new Reward(
         this.id,
         this.name,
@@ -404,27 +493,29 @@ export class Reward {
 
   /**
    * Check if a group can afford to purchase a given quantity
+   * Returns Effect<boolean, ValidationError, never>
    */
   canAfford(
     groupCoins: CoinAmount,
     quantity: number,
     totalAvailablePoints: number,
-  ): boolean {
-    const totalCost = this.calculateTotalCost(quantity, totalAvailablePoints);
-    return groupCoins.isGreaterThanOrEqual(totalCost);
+  ): Effect.Effect<boolean, ValidationError, never> {
+    const unitCost = this.calculateDynamicCoinCost(totalAvailablePoints);
+    return Effect.map(unitCost.multiply(quantity), (totalCost) =>
+      groupCoins.isGreaterThanOrEqual(totalCost),
+    );
   }
 
   /**
    * Calculate total cost for a purchase
+   * Returns Effect to handle potential multiplication overflow
    */
   calculateTotalCost(
     quantity: number,
     totalAvailablePoints: number,
-  ): CoinAmount {
+  ): Effect.Effect<CoinAmount, ValidationError, never> {
     const unitCost = this.calculateDynamicCoinCost(totalAvailablePoints);
-    const totalResult = unitCost.multiply(quantity);
-    // Safe to unwrap because we validated inputs
-    return totalResult.kind === "ok" ? totalResult.value : CoinAmount.zero();
+    return unitCost.multiply(quantity);
   }
 
   /**
@@ -489,4 +580,23 @@ function validateDescription(description: string): Result<string, string> {
   }
 
   return ok(trimmed);
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace RewardCompat {
+  /**
+   * @deprecated Use Reward.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof Reward.create>[0],
+  ): Result<Reward, ValidationError> {
+    const effect = Reward.create(props);
+    try {
+      const reward = Effect.runSync(effect);
+      return ok(reward);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
+  }
 }

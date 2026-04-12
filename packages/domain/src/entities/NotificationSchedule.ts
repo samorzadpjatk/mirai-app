@@ -107,20 +107,21 @@ export function validateDateRange(
 
 /**
  * Validate dates are in the future (with optional grace period for updates)
+ * Uses UTC for consistent comparison
  */
 export function validateFutureDates(
   startDate: Date,
   endDate: Date,
   allowGracePeriod = false,
 ): Result<void, string> {
-  const now = new Date();
+  const now = Date.now();
   const graceTime = allowGracePeriod ? 60 * 1000 : 0; // 1 minute grace period for updates
 
-  if (startDate.getTime() < now.getTime() - graceTime) {
+  if (startDate.getTime() < now - graceTime) {
     return err("startDate must be in the future");
   }
 
-  if (endDate.getTime() < now.getTime() - graceTime) {
+  if (endDate.getTime() < now - graceTime) {
     return err("endDate must be in the future");
   }
 
@@ -196,12 +197,10 @@ export function validateScheduleTime(
   }
 
   // Validate that the scheduled time is at least 5 minutes in the future
+  // Note: startDate is already normalized to UTC, so compare directly with UTC now
   const now = new Date();
-  const scheduledTime = new Date(startDate);
-  scheduledTime.setHours(hour, minute, 0, 0);
-
   const minScheduledTime = new Date(now.getTime() + 5 * 60 * 1000);
-  if (scheduledTime < minScheduledTime) {
+  if (startDate < minScheduledTime) {
     return err("Schedule time must be at least 5 minutes in the future");
   }
 
@@ -356,6 +355,25 @@ export class NotificationSchedule {
     );
     if (isError(contentValidation)) {
       return err(contentValidation.error);
+    }
+
+    // Validate hour and minute ranges BEFORE normalization
+    if (
+      props.hour < VALIDATION_RULES.time.minHour ||
+      props.hour > VALIDATION_RULES.time.maxHour
+    ) {
+      return err(
+        `hour must be between ${VALIDATION_RULES.time.minHour} and ${VALIDATION_RULES.time.maxHour}`,
+      );
+    }
+
+    if (
+      props.minute < VALIDATION_RULES.time.minMinute ||
+      props.minute > VALIDATION_RULES.time.maxMinute
+    ) {
+      return err(
+        `minute must be between ${VALIDATION_RULES.time.minMinute} and ${VALIDATION_RULES.time.maxMinute}`,
+      );
     }
 
     // Normalize schedule window

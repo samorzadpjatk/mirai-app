@@ -1,4 +1,5 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import {
   ActivityFeed,
   REACTION_TYPES,
@@ -8,130 +9,138 @@ import {
 } from "./ActivityFeed";
 import { ActivityReaction } from "./ActivityReaction";
 import { ActivityId } from "../value-objects/ActivityId";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 describe("[UNIT] ActivityFeed Entity", () => {
   describe("ActivityFeed.create", () => {
     it("should create activity with valid data", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test Activity",
         description: "Test description",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.tripId).toBe("trip-123");
-        expect(result.value.activityType).toBe("custom");
-        expect(result.value.title).toBe("Test Activity");
-        expect(result.value.description).toBe("Test description");
-        expect(result.value.isPinned).toBe(false);
-        expect(result.value.isHidden).toBe(false);
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.tripId).toBe("trip-123");
+      expect(activity.activityType).toBe("custom");
+      expect(activity.title).toBe("Test Activity");
+      expect(activity.description).toBe("Test description");
+      expect(activity.isPinned).toBe(false);
+      expect(activity.isHidden).toBe(false);
+      expect(activity.createdAt).toBeInstanceOf(Date);
     });
 
     it("should create activity with minimum required fields", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.description).toBeNull();
-        expect(result.value.imageUrl).toBeNull();
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.description).toBeNull();
+      expect(activity.imageUrl).toBeNull();
     });
 
     it("should reject empty tripId", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "",
         activityType: "custom",
         title: "Test",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("tripId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("tripId");
       }
     });
 
     it("should reject empty title", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("title");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("title");
       }
     });
 
     it("should require submissionActivity or submissionMetadata for submission type", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "submission",
         title: "Test",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("submissionMetadata");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("submissionMetadata");
       }
     });
 
     it("should require challengeActivity or challengeMetadata for challenge_event type", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "challenge_event",
         title: "Test",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("challengeMetadata");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("challengeMetadata");
       }
     });
 
     it("should require rankChangeActivity or rankChangeMetadata for rank_change type", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "rank_change",
         title: "Test",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("rankChangeMetadata");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("rankChangeMetadata");
       }
     });
 
     it("should require userPost or postMetadata for user_post type", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "user_post",
         title: "Test",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("postMetadata");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("postMetadata");
       }
     });
 
     it("should create submission activity with metadata", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "submission",
         title: "Submission Activity",
@@ -147,16 +156,14 @@ describe("[UNIT] ActivityFeed Entity", () => {
         },
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.submissionActivity).not.toBeNull();
-        expect(result.value.submissionActivity?.submissionId).toBe("sub-123");
-        expect(result.value.submissionActivity?.isWinner).toBe(true);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.submissionActivity).not.toBeNull();
+      expect(activity.submissionActivity?.submissionId).toBe("sub-123");
+      expect(activity.submissionActivity?.isWinner).toBe(true);
     });
 
     it("should create challenge event activity with metadata", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "challenge_event",
         title: "Challenge Started",
@@ -170,17 +177,13 @@ describe("[UNIT] ActivityFeed Entity", () => {
         },
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.challengeActivity).not.toBeNull();
-        expect(result.value.challengeActivity?.eventType).toBe(
-          "challenge_started",
-        );
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.challengeActivity).not.toBeNull();
+      expect(activity.challengeActivity?.eventType).toBe("challenge_started");
     });
 
     it("should create user post activity with metadata", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "user_post",
         title: "User Post",
@@ -196,64 +199,53 @@ describe("[UNIT] ActivityFeed Entity", () => {
         },
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.userPost).not.toBeNull();
-        expect(result.value.userPost?.authorFirstName).toBe("John");
-        expect(result.value.userPost?.additionalImages).toHaveLength(2);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.userPost).not.toBeNull();
+      expect(activity.userPost?.authorFirstName).toBe("John");
+      expect(activity.userPost?.additionalImages).toHaveLength(2);
     });
   });
 
   describe("ActivityFeed.pin", () => {
     it("should pin an activity", () => {
-      const activityResult = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
       });
 
-      expect(activityResult.kind).toBe("ok");
-      if (activityResult.kind !== "ok") return;
-
-      const pinned = activityResult.value.pin();
+      const activity = Effect.runSync(effect);
+      const pinned = activity.pin();
       expect(pinned.isPinned).toBe(true);
-      expect(pinned.id).toBe(activityResult.value.id); // Same ID
+      expect(pinned.id).toBe(activity.id);
     });
   });
 
   describe("ActivityFeed.unpin", () => {
     it("should unpin an activity", () => {
-      const activityResult = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
         isPinned: true,
       });
 
-      expect(activityResult.kind).toBe("ok");
-      if (activityResult.kind !== "ok") return;
-
-      const unpinned = activityResult.value.unpin();
+      const activity = Effect.runSync(effect);
+      const unpinned = activity.unpin();
       expect(unpinned.isPinned).toBe(false);
     });
   });
 
   describe("ActivityFeed.hide", () => {
     it("should hide an activity", () => {
-      const activityResult = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
       });
 
-      expect(activityResult.kind).toBe("ok");
-      if (activityResult.kind !== "ok") return;
-
-      const hidden = activityResult.value.hide(
-        "admin-123",
-        "Inappropriate content",
-      );
+      const activity = Effect.runSync(effect);
+      const hidden = activity.hide("admin-123", "Inappropriate content");
       expect(hidden.isHidden).toBe(true);
       expect(hidden.hiddenByAdmin).toBe("admin-123");
       expect(hidden.hiddenReason).toBe("Inappropriate content");
@@ -263,7 +255,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
 
   describe("ActivityFeed.unhide", () => {
     it("should unhide an activity", () => {
-      const activityResult = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
@@ -273,10 +265,8 @@ describe("[UNIT] ActivityFeed Entity", () => {
         hiddenByAdmin: "admin-123",
       });
 
-      expect(activityResult.kind).toBe("ok");
-      if (activityResult.kind !== "ok") return;
-
-      const unhidden = activityResult.value.unhide();
+      const activity = Effect.runSync(effect);
+      const unhidden = activity.unhide();
       expect(unhidden.isHidden).toBe(false);
       expect(unhidden.hiddenByAdmin).toBeNull();
       expect(unhidden.hiddenReason).toBeNull();
@@ -286,135 +276,119 @@ describe("[UNIT] ActivityFeed Entity", () => {
 
   describe("ActivityFeed.updateContent", () => {
     it("should update title and description", () => {
-      const activityResult = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Original Title",
         description: "Original description",
       });
 
-      expect(activityResult.kind).toBe("ok");
-      if (activityResult.kind !== "ok") return;
-
-      const updated = activityResult.value.updateContent({
+      const activity = Effect.runSync(effect);
+      const updatedEffect = activity.updateContent({
         title: "New Title",
         description: "New description",
       });
 
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.title).toBe("New Title");
-        expect(updated.value.description).toBe("New description");
-        expect(updated.value.id).toBe(activityResult.value.id);
-      }
+      const updated = Effect.runSync(updatedEffect);
+      expect(updated.title).toBe("New Title");
+      expect(updated.description).toBe("New description");
+      expect(updated.id).toBe(activity.id);
     });
 
     it("should reject empty title update", () => {
-      const activityResult = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Original Title",
       });
 
-      expect(activityResult.kind).toBe("ok");
-      if (activityResult.kind !== "ok") return;
-
-      const updated = activityResult.value.updateContent({
+      const activity = Effect.runSync(effect);
+      const updatedEffect = activity.updateContent({
         title: "",
       });
 
-      expect(updated.kind).toBe("err");
-      if (updated.kind === "err") {
-        expect(updated.error).toBeInstanceOf(ValidationError);
-        expect(updated.error.field).toBe("title");
+      const exit = Effect.runSyncExit(updatedEffect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("title");
       }
     });
 
     it("should allow setting description to null", () => {
-      const activityResult = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Title",
         description: "Original description",
       });
 
-      expect(activityResult.kind).toBe("ok");
-      if (activityResult.kind !== "ok") return;
-
-      const updated = activityResult.value.updateContent({
+      const activity = Effect.runSync(effect);
+      const updatedEffect = activity.updateContent({
         description: null,
       });
 
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.description).toBeNull();
-      }
+      const updated = Effect.runSync(updatedEffect);
+      expect(updated.description).toBeNull();
     });
   });
 
   describe("ActivityFeed.isVisible", () => {
     it("should return true for non-hidden activities", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
         isHidden: false,
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isVisible()).toBe(true);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.isVisible()).toBe(true);
     });
 
     it("should return false for hidden activities", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
         isHidden: true,
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isVisible()).toBe(false);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.isVisible()).toBe(false);
     });
   });
 
   describe("ActivityFeed.isAdminCreated", () => {
     it("should return true for admin-created activities", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
         createdByAdmin: "admin-123",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isAdminCreated()).toBe(true);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.isAdminCreated()).toBe(true);
     });
 
     it("should return false for user-created activities", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
         createdByAdmin: null,
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isAdminCreated()).toBe(false);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.isAdminCreated()).toBe(false);
     });
   });
 
   describe("ActivityFeed.isUserPost", () => {
     it("should return true for user_post type", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "user_post",
         title: "Test",
@@ -430,29 +404,25 @@ describe("[UNIT] ActivityFeed Entity", () => {
         },
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isUserPost()).toBe(true);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.isUserPost()).toBe(true);
     });
 
     it("should return false for other types", () => {
-      const result = ActivityFeed.create({
+      const effect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Test",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isUserPost()).toBe(false);
-      }
+      const activity = Effect.runSync(effect);
+      expect(activity.isUserPost()).toBe(false);
     });
   });
 
   describe("ActivityFeed.compareForSort", () => {
     it("should sort pinned before unpinned", () => {
-      const pinnedResult = ActivityFeed.create({
+      const pinnedEffect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Pinned",
@@ -460,7 +430,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
         createdAt: new Date("2026-01-01"),
       });
 
-      const unpinnedResult = ActivityFeed.create({
+      const unpinnedEffect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Unpinned",
@@ -468,22 +438,16 @@ describe("[UNIT] ActivityFeed Entity", () => {
         createdAt: new Date("2026-01-02"),
       });
 
-      expect(pinnedResult.kind).toBe("ok");
-      expect(unpinnedResult.kind).toBe("ok");
+      const pinned = Effect.runSync(pinnedEffect);
+      const unpinned = Effect.runSync(unpinnedEffect);
 
-      if (pinnedResult.kind === "ok" && unpinnedResult.kind === "ok") {
-        // Pinned should come before unpinned
-        expect(
-          pinnedResult.value.compareForSort(unpinnedResult.value),
-        ).toBeLessThan(0);
-        expect(
-          unpinnedResult.value.compareForSort(pinnedResult.value),
-        ).toBeGreaterThan(0);
-      }
+      // Pinned should come before unpinned
+      expect(pinned.compareForSort(unpinned)).toBeLessThan(0);
+      expect(unpinned.compareForSort(pinned)).toBeGreaterThan(0);
     });
 
     it("should sort by createdAt descending when same pin status", () => {
-      const olderResult = ActivityFeed.create({
+      const olderEffect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Older",
@@ -491,7 +455,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
         createdAt: new Date("2026-01-01"),
       });
 
-      const newerResult = ActivityFeed.create({
+      const newerEffect = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "custom",
         title: "Newer",
@@ -499,82 +463,80 @@ describe("[UNIT] ActivityFeed Entity", () => {
         createdAt: new Date("2026-01-02"),
       });
 
-      expect(olderResult.kind).toBe("ok");
-      expect(newerResult.kind).toBe("ok");
+      const older = Effect.runSync(olderEffect);
+      const newer = Effect.runSync(newerEffect);
 
-      if (olderResult.kind === "ok" && newerResult.kind === "ok") {
-        // Newer should come before older
-        expect(
-          newerResult.value.compareForSort(olderResult.value),
-        ).toBeLessThan(0);
-        expect(
-          olderResult.value.compareForSort(newerResult.value),
-        ).toBeGreaterThan(0);
-      }
+      // Newer should come before older
+      expect(newer.compareForSort(older)).toBeLessThan(0);
+      expect(older.compareForSort(newer)).toBeGreaterThan(0);
     });
   });
 });
 
-describe("ActivityReaction Entity", () => {
+describe("ActivityReaction Entity (in ActivityFeed.test.ts)", () => {
   describe("ActivityReaction.create", () => {
     it("should create reaction with valid data", () => {
       const activityId = ActivityId.generate();
-      const result = ActivityReaction.create({
+      const effect = ActivityReaction.create({
         activityId,
         userId: "user-123",
         reactionType: "heart",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.activityId).toBe(activityId);
-        expect(result.value.userId).toBe("user-123");
-        expect(result.value.reactionType).toBe("heart");
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-      }
+      const reaction = Effect.runSync(effect);
+      expect(reaction.activityId).toBe(activityId);
+      expect(reaction.userId).toBe("user-123");
+      expect(reaction.reactionType).toBe("heart");
+      expect(reaction.createdAt).toBeInstanceOf(Date);
     });
 
     it("should reject empty activityId", () => {
-      const result = ActivityReaction.create({
+      const effect = ActivityReaction.create({
         activityId: " " as ActivityId,
         userId: "user-123",
         reactionType: "heart",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("activityId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("activityId");
       }
     });
 
     it("should reject empty userId", () => {
       const activityId = ActivityId.generate();
-      const result = ActivityReaction.create({
+      const effect = ActivityReaction.create({
         activityId,
         userId: "",
         reactionType: "heart",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("userId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("userId");
       }
     });
 
     it("should reject invalid reaction type", () => {
       const activityId = ActivityId.generate();
-      const result = ActivityReaction.create({
+      const effect = ActivityReaction.create({
         activityId,
         userId: "user-123",
         reactionType: "invalid" as ReactionType,
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("reactionType");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("reactionType");
       }
     });
 
@@ -582,16 +544,14 @@ describe("ActivityReaction Entity", () => {
       const activityId = ActivityId.generate();
 
       for (const reactionType of REACTION_TYPES) {
-        const result = ActivityReaction.create({
+        const effect = ActivityReaction.create({
           activityId,
           userId: "user-123",
           reactionType,
         });
 
-        expect(result.kind).toBe("ok");
-        if (result.kind === "ok") {
-          expect(result.value.reactionType).toBe(reactionType);
-        }
+        const reaction = Effect.runSync(effect);
+        expect(reaction.reactionType).toBe(reactionType);
       }
     });
   });
@@ -599,36 +559,32 @@ describe("ActivityReaction Entity", () => {
   describe("ActivityReaction.getCompositeId", () => {
     it("should generate unique key for reaction", () => {
       const activityId = ActivityId.generate();
-      const result = ActivityReaction.create({
+      const effect = ActivityReaction.create({
         activityId,
         userId: "user-123",
         reactionType: "heart",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        const key = result.value.getCompositeId();
-        expect(key).toContain(activityId);
-        expect(key).toContain("user-123");
-        expect(key).toContain("heart");
-      }
+      const reaction = Effect.runSync(effect);
+      const key = reaction.getCompositeId();
+      expect(key).toContain(activityId);
+      expect(key).toContain("user-123");
+      expect(key).toContain("heart");
     });
   });
 
   describe("ActivityReaction.isOfType", () => {
     it("should check if reaction is of specific type", () => {
       const activityId = ActivityId.generate();
-      const result = ActivityReaction.create({
+      const effect = ActivityReaction.create({
         activityId,
         userId: "user-123",
         reactionType: "fire",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isOfType("fire")).toBe(true);
-        expect(result.value.isOfType("heart")).toBe(false);
-      }
+      const reaction = Effect.runSync(effect);
+      expect(reaction.isOfType("fire")).toBe(true);
+      expect(reaction.isOfType("heart")).toBe(false);
     });
   });
 });

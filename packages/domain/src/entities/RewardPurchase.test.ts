@@ -1,11 +1,12 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import { RewardPurchase, RewardPurchaseStatus } from "./RewardPurchase";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 describe("[UNIT] RewardPurchase Entity", () => {
   describe("RewardPurchase.create", () => {
     it("should create with valid data", () => {
-      const result = RewardPurchase.create({
+      const effect = RewardPurchase.create({
         rewardId: "reward-123",
         groupId: "group-456",
         quantity: 2,
@@ -13,20 +14,19 @@ describe("[UNIT] RewardPurchase Entity", () => {
         purchasedById: "user-789",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBeDefined();
-        expect(result.value.rewardId).toBe("reward-123");
-        expect(result.value.groupId).toBe("group-456");
-        expect(result.value.quantity).toBe(2);
-        expect(result.value.totalCost).toBe(200);
-        expect(result.value.status).toBe(RewardPurchaseStatus.BOUGHT);
-        expect(result.value.isPending()).toBe(true);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity).toBeDefined();
+      expect(entity.id).toBeDefined();
+      expect(entity.rewardId).toBe("reward-123");
+      expect(entity.groupId).toBe("group-456");
+      expect(entity.quantity).toBe(2);
+      expect(entity.totalCost).toBe(200);
+      expect(entity.status).toBe(RewardPurchaseStatus.BOUGHT);
+      expect(entity.isPending()).toBe(true);
     });
 
     it("should create with collection method", () => {
-      const result = RewardPurchase.create({
+      const effect = RewardPurchase.create({
         rewardId: "reward-123",
         groupId: "group-456",
         quantity: 1,
@@ -35,15 +35,14 @@ describe("[UNIT] RewardPurchase Entity", () => {
         purchasedById: "user-789",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.collectionMethod).toBe("Pickup at hotel reception");
-        expect(result.value.hasCollectionMethod()).toBe(true);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity).toBeDefined();
+      expect(entity.collectionMethod).toBe("Pickup at hotel reception");
+      expect(entity.hasCollectionMethod()).toBe(true);
     });
 
     it("should reject empty rewardId", () => {
-      const result = RewardPurchase.create({
+      const effect = RewardPurchase.create({
         rewardId: "",
         groupId: "group-456",
         quantity: 1,
@@ -51,15 +50,16 @@ describe("[UNIT] RewardPurchase Entity", () => {
         purchasedById: "user-789",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("rewardId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("rewardId");
       }
     });
 
     it("should reject quantity less than 1", () => {
-      const result = RewardPurchase.create({
+      const effect = RewardPurchase.create({
         rewardId: "reward-123",
         groupId: "group-456",
         quantity: 0,
@@ -67,15 +67,16 @@ describe("[UNIT] RewardPurchase Entity", () => {
         purchasedById: "user-789",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("quantity");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("quantity");
       }
     });
 
     it("should reject negative total cost", () => {
-      const result = RewardPurchase.create({
+      const effect = RewardPurchase.create({
         rewardId: "reward-123",
         groupId: "group-456",
         quantity: 1,
@@ -83,151 +84,133 @@ describe("[UNIT] RewardPurchase Entity", () => {
         purchasedById: "user-789",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("totalCost");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("totalCost");
       }
     });
   });
 
   describe("RewardPurchase status transitions", () => {
     it("should transition from BOUGHT to ACCEPTED", () => {
-      const purchaseResult = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 1,
-        totalCost: 100,
-        purchasedById: "user-789",
-      });
+      const purchase = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 1,
+          totalCost: 100,
+          purchasedById: "user-789",
+        }),
+      );
 
-      expect(purchaseResult.kind).toBe("ok");
-      if (purchaseResult.kind !== "ok") return;
+      const updated = Effect.runSync(purchase.accept("admin-123"));
 
-      const updated = purchaseResult.value.accept("admin-123");
-
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.status).toBe(RewardPurchaseStatus.ACCEPTED);
-        expect(updated.value.statusUpdatedById).toBe("admin-123");
-      }
+      expect(updated.status).toBe(RewardPurchaseStatus.ACCEPTED);
+      expect(updated.statusUpdatedById).toBe("admin-123");
     });
 
     it("should transition from ACCEPTED to IN_DELIVERY", () => {
-      const purchaseResult = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 1,
-        totalCost: 100,
-        purchasedById: "user-789",
-        status: RewardPurchaseStatus.ACCEPTED,
-      });
+      const purchase = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 1,
+          totalCost: 100,
+          purchasedById: "user-789",
+          status: RewardPurchaseStatus.ACCEPTED,
+        }),
+      );
 
-      expect(purchaseResult.kind).toBe("ok");
-      if (purchaseResult.kind !== "ok") return;
+      const updated = Effect.runSync(purchase.startDelivery("admin-123"));
 
-      const updated = purchaseResult.value.startDelivery("admin-123");
-
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.status).toBe(RewardPurchaseStatus.IN_DELIVERY);
-      }
+      expect(updated.status).toBe(RewardPurchaseStatus.IN_DELIVERY);
     });
 
     it("should transition from IN_DELIVERY to DELIVERED", () => {
-      const purchaseResult = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 1,
-        totalCost: 100,
-        purchasedById: "user-789",
-        status: RewardPurchaseStatus.IN_DELIVERY,
-      });
+      const purchase = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 1,
+          totalCost: 100,
+          purchasedById: "user-789",
+          status: RewardPurchaseStatus.IN_DELIVERY,
+        }),
+      );
 
-      expect(purchaseResult.kind).toBe("ok");
-      if (purchaseResult.kind !== "ok") return;
+      const updated = Effect.runSync(purchase.deliver("admin-123"));
 
-      const updated = purchaseResult.value.deliver("admin-123");
-
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.status).toBe(RewardPurchaseStatus.DELIVERED);
-        expect(updated.value.isCompleted()).toBe(true);
-        expect(updated.value.isTerminal()).toBe(true);
-      }
+      expect(updated.status).toBe(RewardPurchaseStatus.DELIVERED);
+      expect(updated.isCompleted()).toBe(true);
+      expect(updated.isTerminal()).toBe(true);
     });
 
     it("should allow cancellation from BOUGHT", () => {
-      const purchaseResult = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 1,
-        totalCost: 100,
-        purchasedById: "user-789",
-      });
+      const purchase = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 1,
+          totalCost: 100,
+          purchasedById: "user-789",
+        }),
+      );
 
-      expect(purchaseResult.kind).toBe("ok");
-      if (purchaseResult.kind !== "ok") return;
+      const updated = Effect.runSync(purchase.cancel("admin-123"));
 
-      const updated = purchaseResult.value.cancel("admin-123");
-
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.status).toBe(RewardPurchaseStatus.CANCELLED);
-        expect(updated.value.isCancelled()).toBe(true);
-      }
+      expect(updated.status).toBe(RewardPurchaseStatus.CANCELLED);
+      expect(updated.isCancelled()).toBe(true);
     });
 
     it("should reject invalid status transition", () => {
-      const purchaseResult = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 1,
-        totalCost: 100,
-        purchasedById: "user-789",
-      });
-
-      expect(purchaseResult.kind).toBe("ok");
-      if (purchaseResult.kind !== "ok") return;
+      const purchase = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 1,
+          totalCost: 100,
+          purchasedById: "user-789",
+        }),
+      );
 
       // Cannot go from BOUGHT directly to DELIVERED
-      const updated = purchaseResult.value.updateStatus(
+      const effect = purchase.updateStatus(
         RewardPurchaseStatus.DELIVERED,
         "admin-123",
       );
 
-      expect(updated.kind).toBe("err");
-      if (updated.kind === "err") {
-        expect(updated.error).toBeInstanceOf(StateTransitionError);
-        if (updated.error instanceof StateTransitionError) {
-          expect(updated.error.from).toBe(RewardPurchaseStatus.BOUGHT);
-          expect(updated.error.to).toBe(RewardPurchaseStatus.DELIVERED);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(StateTransitionError);
+        if (exit.cause.error instanceof StateTransitionError) {
+          expect(exit.cause.error.from).toBe(RewardPurchaseStatus.BOUGHT);
+          expect(exit.cause.error.to).toBe(RewardPurchaseStatus.DELIVERED);
         }
       }
     });
 
     it("should reject transition without updater", () => {
-      const purchaseResult = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 1,
-        totalCost: 100,
-        purchasedById: "user-789",
-      });
-
-      expect(purchaseResult.kind).toBe("ok");
-      if (purchaseResult.kind !== "ok") return;
-
-      const updated = purchaseResult.value.updateStatus(
-        RewardPurchaseStatus.ACCEPTED,
-        "",
+      const purchase = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 1,
+          totalCost: 100,
+          purchasedById: "user-789",
+        }),
       );
 
-      expect(updated.kind).toBe("err");
-      if (updated.kind === "err") {
-        expect(updated.error).toBeInstanceOf(ValidationError);
-        if (updated.error instanceof ValidationError) {
-          expect(updated.error.field).toBe("updatedById");
+      const effect = purchase.updateStatus(RewardPurchaseStatus.ACCEPTED, "");
+
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        if (exit.cause.error instanceof ValidationError) {
+          expect(exit.cause.error.field).toBe("updatedById");
         }
       }
     });
@@ -235,56 +218,53 @@ describe("[UNIT] RewardPurchase Entity", () => {
 
   describe("RewardPurchase status checks", () => {
     it("should identify in progress", () => {
-      const result = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 1,
-        totalCost: 100,
-        purchasedById: "user-789",
-        status: RewardPurchaseStatus.ACCEPTED,
-      });
+      const entity = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 1,
+          totalCost: 100,
+          purchasedById: "user-789",
+          status: RewardPurchaseStatus.ACCEPTED,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isInProgress()).toBe(true);
-        expect(result.value.isPending()).toBe(false);
-      }
+      expect(entity.isInProgress()).toBe(true);
+      expect(entity.isPending()).toBe(false);
     });
 
     it("should identify terminal state", () => {
-      const result = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 1,
-        totalCost: 100,
-        purchasedById: "user-789",
-        status: RewardPurchaseStatus.CANCELLED,
-      });
+      const entity = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 1,
+          totalCost: 100,
+          purchasedById: "user-789",
+          status: RewardPurchaseStatus.CANCELLED,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isTerminal()).toBe(true);
-        expect(
-          result.value.canTransitionTo(RewardPurchaseStatus.DELIVERED),
-        ).toBe(false);
-      }
+      expect(entity.isTerminal()).toBe(true);
+      expect(entity.canTransitionTo(RewardPurchaseStatus.DELIVERED)).toBe(
+        false,
+      );
     });
   });
 
   describe("RewardPurchase.getCostPerUnit", () => {
     it("should calculate cost per unit correctly", () => {
-      const result = RewardPurchase.create({
-        rewardId: "reward-123",
-        groupId: "group-456",
-        quantity: 5,
-        totalCost: 500,
-        purchasedById: "user-789",
-      });
+      const entity = Effect.runSync(
+        RewardPurchase.create({
+          rewardId: "reward-123",
+          groupId: "group-456",
+          quantity: 5,
+          totalCost: 500,
+          purchasedById: "user-789",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.getCostPerUnit()).toBe(100);
-      }
+      expect(entity.getCostPerUnit()).toBe(100);
     });
   });
 });

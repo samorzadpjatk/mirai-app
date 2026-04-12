@@ -1,8 +1,9 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { updateEntity, timestamps, type Writable } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 import type { ActivityId } from "../value-objects/ActivityId";
 
 /**
@@ -266,6 +267,8 @@ export class ActivityFeed {
 
   /**
    * Factory method to create a new ActivityFeed
+   *
+   * Returns Effect<ActivityFeed, ValidationError, never>
    */
   static create(props: {
     id?: ActivityId;
@@ -294,10 +297,17 @@ export class ActivityFeed {
     userPost?: UserPostMetadata | null;
     admin?: AdminInfo | null;
     hiddenBy?: AdminInfo | null;
-  }): Result<ActivityFeed, ValidationError> {
+  }): Effect.Effect<ActivityFeed, ValidationError, never> {
     // Validate tripId
     const tripId = validate.id(props.tripId, "tripId");
-    if (isError(tripId)) return err(tripId.error);
+    if (isError(tripId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: tripId.error.message,
+          field: "tripId",
+        }),
+      );
+    }
 
     // Validate title
     const title = validate.string(props.title, "title", {
@@ -305,7 +315,14 @@ export class ActivityFeed {
       maxLength: 500,
       trim: true,
     });
-    if (isError(title)) return err(title.error);
+    if (isError(title)) {
+      return Effect.fail(
+        new ValidationError({
+          message: title.error.message,
+          field: "title",
+        }),
+      );
+    }
 
     // Validate activity type-specific requirements
     if (
@@ -313,11 +330,12 @@ export class ActivityFeed {
       !props.submissionActivity &&
       !props.submissionMetadata
     ) {
-      return err(
-        new ValidationError(
-          "submissionActivity or submissionMetadata is required for submission type",
-          "submissionMetadata",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message:
+            "submissionActivity or submissionMetadata is required for submission type",
+          field: "submissionMetadata",
+        }),
       );
     }
 
@@ -326,11 +344,12 @@ export class ActivityFeed {
       !props.challengeActivity &&
       !props.challengeMetadata
     ) {
-      return err(
-        new ValidationError(
-          "challengeActivity or challengeMetadata is required for challenge_event type",
-          "challengeMetadata",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message:
+            "challengeActivity or challengeMetadata is required for challenge_event type",
+          field: "challengeMetadata",
+        }),
       );
     }
 
@@ -339,11 +358,12 @@ export class ActivityFeed {
       !props.rankChangeActivity &&
       !props.rankChangeMetadata
     ) {
-      return err(
-        new ValidationError(
-          "rankChangeActivity or rankChangeMetadata is required for rank_change type",
-          "rankChangeMetadata",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message:
+            "rankChangeActivity or rankChangeMetadata is required for rank_change type",
+          field: "rankChangeMetadata",
+        }),
       );
     }
 
@@ -352,17 +372,17 @@ export class ActivityFeed {
       !props.userPost &&
       !props.postMetadata
     ) {
-      return err(
-        new ValidationError(
-          "userPost or postMetadata is required for user_post type",
-          "postMetadata",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: "userPost or postMetadata is required for user_post type",
+          field: "postMetadata",
+        }),
       );
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new ActivityFeed(
         props.id ?? (crypto.randomUUID() as ActivityId),
         tripId.value,
@@ -396,6 +416,8 @@ export class ActivityFeed {
 
   /**
    * Factory method for creating challenge activity
+   *
+   * Returns Effect<ActivityFeed, ValidationError, never>
    */
   static createChallengeActivity(props: {
     tripId: string;
@@ -407,7 +429,7 @@ export class ActivityFeed {
     id?: ActivityId;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<ActivityFeed, ValidationError> {
+  }): Effect.Effect<ActivityFeed, ValidationError, never> {
     return ActivityFeed.create({
       id: props.id,
       tripId: props.tripId,
@@ -424,6 +446,8 @@ export class ActivityFeed {
 
   /**
    * Factory method for creating rank change activity
+   *
+   * Returns Effect<ActivityFeed, ValidationError, never>
    */
   static createRankChangeActivity(props: {
     tripId: string;
@@ -433,7 +457,7 @@ export class ActivityFeed {
     id?: ActivityId;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<ActivityFeed, ValidationError> {
+  }): Effect.Effect<ActivityFeed, ValidationError, never> {
     return ActivityFeed.create({
       id: props.id,
       tripId: props.tripId,
@@ -448,6 +472,8 @@ export class ActivityFeed {
 
   /**
    * Factory method for creating submission activity
+   *
+   * Returns Effect<ActivityFeed, ValidationError, never>
    */
   static createSubmissionActivity(props: {
     tripId: string;
@@ -458,7 +484,7 @@ export class ActivityFeed {
     id?: ActivityId;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<ActivityFeed, ValidationError> {
+  }): Effect.Effect<ActivityFeed, ValidationError, never> {
     return ActivityFeed.create({
       id: props.id,
       tripId: props.tripId,
@@ -474,6 +500,8 @@ export class ActivityFeed {
 
   /**
    * Factory method for creating user post activity
+   *
+   * Returns Effect<ActivityFeed, ValidationError, never>
    */
   static createPostActivity(props: {
     tripId: string;
@@ -484,7 +512,7 @@ export class ActivityFeed {
     id?: ActivityId;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<ActivityFeed, ValidationError> {
+  }): Effect.Effect<ActivityFeed, ValidationError, never> {
     return ActivityFeed.create({
       id: props.id,
       tripId: props.tripId,
@@ -584,12 +612,12 @@ export class ActivityFeed {
 
   /**
    * Update the activity title and/or description
-   * Returns a Result with new ActivityFeed instance or ValidationError
+   * Returns a Effect with new ActivityFeed instance or ValidationError
    */
   updateContent(props: {
     title?: string;
     description?: string | null;
-  }): Result<ActivityFeed, ValidationError> {
+  }): Effect.Effect<ActivityFeed, ValidationError, never> {
     const updates: Partial<ActivityFeed> = {};
 
     if (props.title !== undefined) {
@@ -598,7 +626,14 @@ export class ActivityFeed {
         maxLength: 500,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "title",
+          }),
+        );
+      }
       updates.title = validated.value;
     }
 
@@ -606,7 +641,7 @@ export class ActivityFeed {
       updates.description = props.description;
     }
 
-    return ok(updateEntity(this, updates, ActivityFeed));
+    return Effect.succeed(updateEntity(this, updates, ActivityFeed));
   }
 
   /**
@@ -666,5 +701,24 @@ export class ActivityFeed {
 
     // Finally by id descending for stable ordering
     return otherKey.id.localeCompare(thisKey.id);
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace ActivityFeedCompat {
+  /**
+   * @deprecated Use ActivityFeed.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof ActivityFeed.create>[0],
+  ): Result<ActivityFeed, ValidationError> {
+    const effect = ActivityFeed.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

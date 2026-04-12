@@ -1,9 +1,10 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 /**
  * Notification status workflow
@@ -76,6 +77,8 @@ export class Notification {
   /**
    * Factory method to create a new Notification
    * Validates all input data
+   *
+   * Returns Effect<Notification, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -91,14 +94,21 @@ export class Notification {
     failureReason?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Notification, ValidationError> {
+  }): Effect.Effect<Notification, ValidationError, never> {
     // Validate title
     const title = validate.string(props.title, "title", {
       required: true,
       maxLength: 200,
       trim: true,
     });
-    if (isError(title)) return err(title.error);
+    if (isError(title)) {
+      return Effect.fail(
+        new ValidationError({
+          message: title.error.message,
+          field: "title",
+        }),
+      );
+    }
 
     // Validate body
     const body = validate.string(props.body, "body", {
@@ -106,25 +116,39 @@ export class Notification {
       maxLength: 2000,
       trim: true,
     });
-    if (isError(body)) return err(body.error);
+    if (isError(body)) {
+      return Effect.fail(
+        new ValidationError({
+          message: body.error.message,
+          field: "body",
+        }),
+      );
+    }
 
     // Validate createdById
     const createdById = validate.id(props.createdById, "createdById");
-    if (isError(createdById)) return err(createdById.error);
+    if (isError(createdById)) {
+      return Effect.fail(
+        new ValidationError({
+          message: createdById.error.message,
+          field: "createdById",
+        }),
+      );
+    }
 
     // Validate scheduledFor is not in the past
     if (props.scheduledFor && props.scheduledFor.getTime() < Date.now()) {
-      return err(
-        new ValidationError(
-          "scheduledFor must be in the future",
-          "scheduledFor",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: "scheduledFor must be in the future",
+          field: "scheduledFor",
+        }),
       );
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new Notification(
         props.id ?? crypto.randomUUID(),
         title.value,
@@ -147,15 +171,27 @@ export class Notification {
    * Update notification content (title, body, url)
    * Returns a new Notification instance (immutable)
    * Cannot update after sent
+   *
+   * Returns Effect<Notification, ValidationError | StateTransitionError, never>
    */
   updateContent(props: {
     title?: string;
     body?: string;
     url?: string | null;
-  }): Result<Notification, ValidationError | StateTransitionError> {
+  }): Effect.Effect<
+    Notification,
+    ValidationError | StateTransitionError,
+    never
+  > {
     // Cannot update after sent
     if (this.isSent()) {
-      return err(new StateTransitionError(this.status, this.status)); // Stay in same state, but operation not allowed
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: this.status,
+          entityType: "Notification",
+        }),
+      );
     }
 
     const updates: Partial<Notification> = {};
@@ -167,7 +203,14 @@ export class Notification {
         maxLength: 200,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "title",
+          }),
+        );
+      }
       updates.title = validated.value;
     }
 
@@ -178,7 +221,14 @@ export class Notification {
         maxLength: 2000,
         trim: true,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "body",
+          }),
+        );
+      }
       updates.body = validated.value;
     }
 
@@ -186,35 +236,47 @@ export class Notification {
       updates.url = props.url;
     }
 
-    return ok(updateEntity(this, updates, Notification));
+    return Effect.succeed(updateEntity(this, updates, Notification));
   }
 
   /**
    * Update notification status
-   * Returns a Result with new Notification instance or StateTransitionError
+   * Returns an Effect with new Notification instance or StateTransitionError
    */
   updateStatus(
     newStatus: NotificationStatus,
-  ): Result<Notification, StateTransitionError> {
+  ): Effect.Effect<Notification, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, newStatus)) {
-      return err(new StateTransitionError(this.status, newStatus));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: newStatus,
+          entityType: "Notification",
+        }),
+      );
     }
 
-    return ok(updateEntity(this, { status: newStatus }, Notification));
+    return Effect.succeed(
+      updateEntity(this, { status: newStatus }, Notification),
+    );
   }
 
   /**
    * Mark notification as sent
-   * Returns a Result with new Notification instance or StateTransitionError
+   * Returns an Effect with new Notification instance or StateTransitionError
    */
-  markAsSent(): Result<Notification, StateTransitionError> {
+  markAsSent(): Effect.Effect<Notification, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, NotificationStatus.SENT)) {
-      return err(
-        new StateTransitionError(this.status, NotificationStatus.SENT),
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: NotificationStatus.SENT,
+          entityType: "Notification",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         {
@@ -229,16 +291,22 @@ export class Notification {
 
   /**
    * Mark notification as failed
-   * Returns a Result with new Notification instance or StateTransitionError
+   * Returns an Effect with new Notification instance or StateTransitionError
    */
-  markAsFailed(reason: string): Result<Notification, StateTransitionError> {
+  markAsFailed(
+    reason: string,
+  ): Effect.Effect<Notification, StateTransitionError, never> {
     if (!stateMachine.canTransition(this.status, NotificationStatus.FAILED)) {
-      return err(
-        new StateTransitionError(this.status, NotificationStatus.FAILED),
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: NotificationStatus.FAILED,
+          entityType: "Notification",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         { status: NotificationStatus.FAILED, failureReason: reason },
@@ -249,24 +317,32 @@ export class Notification {
 
   /**
    * Cancel notification
-   * Returns a Result with new Notification instance or StateTransitionError
+   * Returns an Effect with new Notification instance or StateTransitionError
    */
-  cancel(): Result<Notification, StateTransitionError> {
+  cancel(): Effect.Effect<Notification, StateTransitionError, never> {
     if (this.isSent()) {
-      return err(
-        new StateTransitionError(this.status, NotificationStatus.CANCELLED),
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: NotificationStatus.CANCELLED,
+          entityType: "Notification",
+        }),
       );
     }
 
     if (
       !stateMachine.canTransition(this.status, NotificationStatus.CANCELLED)
     ) {
-      return err(
-        new StateTransitionError(this.status, NotificationStatus.CANCELLED),
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: NotificationStatus.CANCELLED,
+          entityType: "Notification",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         { status: NotificationStatus.CANCELLED, scheduledFor: null },
@@ -285,19 +361,21 @@ export class Notification {
 
   /**
    * Schedule notification for future delivery
-   * Returns a Result with new Notification instance or ValidationError
+   * Returns an Effect with new Notification instance or ValidationError
    */
-  schedule(scheduledFor: Date): Result<Notification, ValidationError> {
+  schedule(
+    scheduledFor: Date,
+  ): Effect.Effect<Notification, ValidationError, never> {
     if (scheduledFor.getTime() < Date.now()) {
-      return err(
-        new ValidationError(
-          "scheduledFor must be in the future",
-          "scheduledFor",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: "scheduledFor must be in the future",
+          field: "scheduledFor",
+        }),
       );
     }
 
-    return ok(updateEntity(this, { scheduledFor }, Notification));
+    return Effect.succeed(updateEntity(this, { scheduledFor }, Notification));
   }
 
   /**
@@ -420,5 +498,24 @@ export class Notification {
    */
   getSummary(): string {
     return `${this.title}: ${this.body.substring(0, 100)}${this.body.length > 100 ? "..." : ""}`;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace NotificationCompat {
+  /**
+   * @deprecated Use Notification.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof Notification.create>[0],
+  ): Result<Notification, ValidationError> {
+    const effect = Notification.create(props);
+    try {
+      const notification = Effect.runSync(effect);
+      return ok(notification);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

@@ -1,5 +1,7 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * UserEvent entity - represents a user's participation/interest in an event
@@ -28,15 +30,25 @@ export class UserEvent {
     enlistedIn?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<UserEvent, string> {
+  }): Effect.Effect<UserEvent, ValidationError, never> {
     // Validate userId
     if (!props.userId || props.userId.trim() === "") {
-      return err("userId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "userId is required",
+          field: "general",
+        }),
+      );
     }
 
     // Validate eventId
     if (!props.eventId || props.eventId.trim() === "") {
-      return err("eventId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "eventId is required",
+          field: "general",
+        }),
+      );
     }
 
     const interestedIn = props.interestedIn ?? false;
@@ -44,7 +56,7 @@ export class UserEvent {
 
     const now = new Date();
 
-    return ok(
+    return Effect.succeed(
       new UserEvent(
         props.userId.trim(),
         props.eventId.trim(),
@@ -170,5 +182,24 @@ export class UserEvent {
    */
   getCompositeId(): string {
     return `${this.userId}:${this.eventId}`;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace UserEventCompat {
+  /**
+   * @deprecated Use UserEvent.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof UserEvent.create>[0],
+  ): Result<UserEvent, ValidationError> {
+    const effect = UserEvent.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

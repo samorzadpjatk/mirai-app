@@ -40,12 +40,13 @@ export {
   isValidDateRange,
 } from "./utils/validation";
 
-// NEW: Domain error types (created in Phase 1)
+// Domain error types - LEGACY (preserved for backward compatibility during migration)
+// New code should use the Effect-based errors exported below
 export {
   DomainError,
-  ValidationError,
-  StateTransitionError,
-  NotFoundError,
+  ValidationError as LegacyValidationError,
+  StateTransitionError as LegacyStateTransitionError,
+  NotFoundError as LegacyNotFoundError,
 } from "./errors/domain-errors";
 
 // NEW: Entity validation framework (created in Phase 1)
@@ -178,3 +179,49 @@ export {
   isAdminRole,
   isModeratorRole,
 } from "./enums/UserRole";
+
+// ============================================================================
+// Effect Framework Integration (NEW - Step 1.1)
+// ============================================================================
+
+// Effect utilities for Result↔Effect conversion
+export {
+  resultToEffect,
+  effectToResult,
+  effectToResultSync,
+  resultFnToEffect,
+  fromPredicate,
+  isPureEffect,
+  assertPureEffect,
+  type EntityEffect,
+  type EffectSuccess,
+  type EffectError,
+  type EffectRequirements,
+} from "./effect-utils";
+
+// Effect-based domain errors using Data.TaggedError
+// Note: DomainError type is renamed to EffectDomainError to avoid conflict with legacy DomainError class
+export {
+  ValidationError,
+  NotFoundError,
+  StateTransitionError,
+  UnauthorizedError,
+  ConflictError,
+  InvariantError,
+  InvalidStateError,
+  ResourceUnavailableError,
+  QuotaExceededError,
+  type DomainError as EffectDomainError,
+  isDomainError,
+  isValidationError,
+  isNotFoundError,
+  isStateTransitionError,
+  isUnauthorizedError,
+  isConflictError,
+  isInvariantError,
+  getDomainErrorMessage,
+  getDomainErrorCode,
+} from "./errors/effect-errors";
+
+// Re-export Effect types for convenience (domain layer uses Effect<T, E, never>)
+export { Effect, Either, Data } from "effect";

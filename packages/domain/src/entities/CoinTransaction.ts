@@ -1,8 +1,9 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { timestamps } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * CoinTransaction entity - tracks coin balance changes for groups
@@ -24,6 +25,8 @@ export class CoinTransaction {
   /**
    * Factory method to create a new CoinTransaction
    * Validates all input data
+   *
+   * Returns Effect<CoinTransaction, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -33,19 +36,38 @@ export class CoinTransaction {
     adminId: string;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<CoinTransaction, ValidationError> {
+  }): Effect.Effect<CoinTransaction, ValidationError, never> {
     // Validate groupId
     const groupId = validate.id(props.groupId, "groupId");
-    if (isError(groupId)) return err(groupId.error);
+    if (isError(groupId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: groupId.error.message,
+          field: "groupId",
+        }),
+      );
+    }
 
     // Validate amount (must be non-zero)
     if (props.amount === 0) {
-      return err(new ValidationError("amount cannot be zero", "amount"));
+      return Effect.fail(
+        new ValidationError({
+          message: "amount cannot be zero",
+          field: "amount",
+        }),
+      );
     }
 
     // Validate adminId
     const adminId = validate.id(props.adminId, "adminId");
-    if (isError(adminId)) return err(adminId.error);
+    if (isError(adminId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: adminId.error.message,
+          field: "adminId",
+        }),
+      );
+    }
 
     // Validate reason if provided
     if (props.reason) {
@@ -53,12 +75,19 @@ export class CoinTransaction {
         required: false,
         maxLength: 500,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "reason",
+          }),
+        );
+      }
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new CoinTransaction(
         props.id ?? crypto.randomUUID(),
         groupId.value,
@@ -119,5 +148,24 @@ export class CoinTransaction {
    */
   isProcessedBy(adminId: string): boolean {
     return this.adminId === adminId;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace CoinTransactionCompat {
+  /**
+   * @deprecated Use CoinTransaction.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof CoinTransaction.create>[0],
+  ): Result<CoinTransaction, ValidationError> {
+    const effect = CoinTransaction.create(props);
+    try {
+      const transaction = Effect.runSync(effect);
+      return ok(transaction);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

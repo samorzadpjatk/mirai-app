@@ -9,7 +9,7 @@
 
 import type { Result } from "./result";
 import { ok, err } from "./result";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * Validation rules for string fields
@@ -144,12 +144,19 @@ function validateNumber(
 
   // Check NaN
   if (typeof value !== "number" || Number.isNaN(value)) {
-    return err(new ValidationError(`${field} must be a valid number`, field));
+    return err(
+      new ValidationError({
+        message: `${field} must be a valid number`,
+        field,
+      }),
+    );
   }
 
   // Check integer constraint
   if (rule.integer && !Number.isInteger(value)) {
-    return err(new ValidationError(`${field} must be an integer`, field));
+    return err(
+      new ValidationError({ message: `${field} must be an integer`, field }),
+    );
   }
 
   // Check min
@@ -184,7 +191,9 @@ function validateId(
   field: string,
 ): Result<string, ValidationError> {
   if (typeof value !== "string" || isEmptyString(value)) {
-    return err(new ValidationError(`${field} must be a valid ID`, field));
+    return err(
+      new ValidationError({ message: `${field} must be a valid ID`, field }),
+    );
   }
 
   return ok(value);
@@ -212,22 +221,26 @@ function validateArray<T>(
   // Handle required check
   if (rule.required) {
     if (!Array.isArray(value) || value.length === 0) {
-      return err(new ValidationError(`${field} is required`, field));
+      return err(
+        new ValidationError({ message: `${field} is required`, field }),
+      );
     }
   }
 
   // Ensure it's an array
   if (!Array.isArray(value)) {
-    return err(new ValidationError(`${field} must be an array`, field));
+    return err(
+      new ValidationError({ message: `${field} must be an array`, field }),
+    );
   }
 
   // Check maxItems
   if (rule.maxItems !== undefined && value.length > rule.maxItems) {
     return err(
-      new ValidationError(
-        `${field} cannot exceed ${rule.maxItems} items`,
+      new ValidationError({
+        message: `${field} cannot exceed ${rule.maxItems} items`,
         field,
-      ),
+      }),
     );
   }
 
@@ -255,19 +268,29 @@ function validateDateRange(
   const endTime = end.getTime();
 
   if (Number.isNaN(startTime)) {
-    return err(new ValidationError("start date must be a valid date", "start"));
+    return err(
+      new ValidationError({
+        message: "start date must be a valid date",
+        field: "start",
+      }),
+    );
   }
 
   if (Number.isNaN(endTime)) {
-    return err(new ValidationError("end date must be a valid date", "end"));
+    return err(
+      new ValidationError({
+        message: "end date must be a valid date",
+        field: "end",
+      }),
+    );
   }
 
   if (startTime > endTime) {
     return err(
-      new ValidationError(
-        "start date must be before or equal to end date",
-        "dateRange",
-      ),
+      new ValidationError({
+        message: "start date must be before or equal to end date",
+        field: "dateRange",
+      }),
     );
   }
 

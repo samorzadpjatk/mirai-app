@@ -1,8 +1,9 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { updateEntity } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 import type { LocationId } from "../value-objects/LocationId";
 
 /**
@@ -61,6 +62,8 @@ export class Location {
 
   /**
    * Factory method to create a new Location
+   *
+   * Returns Effect<Location, ValidationError, never> - pure synchronous effect
    */
   static create(props: {
     id?: LocationId;
@@ -76,10 +79,17 @@ export class Location {
     timestamp?: Date;
     lastInactivityNotification?: Date | null;
     usersToShareWith?: SharingUserInfo[];
-  }): Result<Location, ValidationError> {
+  }): Effect.Effect<Location, ValidationError, never> {
     // Validate userId
     const userId = validate.id(props.userId, "userId");
-    if (isError(userId)) return err(userId.error);
+    if (isError(userId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: userId.error.message,
+          field: "userId",
+        }),
+      );
+    }
 
     // Validate latitude if provided
     if (props.latitude !== undefined && props.latitude !== null) {
@@ -88,7 +98,14 @@ export class Location {
         min: VALIDATION.latitude.min,
         max: VALIDATION.latitude.max,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "latitude",
+          }),
+        );
+      }
     }
 
     // Validate longitude if provided
@@ -98,7 +115,14 @@ export class Location {
         min: VALIDATION.longitude.min,
         max: VALIDATION.longitude.max,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "longitude",
+          }),
+        );
+      }
     }
 
     // Validate accuracy if provided
@@ -107,7 +131,14 @@ export class Location {
         required: true,
         min: 0,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "accuracy",
+          }),
+        );
+      }
     }
 
     // Validate speed if provided
@@ -116,7 +147,14 @@ export class Location {
         required: true,
         min: 0,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "speed",
+          }),
+        );
+      }
     }
 
     // Validate heading if provided (0-360 degrees)
@@ -126,21 +164,28 @@ export class Location {
         min: 0,
         max: 360,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "heading",
+          }),
+        );
+      }
     }
 
     // Validate usersToShareWith - prevent self-sharing
     const shareList = props.usersToShareWith ?? [];
     if (shareList.some((u) => u.id === props.userId)) {
-      return err(
-        new ValidationError(
-          "Cannot share location with yourself",
-          "usersToShareWith",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: "Cannot share location with yourself",
+          field: "usersToShareWith",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       new Location(
         props.id ?? (crypto.randomUUID() as LocationId),
         userId.value,
@@ -196,6 +241,8 @@ export class Location {
 
   /**
    * Update coordinates and related data
+   *
+   * Returns Effect<Location, ValidationError, never>
    */
   updateCoordinates(props: {
     latitude?: number | null;
@@ -204,7 +251,7 @@ export class Location {
     altitude?: number | null;
     speed?: number | null;
     heading?: number | null;
-  }): Result<Location, ValidationError> {
+  }): Effect.Effect<Location, ValidationError, never> {
     const updates: Partial<Location> = {};
 
     // Validate and update latitude if provided
@@ -215,7 +262,14 @@ export class Location {
           min: VALIDATION.latitude.min,
           max: VALIDATION.latitude.max,
         });
-        if (isError(validated)) return err(validated.error);
+        if (isError(validated)) {
+          return Effect.fail(
+            new ValidationError({
+              message: validated.error.message,
+              field: "latitude",
+            }),
+          );
+        }
       }
       updates.latitude = props.latitude;
     }
@@ -228,7 +282,14 @@ export class Location {
           min: VALIDATION.longitude.min,
           max: VALIDATION.longitude.max,
         });
-        if (isError(validated)) return err(validated.error);
+        if (isError(validated)) {
+          return Effect.fail(
+            new ValidationError({
+              message: validated.error.message,
+              field: "longitude",
+            }),
+          );
+        }
       }
       updates.longitude = props.longitude;
     }
@@ -239,7 +300,14 @@ export class Location {
         required: true,
         min: 0,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "speed",
+          }),
+        );
+      }
       updates.speed = props.speed;
     } else if (props.speed === null) {
       updates.speed = null;
@@ -252,7 +320,14 @@ export class Location {
         min: 0,
         max: 360,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "heading",
+          }),
+        );
+      }
       updates.heading = props.heading;
     } else if (props.heading === null) {
       updates.heading = null;
@@ -262,7 +337,7 @@ export class Location {
     if (props.altitude !== undefined) updates.altitude = props.altitude;
     updates.timestamp = new Date();
 
-    return ok(updateEntity(this, updates, Location));
+    return Effect.succeed(updateEntity(this, updates, Location));
   }
 
   /**
@@ -289,26 +364,33 @@ export class Location {
 
   /**
    * Add a user to share location with
+   *
+   * Returns Effect<Location, ValidationError, never>
    */
-  addSharingUser(user: SharingUserInfo): Result<Location, ValidationError> {
+  addSharingUser(
+    user: SharingUserInfo,
+  ): Effect.Effect<Location, ValidationError, never> {
     // Prevent self-sharing
     if (user.id === this.userId) {
-      return err(
-        new ValidationError("Cannot share location with yourself", "user"),
+      return Effect.fail(
+        new ValidationError({
+          message: "Cannot share location with yourself",
+          field: "user",
+        }),
       );
     }
 
     // Check if already sharing with this user
     if (this.usersToShareWith.some((u) => u.id === user.id)) {
-      return err(
-        new ValidationError(
-          `Already sharing location with user ${user.id}`,
-          "user",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: `Already sharing location with user ${user.id}`,
+          field: "user",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         {
@@ -336,18 +418,23 @@ export class Location {
 
   /**
    * Update the entire sharing users list
+   *
+   * Returns Effect<Location, ValidationError, never>
    */
   updateSharingUsers(
     users: SharingUserInfo[],
-  ): Result<Location, ValidationError> {
+  ): Effect.Effect<Location, ValidationError, never> {
     // Prevent self-sharing
     if (users.some((u) => u.id === this.userId)) {
-      return err(
-        new ValidationError("Cannot share location with yourself", "users"),
+      return Effect.fail(
+        new ValidationError({
+          message: "Cannot share location with yourself",
+          field: "users",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         { usersToShareWith: users, timestamp: new Date() },
@@ -595,4 +682,23 @@ export function calculateDistance(
  */
 function toRadians(degrees: number): number {
   return degrees * (Math.PI / 180);
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace LocationCompat {
+  /**
+   * @deprecated Use Location.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof Location.create>[0],
+  ): Result<Location, ValidationError> {
+    const effect = Location.create(props);
+    try {
+      const location = Effect.runSync(effect);
+      return ok(location);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
+  }
 }

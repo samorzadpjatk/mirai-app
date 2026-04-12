@@ -1,11 +1,10 @@
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
+import { Effect } from "effect";
 import type { SubmissionId } from "../value-objects/SubmissionId";
 import type { GroupInfo, ChallengeInfo } from "./ActivityFeed";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { timestamps, updateEntity } from "../utils/immutable";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 /**
  * Submission status values
@@ -104,28 +103,29 @@ export class ChallengeSubmission {
     group?: GroupInfo | null;
     reviewedBy?: ReviewerInfo | null;
     challenge?: ChallengeInfo | null;
-  }): Result<ChallengeSubmission, ValidationError> {
+  }): Effect.Effect<ChallengeSubmission, ValidationError, never> {
     // Validate challengeId
     const challengeIdResult = validate.id(props.challengeId, "challengeId");
-    if (isError(challengeIdResult)) return challengeIdResult;
+    if (challengeIdResult.kind === "err")
+      return Effect.fail(challengeIdResult.error);
 
     // Validate groupId
     const groupIdResult = validate.id(props.groupId, "groupId");
-    if (isError(groupIdResult)) return groupIdResult;
+    if (groupIdResult.kind === "err") return Effect.fail(groupIdResult.error);
 
     // Validate imageIds
     const imageIds = props.imageIds ?? [];
     const imageIdsResult = validate.array(imageIds, "imageIds", {
       maxItems: 10,
     });
-    if (isError(imageIdsResult)) return imageIdsResult;
+    if (imageIdsResult.kind === "err") return Effect.fail(imageIdsResult.error);
 
     // Validate textContent length
     if (props.textContent !== null && props.textContent !== undefined) {
       const textResult = validate.string(props.textContent, "textContent", {
         maxLength: 10000,
       });
-      if (isError(textResult)) return textResult;
+      if (textResult.kind === "err") return Effect.fail(textResult.error);
     }
 
     // Validate location coordinates
@@ -134,7 +134,7 @@ export class ChallengeSubmission {
         min: -90,
         max: 90,
       });
-      if (isError(latResult)) return latResult;
+      if (latResult.kind === "err") return Effect.fail(latResult.error);
     }
 
     if (props.longitude !== null && props.longitude !== undefined) {
@@ -142,7 +142,7 @@ export class ChallengeSubmission {
         min: -180,
         max: 180,
       });
-      if (isError(lngResult)) return lngResult;
+      if (lngResult.kind === "err") return Effect.fail(lngResult.error);
     }
 
     // Validate rejection reason length
@@ -154,18 +154,28 @@ export class ChallengeSubmission {
           maxLength: 1000,
         },
       );
-      if (isError(reasonResult)) return reasonResult;
+      if (reasonResult.kind === "err") return Effect.fail(reasonResult.error);
     }
 
     // Validate points are non-negative
     const awardedPoints = props.awardedPoints ?? 0;
     if (awardedPoints < 0) {
-      return err(ValidationError.minValue("awardedPoints", 0));
+      return Effect.fail(
+        new ValidationError({
+          message: "awardedPoints must be at least 0",
+          field: "awardedPoints",
+        }),
+      );
     }
 
     const bonusPoints = props.bonusPoints ?? 0;
     if (bonusPoints < 0) {
-      return err(ValidationError.minValue("bonusPoints", 0));
+      return Effect.fail(
+        new ValidationError({
+          message: "bonusPoints must be at least 0",
+          field: "bonusPoints",
+        }),
+      );
     }
 
     // Validate ranking is between 1 and 3 if provided
@@ -176,7 +186,7 @@ export class ChallengeSubmission {
         max: 3,
         integer: true,
       });
-      if (isError(rankingResult)) return rankingResult;
+      if (rankingResult.kind === "err") return Effect.fail(rankingResult.error);
       ranking = rankingResult.value;
     }
 
@@ -186,7 +196,7 @@ export class ChallengeSubmission {
       updatedAt: props.updatedAt,
     });
 
-    return ok(
+    return Effect.succeed(
       new ChallengeSubmission(
         props.id ?? (crypto.randomUUID() as SubmissionId),
         challengeIdResult.value.trim(),
@@ -225,9 +235,19 @@ export class ChallengeSubmission {
     textContent?: string | null;
     latitude?: number | null;
     longitude?: number | null;
-  }): Result<ChallengeSubmission, ValidationError | StateTransitionError> {
+  }): Effect.Effect<
+    ChallengeSubmission,
+    ValidationError | StateTransitionError,
+    never
+  > {
     if (this.status !== "PENDING") {
-      return err(new StateTransitionError(this.status, "PENDING_UPDATE"));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: "PENDING_UPDATE",
+          entityType: "ChallengeSubmission",
+        }),
+      );
     }
 
     // Validate imageIds
@@ -235,7 +255,7 @@ export class ChallengeSubmission {
     const imageIdsResult = validate.array(imageIds, "imageIds", {
       maxItems: 10,
     });
-    if (isError(imageIdsResult)) return imageIdsResult;
+    if (imageIdsResult.kind === "err") return Effect.fail(imageIdsResult.error);
 
     // Validate textContent length
     let textContent =
@@ -244,7 +264,7 @@ export class ChallengeSubmission {
       const textResult = validate.string(textContent, "textContent", {
         maxLength: 10000,
       });
-      if (isError(textResult)) return textResult;
+      if (textResult.kind === "err") return Effect.fail(textResult.error);
     }
 
     // Validate location coordinates
@@ -258,7 +278,7 @@ export class ChallengeSubmission {
         min: -90,
         max: 90,
       });
-      if (isError(latResult)) return latResult;
+      if (latResult.kind === "err") return Effect.fail(latResult.error);
     }
 
     if (longitude !== null) {
@@ -266,10 +286,10 @@ export class ChallengeSubmission {
         min: -180,
         max: 180,
       });
-      if (isError(lngResult)) return lngResult;
+      if (lngResult.kind === "err") return Effect.fail(lngResult.error);
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         {
@@ -297,19 +317,29 @@ export class ChallengeSubmission {
     awardedPoints?: number;
     bonusPoints?: number;
     ranking?: number | null;
-  }): Result<ChallengeSubmission, ValidationError | StateTransitionError> {
+  }): Effect.Effect<
+    ChallengeSubmission,
+    ValidationError | StateTransitionError,
+    never
+  > {
     if (!submissionStateMachine.canTransition(this.status, "APPROVED")) {
-      return err(new StateTransitionError(this.status, "APPROVED"));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: "APPROVED",
+          entityType: "ChallengeSubmission",
+        }),
+      );
     }
 
     const awardedPoints = props.awardedPoints ?? this.awardedPoints;
     const bonusPoints = props.bonusPoints ?? this.bonusPoints;
 
     if (awardedPoints < 0) {
-      return err(ValidationError.minValue("awardedPoints", 0));
+      return Effect.fail(ValidationError.minValue("awardedPoints", 0));
     }
     if (bonusPoints < 0) {
-      return err(ValidationError.minValue("bonusPoints", 0));
+      return Effect.fail(ValidationError.minValue("bonusPoints", 0));
     }
 
     let ranking: number | null = this.ranking;
@@ -319,11 +349,11 @@ export class ChallengeSubmission {
         max: 3,
         integer: true,
       });
-      if (isError(rankingResult)) return rankingResult;
+      if (rankingResult.kind === "err") return Effect.fail(rankingResult.error);
       ranking = rankingResult.value;
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         {
@@ -348,18 +378,28 @@ export class ChallengeSubmission {
   reject(props: {
     reviewedById: string;
     reason: string;
-  }): Result<ChallengeSubmission, ValidationError | StateTransitionError> {
+  }): Effect.Effect<
+    ChallengeSubmission,
+    ValidationError | StateTransitionError,
+    never
+  > {
     if (!submissionStateMachine.canTransition(this.status, "REJECTED")) {
-      return err(new StateTransitionError(this.status, "REJECTED"));
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: "REJECTED",
+          entityType: "ChallengeSubmission",
+        }),
+      );
     }
 
     const reasonResult = validate.string(props.reason, "reason", {
       required: true,
       maxLength: 1000,
     });
-    if (isError(reasonResult)) return reasonResult;
+    if (reasonResult.kind === "err") return Effect.fail(reasonResult.error);
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         {
@@ -383,12 +423,17 @@ export class ChallengeSubmission {
    */
   autoApprove(props: {
     awardedPoints: number;
-  }): Result<ChallengeSubmission, ValidationError> {
+  }): Effect.Effect<ChallengeSubmission, ValidationError, never> {
     if (props.awardedPoints < 0) {
-      return err(ValidationError.minValue("awardedPoints", 0));
+      return Effect.fail(
+        new ValidationError({
+          message: "awardedPoints must be at least 0",
+          field: "awardedPoints",
+        }),
+      );
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         {

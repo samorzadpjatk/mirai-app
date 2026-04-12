@@ -1,5 +1,7 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * GroupJoinRequest entity - represents a pending request to join a group
@@ -19,6 +21,8 @@ export class GroupJoinRequest {
   /**
    * Factory method to create a new GroupJoinRequest
    * Validates all input data
+   *
+   * Returns Effect<GroupJoinRequest, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -26,30 +30,50 @@ export class GroupJoinRequest {
     groupId: string;
     userId: string;
     createdAt?: Date;
-  }): Result<GroupJoinRequest, string> {
+  }): Effect.Effect<GroupJoinRequest, ValidationError, never> {
     // Validate tripId
     if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "tripId is required",
+          field: "tripId",
+        }),
+      );
     }
 
     // Validate groupId
     if (!props.groupId || props.groupId.trim() === "") {
-      return err("groupId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "groupId is required",
+          field: "groupId",
+        }),
+      );
     }
 
     // Validate userId
     if (!props.userId || props.userId.trim() === "") {
-      return err("userId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "userId is required",
+          field: "userId",
+        }),
+      );
     }
 
     // Check that userId is different from groupId
     if (props.userId.trim() === props.groupId.trim()) {
-      return err("userId and groupId must be different");
+      return Effect.fail(
+        new ValidationError({
+          message: "userId and groupId must be different",
+          field: "userId",
+        }),
+      );
     }
 
     const now = new Date();
 
-    return ok(
+    return Effect.succeed(
       new GroupJoinRequest(
         props.id ?? crypto.randomUUID(),
         props.tripId.trim(),
@@ -115,5 +139,24 @@ export class GroupJoinRequest {
    */
   isOlderThan(ms: number): boolean {
     return this.getAgeMs() > ms;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace GroupJoinRequestCompat {
+  /**
+   * @deprecated Use GroupJoinRequest.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof GroupJoinRequest.create>[0],
+  ): Result<GroupJoinRequest, ValidationError> {
+    const effect = GroupJoinRequest.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

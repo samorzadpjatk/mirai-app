@@ -1,30 +1,30 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import { TripResource } from "./TripResource";
+import { ValidationError } from "../errors/effect-errors";
 
 describe("[UNIT] TripResource Entity", () => {
   describe("TripResource.create", () => {
     it("should create trip resource with valid data", () => {
-      const result = TripResource.create({
+      const effect = TripResource.create({
         tripId: "trip-123",
         type: "link",
         label: "Hotel Booking",
         url: "https://hotel.com/booking",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBeDefined();
-        expect(result.value.tripId).toBe("trip-123");
-        expect(result.value.type).toBe("link");
-        expect(result.value.label).toBe("Hotel Booking");
-        expect(result.value.url).toBe("https://hotel.com/booking");
-        expect(result.value.sortOrder).toBe(0);
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity.id).toBeDefined();
+      expect(entity.tripId).toBe("trip-123");
+      expect(entity.type).toBe("link");
+      expect(entity.label).toBe("Hotel Booking");
+      expect(entity.url).toBe("https://hotel.com/booking");
+      expect(entity.sortOrder).toBe(0);
+      expect(entity.createdAt).toBeInstanceOf(Date);
     });
 
     it("should create trip resource with storage path", () => {
-      const result = TripResource.create({
+      const effect = TripResource.create({
         tripId: "trip-123",
         type: "document",
         label: "Trip Guide PDF",
@@ -32,214 +32,209 @@ describe("[UNIT] TripResource Entity", () => {
         fileName: "guide.pdf",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.storagePath).toBe("/documents/guide.pdf");
-        expect(result.value.fileName).toBe("guide.pdf");
-        expect(result.value.hasFile()).toBe(true);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity.storagePath).toBe("/documents/guide.pdf");
+      expect(entity.fileName).toBe("guide.pdf");
+      expect(entity.hasFile()).toBe(true);
     });
 
     it("should reject empty tripId", () => {
-      const result = TripResource.create({
+      const effect = TripResource.create({
         tripId: "",
         type: "link",
         label: "Hotel",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("tripId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject empty type", () => {
-      const result = TripResource.create({
+      const effect = TripResource.create({
         tripId: "trip-123",
         type: "",
         label: "Hotel",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("type");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject empty label", () => {
-      const result = TripResource.create({
+      const effect = TripResource.create({
         tripId: "trip-123",
         type: "link",
         label: "",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("label");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject negative sortOrder", () => {
-      const result = TripResource.create({
+      const effect = TripResource.create({
         tripId: "trip-123",
         type: "link",
         label: "Hotel",
         sortOrder: -1,
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("sortOrder");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject label exceeding max length", () => {
-      const result = TripResource.create({
+      const effect = TripResource.create({
         tripId: "trip-123",
         type: "link",
         label: "a".repeat(101),
       });
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
   });
 
   describe("TripResource.updateDetails", () => {
     it("should update label", () => {
-      const resourceResult = TripResource.create({
-        tripId: "trip-123",
-        type: "link",
-        label: "Hotel",
-      });
+      const resource = Effect.runSync(
+        TripResource.create({
+          tripId: "trip-123",
+          type: "link",
+          label: "Hotel",
+        }),
+      );
 
-      expect(resourceResult.kind).toBe("ok");
-      if (resourceResult.kind !== "ok") return;
+      const updated = Effect.runSync(
+        resource.updateDetails({ label: "Updated Hotel" }),
+      );
 
-      const resource = resourceResult.value;
-      const updated = resource.updateDetails({ label: "Updated Hotel" });
-
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.label).toBe("Updated Hotel");
-        expect(updated.value.id).toBe(resource.id);
-      }
+      expect(updated.label).toBe("Updated Hotel");
+      expect(updated.id).toBe(resource.id);
     });
 
     it("should reject empty label update", () => {
-      const resourceResult = TripResource.create({
-        tripId: "trip-123",
-        type: "link",
-        label: "Hotel",
-      });
+      const resource = Effect.runSync(
+        TripResource.create({
+          tripId: "trip-123",
+          type: "link",
+          label: "Hotel",
+        }),
+      );
 
-      expect(resourceResult.kind).toBe("ok");
-      if (resourceResult.kind !== "ok") return;
-
-      const resource = resourceResult.value;
-      const updated = resource.updateDetails({ label: "" });
-
-      expect(updated.kind).toBe("err");
+      const effect = resource.updateDetails({ label: "" });
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
   });
 
   describe("TripResource.updateSortOrder", () => {
     it("should update sort order", () => {
-      const resourceResult = TripResource.create({
-        tripId: "trip-123",
-        type: "link",
-        label: "Hotel",
-        sortOrder: 0,
-      });
+      const resource = Effect.runSync(
+        TripResource.create({
+          tripId: "trip-123",
+          type: "link",
+          label: "Hotel",
+          sortOrder: 0,
+        }),
+      );
 
-      expect(resourceResult.kind).toBe("ok");
-      if (resourceResult.kind !== "ok") return;
-
-      const resource = resourceResult.value;
-      const updated = resource.updateSortOrder(5);
-
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.sortOrder).toBe(5);
-      }
+      const updated = Effect.runSync(resource.updateSortOrder(5));
+      expect(updated.sortOrder).toBe(5);
     });
 
     it("should reject negative sort order", () => {
-      const resourceResult = TripResource.create({
-        tripId: "trip-123",
-        type: "link",
-        label: "Hotel",
-      });
+      const resource = Effect.runSync(
+        TripResource.create({
+          tripId: "trip-123",
+          type: "link",
+          label: "Hotel",
+        }),
+      );
 
-      expect(resourceResult.kind).toBe("ok");
-      if (resourceResult.kind !== "ok") return;
-
-      const resource = resourceResult.value;
-      const updated = resource.updateSortOrder(-1);
-
-      expect(updated.kind).toBe("err");
+      const effect = resource.updateSortOrder(-1);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
   });
 
   describe("TripResource type checking", () => {
     it("should identify link type", () => {
-      const result = TripResource.create({
-        tripId: "trip-123",
-        type: "link",
-        label: "Hotel",
-        url: "https://hotel.com",
-      });
+      const entity = Effect.runSync(
+        TripResource.create({
+          tripId: "trip-123",
+          type: "link",
+          label: "Hotel",
+          url: "https://hotel.com",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isLink()).toBe(true);
-        expect(result.value.isDocument()).toBe(false);
-        expect(result.value.hasUrl()).toBe(true);
-      }
+      expect(entity.isLink()).toBe(true);
+      expect(entity.isDocument()).toBe(false);
+      expect(entity.hasUrl()).toBe(true);
     });
 
     it("should identify document type", () => {
-      const result = TripResource.create({
-        tripId: "trip-123",
-        type: "document",
-        label: "Guide",
-        storagePath: "/docs/guide.pdf",
-      });
+      const entity = Effect.runSync(
+        TripResource.create({
+          tripId: "trip-123",
+          type: "document",
+          label: "Guide",
+          storagePath: "/docs/guide.pdf",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isDocument()).toBe(true);
-        expect(result.value.isLink()).toBe(false);
-        expect(result.value.hasFile()).toBe(true);
-      }
+      expect(entity.isDocument()).toBe(true);
+      expect(entity.isLink()).toBe(false);
+      expect(entity.hasFile()).toBe(true);
     });
 
     it("should identify contact type", () => {
-      const result = TripResource.create({
-        tripId: "trip-123",
-        type: "contact",
-        label: "Emergency Contact",
-      });
+      const entity = Effect.runSync(
+        TripResource.create({
+          tripId: "trip-123",
+          type: "contact",
+          label: "Emergency Contact",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isContact()).toBe(true);
-        expect(result.value.isLink()).toBe(false);
-      }
+      expect(entity.isContact()).toBe(true);
+      expect(entity.isLink()).toBe(false);
     });
 
     it("should return access URL", () => {
-      const result = TripResource.create({
-        tripId: "trip-123",
-        type: "link",
-        label: "Hotel",
-        url: "https://hotel.com",
-        publicUrl: "https://public.hotel.com",
-      });
+      const entity = Effect.runSync(
+        TripResource.create({
+          tripId: "trip-123",
+          type: "link",
+          label: "Hotel",
+          url: "https://hotel.com",
+          publicUrl: "https://public.hotel.com",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.getAccessUrl()).toBe("https://public.hotel.com");
-      }
+      expect(entity.getAccessUrl()).toBe("https://public.hotel.com");
     });
   });
 });

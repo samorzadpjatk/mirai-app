@@ -1,64 +1,43 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit } from "effect";
 import { CoinAmount } from "./CoinAmount";
-
-// Helper to extract value from Result
-const unwrap = <T, E>(
-  result: { kind: "ok"; value: T } | { kind: "err"; error: E },
-): T => {
-  if (result.kind === "err") {
-    throw new Error(`Unexpected error: ${result.error}`);
-  }
-  return result.value;
-};
 
 describe("[UNIT] CoinAmount", () => {
   describe("CoinAmount.create", () => {
     it("should create with positive integer", () => {
-      const result = CoinAmount.create(100);
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.toNumber()).toBe(100);
-      }
+      const effect = CoinAmount.create(100);
+      const coinAmount = Effect.runSync(effect);
+      expect(coinAmount.toNumber()).toBe(100);
     });
 
     it("should create with zero", () => {
-      const result = CoinAmount.create(0);
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.toNumber()).toBe(0);
-      }
+      const effect = CoinAmount.create(0);
+      const coinAmount = Effect.runSync(effect);
+      expect(coinAmount.toNumber()).toBe(0);
     });
 
     it("should create with large value", () => {
-      const result = CoinAmount.create(1_000_000_000);
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.toNumber()).toBe(1_000_000_000);
-      }
+      const effect = CoinAmount.create(1_000_000_000);
+      const coinAmount = Effect.runSync(effect);
+      expect(coinAmount.toNumber()).toBe(1_000_000_000);
     });
 
     it("should reject negative value", () => {
-      const result = CoinAmount.create(-1);
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("negative");
-      }
+      const effect = CoinAmount.create(-1);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
     });
 
     it("should reject fractional value", () => {
-      const result = CoinAmount.create(10.5);
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("integer");
-      }
+      const effect = CoinAmount.create(10.5);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
     });
 
     it("should reject value exceeding maximum", () => {
-      const result = CoinAmount.create(2_000_000_000);
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("maximum");
-      }
+      const effect = CoinAmount.create(2_000_000_000);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
     });
   });
 
@@ -72,112 +51,101 @@ describe("[UNIT] CoinAmount", () => {
 
   describe("CoinAmount.add", () => {
     it("should add two amounts", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const b = unwrap(CoinAmount.create(30));
-      const result = a.add(b);
+      const a = Effect.runSync(CoinAmount.create(50));
+      const b = Effect.runSync(CoinAmount.create(30));
+      const result = Effect.runSync(a.add(b));
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.toNumber()).toBe(80);
-      }
+      expect(result.toNumber()).toBe(80);
     });
 
     it("should not exceed maximum when adding", () => {
       const a = CoinAmount.unsafeCreate(900_000_000);
       const b = CoinAmount.unsafeCreate(200_000_000);
-      const result = a.add(b);
+      const effect = a.add(b);
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
     });
   });
 
   describe("CoinAmount.subtract", () => {
     it("should subtract smaller from larger", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const b = unwrap(CoinAmount.create(30));
-      const result = a.subtract(b);
+      const a = Effect.runSync(CoinAmount.create(50));
+      const b = Effect.runSync(CoinAmount.create(30));
+      const result = Effect.runSync(a.subtract(b));
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.toNumber()).toBe(20);
-      }
+      expect(result.toNumber()).toBe(20);
     });
 
     it("should return error when result would be negative", () => {
-      const a = unwrap(CoinAmount.create(30));
-      const b = unwrap(CoinAmount.create(50));
-      const result = a.subtract(b);
+      const a = Effect.runSync(CoinAmount.create(30));
+      const b = Effect.runSync(CoinAmount.create(50));
+      const effect = a.subtract(b);
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
     });
 
     it("should allow subtracting to zero", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const b = unwrap(CoinAmount.create(50));
-      const result = a.subtract(b);
+      const a = Effect.runSync(CoinAmount.create(50));
+      const b = Effect.runSync(CoinAmount.create(50));
+      const result = Effect.runSync(a.subtract(b));
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.toNumber()).toBe(0);
-        expect(result.value.isZero()).toBe(true);
-      }
+      expect(result.toNumber()).toBe(0);
+      expect(result.isZero()).toBe(true);
     });
   });
 
   describe("CoinAmount.multiply", () => {
     it("should multiply by positive integer", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const result = a.multiply(3);
+      const a = Effect.runSync(CoinAmount.create(50));
+      const result = Effect.runSync(a.multiply(3));
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.toNumber()).toBe(150);
-      }
+      expect(result.toNumber()).toBe(150);
     });
 
     it("should reject negative factor", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const result = a.multiply(-2);
+      const a = Effect.runSync(CoinAmount.create(50));
+      const effect = a.multiply(-2);
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
     });
 
     it("should reject fractional factor", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const result = a.multiply(1.5);
+      const a = Effect.runSync(CoinAmount.create(50));
+      const effect = a.multiply(1.5);
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
     });
 
     it("should handle zero factor", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const result = a.multiply(0);
+      const a = Effect.runSync(CoinAmount.create(50));
+      const result = Effect.runSync(a.multiply(0));
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.toNumber()).toBe(0);
-      }
+      expect(result.toNumber()).toBe(0);
     });
   });
 
   describe("CoinAmount.isGreaterThanOrEqual", () => {
     it("should return true when greater", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const b = unwrap(CoinAmount.create(30));
+      const a = Effect.runSync(CoinAmount.create(50));
+      const b = Effect.runSync(CoinAmount.create(30));
 
       expect(a.isGreaterThanOrEqual(b)).toBe(true);
     });
 
     it("should return true when equal", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const b = unwrap(CoinAmount.create(50));
+      const a = Effect.runSync(CoinAmount.create(50));
+      const b = Effect.runSync(CoinAmount.create(50));
 
       expect(a.isGreaterThanOrEqual(b)).toBe(true);
     });
 
     it("should return false when smaller", () => {
-      const a = unwrap(CoinAmount.create(30));
-      const b = unwrap(CoinAmount.create(50));
+      const a = Effect.runSync(CoinAmount.create(30));
+      const b = Effect.runSync(CoinAmount.create(50));
 
       expect(a.isGreaterThanOrEqual(b)).toBe(false);
     });
@@ -190,29 +158,29 @@ describe("[UNIT] CoinAmount", () => {
     });
 
     it("should return false for positive", () => {
-      const amount = unwrap(CoinAmount.create(10));
+      const amount = Effect.runSync(CoinAmount.create(10));
       expect(amount.isZero()).toBe(false);
     });
   });
 
   describe("CoinAmount.compare", () => {
     it("should return positive when greater", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const b = unwrap(CoinAmount.create(30));
+      const a = Effect.runSync(CoinAmount.create(50));
+      const b = Effect.runSync(CoinAmount.create(30));
 
       expect(a.compare(b)).toBeGreaterThan(0);
     });
 
     it("should return negative when smaller", () => {
-      const a = unwrap(CoinAmount.create(30));
-      const b = unwrap(CoinAmount.create(50));
+      const a = Effect.runSync(CoinAmount.create(30));
+      const b = Effect.runSync(CoinAmount.create(50));
 
       expect(a.compare(b)).toBeLessThan(0);
     });
 
     it("should return zero when equal", () => {
-      const a = unwrap(CoinAmount.create(50));
-      const b = unwrap(CoinAmount.create(50));
+      const a = Effect.runSync(CoinAmount.create(50));
+      const b = Effect.runSync(CoinAmount.create(50));
 
       expect(a.compare(b)).toBe(0);
     });
@@ -220,12 +188,12 @@ describe("[UNIT] CoinAmount", () => {
 
   describe("CoinAmount.toString", () => {
     it("should format single coin", () => {
-      const amount = unwrap(CoinAmount.create(1));
+      const amount = Effect.runSync(CoinAmount.create(1));
       expect(amount.toString()).toBe("1 coin");
     });
 
     it("should format multiple coins", () => {
-      const amount = unwrap(CoinAmount.create(5));
+      const amount = Effect.runSync(CoinAmount.create(5));
       expect(amount.toString()).toBe("5 coins");
     });
 

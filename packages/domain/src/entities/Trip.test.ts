@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import { Trip, TripStatus } from "./Trip";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 describe("[UNIT] Trip Entity", () => {
   describe("Trip.create", () => {
@@ -8,215 +9,204 @@ describe("[UNIT] Trip Entity", () => {
       const startDate = new Date("2026-06-01");
       const endDate = new Date("2026-06-07");
 
-      const result = Trip.create({
+      const effect = Trip.create({
         name: "Summer Trip 2026",
         startDate,
         endDate,
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBeDefined();
-        expect(result.value.name).toBe("Summer Trip 2026");
-        expect(result.value.startDate).toEqual(startDate);
-        expect(result.value.endDate).toEqual(endDate);
-        expect(result.value.status).toBe(TripStatus.PLANNING);
-        expect(result.value.isPlanning()).toBe(true);
-      }
+      const trip = Effect.runSync(effect);
+      expect(trip.id).toBeDefined();
+      expect(trip.name).toBe("Summer Trip 2026");
+      expect(trip.startDate).toEqual(startDate);
+      expect(trip.endDate).toEqual(endDate);
+      expect(trip.status).toBe(TripStatus.PLANNING);
+      expect(trip.isPlanning()).toBe(true);
     });
 
     it("should reject empty name", () => {
-      const result = Trip.create({
+      const effect = Trip.create({
         name: "",
         startDate: new Date("2026-06-01"),
         endDate: new Date("2026-06-07"),
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("name");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("name");
       }
     });
 
     it("should reject endDate before startDate", () => {
-      const result = Trip.create({
+      const effect = Trip.create({
         name: "Trip Name",
         startDate: new Date("2026-06-07"),
         endDate: new Date("2026-06-01"),
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("endDate");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("endDate");
       }
     });
   });
 
   describe("Trip.start", () => {
     it("should start planning trip", () => {
-      const tripResult = Trip.create({
-        name: "Trip Name",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-07"),
-        status: TripStatus.PLANNING,
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Trip Name",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-07"),
+          status: TripStatus.PLANNING,
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind !== "ok") return;
+      const started = Effect.runSync(trip.start());
 
-      const trip = tripResult.value;
-      const startedResult = trip.start();
-
-      expect(startedResult.kind).toBe("ok");
-      if (startedResult.kind === "ok") {
-        expect(startedResult.value.status).toBe(TripStatus.ACTIVE);
-        expect(startedResult.value.isActive()).toBe(true);
-      }
+      expect(started.status).toBe(TripStatus.ACTIVE);
+      expect(started.isActive()).toBe(true);
     });
 
     it("should reject starting already active trip", () => {
-      const tripResult = Trip.create({
-        name: "Trip Name",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-07"),
-        status: TripStatus.ACTIVE,
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Trip Name",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-07"),
+          status: TripStatus.ACTIVE,
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind !== "ok") return;
-
-      const result = tripResult.value.start();
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
+      const effect = trip.start();
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
 
   describe("Trip.complete", () => {
     it("should complete active trip", () => {
-      const tripResult = Trip.create({
-        name: "Trip Name",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-07"),
-        status: TripStatus.ACTIVE,
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Trip Name",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-07"),
+          status: TripStatus.ACTIVE,
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind !== "ok") return;
+      const completed = Effect.runSync(trip.complete());
 
-      const trip = tripResult.value;
-      const completedResult = trip.complete();
-
-      expect(completedResult.kind).toBe("ok");
-      if (completedResult.kind === "ok") {
-        expect(completedResult.value.status).toBe(TripStatus.COMPLETED);
-        expect(completedResult.value.isCompleted()).toBe(true);
-      }
+      expect(completed.status).toBe(TripStatus.COMPLETED);
+      expect(completed.isCompleted()).toBe(true);
     });
 
     it("should reject completing planning trip", () => {
-      const tripResult = Trip.create({
-        name: "Trip Name",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-07"),
-        status: TripStatus.PLANNING,
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Trip Name",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-07"),
+          status: TripStatus.PLANNING,
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind !== "ok") return;
-
-      const result = tripResult.value.complete();
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
+      const effect = trip.complete();
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
 
   describe("Trip.cancel", () => {
     it("should cancel planning trip", () => {
-      const tripResult = Trip.create({
-        name: "Trip Name",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-07"),
-        status: TripStatus.PLANNING,
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Trip Name",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-07"),
+          status: TripStatus.PLANNING,
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind !== "ok") return;
+      const cancelled = Effect.runSync(trip.cancel());
 
-      const result = tripResult.value.cancel();
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.status).toBe(TripStatus.CANCELLED);
-        expect(result.value.isCancelled()).toBe(true);
-      }
+      expect(cancelled.status).toBe(TripStatus.CANCELLED);
+      expect(cancelled.isCancelled()).toBe(true);
     });
 
     it("should reject canceling completed trip", () => {
-      const tripResult = Trip.create({
-        name: "Trip Name",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-07"),
-        status: TripStatus.COMPLETED,
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Trip Name",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-07"),
+          status: TripStatus.COMPLETED,
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind !== "ok") return;
-
-      const result = tripResult.value.cancel();
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
+      const effect = trip.cancel();
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
 
   describe("Trip.isTerminal", () => {
     it("should return true for completed trip", () => {
-      const tripResult = Trip.create({
-        name: "Trip Name",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-07"),
-        status: TripStatus.COMPLETED,
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Trip Name",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-07"),
+          status: TripStatus.COMPLETED,
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind === "ok") {
-        expect(tripResult.value.isTerminal()).toBe(true);
-      }
+      expect(trip.isTerminal()).toBe(true);
     });
 
     it("should return false for planning trip", () => {
-      const tripResult = Trip.create({
-        name: "Trip Name",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-07"),
-        status: TripStatus.PLANNING,
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Trip Name",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-07"),
+          status: TripStatus.PLANNING,
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind === "ok") {
-        expect(tripResult.value.isTerminal()).toBe(false);
-      }
+      expect(trip.isTerminal()).toBe(false);
     });
   });
 
   describe("Trip.getDurationInDays", () => {
     it("should return correct duration", () => {
-      const tripResult = Trip.create({
-        name: "Week Trip",
-        startDate: new Date("2026-06-01"),
-        endDate: new Date("2026-06-08"),
-      });
+      const trip = Effect.runSync(
+        Trip.create({
+          name: "Week Trip",
+          startDate: new Date("2026-06-01"),
+          endDate: new Date("2026-06-08"),
+        }),
+      );
 
-      expect(tripResult.kind).toBe("ok");
-      if (tripResult.kind === "ok") {
-        expect(tripResult.value.getDurationInDays()).toBe(7);
-      }
+      expect(trip.getDurationInDays()).toBe(7);
     });
   });
 });

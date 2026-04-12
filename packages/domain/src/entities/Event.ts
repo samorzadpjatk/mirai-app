@@ -1,8 +1,9 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { timestamps, updateEntity } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * Event entity - represents a trip-level event
@@ -28,6 +29,8 @@ export class Event {
   /**
    * Factory method to create a new Event
    * Validates all input data
+   *
+   * Returns Effect<Event, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -41,10 +44,17 @@ export class Event {
     files?: string[];
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Event, ValidationError> {
+  }): Effect.Effect<Event, ValidationError, never> {
     // Validate creatorId
     const creatorId = validate.id(props.creatorId, "creatorId");
-    if (isError(creatorId)) return err(creatorId.error);
+    if (isError(creatorId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: creatorId.error.message,
+          field: "creatorId",
+        }),
+      );
+    }
 
     // Validate title
     const title = validate.string(props.title, "title", {
@@ -52,7 +62,14 @@ export class Event {
       maxLength: 200,
       trim: true,
     });
-    if (isError(title)) return err(title.error);
+    if (isError(title)) {
+      return Effect.fail(
+        new ValidationError({
+          message: title.error.message,
+          field: "title",
+        }),
+      );
+    }
 
     // Validate location
     const location = validate.string(props.location, "location", {
@@ -60,7 +77,14 @@ export class Event {
       maxLength: 300,
       trim: true,
     });
-    if (isError(location)) return err(location.error);
+    if (isError(location)) {
+      return Effect.fail(
+        new ValidationError({
+          message: location.error.message,
+          field: "location",
+        }),
+      );
+    }
 
     // Validate description
     const description = validate.string(props.description, "description", {
@@ -68,19 +92,40 @@ export class Event {
       maxLength: 2000,
       trim: true,
     });
-    if (isError(description)) return err(description.error);
+    if (isError(description)) {
+      return Effect.fail(
+        new ValidationError({
+          message: description.error.message,
+          field: "description",
+        }),
+      );
+    }
 
     // Validate time range
     const timeRange = validate.dateRange(props.startTime, props.endTime);
-    if (isError(timeRange)) return err(timeRange.error);
+    if (isError(timeRange)) {
+      return Effect.fail(
+        new ValidationError({
+          message: timeRange.error.message,
+          field: "startTime/endTime",
+        }),
+      );
+    }
 
     // Validate files array
     const files = validate.array(props.files ?? [], "files", { maxItems: 10 });
-    if (isError(files)) return err(files.error);
+    if (isError(files)) {
+      return Effect.fail(
+        new ValidationError({
+          message: files.error.message,
+          field: "files",
+        }),
+      );
+    }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new Event(
         props.id ?? crypto.randomUUID(),
         creatorId.value,
@@ -100,12 +145,14 @@ export class Event {
   /**
    * Update event details
    * Returns a new Event instance (immutable)
+   *
+   * Returns Effect<Event, ValidationError, never>
    */
   updateDetails(props: {
     title?: string;
     location?: string;
     description?: string;
-  }): Result<Event, ValidationError> {
+  }): Effect.Effect<Event, ValidationError, never> {
     // Validate title if provided
     let title = this.title;
     if (props.title !== undefined) {
@@ -114,7 +161,14 @@ export class Event {
         maxLength: 200,
         trim: true,
       });
-      if (isError(titleValidated)) return err(titleValidated.error);
+      if (isError(titleValidated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: titleValidated.error.message,
+            field: "title",
+          }),
+        );
+      }
       title = titleValidated.value;
     }
 
@@ -126,7 +180,14 @@ export class Event {
         maxLength: 300,
         trim: true,
       });
-      if (isError(locationValidated)) return err(locationValidated.error);
+      if (isError(locationValidated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: locationValidated.error.message,
+            field: "location",
+          }),
+        );
+      }
       location = locationValidated.value;
     }
 
@@ -142,28 +203,46 @@ export class Event {
           trim: true,
         },
       );
-      if (isError(descriptionValidated)) return err(descriptionValidated.error);
+      if (isError(descriptionValidated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: descriptionValidated.error.message,
+            field: "description",
+          }),
+        );
+      }
       description = descriptionValidated.value;
     }
 
-    return ok(updateEntity(this, { title, location, description }, Event));
+    return Effect.succeed(
+      updateEntity(this, { title, location, description }, Event),
+    );
   }
 
   /**
    * Update event times
    * Returns a new Event instance (immutable)
+   *
+   * Returns Effect<Event, ValidationError, never>
    */
   updateTimes(props: {
     startTime?: Date;
     endTime?: Date;
-  }): Result<Event, ValidationError> {
+  }): Effect.Effect<Event, ValidationError, never> {
     const newStartTime = props.startTime ?? this.startTime;
     const newEndTime = props.endTime ?? this.endTime;
 
     const timeRange = validate.dateRange(newStartTime, newEndTime);
-    if (isError(timeRange)) return err(timeRange.error);
+    if (isError(timeRange)) {
+      return Effect.fail(
+        new ValidationError({
+          message: timeRange.error.message,
+          field: "startTime/endTime",
+        }),
+      );
+    }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         { startTime: newStartTime, endTime: newEndTime },
@@ -175,12 +254,21 @@ export class Event {
   /**
    * Assign to organizing group
    * Returns a new Event instance (immutable)
+   *
+   * Returns Effect<Event, ValidationError, never>
    */
-  assignToGroup(groupId: string): Result<Event, ValidationError> {
+  assignToGroup(groupId: string): Effect.Effect<Event, ValidationError, never> {
     const validatedGroupId = validate.id(groupId, "groupId");
-    if (isError(validatedGroupId)) return err(validatedGroupId.error);
+    if (isError(validatedGroupId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: validatedGroupId.error.message,
+          field: "groupId",
+        }),
+      );
+    }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(this, { organizerGroupId: validatedGroupId.value }, Event),
     );
   }
@@ -196,19 +284,35 @@ export class Event {
   /**
    * Add a file
    * Returns a new Event instance (immutable)
+   *
+   * Returns Effect<Event, ValidationError, never>
    */
-  addFile(filePath: string): Result<Event, ValidationError> {
+  addFile(filePath: string): Effect.Effect<Event, ValidationError, never> {
     const validatedFilePath = validate.string(filePath, "filePath", {
       required: true,
       trim: true,
     });
-    if (isError(validatedFilePath)) return err(validatedFilePath.error);
+    if (isError(validatedFilePath)) {
+      return Effect.fail(
+        new ValidationError({
+          message: validatedFilePath.error.message,
+          field: "filePath",
+        }),
+      );
+    }
 
     const newFiles = [...this.files, validatedFilePath.value];
     const files = validate.array(newFiles, "files", { maxItems: 10 });
-    if (isError(files)) return err(files.error);
+    if (isError(files)) {
+      return Effect.fail(
+        new ValidationError({
+          message: files.error.message,
+          field: "files",
+        }),
+      );
+    }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(this, { files: Object.freeze([...files.value]) }, Event),
     );
   }
@@ -269,5 +373,24 @@ export class Event {
   getSummary(): string {
     const startStr = this.startTime.toLocaleString();
     return `${this.title} @ ${this.location} (${startStr})`;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace EventCompat {
+  /**
+   * @deprecated Use Event.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof Event.create>[0],
+  ): Result<Event, ValidationError> {
+    const effect = Event.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

@@ -1,8 +1,8 @@
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { Effect } from "effect";
 import type { ChallengeVoteId } from "../value-objects/ChallengeVoteId";
 import { VotePosition } from "../value-objects/VotePosition";
 import { VoteWeight } from "../value-objects/VoteWeight";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * ChallengeVote entity - represents a single vote cast in a challenge
@@ -38,41 +38,45 @@ export class ChallengeVote {
     points?: number;
     weight?: number;
     votedAt?: Date;
-  }): Result<ChallengeVote, string> {
+  }): Effect.Effect<ChallengeVote, ValidationError, never> {
     // Validate challengeId
     if (!props.challengeId || props.challengeId.trim() === "") {
-      return err("challengeId is required");
+      return Effect.fail(ValidationError.required("challengeId"));
     }
 
     // Validate submissionId
     if (!props.submissionId || props.submissionId.trim() === "") {
-      return err("submissionId is required");
+      return Effect.fail(ValidationError.required("submissionId"));
     }
 
     // Validate voterId
     if (!props.voterId || props.voterId.trim() === "") {
-      return err("voterId is required");
+      return Effect.fail(ValidationError.required("voterId"));
     }
 
     // Validate and create position
     const positionResult = VotePosition.create(props.position);
     if (positionResult.kind === "err") {
-      return err(`Invalid position: ${positionResult.error}`);
+      return Effect.fail(
+        ValidationError.forField("position", positionResult.error),
+      );
     }
 
     // Validate points (must be non-negative)
     const points = props.points ?? positionResult.value.toPoints();
     if (points < 0) {
-      return err("points must be non-negative");
+      return Effect.fail(ValidationError.minValue("points", 0));
     }
 
     // Validate and create weight
     const weightResult =
       props.weight !== undefined
         ? VoteWeight.create(props.weight)
-        : ok(VoteWeight.default());
+        : { kind: "ok" as const, value: VoteWeight.default() };
     if (weightResult.kind === "err") {
-      return err(`Invalid weight: ${weightResult.error}`);
+      return Effect.fail(
+        ValidationError.forField("weight", weightResult.error),
+      );
     }
 
     // Validate ID if provided
@@ -84,7 +88,7 @@ export class ChallengeVote {
       id = crypto.randomUUID() as ChallengeVoteId;
     }
 
-    return ok(
+    return Effect.succeed(
       new ChallengeVote(
         id,
         props.challengeId.trim(),

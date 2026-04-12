@@ -1,9 +1,10 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * Push delivery record interface - tracks push notification to individual user
@@ -76,6 +77,8 @@ export class NotificationDelivery {
   /**
    * Factory method to create a new NotificationDelivery
    * Validates all input data
+   *
+   * Returns Effect<NotificationDelivery, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -93,10 +96,17 @@ export class NotificationDelivery {
     pushes?: PushDeliveryRecord[];
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<NotificationDelivery, ValidationError> {
+  }): Effect.Effect<NotificationDelivery, ValidationError, never> {
     // Validate notificationId
     const notificationId = validate.id(props.notificationId, "notificationId");
-    if (isError(notificationId)) return err(notificationId.error);
+    if (isError(notificationId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: notificationId.error.message,
+          field: "notificationId",
+        }),
+      );
+    }
 
     // Validate counts
     const totalRecipients = validate.number(
@@ -108,7 +118,14 @@ export class NotificationDelivery {
         integer: true,
       },
     );
-    if (isError(totalRecipients)) return err(totalRecipients.error);
+    if (isError(totalRecipients)) {
+      return Effect.fail(
+        new ValidationError({
+          message: totalRecipients.error.message,
+          field: "totalRecipients",
+        }),
+      );
+    }
 
     const successCount = validate.number(
       props.successCount ?? 0,
@@ -119,7 +136,14 @@ export class NotificationDelivery {
         integer: true,
       },
     );
-    if (isError(successCount)) return err(successCount.error);
+    if (isError(successCount)) {
+      return Effect.fail(
+        new ValidationError({
+          message: successCount.error.message,
+          field: "successCount",
+        }),
+      );
+    }
 
     const failureCount = validate.number(
       props.failureCount ?? 0,
@@ -130,15 +154,22 @@ export class NotificationDelivery {
         integer: true,
       },
     );
-    if (isError(failureCount)) return err(failureCount.error);
+    if (isError(failureCount)) {
+      return Effect.fail(
+        new ValidationError({
+          message: failureCount.error.message,
+          field: "failureCount",
+        }),
+      );
+    }
 
     // Validate counts relationship
     if (successCount.value + failureCount.value > totalRecipients.value) {
-      return err(
-        new ValidationError(
-          "successCount + failureCount cannot exceed totalRecipients",
-          "counts",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: "successCount + failureCount cannot exceed totalRecipients",
+          field: "counts",
+        }),
       );
     }
 
@@ -148,7 +179,14 @@ export class NotificationDelivery {
         required: false,
         maxLength: 2000,
       });
-      if (isError(validated)) return err(validated.error);
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "errors",
+          }),
+        );
+      }
     }
 
     // Validate completedAt is after startedAt if both present
@@ -157,17 +195,17 @@ export class NotificationDelivery {
       props.deliveryCompletedAt &&
       props.deliveryCompletedAt.getTime() < startedAt.getTime()
     ) {
-      return err(
-        new ValidationError(
-          "deliveryCompletedAt must be after deliveryStartedAt",
-          "deliveryCompletedAt",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: "deliveryCompletedAt must be after deliveryStartedAt",
+          field: "deliveryCompletedAt",
+        }),
       );
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new NotificationDelivery(
         props.id ?? crypto.randomUUID(),
         props.tripId ?? null,
@@ -219,17 +257,26 @@ export class NotificationDelivery {
 
   /**
    * Mark delivery as failed
-   * Returns a Result with new NotificationDelivery instance or ValidationError
+   * Returns a Effect with new NotificationDelivery instance or ValidationError
    */
-  markAsFailed(errors: string): Result<NotificationDelivery, ValidationError> {
+  markAsFailed(
+    errors: string,
+  ): Effect.Effect<NotificationDelivery, ValidationError, never> {
     const validated = validate.string(errors, "errors", {
       required: true,
       maxLength: 2000,
       trim: true,
     });
-    if (isError(validated)) return err(validated.error);
+    if (isError(validated)) {
+      return Effect.fail(
+        new ValidationError({
+          message: validated.error.message,
+          field: "errors",
+        }),
+      );
+    }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         {
@@ -244,24 +291,32 @@ export class NotificationDelivery {
 
   /**
    * Update delivery statistics
-   * Returns a Result with new NotificationDelivery instance or ValidationError
+   * Returns a Effect with new NotificationDelivery instance or ValidationError
    */
   updateStats(props: {
     totalRecipients?: number;
     successCount?: number;
     failureCount?: number;
-  }): Result<NotificationDelivery, ValidationError> {
+  }): Effect.Effect<NotificationDelivery, ValidationError, never> {
     const total = props.totalRecipients ?? this.totalRecipients;
     const success = props.successCount ?? this.successCount;
     const failure = props.failureCount ?? this.failureCount;
 
     if (total < 0 || success < 0 || failure < 0) {
-      return err(new ValidationError("counts must be non-negative", "counts"));
+      return Effect.fail(
+        new ValidationError({
+          message: "counts must be non-negative",
+          field: "counts",
+        }),
+      );
     }
 
     if (success + failure > total) {
-      return err(
-        new ValidationError("success + failure cannot exceed total", "counts"),
+      return Effect.fail(
+        new ValidationError({
+          message: "success + failure cannot exceed total",
+          field: "counts",
+        }),
       );
     }
 
@@ -273,7 +328,7 @@ export class NotificationDelivery {
     if (props.failureCount !== undefined)
       updates.failureCount = props.failureCount;
 
-    return ok(updateEntity(this, updates, NotificationDelivery));
+    return Effect.succeed(updateEntity(this, updates, NotificationDelivery));
   }
 
   /**
@@ -420,5 +475,24 @@ export class NotificationDelivery {
     return (
       this.deliveryCompletedAt.getTime() - this.deliveryStartedAt.getTime()
     );
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace NotificationDeliveryCompat {
+  /**
+   * @deprecated Use NotificationDelivery.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof NotificationDelivery.create>[0],
+  ): Result<NotificationDelivery, ValidationError> {
+    const effect = NotificationDelivery.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

@@ -1,5 +1,7 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * Validation rules for PushSubscription data
@@ -36,30 +38,46 @@ export class PushSubscription {
     token: string;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<PushSubscription, string> {
+  }): Effect.Effect<PushSubscription, ValidationError, never> {
     // Validate userId
     if (!props.userId || props.userId.trim() === "") {
-      return err("userId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "userId is required",
+          field: "userId",
+        }),
+      );
     }
 
     // Validate token
     if (!props.token || props.token.trim() === "") {
-      return err("token is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "token is required",
+          field: "token",
+        }),
+      );
     }
     if (props.token.length < VALIDATION_RULES.token.minLength) {
-      return err(
-        `token must be at least ${VALIDATION_RULES.token.minLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `token must be at least ${VALIDATION_RULES.token.minLength} characters`,
+          field: "token",
+        }),
       );
     }
     if (props.token.length > VALIDATION_RULES.token.maxLength) {
-      return err(
-        `token must be at most ${VALIDATION_RULES.token.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `token must be at most ${VALIDATION_RULES.token.maxLength} characters`,
+          field: "token",
+        }),
       );
     }
 
     const now = new Date();
 
-    return ok(
+    return Effect.succeed(
       new PushSubscription(
         props.id ?? crypto.randomUUID(),
         props.userId.trim(),
@@ -107,5 +125,24 @@ export class PushSubscription {
       return "****";
     }
     return `${this.token.slice(0, 4)}****${this.token.slice(-4)}`;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace PushSubscriptionCompat {
+  /**
+   * @deprecated Use PushSubscription.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof PushSubscription.create>[0],
+  ): Result<PushSubscription, ValidationError> {
+    const effect = PushSubscription.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

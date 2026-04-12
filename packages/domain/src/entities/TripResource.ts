@@ -1,3 +1,5 @@
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
 
@@ -59,36 +61,62 @@ export class TripResource {
     sortOrder?: number;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<TripResource, string> {
+  }): Effect.Effect<TripResource, ValidationError, never> {
     // Validate tripId
     if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "tripId is required",
+          field: "general",
+        }),
+      );
     }
 
     // Validate type
     if (!props.type || props.type.trim() === "") {
-      return err("type is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "type is required",
+          field: "general",
+        }),
+      );
     }
     if (props.type.length > VALIDATION_RULES.type.maxLength) {
-      return err(
-        `type must be at most ${VALIDATION_RULES.type.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `type must be at most ${VALIDATION_RULES.type.maxLength} characters`,
+          field: "type",
+        }),
       );
     }
 
     // Validate label
     if (!props.label || props.label.trim() === "") {
-      return err("label is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "label is required",
+          field: "general",
+        }),
+      );
     }
     if (props.label.length > VALIDATION_RULES.label.maxLength) {
-      return err(
-        `label must be at most ${VALIDATION_RULES.label.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `label must be at most ${VALIDATION_RULES.label.maxLength} characters`,
+          field: "label",
+        }),
       );
     }
 
     // Validate sortOrder
     const sortOrder = props.sortOrder ?? 0;
     if (sortOrder < 0) {
-      return err("sortOrder must be non-negative");
+      return Effect.fail(
+        new ValidationError({
+          message: "sortOrder must be non-negative",
+          field: "general",
+        }),
+      );
     }
 
     // Validate that at least one of url or storagePath is provided for valid resources
@@ -97,7 +125,7 @@ export class TripResource {
 
     const now = new Date();
 
-    return ok(
+    return Effect.succeed(
       new TripResource(
         props.id ?? crypto.randomUUID(),
         props.tripId.trim(),
@@ -124,20 +152,28 @@ export class TripResource {
   updateDetails(props: {
     label?: string;
     description?: string | null;
-  }): Result<TripResource, string> {
+  }): Effect.Effect<TripResource, ValidationError, never> {
     // Validate label if provided
     if (props.label !== undefined) {
       if (props.label.trim() === "") {
-        return err("label is required");
+        return Effect.fail(
+          new ValidationError({
+            message: "label is required",
+            field: "general",
+          }),
+        );
       }
       if (props.label.length > VALIDATION_RULES.label.maxLength) {
-        return err(
-          `label must be at most ${VALIDATION_RULES.label.maxLength} characters`,
+        return Effect.fail(
+          new ValidationError({
+            message: `label must be at most ${VALIDATION_RULES.label.maxLength} characters`,
+            field: "label",
+          }),
         );
       }
     }
 
-    return ok(
+    return Effect.succeed(
       new TripResource(
         this.id,
         this.tripId,
@@ -189,12 +225,19 @@ export class TripResource {
    * Update sort order
    * Returns a new TripResource instance (immutable)
    */
-  updateSortOrder(newSortOrder: number): Result<TripResource, string> {
+  updateSortOrder(
+    newSortOrder: number,
+  ): Effect.Effect<TripResource, ValidationError, never> {
     if (newSortOrder < 0) {
-      return err("sortOrder must be non-negative");
+      return Effect.fail(
+        new ValidationError({
+          message: "sortOrder must be non-negative",
+          field: "general",
+        }),
+      );
     }
 
-    return ok(
+    return Effect.succeed(
       new TripResource(
         this.id,
         this.tripId,
@@ -261,5 +304,24 @@ export class TripResource {
    */
   isContact(): boolean {
     return this.type.toLowerCase() === "contact";
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace TripResourceCompat {
+  /**
+   * @deprecated Use TripResource.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof TripResource.create>[0],
+  ): Result<TripResource, ValidationError> {
+    const effect = TripResource.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

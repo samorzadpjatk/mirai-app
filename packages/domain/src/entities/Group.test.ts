@@ -1,32 +1,31 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import { Group, GroupStatus } from "./Group";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 describe("[UNIT] Group Entity", () => {
   describe("Group.create", () => {
     it("should create group with minimum required fields", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "trip-123",
         name: "Team Alpha",
         organizerId: "user-456",
         code: "ALPHA2026",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBeDefined();
-        expect(result.value.tripId).toBe("trip-123");
-        expect(result.value.name).toBe("Team Alpha");
-        expect(result.value.organizerId).toBe("user-456");
-        expect(result.value.code).toBe("ALPHA2026");
-        expect(result.value.coins).toBe(0);
-        expect(result.value.isDeleted()).toBe(false);
-        expect(result.value.status).toBe(GroupStatus.ACTIVE);
-      }
+      const group = Effect.runSync(effect);
+      expect(group.id).toBeDefined();
+      expect(group.tripId).toBe("trip-123");
+      expect(group.name).toBe("Team Alpha");
+      expect(group.organizerId).toBe("user-456");
+      expect(group.code).toBe("ALPHA2026");
+      expect(group.coins).toBe(0);
+      expect(group.isDeleted()).toBe(false);
+      expect(group.status).toBe(GroupStatus.ACTIVE);
     });
 
     it("should create group with all fields", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "trip-123",
         name: "Team Beta",
         description: "The best team ever",
@@ -36,106 +35,116 @@ describe("[UNIT] Group Entity", () => {
         coins: 100,
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.description).toBe("The best team ever");
-        expect(result.value.image).toBe("https://example.com/team.jpg");
-        expect(result.value.coins).toBe(100);
-      }
+      const group = Effect.runSync(effect);
+      expect(group.description).toBe("The best team ever");
+      expect(group.image).toBe("https://example.com/team.jpg");
+      expect(group.coins).toBe(100);
     });
 
     it("should reject empty tripId", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "",
         name: "Team Name",
         organizerId: "user-123",
         code: "CODE123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("tripId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("tripId");
       }
     });
 
     it("should reject empty name", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "trip-123",
         name: "",
         organizerId: "user-123",
         code: "CODE123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("name");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("name");
       }
     });
 
     it("should reject name longer than 100 characters", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "trip-123",
         name: "a".repeat(101),
         organizerId: "user-123",
         code: "CODE123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("name");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("name");
       }
     });
 
     it("should reject empty organizerId", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "trip-123",
         name: "Team Name",
         organizerId: "",
         code: "CODE123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("organizerId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("organizerId");
       }
     });
 
     it("should reject empty code", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "trip-123",
         name: "Team Name",
         organizerId: "user-123",
         code: "",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("code");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("code");
       }
     });
 
     it("should reject code longer than 50 characters", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "trip-123",
         name: "Team Name",
         organizerId: "user-123",
         code: "a".repeat(51),
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("code");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("code");
       }
     });
 
     it("should reject negative coins", () => {
-      const result = Group.create({
+      const effect = Group.create({
         tripId: "trip-123",
         name: "Team Name",
         organizerId: "user-123",
@@ -143,333 +152,307 @@ describe("[UNIT] Group Entity", () => {
         coins: -10,
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("coins");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("coins");
       }
     });
   });
 
   describe("Group.updateDetails", () => {
     it("should update name and description", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Original Name",
-        organizerId: "user-123",
-        code: "CODE123",
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Original Name",
+          organizerId: "user-123",
+          code: "CODE123",
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
+      const updated = Effect.runSync(
+        group.updateDetails({
+          name: "Updated Name",
+          description: "Updated description",
+        }),
+      );
 
-      const group = groupResult.value;
-      const updatedResult = group.updateDetails({
-        name: "Updated Name",
-        description: "Updated description",
-      });
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.name).toBe("Updated Name");
-        expect(updatedResult.value.description).toBe("Updated description");
-        expect(updatedResult.value.id).toBe(group.id);
-      }
+      expect(updated.name).toBe("Updated Name");
+      expect(updated.description).toBe("Updated description");
+      expect(updated.id).toBe(group.id);
     });
 
     it("should reject invalid name update", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Original Name",
-        organizerId: "user-123",
-        code: "CODE123",
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Original Name",
+          organizerId: "user-123",
+          code: "CODE123",
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
-
-      const result = groupResult.value.updateDetails({ name: "" });
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
+      const effect = group.updateDetails({ name: "" });
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject update if group is deleted", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Original Name",
-        organizerId: "user-123",
-        code: "CODE123",
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Original Name",
+          organizerId: "user-123",
+          code: "CODE123",
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
+      const deleted = Effect.runSync(group.markAsDeleted());
+      const effect = deleted.updateDetails({ name: "New Name" });
 
-      const deletedResult = groupResult.value.markAsDeleted();
-      expect(deletedResult.kind).toBe("ok");
-      if (deletedResult.kind !== "ok") return;
-
-      const result = deletedResult.value.updateDetails({ name: "New Name" });
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
 
   describe("Group.changeOrganizer", () => {
     it("should change organizer", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
+      const updated = Effect.runSync(group.changeOrganizer("user-456"));
 
-      const group = groupResult.value;
-      const updatedResult = group.changeOrganizer("user-456");
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.organizerId).toBe("user-456");
-        expect(updatedResult.value.id).toBe(group.id);
-      }
+      expect(updated.organizerId).toBe("user-456");
+      expect(updated.id).toBe(group.id);
     });
 
     it("should reject empty organizerId", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
-
-      const result = groupResult.value.changeOrganizer("");
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("organizerId");
+      const effect = group.changeOrganizer("");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("organizerId");
       }
     });
   });
 
   describe("Group.addCoins", () => {
     it("should add coins to balance", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-        coins: 100,
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+          coins: 100,
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
+      const updated = Effect.runSync(group.addCoins(50));
 
-      const group = groupResult.value;
-      const updatedResult = group.addCoins(50);
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.coins).toBe(150);
-      }
+      expect(updated.coins).toBe(150);
     });
 
     it("should reject negative amount", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-        coins: 100,
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+          coins: 100,
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
-
-      const result = groupResult.value.addCoins(-10);
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("amount");
+      const effect = group.addCoins(-10);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("amount");
       }
     });
   });
 
   describe("Group.spendCoins", () => {
     it("should subtract coins from balance", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-        coins: 100,
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+          coins: 100,
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
+      const updated = Effect.runSync(group.spendCoins(30));
 
-      const group = groupResult.value;
-      const updatedResult = group.spendCoins(30);
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.coins).toBe(70);
-      }
+      expect(updated.coins).toBe(70);
     });
 
     it("should reject spending more than balance", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-        coins: 50,
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+          coins: 50,
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
-
-      const result = groupResult.value.spendCoins(100);
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("coins");
+      const effect = group.spendCoins(100);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.field).toBe("coins");
       }
     });
   });
 
   describe("Group.markAsDeleted", () => {
     it("should mark group as deleted", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
+      const updated = Effect.runSync(group.markAsDeleted());
 
-      const group = groupResult.value;
-      const updatedResult = group.markAsDeleted();
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.isDeleted()).toBe(true);
-        expect(updatedResult.value.status).toBe(GroupStatus.DELETED);
-      }
+      expect(updated.isDeleted()).toBe(true);
+      expect(updated.status).toBe(GroupStatus.DELETED);
     });
 
     it("should reject deleting already deleted group", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-        status: GroupStatus.DELETED,
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+          status: GroupStatus.DELETED,
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind !== "ok") return;
-
-      const result = groupResult.value.markAsDeleted();
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
+      const effect = group.markAsDeleted();
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        const error = exit.cause.error;
+        expect(error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
 
   describe("Group.isActive", () => {
     it("should return true for active group", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind === "ok") {
-        expect(groupResult.value.isActive()).toBe(true);
-      }
+      expect(group.isActive()).toBe(true);
     });
 
     it("should return false for deleted group", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind === "ok") {
-        const deletedResult = groupResult.value.markAsDeleted();
-        expect(deletedResult.kind).toBe("ok");
-        if (deletedResult.kind === "ok") {
-          expect(deletedResult.value.isActive()).toBe(false);
-        }
-      }
+      const deleted = Effect.runSync(group.markAsDeleted());
+      expect(deleted.isActive()).toBe(false);
     });
   });
 
   describe("Group.hasEnoughCoins", () => {
     it("should return true when balance is sufficient", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-        coins: 100,
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+          coins: 100,
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind === "ok") {
-        expect(groupResult.value.hasEnoughCoins(50)).toBe(true);
-        expect(groupResult.value.hasEnoughCoins(100)).toBe(true);
-      }
+      expect(group.hasEnoughCoins(50)).toBe(true);
+      expect(group.hasEnoughCoins(100)).toBe(true);
     });
 
     it("should return false when balance is insufficient", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-        coins: 50,
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+          coins: 50,
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind === "ok") {
-        expect(groupResult.value.hasEnoughCoins(100)).toBe(false);
-      }
+      expect(group.hasEnoughCoins(100)).toBe(false);
     });
   });
 
   describe("Group.getBalance", () => {
     it("should return current coin balance", () => {
-      const groupResult = Group.create({
-        tripId: "trip-123",
-        name: "Team Name",
-        organizerId: "user-123",
-        code: "CODE123",
-        coins: 150,
-      });
+      const group = Effect.runSync(
+        Group.create({
+          tripId: "trip-123",
+          name: "Team Name",
+          organizerId: "user-123",
+          code: "CODE123",
+          coins: 150,
+        }),
+      );
 
-      expect(groupResult.kind).toBe("ok");
-      if (groupResult.kind === "ok") {
-        expect(groupResult.value.getBalance()).toBe(150);
-      }
+      expect(group.getBalance()).toBe(150);
     });
   });
 });

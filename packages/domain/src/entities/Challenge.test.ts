@@ -1,528 +1,507 @@
 import { describe, it, expect } from "bun:test";
+import { Effect } from "effect";
 import {
   Challenge,
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
 } from "./Challenge";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 describe("[UNIT] Challenge Entity", () => {
   describe("Challenge.create", () => {
-    it("should create challenge with minimum required fields", () => {
-      const result = Challenge.create({
-        tripId: "trip-123",
-        name: "Photo Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should create challenge with minimum required fields", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Photo Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBeDefined();
-        expect(result.value.tripId).toBe("trip-123");
-        expect(result.value.name).toBe("Photo Challenge");
-        expect(result.value.status).toBe(ChallengeStatus.HIDDEN);
-        expect(result.value.basePoints).toBe(0);
-        expect(result.value.isRecurring).toBe(false);
-        expect(result.value.autoApprove).toBe(false);
-      }
+      expect(challenge.id).toBeDefined();
+      expect(challenge.tripId).toBe("trip-123");
+      expect(challenge.name).toBe("Photo Challenge");
+      expect(challenge.status).toBe(ChallengeStatus.HIDDEN);
+      expect(challenge.basePoints).toBe(0);
+      expect(challenge.isRecurring).toBe(false);
+      expect(challenge.autoApprove).toBe(false);
     });
 
-    it("should create challenge with all fields", () => {
+    it("should create challenge with all fields", async () => {
       const startTime = new Date("2026-01-01");
       const endTime = new Date("2026-01-31");
 
-      const result = Challenge.create({
-        tripId: "trip-123",
-        name: "Video Challenge",
-        description: "Submit your best video",
-        image: "https://example.com/image.jpg",
-        submissionType: SubmissionType.VIDEO,
-        scoringCategory: ScoringCategory.PEER_VOTING,
-        isRecurring: true,
-        dailyStartTime: "09:00",
-        dailyEndTime: "18:00",
-        basePoints: 100,
-        firstPlacePoints: 50,
-        secondPlacePoints: 30,
-        thirdPlacePoints: 20,
-        status: ChallengeStatus.VISIBLE,
-        startTime,
-        endTime,
-        targetLatitude: 40.7128,
-        targetLongitude: -74.006,
-        expectedValue: "QR123",
-        autoApprove: true,
-      });
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Video Challenge",
+          description: "Submit your best video",
+          image: "https://example.com/image.jpg",
+          submissionType: SubmissionType.VIDEO,
+          scoringCategory: ScoringCategory.PEER_VOTING,
+          isRecurring: true,
+          dailyStartTime: "09:00",
+          dailyEndTime: "18:00",
+          basePoints: 100,
+          firstPlacePoints: 50,
+          secondPlacePoints: 30,
+          thirdPlacePoints: 20,
+          status: ChallengeStatus.VISIBLE,
+          startTime,
+          endTime,
+          targetLatitude: 40.7128,
+          targetLongitude: -74.006,
+          expectedValue: "QR123",
+          autoApprove: true,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.description).toBe("Submit your best video");
-        expect(result.value.image).toBe("https://example.com/image.jpg");
-        expect(result.value.scoringCategory).toBe(ScoringCategory.PEER_VOTING);
-        expect(result.value.isRecurring).toBe(true);
-        expect(result.value.dailyStartTime).toBe("09:00");
-        expect(result.value.basePoints).toBe(100);
-        expect(result.value.firstPlacePoints).toBe(50);
-        expect(result.value.startTime).toEqual(startTime);
-        expect(result.value.targetLatitude).toBe(40.7128);
-        expect(result.value.expectedValue).toBe("QR123");
-        expect(result.value.autoApprove).toBe(true);
-      }
+      expect(challenge.description).toBe("Submit your best video");
+      expect(challenge.image).toBe("https://example.com/image.jpg");
+      expect(challenge.scoringCategory).toBe(ScoringCategory.PEER_VOTING);
+      expect(challenge.isRecurring).toBe(true);
+      expect(challenge.dailyStartTime).toBe("09:00");
+      expect(challenge.basePoints).toBe(100);
+      expect(challenge.firstPlacePoints).toBe(50);
+      expect(challenge.startTime).toEqual(startTime);
+      expect(challenge.targetLatitude).toBe(40.7128);
+      expect(challenge.expectedValue).toBe("QR123");
+      expect(challenge.autoApprove).toBe(true);
     });
 
-    it("should reject empty tripId", () => {
-      const result = Challenge.create({
-        tripId: "",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should reject empty tripId", async () => {
+      const error = await Effect.runPromise(
+        Effect.flip(
+          Challenge.create({
+            tripId: "",
+            name: "Test Challenge",
+            submissionType: SubmissionType.IMAGE,
+            scoringCategory: ScoringCategory.UNLIMITED,
+          }),
+        ),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("tripId");
-      }
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error.field).toBe("tripId");
     });
 
-    it("should reject empty name", () => {
-      const result = Challenge.create({
-        tripId: "trip-123",
-        name: "",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should reject empty name", async () => {
+      const error = await Effect.runPromise(
+        Effect.flip(
+          Challenge.create({
+            tripId: "trip-123",
+            name: "",
+            submissionType: SubmissionType.IMAGE,
+            scoringCategory: ScoringCategory.UNLIMITED,
+          }),
+        ),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("name");
-      }
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error.field).toBe("name");
     });
 
-    it("should reject name longer than 200 characters", () => {
-      const result = Challenge.create({
-        tripId: "trip-123",
-        name: "a".repeat(201),
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should reject name longer than 200 characters", async () => {
+      const error = await Effect.runPromise(
+        Effect.flip(
+          Challenge.create({
+            tripId: "trip-123",
+            name: "a".repeat(201),
+            submissionType: SubmissionType.IMAGE,
+            scoringCategory: ScoringCategory.UNLIMITED,
+          }),
+        ),
+      );
 
-      expect(result.kind).toBe("err");
+      expect(error).toBeInstanceOf(ValidationError);
     });
 
-    it("should reject negative basePoints", () => {
-      const result = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-        basePoints: -10,
-      });
+    it("should reject negative basePoints", async () => {
+      const error = await Effect.runPromise(
+        Effect.flip(
+          Challenge.create({
+            tripId: "trip-123",
+            name: "Test Challenge",
+            submissionType: SubmissionType.IMAGE,
+            scoringCategory: ScoringCategory.UNLIMITED,
+            basePoints: -10,
+          }),
+        ),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("basePoints");
-      }
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error.field).toBe("basePoints");
     });
 
-    it("should reject endTime before startTime", () => {
-      const result = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-        startTime: new Date("2026-01-31"),
-        endTime: new Date("2026-01-01"),
-      });
+    it("should reject endTime before startTime", async () => {
+      const error = await Effect.runPromise(
+        Effect.flip(
+          Challenge.create({
+            tripId: "trip-123",
+            name: "Test Challenge",
+            submissionType: SubmissionType.IMAGE,
+            scoringCategory: ScoringCategory.UNLIMITED,
+            startTime: new Date("2026-01-31"),
+            endTime: new Date("2026-01-01"),
+          }),
+        ),
+      );
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("endTime");
-      }
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error.field).toBe("endTime");
     });
   });
 
   describe("Challenge.updateDetails", () => {
-    it("should update name and description", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Original Name",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should update name and description", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Original Name",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind !== "ok") return;
+      const updated = await Effect.runPromise(
+        challenge.updateDetails({
+          name: "Updated Name",
+          description: "Updated description",
+        }),
+      );
 
-      const challenge = challengeResult.value;
-      const updatedResult = challenge.updateDetails({
-        name: "Updated Name",
-        description: "Updated description",
-      });
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.name).toBe("Updated Name");
-        expect(updatedResult.value.description).toBe("Updated description");
-        expect(updatedResult.value.id).toBe(challenge.id); // Same ID
-      }
+      expect(updated.name).toBe("Updated Name");
+      expect(updated.description).toBe("Updated description");
+      expect(updated.id).toBe(challenge.id); // Same ID
     });
 
-    it("should reject invalid name update", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Original Name",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should reject invalid name update", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Original Name",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind !== "ok") return;
-
-      const result = challengeResult.value.updateDetails({ name: "" });
-      expect(result.kind).toBe("err");
+      const error = await Effect.runPromise(
+        Effect.flip(challenge.updateDetails({ name: "" })),
+      );
+      expect(error).toBeInstanceOf(ValidationError);
     });
   });
 
   describe("Challenge.updateStatus", () => {
-    it("should transition from HIDDEN to VISIBLE", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should transition from HIDDEN to VISIBLE", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind !== "ok") return;
-
-      const challenge = challengeResult.value;
       expect(challenge.status).toBe(ChallengeStatus.HIDDEN);
 
-      const updatedResult = challenge.updateStatus(ChallengeStatus.VISIBLE);
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.status).toBe(ChallengeStatus.VISIBLE);
-      }
+      const updated = await Effect.runPromise(
+        challenge.updateStatus(ChallengeStatus.VISIBLE),
+      );
+      expect(updated.status).toBe(ChallengeStatus.VISIBLE);
     });
 
-    it("should transition through valid workflow", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.PEER_VOTING,
-      });
-
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind !== "ok") return;
-
-      let challenge = challengeResult.value;
+    it("should transition through valid workflow", async () => {
+      let challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.PEER_VOTING,
+        }),
+      );
 
       // HIDDEN -> VISIBLE
-      const result1 = challenge.updateStatus(ChallengeStatus.VISIBLE);
-      expect(result1.kind).toBe("ok");
-      if (result1.kind === "ok") challenge = result1.value;
+      challenge = await Effect.runPromise(
+        challenge.updateStatus(ChallengeStatus.VISIBLE),
+      );
       expect(challenge.status).toBe(ChallengeStatus.VISIBLE);
 
       // VISIBLE -> ACTIVE
-      const result2 = challenge.updateStatus(ChallengeStatus.ACTIVE);
-      expect(result2.kind).toBe("ok");
-      if (result2.kind === "ok") challenge = result2.value;
+      challenge = await Effect.runPromise(
+        challenge.updateStatus(ChallengeStatus.ACTIVE),
+      );
       expect(challenge.status).toBe(ChallengeStatus.ACTIVE);
 
       // ACTIVE -> VOTING_PHASE (for PEER_VOTING)
-      const result3 = challenge.updateStatus(ChallengeStatus.VOTING_PHASE);
-      expect(result3.kind).toBe("ok");
-      if (result3.kind === "ok") challenge = result3.value;
+      challenge = await Effect.runPromise(
+        challenge.updateStatus(ChallengeStatus.VOTING_PHASE),
+      );
       expect(challenge.status).toBe(ChallengeStatus.VOTING_PHASE);
 
       // VOTING_PHASE -> COMPLETED
-      const result4 = challenge.updateStatus(ChallengeStatus.COMPLETED);
-      expect(result4.kind).toBe("ok");
-      if (result4.kind === "ok") challenge = result4.value;
+      challenge = await Effect.runPromise(
+        challenge.updateStatus(ChallengeStatus.COMPLETED),
+      );
       expect(challenge.status).toBe(ChallengeStatus.COMPLETED);
     });
 
-    it("should return StateTransitionError for invalid transition", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
-
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind !== "ok") return;
-
-      const challenge = challengeResult.value;
+    it("should return StateTransitionError for invalid transition", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
       // Try to transition directly from HIDDEN to ACTIVE (invalid)
-      const result = challenge.updateStatus(ChallengeStatus.ACTIVE);
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
-        expect(result.error.from).toBe(ChallengeStatus.HIDDEN);
-        expect(result.error.to).toBe(ChallengeStatus.ACTIVE);
-      }
+      const error = await Effect.runPromise(
+        Effect.flip(challenge.updateStatus(ChallengeStatus.ACTIVE)),
+      );
+      expect(error).toBeInstanceOf(StateTransitionError);
+      expect(error.from).toBe(ChallengeStatus.HIDDEN);
+      expect(error.to).toBe(ChallengeStatus.ACTIVE);
     });
   });
 
   describe("Challenge.updatePoints", () => {
-    it("should update points", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.SPEED,
-        basePoints: 50,
-      });
+    it("should update points", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.SPEED,
+          basePoints: 50,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind !== "ok") return;
+      const updated = await Effect.runPromise(
+        challenge.updatePoints({
+          basePoints: 100,
+          firstPlacePoints: 50,
+          secondPlacePoints: 30,
+          thirdPlacePoints: 20,
+        }),
+      );
 
-      const challenge = challengeResult.value;
-      const updatedResult = challenge.updatePoints({
-        basePoints: 100,
-        firstPlacePoints: 50,
-        secondPlacePoints: 30,
-        thirdPlacePoints: 20,
-      });
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.basePoints).toBe(100);
-        expect(updatedResult.value.firstPlacePoints).toBe(50);
-        expect(updatedResult.value.secondPlacePoints).toBe(30);
-        expect(updatedResult.value.thirdPlacePoints).toBe(20);
-      }
+      expect(updated.basePoints).toBe(100);
+      expect(updated.firstPlacePoints).toBe(50);
+      expect(updated.secondPlacePoints).toBe(30);
+      expect(updated.thirdPlacePoints).toBe(20);
     });
 
-    it("should reject negative points", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should reject negative points", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind !== "ok") return;
-
-      const result = challengeResult.value.updatePoints({ basePoints: -10 });
-      expect(result.kind).toBe("err");
+      const error = await Effect.runPromise(
+        Effect.flip(challenge.updatePoints({ basePoints: -10 })),
+      );
+      expect(error).toBeInstanceOf(ValidationError);
     });
   });
 
   describe("Challenge.updateSchedule", () => {
-    it("should update schedule", () => {
+    it("should update schedule", async () => {
       const startTime = new Date("2026-02-01");
       const endTime = new Date("2026-02-28");
 
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind !== "ok") return;
+      const updated = await Effect.runPromise(
+        challenge.updateSchedule({
+          startTime,
+          endTime,
+          dailyStartTime: "10:00",
+          dailyEndTime: "20:00",
+        }),
+      );
 
-      const challenge = challengeResult.value;
-      const updatedResult = challenge.updateSchedule({
-        startTime,
-        endTime,
-        dailyStartTime: "10:00",
-        dailyEndTime: "20:00",
-      });
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.startTime).toEqual(startTime);
-        expect(updatedResult.value.endTime).toEqual(endTime);
-        expect(updatedResult.value.dailyStartTime).toBe("10:00");
-        expect(updatedResult.value.dailyEndTime).toBe("20:00");
-      }
+      expect(updated.startTime).toEqual(startTime);
+      expect(updated.endTime).toEqual(endTime);
+      expect(updated.dailyStartTime).toBe("10:00");
+      expect(updated.dailyEndTime).toBe("20:00");
     });
   });
 
   describe("Challenge.isActive", () => {
-    it("should return true for ACTIVE status", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-        status: ChallengeStatus.ACTIVE,
-      });
+    it("should return true for ACTIVE status", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+          status: ChallengeStatus.ACTIVE,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.isActive()).toBe(true);
-      }
+      expect(challenge.isActive()).toBe(true);
     });
 
-    it("should return false for HIDDEN status", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-        status: ChallengeStatus.HIDDEN,
-      });
+    it("should return false for HIDDEN status", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+          status: ChallengeStatus.HIDDEN,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.isActive()).toBe(false);
-      }
+      expect(challenge.isActive()).toBe(false);
     });
   });
 
   describe("Challenge.isOpenForSubmission", () => {
-    it("should return true when ACTIVE and within time window", () => {
+    it("should return true when ACTIVE and within time window", async () => {
       const now = new Date();
       const startTime = new Date(now.getTime() - 1000); // Started 1 second ago
       const endTime = new Date(now.getTime() + 10000); // Ends in 10 seconds
 
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-        status: ChallengeStatus.ACTIVE,
-        startTime,
-        endTime,
-      });
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+          status: ChallengeStatus.ACTIVE,
+          startTime,
+          endTime,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.isOpenForSubmission()).toBe(true);
-      }
+      expect(challenge.isOpenForSubmission()).toBe(true);
     });
 
-    it("should return false when not ACTIVE", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-        status: ChallengeStatus.VISIBLE,
-      });
+    it("should return false when not ACTIVE", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+          status: ChallengeStatus.VISIBLE,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.isOpenForSubmission()).toBe(false);
-      }
+      expect(challenge.isOpenForSubmission()).toBe(false);
     });
   });
 
   describe("Challenge.requiresLocation", () => {
-    it("should return true for IMAGE_LOCATION type", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE_LOCATION,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should return true for IMAGE_LOCATION type", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE_LOCATION,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.requiresLocation()).toBe(true);
-      }
+      expect(challenge.requiresLocation()).toBe(true);
     });
 
-    it("should return true for LOCATION type", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.LOCATION,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should return true for LOCATION type", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.LOCATION,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.requiresLocation()).toBe(true);
-      }
+      expect(challenge.requiresLocation()).toBe(true);
     });
 
-    it("should return false for TEXT type", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.TEXT,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should return false for TEXT type", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.TEXT,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.requiresLocation()).toBe(false);
-      }
+      expect(challenge.requiresLocation()).toBe(false);
     });
   });
 
   describe("Challenge.requiresQRCode", () => {
-    it("should return true for QR_CODE type", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.QR_CODE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should return true for QR_CODE type", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.QR_CODE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.requiresQRCode()).toBe(true);
-      }
+      expect(challenge.requiresQRCode()).toBe(true);
     });
 
-    it("should return false for IMAGE type", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      });
+    it("should return false for IMAGE type", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.UNLIMITED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.requiresQRCode()).toBe(false);
-      }
+      expect(challenge.requiresQRCode()).toBe(false);
     });
   });
 
   describe("Challenge.hasVotingPhase", () => {
-    it("should return true for PEER_VOTING category", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.PEER_VOTING,
-      });
+    it("should return true for PEER_VOTING category", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.PEER_VOTING,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.hasVotingPhase()).toBe(true);
-      }
+      expect(challenge.hasVotingPhase()).toBe(true);
     });
 
-    it("should return false for SPEED category", () => {
-      const challengeResult = Challenge.create({
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.SPEED,
-      });
+    it("should return false for SPEED category", async () => {
+      const challenge = await Effect.runPromise(
+        Challenge.create({
+          tripId: "trip-123",
+          name: "Test Challenge",
+          submissionType: SubmissionType.IMAGE,
+          scoringCategory: ScoringCategory.SPEED,
+        }),
+      );
 
-      expect(challengeResult.kind).toBe("ok");
-      if (challengeResult.kind === "ok") {
-        expect(challengeResult.value.hasVotingPhase()).toBe(false);
-      }
+      expect(challenge.hasVotingPhase()).toBe(false);
     });
   });
 });

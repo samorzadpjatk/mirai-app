@@ -1,9 +1,10 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 /**
  * LocationSharingRequestStatus - represents the status of a location sharing request
@@ -51,6 +52,8 @@ export class LocationSharingRequest {
   /**
    * Factory method to create a new LocationSharingRequest
    * Validates all input data
+   *
+   * Returns Effect<LocationSharingRequest, ValidationError, never>
    */
   static create(props: {
     id?: string;
@@ -59,28 +62,42 @@ export class LocationSharingRequest {
     status?: LocationSharingRequestStatus;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<LocationSharingRequest, ValidationError> {
+  }): Effect.Effect<LocationSharingRequest, ValidationError, never> {
     // Validate senderId
     const senderId = validate.id(props.senderId, "senderId");
-    if (isError(senderId)) return err(senderId.error);
+    if (isError(senderId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: senderId.error.message,
+          field: "senderId",
+        }),
+      );
+    }
 
     // Validate receiverId
     const receiverId = validate.id(props.receiverId, "receiverId");
-    if (isError(receiverId)) return err(receiverId.error);
+    if (isError(receiverId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: receiverId.error.message,
+          field: "receiverId",
+        }),
+      );
+    }
 
     // Check that sender and receiver are different
     if (senderId.value === receiverId.value) {
-      return err(
-        new ValidationError(
-          "senderId and receiverId must be different",
-          "receiverId",
-        ),
+      return Effect.fail(
+        new ValidationError({
+          message: "senderId and receiverId must be different",
+          field: "receiverId",
+        }),
       );
     }
 
     const ts = timestamps(props);
 
-    return ok(
+    return Effect.succeed(
       new LocationSharingRequest(
         props.id ?? crypto.randomUUID(),
         senderId.value,
@@ -94,24 +111,25 @@ export class LocationSharingRequest {
 
   /**
    * Accept the request
-   * Returns a Result with new LocationSharingRequest instance or StateTransitionError
+   * Returns a Effect with new LocationSharingRequest instance or StateTransitionError
    */
-  accept(): Result<LocationSharingRequest, StateTransitionError> {
+  accept(): Effect.Effect<LocationSharingRequest, StateTransitionError, never> {
     if (
       !stateMachine.canTransition(
         this.status,
         LocationSharingRequestStatus.ACCEPTED,
       )
     ) {
-      return err(
-        new StateTransitionError(
-          this.status,
-          LocationSharingRequestStatus.ACCEPTED,
-        ),
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: LocationSharingRequestStatus.ACCEPTED,
+          entityType: "LocationSharingRequest",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         { status: LocationSharingRequestStatus.ACCEPTED },
@@ -122,24 +140,25 @@ export class LocationSharingRequest {
 
   /**
    * Reject the request
-   * Returns a Result with new LocationSharingRequest instance or StateTransitionError
+   * Returns a Effect with new LocationSharingRequest instance or StateTransitionError
    */
-  reject(): Result<LocationSharingRequest, StateTransitionError> {
+  reject(): Effect.Effect<LocationSharingRequest, StateTransitionError, never> {
     if (
       !stateMachine.canTransition(
         this.status,
         LocationSharingRequestStatus.REJECTED,
       )
     ) {
-      return err(
-        new StateTransitionError(
-          this.status,
-          LocationSharingRequestStatus.REJECTED,
-        ),
+      return Effect.fail(
+        new StateTransitionError({
+          from: this.status,
+          to: LocationSharingRequestStatus.REJECTED,
+          entityType: "LocationSharingRequest",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       updateEntity(
         this,
         { status: LocationSharingRequestStatus.REJECTED },
@@ -211,5 +230,24 @@ export class LocationSharingRequest {
     if (this.senderId === userId) return this.receiverId;
     if (this.receiverId === userId) return this.senderId;
     return null;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace LocationSharingRequestCompat {
+  /**
+   * @deprecated Use LocationSharingRequest.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof LocationSharingRequest.create>[0],
+  ): Result<LocationSharingRequest, ValidationError> {
+    const effect = LocationSharingRequest.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

@@ -1,3 +1,5 @@
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
 import type { ReportId } from "../value-objects/ReportId";
@@ -45,21 +47,36 @@ export class SubmissionReport {
     details?: string | null;
     createdAt?: Date;
     reporter?: ReporterInfo | null;
-  }): Result<SubmissionReport, string> {
+  }): Effect.Effect<SubmissionReport, ValidationError, never> {
     // Validate submissionId
     if (!props.submissionId || props.submissionId.trim() === "") {
-      return err("submissionId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "submissionId is required",
+          field: "general",
+        }),
+      );
     }
 
     // Validate reporterId
     if (!props.reporterId || props.reporterId.trim() === "") {
-      return err("reporterId is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "reporterId is required",
+          field: "general",
+        }),
+      );
     }
 
     // Validate and create reason
     const reasonResult = ReportReason.create(props.reason);
     if (reasonResult.kind === "err") {
-      return err(`Invalid reason: ${reasonResult.error}`);
+      return Effect.fail(
+        new ValidationError({
+          message: `Invalid reason: ${reasonResult.error}`,
+          field: "reason",
+        }),
+      );
     }
 
     // Validate details (optional, but must not be empty if provided)
@@ -68,7 +85,12 @@ export class SubmissionReport {
       const trimmed = props.details.trim();
       if (trimmed.length > 0) {
         if (trimmed.length > 2000) {
-          return err("details must be at most 2000 characters");
+          return Effect.fail(
+            new ValidationError({
+              message: "details must be at most 2000 characters",
+              field: "general",
+            }),
+          );
         }
         details = trimmed;
       }
@@ -82,7 +104,7 @@ export class SubmissionReport {
       id = crypto.randomUUID() as ReportId;
     }
 
-    return ok(
+    return Effect.succeed(
       new SubmissionReport(
         id,
         props.submissionId.trim(),
@@ -225,4 +247,23 @@ export function groupReportsBySubmission(
   }
 
   return grouped;
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace SubmissionReportCompat {
+  /**
+   * @deprecated Use SubmissionReport.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof SubmissionReport.create>[0],
+  ): Result<SubmissionReport, ValidationError> {
+    const effect = SubmissionReport.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
+  }
 }

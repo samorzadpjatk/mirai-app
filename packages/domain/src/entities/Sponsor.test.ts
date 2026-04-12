@@ -1,544 +1,513 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import { Sponsor } from "./Sponsor";
 import { SponsorId } from "../value-objects/SponsorId";
-import { ValidationError } from "../errors/domain-errors";
+import { ValidationError } from "../errors/effect-errors";
 
 describe("[UNIT] Sponsor entity", () => {
   describe("create", () => {
     it("should create a sponsor with valid data", () => {
-      const result = Sponsor.create({
-        name: "Test Sponsor",
-        description: "A test sponsor description",
-        logoPath: "/logos/test.png",
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test Sponsor",
+          description: "A test sponsor description",
+          logoPath: "/logos/test.png",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.name).toBe("Test Sponsor");
-        expect(result.value.description).toBe("A test sponsor description");
-        expect(result.value.logoPath).toBe("/logos/test.png");
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.height).toBeNull();
-        expect(result.value.offsetX).toBeNull();
-        expect(result.value.offsetY).toBeNull();
-        expect(result.value.id).toBeDefined();
-      }
+      expect(sponsor.name).toBe("Test Sponsor");
+      expect(sponsor.description).toBe("A test sponsor description");
+      expect(sponsor.logoPath).toBe("/logos/test.png");
+      expect(sponsor.isActive).toBe(true);
+      expect(sponsor.height).toBeNull();
+      expect(sponsor.offsetX).toBeNull();
+      expect(sponsor.offsetY).toBeNull();
+      expect(sponsor.id).toBeDefined();
     });
 
     it("should trim whitespace from name and description", () => {
-      const result = Sponsor.create({
-        name: "  Test Sponsor  ",
-        description: "  Description here  ",
-        logoPath: "  /logos/test.png  ",
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "  Test Sponsor  ",
+          description: "  Description here  ",
+          logoPath: "  /logos/test.png  ",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.name).toBe("Test Sponsor");
-        expect(result.value.description).toBe("Description here");
-        expect(result.value.logoPath).toBe("/logos/test.png");
-      }
+      expect(sponsor.name).toBe("Test Sponsor");
+      expect(sponsor.description).toBe("Description here");
+      expect(sponsor.logoPath).toBe("/logos/test.png");
     });
 
     it("should accept optional height, offsetX, offsetY", () => {
-      const result = Sponsor.create({
-        name: "Test Sponsor",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        height: 100,
-        offsetX: 10,
-        offsetY: 20,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test Sponsor",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          height: 100,
+          offsetX: 10,
+          offsetY: 20,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.height).toBe(100);
-        expect(result.value.offsetX).toBe(10);
-        expect(result.value.offsetY).toBe(20);
-      }
+      expect(sponsor.height).toBe(100);
+      expect(sponsor.offsetX).toBe(10);
+      expect(sponsor.offsetY).toBe(20);
     });
 
     it("should accept null for optional numeric fields", () => {
-      const result = Sponsor.create({
-        name: "Test Sponsor",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        height: null,
-        offsetX: null,
-        offsetY: null,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test Sponsor",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          height: null,
+          offsetX: null,
+          offsetY: null,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.height).toBeNull();
-        expect(result.value.offsetX).toBeNull();
-        expect(result.value.offsetY).toBeNull();
-      }
+      expect(sponsor.height).toBeNull();
+      expect(sponsor.offsetX).toBeNull();
+      expect(sponsor.offsetY).toBeNull();
     });
 
     it("should accept explicit isActive flag", () => {
-      const result = Sponsor.create({
-        name: "Test Sponsor",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        isActive: false,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test Sponsor",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          isActive: false,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isActive).toBe(false);
-      }
+      expect(sponsor.isActive).toBe(false);
     });
 
     it("should accept pre-generated ID", () => {
       const id = SponsorId.generate();
-      const result = Sponsor.create({
-        id,
-        name: "Test Sponsor",
-        description: "Description",
-        logoPath: "/logos/test.png",
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          id,
+          name: "Test Sponsor",
+          description: "Description",
+          logoPath: "/logos/test.png",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe(id);
-      }
+      expect(sponsor.id).toBe(id);
     });
 
-    it("should return error for empty name", () => {
-      const result = Sponsor.create({
+    it("should fail for empty name", () => {
+      const effect = Sponsor.create({
         name: "",
         description: "Description",
         logoPath: "/logos/test.png",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("name");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("name");
       }
     });
 
-    it("should return error for empty description", () => {
-      const result = Sponsor.create({
+    it("should fail for empty description", () => {
+      const effect = Sponsor.create({
         name: "Test",
         description: "",
         logoPath: "/logos/test.png",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("description");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("description");
       }
     });
 
-    it("should return error for empty logoPath", () => {
-      const result = Sponsor.create({
+    it("should fail for empty logoPath", () => {
+      const effect = Sponsor.create({
         name: "Test",
         description: "Description",
         logoPath: "",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("logoPath");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("logoPath");
       }
     });
 
-    it("should return error for name exceeding 200 characters", () => {
-      const result = Sponsor.create({
+    it("should fail for name exceeding 200 characters", () => {
+      const effect = Sponsor.create({
         name: "a".repeat(201),
         description: "Description",
         logoPath: "/logos/test.png",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("name");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("name");
       }
     });
 
-    it("should return error for description exceeding 2000 characters", () => {
-      const result = Sponsor.create({
+    it("should fail for description exceeding 2000 characters", () => {
+      const effect = Sponsor.create({
         name: "Test",
         description: "a".repeat(2001),
         logoPath: "/logos/test.png",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("description");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("description");
       }
     });
 
-    it("should return error for negative height", () => {
-      const result = Sponsor.create({
+    it("should fail for negative height", () => {
+      const effect = Sponsor.create({
         name: "Test",
         description: "Description",
         logoPath: "/logos/test.png",
         height: -1,
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("height");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("height");
       }
     });
 
-    it("should return error for negative offsetX", () => {
-      const result = Sponsor.create({
+    it("should fail for negative offsetX", () => {
+      const effect = Sponsor.create({
         name: "Test",
         description: "Description",
         logoPath: "/logos/test.png",
         offsetX: -1,
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("offsetX");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("offsetX");
       }
     });
 
-    it("should return error for negative offsetY", () => {
-      const result = Sponsor.create({
+    it("should fail for negative offsetY", () => {
+      const effect = Sponsor.create({
         name: "Test",
         description: "Description",
         logoPath: "/logos/test.png",
         offsetY: -1,
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("offsetY");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("offsetY");
       }
     });
   });
 
   describe("update", () => {
     it("should update sponsor name", () => {
-      const createResult = Sponsor.create({
-        name: "Original",
-        description: "Description",
-        logoPath: "/logos/test.png",
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Original",
+          description: "Description",
+          logoPath: "/logos/test.png",
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const sponsor = createResult.value;
-        const updateResult = sponsor.update({ name: "Updated" });
+      const updated = Effect.runSync(sponsor.update({ name: "Updated" }));
 
-        expect(updateResult.kind).toBe("ok");
-        if (updateResult.kind === "ok") {
-          expect(updateResult.value.name).toBe("Updated");
-          expect(updateResult.value.description).toBe(sponsor.description);
-          expect(updateResult.value.id).toBe(sponsor.id);
-          expect(updateResult.value.updatedAt.getTime()).toBeGreaterThanOrEqual(
-            sponsor.updatedAt.getTime(),
-          );
-        }
-      }
+      expect(updated.name).toBe("Updated");
+      expect(updated.description).toBe(sponsor.description);
+      expect(updated.id).toBe(sponsor.id);
+      expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        sponsor.updatedAt.getTime(),
+      );
     });
 
     it("should update sponsor description", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Original",
-        logoPath: "/logos/test.png",
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Original",
+          logoPath: "/logos/test.png",
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const sponsor = createResult.value;
-        const updateResult = sponsor.update({ description: "Updated" });
+      const updated = Effect.runSync(
+        sponsor.update({ description: "Updated" }),
+      );
 
-        expect(updateResult.kind).toBe("ok");
-        if (updateResult.kind === "ok") {
-          expect(updateResult.value.description).toBe("Updated");
-        }
-      }
+      expect(updated.description).toBe("Updated");
     });
 
     it("should update sponsor logo path", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/old.png",
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/old.png",
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const sponsor = createResult.value;
-        const updateResult = sponsor.update({ logoPath: "/logos/new.png" });
+      const updated = Effect.runSync(
+        sponsor.update({ logoPath: "/logos/new.png" }),
+      );
 
-        expect(updateResult.kind).toBe("ok");
-        if (updateResult.kind === "ok") {
-          expect(updateResult.value.logoPath).toBe("/logos/new.png");
-        }
-      }
+      expect(updated.logoPath).toBe("/logos/new.png");
     });
 
     it("should update numeric fields", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const sponsor = createResult.value;
-        const updateResult = sponsor.update({
+      const updated = Effect.runSync(
+        sponsor.update({
           height: 100,
           offsetX: 10,
           offsetY: 20,
-        });
+        }),
+      );
 
-        expect(updateResult.kind).toBe("ok");
-        if (updateResult.kind === "ok") {
-          expect(updateResult.value.height).toBe(100);
-          expect(updateResult.value.offsetX).toBe(10);
-          expect(updateResult.value.offsetY).toBe(20);
-        }
-      }
+      expect(updated.height).toBe(100);
+      expect(updated.offsetX).toBe(10);
+      expect(updated.offsetY).toBe(20);
     });
 
     it("should update isActive flag", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        isActive: true,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          isActive: true,
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const sponsor = createResult.value;
-        const updateResult = sponsor.update({ isActive: false });
+      const updated = Effect.runSync(sponsor.update({ isActive: false }));
 
-        expect(updateResult.kind).toBe("ok");
-        if (updateResult.kind === "ok") {
-          expect(updateResult.value.isActive).toBe(false);
-        }
+      expect(updated.isActive).toBe(false);
+    });
+
+    it("should fail for empty name in update", () => {
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+        }),
+      );
+
+      const effect = sponsor.update({ name: "" });
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("name");
       }
     });
 
-    it("should return error for empty name in update", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-      });
+    it("should fail for negative height in update", () => {
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const updateResult = createResult.value.update({ name: "" });
-        expect(updateResult.kind).toBe("err");
-        if (updateResult.kind === "err") {
-          expect(updateResult.error).toBeInstanceOf(ValidationError);
-          expect(updateResult.error.field).toBe("name");
-        }
-      }
-    });
-
-    it("should return error for negative height in update", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-      });
-
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const updateResult = createResult.value.update({ height: -1 });
-        expect(updateResult.kind).toBe("err");
-        if (updateResult.kind === "err") {
-          expect(updateResult.error).toBeInstanceOf(ValidationError);
-          expect(updateResult.error.field).toBe("height");
-        }
+      const effect = sponsor.update({ height: -1 });
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("height");
       }
     });
 
     it("should preserve unmodified fields", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        height: 100,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          height: 100,
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const sponsor = createResult.value;
-        const updateResult = sponsor.update({ name: "Updated" });
+      const updated = Effect.runSync(sponsor.update({ name: "Updated" }));
 
-        expect(updateResult.kind).toBe("ok");
-        if (updateResult.kind === "ok") {
-          expect(updateResult.value.description).toBe(sponsor.description);
-          expect(updateResult.value.logoPath).toBe(sponsor.logoPath);
-          expect(updateResult.value.height).toBe(sponsor.height);
-          expect(updateResult.value.createdAt).toBe(sponsor.createdAt);
-        }
-      }
+      expect(updated.description).toBe(sponsor.description);
+      expect(updated.logoPath).toBe(sponsor.logoPath);
+      expect(updated.height).toBe(sponsor.height);
+      expect(updated.createdAt).toBe(sponsor.createdAt);
     });
   });
 
   describe("deactivate", () => {
     it("should deactivate an active sponsor", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        isActive: true,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          isActive: true,
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const deactivated = createResult.value.deactivate();
-        expect(deactivated.isActive).toBe(false);
-        expect(deactivated.id).toBe(createResult.value.id);
-      }
+      const deactivated = sponsor.deactivate();
+      expect(deactivated.isActive).toBe(false);
+      expect(deactivated.id).toBe(sponsor.id);
     });
   });
 
   describe("activate", () => {
     it("should activate an inactive sponsor", () => {
-      const createResult = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        isActive: false,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          isActive: false,
+        }),
+      );
 
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind === "ok") {
-        const activated = createResult.value.activate();
-        expect(activated.isActive).toBe(true);
-        expect(activated.id).toBe(createResult.value.id);
-      }
+      const activated = sponsor.activate();
+      expect(activated.isActive).toBe(true);
+      expect(activated.id).toBe(sponsor.id);
     });
   });
 
   describe("hasLogoAdjustments", () => {
     it("should return true when height is set", () => {
-      const result = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        height: 100,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          height: 100,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.hasLogoAdjustments()).toBe(true);
-      }
+      expect(sponsor.hasLogoAdjustments()).toBe(true);
     });
 
     it("should return true when offsetX is set", () => {
-      const result = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        offsetX: 10,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          offsetX: 10,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.hasLogoAdjustments()).toBe(true);
-      }
+      expect(sponsor.hasLogoAdjustments()).toBe(true);
     });
 
     it("should return true when offsetY is set", () => {
-      const result = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        offsetY: 10,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          offsetY: 10,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.hasLogoAdjustments()).toBe(true);
-      }
+      expect(sponsor.hasLogoAdjustments()).toBe(true);
     });
 
     it("should return false when no adjustments are set", () => {
-      const result = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.hasLogoAdjustments()).toBe(false);
-      }
+      expect(sponsor.hasLogoAdjustments()).toBe(false);
     });
   });
 
   describe("getDisplayName", () => {
     it("should return name for active sponsor", () => {
-      const result = Sponsor.create({
-        name: "Test Sponsor",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        isActive: true,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test Sponsor",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          isActive: true,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.getDisplayName()).toBe("Test Sponsor");
-      }
+      expect(sponsor.getDisplayName()).toBe("Test Sponsor");
     });
 
     it("should return name with (Inactive) for inactive sponsor", () => {
-      const result = Sponsor.create({
-        name: "Test Sponsor",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        isActive: false,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test Sponsor",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          isActive: false,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.getDisplayName()).toBe("Test Sponsor (Inactive)");
-      }
+      expect(sponsor.getDisplayName()).toBe("Test Sponsor (Inactive)");
     });
   });
 
   describe("isCurrentlyActive", () => {
     it("should return true for active sponsor", () => {
-      const result = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        isActive: true,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          isActive: true,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isCurrentlyActive()).toBe(true);
-      }
+      expect(sponsor.isCurrentlyActive()).toBe(true);
     });
 
     it("should return false for inactive sponsor", () => {
-      const result = Sponsor.create({
-        name: "Test",
-        description: "Description",
-        logoPath: "/logos/test.png",
-        isActive: false,
-      });
+      const sponsor = Effect.runSync(
+        Sponsor.create({
+          name: "Test",
+          description: "Description",
+          logoPath: "/logos/test.png",
+          isActive: false,
+        }),
+      );
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isCurrentlyActive()).toBe(false);
-      }
+      expect(sponsor.isCurrentlyActive()).toBe(false);
     });
   });
 });

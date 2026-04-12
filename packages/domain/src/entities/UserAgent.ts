@@ -1,5 +1,7 @@
+import { Effect } from "effect";
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * UserAgentPlatform - supported platforms for user agent tracking
@@ -51,25 +53,41 @@ export class UserAgent {
     userId?: string | null;
     endpoint?: string | null;
     timestamp?: Date;
-  }): Result<UserAgent, string> {
+  }): Effect.Effect<UserAgent, ValidationError, never> {
     // Validate userAgent
     if (!props.userAgent || props.userAgent.trim() === "") {
-      return err("userAgent is required");
+      return Effect.fail(
+        new ValidationError({
+          message: "userAgent is required",
+          field: "userAgent",
+        }),
+      );
     }
     if (props.userAgent.length < VALIDATION_RULES.userAgent.minLength) {
-      return err(
-        `userAgent must be at least ${VALIDATION_RULES.userAgent.minLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `userAgent must be at least ${VALIDATION_RULES.userAgent.minLength} characters`,
+          field: "userAgent",
+        }),
       );
     }
     if (props.userAgent.length > VALIDATION_RULES.userAgent.maxLength) {
-      return err(
-        `userAgent must be at most ${VALIDATION_RULES.userAgent.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `userAgent must be at most ${VALIDATION_RULES.userAgent.maxLength} characters`,
+          field: "userAgent",
+        }),
       );
     }
 
     // Validate platform
     if (!Object.values(UserAgentPlatform).includes(props.platform)) {
-      return err(`Invalid platform: ${props.platform}`);
+      return Effect.fail(
+        new ValidationError({
+          message: `Invalid platform: ${props.platform}`,
+          field: "platform",
+        }),
+      );
     }
 
     // Validate endpoint if provided
@@ -77,12 +95,15 @@ export class UserAgent {
       props.endpoint &&
       props.endpoint.length > VALIDATION_RULES.endpoint.maxLength
     ) {
-      return err(
-        `endpoint must be at most ${VALIDATION_RULES.endpoint.maxLength} characters`,
+      return Effect.fail(
+        new ValidationError({
+          message: `endpoint must be at most ${VALIDATION_RULES.endpoint.maxLength} characters`,
+          field: "endpoint",
+        }),
       );
     }
 
-    return ok(
+    return Effect.succeed(
       new UserAgent(
         props.id ?? crypto.randomUUID(),
         props.userAgent.trim(),
@@ -124,7 +145,7 @@ export class UserAgent {
     userId?: string | null;
     endpoint?: string | null;
     timestamp?: Date;
-  }): Result<UserAgent, string> {
+  }): Effect.Effect<UserAgent, ValidationError, never> {
     const platform = UserAgent.detectPlatform(props.userAgent);
     return UserAgent.create({
       ...props,
@@ -187,5 +208,24 @@ export class UserAgent {
    */
   isOlderThan(ms: number): boolean {
     return this.getAgeMs() > ms;
+  }
+}
+
+// Backward compatibility: Keep synchronous Result-based methods for transition
+export namespace UserAgentCompat {
+  /**
+   * @deprecated Use UserAgent.create instead (returns Effect)
+   * Synchronous Result-based version for backward compatibility during migration
+   */
+  export function createSync(
+    props: Parameters<typeof UserAgent.create>[0],
+  ): Result<UserAgent, ValidationError> {
+    const effect = UserAgent.create(props);
+    try {
+      const entity = Effect.runSync(effect);
+      return ok(entity);
+    } catch (e) {
+      return err(e as ValidationError);
+    }
   }
 }

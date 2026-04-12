@@ -1,31 +1,31 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import {
   Notification,
   NotificationStatus,
   NotificationPriority,
 } from "./Notification";
-import { ValidationError, StateTransitionError } from "../errors/domain-errors";
+import { ValidationError, StateTransitionError } from "../errors/effect-errors";
 
 describe("[UNIT] Notification Entity", () => {
   describe("Notification.create", () => {
     it("should create notification with minimum required fields", () => {
-      const result = Notification.create({
+      const effect = Notification.create({
         title: "New Challenge Available",
         body: "Check out the latest challenge!",
         createdById: "admin-123",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBeDefined();
-        expect(result.value.title).toBe("New Challenge Available");
-        expect(result.value.body).toBe("Check out the latest challenge!");
-        expect(result.value.createdById).toBe("admin-123");
-        expect(result.value.status).toBe(NotificationStatus.DRAFT);
-        expect(result.value.priority).toBe(NotificationPriority.NORMAL);
-        expect(result.value.url).toBeNull();
-        expect(result.value.isSent()).toBe(false);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity).toBeDefined();
+      expect(entity.id).toBeDefined();
+      expect(entity.title).toBe("New Challenge Available");
+      expect(entity.body).toBe("Check out the latest challenge!");
+      expect(entity.createdById).toBe("admin-123");
+      expect(entity.status).toBe(NotificationStatus.DRAFT);
+      expect(entity.priority).toBe(NotificationPriority.NORMAL);
+      expect(entity.url).toBeNull();
+      expect(entity.isSent()).toBe(false);
     });
 
     it("should create notification with all fields", () => {
@@ -33,7 +33,7 @@ describe("[UNIT] Notification Entity", () => {
       const futureDate = new Date();
       futureDate.setFullYear(futureDate.getFullYear() + 1);
 
-      const result = Notification.create({
+      const effect = Notification.create({
         title: "Important Update",
         body: "Please read this important message",
         url: "/challenges/123",
@@ -44,84 +44,88 @@ describe("[UNIT] Notification Entity", () => {
         scheduledFor: futureDate,
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.title).toBe("Important Update");
-        expect(result.value.url).toBe("/challenges/123");
-        expect(result.value.tripId).toBe("trip-789");
-        expect(result.value.priority).toBe(NotificationPriority.HIGH);
-        expect(result.value.status).toBe(NotificationStatus.READY);
-        expect(result.value.scheduledFor).toBeDefined();
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity).toBeDefined();
+      expect(entity.title).toBe("Important Update");
+      expect(entity.url).toBe("/challenges/123");
+      expect(entity.tripId).toBe("trip-789");
+      expect(entity.priority).toBe(NotificationPriority.HIGH);
+      expect(entity.status).toBe(NotificationStatus.READY);
+      expect(entity.scheduledFor).toBeDefined();
     });
 
     it("should reject empty title", () => {
-      const result = Notification.create({
+      const effect = Notification.create({
         title: "",
         body: "Body text",
         createdById: "admin-123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("title");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("title");
       }
     });
 
     it("should reject title longer than 200 characters", () => {
-      const result = Notification.create({
+      const effect = Notification.create({
         title: "a".repeat(201),
         body: "Body text",
         createdById: "admin-123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("title");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("title");
       }
     });
 
     it("should reject empty body", () => {
-      const result = Notification.create({
+      const effect = Notification.create({
         title: "Title",
         body: "",
         createdById: "admin-123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("body");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("body");
       }
     });
 
     it("should reject body longer than 2000 characters", () => {
-      const result = Notification.create({
+      const effect = Notification.create({
         title: "Title",
         body: "a".repeat(2001),
         createdById: "admin-123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("body");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("body");
       }
     });
 
     it("should reject empty createdById", () => {
-      const result = Notification.create({
+      const effect = Notification.create({
         title: "Title",
         body: "Body",
         createdById: "",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("createdById");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("createdById");
       }
     });
 
@@ -129,181 +133,157 @@ describe("[UNIT] Notification Entity", () => {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 1); // Yesterday
 
-      const result = Notification.create({
+      const effect = Notification.create({
         title: "Title",
         body: "Body",
         createdById: "admin-123",
         scheduledFor: pastDate,
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("scheduledFor");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+        expect(exit.cause.error.field).toBe("scheduledFor");
       }
     });
   });
 
   describe("Notification.updateContent", () => {
     it("should update title and body", () => {
-      const notificationResult = Notification.create({
-        title: "Original Title",
-        body: "Original body",
-        createdById: "admin-123",
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Original Title",
+          body: "Original body",
+          createdById: "admin-123",
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
+      const updated = Effect.runSync(
+        notification.updateContent({
+          title: "Updated Title",
+          body: "Updated body",
+        }),
+      );
 
-      const notification = notificationResult.value;
-      const updatedResult = notification.updateContent({
-        title: "Updated Title",
-        body: "Updated body",
-      });
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.title).toBe("Updated Title");
-        expect(updatedResult.value.body).toBe("Updated body");
-        expect(updatedResult.value.id).toBe(notification.id);
-      }
+      expect(updated.title).toBe("Updated Title");
+      expect(updated.body).toBe("Updated body");
+      expect(updated.id).toBe(notification.id);
     });
 
     it("should reject update after sent", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
+      const sent = Effect.runSync(notification.markAsSent());
+      const effect = sent.updateContent({ title: "New Title" });
 
-      const sentResult = notificationResult.value.markAsSent();
-      expect(sentResult.kind).toBe("ok");
-      if (sentResult.kind !== "ok") return;
-
-      const result = sentResult.value.updateContent({ title: "New Title" });
-
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
 
   describe("Notification.updateStatus", () => {
     it("should transition from DRAFT to READY", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
-
-      const notification = notificationResult.value;
       expect(notification.status).toBe(NotificationStatus.DRAFT);
 
-      const updatedResult = notification.updateStatus(NotificationStatus.READY);
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.status).toBe(NotificationStatus.READY);
-      }
+      const updated = Effect.runSync(
+        notification.updateStatus(NotificationStatus.READY),
+      );
+      expect(updated.status).toBe(NotificationStatus.READY);
     });
 
     it("should transition from READY to SENT", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
-
-      const notification = notificationResult.value;
-      const updatedResult = notification.updateStatus(NotificationStatus.SENT);
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.status).toBe(NotificationStatus.SENT);
-      }
+      const updated = Effect.runSync(
+        notification.updateStatus(NotificationStatus.SENT),
+      );
+      expect(updated.status).toBe(NotificationStatus.SENT);
     });
 
     it("should reject invalid transition", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-      });
-
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+        }),
+      );
 
       // Cannot go from DRAFT directly to SENT
-      const result = notificationResult.value.updateStatus(
-        NotificationStatus.SENT,
-      );
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
-        expect(result.error.from).toBe(NotificationStatus.DRAFT);
-        expect(result.error.to).toBe(NotificationStatus.SENT);
+      const effect = notification.updateStatus(NotificationStatus.SENT);
+
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(StateTransitionError);
+        expect(exit.cause.error.from).toBe(NotificationStatus.DRAFT);
+        expect(exit.cause.error.to).toBe(NotificationStatus.SENT);
       }
     });
   });
 
   describe("Notification.markAsSent", () => {
     it("should mark as sent and set sentAt", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
+      const updated = Effect.runSync(notification.markAsSent());
 
-      const notification = notificationResult.value;
-      const updatedResult = notification.markAsSent();
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.status).toBe(NotificationStatus.SENT);
-        expect(updatedResult.value.sentAt).toBeInstanceOf(Date);
-        expect(updatedResult.value.isSent()).toBe(true);
-      }
+      expect(updated.status).toBe(NotificationStatus.SENT);
+      expect(updated.sentAt).toBeInstanceOf(Date);
+      expect(updated.isSent()).toBe(true);
     });
   });
 
   describe("Notification.markAsFailed", () => {
     it("should mark as failed with reason", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-      });
-
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
-
-      const notification = notificationResult.value;
-      const updatedResult = notification.markAsFailed(
-        "Push service unavailable",
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+        }),
       );
 
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.status).toBe(NotificationStatus.FAILED);
-        expect(updatedResult.value.failureReason).toBe(
-          "Push service unavailable",
-        );
-      }
+      const updated = Effect.runSync(
+        notification.markAsFailed("Push service unavailable"),
+      );
+
+      expect(updated.status).toBe(NotificationStatus.FAILED);
+      expect(updated.failureReason).toBe("Push service unavailable");
     });
   });
 
@@ -312,91 +292,81 @@ describe("[UNIT] Notification Entity", () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1); // Tomorrow
 
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-        scheduledFor: futureDate,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+          scheduledFor: futureDate,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
+      const updated = Effect.runSync(notification.cancel());
 
-      const notification = notificationResult.value;
-      const updatedResult = notification.cancel();
-
-      expect(updatedResult.kind).toBe("ok");
-      if (updatedResult.kind === "ok") {
-        expect(updatedResult.value.status).toBe(NotificationStatus.CANCELLED);
-        expect(updatedResult.value.isCancelled()).toBe(true);
-      }
+      expect(updated.status).toBe(NotificationStatus.CANCELLED);
+      expect(updated.isCancelled()).toBe(true);
     });
 
     it("should reject cancel after sent", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind !== "ok") return;
+      const sent = Effect.runSync(notification.markAsSent());
+      const effect = sent.cancel();
 
-      const sentResult = notificationResult.value.markAsSent();
-      expect(sentResult.kind).toBe("ok");
-      if (sentResult.kind !== "ok") return;
-
-      const result = sentResult.value.cancel();
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBeInstanceOf(StateTransitionError);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
 
   describe("Notification.isReadyToSend", () => {
     it("should return true when READY and no schedule", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind === "ok") {
-        expect(notificationResult.value.isReadyToSend()).toBe(true);
-      }
+      expect(notification.isReadyToSend()).toBe(true);
     });
 
     it("should return false when DRAFT", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.DRAFT,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.DRAFT,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind === "ok") {
-        expect(notificationResult.value.isReadyToSend()).toBe(false);
-      }
+      expect(notification.isReadyToSend()).toBe(false);
     });
 
     it("should return false when already sent", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.SENT,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.SENT,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind === "ok") {
-        expect(notificationResult.value.isReadyToSend()).toBe(false);
-      }
+      expect(notification.isReadyToSend()).toBe(false);
     });
   });
 
@@ -405,48 +375,44 @@ describe("[UNIT] Notification Entity", () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
 
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        scheduledFor: futureDate,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          scheduledFor: futureDate,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind === "ok") {
-        expect(notificationResult.value.isScheduled()).toBe(true);
-      }
+      expect(notification.isScheduled()).toBe(true);
     });
 
     it("should return false when no schedule", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind === "ok") {
-        expect(notificationResult.value.isScheduled()).toBe(false);
-      }
+      expect(notification.isScheduled()).toBe(false);
     });
   });
 
   describe("Notification.isOverdue", () => {
     it("should return true when scheduled time has passed", () => {
       // Create notification and schedule it with a date that will be "in the past" after creation
-      const createResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-      });
-
-      expect(createResult.kind).toBe("ok");
-      if (createResult.kind !== "ok") return;
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+        }),
+      );
 
       // No schedule set, so not overdue
-      const notification = createResult.value;
       expect(notification.isOverdue()).toBe(false);
     });
 
@@ -454,47 +420,44 @@ describe("[UNIT] Notification Entity", () => {
       const futureDate = new Date();
       futureDate.setMinutes(futureDate.getMinutes() + 5); // 5 minutes from now
 
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-        scheduledFor: futureDate,
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          status: NotificationStatus.READY,
+          scheduledFor: futureDate,
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind === "ok") {
-        expect(notificationResult.value.isOverdue()).toBe(false);
-      }
+      expect(notification.isOverdue()).toBe(false);
     });
   });
 
   describe("Notification.hasUrl", () => {
     it("should return true when URL is set", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        url: "/challenges/123",
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+          url: "/challenges/123",
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind === "ok") {
-        expect(notificationResult.value.hasUrl()).toBe(true);
-      }
+      expect(notification.hasUrl()).toBe(true);
     });
 
     it("should return false when URL is null", () => {
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-      });
+      const notification = Effect.runSync(
+        Notification.create({
+          title: "Title",
+          body: "Body",
+          createdById: "admin-123",
+        }),
+      );
 
-      expect(notificationResult.kind).toBe("ok");
-      if (notificationResult.kind === "ok") {
-        expect(notificationResult.value.hasUrl()).toBe(false);
-      }
+      expect(notification.hasUrl()).toBe(false);
     });
   });
 });

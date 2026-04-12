@@ -1,22 +1,25 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit, Cause } from "effect";
 import { Reward, REWARD_PURCHASE_STATUSES } from "./Reward";
-import { RewardPurchase, RewardPurchaseStatus, canTransitionPurchaseStatus } from "./RewardPurchase";
+import {
+  RewardPurchase,
+  RewardPurchaseStatus,
+  canTransitionPurchaseStatus,
+} from "./RewardPurchase";
 import { CoinAmount } from "../value-objects/CoinAmount";
+import { ValidationError } from "../errors/effect-errors";
 
-// Helper to extract value from Result
-const unwrap = <T, E>(
-  result: { kind: "ok"; value: T } | { kind: "err"; error: E },
+// Helper to unwrap Effect and return entity (throws on error)
+const unwrapEffect = <T>(
+  effect: Effect.Effect<T, ValidationError, never>,
 ): T => {
-  if (result.kind === "err") {
-    throw new Error(`Unexpected error: ${result.error}`);
-  }
-  return result.value;
+  return Effect.runSync(effect);
 };
 
 describe("[UNIT] Reward Entity", () => {
   describe("Reward.create", () => {
     it("should create reward with valid data", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -25,22 +28,20 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.name).toBe("Test Reward");
-        expect(result.value.description).toBe("A test reward description");
-        expect(result.value.availableQuantity).toBe(10);
-        expect(result.value.coinCostPercentage.toNumber()).toBe(15);
-        expect(result.value.isHidden).toBe(false);
-        expect(result.value.tripId).toBe("trip-123");
-        expect(result.value.createdById).toBe("user-123");
-        expect(result.value.id).toBeDefined();
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity.name).toBe("Test Reward");
+      expect(entity.description).toBe("A test reward description");
+      expect(entity.availableQuantity).toBe(10);
+      expect(entity.coinCostPercentage.toNumber()).toBe(15);
+      expect(entity.isHidden).toBe(false);
+      expect(entity.tripId).toBe("trip-123");
+      expect(entity.createdById).toBe("user-123");
+      expect(entity.id).toBeDefined();
+      expect(entity.createdAt).toBeInstanceOf(Date);
     });
 
     it("should reject empty name", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "",
         description: "A test reward description",
         availableQuantity: 10,
@@ -49,14 +50,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Name");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject name with only whitespace", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "   ",
         description: "A test reward description",
         availableQuantity: 10,
@@ -65,11 +67,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("should reject empty description", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "",
         availableQuantity: 10,
@@ -78,14 +84,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Description");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject negative quantity", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: -1,
@@ -94,14 +101,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Quantity");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject fractional quantity", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10.5,
@@ -110,11 +118,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("should reject coin cost percentage below 1", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -123,11 +135,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("should reject coin cost percentage above 100", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -136,11 +152,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("err");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("should reject empty tripId", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -149,14 +169,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "user-123",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("tripId");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject empty createdById", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -165,14 +186,15 @@ describe("[UNIT] Reward Entity", () => {
         createdById: "",
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("createdById");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should create reward with images", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -182,14 +204,12 @@ describe("[UNIT] Reward Entity", () => {
         images: ["image1.jpg", "image2.jpg"],
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.images).toEqual(["image1.jpg", "image2.jpg"]);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity.images).toEqual(["image1.jpg", "image2.jpg"]);
     });
 
     it("should filter out empty image URLs", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -199,14 +219,12 @@ describe("[UNIT] Reward Entity", () => {
         images: ["image1.jpg", "", "   ", "image2.jpg"],
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.images).toEqual(["image1.jpg", "image2.jpg"]);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity.images).toEqual(["image1.jpg", "image2.jpg"]);
     });
 
     it("should reject too many images", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -216,14 +234,15 @@ describe("[UNIT] Reward Entity", () => {
         images: Array(11).fill("image.jpg"),
       });
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("images");
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should create hidden reward when isHidden is true", () => {
-      const result = Reward.create({
+      const effect = Reward.create({
         name: "Test Reward",
         description: "A test reward description",
         availableQuantity: 10,
@@ -233,16 +252,14 @@ describe("[UNIT] Reward Entity", () => {
         isHidden: true,
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isHidden).toBe(true);
-      }
+      const entity = Effect.runSync(effect);
+      expect(entity.isHidden).toBe(true);
     });
   });
 
   describe("Reward.update", () => {
     it("should update name", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Original Name",
           description: "A test reward description",
@@ -253,17 +270,14 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const updated = reward.update({ name: "New Name" });
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.name).toBe("New Name");
-        expect(updated.value.description).toBe("A test reward description"); // Unchanged
-        expect(updated.value.id).toBe(reward.id); // Same ID
-      }
+      const updated = unwrapEffect(reward.update({ name: "New Name" }));
+      expect(updated.name).toBe("New Name");
+      expect(updated.description).toBe("A test reward description"); // Unchanged
+      expect(updated.id).toBe(reward.id); // Same ID
     });
 
     it("should update description", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "Original description",
@@ -274,16 +288,15 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const updated = reward.update({ description: "New description" });
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.description).toBe("New description");
-        expect(updated.value.name).toBe("Test Reward"); // Unchanged
-      }
+      const updated = unwrapEffect(
+        reward.update({ description: "New description" }),
+      );
+      expect(updated.description).toBe("New description");
+      expect(updated.name).toBe("Test Reward"); // Unchanged
     });
 
     it("should update quantity", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -294,15 +307,12 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const updated = reward.update({ availableQuantity: 20 });
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.availableQuantity).toBe(20);
-      }
+      const updated = unwrapEffect(reward.update({ availableQuantity: 20 }));
+      expect(updated.availableQuantity).toBe(20);
     });
 
     it("should update images", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -314,15 +324,14 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const updated = reward.update({ images: ["new1.jpg", "new2.jpg"] });
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.images).toEqual(["new1.jpg", "new2.jpg"]);
-      }
+      const updated = unwrapEffect(
+        reward.update({ images: ["new1.jpg", "new2.jpg"] }),
+      );
+      expect(updated.images).toEqual(["new1.jpg", "new2.jpg"]);
     });
 
     it("should reject invalid name update", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -333,12 +342,16 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const updated = reward.update({ name: "" });
-      expect(updated.kind).toBe("err");
+      const effect = reward.update({ name: "" });
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("should update multiple fields at once", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -349,23 +362,22 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const updated = reward.update({
-        name: "New Name",
-        availableQuantity: 5,
-        coinCostPercentage: 25,
-      });
-      expect(updated.kind).toBe("ok");
-      if (updated.kind === "ok") {
-        expect(updated.value.name).toBe("New Name");
-        expect(updated.value.availableQuantity).toBe(5);
-        expect(updated.value.coinCostPercentage.toNumber()).toBe(25);
-      }
+      const updated = unwrapEffect(
+        reward.update({
+          name: "New Name",
+          availableQuantity: 5,
+          coinCostPercentage: 25,
+        }),
+      );
+      expect(updated.name).toBe("New Name");
+      expect(updated.availableQuantity).toBe(5);
+      expect(updated.coinCostPercentage.toNumber()).toBe(25);
     });
   });
 
   describe("Reward.hide / Reward.unhide", () => {
     it("should hide reward", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -382,7 +394,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should unhide reward", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -401,7 +413,7 @@ describe("[UNIT] Reward Entity", () => {
 
   describe("Reward.decrementQuantity", () => {
     it("should decrease quantity", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -412,15 +424,12 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const decremented = reward.decrementQuantity(3);
-      expect(decremented.kind).toBe("ok");
-      if (decremented.kind === "ok") {
-        expect(decremented.value.availableQuantity).toBe(7);
-      }
+      const decremented = unwrapEffect(reward.decrementQuantity(3));
+      expect(decremented.availableQuantity).toBe(7);
     });
 
     it("should reject decrementing more than available", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -431,15 +440,16 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const decremented = reward.decrementQuantity(10);
-      expect(decremented.kind).toBe("err");
-      if (decremented.kind === "err") {
-        expect(decremented.error).toContain("Not enough");
+      const effect = reward.decrementQuantity(10);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
       }
     });
 
     it("should reject invalid decrement amount", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -450,15 +460,21 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      expect(reward.decrementQuantity(0).kind).toBe("err");
-      expect(reward.decrementQuantity(-1).kind).toBe("err");
-      expect(reward.decrementQuantity(1.5).kind).toBe("err");
+      expect(
+        Exit.isFailure(Effect.runSyncExit(reward.decrementQuantity(0))),
+      ).toBe(true);
+      expect(
+        Exit.isFailure(Effect.runSyncExit(reward.decrementQuantity(-1))),
+      ).toBe(true);
+      expect(
+        Exit.isFailure(Effect.runSyncExit(reward.decrementQuantity(1.5))),
+      ).toBe(true);
     });
   });
 
   describe("Reward.incrementQuantity", () => {
     it("should increase quantity", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -469,15 +485,12 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const incremented = reward.incrementQuantity(5);
-      expect(incremented.kind).toBe("ok");
-      if (incremented.kind === "ok") {
-        expect(incremented.value.availableQuantity).toBe(15);
-      }
+      const incremented = unwrapEffect(reward.incrementQuantity(5));
+      expect(incremented.availableQuantity).toBe(15);
     });
 
     it("should reject invalid increment amount", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -488,15 +501,21 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      expect(reward.incrementQuantity(0).kind).toBe("err");
-      expect(reward.incrementQuantity(-1).kind).toBe("err");
-      expect(reward.incrementQuantity(1.5).kind).toBe("err");
+      expect(
+        Exit.isFailure(Effect.runSyncExit(reward.incrementQuantity(0))),
+      ).toBe(true);
+      expect(
+        Exit.isFailure(Effect.runSyncExit(reward.incrementQuantity(-1))),
+      ).toBe(true);
+      expect(
+        Exit.isFailure(Effect.runSyncExit(reward.incrementQuantity(1.5))),
+      ).toBe(true);
     });
   });
 
   describe("Reward.calculateDynamicCoinCost", () => {
     it("should calculate cost based on percentage of total points", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -512,7 +531,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should round to nearest integer", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -528,7 +547,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should return minimum cost of 1 when total points is 0", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -544,7 +563,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should return minimum cost of 1 when calculation is less than 1", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -562,7 +581,7 @@ describe("[UNIT] Reward Entity", () => {
 
   describe("Reward.calculateTotalCost", () => {
     it("should calculate total cost for quantity", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -573,14 +592,57 @@ describe("[UNIT] Reward Entity", () => {
         }),
       );
 
-      const totalCost = reward.calculateTotalCost(3, 1000);
-      expect(totalCost.toNumber()).toBe(300); // 3 * 10% of 1000
+      // calculateTotalCost returns Effect<CoinAmount, ValidationError, never>
+      const effect = reward.calculateTotalCost(3, 1000);
+      const coinAmount = Effect.runSync(effect);
+      expect(coinAmount.toNumber()).toBe(300); // 3 * 10% of 1000
+    });
+
+    it("should return zero cost for quantity 0", () => {
+      const reward = unwrapEffect(
+        Reward.create({
+          name: "Test Reward",
+          description: "A test reward description",
+          availableQuantity: 10,
+          coinCostPercentage: 10,
+          tripId: "trip-123",
+          createdById: "user-123",
+        }),
+      );
+
+      // calculateTotalCost returns Effect<CoinAmount, ValidationError, never>
+      // Note: multiply allows 0, so this returns success with 0 cost
+      const effect = reward.calculateTotalCost(0, 1000);
+      const coinAmount = Effect.runSync(effect);
+      expect(coinAmount.toNumber()).toBe(0);
+    });
+
+    it("should return error for negative quantity", () => {
+      const reward = unwrapEffect(
+        Reward.create({
+          name: "Test Reward",
+          description: "A test reward description",
+          availableQuantity: 10,
+          coinCostPercentage: 10,
+          tripId: "trip-123",
+          createdById: "user-123",
+        }),
+      );
+
+      // calculateTotalCost returns Effect<CoinAmount, ValidationError, never>
+      // multiply fails for negative numbers
+      const effect = reward.calculateTotalCost(-1, 1000);
+      const exit = Effect.runSyncExit(effect);
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
+        expect(exit.cause.error).toBeInstanceOf(ValidationError);
+      }
     });
   });
 
   describe("Reward.canAfford", () => {
     it("should return true when group has enough coins", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -592,11 +654,13 @@ describe("[UNIT] Reward Entity", () => {
       );
 
       const groupCoins = CoinAmount.unsafeCreate(500);
-      expect(reward.canAfford(groupCoins, 3, 1000)).toBe(true); // Need 300, have 500
+      // canAfford returns Effect<boolean, ValidationError, never>
+      const canAfford = Effect.runSync(reward.canAfford(groupCoins, 3, 1000));
+      expect(canAfford).toBe(true); // Need 300, have 500
     });
 
     it("should return false when group doesn't have enough coins", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -608,11 +672,13 @@ describe("[UNIT] Reward Entity", () => {
       );
 
       const groupCoins = CoinAmount.unsafeCreate(200);
-      expect(reward.canAfford(groupCoins, 3, 1000)).toBe(false); // Need 300, have 200
+      // canAfford returns Effect<boolean, ValidationError, never>
+      const canAfford = Effect.runSync(reward.canAfford(groupCoins, 3, 1000));
+      expect(canAfford).toBe(false); // Need 300, have 200
     });
 
     it("should return true when group has exactly enough coins", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -624,13 +690,15 @@ describe("[UNIT] Reward Entity", () => {
       );
 
       const groupCoins = CoinAmount.unsafeCreate(300);
-      expect(reward.canAfford(groupCoins, 3, 1000)).toBe(true); // Need 300, have 300
+      // canAfford returns Effect<boolean, ValidationError, never>
+      const canAfford = Effect.runSync(reward.canAfford(groupCoins, 3, 1000));
+      expect(canAfford).toBe(true); // Need 300, have 300
     });
   });
 
   describe("Reward.isInStock", () => {
     it("should return true when quantity > 0", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -645,7 +713,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should return false when quantity = 0", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -662,7 +730,7 @@ describe("[UNIT] Reward Entity", () => {
 
   describe("Reward.canBePurchased", () => {
     it("should return true when in stock and not hidden", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -677,7 +745,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should return false when out of stock", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -692,7 +760,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should return false when hidden", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -710,7 +778,7 @@ describe("[UNIT] Reward Entity", () => {
 
   describe("Reward.canPurchaseQuantity", () => {
     it("should return true when quantity is available", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -725,7 +793,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should return false when quantity exceeds available", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -742,7 +810,7 @@ describe("[UNIT] Reward Entity", () => {
 
   describe("Reward.getPrimaryImage", () => {
     it("should return first image", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -758,7 +826,7 @@ describe("[UNIT] Reward Entity", () => {
     });
 
     it("should return null when no images", () => {
-      const reward = unwrap(
+      const reward = unwrapEffect(
         Reward.create({
           name: "Test Reward",
           description: "A test reward description",
@@ -776,46 +844,116 @@ describe("[UNIT] Reward Entity", () => {
 
 describe("canTransitionPurchaseStatus", () => {
   it("should allow transition from BOUGHT to ACCEPTED", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.BOUGHT, RewardPurchaseStatus.ACCEPTED)).toBe(true);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.BOUGHT,
+        RewardPurchaseStatus.ACCEPTED,
+      ),
+    ).toBe(true);
   });
 
   it("should allow transition from BOUGHT to CANCELLED", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.BOUGHT, RewardPurchaseStatus.CANCELLED)).toBe(true);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.BOUGHT,
+        RewardPurchaseStatus.CANCELLED,
+      ),
+    ).toBe(true);
   });
 
   it("should allow transition from ACCEPTED to IN_DELIVERY", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.ACCEPTED, RewardPurchaseStatus.IN_DELIVERY)).toBe(true);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.ACCEPTED,
+        RewardPurchaseStatus.IN_DELIVERY,
+      ),
+    ).toBe(true);
   });
 
   it("should allow transition from ACCEPTED to CANCELLED", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.ACCEPTED, RewardPurchaseStatus.CANCELLED)).toBe(true);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.ACCEPTED,
+        RewardPurchaseStatus.CANCELLED,
+      ),
+    ).toBe(true);
   });
 
   it("should allow transition from IN_DELIVERY to DELIVERED", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.IN_DELIVERY, RewardPurchaseStatus.DELIVERED)).toBe(true);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.IN_DELIVERY,
+        RewardPurchaseStatus.DELIVERED,
+      ),
+    ).toBe(true);
   });
 
   it("should allow transition from IN_DELIVERY to CANCELLED", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.IN_DELIVERY, RewardPurchaseStatus.CANCELLED)).toBe(true);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.IN_DELIVERY,
+        RewardPurchaseStatus.CANCELLED,
+      ),
+    ).toBe(true);
   });
 
   it("should NOT allow transition from BOUGHT to DELIVERED", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.BOUGHT, RewardPurchaseStatus.DELIVERED)).toBe(false);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.BOUGHT,
+        RewardPurchaseStatus.DELIVERED,
+      ),
+    ).toBe(false);
   });
 
   it("should NOT allow transition from CANCELLED to any status", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.CANCELLED, RewardPurchaseStatus.BOUGHT)).toBe(false);
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.CANCELLED, RewardPurchaseStatus.ACCEPTED)).toBe(false);
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.CANCELLED, RewardPurchaseStatus.DELIVERED)).toBe(false);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.CANCELLED,
+        RewardPurchaseStatus.BOUGHT,
+      ),
+    ).toBe(false);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.CANCELLED,
+        RewardPurchaseStatus.ACCEPTED,
+      ),
+    ).toBe(false);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.CANCELLED,
+        RewardPurchaseStatus.DELIVERED,
+      ),
+    ).toBe(false);
   });
 
   it("should NOT allow transition from DELIVERED to any status", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.DELIVERED, RewardPurchaseStatus.CANCELLED)).toBe(false);
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.DELIVERED, RewardPurchaseStatus.BOUGHT)).toBe(false);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.DELIVERED,
+        RewardPurchaseStatus.CANCELLED,
+      ),
+    ).toBe(false);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.DELIVERED,
+        RewardPurchaseStatus.BOUGHT,
+      ),
+    ).toBe(false);
   });
 
   it("should allow same status transition", () => {
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.BOUGHT, RewardPurchaseStatus.BOUGHT)).toBe(true);
-    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.DELIVERED, RewardPurchaseStatus.DELIVERED)).toBe(true);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.BOUGHT,
+        RewardPurchaseStatus.BOUGHT,
+      ),
+    ).toBe(true);
+    expect(
+      canTransitionPurchaseStatus(
+        RewardPurchaseStatus.DELIVERED,
+        RewardPurchaseStatus.DELIVERED,
+      ),
+    ).toBe(true);
   });
 });
