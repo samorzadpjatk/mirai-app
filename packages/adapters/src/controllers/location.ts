@@ -1,14 +1,17 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { LocationRepository } from "@mirai-app/use-cases";
+import type { Location, LocationId } from "@mirai-app/domain";
 import {
-  GetLocationUseCase,
-  CreateLocationUseCase,
-  UpdateLocationUseCase,
   ListLocationsUseCase,
   UpdateSharingSettingsUseCase,
   AddSharingUserUseCase,
   RemoveSharingUserUseCase,
   GetSharingSettingsUseCase,
+  getLocationUseCase,
+  createLocationUseCase,
+  updateLocationUseCase,
+  LocationRepositoryTag,
   type CreateLocationInput,
   type UpdateLocationInput,
   type UpdateSharingSettingsInput,
@@ -153,14 +156,42 @@ export class LocationController {
       };
     }
 
-    const useCase = new GetLocationUseCase(this.locationRepository);
-    const result = await useCase.execute({ userId: parsed.data.userId });
+    const program = getLocationUseCase({ userId: parsed.data.userId }).pipe(
+      Effect.provideService(LocationRepositoryTag, {
+        create: (location: Location) =>
+          Effect.promise(() => this.locationRepository.create(location)),
+        findById: (id: LocationId) =>
+          Effect.promise(() => this.locationRepository.findById(id)),
+        findByUserId: (userId: string) =>
+          Effect.promise(() => this.locationRepository.findByUserId(userId)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => this.locationRepository.findAll(options)),
+        findSharingWithUser: (userId: string) =>
+          Effect.promise(() =>
+            this.locationRepository.findSharingWithUser(userId),
+          ),
+        findByUserIds: (userIds: string[]) =>
+          Effect.promise(() => this.locationRepository.findByUserIds(userIds)),
+        save: (location: Location) =>
+          Effect.promise(() => this.locationRepository.save(location)),
+        delete: (id: LocationId) =>
+          Effect.promise(() => this.locationRepository.delete(id)),
+        deleteByUserId: (userId: string) =>
+          Effect.promise(() => this.locationRepository.deleteByUserId(userId)),
+        existsForUser: (userId: string) =>
+          Effect.promise(() => this.locationRepository.existsForUser(userId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -194,8 +225,7 @@ export class LocationController {
       };
     }
 
-    const useCase = new CreateLocationUseCase(this.locationRepository);
-    const result = await useCase.execute({
+    const program = createLocationUseCase({
       userId: parsed.data.userId,
       latitude: parsed.data.latitude,
       longitude: parsed.data.longitude,
@@ -205,13 +235,42 @@ export class LocationController {
       heading: parsed.data.heading,
       speed: parsed.data.speed,
       isSharingLocation: parsed.data.isSharingLocation,
-    });
+    }).pipe(
+      Effect.provideService(LocationRepositoryTag, {
+        create: (location: Location) =>
+          Effect.promise(() => this.locationRepository.create(location)),
+        findById: (id: LocationId) =>
+          Effect.promise(() => this.locationRepository.findById(id)),
+        findByUserId: (userId: string) =>
+          Effect.promise(() => this.locationRepository.findByUserId(userId)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => this.locationRepository.findAll(options)),
+        findSharingWithUser: (userId: string) =>
+          Effect.promise(() =>
+            this.locationRepository.findSharingWithUser(userId),
+          ),
+        findByUserIds: (userIds: string[]) =>
+          Effect.promise(() => this.locationRepository.findByUserIds(userIds)),
+        save: (location: Location) =>
+          Effect.promise(() => this.locationRepository.save(location)),
+        delete: (id: LocationId) =>
+          Effect.promise(() => this.locationRepository.delete(id)),
+        deleteByUserId: (userId: string) =>
+          Effect.promise(() => this.locationRepository.deleteByUserId(userId)),
+        existsForUser: (userId: string) =>
+          Effect.promise(() => this.locationRepository.existsForUser(userId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -249,8 +308,7 @@ export class LocationController {
       };
     }
 
-    const useCase = new UpdateLocationUseCase(this.locationRepository);
-    const result = await useCase.execute({
+    const program = updateLocationUseCase({
       userId: parsed.data.userId,
       latitude: parsed.data.latitude,
       longitude: parsed.data.longitude,
@@ -260,13 +318,42 @@ export class LocationController {
       heading: parsed.data.heading,
       speed: parsed.data.speed,
       isSharingLocation: parsed.data.isSharingLocation,
-    });
+    }).pipe(
+      Effect.provideService(LocationRepositoryTag, {
+        create: (location: Location) =>
+          Effect.promise(() => this.locationRepository.create(location)),
+        findById: (id: LocationId) =>
+          Effect.promise(() => this.locationRepository.findById(id)),
+        findByUserId: (userId: string) =>
+          Effect.promise(() => this.locationRepository.findByUserId(userId)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => this.locationRepository.findAll(options)),
+        findSharingWithUser: (userId: string) =>
+          Effect.promise(() =>
+            this.locationRepository.findSharingWithUser(userId),
+          ),
+        findByUserIds: (userIds: string[]) =>
+          Effect.promise(() => this.locationRepository.findByUserIds(userIds)),
+        save: (location: Location) =>
+          Effect.promise(() => this.locationRepository.save(location)),
+        delete: (id: LocationId) =>
+          Effect.promise(() => this.locationRepository.delete(id)),
+        deleteByUserId: (userId: string) =>
+          Effect.promise(() => this.locationRepository.deleteByUserId(userId)),
+        existsForUser: (userId: string) =>
+          Effect.promise(() => this.locationRepository.existsForUser(userId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**

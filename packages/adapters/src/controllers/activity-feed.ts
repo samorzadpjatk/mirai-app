@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { ActivityFeedRepository } from "@mirai-app/use-cases";
 import {
   GetActivityFeedUseCase,
@@ -543,46 +544,49 @@ export class ActivityFeedController {
       return { success: false, error: "Activity not found" };
     }
 
-    // Apply updates
-    let updated = existing;
+    try {
+      // Apply updates
+      let updated = existing;
 
-    if (
-      parsed.data.title !== undefined ||
-      parsed.data.description !== undefined
-    ) {
-      const contentResult = updated.updateContent({
-        title: parsed.data.title,
-        description: parsed.data.description,
-      });
-
-      if (contentResult.kind === "err") {
-        return { success: false, error: contentResult.error.message };
+      if (
+        parsed.data.title !== undefined ||
+        parsed.data.description !== undefined
+      ) {
+        updated = await Effect.runPromise(
+          updated.updateContent({
+            title: parsed.data.title,
+            description: parsed.data.description,
+          }),
+        );
       }
 
-      updated = contentResult.value;
+      if (parsed.data.isPinned !== undefined) {
+        updated = parsed.data.isPinned ? updated.pin() : updated.unpin();
+      }
+
+      // Persist changes
+      const saved = await this.activityFeedRepository.update(updated);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          tripId: saved.tripId,
+          activityType: saved.activityType,
+          title: saved.title,
+          description: saved.description,
+          imageUrl: saved.imageUrl,
+          isPinned: saved.isPinned,
+          isHidden: saved.isHidden,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    if (parsed.data.isPinned !== undefined) {
-      updated = parsed.data.isPinned ? updated.pin() : updated.unpin();
-    }
-
-    // Persist changes
-    const saved = await this.activityFeedRepository.update(updated);
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        tripId: saved.tripId,
-        activityType: saved.activityType,
-        title: saved.title,
-        description: saved.description,
-        imageUrl: saved.imageUrl,
-        isPinned: saved.isPinned,
-        isHidden: saved.isHidden,
-        updatedAt: saved.updatedAt,
-      },
-    };
   }
 
   /**
@@ -626,24 +630,31 @@ export class ActivityFeedController {
       return { success: false, error: "Activity not found" };
     }
 
-    const updated = parsed.data.isPinned ? existing.pin() : existing.unpin();
+    try {
+      const updated = parsed.data.isPinned ? existing.pin() : existing.unpin();
 
-    const saved = await this.activityFeedRepository.update(updated);
+      const saved = await this.activityFeedRepository.update(updated);
 
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        tripId: saved.tripId,
-        activityType: saved.activityType,
-        title: saved.title,
-        description: saved.description,
-        imageUrl: saved.imageUrl,
-        isPinned: saved.isPinned,
-        isHidden: saved.isHidden,
-        updatedAt: saved.updatedAt,
-      },
-    };
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          tripId: saved.tripId,
+          activityType: saved.activityType,
+          title: saved.title,
+          description: saved.description,
+          imageUrl: saved.imageUrl,
+          isPinned: saved.isPinned,
+          isHidden: saved.isHidden,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   /**
@@ -684,29 +695,36 @@ export class ActivityFeedController {
       return { success: false, error: "Activity not found" };
     }
 
-    const updated = existing.hide(
-      parsed.data.hiddenByAdmin,
-      parsed.data.reason ?? null,
-    );
+    try {
+      const updated = existing.hide(
+        parsed.data.hiddenByAdmin,
+        parsed.data.reason ?? null,
+      );
 
-    const saved = await this.activityFeedRepository.update(updated);
+      const saved = await this.activityFeedRepository.update(updated);
 
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        tripId: saved.tripId,
-        activityType: saved.activityType,
-        title: saved.title,
-        description: saved.description,
-        imageUrl: saved.imageUrl,
-        isPinned: saved.isPinned,
-        isHidden: saved.isHidden,
-        hiddenAt: saved.hiddenAt!,
-        hiddenReason: saved.hiddenReason,
-        updatedAt: saved.updatedAt,
-      },
-    };
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          tripId: saved.tripId,
+          activityType: saved.activityType,
+          title: saved.title,
+          description: saved.description,
+          imageUrl: saved.imageUrl,
+          isPinned: saved.isPinned,
+          isHidden: saved.isHidden,
+          hiddenAt: saved.hiddenAt!,
+          hiddenReason: saved.hiddenReason,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   /**
@@ -745,24 +763,31 @@ export class ActivityFeedController {
       return { success: false, error: "Activity not found" };
     }
 
-    const updated = existing.unhide();
+    try {
+      const updated = existing.unhide();
 
-    const saved = await this.activityFeedRepository.update(updated);
+      const saved = await this.activityFeedRepository.update(updated);
 
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        tripId: saved.tripId,
-        activityType: saved.activityType,
-        title: saved.title,
-        description: saved.description,
-        imageUrl: saved.imageUrl,
-        isPinned: saved.isPinned,
-        isHidden: saved.isHidden,
-        updatedAt: saved.updatedAt,
-      },
-    };
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          tripId: saved.tripId,
+          activityType: saved.activityType,
+          title: saved.title,
+          description: saved.description,
+          imageUrl: saved.imageUrl,
+          isPinned: saved.isPinned,
+          isHidden: saved.isHidden,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   /**

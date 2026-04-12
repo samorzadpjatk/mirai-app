@@ -6,8 +6,8 @@
 
 ## Contents
 
-- **Controllers**: tRPC routers, API endpoints (thin controllers)
-- **Gateways**: Repository implementations (Prisma, etc.)
+- **Controllers**: GraphQL resolvers, API endpoints (thin controllers)
+- **Gateways**: Repository implementations (Drizzle, etc.)
 - **Presenters**: Response formatters
 - **Mappers**: Data transformation between domain and external formats
 
@@ -16,7 +16,7 @@
 1. **Implement Inner Layer Interfaces**: Implement use-case ports
 2. **Convert Data Only**: Convert formats, not business logic
 3. **No Decisions**: Adapters adapt; they never decide
-4. **Framework-Specific**: Contains framework-specific code (tRPC, Prisma)
+4. **Framework-Specific**: Contains framework-specific code (GraphQL, Hono, Drizzle)
 5. **No Domain Logic**: Keep business rules in the domain layer
 
 ## Directory Structure
@@ -24,14 +24,19 @@
 ```
 src/
 ├── index.ts              # Public exports
-├── api/                  # tRPC routers and controllers
-│   ├── trpc.ts          # tRPC setup (publicProcedure only)
-│   ├── controller-helpers.ts  # Auth helpers
-│   └── controllers/      # tRPC routers
+├── api/                  # API utilities
+│   └── errors.ts        # Error handling utilities
+├── controllers/          # GraphQL controllers/resolvers
 ├── utils/               # Utility functions
-│   └── TokenExtractor.ts    # Extract Bearer tokens from headers
+│   ├── TokenExtractor.ts    # Extract Bearer tokens from headers
+│   ├── controller-helpers.ts # Auth helpers
+│   └── effect-executor.ts   # Effect execution utilities
 ├── gateways/            # Repository implementations
-├── presenters/          # Response formatters
+│   ├── drizzle/         # Drizzle ORM implementations
+│   └── in-memory/       # In-memory test implementations
+├── modules/             # DI modules
+├── services/            # External service integrations
+├── errors/              # Adapter-specific errors
 └── mappers/             # Domain <-> DTO <-> DB mapping
 ```
 
@@ -152,62 +157,75 @@ export class UserMapper {
 }
 ```
 
-### Controller (tRPC Router) - New Auth Pattern
+### Controller (GraphQL/Hono) - Auth Pattern
 
-Controllers handle authentication explicitly. The tRPC layer provides only transport.
+Controllers handle authentication explicitly using Effect-based patterns.
 
 ```typescript
-// controllers/user-controller.ts
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import { publicProcedure, createTRPCRouter } from "../trpc";
-import { requireAuth, requireAdmin } from "../controller-helpers";
-import { CreateUserUseCase } from "@mirai-app/use-cases";
+// controllers/user.ts
+import { requireAuth, requireAdmin } from "../utils/controller-helpers";
+import type { CreateUserUseCase } from "@mirai-app/use-cases";
+import type { DIContext } from "@mirai-app/frameworks/di";
+import { Effect } from "effect";
 
-export const userController = createTRPCRouter({
+export class UserController {
+  constructor(private createUserUseCase: CreateUserUseCase) {}
+
   // Public endpoint - no auth required
-  getPublicData: publicProcedure.query(async ({ ctx }) => {
-    // No auth needed
+  async getPublicData() {
     return { data: "public" };
-  }),
+  }
 
   // Protected endpoint - requires authentication
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      // 1. Extract and validate auth at controller level
-      const authContext = await requireAuth(ctx.headers, ctx.di);
+  async getById(input: { id: string }, di: DIContext) {
+    // 1. Extract and validate auth at controller level
+    const authContext = await requireAuth(di.headers, di);
 
-      // 2. Resolve use case from DI
-      const useCase = ctx.di.resolve<CreateUserUseCase>("createUserUseCase");
+    // 2. Execute use case with Effect
+    const effect = this.createUserUseCase.execute({
+      ...input,
+      authContext, // Pass auth downstream
+    });
 
-      // 3. Execute with explicit auth context
-      const result = await useCase.execute({
-        ...input,
-        authContext, // Pass auth downstream
-      });
+    // 3. Run Effect and handle errors
+    return await Effect.runPromise(
+      effect.pipe(Effect.catchTag("NotFoundError", () => Effect.succeed(null))),
+    );
+  }
+}
+```
 
-      // 4. Handle Result type
-      if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
-      }
+### Effect-Based Error Handling
 
-      return result.value;
-    }),
+Controllers use Effect for composable error handling:
 
-  // Admin-only endpoint
-  adminAction: publicProcedure.mutation(async ({ ctx }) => {
-    // Throws TRPCError FORBIDDEN if not admin
-    const authContext = await requireAdmin(ctx.headers, ctx.di);
+```typescript
+import { Effect } from "effect";
+import { requireAuth } from "../utils/controller-helpers";
+
+async function handleRequest(input: Input, di: DIContext) {
+  const program = Effect.gen(function* () {
+    const authContext = yield* requireAuthEffect(di.headers, di);
+    const result = yield* useCase.execute({ ...input, authContext });
+    return result;
+  });
+
+  return await Effect.runPromise(program);
+}
+```
+
+// Admin-only endpoint
+adminAction: publicProcedure.mutation(async ({ ctx }) => {
+// Throws TRPCError FORBIDDEN if not admin
+const authContext = await requireAdmin(ctx.headers, ctx.di);
 
     // Execute admin-only logic...
     return { success: true };
-  }),
+
+}),
 });
-```
+
+````
 
 ### TokenExtractor Utility
 
@@ -223,7 +241,7 @@ const token = TokenExtractor.extract(authHeader); // Returns string | null
 if (!token) {
   throw new TRPCError({ code: "UNAUTHORIZED", message: "No token" });
 }
-```
+````
 
 The TokenExtractor validates the Bearer scheme and handles various header formats.
 

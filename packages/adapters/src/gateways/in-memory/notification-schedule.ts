@@ -375,19 +375,13 @@ export class InMemoryNotificationScheduleRepository
     let count = 0;
     for (const id of ids) {
       const schedule = this.storage.get(id);
-      if (schedule) {
-        const toggled = isActive
-          ? schedule
-          : schedule.toggleActive().toggleActive(); // Double toggle to ensure correct state
-        // Actually, we need to create a new instance with the correct isActive value
-        // Since there's no direct "setIsActive" method, we'll use update pattern
-        // or the toggleActive() method intelligently
-        const finalSchedule =
-          schedule.isActive === isActive ? schedule : schedule.toggleActive();
-        if (schedule.isActive !== finalSchedule.isActive) {
-          this.storage.set(id, finalSchedule);
-          count++;
-        }
+      if (schedule && schedule.isActive !== isActive) {
+        // Create updated schedule by directly setting isActive
+        // Note: This is for testing - in production, use proper domain methods
+        const updatedSchedule = Object.create(Object.getPrototypeOf(schedule));
+        Object.assign(updatedSchedule, schedule, { isActive });
+        this.storage.set(id, updatedSchedule);
+        count++;
       }
     }
     return count;

@@ -105,3 +105,120 @@ export function createControllerResult<T>(
   }
   return { success: true, data };
 }
+
+// =============================================================================
+// Effect Integration (Migration Phase 4.1+)
+// =============================================================================
+
+import { Effect } from "effect";
+import type { DomainError } from "@mirai-app/domain";
+import {
+  mapDomainErrorToHttpError,
+  mapErrorToGraphQL,
+} from "./effect-executor";
+
+/**
+ * Runs an Effect and returns the result, mapping errors to HTTP errors.
+ *
+ * This is the Effect-based replacement for `handleResult`. Use this when
+ * your use case returns Effect<A, E, never> instead of Promise<Result<T,E>>.
+ *
+ * @example
+ * ```typescript
+ * // Old Result-based pattern
+ * const result = await useCase.execute(input);
+ * return handleEffectResult(result);
+ *
+ * // New Effect-based pattern
+ * const effect = useCase.execute(input);
+ * return await handleEffect(effect);
+ * ```
+ */
+export async function handleEffect<T, E extends DomainError>(
+  effect: Effect.Effect<T, E, never>,
+): Promise<T> {
+  const result = await Effect.runPromise(Effect.either(effect));
+
+  if (result._tag === "Left") {
+    throw mapDomainErrorToHttpError(result.left);
+  }
+
+  return result.right;
+}
+
+/**
+ * Runs an Effect and returns a ControllerResult for legacy compatibility.
+ *
+ * Use this during the migration period when you need to maintain the
+ * ControllerResult pattern while transitioning to Effect.
+ *
+ * @example
+ * ```typescript
+ * const effect = useCase.execute(input);
+ * const controllerResult = await effectToControllerResult(effect);
+ * return controllerResult;
+ * ```
+ */
+export async function effectToControllerResult<T, E extends DomainError, R = T>(
+  effect: Effect.Effect<T, E, never>,
+  transform?: (value: T) => R,
+): Promise<ControllerResult<R>> {
+  const result = await Effect.runPromise(Effect.either(effect));
+
+  if (result._tag === "Left") {
+    return { success: false, error: result.left.message };
+  }
+
+  const data = transform
+    ? transform(result.right)
+    : (result.right as unknown as R);
+  return { success: true, data };
+}
+
+/**
+ * Handle an Effect with async transformation.
+ *
+ * Similar to `handleResultAsync` but for Effect-based use cases.
+ */
+export async function handleEffectAsync<T, E extends DomainError, R = T>(
+  effect: Effect.Effect<T, E, never>,
+  transform?: (value: T) => Promise<R>,
+): Promise<R> {
+  const result = await Effect.runPromise(Effect.either(effect));
+
+  if (result._tag === "Left") {
+    throw mapDomainErrorToHttpError(result.left);
+  }
+
+  if (transform) {
+    return await transform(result.right);
+  }
+
+  return result.right as unknown as R;
+}
+
+/**
+ * GraphQL-specific Effect handler that maps errors to GraphQLError.
+ *
+ * Use this in GraphQL resolvers to maintain existing error contracts.
+ *
+ * @example
+ * ```typescript
+ * // In a resolver
+ * const user = await handleEffectGraphQL(
+ *   useCase.execute({ id: args.id })
+ * );
+ * return user;
+ * ```
+ */
+export async function handleEffectGraphQL<T, E extends DomainError>(
+  effect: Effect.Effect<T, E, never>,
+): Promise<T> {
+  const result = await Effect.runPromise(Effect.either(effect));
+
+  if (result._tag === "Left") {
+    throw mapErrorToGraphQL(result.left);
+  }
+
+  return result.right;
+}

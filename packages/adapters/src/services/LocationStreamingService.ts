@@ -18,7 +18,7 @@ import type { ConnectionManager, BroadcastLocation } from "./ConnectionManager";
  * Client updates location
  *    |
  *    v
- * UpdateLocationUseCase
+ * updateLocationUseCase (Effect-based)
  *    |
  *    v
  * eventBus.publish(LocationUpdated)

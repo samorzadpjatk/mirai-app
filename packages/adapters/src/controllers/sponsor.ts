@@ -1,13 +1,16 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { SponsorRepository } from "@mirai-app/use-cases";
+import type { Sponsor } from "@mirai-app/domain";
 import {
-  CreateSponsorUseCase,
-  GetSponsorUseCase,
-  UpdateSponsorUseCase,
-  DeleteSponsorUseCase,
   ListSponsorsUseCase,
   LinkSponsorToTripUseCase,
   UnlinkSponsorFromTripUseCase,
+  getSponsorUseCase,
+  createSponsorUseCase,
+  updateSponsorUseCase,
+  deleteSponsorUseCase,
+  SponsorRepositoryTag,
   type CreateSponsorInput,
   type UpdateSponsorInput,
   type ListSponsorsInput,
@@ -123,14 +126,48 @@ export class SponsorController {
       };
     }
 
-    const useCase = new GetSponsorUseCase(this.sponsorRepository);
-    const result = await useCase.execute({ sponsorId: parsed.data.id });
+    const program = getSponsorUseCase({ sponsorId: parsed.data.id }).pipe(
+      Effect.provideService(SponsorRepositoryTag, {
+        create: (sponsor: Sponsor) =>
+          Effect.promise(() => this.sponsorRepository.create(sponsor)),
+        findById: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.findById(id)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => this.sponsorRepository.findAll(options)),
+        findActive: () =>
+          Effect.promise(() => this.sponsorRepository.findActive()),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.sponsorRepository.findByTripId(tripId)),
+        update: (sponsor: Sponsor) =>
+          Effect.promise(() => this.sponsorRepository.update(sponsor)),
+        delete: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.delete(id)),
+        exists: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.exists(id)),
+        isLinkedToTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.isLinkedToTrip(sponsorId, tripId),
+          ),
+        linkToTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.linkToTrip(sponsorId, tripId),
+          ),
+        unlinkFromTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.unlinkFromTrip(sponsorId, tripId),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -209,8 +246,7 @@ export class SponsorController {
       };
     }
 
-    const useCase = new CreateSponsorUseCase(this.sponsorRepository);
-    const result = await useCase.execute({
+    const program = createSponsorUseCase({
       name: parsed.data.name,
       description: parsed.data.description,
       logoPath: parsed.data.logoPath,
@@ -218,13 +254,48 @@ export class SponsorController {
       offsetX: parsed.data.offsetX,
       offsetY: parsed.data.offsetY,
       isActive: parsed.data.isActive,
-    });
+    }).pipe(
+      Effect.provideService(SponsorRepositoryTag, {
+        create: (sponsor: Sponsor) =>
+          Effect.promise(() => this.sponsorRepository.create(sponsor)),
+        findById: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.findById(id)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => this.sponsorRepository.findAll(options)),
+        findActive: () =>
+          Effect.promise(() => this.sponsorRepository.findActive()),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.sponsorRepository.findByTripId(tripId)),
+        update: (sponsor: Sponsor) =>
+          Effect.promise(() => this.sponsorRepository.update(sponsor)),
+        delete: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.delete(id)),
+        exists: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.exists(id)),
+        isLinkedToTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.isLinkedToTrip(sponsorId, tripId),
+          ),
+        linkToTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.linkToTrip(sponsorId, tripId),
+          ),
+        unlinkFromTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.unlinkFromTrip(sponsorId, tripId),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -255,8 +326,7 @@ export class SponsorController {
       };
     }
 
-    const useCase = new UpdateSponsorUseCase(this.sponsorRepository);
-    const result = await useCase.execute({
+    const program = updateSponsorUseCase({
       sponsorId: parsed.data.sponsorId,
       name: parsed.data.name,
       description: parsed.data.description,
@@ -265,13 +335,48 @@ export class SponsorController {
       offsetX: parsed.data.offsetX,
       offsetY: parsed.data.offsetY,
       isActive: parsed.data.isActive,
-    });
+    }).pipe(
+      Effect.provideService(SponsorRepositoryTag, {
+        create: (sponsor: Sponsor) =>
+          Effect.promise(() => this.sponsorRepository.create(sponsor)),
+        findById: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.findById(id)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => this.sponsorRepository.findAll(options)),
+        findActive: () =>
+          Effect.promise(() => this.sponsorRepository.findActive()),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.sponsorRepository.findByTripId(tripId)),
+        update: (sponsor: Sponsor) =>
+          Effect.promise(() => this.sponsorRepository.update(sponsor)),
+        delete: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.delete(id)),
+        exists: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.exists(id)),
+        isLinkedToTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.isLinkedToTrip(sponsorId, tripId),
+          ),
+        linkToTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.linkToTrip(sponsorId, tripId),
+          ),
+        unlinkFromTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.unlinkFromTrip(sponsorId, tripId),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -295,14 +400,48 @@ export class SponsorController {
       };
     }
 
-    const useCase = new DeleteSponsorUseCase(this.sponsorRepository);
-    const result = await useCase.execute({ sponsorId: parsed.data.id });
+    const program = deleteSponsorUseCase({ sponsorId: parsed.data.id }).pipe(
+      Effect.provideService(SponsorRepositoryTag, {
+        create: (sponsor: Sponsor) =>
+          Effect.promise(() => this.sponsorRepository.create(sponsor)),
+        findById: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.findById(id)),
+        findAll: (options?: { limit?: number; offset?: number }) =>
+          Effect.promise(() => this.sponsorRepository.findAll(options)),
+        findActive: () =>
+          Effect.promise(() => this.sponsorRepository.findActive()),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.sponsorRepository.findByTripId(tripId)),
+        update: (sponsor: Sponsor) =>
+          Effect.promise(() => this.sponsorRepository.update(sponsor)),
+        delete: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.delete(id)),
+        exists: (id: string) =>
+          Effect.promise(() => this.sponsorRepository.exists(id)),
+        isLinkedToTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.isLinkedToTrip(sponsorId, tripId),
+          ),
+        linkToTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.linkToTrip(sponsorId, tripId),
+          ),
+        unlinkFromTrip: (sponsorId: string, tripId: string) =>
+          Effect.promise(() =>
+            this.sponsorRepository.unlinkFromTrip(sponsorId, tripId),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**

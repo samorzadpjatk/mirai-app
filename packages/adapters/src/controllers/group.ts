@@ -1,10 +1,7 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { GroupRepository } from "@mirai-app/use-cases";
 import { Group, GroupStatus } from "@mirai-app/domain";
-import type {
-  CreateGroupUseCase,
-  UpdateGroupUseCase,
-} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for group controller
@@ -76,11 +73,7 @@ const schemas = {
  * should delegate to them instead of working directly with the repository.
  */
 export class GroupController {
-  constructor(
-    private groupRepository: GroupRepository,
-    private createGroupUseCase?: CreateGroupUseCase,
-    private updateGroupUseCase?: UpdateGroupUseCase,
-  ) {}
+  constructor(private groupRepository: GroupRepository) {}
 
   /**
    * Get a group by ID
@@ -274,16 +267,7 @@ export class GroupController {
       };
     }
 
-    // Use CreateGroupUseCase if available, otherwise fallback to manual creation
-    if (this.createGroupUseCase) {
-      const result = await this.createGroupUseCase.execute(parsed.data);
-      if (result.kind === "err") {
-        return { success: false, error: result.error };
-      }
-      return { success: true, data: result.value };
-    }
-
-    // Fallback: manual implementation
+    // Manual implementation using repository and domain entity
     // Check if code is already in use
     const existingGroup = await this.groupRepository.findByCode(
       parsed.data.code,
@@ -293,39 +277,44 @@ export class GroupController {
     }
 
     // Create domain entity directly
-    const groupResult = Group.create({
-      tripId: parsed.data.tripId,
-      name: parsed.data.name,
-      description: parsed.data.description,
-      image: parsed.data.image,
-      organizerId: parsed.data.organizerId,
-      code: parsed.data.code,
-      coins: parsed.data.coins,
-    });
+    try {
+      const group = await Effect.runPromise(
+        Group.create({
+          tripId: parsed.data.tripId,
+          name: parsed.data.name,
+          description: parsed.data.description,
+          image: parsed.data.image,
+          organizerId: parsed.data.organizerId,
+          code: parsed.data.code,
+          coins: parsed.data.coins,
+        }),
+      );
 
-    if (groupResult.kind === "err") {
-      return { success: false, error: groupResult.error.message };
+      // Persist group
+      const saved = await this.groupRepository.create(group);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          tripId: saved.tripId,
+          name: saved.name,
+          description: saved.description,
+          image: saved.image,
+          organizerId: saved.organizerId,
+          code: saved.code,
+          coins: saved.coins,
+          status: saved.status,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    // Persist group
-    const saved = await this.groupRepository.create(groupResult.value);
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        tripId: saved.tripId,
-        name: saved.name,
-        description: saved.description,
-        image: saved.image,
-        organizerId: saved.organizerId,
-        code: saved.code,
-        coins: saved.coins,
-        status: saved.status,
-        createdAt: saved.createdAt,
-        updatedAt: saved.updatedAt,
-      },
-    };
   }
 
   /**
@@ -357,30 +346,7 @@ export class GroupController {
       };
     }
 
-    // Use UpdateGroupUseCase if available, otherwise fallback to manual update
-    if (this.updateGroupUseCase) {
-      const result = await this.updateGroupUseCase.execute(parsed.data);
-      if (result.kind === "err") {
-        return { success: false, error: result.error };
-      }
-      return {
-        success: true,
-        data: {
-          id: result.value.id,
-          tripId: result.value.tripId,
-          name: result.value.name,
-          description: result.value.description,
-          image: result.value.image,
-          organizerId: result.value.organizerId,
-          code: result.value.code,
-          coins: result.value.coins,
-          status: result.value.status,
-          updatedAt: result.value.updatedAt,
-        },
-      };
-    }
-
-    // Fallback: manual implementation
+    // Manual implementation using repository and domain entity
     // Find existing group
     const group = await this.groupRepository.findById(parsed.data.groupId);
     if (!group) {
@@ -395,42 +361,45 @@ export class GroupController {
     // Apply updates using entity method
     let updatedGroup = group;
 
-    if (
-      parsed.data.name !== undefined ||
-      parsed.data.description !== undefined ||
-      parsed.data.image !== undefined
-    ) {
-      const detailsResult = updatedGroup.updateDetails({
-        name: parsed.data.name,
-        description: parsed.data.description,
-        image: parsed.data.image,
-      });
-
-      if (detailsResult.kind === "err") {
-        return { success: false, error: detailsResult.error.message };
+    try {
+      if (
+        parsed.data.name !== undefined ||
+        parsed.data.description !== undefined ||
+        parsed.data.image !== undefined
+      ) {
+        updatedGroup = await Effect.runPromise(
+          updatedGroup.updateDetails({
+            name: parsed.data.name,
+            description: parsed.data.description,
+            image: parsed.data.image,
+          }),
+        );
       }
 
-      updatedGroup = detailsResult.value;
+      // Persist changes
+      const saved = await this.groupRepository.update(updatedGroup);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          tripId: saved.tripId,
+          name: saved.name,
+          description: saved.description,
+          image: saved.image,
+          organizerId: saved.organizerId,
+          code: saved.code,
+          coins: saved.coins,
+          status: saved.status,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    // Persist changes
-    const saved = await this.groupRepository.update(updatedGroup);
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        tripId: saved.tripId,
-        name: saved.name,
-        description: saved.description,
-        image: saved.image,
-        organizerId: saved.organizerId,
-        code: saved.code,
-        coins: saved.coins,
-        status: saved.status,
-        updatedAt: saved.updatedAt,
-      },
-    };
   }
 
   /**
@@ -470,26 +439,31 @@ export class GroupController {
 
     const previousCoins = group.coins;
 
-    // Apply coin update
-    const coinsResult = group.addCoins(parsed.data.amount);
+    try {
+      // Apply coin update
+      const updatedGroup = await Effect.runPromise(
+        group.addCoins(parsed.data.amount),
+      );
 
-    if (coinsResult.kind === "err") {
-      return { success: false, error: coinsResult.error.message };
+      // Persist changes
+      const saved = await this.groupRepository.update(updatedGroup);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          name: saved.name,
+          previousCoins,
+          newCoins: saved.coins,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    // Persist changes
-    const saved = await this.groupRepository.update(coinsResult.value);
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        name: saved.name,
-        previousCoins,
-        newCoins: saved.coins,
-        updatedAt: saved.updatedAt,
-      },
-    };
   }
 
   /**
@@ -624,16 +598,19 @@ export class GroupController {
       return { success: false, error: "Group is already deleted" };
     }
 
-    // Mark as deleted
-    const deletedResult = group.markAsDeleted();
+    try {
+      // Mark as deleted
+      const deletedGroup = await Effect.runPromise(group.markAsDeleted());
 
-    if (deletedResult.kind === "err") {
-      return { success: false, error: deletedResult.error.message };
+      // Persist changes
+      await this.groupRepository.update(deletedGroup);
+
+      return { success: true, data: { deleted: true } };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    // Persist changes
-    await this.groupRepository.update(deletedResult.value);
-
-    return { success: true, data: { deleted: true } };
   }
 }

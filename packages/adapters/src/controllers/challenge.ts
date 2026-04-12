@@ -206,11 +206,11 @@ export class ChallengeController {
 
     const useCase = new GetChallengeUseCase(this.challengeRepository);
     const result = await useCase.execute({ challengeId: parsed.data.id });
-    
+
     if (result.kind === "err") {
       return { success: false, error: result.error };
     }
-    
+
     return { success: true, data: result.value };
   }
 

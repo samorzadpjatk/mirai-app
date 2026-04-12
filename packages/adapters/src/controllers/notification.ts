@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { NotificationRepository } from "@mirai-app/use-cases";
 import {
   GetNotificationUseCase,
@@ -209,40 +210,43 @@ export class NotificationController {
     }
 
     // Create domain entity directly until CreateNotificationUseCase exists
-    const notificationResult = Notification.create({
-      title: parsed.data.title,
-      body: parsed.data.body,
-      url: parsed.data.url,
-      createdById: parsed.data.createdById,
-      tripId: parsed.data.tripId,
-      priority: parsed.data.priority as NotificationPriority,
-      scheduledFor: parsed.data.scheduledFor,
-    });
+    try {
+      const notification = await Effect.runPromise(
+        Notification.create({
+          title: parsed.data.title,
+          body: parsed.data.body,
+          url: parsed.data.url,
+          createdById: parsed.data.createdById,
+          tripId: parsed.data.tripId,
+          priority: parsed.data.priority as NotificationPriority,
+          scheduledFor: parsed.data.scheduledFor,
+        }),
+      );
 
-    if (notificationResult.kind === "err") {
-      return { success: false, error: notificationResult.error.message };
+      // Persist notification
+      const saved = await this.notificationRepository.create(notification);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          title: saved.title,
+          body: saved.body,
+          url: saved.url,
+          status: saved.status,
+          priority: saved.priority,
+          tripId: saved.tripId,
+          createdById: saved.createdById,
+          createdAt: saved.createdAt,
+          isScheduled: saved.isScheduled(),
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    // Persist notification
-    const saved = await this.notificationRepository.create(
-      notificationResult.value,
-    );
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        title: saved.title,
-        body: saved.body,
-        url: saved.url,
-        status: saved.status,
-        priority: saved.priority,
-        tripId: saved.tripId,
-        createdById: saved.createdById,
-        createdAt: saved.createdAt,
-        isScheduled: saved.isScheduled(),
-      },
-    };
   }
 
   /**
@@ -282,67 +286,65 @@ export class NotificationController {
       return { success: false, error: "Notification not found" };
     }
 
-    // Apply updates using entity method
-    let updatedNotification = notification;
+    try {
+      // Apply updates using entity method
+      let updatedNotification = notification;
 
-    if (
-      parsed.data.title !== undefined ||
-      parsed.data.body !== undefined ||
-      parsed.data.url !== undefined
-    ) {
-      const contentResult = updatedNotification.updateContent({
-        title: parsed.data.title,
-        body: parsed.data.body,
-        url: parsed.data.url,
-      });
-
-      if (contentResult.kind === "err") {
-        return { success: false, error: contentResult.error.message };
+      if (
+        parsed.data.title !== undefined ||
+        parsed.data.body !== undefined ||
+        parsed.data.url !== undefined
+      ) {
+        updatedNotification = await Effect.runPromise(
+          updatedNotification.updateContent({
+            title: parsed.data.title,
+            body: parsed.data.body,
+            url: parsed.data.url,
+          }),
+        );
       }
 
-      updatedNotification = contentResult.value;
-    }
-
-    if (parsed.data.priority !== undefined) {
-      updatedNotification = updatedNotification.updatePriority(
-        parsed.data.priority as NotificationPriority,
-      );
-    }
-
-    if (
-      parsed.data.scheduledFor !== undefined &&
-      parsed.data.scheduledFor !== null
-    ) {
-      const scheduleResult = updatedNotification.schedule(
-        parsed.data.scheduledFor,
-      );
-
-      if (scheduleResult.kind === "err") {
-        return { success: false, error: scheduleResult.error.message };
+      if (parsed.data.priority !== undefined) {
+        updatedNotification = updatedNotification.updatePriority(
+          parsed.data.priority as NotificationPriority,
+        );
       }
 
-      updatedNotification = scheduleResult.value;
-    } else if (parsed.data.scheduledFor === null) {
-      // If explicitly set to null, unschedule the notification
-      updatedNotification = updatedNotification.unschedule();
+      if (
+        parsed.data.scheduledFor !== undefined &&
+        parsed.data.scheduledFor !== null
+      ) {
+        updatedNotification = await Effect.runPromise(
+          updatedNotification.schedule(parsed.data.scheduledFor),
+        );
+      } else if (parsed.data.scheduledFor === null) {
+        // If explicitly set to null, unschedule the notification
+        updatedNotification = updatedNotification.unschedule();
+      }
+
+      // Persist changes
+      const saved =
+        await this.notificationRepository.update(updatedNotification);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          title: saved.title,
+          body: saved.body,
+          url: saved.url,
+          status: saved.status,
+          priority: saved.priority,
+          tripId: saved.tripId,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    // Persist changes
-    const saved = await this.notificationRepository.update(updatedNotification);
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        title: saved.title,
-        body: saved.body,
-        url: saved.url,
-        status: saved.status,
-        priority: saved.priority,
-        tripId: saved.tripId,
-        updatedAt: saved.updatedAt,
-      },
-    };
   }
 
   /**
@@ -389,31 +391,32 @@ export class NotificationController {
       };
     }
 
-    // Apply status update
-    const statusResult = notification.updateStatus(
-      parsed.data.newStatus as NotificationStatus,
-    );
+    try {
+      // Apply status update
+      const updatedNotification = await Effect.runPromise(
+        notification.updateStatus(parsed.data.newStatus as NotificationStatus),
+      );
 
-    if (statusResult.kind === "err") {
+      // Persist changes
+      const saved =
+        await this.notificationRepository.update(updatedNotification);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          title: saved.title,
+          previousStatus,
+          newStatus: saved.status,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
       return {
         success: false,
-        error: statusResult.error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
-
-    // Persist changes
-    const saved = await this.notificationRepository.update(statusResult.value);
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        title: saved.title,
-        previousStatus,
-        newStatus: saved.status,
-        updatedAt: saved.updatedAt,
-      },
-    };
   }
 
   /**

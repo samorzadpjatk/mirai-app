@@ -138,6 +138,11 @@ export {
   toControllerResult,
   createControllerResult,
   type ControllerResult,
+  // Effect-based handlers (Migration Phase 4.1+)
+  handleEffect,
+  effectToControllerResult,
+  handleEffectAsync,
+  handleEffectGraphQL,
 } from "./utils/controller-helpers";
 export {
   createRepository,
@@ -146,6 +151,25 @@ export {
   type ControllerFactory,
 } from "./utils/repository-factory";
 export { TokenExtractor } from "./utils/TokenExtractor";
+
+// Effect Executor Utilities (Step 4.1)
+export {
+  // Effect execution
+  runEffect,
+  runEffectWithHandler,
+  runEffectGraphQL,
+  runEffectGraphQLWithHandler,
+  // HTTP error mapping
+  mapErrorToHttpStatus,
+  mapDomainErrorToHttpError,
+  // GraphQL error mapping
+  mapErrorToGraphQLCode,
+  mapErrorToGraphQL,
+  type GraphQLErrorCode,
+  // Type guards
+  isDomainError,
+  getErrorTag,
+} from "./utils/effect-executor";
 
 // =============================================================================
 // Mappers (Domain <-> DTO <-> Database) - Drizzle ORM
@@ -265,9 +289,6 @@ export type {
   ListSubmissionsByChallengeUseCase,
   // Location
   LocationRepository,
-  GetLocationUseCase,
-  CreateLocationUseCase,
-  UpdateLocationUseCase,
   ListLocationsUseCase,
   UpdateSharingSettingsUseCase,
   AddSharingUserUseCase,
@@ -276,12 +297,7 @@ export type {
   // Reward
   RewardRepository,
   RewardPurchaseRepository,
-  GetRewardUseCase,
-  CreateRewardUseCase,
-  UpdateRewardUseCase,
   SetRewardHiddenUseCase,
-  DeleteRewardUseCase,
-  ListRewardsUseCase,
   PurchaseRewardUseCase,
   UpdatePurchaseStatusUseCase,
   UpdateMyPurchaseStatusUseCase,
@@ -301,11 +317,14 @@ export type {
   GetReportsUseCase,
   // Sponsor
   SponsorRepository,
-  CreateSponsorUseCase,
-  GetSponsorUseCase,
-  UpdateSponsorUseCase,
-  DeleteSponsorUseCase,
   ListSponsorsUseCase,
   LinkSponsorToTripUseCase,
   UnlinkSponsorFromTripUseCase,
 } from "@mirai-app/use-cases";
+
+// NOTE: The following use cases are now function-based (Effect-based) and should be imported directly:
+// - getActivityFeedUseCase, createActivityUseCase, addReactionUseCase
+// - createReportUseCase, getReportsUseCase
+// - purchaseRewardUseCase, getPurchaseHistoryUseCase
+// - addCoinsUseCase, removeCoinsUseCase, getCoinTransactionsUseCase, getCoinStatisticsUseCase
+// - getCoinQuickStatsUseCase, getCoinAdditionalInsightsUseCase, getMostActiveAdminStatsUseCase

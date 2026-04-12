@@ -99,11 +99,11 @@ export class UserController {
 
     const useCase = new GetUserUseCase(this.userRepository);
     const result = await useCase.execute({ userId: parsed.data.id });
-    
+
     if (result.kind === "err") {
       return { success: false, error: result.error };
     }
-    
+
     return { success: true, data: result.value };
   }
 
@@ -141,11 +141,11 @@ export class UserController {
       lastName: parsed.data.lastName,
       role: parsed.data.role as UserRole,
     });
-    
+
     if (result.kind === "err") {
       return { success: false, error: result.error };
     }
-    
+
     return { success: true, data: result.value };
   }
 
@@ -183,11 +183,11 @@ export class UserController {
       lastName: parsed.data.lastName,
       hasAvatar: parsed.data.hasAvatar,
     });
-    
+
     if (result.kind === "err") {
       return { success: false, error: result.error };
     }
-    
+
     return { success: true, data: result.value };
   }
 

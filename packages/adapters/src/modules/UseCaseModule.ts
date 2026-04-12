@@ -6,14 +6,13 @@
  * It serves as the bridge between the port interfaces (defined in use-cases)
  * and their implementations.
  *
- * ## Auth & Telemetry Use Cases (4 use cases)
+ * ## Auth Use Cases (3 use cases)
  *
  * | Token | Class | Dependencies | Purpose |
  * |-------|-------|--------------|---------|
  * | `authenticateUserUseCase` | AuthenticateUserUseCase | AuthPort | Token validation |
  * | `authorizeAdminUseCase` | AuthorizeAdminUseCase | AuthContext | Admin role check |
  * | `authorizeModeratorUseCase` | AuthorizeModeratorUseCase | AuthContext | Moderator role check |
- * | `logTelemetryUseCase` | LogTelemetryUseCase | TelemetryPort | Telemetry logging |
  *
  * ## Port Registrations (with implementations)
  *
@@ -125,8 +124,10 @@ import {
   AuthenticateUserUseCase,
   AuthorizeAdminUseCase,
   AuthorizeModeratorUseCase,
-  LogTelemetryUseCase,
+  logTelemetryUseCase,
+  TelemetryPortTag,
 } from "@mirai-app/use-cases/interactors";
+import { Effect } from "effect";
 
 // =============================================================================
 // Adapter Imports
@@ -386,13 +387,6 @@ function createAuthorizeModeratorUseCase(): AuthorizeModeratorUseCase {
 }
 
 /**
- * Create LogTelemetryUseCase instance
- */
-function createLogTelemetryUseCase(cradle: Cradle): LogTelemetryUseCase {
-  return new LogTelemetryUseCase(cradle.telemetryPort as TelemetryPort);
-}
-
-/**
  * Create PubSubService instance (EventEmitterPubSub)
  *
  * Uses singleton pattern since EventEmitterPubSub maintains internal state
@@ -437,7 +431,7 @@ export interface UseCaseModuleDeps {
   [AUTH_USE_CASE_TOKENS.AuthorizeModeratorUseCase]: AuthorizeModeratorUseCase;
 
   /** Log telemetry use case */
-  [AUTH_USE_CASE_TOKENS.LogTelemetryUseCase]: LogTelemetryUseCase;
+  [AUTH_USE_CASE_TOKENS.LogTelemetryUseCase]: typeof logTelemetryUseCase;
 }
 
 // =============================================================================
@@ -632,11 +626,11 @@ export const UseCaseModule: StaticModule<UseCaseModuleDef> =
 
       /**
        * LogTelemetryUseCase - Logs telemetry events
-       * SCOPED lifetime because it depends on request-scoped telemetryPort.
+       * SINGLETON lifetime because it's a pure function.
        */
       [AUTH_USE_CASE_TOKENS.LogTelemetryUseCase]: {
-        factory: createLogTelemetryUseCase,
-        lifetime: Lifetime.SCOPED,
+        factory: () => logTelemetryUseCase,
+        lifetime: Lifetime.SINGLETON,
       },
     },
 

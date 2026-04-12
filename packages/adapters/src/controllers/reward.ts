@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type {
   RewardRepository,
   RewardPurchaseRepository,
@@ -17,16 +18,23 @@ import type {
   GetPurchaseHistoryOutput,
 } from "@mirai-app/use-cases";
 import {
-  GetRewardUseCase,
-  CreateRewardUseCase,
-  UpdateRewardUseCase,
   SetRewardHiddenUseCase,
-  DeleteRewardUseCase,
-  ListRewardsUseCase,
   PurchaseRewardUseCase,
   UpdatePurchaseStatusUseCase,
   UpdateMyPurchaseStatusUseCase,
   GetPurchaseHistoryUseCase,
+} from "@mirai-app/use-cases";
+import {
+  getRewardUseCase,
+  createRewardUseCase,
+  updateRewardUseCase,
+  deleteRewardUseCase,
+  listRewardsUseCase,
+} from "@mirai-app/use-cases/interactors";
+import {
+  RewardRepositoryTag,
+  TripAccessCheckerTag,
+  TripPointsCalculatorTag,
 } from "@mirai-app/use-cases";
 import type { RewardId, UserId } from "@mirai-app/domain";
 import { UserRole, RewardPurchaseStatus } from "@mirai-app/domain";
@@ -148,20 +156,53 @@ export class RewardController {
       };
     }
 
-    const useCase = new GetRewardUseCase(this.rewardRepository);
-    const result = await useCase.execute({
+    const program = getRewardUseCase({
       rewardId: parsed.data.id as RewardId,
-    });
+    }).pipe(
+      Effect.provideService(RewardRepositoryTag, {
+        create: (reward) =>
+          Effect.promise(() => this.rewardRepository.create(reward)),
+        findById: (id) =>
+          Effect.promise(() => this.rewardRepository.findById(id)),
+        findByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findByTripId(tripId, options),
+          ),
+        findVisibleByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findVisibleByTripId(tripId, options),
+          ),
+        update: (reward) =>
+          Effect.promise(() => this.rewardRepository.update(reward)),
+        delete: (id) => Effect.promise(() => this.rewardRepository.delete(id)),
+        hasPurchases: (id) =>
+          Effect.promise(() => this.rewardRepository.hasPurchases(id)),
+        getPurchaseCount: (id) =>
+          Effect.promise(() => this.rewardRepository.getPurchaseCount(id)),
+        decrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.decrementQuantity(id, amount),
+          ),
+        incrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.incrementQuantity(id, amount),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
-   * Get all visible rewards for a trip (with dynamic pricing calculations)
+   * Set reward hidden status
    */
   async getByTrip(
     input: unknown,
@@ -177,20 +218,56 @@ export class RewardController {
       };
     }
 
-    const useCase = new ListRewardsUseCase(
-      this.rewardRepository,
-      this.pointsCalculator,
-    );
-    const result = await useCase.execute({
+    const program = listRewardsUseCase({
       tripId: parsed.data.tripId,
       groupCoins: parsed.data.groupCoins,
-    });
+    }).pipe(
+      Effect.provideService(RewardRepositoryTag, {
+        create: (reward) =>
+          Effect.promise(() => this.rewardRepository.create(reward)),
+        findById: (id) =>
+          Effect.promise(() => this.rewardRepository.findById(id)),
+        findByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findByTripId(tripId, options),
+          ),
+        findVisibleByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findVisibleByTripId(tripId, options),
+          ),
+        update: (reward) =>
+          Effect.promise(() => this.rewardRepository.update(reward)),
+        delete: (id) => Effect.promise(() => this.rewardRepository.delete(id)),
+        hasPurchases: (id) =>
+          Effect.promise(() => this.rewardRepository.hasPurchases(id)),
+        getPurchaseCount: (id) =>
+          Effect.promise(() => this.rewardRepository.getPurchaseCount(id)),
+        decrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.decrementQuantity(id, amount),
+          ),
+        incrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.incrementQuantity(id, amount),
+          ),
+      }),
+      Effect.provideService(TripPointsCalculatorTag, {
+        calculateTotalAvailablePoints: (tripId) =>
+          Effect.promise(() =>
+            this.pointsCalculator.calculateTotalAvailablePoints(tripId),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -210,21 +287,57 @@ export class RewardController {
       };
     }
 
-    const useCase = new ListRewardsUseCase(
-      this.rewardRepository,
-      this.pointsCalculator,
-    );
-    const result = await useCase.execute({
+    const program = listRewardsUseCase({
       tripId: parsed.data.tripId,
       includeHidden: true,
       pagination: parsed.data.pagination,
-    });
+    }).pipe(
+      Effect.provideService(RewardRepositoryTag, {
+        create: (reward) =>
+          Effect.promise(() => this.rewardRepository.create(reward)),
+        findById: (id) =>
+          Effect.promise(() => this.rewardRepository.findById(id)),
+        findByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findByTripId(tripId, options),
+          ),
+        findVisibleByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findVisibleByTripId(tripId, options),
+          ),
+        update: (reward) =>
+          Effect.promise(() => this.rewardRepository.update(reward)),
+        delete: (id) => Effect.promise(() => this.rewardRepository.delete(id)),
+        hasPurchases: (id) =>
+          Effect.promise(() => this.rewardRepository.hasPurchases(id)),
+        getPurchaseCount: (id) =>
+          Effect.promise(() => this.rewardRepository.getPurchaseCount(id)),
+        decrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.decrementQuantity(id, amount),
+          ),
+        incrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.incrementQuantity(id, amount),
+          ),
+      }),
+      Effect.provideService(TripPointsCalculatorTag, {
+        calculateTotalAvailablePoints: (tripId) =>
+          Effect.promise(() =>
+            this.pointsCalculator.calculateTotalAvailablePoints(tripId),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -244,11 +357,7 @@ export class RewardController {
       };
     }
 
-    const useCase = new CreateRewardUseCase(
-      this.rewardRepository,
-      this.accessChecker,
-    );
-    const result = await useCase.execute({
+    const program = createRewardUseCase({
       name: parsed.data.name,
       description: parsed.data.description,
       availableQuantity: parsed.data.availableQuantity,
@@ -258,13 +367,55 @@ export class RewardController {
       tripId: parsed.data.tripId,
       createdById: parsed.data.createdById,
       creatorRole: parsed.data.creatorRole,
-    });
+    }).pipe(
+      Effect.provideService(RewardRepositoryTag, {
+        create: (reward) =>
+          Effect.promise(() => this.rewardRepository.create(reward)),
+        findById: (id) =>
+          Effect.promise(() => this.rewardRepository.findById(id)),
+        findByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findByTripId(tripId, options),
+          ),
+        findVisibleByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findVisibleByTripId(tripId, options),
+          ),
+        update: (reward) =>
+          Effect.promise(() => this.rewardRepository.update(reward)),
+        delete: (id) => Effect.promise(() => this.rewardRepository.delete(id)),
+        hasPurchases: (id) =>
+          Effect.promise(() => this.rewardRepository.hasPurchases(id)),
+        getPurchaseCount: (id) =>
+          Effect.promise(() => this.rewardRepository.getPurchaseCount(id)),
+        decrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.decrementQuantity(id, amount),
+          ),
+        incrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.incrementQuantity(id, amount),
+          ),
+      }),
+      Effect.provideService(TripAccessCheckerTag, {
+        isGroupLeader: (userId) =>
+          Effect.promise(() => this.accessChecker.isGroupLeader(userId)),
+        isStaff: (userId) =>
+          Effect.promise(() => this.accessChecker.isStaff(userId)),
+        hasTripEnded: (tripId) =>
+          Effect.promise(() => this.accessChecker.hasTripEnded(tripId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -284,21 +435,54 @@ export class RewardController {
       };
     }
 
-    const useCase = new UpdateRewardUseCase(this.rewardRepository);
-    const result = await useCase.execute({
+    const program = updateRewardUseCase({
       rewardId: parsed.data.rewardId as RewardId,
       name: parsed.data.name,
       description: parsed.data.description,
       availableQuantity: parsed.data.availableQuantity,
       images: parsed.data.images,
       coinCostPercentage: parsed.data.coinCostPercentage,
-    });
+    }).pipe(
+      Effect.provideService(RewardRepositoryTag, {
+        create: (reward) =>
+          Effect.promise(() => this.rewardRepository.create(reward)),
+        findById: (id) =>
+          Effect.promise(() => this.rewardRepository.findById(id)),
+        findByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findByTripId(tripId, options),
+          ),
+        findVisibleByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findVisibleByTripId(tripId, options),
+          ),
+        update: (reward) =>
+          Effect.promise(() => this.rewardRepository.update(reward)),
+        delete: (id) => Effect.promise(() => this.rewardRepository.delete(id)),
+        hasPurchases: (id) =>
+          Effect.promise(() => this.rewardRepository.hasPurchases(id)),
+        getPurchaseCount: (id) =>
+          Effect.promise(() => this.rewardRepository.getPurchaseCount(id)),
+        decrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.decrementQuantity(id, amount),
+          ),
+        incrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.incrementQuantity(id, amount),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -349,16 +533,49 @@ export class RewardController {
       };
     }
 
-    const useCase = new DeleteRewardUseCase(this.rewardRepository);
-    const result = await useCase.execute({
+    const program = deleteRewardUseCase({
       rewardId: parsed.data.rewardId as RewardId,
-    });
+    }).pipe(
+      Effect.provideService(RewardRepositoryTag, {
+        create: (reward) =>
+          Effect.promise(() => this.rewardRepository.create(reward)),
+        findById: (id) =>
+          Effect.promise(() => this.rewardRepository.findById(id)),
+        findByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findByTripId(tripId, options),
+          ),
+        findVisibleByTripId: (tripId, options) =>
+          Effect.promise(() =>
+            this.rewardRepository.findVisibleByTripId(tripId, options),
+          ),
+        update: (reward) =>
+          Effect.promise(() => this.rewardRepository.update(reward)),
+        delete: (id) => Effect.promise(() => this.rewardRepository.delete(id)),
+        hasPurchases: (id) =>
+          Effect.promise(() => this.rewardRepository.hasPurchases(id)),
+        getPurchaseCount: (id) =>
+          Effect.promise(() => this.rewardRepository.getPurchaseCount(id)),
+        decrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.decrementQuantity(id, amount),
+          ),
+        incrementQuantity: (id, amount) =>
+          Effect.promise(() =>
+            this.rewardRepository.incrementQuantity(id, amount),
+          ),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const result = await Effect.runPromise(program);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**

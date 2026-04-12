@@ -1,19 +1,21 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { NotificationScheduleRepository } from "@mirai-app/use-cases";
 import {
-  GetNotificationSchedulesUseCase,
-  GetNotificationScheduleByIdUseCase,
-  CreateNotificationScheduleUseCase,
-  UpdateNotificationScheduleUseCase,
-  DeleteNotificationScheduleUseCase,
-  ToggleNotificationScheduleActiveUseCase,
-  DuplicateNotificationScheduleUseCase,
-  BulkDeleteNotificationSchedulesUseCase,
-  BulkToggleNotificationScheduleActiveUseCase,
-  GetActiveNotificationSchedulesUseCase,
-  GetUpcomingNotificationSchedulesUseCase,
-  UpdateNotificationScheduleLastRunUseCase,
-  GetNotificationScheduleExecutionHistoryUseCase,
+  getNotificationSchedulesUseCase,
+  getNotificationScheduleByIdUseCase,
+  createNotificationScheduleUseCase,
+  updateNotificationScheduleUseCase,
+  deleteNotificationScheduleUseCase,
+  toggleNotificationScheduleActiveUseCase,
+  getActiveNotificationSchedulesUseCase,
+  getUpcomingNotificationSchedulesUseCase,
+  updateNotificationScheduleLastRunUseCase,
+  bulkDeleteNotificationSchedulesUseCase,
+  bulkToggleNotificationScheduleActiveUseCase,
+  duplicateNotificationScheduleUseCase,
+  getNotificationScheduleExecutionHistoryUseCase,
+  NotificationScheduleRepositoryTag,
   type NotificationScheduleOutput,
 } from "@mirai-app/use-cases";
 import {
@@ -159,8 +161,6 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new GetNotificationSchedulesUseCase(this.repository);
-
     // Map Zod schema filter to domain filter type
     const filter: NotificationScheduleFilter | undefined = parsed.data.filter
       ? {
@@ -178,16 +178,61 @@ export class NotificationScheduleController {
       offset: 0,
     };
 
-    const result = await useCase.execute({
+    const program = getNotificationSchedulesUseCase({
       filter,
       pagination,
-    });
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -204,28 +249,118 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new GetNotificationScheduleByIdUseCase(this.repository);
-    const result = await useCase.execute({ id: parsed.data.id });
+    const program = getNotificationScheduleByIdUseCase({
+      id: parsed.data.id,
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
    * Get active notification schedules
    */
   async getActive(): Promise<ControllerResult<NotificationScheduleOutput[]>> {
-    const useCase = new GetActiveNotificationSchedulesUseCase(this.repository);
-    const result = await useCase.execute();
+    const program = getActiveNotificationSchedulesUseCase().pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -242,16 +377,60 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new GetUpcomingNotificationSchedulesUseCase(
-      this.repository,
+    const program = getUpcomingNotificationSchedulesUseCase({
+      days: parsed.data.days,
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
     );
-    const result = await useCase.execute({ days: parsed.data.days });
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -268,8 +447,7 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new CreateNotificationScheduleUseCase(this.repository);
-    const result = await useCase.execute({
+    const program = createNotificationScheduleUseCase({
       name: parsed.data.name,
       tripId: parsed.data.tripId,
       notificationType: parsed.data
@@ -283,13 +461,58 @@ export class NotificationScheduleController {
       minute: parsed.data.minute,
       isActive: parsed.data.isActive,
       createdById: parsed.data.createdById,
-    });
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -306,8 +529,7 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new UpdateNotificationScheduleUseCase(this.repository);
-    const result = await useCase.execute({
+    const program = updateNotificationScheduleUseCase({
       id: parsed.data.id,
       name: parsed.data.name,
       notificationTitle: parsed.data.notificationTitle,
@@ -318,13 +540,58 @@ export class NotificationScheduleController {
       hour: parsed.data.hour,
       minute: parsed.data.minute,
       isActive: parsed.data.isActive,
-    });
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -345,14 +612,64 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new DeleteNotificationScheduleUseCase(this.repository);
-    const result = await useCase.execute({ id: parsed.data.id });
+    const program = deleteNotificationScheduleUseCase({
+      id: parsed.data.id,
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        deleteExecutions: (scheduleId: string) =>
+          Effect.promise(
+            () => this.repository.delete?.(scheduleId) || Promise.resolve(),
+          ),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -374,14 +691,60 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new BulkDeleteNotificationSchedulesUseCase(this.repository);
-    const result = await useCase.execute({ ids: parsed.data.ids });
+    const program = bulkDeleteNotificationSchedulesUseCase({
+      ids: parsed.data.ids,
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -398,16 +761,60 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new ToggleNotificationScheduleActiveUseCase(
-      this.repository,
+    const program = toggleNotificationScheduleActiveUseCase({
+      id: parsed.data.id,
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
     );
-    const result = await useCase.execute({ id: parsed.data.id });
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -424,19 +831,61 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new BulkToggleNotificationScheduleActiveUseCase(
-      this.repository,
-    );
-    const result = await useCase.execute({
+    const program = bulkToggleNotificationScheduleActiveUseCase({
       ids: parsed.data.ids,
       isActive: parsed.data.isActive,
-    });
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -453,20 +902,64 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new DuplicateNotificationScheduleUseCase(this.repository);
-    const result = await useCase.execute({
+    const program = duplicateNotificationScheduleUseCase({
       id: parsed.data.id,
       name: parsed.data.name,
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
       newCreatedById: parsed.data.newCreatedById,
-    });
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -483,19 +976,61 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new UpdateNotificationScheduleLastRunUseCase(
-      this.repository,
-    );
-    const result = await useCase.execute({
+    const program = updateNotificationScheduleLastRunUseCase({
       id: parsed.data.id,
       lastRun: parsed.data.lastRun,
-    });
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -523,18 +1058,60 @@ export class NotificationScheduleController {
       };
     }
 
-    const useCase = new GetNotificationScheduleExecutionHistoryUseCase(
-      this.repository,
-    );
-    const result = await useCase.execute({
+    const program = getNotificationScheduleExecutionHistoryUseCase({
       scheduleId: parsed.data.scheduleId,
       limit: parsed.data.limit,
-    });
+    }).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        exists: (id: string) =>
+          Effect.promise(() => this.repository.exists(id)),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.promise(() =>
+            this.repository.getExecutionHistory(scheduleId, limit),
+          ),
+        create: (schedule) =>
+          Effect.promise(() => this.repository.create(schedule)),
+        findById: (id: string) =>
+          Effect.promise(() => this.repository.findById(id)),
+        findByTripId: (tripId: string) =>
+          Effect.promise(() => this.repository.findByTripId(tripId)),
+        findByName: (name: string) =>
+          Effect.promise(() => this.repository.findByName(name)),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          Effect.promise(() =>
+            this.repository.findByTripIdAndName(tripId, name),
+          ),
+        findByType: (type) =>
+          Effect.promise(() => this.repository.findByType(type)),
+        findAll: (options) =>
+          Effect.promise(() => this.repository.findAll(options)),
+        findActive: (now) =>
+          Effect.promise(() => this.repository.findActive(now)),
+        findUpcoming: (days, now) =>
+          Effect.promise(() => this.repository.findUpcoming(days, now)),
+        update: (schedule) =>
+          Effect.promise(() => this.repository.update(schedule)),
+        delete: (id: string) =>
+          Effect.promise(() => this.repository.delete(id)),
+        deleteMany: (ids: string[]) =>
+          Effect.promise(() => this.repository.deleteMany(ids)),
+        count: (filter) => Effect.promise(() => this.repository.count(filter)),
+        updateLastRun: (id: string, lastRun: Date) =>
+          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
+        toggleActive: (id: string) =>
+          Effect.promise(() => this.repository.toggleActive(id)),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
+        countExecutions: (scheduleId: string) =>
+          Effect.promise(() => this.repository.countExecutions(scheduleId)),
+      }),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const output = await Effect.runPromise(program);
+      return { success: true, data: output };
+    } catch (error) {
+      return { success: false, error: String(error) };
     }
-
-    return { success: true, data: result.value };
   }
 }

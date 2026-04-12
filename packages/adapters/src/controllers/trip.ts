@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { TripRepository } from "@mirai-app/use-cases";
 import { Trip, TripStatus } from "@mirai-app/domain";
 
@@ -172,36 +173,41 @@ export class TripController {
     }
 
     // Create domain entity directly until CreateTripUseCase exists
-    const tripResult = Trip.create({
-      name: parsed.data.name,
-      description: parsed.data.description,
-      startDate: parsed.data.startDate,
-      endDate: parsed.data.endDate,
-      backgroundImagePath: parsed.data.backgroundImagePath,
-      status: parsed.data.status as TripStatus,
-    });
+    try {
+      const trip = await Effect.runPromise(
+        Trip.create({
+          name: parsed.data.name,
+          description: parsed.data.description,
+          startDate: parsed.data.startDate,
+          endDate: parsed.data.endDate,
+          backgroundImagePath: parsed.data.backgroundImagePath,
+          status: parsed.data.status as TripStatus,
+        }),
+      );
 
-    if (tripResult.kind === "err") {
-      return { success: false, error: tripResult.error.message };
+      // Persist trip
+      const saved = await this.tripRepository.create(trip);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          startDate: saved.startDate,
+          endDate: saved.endDate,
+          backgroundImagePath: saved.backgroundImagePath,
+          status: saved.status,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    // Persist trip
-    const saved = await this.tripRepository.create(tripResult.value);
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        name: saved.name,
-        description: saved.description,
-        startDate: saved.startDate,
-        endDate: saved.endDate,
-        backgroundImagePath: saved.backgroundImagePath,
-        status: saved.status,
-        createdAt: saved.createdAt,
-        updatedAt: saved.updatedAt,
-      },
-    };
   }
 
   /**
@@ -245,61 +251,60 @@ export class TripController {
       };
     }
 
-    // Apply updates using entity methods
-    let updatedTrip = trip;
+    try {
+      // Apply updates using entity methods
+      let updatedTrip = trip;
 
-    // Update details if provided
-    if (
-      parsed.data.name !== undefined ||
-      parsed.data.description !== undefined ||
-      parsed.data.backgroundImagePath !== undefined
-    ) {
-      const detailsResult = updatedTrip.updateDetails({
-        name: parsed.data.name,
-        description: parsed.data.description,
-        backgroundImagePath: parsed.data.backgroundImagePath,
-      });
-
-      if (detailsResult.kind === "err") {
-        return { success: false, error: detailsResult.error.message };
+      // Update details if provided
+      if (
+        parsed.data.name !== undefined ||
+        parsed.data.description !== undefined ||
+        parsed.data.backgroundImagePath !== undefined
+      ) {
+        updatedTrip = await Effect.runPromise(
+          updatedTrip.updateDetails({
+            name: parsed.data.name,
+            description: parsed.data.description,
+            backgroundImagePath: parsed.data.backgroundImagePath,
+          }),
+        );
       }
 
-      updatedTrip = detailsResult.value;
-    }
-
-    // Update dates if provided
-    if (
-      parsed.data.startDate !== undefined ||
-      parsed.data.endDate !== undefined
-    ) {
-      const datesResult = updatedTrip.updateDates({
-        startDate: parsed.data.startDate,
-        endDate: parsed.data.endDate,
-      });
-
-      if (datesResult.kind === "err") {
-        return { success: false, error: datesResult.error.message };
+      // Update dates if provided
+      if (
+        parsed.data.startDate !== undefined ||
+        parsed.data.endDate !== undefined
+      ) {
+        updatedTrip = await Effect.runPromise(
+          updatedTrip.updateDates({
+            startDate: parsed.data.startDate,
+            endDate: parsed.data.endDate,
+          }),
+        );
       }
 
-      updatedTrip = datesResult.value;
+      // Persist changes
+      const saved = await this.tripRepository.update(updatedTrip);
+
+      return {
+        success: true,
+        data: {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          startDate: saved.startDate,
+          endDate: saved.endDate,
+          backgroundImagePath: saved.backgroundImagePath,
+          status: saved.status,
+          updatedAt: saved.updatedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-
-    // Persist changes
-    const saved = await this.tripRepository.update(updatedTrip);
-
-    return {
-      success: true,
-      data: {
-        id: saved.id,
-        name: saved.name,
-        description: saved.description,
-        startDate: saved.startDate,
-        endDate: saved.endDate,
-        backgroundImagePath: saved.backgroundImagePath,
-        status: saved.status,
-        updatedAt: saved.updatedAt,
-      },
-    };
   }
 
   /**
@@ -342,19 +347,14 @@ export class TripController {
       };
     }
 
-    // Apply status update
-    const updateResult = trip.updateStatus(parsed.data.newStatus as TripStatus);
-
-    if (updateResult.kind === "err") {
-      return {
-        success: false,
-        error: `Failed to update status: ${updateResult.error.message}`,
-      };
-    }
-
     try {
+      // Apply status update
+      const updatedTrip = await Effect.runPromise(
+        trip.updateStatus(parsed.data.newStatus as TripStatus),
+      );
+
       // Persist changes
-      const saved = await this.tripRepository.update(updateResult.value);
+      const saved = await this.tripRepository.update(updatedTrip);
 
       return {
         success: true,
@@ -369,7 +369,7 @@ export class TripController {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to update status: ${error}`,
+        error: `Failed to update status: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
