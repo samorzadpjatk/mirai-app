@@ -1,4 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { Effect } from "effect";
 import { RewardController } from "../reward";
 import type {
   RewardRepository,
@@ -31,6 +32,13 @@ const createMockReward = (overrides?: Partial<Reward>): Reward =>
     updatedAt: new Date("2024-01-01"),
     isInStock: () => true,
     canBePurchased: () => true,
+    canPurchaseQuantity: () => true,
+    calculateDynamicCoinCost: () => ({ toNumber: () => 50 }),
+    canAfford: () => Effect.succeed(true),
+    calculateTotalCost: () => Effect.succeed({ toNumber: () => 50 }),
+    update: function (props) {
+      return Effect.succeed({ ...this, ...props, updatedAt: new Date() });
+    },
     hide: function () {
       return { ...this, isHidden: true };
     },
@@ -52,10 +60,22 @@ describe("[UNIT] RewardController", () => {
     mockRewardRepository = {
       findById: mock(() => Promise.resolve(createMockReward())),
       findByTripId: mock(() =>
-        Promise.resolve({ items: [createMockReward()], total: 1 }),
+        Promise.resolve({
+          items: [createMockReward()],
+          total: 1,
+          limit: 30,
+          offset: 0,
+          hasMore: false,
+        }),
       ),
       findVisibleByTripId: mock(() =>
-        Promise.resolve({ items: [createMockReward()], total: 1 }),
+        Promise.resolve({
+          items: [createMockReward()],
+          total: 1,
+          limit: 30,
+          offset: 0,
+          hasMore: false,
+        }),
       ),
       create: mock((reward: Reward) => Promise.resolve(reward)),
       update: mock((reward: Reward) => Promise.resolve(reward)),

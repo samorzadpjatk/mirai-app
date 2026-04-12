@@ -1,14 +1,56 @@
 import { builder } from "../builder";
 import { GroupType, CreateGroupInput, UpdateGroupInput } from "../types/Group";
 import {
-  GetGroupUseCase,
-  CreateGroupUseCase,
-  UpdateGroupUseCase,
+  getGroupUseCase,
+  createGroupUseCase,
+  updateGroupUseCase,
   type GetGroupInput,
   type CreateGroupInput as CreateGroupUseCaseInput,
   type UpdateGroupInput as UpdateGroupUseCaseInput,
+  GetGroupNotFoundError,
+  GroupCodeAlreadyExistsError,
+  GroupCreationError,
+  UpdateGroupNotFoundError,
+  UpdateGroupDeletedError,
+  UpdateGroupValidationError,
 } from "@mirai-app/use-cases";
+import { GroupRepositoryTag } from "@mirai-app/use-cases/ports/GroupRepository";
+import { Effect, Either } from "effect";
 import { GroupStatus } from "@mirai-app/domain";
+
+/**
+ * Helper to create Effect repository from container repository
+ */
+const createEffectRepository = (container: any) => ({
+  create: (group: any) =>
+    Effect.promise(() => container.groupRepository.create(group)),
+  findById: (id: string) =>
+    Effect.promise(() => container.groupRepository.findById(id)),
+  findByCode: (code: string) =>
+    Effect.promise(() => container.groupRepository.findByCode(code)),
+  findByTripId: (tripId: string) =>
+    Effect.promise(() => container.groupRepository.findByTripId(tripId)),
+  findByOrganizerId: (organizerId: string) =>
+    Effect.promise(() =>
+      container.groupRepository.findByOrganizerId(organizerId),
+    ),
+  findByStatus: (status: GroupStatus) =>
+    Effect.promise(() => container.groupRepository.findByStatus(status)),
+  findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
+    Effect.promise(() =>
+      container.groupRepository.findByTripIdAndStatus(tripId, status),
+    ),
+  findAll: (options?: { limit?: number; offset?: number }) =>
+    Effect.promise(() => container.groupRepository.findAll(options)),
+  update: (group: any) =>
+    Effect.promise(() => container.groupRepository.update(group)),
+  delete: (id: string) =>
+    Effect.promise(() => container.groupRepository.delete(id)),
+  exists: (id: string) =>
+    Effect.promise(() => container.groupRepository.exists(id)),
+  countByTripId: (tripId: string) =>
+    Effect.promise(() => container.groupRepository.countByTripId(tripId)),
+});
 
 /**
  * Group Queries
@@ -23,15 +65,23 @@ builder.queryFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<GetGroupUseCase>("getGroupUseCase");
-      const result = await useCase.execute({ groupId: args.id });
+      const input: GetGroupInput = { groupId: args.id };
+      const effectRepo = createEffectRepository(context.container);
 
-      if (result.kind === "err") {
-        throw new Error(result.error);
+      const program = getGroupUseCase(input).pipe(
+        Effect.provideService(GroupRepositoryTag, effectRepo),
+      );
+
+      const either = await Effect.runPromise(Effect.either(program));
+
+      if (Either.isLeft(either)) {
+        if (either.left instanceof GetGroupNotFoundError) {
+          return null;
+        }
+        throw new Error(either.left.message);
       }
 
-      return result.value;
+      return either.right;
     },
   }),
 
@@ -75,22 +125,34 @@ builder.mutationFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<CreateGroupUseCase>("createGroupUseCase");
-
-      const result = await useCase.execute({
+      const input: CreateGroupUseCaseInput = {
         tripId: args.input.tripId,
         name: args.input.name,
         description: args.input.description,
         image: args.input.image,
         organizerId: args.input.organizerId,
-      });
+        code: args.input.code ?? args.input.tripId.slice(0, 8).toUpperCase(),
+      };
 
-      if (result.kind === "err") {
-        throw new Error(result.error);
+      const effectRepo = createEffectRepository(context.container);
+
+      const program = createGroupUseCase(input).pipe(
+        Effect.provideService(GroupRepositoryTag, effectRepo),
+      );
+
+      const either = await Effect.runPromise(Effect.either(program));
+
+      if (Either.isLeft(either)) {
+        if (either.left instanceof GroupCodeAlreadyExistsError) {
+          throw new Error("Group code already exists");
+        }
+        if (either.left instanceof GroupCreationError) {
+          throw new Error(`Failed to create group: ${either.left.message}`);
+        }
+        throw new Error(either.left.message);
       }
 
-      return result.value;
+      return either.right;
     },
   }),
 
@@ -103,21 +165,35 @@ builder.mutationFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<UpdateGroupUseCase>("updateGroupUseCase");
-
-      const result = await useCase.execute({
+      const input: UpdateGroupUseCaseInput = {
         groupId: args.id,
         name: args.input.name,
         description: args.input.description,
         image: args.input.image,
-      });
+      };
 
-      if (result.kind === "err") {
-        throw new Error(result.error);
+      const effectRepo = createEffectRepository(context.container);
+
+      const program = updateGroupUseCase(input).pipe(
+        Effect.provideService(GroupRepositoryTag, effectRepo),
+      );
+
+      const either = await Effect.runPromise(Effect.either(program));
+
+      if (Either.isLeft(either)) {
+        if (either.left instanceof UpdateGroupNotFoundError) {
+          throw new Error("Group not found");
+        }
+        if (either.left instanceof UpdateGroupDeletedError) {
+          throw new Error("Cannot update a deleted group");
+        }
+        if (either.left instanceof UpdateGroupValidationError) {
+          throw new Error(`Validation error: ${either.left.message}`);
+        }
+        throw new Error(either.left.message);
       }
 
-      return result.value;
+      return either.right;
     },
   }),
 

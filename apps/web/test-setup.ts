@@ -4,13 +4,8 @@
 // Set up environment variables for tests
 process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
 process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
-process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
-
-// Pre-load TRPC modules to ensure proper resolution
-// This works around a Bun module resolution issue with @trpc/client exports
-import "@trpc/client";
-import "@trpc/tanstack-react-query";
+process.env.PUBLIC_GRAPHQL_URL = "http://localhost:3001/graphql";
+process.env.PUBLIC_GRAPHQL_WS_URL = "ws://localhost:3001/graphql";
 
 // Mock react-hot-toast globally
 const mockToast = {

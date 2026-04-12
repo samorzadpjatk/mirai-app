@@ -8,16 +8,18 @@
 
 The frameworks layer contains:
 
-- **tRPC Configuration**: Client and server setup
-- **Prisma Configuration**: Database client configuration
+- **GraphQL Configuration**: Yoga server and Pothos schema setup
+- **Hono Configuration**: HTTP server setup
+- **Drizzle Configuration**: Database ORM configuration
 - **Supabase Configuration**: Supabase client setup
-- **Fastify Configuration**: Server configuration (for backend)
+- **Effect Runtime**: Effect framework integration
+- **DI Container**: awilix-modular dependency injection
 
 ## Rules
 
 1. **Configuration Only**: No business logic, only framework setup
 2. **Can Use All Inner Layers**: Depends on domain, use-cases, and adapters
-3. **Framework-Specific Code**: Contains code specific to tRPC, Prisma, etc.
+3. **Framework-Specific Code**: Contains code specific to GraphQL, Hono, Drizzle, etc.
 4. **Reusable Setup**: Configuration that can be reused across apps
 
 ## Directory Structure
@@ -25,84 +27,101 @@ The frameworks layer contains:
 ```
 src/
 ├── index.ts              # Public exports
-├── trpc/                 # tRPC configuration
-│   ├── client.ts         # tRPC client setup
-│   ├── server.ts         # tRPC server setup
-│   └── router-factory.ts # Router creation utilities
-├── prisma/               # Prisma configuration
-│   ├── client.ts         # Prisma client setup
-│   └── schema-helpers.ts # Schema utilities
+├── graphql/              # GraphQL configuration
+│   ├── client.tsx        # GraphQL client (urql)
+│   ├── server.ts         # GraphQL Yoga server setup
+│   └── schema.ts         # Pothos schema builder
+├── hono/                 # Hono HTTP server configuration
+│   └── server.ts         # Hono server setup
+├── drizzle/              # Drizzle ORM configuration
+│   ├── client.ts         # Database client setup
+│   └── schema/           # Database schema definitions
 ├── supabase/             # Supabase configuration
-│   └── client.ts         # Supabase client setup
-└── fastify/              # Fastify configuration
-    └── server.ts         # Fastify server setup
+│   ├── client.ts         # Supabase client setup
+│   ├── react.tsx         # React integration
+│   ├── server.ts         # Server-side client
+│   └── store/            # Zustand auth store
+├── di/                   # Dependency injection
+│   ├── index.ts          # Container creation
+│   ├── types.ts          # DI type definitions
+│   └── modules/          # DI modules
+├── layers/               # Effect Layer configurations
+│   └── index.ts          # Layer compositions
+├── auth/                 # Auth configuration
+│   ├── client.ts         # Client auth setup
+│   ├── server.ts         # Server auth setup
+│   └── hooks/            # React auth hooks
+└── stores/               # Zustand stores
 ```
 
 ## Example Usage
 
-### tRPC Client Configuration
+### GraphQL Client Configuration
 
 ```typescript
-// trpc/client.ts
-import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "../adapters/controllers";
+// graphql/client.tsx
+import { createClient, fetchExchange } from "@urql/core";
 
-export const trpc = createTRPCReact<AppRouter>();
-
-export function createTRPCClient(baseUrl: string) {
-  return trpc.createClient({
-    links: [
-      httpBatchLink({
-        url: `${baseUrl}/api/trpc`,
-      }),
-    ],
+export const createGraphQLClient(baseUrl: string) {
+  return createClient({
+    url: `${baseUrl}/graphql`,
+    exchanges: [fetchExchange],
   });
 }
 ```
 
-### tRPC Server Configuration
+### GraphQL Server Configuration
 
 ```typescript
-// trpc/server.ts
-import { initTRPC } from "@trpc/server";
-import type { Context } from "./context";
+// graphql/server.ts
+import { createYoga } from "graphql-yoga";
+import { createSchema } from "./schema";
 
-const t = initTRPC.context<Context>().create();
-
-export const router = t.router;
-export const middleware = t.middleware;
-export const procedure = t.procedure;
-
-export const createTRPCRouter = router;
-
-// Protected procedure (requires auth)
-export const protectedProcedure = procedure.use(
-  t.middleware(async ({ ctx, next }) => {
-    if (!ctx.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
-    return next({ ctx: { ...ctx, user: ctx.user } });
-  }),
-);
+export function createGraphQLServer() {
+  return createYoga({
+    schema: createSchema(),
+    context: async ({ request }) => {
+      // Create context with DI container
+      return { container: await createRequestContainer(request) };
+    },
+  });
+}
 ```
 
-### Prisma Client Configuration
+### Drizzle Client Configuration
 
 ```typescript
-// prisma/client.ts
-import { PrismaClient } from "@prisma/client";
+// drizzle/client.ts
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+export const db = drizzle(pool, { schema });
+export type Database = typeof db;
+```
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+### Effect Runtime Configuration
 
-export type { PrismaClient };
+```typescript
+// layers/index.ts
+import { Layer } from "effect";
+
+export const AppLayer = Layer.mergeAll(
+  RepositoryLayer,
+  ServiceLayer,
+  ConfigLayer,
+);
+
+// Usage in application entry point
+const program = Effect.gen(function* () {
+  const server = yield* HttpServer;
+  yield* server.start();
+});
+
+Effect.runPromise(program.pipe(Effect.provide(AppLayer)));
 ```
 
 ## Testing
