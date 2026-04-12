@@ -22,6 +22,7 @@
     "@mirai-app/frameworks": "workspace:*",
     "@mirai-app/graphql-client": "workspace:*",
     "@tailwindcss/vite": "^4.2.2",
+    "effect": "^3.14.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@urql/core": "^5.0.0",

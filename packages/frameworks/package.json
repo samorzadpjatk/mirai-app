@@ -38,6 +38,7 @@
     "@mirai-app/use-cases": "workspace:*",
     "@mirai-app/adapters": "workspace:*",
     "drizzle-orm": "^0.45.2",
+    "effect": "^3.14.0",
     "pg": "^8.20.0",
     "@supabase/supabase-js": "^2.89.0",
     "hono": "^4.12.12",

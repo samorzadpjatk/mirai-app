@@ -45,6 +45,7 @@
     "@mirai-app/frameworks": "workspace:*",
     "@mirai-app/graphql-client": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "effect": "^3.14.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/native": "^7.1.8",

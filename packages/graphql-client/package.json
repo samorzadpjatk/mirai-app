@@ -20,6 +20,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "effect": "^3.14.0",
     "graphql": "^16.8.1",
     "graphql-request": "^7.1.2",
     "graphql-tag": "^2.12.6",
