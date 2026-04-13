@@ -52,7 +52,7 @@ describe("[UNIT] Trip Entity", () => {
       if (Exit.isFailure(exit) && Cause.isFailType(exit.cause)) {
         const error = exit.cause.error;
         expect(error).toBeInstanceOf(ValidationError);
-        expect(error.field).toBe("endDate");
+        expect(error.field).toBe("dateRange");
       }
     });
   });

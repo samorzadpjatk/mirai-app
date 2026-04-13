@@ -1,259 +1,290 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Exit } from "effect";
 import { validate } from "./entity-validation";
 import { isValidationError } from "../errors/effect-errors";
 
 describe("[UNIT] entity-validation", () => {
   describe("validate.string", () => {
     it("returns ok for valid string", () => {
-      const result = validate.string("hello", "name", {});
+      const effect = validate.string("hello", "name", {});
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBe("hello");
-      }
+      expect(value).toBe("hello");
     });
 
     it("returns error for empty string when required", () => {
-      const result = validate.string("", "name", { required: true });
+      const effect = validate.string("", "name", { required: true });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(isValidationError(result.error)).toBe(true);
-        expect(result.error.message).toContain("name is required");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect(isValidationError(error)).toBe(true);
+        expect((error as Error).message).toContain("name is required");
       }
     });
 
     it("returns error for whitespace-only string when required", () => {
-      const result = validate.string("   ", "name", { required: true });
+      const effect = validate.string("   ", "name", { required: true });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
+      expect(Exit.isFailure(exit)).toBe(true);
     });
 
     it("allows empty string when not required", () => {
-      const result = validate.string("", "name", { required: false });
+      const effect = validate.string("", "name", { required: false });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
+      expect(value).toBe("");
     });
 
     it("validates minLength", () => {
-      const result = validate.string("hi", "name", { minLength: 3 });
+      const effect = validate.string("hi", "name", { minLength: 3 });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("at least 3");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("at least 3");
       }
     });
 
     it("returns ok when at minLength boundary", () => {
-      const result = validate.string("abc", "name", { minLength: 3 });
+      const effect = validate.string("abc", "name", { minLength: 3 });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBe("abc");
-      }
+      expect(value).toBe("abc");
     });
 
     it("validates maxLength", () => {
-      const result = validate.string("toolong", "name", { maxLength: 3 });
+      const effect = validate.string("toolong", "name", { maxLength: 3 });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("at most 3");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("at most 3");
       }
     });
 
     it("returns ok when at maxLength boundary", () => {
-      const result = validate.string("abc", "name", { maxLength: 3 });
+      const effect = validate.string("abc", "name", { maxLength: 3 });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBe("abc");
-      }
+      expect(value).toBe("abc");
     });
 
     it("trims when trim option is true", () => {
-      const result = validate.string("  hello  ", "name", { trim: true });
+      const effect = validate.string("  hello  ", "name", { trim: true });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBe("hello");
-      }
+      expect(value).toBe("hello");
     });
 
     it("does not trim when trim option is false", () => {
-      const result = validate.string("  hello  ", "name", { trim: false });
+      const effect = validate.string("  hello  ", "name", { trim: false });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBe("  hello  ");
-      }
+      expect(value).toBe("  hello  ");
     });
 
     it("applies trim before length validation", () => {
-      const result = validate.string("  hi  ", "name", {
+      const effect = validate.string("  hi  ", "name", {
         trim: true,
         minLength: 3,
       });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
+      expect(Exit.isFailure(exit)).toBe(true);
     });
 
     it("includes field name in error", () => {
-      const result = validate.string("", "username", { required: true });
+      const effect = validate.string("", "username", { required: true });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.field).toBe("username");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as { field: string }).field).toBe("username");
       }
     });
   });
 
   describe("validate.number", () => {
     it("returns ok for valid number", () => {
-      const result = validate.number(42, "count", {});
+      const effect = validate.number(42, "count", {});
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBe(42);
-      }
+      expect(value).toBe(42);
     });
 
     it("validates min constraint", () => {
-      const result = validate.number(5, "count", { min: 10 });
+      const effect = validate.number(5, "count", { min: 10 });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("at least 10");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("at least 10");
       }
     });
 
     it("returns ok at min boundary", () => {
-      const result = validate.number(10, "count", { min: 10 });
+      const effect = validate.number(10, "count", { min: 10 });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
+      expect(value).toBe(10);
     });
 
     it("validates max constraint", () => {
-      const result = validate.number(15, "count", { max: 10 });
+      const effect = validate.number(15, "count", { max: 10 });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("at most 10");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("at most 10");
       }
     });
 
     it("returns ok at max boundary", () => {
-      const result = validate.number(10, "count", { max: 10 });
+      const effect = validate.number(10, "count", { max: 10 });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
+      expect(value).toBe(10);
     });
 
     it("validates integer constraint", () => {
-      const result = validate.number(3.14, "count", { integer: true });
+      const effect = validate.number(3.14, "count", { integer: true });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("integer");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("integer");
       }
     });
 
     it("returns ok for integer when integer constraint set", () => {
-      const result = validate.number(42, "count", { integer: true });
+      const effect = validate.number(42, "count", { integer: true });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
+      expect(value).toBe(42);
     });
 
     it("returns ok for zero", () => {
-      const result = validate.number(0, "count", { min: 0 });
+      const effect = validate.number(0, "count", { min: 0 });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
+      expect(value).toBe(0);
     });
 
     it("returns ok for negative numbers when allowed", () => {
-      const result = validate.number(-10, "temperature", {});
+      const effect = validate.number(-10, "temperature", {});
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
+      expect(value).toBe(-10);
     });
 
     it("returns error for NaN", () => {
-      const result = validate.number(NaN, "value", {});
+      const effect = validate.number(NaN, "value", {});
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
+      expect(Exit.isFailure(exit)).toBe(true);
     });
   });
 
   describe("validate.id", () => {
     it("returns ok for valid ID", () => {
-      const result = validate.id("user-123", "userId");
+      const effect = validate.id("user-123", "userId");
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBe("user-123");
-      }
+      expect(value).toBe("user-123");
     });
 
     it("returns error for empty string", () => {
-      const result = validate.id("", "userId");
+      const effect = validate.id("", "userId");
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("valid ID");
-        expect(result.error.field).toBe("userId");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("valid ID");
+        expect((error as { field: string }).field).toBe("userId");
       }
     });
 
     it("returns error for whitespace-only string", () => {
-      const result = validate.id("   ", "tripId");
+      const effect = validate.id("   ", "tripId");
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
+      expect(Exit.isFailure(exit)).toBe(true);
     });
 
     it("accepts various ID formats", () => {
-      expect(validate.id("abc", "id").kind).toBe("ok");
-      expect(validate.id("123", "id").kind).toBe("ok");
-      expect(validate.id("abc-123-def", "id").kind).toBe("ok");
-      expect(validate.id("uuid-format-1234-5678", "id").kind).toBe("ok");
+      expect(Effect.runSync(validate.id("abc", "id"))).toBe("abc");
+      expect(Effect.runSync(validate.id("123", "id"))).toBe("123");
+      expect(Effect.runSync(validate.id("abc-123-def", "id"))).toBe(
+        "abc-123-def",
+      );
+      expect(Effect.runSync(validate.id("uuid-format-1234-5678", "id"))).toBe(
+        "uuid-format-1234-5678",
+      );
     });
   });
 
   describe("validate.array", () => {
     it("returns ok for valid array", () => {
-      const result = validate.array([1, 2, 3], "items", {});
+      const effect = validate.array([1, 2, 3], "items", {});
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toEqual([1, 2, 3]);
-      }
+      expect(value).toEqual([1, 2, 3]);
     });
 
     it("returns error for empty array when required", () => {
-      const result = validate.array([], "items", { required: true });
+      const effect = validate.array([], "items", { required: true });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("required");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("required");
       }
     });
 
     it("allows empty array when not required", () => {
-      const result = validate.array([], "items", { required: false });
+      const effect = validate.array([], "items", { required: false });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
+      expect(value).toEqual([]);
     });
 
     it("validates maxItems", () => {
-      const result = validate.array([1, 2, 3, 4, 5], "items", { maxItems: 3 });
+      const effect = validate.array([1, 2, 3, 4, 5], "items", { maxItems: 3 });
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("cannot exceed 3 items");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("cannot exceed 3 items");
       }
     });
 
     it("returns ok at maxItems boundary", () => {
-      const result = validate.array([1, 2, 3], "items", { maxItems: 3 });
+      const effect = validate.array([1, 2, 3], "items", { maxItems: 3 });
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
+      expect(value).toEqual([1, 2, 3]);
     });
 
     it("preserves generic type", () => {
@@ -261,13 +292,11 @@ describe("[UNIT] entity-validation", () => {
         id: string;
       }
       const items: Item[] = [{ id: "1" }, { id: "2" }];
-      const result = validate.array(items, "items", {});
+      const effect = validate.array(items, "items", {});
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        // Type inference ensures result.value is Item[]
-        expect(result.value[0]?.id).toBe("1");
-      }
+      // Type inference ensures value is Item[]
+      expect(value[0]?.id).toBe("1");
     });
   });
 
@@ -275,62 +304,69 @@ describe("[UNIT] entity-validation", () => {
     it("returns ok when start is before end", () => {
       const start = new Date("2024-01-01");
       const end = new Date("2024-01-15");
-      const result = validate.dateRange(start, end);
+      const effect = validate.dateRange(start, end);
 
-      expect(result.kind).toBe("ok");
+      expect(Effect.runSync(effect)).toBeUndefined();
     });
 
     it("returns ok when start equals end", () => {
       const date = new Date("2024-01-01");
-      const result = validate.dateRange(date, date);
+      const effect = validate.dateRange(date, date);
 
-      expect(result.kind).toBe("ok");
+      expect(Effect.runSync(effect)).toBeUndefined();
     });
 
     it("returns error when start is after end", () => {
       const start = new Date("2024-01-15");
       const end = new Date("2024-01-01");
-      const result = validate.dateRange(start, end);
+      const effect = validate.dateRange(start, end);
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("before or equal");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("before or equal");
       }
     });
 
     it("returns error for invalid start date", () => {
-      const result = validate.dateRange(
+      const effect = validate.dateRange(
         new Date("invalid"),
         new Date("2024-01-01"),
       );
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("start date");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("start date");
       }
     });
 
     it("returns error for invalid end date", () => {
-      const result = validate.dateRange(
+      const effect = validate.dateRange(
         new Date("2024-01-01"),
         new Date("invalid"),
       );
+      const exit = Effect.runSyncExit(effect);
 
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error.message).toContain("end date");
+      expect(Exit.isFailure(exit)).toBe(true);
+      if (Exit.isFailure(exit)) {
+        const error =
+          exit.cause._tag === "Fail" ? exit.cause.error : exit.cause;
+        expect((error as Error).message).toContain("end date");
       }
     });
 
     it("returns void value on success", () => {
       const start = new Date("2024-01-01");
       const end = new Date("2024-01-15");
-      const result = validate.dateRange(start, end);
+      const effect = validate.dateRange(start, end);
+      const value = Effect.runSync(effect);
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value).toBeUndefined();
-      }
+      expect(value).toBeUndefined();
     });
   });
 });
