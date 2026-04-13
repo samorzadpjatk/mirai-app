@@ -9,6 +9,7 @@ import type {
   LocationSelect,
   LocationInsert,
 } from "@mirai-app/frameworks/drizzle";
+import { Effect } from "effect";
 
 /**
  * LocationDrizzleMapper
@@ -26,7 +27,7 @@ export class LocationDrizzleMapper implements DrizzleEntityMapper<
   toDomain(record: LocationSelect): Location {
     const accuracy = this.mapAccuracyFromValue(record.accuracy);
 
-    const result = Location.create({
+    const effect = Location.create({
       id: record.id as any, // LocationId branded type
       userId: record.userId,
       latitude: record.latitude,
@@ -42,11 +43,15 @@ export class LocationDrizzleMapper implements DrizzleEntityMapper<
       usersToShareWith: [], // Loaded separately via join
     } as any);
 
-    if (result.kind === "err") {
-      throw new Error(`Failed to map Location from Drizzle: ${result.error}`);
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map Location from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   /**

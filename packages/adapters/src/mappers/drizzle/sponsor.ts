@@ -1,6 +1,6 @@
 import type { Sponsor } from "@mirai-app/domain";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
-import type { sponsors } from "@mirai-app/frameworks/drizzle/schema/sponsor";
+import type { sponsors } from "@mirai-app/frameworks/drizzle/schema";
 
 /**
  * SponsorDrizzleMapper

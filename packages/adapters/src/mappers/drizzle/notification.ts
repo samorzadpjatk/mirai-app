@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { Notification, NotificationPriority } from "@mirai-app/domain";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
@@ -24,7 +25,7 @@ export class NotificationDrizzleMapper implements DrizzleEntityMapper<
   ): Notification {
     const priority = this.mapPriorityFromDrizzle(record.priority ?? "NORMAL");
 
-    const result = Notification.create({
+    const effect = Notification.create({
       id: record.id,
       tripId: record.tripId,
       title: record.title,
@@ -36,13 +37,15 @@ export class NotificationDrizzleMapper implements DrizzleEntityMapper<
       updatedAt: record.updatedAt,
     });
 
-    if (result.kind === "err") {
-      throw new Error(
-        `Failed to map Notification from Drizzle: ${result.error}`,
-      );
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map Notification from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   /**

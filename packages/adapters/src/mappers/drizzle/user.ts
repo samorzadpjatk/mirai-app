@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { User, UserRole } from "@mirai-app/domain";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
@@ -27,7 +28,7 @@ export class UserDrizzleMapper implements DrizzleEntityMapper<
     // Map Drizzle role string to UserRole enum
     const role = this.mapRoleFromDrizzle(record.role);
 
-    const result = User.create({
+    const effect = User.create({
       id: record.id,
       authUserId: record.authUserId,
       firstName: record.firstName,
@@ -39,12 +40,15 @@ export class UserDrizzleMapper implements DrizzleEntityMapper<
       lastSeenOn: record.lastSeenOn,
     });
 
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
     // This should never fail if database has valid data
-    if (result.kind === "err") {
-      throw new Error(`Failed to map User from Drizzle: ${result.error}`);
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map User from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   /**

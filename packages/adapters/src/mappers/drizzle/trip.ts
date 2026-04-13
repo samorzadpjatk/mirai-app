@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { Trip, TripStatus } from "@mirai-app/domain";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
@@ -20,7 +21,7 @@ export class TripDrizzleMapper implements DrizzleEntityMapper<
    * Convert a Drizzle Trip record to a domain Trip entity
    */
   toDomain(record: TripSelect): Trip {
-    const result = Trip.create({
+    const effect = Trip.create({
       id: record.id,
       name: record.name,
       description: record.description,
@@ -32,11 +33,15 @@ export class TripDrizzleMapper implements DrizzleEntityMapper<
       updatedAt: record.updatedAt,
     });
 
-    if (result.kind === "err") {
-      throw new Error(`Failed to map Trip from Drizzle: ${result.error}`);
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map Trip from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   /**

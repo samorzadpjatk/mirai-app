@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import {
   Challenge,
   ChallengeStatus,
@@ -33,7 +34,7 @@ export class ChallengeDrizzleMapper implements DrizzleEntityMapper<
     );
     const status = this.mapStatusFromDrizzle(record.status);
 
-    const result = Challenge.create({
+    const effect = Challenge.create({
       id: record.id,
       tripId: record.tripId,
       name: record.name,
@@ -61,11 +62,15 @@ export class ChallengeDrizzleMapper implements DrizzleEntityMapper<
       updatedAt: record.updatedAt,
     });
 
-    if (result.kind === "err") {
-      throw new Error(`Failed to map Challenge from Drizzle: ${result.error}`);
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map Challenge from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   /**

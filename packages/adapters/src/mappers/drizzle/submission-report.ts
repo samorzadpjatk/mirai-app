@@ -4,7 +4,7 @@ import {
   submissionReports,
   type SubmissionReportSelect,
   type SubmissionReportInsert,
-} from "@mirai-app/frameworks/drizzle/schema/submissionReport";
+} from "@mirai-app/frameworks/drizzle/schema";
 
 /**
  * SubmissionReportDrizzleMapper

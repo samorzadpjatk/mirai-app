@@ -1,4 +1,5 @@
 import { describe, it, expect } from "bun:test";
+import { Effect } from "effect";
 import { GroupDrizzleMapper } from "../drizzle/group";
 import { Group, GroupStatus } from "@mirai-app/domain";
 import type { GroupSelect, GroupInsert } from "@mirai-app/frameworks/drizzle";
@@ -59,7 +60,7 @@ describe("[UNIT] GroupDrizzleMapper", () => {
 
   describe("toDrizzleInsert", () => {
     it("should map domain entity to Drizzle insert", () => {
-      const domainResult = Group.create({
+      const effect = Group.create({
         id: "group-456",
         tripId: "trip-456",
         name: "New Group",
@@ -72,10 +73,11 @@ describe("[UNIT] GroupDrizzleMapper", () => {
         createdAt: new Date("2026-02-01"),
         updatedAt: new Date("2026-02-15"),
       });
-      if (domainResult.kind === "err") {
+      const exit = Effect.runSyncExit(effect);
+      if (exit._tag === "Failure") {
         throw new Error("Failed to create test group");
       }
-      const domain = domainResult.value;
+      const domain = exit.value;
 
       const insert = mapper.toDrizzleInsert(domain);
 
@@ -93,7 +95,7 @@ describe("[UNIT] GroupDrizzleMapper", () => {
     });
 
     it("should set isDeleted true for DELETED status", () => {
-      const domainResult = Group.create({
+      const effect = Group.create({
         id: "group-deleted",
         tripId: "trip-123",
         name: "Deleted Group",
@@ -106,10 +108,11 @@ describe("[UNIT] GroupDrizzleMapper", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      if (domainResult.kind === "err") {
+      const exit = Effect.runSyncExit(effect);
+      if (exit._tag === "Failure") {
         throw new Error("Failed to create test group");
       }
-      const domain = domainResult.value;
+      const domain = exit.value;
 
       const insert = mapper.toDrizzleInsert(domain);
 
@@ -119,7 +122,7 @@ describe("[UNIT] GroupDrizzleMapper", () => {
 
   describe("toDrizzleUpdate", () => {
     it("should map domain entity to Drizzle update", () => {
-      const domainResult = Group.create({
+      const effect = Group.create({
         id: "group-789",
         tripId: "trip-789",
         name: "Updated Group",
@@ -132,10 +135,11 @@ describe("[UNIT] GroupDrizzleMapper", () => {
         createdAt: new Date("2026-01-01"),
         updatedAt: new Date("2026-03-01"),
       });
-      if (domainResult.kind === "err") {
+      const exit = Effect.runSyncExit(effect);
+      if (exit._tag === "Failure") {
         throw new Error("Failed to create test group");
       }
-      const domain = domainResult.value;
+      const domain = exit.value;
 
       const update = mapper.toDrizzleUpdate(domain);
 
@@ -151,7 +155,7 @@ describe("[UNIT] GroupDrizzleMapper", () => {
 
   describe("round-trip conversion", () => {
     it("should preserve data through domain -> drizzle -> domain", () => {
-      const originalResult = Group.create({
+      const effect = Group.create({
         id: "group-roundtrip",
         tripId: "trip-roundtrip",
         name: "Roundtrip Group",
@@ -164,10 +168,11 @@ describe("[UNIT] GroupDrizzleMapper", () => {
         createdAt: new Date("2026-04-01"),
         updatedAt: new Date("2026-04-15"),
       });
-      if (originalResult.kind === "err") {
+      const exit = Effect.runSyncExit(effect);
+      if (exit._tag === "Failure") {
         throw new Error("Failed to create test group");
       }
-      const original = originalResult.value;
+      const original = exit.value;
 
       // Domain -> Drizzle
       const drizzle = mapper.toDrizzleInsert(original);

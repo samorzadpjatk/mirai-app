@@ -1,4 +1,5 @@
 import { describe, it, expect } from "bun:test";
+import { Effect } from "effect";
 import { UserDrizzleMapper } from "../drizzle/user";
 import { User, UserRole } from "@mirai-app/domain";
 import type { UserSelect, UserInsert } from "@mirai-app/frameworks/drizzle";
@@ -71,7 +72,7 @@ describe("[UNIT] UserDrizzleMapper", () => {
 
   describe("toDrizzleInsert", () => {
     it("should map domain entity to Drizzle insert", () => {
-      const domainResult = User.create({
+      const effect = User.create({
         id: "user-456",
         authUserId: "auth-456",
         firstName: "Jane",
@@ -82,10 +83,11 @@ describe("[UNIT] UserDrizzleMapper", () => {
         createdAt: new Date("2026-02-01"),
         updatedAt: new Date("2026-02-15"),
       });
-      if (domainResult.kind === "err") {
+      const exit = Effect.runSyncExit(effect);
+      if (exit._tag === "Failure") {
         throw new Error("Failed to create test user");
       }
-      const domain = domainResult.value;
+      const domain = exit.value;
 
       const insert = mapper.toDrizzleInsert(domain);
 
@@ -103,7 +105,7 @@ describe("[UNIT] UserDrizzleMapper", () => {
 
   describe("toDrizzleUpdate", () => {
     it("should map domain entity to Drizzle update", () => {
-      const domainResult = User.create({
+      const effect = User.create({
         id: "user-789",
         authUserId: "auth-789",
         firstName: "Updated",
@@ -114,10 +116,11 @@ describe("[UNIT] UserDrizzleMapper", () => {
         createdAt: new Date("2026-01-01"),
         updatedAt: new Date("2026-03-15"),
       });
-      if (domainResult.kind === "err") {
+      const exit = Effect.runSyncExit(effect);
+      if (exit._tag === "Failure") {
         throw new Error("Failed to create test user");
       }
-      const domain = domainResult.value;
+      const domain = exit.value;
 
       const update = mapper.toDrizzleUpdate(domain);
 
@@ -134,7 +137,7 @@ describe("[UNIT] UserDrizzleMapper", () => {
 
   describe("round-trip conversion", () => {
     it("should preserve data through domain -> drizzle -> domain", () => {
-      const originalResult = User.create({
+      const effect = User.create({
         id: "user-roundtrip",
         authUserId: "auth-roundtrip",
         firstName: "Roundtrip",
@@ -145,10 +148,11 @@ describe("[UNIT] UserDrizzleMapper", () => {
         createdAt: new Date("2026-04-01"),
         updatedAt: new Date("2026-04-15"),
       });
-      if (originalResult.kind === "err") {
+      const exit = Effect.runSyncExit(effect);
+      if (exit._tag === "Failure") {
         throw new Error("Failed to create test user");
       }
-      const original = originalResult.value;
+      const original = exit.value;
 
       // Domain -> Drizzle
       const drizzle = mapper.toDrizzleInsert(original);

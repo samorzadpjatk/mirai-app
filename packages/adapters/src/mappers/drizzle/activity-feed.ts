@@ -1,4 +1,5 @@
 import { ActivityFeed, ActivityReaction } from "@mirai-app/domain";
+import { Effect } from "effect";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   activityFeed as activityFeedTable,
@@ -23,7 +24,7 @@ export class ActivityFeedDrizzleMapper implements DrizzleEntityMapper<
    * Convert a Drizzle ActivityFeed record to a domain ActivityFeed entity
    */
   toDomain(record: ActivityFeedSelect): ActivityFeed {
-    const result = ActivityFeed.create({
+    const effect = ActivityFeed.create({
       id: record.id as any, // ActivityId branded type
       tripId: record.tripId,
       activityType: record.activityType as any, // ActivityType branded type
@@ -41,13 +42,15 @@ export class ActivityFeedDrizzleMapper implements DrizzleEntityMapper<
       // reactions loaded separately
     } as any);
 
-    if (result.kind === "err") {
-      throw new Error(
-        `Failed to map ActivityFeed from Drizzle: ${result.error}`,
-      );
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map ActivityFeed from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   /**
@@ -106,7 +109,7 @@ export class ActivityReactionDrizzleMapper implements DrizzleEntityMapper<
   ActivityReactionInsert
 > {
   toDomain(record: ActivityReactionSelect): ActivityReaction {
-    const result = ActivityReaction.create({
+    const effect = ActivityReaction.create({
       id: record.id,
       activityId: record.activityId,
       userId: record.userId,
@@ -114,13 +117,17 @@ export class ActivityReactionDrizzleMapper implements DrizzleEntityMapper<
       createdAt: record.createdAt,
     });
 
-    if (result.kind === "err") {
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
       throw new Error(
-        `Failed to map ActivityReaction from Drizzle: ${result.error}`,
+        `Failed to map ActivityReaction from Drizzle: ${exit.cause}`,
       );
     }
 
-    return result.value;
+    return exit.value;
   }
 
   toDrizzleInsert(reaction: ActivityReaction): ActivityReactionInsert {

@@ -3,6 +3,7 @@ import {
   RewardPurchase,
   RewardPurchaseStatus,
 } from "@mirai-app/domain";
+import { Effect } from "effect";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   rewards,
@@ -24,7 +25,7 @@ export class RewardDrizzleMapper implements DrizzleEntityMapper<
   RewardInsert
 > {
   toDomain(record: RewardSelect): Reward {
-    const result = Reward.create({
+    const effect = Reward.create({
       id: record.id as any, // RewardId branded type
       name: record.name,
       description: record.description,
@@ -38,11 +39,15 @@ export class RewardDrizzleMapper implements DrizzleEntityMapper<
       updatedAt: record.updatedAt,
     });
 
-    if (result.kind === "err") {
-      throw new Error(`Failed to map Reward from Drizzle: ${result.error}`);
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map Reward from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   toDrizzleInsert(reward: Reward): RewardInsert {
@@ -87,7 +92,7 @@ export class RewardPurchaseDrizzleMapper implements DrizzleEntityMapper<
   toDomain(record: RewardPurchaseSelect): RewardPurchase {
     const status = this.mapStatusFromDrizzle(record.status);
 
-    const result = RewardPurchase.create({
+    const effect = RewardPurchase.create({
       id: record.id as any,
       rewardId: record.rewardId,
       groupId: record.groupId,
@@ -100,13 +105,17 @@ export class RewardPurchaseDrizzleMapper implements DrizzleEntityMapper<
       statusUpdatedAt: record.statusUpdatedAt ?? undefined,
     });
 
-    if (result.kind === "err") {
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
       throw new Error(
-        `Failed to map RewardPurchase from Drizzle: ${result.error}`,
+        `Failed to map RewardPurchase from Drizzle: ${exit.cause}`,
       );
     }
 
-    return result.value;
+    return exit.value;
   }
 
   toDrizzleInsert(purchase: RewardPurchase): RewardPurchaseInsert {

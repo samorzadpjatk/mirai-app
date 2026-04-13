@@ -3,7 +3,7 @@ import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import {
   type ChallengeSubmissionSelect,
   type ChallengeSubmissionInsert,
-} from "@mirai-app/frameworks/drizzle/schema/challenge";
+} from "@mirai-app/frameworks/drizzle/schema";
 
 /**
  * ChallengeSubmissionDrizzleMapper

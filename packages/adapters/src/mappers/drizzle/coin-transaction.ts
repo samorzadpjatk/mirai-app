@@ -1,6 +1,6 @@
 import type { CoinTransaction } from "@mirai-app/use-cases";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
-import type { coinTransactions } from "@mirai-app/frameworks/drizzle/schema/coinTransaction";
+import type { coinTransactions } from "@mirai-app/frameworks/drizzle/schema";
 
 /**
  * CoinTransactionDrizzleMapper

@@ -1,6 +1,7 @@
 import { ChallengeVote } from "@mirai-app/domain";
+import { Effect } from "effect";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
-import type { challengeVotes } from "@mirai-app/frameworks/drizzle/schema/challenge";
+import type { challengeVotes } from "@mirai-app/frameworks/drizzle/schema";
 
 /**
  * ChallengeVoteDrizzleMapper
@@ -18,7 +19,7 @@ export class ChallengeVoteDrizzleMapper implements DrizzleEntityMapper<
    */
   toDomain(record: typeof challengeVotes.$inferSelect): ChallengeVote {
     // Map Drizzle record to ChallengeVote using entity factory
-    const result = ChallengeVote.create({
+    const effect = ChallengeVote.create({
       id: record.id as any, // ChallengeVoteId branded type
       challengeId: record.challengeId,
       submissionId: record.submissionId,
@@ -31,10 +32,18 @@ export class ChallengeVoteDrizzleMapper implements DrizzleEntityMapper<
             : 0,
       votedAt: record.createdAt,
     });
-    if (result.kind === "err") {
-      throw new Error(`Failed to map ChallengeVote: ${result.error}`);
+
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
+      throw new Error(
+        `Failed to map ChallengeVote from Drizzle: ${exit.cause}`,
+      );
     }
-    return result.value;
+
+    return exit.value;
   }
 
   /**

@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { Group, GroupStatus } from "@mirai-app/domain";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
@@ -22,7 +23,7 @@ export class GroupDrizzleMapper implements DrizzleEntityMapper<
   toDomain(record: GroupSelect): Group {
     const status = this.mapStatusFromDrizzle(record.isDeleted);
 
-    const result = Group.create({
+    const effect = Group.create({
       id: record.id,
       tripId: record.tripId,
       name: record.name,
@@ -36,11 +37,14 @@ export class GroupDrizzleMapper implements DrizzleEntityMapper<
       updatedAt: record.updatedAt,
     });
 
-    if (result.kind === "err") {
-      throw new Error(`Failed to map Group from Drizzle: ${result.error}`);
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map Group from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   /**

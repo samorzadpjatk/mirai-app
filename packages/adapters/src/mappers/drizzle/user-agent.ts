@@ -1,7 +1,7 @@
 import type {
   UserAgentSelect,
   UserAgentInsert,
-} from "@mirai-app/frameworks/drizzle/schema/userAgent";
+} from "@mirai-app/frameworks/drizzle/schema";
 
 /**
  * UserAgent telemetry record structure

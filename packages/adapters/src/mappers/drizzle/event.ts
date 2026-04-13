@@ -1,4 +1,5 @@
 import { Event } from "@mirai-app/domain";
+import { Effect } from "effect";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   events,
@@ -20,7 +21,7 @@ export class EventDrizzleMapper implements DrizzleEntityMapper<
    * Convert a Drizzle Event record to a domain Event entity
    */
   toDomain(record: EventSelect): Event {
-    const result = Event.create({
+    const effect = Event.create({
       id: record.id,
       creatorId: record.creatorId,
       organizerGroupId: record.organizerGroupId,
@@ -34,11 +35,15 @@ export class EventDrizzleMapper implements DrizzleEntityMapper<
       updatedAt: record.updatedAt,
     });
 
-    if (result.kind === "err") {
-      throw new Error(`Failed to map Event from Drizzle: ${result.error}`);
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    // This should never fail if database has valid data
+    if (exit._tag === "Failure") {
+      throw new Error(`Failed to map Event from Drizzle: ${exit.cause}`);
     }
 
-    return result.value;
+    return exit.value;
   }
 
   /**
