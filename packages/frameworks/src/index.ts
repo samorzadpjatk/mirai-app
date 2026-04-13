@@ -61,6 +61,7 @@
 // =============================================================================
 
 export {
+  // Core Container
   container,
   initializeContainer,
   createChildContainer,
@@ -68,6 +69,38 @@ export {
   resetContainer,
   TYPES,
   type ServiceIdentifier,
+  // Effect Runtime
+  initializeRuntime,
+  createRuntimeFromLayer,
+  getRuntime,
+  getAppLayer,
+  isRuntimeInitialized,
+  resetRuntime,
+  runEffect,
+  runEffectExit,
+  runEffectSync,
+  runEffectWith,
+  runEffectWithLayer,
+  runEffectWithRuntime,
+  mergeLayers,
+  mergeLayerArray,
+  composeLayers,
+  buildRuntimeFromLayer,
+  // Effect Layer Integration
+  setAwilixContainer,
+  getAwilixContainer,
+  hasAwilixContainer,
+  resetAwilixContainer,
+  createContainerLayer,
+  fromAwilix,
+  fromAwilixWithTag,
+  fromContainer,
+  buildAppLayer,
+  buildAppLayerFromGlobal,
+  createServiceTag,
+  runWithAwilixContainer,
+  runWithGlobalContainer,
+  AwilixContainerTag,
 } from "./di";
 
 // =============================================================================

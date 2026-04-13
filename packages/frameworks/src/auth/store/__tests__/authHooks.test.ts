@@ -6,7 +6,7 @@ import {
   useIsAuthenticated,
   useAuthLoading,
 } from "../authHooks";
-import { authStore } from "../../stores/authStore";
+import { authStore } from "../../../stores/authStore";
 
 // Reset store before each test
 const resetStore = () => {

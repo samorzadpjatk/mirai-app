@@ -9,6 +9,7 @@
     "./drizzle": "./src/drizzle/index.ts",
     "./drizzle/*": "./src/drizzle/*.ts",
     "./drizzle/schema": "./src/drizzle/schema/index.ts",
+    "./drizzle/schema/*": "./src/drizzle/schema/*.ts",
     "./graphql": "./src/graphql/index.ts",
     "./graphql/*": "./src/graphql/*.ts",
     "./graphql/client": "./src/graphql/client.tsx",

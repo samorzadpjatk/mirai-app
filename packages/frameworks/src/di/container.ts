@@ -11,12 +11,28 @@
  * - Root container: Shared singletons (database, external clients)
  * - Scoped containers: Request-scoped dependencies
  *
+ * ## Effect Integration
+ *
+ * The container integrates with Effect's Layer system for type-safe
+ * dependency injection in Effect-based code:
+ *
+ * ```typescript
+ * import { createContainerLayer, fromContainer } from "./effect-layer";
+ *
+ * // Create Layer from container
+ * const AppLayer = createContainerLayer(container);
+ *
+ * // Or create individual service layers
+ * const UserRepoLayer = fromContainer(container, "userRepository");
+ * ```
+ *
  * ## Benefits over Inversify
  *
  * - No experimentalDecorators or emitDecoratorMetadata needed
  * - No reflect-metadata dependency required
  * - Automatic type inference - no manual service identifiers needed
  * - Module-based organization similar to NestJS
+ * - Native Effect Layer integration
  *
  * ## Usage
  *
@@ -32,6 +48,7 @@
  * ```
  */
 
+import { Layer } from "effect";
 import {
   createContainer,
   type AwilixContainer,
@@ -293,3 +310,52 @@ export { asClass, asValue, Lifetime };
 // =============================================================================
 
 export type { AwilixContainer, StaticModule };
+
+// =============================================================================
+// Effect Layer Integration
+// =============================================================================
+
+/**
+ * Augment awilix types with Effect Layer integration
+ *
+ * This module augmentation adds `toLayer()` method to AwilixContainer,
+ * enabling seamless integration with Effect's dependency injection system.
+ *
+ * @example
+ * ```typescript
+ * import { Context, Effect } from "effect";
+ * import { createContainerLayer } from "./effect-layer";
+ *
+ * // Create container and Layer
+ * const container = initializeContainer([AppModule]);
+ * const ContainerLayer = createContainerLayer(container);
+ *
+ * // Use in Effects
+ * const program = Effect.gen(function* () {
+ *   const ctr = yield* Context.Tag<AwilixContainer>("Container");
+ *   const repo = ctr.resolve<UserRepository>("userRepository");
+ *   return yield* repo.findById("123");
+ * });
+ *
+ * const result = await Effect.runPromise(
+ *   Effect.provide(program, ContainerLayer)
+ * );
+ * ```
+ */
+declare module "awilix" {
+  interface AwilixContainer<Cradle extends object = object> {
+    /**
+     * Convert this container to an Effect Layer
+     *
+     * Note: This is a type declaration only. The actual implementation
+     * is provided via the `createContainerLayer` function in effect-layer.ts
+     *
+     * @returns Layer providing this container in Effect context
+     */
+    toLayer(): Layer.Layer<
+      import("effect").Context.Tag<"AwilixContainer", AwilixContainer>,
+      never,
+      never
+    >;
+  }
+}

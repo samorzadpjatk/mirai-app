@@ -43,7 +43,9 @@
  * @module AppModule
  */
 
+import { Layer } from "effect";
 import { createStaticModule, type StaticModule } from "awilix-modular";
+import type { AwilixContainer } from "awilix";
 import { RepositoryModule } from "@mirai-app/adapters/modules/RepositoryModule";
 import {
   ControllerModule,
@@ -51,6 +53,7 @@ import {
 } from "@mirai-app/adapters/modules/ControllerModule";
 import { UseCaseModule as BaseUseCaseModule } from "@mirai-app/use-cases/modules/UseCaseModule";
 import { UseCaseModule as AuthUseCaseModule } from "@mirai-app/adapters/modules/UseCaseModule";
+import { initializeContainer } from "./container";
 
 // =============================================================================
 // Module Imports
@@ -256,6 +259,83 @@ export type ModuleDeps = Record<string, unknown>;
 // =============================================================================
 
 // Note: ModuleDef types are defined in this file and don't need re-export
+
+// =============================================================================
+// Effect Layer Integration
+// =============================================================================
+
+/**
+ * Create an Effect Layer from AppModule's container
+ *
+ * This function initializes the container with AppModule and creates
+ * a complete Effect Layer with all registered services.
+ *
+ * @param additionalTokens - Additional service tokens to include in the Layer
+ * @returns Object containing the container and the built Layer
+ *
+ * @example
+ * ```typescript
+ * import { initializeAppLayer } from "@mirai-app/frameworks/di";
+ *
+ * const { container, appLayer } = initializeAppLayer();
+ *
+ * // Use the Layer in Effects
+ * const result = await Effect.runPromise(
+ *   Effect.provide(program, appLayer)
+ * );
+ * ```
+ */
+export function initializeAppLayer(additionalTokens: string[] = []): {
+  container: AwilixContainer;
+  appLayer: Layer.Layer<any, never, never>;
+} {
+  const container = initializeContainer([AppModule]);
+
+  // Get all exported tokens from AppModule imports
+  const baseTokens = getAllExportedTokens();
+  const allTokens = [...baseTokens, ...additionalTokens];
+
+  // Build the Effect Layer
+  const { buildAppLayer, setAwilixContainer } = require("./effect-layer");
+  setAwilixContainer(container);
+  const appLayer = buildAppLayer(container, allTokens);
+
+  return { container, appLayer };
+}
+
+/**
+ * Get all exported token names from AppModule imports
+ *
+ * Collects all export names from the imported modules.
+ * This is used to automatically build the Effect Layer.
+ *
+ * @returns Array of token names exported by imported modules
+ */
+function getAllExportedTokens(): string[] {
+  const tokens: string[] = [];
+
+  if (!AppModule.imports) {
+    return tokens;
+  }
+
+  for (const mod of AppModule.imports) {
+    const resolvedMod = resolveModule(mod);
+    if (resolvedMod.exports) {
+      tokens.push(...resolvedMod.exports);
+    }
+  }
+
+  return tokens;
+}
+
+/**
+ * Resolve a module import, handling lazy-loaded factory functions
+ */
+function resolveModule(
+  mod: StaticModule<unknown> | (() => StaticModule<unknown>),
+): StaticModule<unknown> {
+  return typeof mod === "function" ? mod() : mod;
+}
 
 // =============================================================================
 // Helper Functions
