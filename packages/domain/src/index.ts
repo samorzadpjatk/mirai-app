@@ -23,21 +23,6 @@ export {
   isValidDateRange,
 } from "./utils/validation";
 
-// Result type for functional error handling
-export {
-  type Result,
-  ok,
-  err,
-  isSuccess,
-  isError,
-  map,
-  mapError,
-  flatten,
-  flatMap,
-  getOrElse,
-  unwrap,
-} from "./utils/result";
-
 // Domain error types - LEGACY (preserved for backward compatibility during migration)
 // New code should use the Effect-based errors exported below
 export {
@@ -207,3 +192,24 @@ export {
   getDomainErrorMessage,
   getDomainErrorCode,
 } from "./errors/effect-errors";
+
+// ============================================================================
+// Result Type (Either/Result pattern for non-Effect code)
+// ============================================================================
+
+export {
+  ok,
+  err,
+  isOk,
+  isErr,
+  mapResult,
+  flatMapResult,
+  getOrElse,
+  fold,
+  fromNullable,
+  tryCatch,
+  fromPredicateResult,
+  type Result,
+  type Ok,
+  type Err,
+} from "./utils/result";
