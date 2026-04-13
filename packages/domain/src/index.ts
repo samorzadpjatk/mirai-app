@@ -5,25 +5,8 @@
  * All exports are pure TypeScript/JavaScript - no frameworks, no I/O.
  */
 
-// Utilities (export first as they're used by other modules)
-export {
-  // Result type and functions
-  type Result,
-  ok,
-  err,
-  isSuccess,
-  isError,
-  unwrap,
-  unwrapOr,
-  unwrapOrElse,
-  map,
-  mapError,
-  flatMap,
-  match,
-  all,
-  zip2,
-  zip3,
-} from "./utils/result";
+// Effect exports - native Effect framework integration
+export { Effect, Either, Data } from "effect";
 
 // Validation utilities
 export {
@@ -39,6 +22,21 @@ export {
   isPastDate,
   isValidDateRange,
 } from "./utils/validation";
+
+// Result type for functional error handling
+export {
+  type Result,
+  ok,
+  err,
+  isSuccess,
+  isError,
+  map,
+  mapError,
+  flatten,
+  flatMap,
+  getOrElse,
+  unwrap,
+} from "./utils/result";
 
 // Domain error types - LEGACY (preserved for backward compatibility during migration)
 // New code should use the Effect-based errors exported below
@@ -162,15 +160,6 @@ export * from "./value-objects/AuthContext";
 // Domain Events (Phase 2: Real-Time Architecture)
 export * from "./events";
 
-// Types (Domain-specific type exports - file exists at src/types/Result.ts)
-// Note: Result type and most functions are already exported from utils/result
-// The types/Result.ts file provides the same API for specific domain usage
-export {
-  // Additional type guards available from types/Result module
-  isOk,
-  isErr,
-} from "./types/Result";
-
 // Enums
 export {
   UserRole,
@@ -184,12 +173,8 @@ export {
 // Effect Framework Integration (NEW - Step 1.1)
 // ============================================================================
 
-// Effect utilities for Result↔Effect conversion
+// Effect utilities
 export {
-  resultToEffect,
-  effectToResult,
-  effectToResultSync,
-  resultFnToEffect,
   fromPredicate,
   isPureEffect,
   assertPureEffect,
@@ -222,6 +207,3 @@ export {
   getDomainErrorMessage,
   getDomainErrorCode,
 } from "./errors/effect-errors";
-
-// Re-export Effect types for convenience (domain layer uses Effect<T, E, never>)
-export { Effect, Either, Data } from "effect";
