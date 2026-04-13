@@ -1,7 +1,5 @@
 import { Effect } from "effect";
 import { ValidationError } from "../errors/effect-errors";
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
 
 /**
  * TripParticipantRole - represents the role of a participant in a trip
@@ -313,24 +311,5 @@ export class TripParticipant {
    */
   demoteToMember(): TripParticipant {
     return this.updateRole(TripParticipantRole.MEMBER);
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace TripParticipantCompat {
-  /**
-   * @deprecated Use TripParticipant.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof TripParticipant.create>[0],
-  ): Result<TripParticipant, ValidationError> {
-    const effect = TripParticipant.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

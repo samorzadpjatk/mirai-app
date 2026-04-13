@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import type { SponsorId } from "../value-objects/SponsorId";
 import { validate } from "../utils/entity-validation";
 import { timestamps, updateEntity } from "../utils/immutable";
@@ -330,24 +328,5 @@ export class Sponsor {
    */
   isCurrentlyActive(): boolean {
     return this.isActive;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace SponsorCompat {
-  /**
-   * @deprecated Use Sponsor.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof Sponsor.create>[0],
-  ): Result<Sponsor, ValidationError> {
-    const effect = Sponsor.create(props);
-    try {
-      const sponsor = Effect.runSync(effect);
-      return ok(sponsor);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

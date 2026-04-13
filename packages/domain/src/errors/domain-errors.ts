@@ -8,8 +8,6 @@
  * @module domain-errors
  */
 
-import type { Result } from "../utils/result";
-
 /**
  * Base domain error class
  * All domain errors extend this class for consistent error handling

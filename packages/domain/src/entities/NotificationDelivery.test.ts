@@ -316,7 +316,7 @@ describe("[UNIT] NotificationDelivery Entity", () => {
 
       const failedPushes = updated.getFailedPushes();
       expect(failedPushes).toHaveLength(1);
-      expect(failedPushes[0].failureReason).toBe("Token invalid");
+      expect(failedPushes[0]!.failureReason).toBe("Token invalid");
     });
   });
 });

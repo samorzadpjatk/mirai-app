@@ -1,5 +1,5 @@
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * VotePosition - Value object representing a vote position (1st, 2nd, 3rd place)
@@ -13,16 +13,30 @@ export class VotePosition {
    * Create a VotePosition from a number
    * Valid positions: 1, 2, 3
    */
-  static create(position: number): Result<VotePosition, string> {
-    if (!Number.isInteger(position)) {
-      return err("Vote position must be an integer");
-    }
+  static create(
+    position: number,
+  ): Effect.Effect<VotePosition, ValidationError, never> {
+    return Effect.gen(function* () {
+      if (!Number.isInteger(position)) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Vote position must be an integer",
+            field: "general",
+          }),
+        );
+      }
 
-    if (position < 1 || position > 3) {
-      return err("Vote position must be between 1 and 3");
-    }
+      if (position < 1 || position > 3) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Vote position must be between 1 and 3",
+            field: "general",
+          }),
+        );
+      }
 
-    return ok(new VotePosition(position));
+      return new VotePosition(position);
+    });
   }
 
   /**

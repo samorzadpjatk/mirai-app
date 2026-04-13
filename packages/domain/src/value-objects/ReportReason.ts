@@ -1,5 +1,5 @@
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * ReportReason - Value object representing a report reason
@@ -37,26 +37,40 @@ export class ReportReason {
   /**
    * Create a ReportReason from a string
    */
-  static create(reason: string): Result<ReportReason, string> {
-    if (!reason || reason.trim() === "") {
-      return err("Report reason is required");
-    }
-
-    const trimmed = reason.trim().toUpperCase();
-
-    // Allow custom reasons but suggest standard ones
-    if (
-      !ReportReason.VALID_REASONS.includes(
-        trimmed as (typeof ReportReason.VALID_REASONS)[number],
-      )
-    ) {
-      // Custom reasons are allowed but must be at least 3 characters
-      if (trimmed.length < 3) {
-        return err("Report reason must be at least 3 characters");
+  static create(
+    reason: string,
+  ): Effect.Effect<ReportReason, ValidationError, never> {
+    return Effect.gen(function* () {
+      if (!reason || reason.trim() === "") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Report reason is required",
+            field: "reason",
+          }),
+        );
       }
-    }
 
-    return ok(new ReportReason(trimmed));
+      const trimmed = reason.trim().toUpperCase();
+
+      // Allow custom reasons but suggest standard ones
+      if (
+        !ReportReason.VALID_REASONS.includes(
+          trimmed as (typeof ReportReason.VALID_REASONS)[number],
+        )
+      ) {
+        // Custom reasons are allowed but must be at least 3 characters
+        if (trimmed.length < 3) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "Report reason must be at least 3 characters",
+              field: "reason",
+            }),
+          );
+        }
+      }
+
+      return new ReportReason(trimmed);
+    });
   }
 
   /**

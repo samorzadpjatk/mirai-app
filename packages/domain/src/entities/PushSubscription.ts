@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
 import { ValidationError } from "../errors/effect-errors";
 
 /**
@@ -125,24 +123,5 @@ export class PushSubscription {
       return "****";
     }
     return `${this.token.slice(0, 4)}****${this.token.slice(-4)}`;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace PushSubscriptionCompat {
-  /**
-   * @deprecated Use PushSubscription.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof PushSubscription.create>[0],
-  ): Result<PushSubscription, ValidationError> {
-    const effect = PushSubscription.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

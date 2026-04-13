@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
@@ -475,24 +473,5 @@ export class NotificationDelivery {
     return (
       this.deliveryCompletedAt.getTime() - this.deliveryStartedAt.getTime()
     );
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace NotificationDeliveryCompat {
-  /**
-   * @deprecated Use NotificationDelivery.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof NotificationDelivery.create>[0],
-  ): Result<NotificationDelivery, ValidationError> {
-    const effect = NotificationDelivery.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

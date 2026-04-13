@@ -39,67 +39,45 @@ export class ChallengeVote {
     weight?: number;
     votedAt?: Date;
   }): Effect.Effect<ChallengeVote, ValidationError, never> {
-    // Validate challengeId
-    if (!props.challengeId || props.challengeId.trim() === "") {
-      return Effect.fail(ValidationError.required("challengeId"));
-    }
+    return Effect.gen(function* () {
+      if (!props.challengeId || props.challengeId.trim() === "") {
+        return yield* Effect.fail(ValidationError.required("challengeId"));
+      }
 
-    // Validate submissionId
-    if (!props.submissionId || props.submissionId.trim() === "") {
-      return Effect.fail(ValidationError.required("submissionId"));
-    }
+      if (!props.submissionId || props.submissionId.trim() === "") {
+        return yield* Effect.fail(ValidationError.required("submissionId"));
+      }
 
-    // Validate voterId
-    if (!props.voterId || props.voterId.trim() === "") {
-      return Effect.fail(ValidationError.required("voterId"));
-    }
+      if (!props.voterId || props.voterId.trim() === "") {
+        return yield* Effect.fail(ValidationError.required("voterId"));
+      }
 
-    // Validate and create position
-    const positionResult = VotePosition.create(props.position);
-    if (positionResult.kind === "err") {
-      return Effect.fail(
-        ValidationError.forField("position", positionResult.error),
-      );
-    }
+      const position = yield* VotePosition.create(props.position);
 
-    // Validate points (must be non-negative)
-    const points = props.points ?? positionResult.value.toPoints();
-    if (points < 0) {
-      return Effect.fail(ValidationError.minValue("points", 0));
-    }
+      const points = props.points ?? position.toPoints();
+      if (points < 0) {
+        return yield* Effect.fail(ValidationError.minValue("points", 0));
+      }
 
-    // Validate and create weight
-    const weightResult =
-      props.weight !== undefined
-        ? VoteWeight.create(props.weight)
-        : { kind: "ok" as const, value: VoteWeight.default() };
-    if (weightResult.kind === "err") {
-      return Effect.fail(
-        ValidationError.forField("weight", weightResult.error),
-      );
-    }
+      const weight =
+        props.weight !== undefined
+          ? yield* VoteWeight.create(props.weight)
+          : VoteWeight.default();
 
-    // Validate ID if provided
-    let id: ChallengeVoteId;
-    if (props.id) {
-      id = props.id;
-    } else {
-      // Generate ID synchronously using crypto.randomUUID()
-      id = crypto.randomUUID() as ChallengeVoteId;
-    }
+      const id: ChallengeVoteId =
+        props.id ?? (crypto.randomUUID() as ChallengeVoteId);
 
-    return Effect.succeed(
-      new ChallengeVote(
+      return new ChallengeVote(
         id,
         props.challengeId.trim(),
         props.submissionId.trim(),
         props.voterId.trim(),
-        positionResult.value,
+        position,
         points,
-        weightResult.value,
+        weight,
         props.votedAt ?? new Date(),
-      ),
-    );
+      );
+    });
   }
 
   /**

@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
 import { ValidationError } from "../errors/effect-errors";
 
 /**
@@ -182,24 +180,5 @@ export class UserEvent {
    */
   getCompositeId(): string {
     return `${this.userId}:${this.eventId}`;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace UserEventCompat {
-  /**
-   * @deprecated Use UserEvent.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof UserEvent.create>[0],
-  ): Result<UserEvent, ValidationError> {
-    const effect = UserEvent.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

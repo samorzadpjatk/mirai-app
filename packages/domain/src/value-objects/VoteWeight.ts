@@ -1,5 +1,5 @@
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * VoteWeight - Value object representing the normalized weight of a vote
@@ -18,16 +18,30 @@ export class VoteWeight {
    * Create a VoteWeight from a number
    * Must be positive
    */
-  static create(weight: number): Result<VoteWeight, string> {
-    if (typeof weight !== "number" || Number.isNaN(weight)) {
-      return err("Vote weight must be a valid number");
-    }
+  static create(
+    weight: number,
+  ): Effect.Effect<VoteWeight, ValidationError, never> {
+    return Effect.gen(function* () {
+      if (typeof weight !== "number" || Number.isNaN(weight)) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Vote weight must be a valid number",
+            field: "general",
+          }),
+        );
+      }
 
-    if (weight <= 0) {
-      return err("Vote weight must be positive");
-    }
+      if (weight <= 0) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Vote weight must be positive",
+            field: "general",
+          }),
+        );
+      }
 
-    return ok(new VoteWeight(weight));
+      return new VoteWeight(weight);
+    });
   }
 
   /**

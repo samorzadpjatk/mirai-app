@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { updateEntity, timestamps } from "../utils/immutable";
 import { ValidationError } from "../errors/effect-errors";
@@ -657,24 +655,5 @@ export class TripInsurance {
    */
   getEmergencyContact(): string {
     return `${this.label}: ${this.phoneDisplay} (${this.providerName})`;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace TripInsuranceCompat {
-  /**
-   * @deprecated Use TripInsurance.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof TripInsurance.create>[0],
-  ): Result<TripInsurance, ValidationError> {
-    const effect = TripInsurance.create(props);
-    try {
-      const insurance = Effect.runSync(effect);
-      return ok(insurance);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

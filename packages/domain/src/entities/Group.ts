@@ -63,60 +63,108 @@ export class Group {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<Group, ValidationError, never> {
-    return Effect.gen(function* () {
-      // Validate tripId
-      const tripId = yield* validate.id(props.tripId, "tripId");
-
-      // Validate name
-      const name = yield* validate.string(props.name, "name", {
-        required: true,
-        maxLength: 100,
-        trim: true,
-      });
-
-      // Validate organizerId
-      const organizerId = yield* validate.id(props.organizerId, "organizerId");
-
-      // Validate code
-      const code = yield* validate.string(props.code, "code", {
-        required: true,
-        maxLength: 50,
-        trim: true,
-      });
-
-      // Validate coins
-      const coins = yield* validate.number(props.coins ?? 0, "coins", {
-        required: true,
-        min: 0,
-      });
-
-      // Validate description (optional)
-      const description = yield* validate.string(
-        props.description ?? "",
-        "description",
-        {
-          required: false,
-          maxLength: 500,
-          trim: true,
-        },
+    // Validate tripId
+    const tripId = validate.id(props.tripId, "tripId");
+    if (isError(tripId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: tripId.error.message,
+          field: "tripId",
+        }),
       );
+    }
 
-      const ts = timestamps(props);
+    // Validate name
+    const name = validate.string(props.name, "name", {
+      required: true,
+      maxLength: 100,
+      trim: true,
+    });
+    if (isError(name)) {
+      return Effect.fail(
+        new ValidationError({
+          message: name.error.message,
+          field: "name",
+        }),
+      );
+    }
 
-      return new Group(
+    // Validate organizerId
+    const organizerId = validate.id(props.organizerId, "organizerId");
+    if (isError(organizerId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: organizerId.error.message,
+          field: "organizerId",
+        }),
+      );
+    }
+
+    // Validate code
+    const code = validate.string(props.code, "code", {
+      required: true,
+      maxLength: 50,
+      trim: true,
+    });
+    if (isError(code)) {
+      return Effect.fail(
+        new ValidationError({
+          message: code.error.message,
+          field: "code",
+        }),
+      );
+    }
+
+    // Validate coins
+    const coins = validate.number(props.coins ?? 0, "coins", {
+      required: true,
+      min: 0,
+    });
+    if (isError(coins)) {
+      return Effect.fail(
+        new ValidationError({
+          message: coins.error.message,
+          field: "coins",
+        }),
+      );
+    }
+
+    // Validate description (optional)
+    const description = validate.string(
+      props.description ?? "",
+      "description",
+      {
+        required: false,
+        maxLength: 500,
+        trim: true,
+      },
+    );
+    if (isError(description)) {
+      return Effect.fail(
+        new ValidationError({
+          message: description.error.message,
+          field: "description",
+        }),
+      );
+    }
+
+    const ts = timestamps(props);
+
+    return Effect.succeed(
+      new Group(
         props.id ?? crypto.randomUUID(),
-        tripId,
-        name,
-        description || null,
+        tripId.value,
+        name.value,
+        description.value || null,
         props.image ?? null,
-        organizerId,
-        code,
-        coins,
+        organizerId.value,
+        code.value,
+        coins.value,
         props.status ?? GroupStatus.ACTIVE,
         ts.createdAt,
         ts.updatedAt,
-      );
-    });
+      ),
+    );
   }
 
   /**
@@ -140,39 +188,51 @@ export class Group {
       );
     }
 
-    return Effect.gen(function* () {
-      const updates: Partial<Group> = {};
+    const updates: Partial<Group> = {};
 
-      // Validate name if provided
-      if (props.name !== undefined) {
-        updates.name = yield* validate.string(props.name, "name", {
-          required: true,
-          maxLength: 100,
-          trim: true,
-        });
-      }
-
-      // Validate description if provided
-      if (props.description !== undefined && props.description !== null) {
-        updates.description = yield* validate.string(
-          props.description,
-          "description",
-          {
-            required: false,
-            maxLength: 500,
-            trim: true,
-          },
+    // Validate name if provided
+    if (props.name !== undefined) {
+      const validated = validate.string(props.name, "name", {
+        required: true,
+        maxLength: 100,
+        trim: true,
+      });
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "name",
+          }),
         );
-      } else if (props.description === null) {
-        updates.description = null;
       }
+      updates.name = validated.value;
+    }
 
-      if (props.image !== undefined) {
-        updates.image = props.image;
+    // Validate description if provided
+    if (props.description !== undefined && props.description !== null) {
+      const validated = validate.string(props.description, "description", {
+        required: false,
+        maxLength: 500,
+        trim: true,
+      });
+      if (isError(validated)) {
+        return Effect.fail(
+          new ValidationError({
+            message: validated.error.message,
+            field: "description",
+          }),
+        );
       }
+      updates.description = validated.value;
+    } else if (props.description === null) {
+      updates.description = null;
+    }
 
-      return updateEntity(this, updates, Group);
-    });
+    if (props.image !== undefined) {
+      updates.image = props.image;
+    }
+
+    return Effect.succeed(updateEntity(this, updates, Group));
   }
 
   /**
@@ -182,10 +242,19 @@ export class Group {
   changeOrganizer(
     newOrganizerId: string,
   ): Effect.Effect<Group, ValidationError, never> {
-    return Effect.gen(function* () {
-      const organizerId = yield* validate.id(newOrganizerId, "organizerId");
-      return updateEntity(this, { organizerId }, Group);
-    });
+    const organizerId = validate.id(newOrganizerId, "organizerId");
+    if (isError(organizerId)) {
+      return Effect.fail(
+        new ValidationError({
+          message: organizerId.error.message,
+          field: "organizerId",
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      updateEntity(this, { organizerId: organizerId.value }, Group),
+    );
   }
 
   /**
@@ -193,14 +262,22 @@ export class Group {
    * Returns an Effect with new Group instance or ValidationError
    */
   addCoins(amount: number): Effect.Effect<Group, ValidationError, never> {
-    return Effect.gen(function* () {
-      const validated = yield* validate.number(amount, "amount", {
-        required: true,
-        min: 0,
-      });
-
-      return updateEntity(this, { coins: this.coins + validated }, Group);
+    const validated = validate.number(amount, "amount", {
+      required: true,
+      min: 0,
     });
+    if (isError(validated)) {
+      return Effect.fail(
+        new ValidationError({
+          message: validated.error.message,
+          field: "amount",
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      updateEntity(this, { coins: this.coins + amount }, Group),
+    );
   }
 
   /**
@@ -209,23 +286,31 @@ export class Group {
    * Returns error if insufficient balance
    */
   spendCoins(amount: number): Effect.Effect<Group, ValidationError, never> {
-    return Effect.gen(function* () {
-      const validated = yield* validate.number(amount, "amount", {
-        required: true,
-        min: 0,
-      });
-
-      if (validated > this.coins) {
-        return yield* Effect.fail(
-          new ValidationError({
-            message: `Insufficient balance: ${this.coins} coins available, ${validated} required`,
-            field: "coins",
-          }),
-        );
-      }
-
-      return updateEntity(this, { coins: this.coins - validated }, Group);
+    const validated = validate.number(amount, "amount", {
+      required: true,
+      min: 0,
     });
+    if (isError(validated)) {
+      return Effect.fail(
+        new ValidationError({
+          message: validated.error.message,
+          field: "amount",
+        }),
+      );
+    }
+
+    if (amount > this.coins) {
+      return Effect.fail(
+        new ValidationError({
+          message: `Insufficient balance: ${this.coins} coins available, ${amount} required`,
+          field: "coins",
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      updateEntity(this, { coins: this.coins - amount }, Group),
+    );
   }
 
   /**
@@ -281,36 +366,5 @@ export class Group {
    */
   getSummary(): string {
     return `${this.name} (${this.code}) - ${this.coins} coins`;
-  }
-
-  /**
-   * Reconstitute a Group from persistence (no validation)
-   */
-  static reconstitute(data: {
-    id: string;
-    tripId: string;
-    name: string;
-    description: string | null;
-    image: string | null;
-    organizerId: string;
-    code: string;
-    coins: number;
-    status: GroupStatus;
-    createdAt: Date;
-    updatedAt: Date;
-  }): Group {
-    return new Group(
-      data.id,
-      data.tripId,
-      data.name,
-      data.description,
-      data.image,
-      data.organizerId,
-      data.code,
-      data.coins,
-      data.status,
-      data.createdAt,
-      data.updatedAt,
-    );
   }
 }

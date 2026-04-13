@@ -1,7 +1,5 @@
 import { Effect } from "effect";
 import { ValidationError } from "../errors/effect-errors";
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
 
 /**
  * Validation rules for TripResource data
@@ -304,24 +302,5 @@ export class TripResource {
    */
   isContact(): boolean {
     return this.type.toLowerCase() === "contact";
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace TripResourceCompat {
-  /**
-   * @deprecated Use TripResource.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof TripResource.create>[0],
-  ): Result<TripResource, ValidationError> {
-    const effect = TripResource.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

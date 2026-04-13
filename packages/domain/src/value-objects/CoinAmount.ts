@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import { type Result, ok, err } from "../utils/result";
 import { ValidationError } from "../errors/effect-errors";
 
 /**
@@ -22,34 +21,36 @@ export class CoinAmount {
   static create(
     amount: number,
   ): Effect.Effect<CoinAmount, ValidationError, never> {
-    if (!Number.isInteger(amount)) {
-      return Effect.fail(
-        new ValidationError({
-          message: "Coin amount must be an integer",
-          field: "general",
-        }),
-      );
-    }
+    return Effect.gen(function* () {
+      if (!Number.isInteger(amount)) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Coin amount must be an integer",
+            field: "general",
+          }),
+        );
+      }
 
-    if (amount < this.MIN_COINS) {
-      return Effect.fail(
-        new ValidationError({
-          message: `Coin amount cannot be negative (minimum: ${this.MIN_COINS})`,
-          field: "general",
-        }),
-      );
-    }
+      if (amount < CoinAmount.MIN_COINS) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: `Coin amount cannot be negative (minimum: ${CoinAmount.MIN_COINS})`,
+            field: "general",
+          }),
+        );
+      }
 
-    if (amount > this.MAX_COINS) {
-      return Effect.fail(
-        new ValidationError({
-          message: `Coin amount exceeds maximum (${this.MAX_COINS})`,
-          field: "general",
-        }),
-      );
-    }
+      if (amount > CoinAmount.MAX_COINS) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: `Coin amount exceeds maximum (${CoinAmount.MAX_COINS})`,
+            field: "general",
+          }),
+        );
+      }
 
-    return Effect.succeed(new CoinAmount(amount));
+      return new CoinAmount(amount);
+    });
   }
 
   /**
@@ -89,15 +90,18 @@ export class CoinAmount {
    * Multiply by a positive integer factor
    */
   multiply(factor: number): Effect.Effect<CoinAmount, ValidationError, never> {
-    if (!Number.isInteger(factor) || factor < 0) {
-      return Effect.fail(
-        new ValidationError({
-          message: "Factor must be a non-negative integer",
-          field: "general",
-        }),
-      );
-    }
-    return CoinAmount.create(this.value * factor);
+    const self = this;
+    return Effect.gen(function* () {
+      if (!Number.isInteger(factor) || factor < 0) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Factor must be a non-negative integer",
+            field: "general",
+          }),
+        );
+      }
+      return yield* CoinAmount.create(self.value * factor);
+    });
   }
 
   /**
@@ -133,24 +137,5 @@ export class CoinAmount {
    */
   toNumber(): number {
     return this.value;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace CoinAmountCompat {
-  /**
-   * @deprecated Use CoinAmount.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof CoinAmount.create>[0],
-  ): Result<CoinAmount, ValidationError> {
-    const effect = CoinAmount.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

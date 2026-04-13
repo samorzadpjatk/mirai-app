@@ -1,4 +1,5 @@
-import { type Result, ok, err, isError } from "../utils/result";
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * Notification types for scheduled notifications
@@ -93,169 +94,6 @@ export function getNextScheduledStartDate(
 }
 
 /**
- * Validate date range (startDate < endDate)
- */
-export function validateDateRange(
-  startDate: Date,
-  endDate: Date,
-): Result<void, string> {
-  if (startDate >= endDate) {
-    return err("startDate must be before endDate");
-  }
-  return ok(undefined);
-}
-
-/**
- * Validate dates are in the future (with optional grace period for updates)
- * Uses UTC for consistent comparison
- */
-export function validateFutureDates(
-  startDate: Date,
-  endDate: Date,
-  allowGracePeriod = false,
-): Result<void, string> {
-  const now = Date.now();
-  const graceTime = allowGracePeriod ? 60 * 1000 : 0; // 1 minute grace period for updates
-
-  if (startDate.getTime() < now - graceTime) {
-    return err("startDate must be in the future");
-  }
-
-  if (endDate.getTime() < now - graceTime) {
-    return err("endDate must be in the future");
-  }
-
-  return ok(undefined);
-}
-
-/**
- * Validate reasonable date range (not too far in the future)
- */
-export function validateReasonableDateRange(
-  startDate: Date,
-  endDate: Date,
-  allowGracePeriod = false,
-): Result<void, string> {
-  const now = new Date();
-  const maxFutureDate = new Date(now);
-  maxFutureDate.setFullYear(maxFutureDate.getFullYear() + 2);
-
-  const graceTime = allowGracePeriod ? 24 * 60 * 60 * 1000 : 0; // 1 day grace for updates
-
-  if (startDate.getTime() > maxFutureDate.getTime() + graceTime) {
-    return err("startDate cannot be more than 2 years in the future");
-  }
-
-  if (endDate.getTime() > maxFutureDate.getTime() + graceTime) {
-    return err("endDate cannot be more than 2 years in the future");
-  }
-
-  return ok(undefined);
-}
-
-/**
- * Validate minimum duration (at least 1 day)
- */
-export function validateMinimumDuration(
-  startDate: Date,
-  endDate: Date,
-): Result<void, string> {
-  const durationMs = endDate.getTime() - startDate.getTime();
-  const minDurationMs = 24 * 60 * 60 * 1000; // 1 day
-
-  if (durationMs < minDurationMs) {
-    return err("Duration must be at least 1 day");
-  }
-
-  return ok(undefined);
-}
-
-/**
- * Validate schedule time (hour, minute within valid ranges)
- */
-export function validateScheduleTime(
-  startDate: Date,
-  hour: number,
-  minute: number,
-): Result<void, string> {
-  if (
-    hour < VALIDATION_RULES.time.minHour ||
-    hour > VALIDATION_RULES.time.maxHour
-  ) {
-    return err(
-      `hour must be between ${VALIDATION_RULES.time.minHour} and ${VALIDATION_RULES.time.maxHour}`,
-    );
-  }
-
-  if (
-    minute < VALIDATION_RULES.time.minMinute ||
-    minute > VALIDATION_RULES.time.maxMinute
-  ) {
-    return err(
-      `minute must be between ${VALIDATION_RULES.time.minMinute} and ${VALIDATION_RULES.time.maxMinute}`,
-    );
-  }
-
-  // Validate that the scheduled time is at least 5 minutes in the future
-  // Note: startDate is already normalized to UTC, so compare directly with UTC now
-  const now = new Date();
-  const minScheduledTime = new Date(now.getTime() + 5 * 60 * 1000);
-  if (startDate < minScheduledTime) {
-    return err("Schedule time must be at least 5 minutes in the future");
-  }
-
-  return ok(undefined);
-}
-
-/**
- * Validate notification content based on type
- */
-export function validateNotificationContent(
-  notificationType: NotificationScheduleType,
-  notificationTitle: string | null | undefined,
-  notificationBody: string | null | undefined,
-  notificationUrl: string | null | undefined,
-): Result<void, string> {
-  // INFO type doesn't require title/body (used for system notifications)
-  if (notificationType === NotificationScheduleType.INFO) {
-    return ok(undefined);
-  }
-
-  // All other types require title
-  if (!notificationTitle || notificationTitle.trim() === "") {
-    return err("notificationTitle is required for this notification type");
-  }
-
-  if (notificationTitle.length > VALIDATION_RULES.notificationTitle.maxLength) {
-    return err(
-      `notificationTitle must be at most ${VALIDATION_RULES.notificationTitle.maxLength} characters`,
-    );
-  }
-
-  // All other types require body
-  if (!notificationBody || notificationBody.trim() === "") {
-    return err("notificationBody is required for this notification type");
-  }
-
-  if (notificationBody.length > VALIDATION_RULES.notificationBody.maxLength) {
-    return err(
-      `notificationBody must be at most ${VALIDATION_RULES.notificationBody.maxLength} characters`,
-    );
-  }
-
-  // URL is optional but must be valid if provided
-  if (notificationUrl !== null && notificationUrl !== undefined) {
-    if (notificationUrl.length > VALIDATION_RULES.notificationUrl.maxLength) {
-      return err(
-        `notificationUrl must be at most ${VALIDATION_RULES.notificationUrl.maxLength} characters`,
-      );
-    }
-  }
-
-  return ok(undefined);
-}
-
-/**
  * Filter options for listing schedules
  */
 export interface NotificationScheduleFilter {
@@ -335,110 +173,209 @@ export class NotificationSchedule {
     lastRun?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<NotificationSchedule, string> {
-    // Validate name
-    if (!props.name || props.name.trim() === "") {
-      return err("name is required");
-    }
-    if (props.name.length > VALIDATION_RULES.name.maxLength) {
-      return err(
-        `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
-      );
-    }
+  }): Effect.Effect<NotificationSchedule, ValidationError, never> {
+    return Effect.gen(function* () {
+      // Validate name
+      if (!props.name || props.name.trim() === "") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "name is required",
+            field: "name",
+          }),
+        );
+      }
+      if (props.name.length > VALIDATION_RULES.name.maxLength) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
+            field: "name",
+          }),
+        );
+      }
 
-    // Validate notification content
-    const contentValidation = validateNotificationContent(
-      props.notificationType,
-      props.notificationTitle,
-      props.notificationBody,
-      props.notificationUrl,
-    );
-    if (isError(contentValidation)) {
-      return err(contentValidation.error);
-    }
+      // Validate notification content
+      if (props.notificationType !== NotificationScheduleType.INFO) {
+        if (!props.notificationTitle || props.notificationTitle.trim() === "") {
+          return yield* Effect.fail(
+            new ValidationError({
+              message:
+                "notificationTitle is required for this notification type",
+              field: "notificationTitle",
+            }),
+          );
+        }
 
-    // Validate hour and minute ranges BEFORE normalization
-    if (
-      props.hour < VALIDATION_RULES.time.minHour ||
-      props.hour > VALIDATION_RULES.time.maxHour
-    ) {
-      return err(
-        `hour must be between ${VALIDATION_RULES.time.minHour} and ${VALIDATION_RULES.time.maxHour}`,
-      );
-    }
+        if (
+          props.notificationTitle.length >
+          VALIDATION_RULES.notificationTitle.maxLength
+        ) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: `notificationTitle must be at most ${VALIDATION_RULES.notificationTitle.maxLength} characters`,
+              field: "notificationTitle",
+            }),
+          );
+        }
 
-    if (
-      props.minute < VALIDATION_RULES.time.minMinute ||
-      props.minute > VALIDATION_RULES.time.maxMinute
-    ) {
-      return err(
-        `minute must be between ${VALIDATION_RULES.time.minMinute} and ${VALIDATION_RULES.time.maxMinute}`,
-      );
-    }
+        if (!props.notificationBody || props.notificationBody.trim() === "") {
+          return yield* Effect.fail(
+            new ValidationError({
+              message:
+                "notificationBody is required for this notification type",
+              field: "notificationBody",
+            }),
+          );
+        }
 
-    // Normalize schedule window
-    const normalized = normalizeScheduleWindow({
-      startDate: props.startDate,
-      endDate: props.endDate,
-      hour: props.hour,
-      minute: props.minute,
-    });
+        if (
+          props.notificationBody.length >
+          VALIDATION_RULES.notificationBody.maxLength
+        ) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: `notificationBody must be at most ${VALIDATION_RULES.notificationBody.maxLength} characters`,
+              field: "notificationBody",
+            }),
+          );
+        }
 
-    // Validate date range
-    const dateRangeValidation = validateDateRange(
-      normalized.startDate,
-      normalized.endDate,
-    );
-    if (isError(dateRangeValidation)) {
-      return err(dateRangeValidation.error);
-    }
+        if (
+          props.notificationUrl !== null &&
+          props.notificationUrl !== undefined &&
+          props.notificationUrl.length >
+            VALIDATION_RULES.notificationUrl.maxLength
+        ) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: `notificationUrl must be at most ${VALIDATION_RULES.notificationUrl.maxLength} characters`,
+              field: "notificationUrl",
+            }),
+          );
+        }
+      }
 
-    // Validate future dates
-    const futureValidation = validateFutureDates(
-      normalized.startDate,
-      normalized.endDate,
-    );
-    if (isError(futureValidation)) {
-      return err(futureValidation.error);
-    }
+      // Validate hour and minute ranges BEFORE normalization
+      if (
+        props.hour < VALIDATION_RULES.time.minHour ||
+        props.hour > VALIDATION_RULES.time.maxHour
+      ) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: `hour must be between ${VALIDATION_RULES.time.minHour} and ${VALIDATION_RULES.time.maxHour}`,
+            field: "hour",
+          }),
+        );
+      }
 
-    // Validate reasonable date range
-    const reasonableValidation = validateReasonableDateRange(
-      normalized.startDate,
-      normalized.endDate,
-    );
-    if (isError(reasonableValidation)) {
-      return err(reasonableValidation.error);
-    }
+      if (
+        props.minute < VALIDATION_RULES.time.minMinute ||
+        props.minute > VALIDATION_RULES.time.maxMinute
+      ) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: `minute must be between ${VALIDATION_RULES.time.minMinute} and ${VALIDATION_RULES.time.maxMinute}`,
+            field: "minute",
+          }),
+        );
+      }
 
-    // Validate minimum duration
-    const durationValidation = validateMinimumDuration(
-      normalized.startDate,
-      normalized.endDate,
-    );
-    if (isError(durationValidation)) {
-      return err(durationValidation.error);
-    }
+      // Normalize schedule window
+      const normalized = normalizeScheduleWindow({
+        startDate: props.startDate,
+        endDate: props.endDate,
+        hour: props.hour,
+        minute: props.minute,
+      });
 
-    // Validate schedule time
-    const timeValidation = validateScheduleTime(
-      normalized.startDate,
-      normalized.hour,
-      normalized.minute,
-    );
-    if (isError(timeValidation)) {
-      return err(timeValidation.error);
-    }
+      // Validate date range
+      if (normalized.startDate >= normalized.endDate) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "startDate must be before endDate",
+            field: "startDate/endDate",
+          }),
+        );
+      }
 
-    // Validate createdById
-    if (!props.createdById || props.createdById.trim() === "") {
-      return err("createdById is required");
-    }
+      // Validate future dates
+      const now = Date.now();
+      if (normalized.startDate.getTime() < now) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "startDate must be in the future",
+            field: "startDate",
+          }),
+        );
+      }
 
-    const now = new Date();
+      if (normalized.endDate.getTime() < now) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "endDate must be in the future",
+            field: "endDate",
+          }),
+        );
+      }
 
-    return ok(
-      new NotificationSchedule(
+      // Validate reasonable date range
+      const maxFutureDate = new Date();
+      maxFutureDate.setFullYear(maxFutureDate.getFullYear() + 2);
+
+      if (normalized.startDate.getTime() > maxFutureDate.getTime()) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "startDate cannot be more than 2 years in the future",
+            field: "startDate",
+          }),
+        );
+      }
+
+      if (normalized.endDate.getTime() > maxFutureDate.getTime()) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "endDate cannot be more than 2 years in the future",
+            field: "endDate",
+          }),
+        );
+      }
+
+      // Validate minimum duration
+      const durationMs =
+        normalized.endDate.getTime() - normalized.startDate.getTime();
+      const minDurationMs = 24 * 60 * 60 * 1000; // 1 day
+      if (durationMs < minDurationMs) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Duration must be at least 1 day",
+            field: "startDate/endDate",
+          }),
+        );
+      }
+
+      // Validate schedule time
+      const minScheduledTime = new Date(now + 5 * 60 * 1000);
+      if (normalized.startDate < minScheduledTime) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "Schedule time must be at least 5 minutes in the future",
+            field: "startDate",
+          }),
+        );
+      }
+
+      // Validate createdById
+      if (!props.createdById || props.createdById.trim() === "") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "createdById is required",
+            field: "createdById",
+          }),
+        );
+      }
+
+      const timestamp = new Date();
+
+      return new NotificationSchedule(
         props.id ?? crypto.randomUUID(),
         props.name.trim(),
         props.tripId ?? null,
@@ -453,10 +390,10 @@ export class NotificationSchedule {
         props.isActive ?? true,
         props.createdById.trim(),
         props.lastRun ?? null,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
-      ),
-    );
+        props.createdAt ?? timestamp,
+        props.updatedAt ?? timestamp,
+      );
+    });
   }
 
   /**
@@ -473,131 +410,211 @@ export class NotificationSchedule {
     hour?: number;
     minute?: number;
     isActive?: boolean;
-  }): Result<NotificationSchedule, string> {
-    // Validate name if provided
-    if (props.name !== undefined) {
-      if (props.name.trim() === "") {
-        return err("name is required");
-      }
-      if (props.name.length > VALIDATION_RULES.name.maxLength) {
-        return err(
-          `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
-        );
-      }
-    }
-
-    // Determine which dates/times to use
-    const baseStartDate = props.startDate ?? this.startDate;
-    const baseEndDate = props.endDate ?? this.endDate;
-    const baseHour = props.hour ?? this.hour;
-    const baseMinute = props.minute ?? this.minute;
-
-    // Check if we need to re-normalize
-    const shouldNormalize =
-      props.startDate !== undefined ||
-      props.endDate !== undefined ||
-      props.hour !== undefined ||
-      props.minute !== undefined;
-
-    let normalized = shouldNormalize
-      ? normalizeScheduleWindow({
-          startDate: baseStartDate,
-          endDate: baseEndDate,
-          hour: baseHour,
-          minute: baseMinute,
-        })
-      : null;
-
-    const finalStartDate = normalized?.startDate ?? baseStartDate;
-    const finalEndDate = normalized?.endDate ?? baseEndDate;
-    const finalHour = normalized?.hour ?? baseHour;
-    const finalMinute = normalized?.minute ?? baseMinute;
-
-    // Validate dates if changed
-    if (shouldNormalize) {
-      const dateRangeValidation = validateDateRange(
-        finalStartDate,
-        finalEndDate,
-      );
-      if (isError(dateRangeValidation)) {
-        return err(dateRangeValidation.error);
-      }
-
-      const futureValidation = validateFutureDates(
-        finalStartDate,
-        finalEndDate,
-        true,
-      );
-      if (isError(futureValidation)) {
-        return err(futureValidation.error);
-      }
-
-      const reasonableValidation = validateReasonableDateRange(
-        finalStartDate,
-        finalEndDate,
-        true,
-      );
-      if (isError(reasonableValidation)) {
-        return err(reasonableValidation.error);
-      }
-
-      const durationValidation = validateMinimumDuration(
-        finalStartDate,
-        finalEndDate,
-      );
-      if (isError(durationValidation)) {
-        return err(durationValidation.error);
-      }
-
-      // Only validate schedule time if start date is in the future
-      if (finalStartDate > new Date()) {
-        const timeValidation = validateScheduleTime(
-          finalStartDate,
-          finalHour,
-          finalMinute,
-        );
-        if (isError(timeValidation)) {
-          return err(timeValidation.error);
+  }): Effect.Effect<NotificationSchedule, ValidationError, never> {
+    const self = this;
+    return Effect.gen(function* () {
+      if (props.name !== undefined) {
+        if (props.name.trim() === "") {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "name is required",
+              field: "name",
+            }),
+          );
+        }
+        if (props.name.length > VALIDATION_RULES.name.maxLength) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
+              field: "name",
+            }),
+          );
         }
       }
-    }
 
-    // Validate notification content if changed
-    const finalTitle =
-      props.notificationTitle !== undefined
-        ? props.notificationTitle
-        : this.notificationTitle;
-    const finalBody =
-      props.notificationBody !== undefined
-        ? props.notificationBody
-        : this.notificationBody;
-    const finalUrl =
-      props.notificationUrl !== undefined
-        ? props.notificationUrl
-        : this.notificationUrl;
+      const baseStartDate = props.startDate ?? self.startDate;
+      const baseEndDate = props.endDate ?? self.endDate;
+      const baseHour = props.hour ?? self.hour;
+      const baseMinute = props.minute ?? self.minute;
 
-    if (
-      props.notificationTitle !== undefined ||
-      props.notificationBody !== undefined ||
-      props.notificationUrl !== undefined
-    ) {
-      const contentValidation = validateNotificationContent(
-        this.notificationType,
-        finalTitle,
-        finalBody,
-        finalUrl,
-      );
-      if (isError(contentValidation)) {
-        return err(contentValidation.error);
+      // Check if we need to re-normalize
+      const shouldNormalize =
+        props.startDate !== undefined ||
+        props.endDate !== undefined ||
+        props.hour !== undefined ||
+        props.minute !== undefined;
+
+      let normalized = shouldNormalize
+        ? normalizeScheduleWindow({
+            startDate: baseStartDate,
+            endDate: baseEndDate,
+            hour: baseHour,
+            minute: baseMinute,
+          })
+        : null;
+
+      const finalStartDate = normalized?.startDate ?? baseStartDate;
+      const finalEndDate = normalized?.endDate ?? baseEndDate;
+      const finalHour = normalized?.hour ?? baseHour;
+      const finalMinute = normalized?.minute ?? baseMinute;
+
+      // Validate dates if changed
+      if (shouldNormalize) {
+        if (finalStartDate >= finalEndDate) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "startDate must be before endDate",
+              field: "startDate/endDate",
+            }),
+          );
+        }
+
+        const now = Date.now();
+        const graceTime = 60 * 1000; // 1 minute grace period for updates
+
+        if (finalStartDate.getTime() < now - graceTime) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "startDate must be in the future",
+              field: "startDate",
+            }),
+          );
+        }
+
+        if (finalEndDate.getTime() < now - graceTime) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "endDate must be in the future",
+              field: "endDate",
+            }),
+          );
+        }
+
+        const maxFutureDate = new Date();
+        maxFutureDate.setFullYear(maxFutureDate.getFullYear() + 2);
+        const dayGrace = 24 * 60 * 60 * 1000;
+
+        if (finalStartDate.getTime() > maxFutureDate.getTime() + dayGrace) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "startDate cannot be more than 2 years in the future",
+              field: "startDate",
+            }),
+          );
+        }
+
+        if (finalEndDate.getTime() > maxFutureDate.getTime() + dayGrace) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "endDate cannot be more than 2 years in the future",
+              field: "endDate",
+            }),
+          );
+        }
+
+        const durationMs = finalEndDate.getTime() - finalStartDate.getTime();
+        const minDurationMs = 24 * 60 * 60 * 1000;
+        if (durationMs < minDurationMs) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "Duration must be at least 1 day",
+              field: "startDate/endDate",
+            }),
+          );
+        }
+
+        // Only validate schedule time if start date is in the future
+        if (finalStartDate > new Date()) {
+          const minScheduledTime = new Date(Date.now() + 5 * 60 * 1000);
+          if (finalStartDate < minScheduledTime) {
+            return yield* Effect.fail(
+              new ValidationError({
+                message:
+                  "Schedule time must be at least 5 minutes in the future",
+                field: "startDate",
+              }),
+            );
+          }
+        }
       }
-    }
 
-    return ok(
-      new NotificationSchedule(
-        this.id,
-        props.name ?? this.name,
-        this.tripId,
-        this.notificationType,
+      const finalTitle =
+        props.notificationTitle !== undefined
+          ? props.notificationTitle
+          : self.notificationTitle;
+      const finalBody =
+        props.notificationBody !== undefined
+          ? props.notificationBody
+          : self.notificationBody;
+      const finalUrl =
+        props.notificationUrl !== undefined
+          ? props.notificationUrl
+          : self.notificationUrl;
+
+      if (
+        props.notificationTitle !== undefined ||
+        props.notificationBody !== undefined ||
+        props.notificationUrl !== undefined
+      ) {
+        if (self.notificationType !== NotificationScheduleType.INFO) {
+          if (!finalTitle || finalTitle.trim() === "") {
+            return yield* Effect.fail(
+              new ValidationError({
+                message:
+                  "notificationTitle is required for this notification type",
+                field: "notificationTitle",
+              }),
+            );
+          }
+
+          if (
+            finalTitle.length > VALIDATION_RULES.notificationTitle.maxLength
+          ) {
+            return yield* Effect.fail(
+              new ValidationError({
+                message: `notificationTitle must be at most ${VALIDATION_RULES.notificationTitle.maxLength} characters`,
+                field: "notificationTitle",
+              }),
+            );
+          }
+
+          if (!finalBody || finalBody.trim() === "") {
+            return yield* Effect.fail(
+              new ValidationError({
+                message:
+                  "notificationBody is required for this notification type",
+                field: "notificationBody",
+              }),
+            );
+          }
+
+          if (finalBody.length > VALIDATION_RULES.notificationBody.maxLength) {
+            return yield* Effect.fail(
+              new ValidationError({
+                message: `notificationBody must be at most ${VALIDATION_RULES.notificationBody.maxLength} characters`,
+                field: "notificationBody",
+              }),
+            );
+          }
+
+          if (finalUrl !== null && finalUrl !== undefined) {
+            if (finalUrl.length > VALIDATION_RULES.notificationUrl.maxLength) {
+              return yield* Effect.fail(
+                new ValidationError({
+                  message: `notificationUrl must be at most ${VALIDATION_RULES.notificationUrl.maxLength} characters`,
+                  field: "notificationUrl",
+                }),
+              );
+            }
+          }
+        }
+      }
+
+      return new NotificationSchedule(
+        self.id,
+        props.name ?? self.name,
+        self.tripId,
+        self.notificationType,
         finalTitle,
         finalBody,
         finalUrl,
@@ -605,13 +622,13 @@ export class NotificationSchedule {
         finalEndDate,
         finalHour,
         finalMinute,
-        props.isActive ?? this.isActive,
-        this.createdById,
-        this.lastRun,
-        this.createdAt,
+        props.isActive ?? self.isActive,
+        self.createdById,
+        self.lastRun,
+        self.createdAt,
         new Date(),
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -673,8 +690,8 @@ export class NotificationSchedule {
     startDate?: Date;
     endDate?: Date;
     newCreatedById: string;
-  }): Result<NotificationSchedule, string> {
-    const newStartDate = params.startDate ?? new Date();
+  }): Effect.Effect<NotificationSchedule, ValidationError, never> {
+    const newStartDate = params.startDate ?? this.startDate;
     const durationMs = this.endDate.getTime() - this.startDate.getTime();
     const newEndDate =
       params.endDate ?? new Date(newStartDate.getTime() + durationMs);

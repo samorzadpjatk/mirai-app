@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { updateEntity } from "../utils/immutable";
 import { ValidationError } from "../errors/effect-errors";
@@ -80,117 +78,71 @@ export class Location {
     lastInactivityNotification?: Date | null;
     usersToShareWith?: SharingUserInfo[];
   }): Effect.Effect<Location, ValidationError, never> {
-    // Validate userId
-    const userId = validate.id(props.userId, "userId");
-    if (isError(userId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: userId.error.message,
-          field: "userId",
-        }),
-      );
-    }
+    return Effect.gen(function* () {
+      // Validate userId
+      const userId = yield* validate.id(props.userId, "userId");
 
-    // Validate latitude if provided
-    if (props.latitude !== undefined && props.latitude !== null) {
-      const validated = validate.number(props.latitude, "latitude", {
-        required: true,
-        min: VALIDATION.latitude.min,
-        max: VALIDATION.latitude.max,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
+      // Validate latitude if provided
+      let latitude = props.latitude ?? null;
+      if (latitude !== null) {
+        latitude = yield* validate.number(latitude, "latitude", {
+          required: true,
+          min: VALIDATION.latitude.min,
+          max: VALIDATION.latitude.max,
+        });
+      }
+
+      // Validate longitude if provided
+      let longitude = props.longitude ?? null;
+      if (longitude !== null) {
+        longitude = yield* validate.number(longitude, "longitude", {
+          required: true,
+          min: VALIDATION.longitude.min,
+          max: VALIDATION.longitude.max,
+        });
+      }
+
+      // Validate accuracy if provided
+      if (props.accuracy !== undefined && props.accuracy !== null) {
+        yield* validate.number(props.accuracy, "accuracy", {
+          required: true,
+          min: 0,
+        });
+      }
+
+      // Validate speed if provided
+      if (props.speed !== undefined && props.speed !== null) {
+        yield* validate.number(props.speed, "speed", {
+          required: true,
+          min: 0,
+        });
+      }
+
+      // Validate heading if provided (0-360 degrees)
+      if (props.heading !== undefined && props.heading !== null) {
+        yield* validate.number(props.heading, "heading", {
+          required: true,
+          min: 0,
+          max: 360,
+        });
+      }
+
+      // Validate usersToShareWith - prevent self-sharing
+      const shareList = props.usersToShareWith ?? [];
+      if (shareList.some((u) => u.id === props.userId)) {
+        return yield* Effect.fail(
           new ValidationError({
-            message: validated.error.message,
-            field: "latitude",
+            message: "Cannot share location with yourself",
+            field: "usersToShareWith",
           }),
         );
       }
-    }
 
-    // Validate longitude if provided
-    if (props.longitude !== undefined && props.longitude !== null) {
-      const validated = validate.number(props.longitude, "longitude", {
-        required: true,
-        min: VALIDATION.longitude.min,
-        max: VALIDATION.longitude.max,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "longitude",
-          }),
-        );
-      }
-    }
-
-    // Validate accuracy if provided
-    if (props.accuracy !== undefined && props.accuracy !== null) {
-      const validated = validate.number(props.accuracy, "accuracy", {
-        required: true,
-        min: 0,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "accuracy",
-          }),
-        );
-      }
-    }
-
-    // Validate speed if provided
-    if (props.speed !== undefined && props.speed !== null) {
-      const validated = validate.number(props.speed, "speed", {
-        required: true,
-        min: 0,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "speed",
-          }),
-        );
-      }
-    }
-
-    // Validate heading if provided (0-360 degrees)
-    if (props.heading !== undefined && props.heading !== null) {
-      const validated = validate.number(props.heading, "heading", {
-        required: true,
-        min: 0,
-        max: 360,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "heading",
-          }),
-        );
-      }
-    }
-
-    // Validate usersToShareWith - prevent self-sharing
-    const shareList = props.usersToShareWith ?? [];
-    if (shareList.some((u) => u.id === props.userId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: "Cannot share location with yourself",
-          field: "usersToShareWith",
-        }),
-      );
-    }
-
-    return Effect.succeed(
-      new Location(
+      return new Location(
         props.id ?? (crypto.randomUUID() as LocationId),
-        userId.value,
-        props.latitude ?? null,
-        props.longitude ?? null,
+        userId,
+        latitude,
+        longitude,
         props.accuracy ?? null,
         props.altitude ?? null,
         props.altitudeAccuracy ?? null,
@@ -200,8 +152,8 @@ export class Location {
         props.timestamp ?? new Date(),
         props.lastInactivityNotification ?? null,
         shareList,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -252,92 +204,70 @@ export class Location {
     speed?: number | null;
     heading?: number | null;
   }): Effect.Effect<Location, ValidationError, never> {
-    const updates: Partial<Location> = {};
+    return Effect.gen(function* () {
+      const updates: Partial<Location> = {};
 
-    // Validate and update latitude if provided
-    if (props.latitude !== undefined) {
-      if (props.latitude !== null) {
-        const validated = validate.number(props.latitude, "latitude", {
-          required: true,
-          min: VALIDATION.latitude.min,
-          max: VALIDATION.latitude.max,
-        });
-        if (isError(validated)) {
-          return Effect.fail(
-            new ValidationError({
-              message: validated.error.message,
-              field: "latitude",
-            }),
+      // Validate and update latitude if provided
+      if (props.latitude !== undefined) {
+        if (props.latitude !== null) {
+          updates.latitude = yield* validate.number(
+            props.latitude,
+            "latitude",
+            {
+              required: true,
+              min: VALIDATION.latitude.min,
+              max: VALIDATION.latitude.max,
+            },
           );
+        } else {
+          updates.latitude = null;
         }
       }
-      updates.latitude = props.latitude;
-    }
 
-    // Validate and update longitude if provided
-    if (props.longitude !== undefined) {
-      if (props.longitude !== null) {
-        const validated = validate.number(props.longitude, "longitude", {
-          required: true,
-          min: VALIDATION.longitude.min,
-          max: VALIDATION.longitude.max,
-        });
-        if (isError(validated)) {
-          return Effect.fail(
-            new ValidationError({
-              message: validated.error.message,
-              field: "longitude",
-            }),
+      // Validate and update longitude if provided
+      if (props.longitude !== undefined) {
+        if (props.longitude !== null) {
+          updates.longitude = yield* validate.number(
+            props.longitude,
+            "longitude",
+            {
+              required: true,
+              min: VALIDATION.longitude.min,
+              max: VALIDATION.longitude.max,
+            },
           );
+        } else {
+          updates.longitude = null;
         }
       }
-      updates.longitude = props.longitude;
-    }
 
-    // Validate speed if provided
-    if (props.speed !== undefined && props.speed !== null) {
-      const validated = validate.number(props.speed, "speed", {
-        required: true,
-        min: 0,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "speed",
-          }),
-        );
+      // Validate speed if provided
+      if (props.speed !== undefined && props.speed !== null) {
+        updates.speed = yield* validate.number(props.speed, "speed", {
+          required: true,
+          min: 0,
+        });
+      } else if (props.speed === null) {
+        updates.speed = null;
       }
-      updates.speed = props.speed;
-    } else if (props.speed === null) {
-      updates.speed = null;
-    }
 
-    // Validate heading if provided
-    if (props.heading !== undefined && props.heading !== null) {
-      const validated = validate.number(props.heading, "heading", {
-        required: true,
-        min: 0,
-        max: 360,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "heading",
-          }),
-        );
+      // Validate heading if provided
+      if (props.heading !== undefined && props.heading !== null) {
+        updates.heading = yield* validate.number(props.heading, "heading", {
+          required: true,
+          min: 0,
+          max: 360,
+        });
+      } else if (props.heading === null) {
+        updates.heading = null;
       }
-      updates.heading = props.heading;
-    } else if (props.heading === null) {
-      updates.heading = null;
-    }
 
-    if (props.accuracy !== undefined) updates.accuracy = props.accuracy;
-    if (props.altitude !== undefined) updates.altitude = props.altitude;
-    updates.timestamp = new Date();
+      if (props.accuracy !== undefined) updates.accuracy = props.accuracy;
+      if (props.altitude !== undefined) updates.altitude = props.altitude;
+      updates.timestamp = new Date();
 
-    return Effect.succeed(updateEntity(this, updates, Location));
+      return updateEntity(this, updates, Location);
+    });
   }
 
   /**
@@ -682,23 +612,4 @@ export function calculateDistance(
  */
 function toRadians(degrees: number): number {
   return degrees * (Math.PI / 180);
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace LocationCompat {
-  /**
-   * @deprecated Use Location.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof Location.create>[0],
-  ): Result<Location, ValidationError> {
-    const effect = Location.create(props);
-    try {
-      const location = Effect.runSync(effect);
-      return ok(location);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
-  }
 }

@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
 import { ValidationError } from "../errors/effect-errors";
 
 /**
@@ -139,24 +137,5 @@ export class GroupJoinRequest {
    */
   isOlderThan(ms: number): boolean {
     return this.getAgeMs() > ms;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace GroupJoinRequestCompat {
-  /**
-   * @deprecated Use GroupJoinRequest.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof GroupJoinRequest.create>[0],
-  ): Result<GroupJoinRequest, ValidationError> {
-    const effect = GroupJoinRequest.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
@@ -230,24 +228,5 @@ export class LocationSharingRequest {
     if (this.senderId === userId) return this.receiverId;
     if (this.receiverId === userId) return this.senderId;
     return null;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace LocationSharingRequestCompat {
-  /**
-   * @deprecated Use LocationSharingRequest.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof LocationSharingRequest.create>[0],
-  ): Result<LocationSharingRequest, ValidationError> {
-    const effect = LocationSharingRequest.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

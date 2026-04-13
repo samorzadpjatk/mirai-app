@@ -408,7 +408,7 @@ describe("[UNIT] ChallengeSubmission", () => {
       );
 
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.field).toBe("awardedPoints");
+      expect((error as ValidationError).field).toBe("awardedPoints");
     });
   });
 
@@ -497,7 +497,7 @@ describe("[UNIT] ChallengeSubmission", () => {
       );
 
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.field).toBe("reason");
+      expect((error as ValidationError).field).toBe("reason");
     });
   });
 

@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
 import type { RewardId } from "../value-objects/RewardId";
 import { CoinAmount } from "../value-objects/CoinAmount";
 import { ValidationError } from "../errors/effect-errors";
@@ -106,26 +104,12 @@ export class Reward {
   }): Effect.Effect<Reward, ValidationError, never> {
     return Effect.gen(function* () {
       // Validate name
-      const nameValidation = validateName(props.name);
-      if (nameValidation.kind === "err") {
-        return yield* Effect.fail(
-          new ValidationError({
-            message: nameValidation.error,
-            field: "name",
-          }),
-        );
-      }
+      const nameValidation = yield* validateName(props.name);
 
       // Validate description
-      const descriptionValidation = validateDescription(props.description);
-      if (descriptionValidation.kind === "err") {
-        return yield* Effect.fail(
-          new ValidationError({
-            message: descriptionValidation.error,
-            field: "description",
-          }),
-        );
-      }
+      const descriptionValidation = yield* validateDescription(
+        props.description,
+      );
 
       // Validate quantity
       if (
@@ -202,8 +186,8 @@ export class Reward {
 
       return new Reward(
         props.id ?? (crypto.randomUUID() as RewardId),
-        nameValidation.value,
-        descriptionValidation.value,
+        nameValidation,
+        descriptionValidation,
         props.availableQuantity,
         coinCostResult,
         images.map((i) => i.trim()).filter((i) => i.length > 0),
@@ -234,31 +218,13 @@ export class Reward {
       // Validate name if provided
       let finalName = self.name;
       if (props.name !== undefined) {
-        const nameValidation = validateName(props.name);
-        if (nameValidation.kind === "err") {
-          return yield* Effect.fail(
-            new ValidationError({
-              message: nameValidation.error,
-              field: "name",
-            }),
-          );
-        }
-        finalName = nameValidation.value;
+        finalName = yield* validateName(props.name);
       }
 
       // Validate description if provided
       let finalDescription = self.description;
       if (props.description !== undefined) {
-        const descValidation = validateDescription(props.description);
-        if (descValidation.kind === "err") {
-          return yield* Effect.fail(
-            new ValidationError({
-              message: descValidation.error,
-              field: "description",
-            }),
-          );
-        }
-        finalDescription = descValidation.value;
+        finalDescription = yield* validateDescription(props.description);
       }
 
       // Validate quantity if provided
@@ -543,60 +509,57 @@ export class Reward {
 /**
  * Validate a reward name
  */
-function validateName(name: string): Result<string, string> {
+function validateName(
+  name: string,
+): Effect.Effect<string, ValidationError, never> {
   const trimmed = name.trim();
 
   if (trimmed.length < VALIDATION_RULES.name.minLength) {
-    return err(
-      `Name must be at least ${VALIDATION_RULES.name.minLength} characters`,
+    return Effect.fail(
+      new ValidationError({
+        message: `Name must be at least ${VALIDATION_RULES.name.minLength} characters`,
+        field: "name",
+      }),
     );
   }
 
   if (trimmed.length > VALIDATION_RULES.name.maxLength) {
-    return err(
-      `Name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
+    return Effect.fail(
+      new ValidationError({
+        message: `Name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
+        field: "name",
+      }),
     );
   }
 
-  return ok(trimmed);
+  return Effect.succeed(trimmed);
 }
 
 /**
  * Validate a reward description
  */
-function validateDescription(description: string): Result<string, string> {
+function validateDescription(
+  description: string,
+): Effect.Effect<string, ValidationError, never> {
   const trimmed = description.trim();
 
   if (trimmed.length < VALIDATION_RULES.description.minLength) {
-    return err(
-      `Description must be at least ${VALIDATION_RULES.description.minLength} characters`,
+    return Effect.fail(
+      new ValidationError({
+        message: `Description must be at least ${VALIDATION_RULES.description.minLength} characters`,
+        field: "description",
+      }),
     );
   }
 
   if (trimmed.length > VALIDATION_RULES.description.maxLength) {
-    return err(
-      `Description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
+    return Effect.fail(
+      new ValidationError({
+        message: `Description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
+        field: "description",
+      }),
     );
   }
 
-  return ok(trimmed);
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace RewardCompat {
-  /**
-   * @deprecated Use Reward.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof Reward.create>[0],
-  ): Result<Reward, ValidationError> {
-    const effect = Reward.create(props);
-    try {
-      const reward = Effect.runSync(effect);
-      return ok(reward);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
-  }
+  return Effect.succeed(trimmed);
 }

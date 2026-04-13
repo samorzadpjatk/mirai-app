@@ -139,7 +139,7 @@ describe("[UNIT] ChallengeVote Entity", () => {
       );
 
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.field).toBe("position");
+      expect(error.field).toBe("general");
     });
 
     it("should error when points is negative", async () => {
@@ -173,7 +173,7 @@ describe("[UNIT] ChallengeVote Entity", () => {
       );
 
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error.field).toBe("weight");
+      expect(error.field).toBe("general");
     });
   });
 

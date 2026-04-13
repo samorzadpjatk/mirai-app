@@ -7,17 +7,16 @@
  * Features:
  * - Branded UserId type prevents mixing IDs across aggregates
  * - Immutable - all properties are readonly
- * - Factory method with Result type for explicit error handling
+ * - Factory method with Effect for explicit error handling
  * - No exceptions thrown during creation
  *
  * @module value-objects
  */
 
+import { Effect } from "effect";
 import type { UserId } from "./UserId";
 import { UserRole } from "../enums/UserRole";
-import { AppError, type ValidationError } from "../errors/DomainErrors";
-import type { Result } from "../types/Result";
-import { ok, err } from "../types/Result";
+import { ValidationError } from "../errors/effect-errors";
 
 /**
  * AuthContext represents the authenticated state of a user
@@ -40,26 +39,22 @@ export class AuthContext {
   /**
    * Factory method to create an AuthContext
    *
-   * Validates inputs and returns a Result type instead of throwing.
+   * Validates inputs and returns an Effect instead of throwing.
    * This ensures explicit error handling at the call site.
    *
    * @param props - Object containing userId, role, and optional sessionId
-   * @returns Result<AuthContext, ValidationError>
+   * @returns Effect<AuthContext, ValidationError>
    *
    * @example
    * ```typescript
-   * const result = AuthContext.create({
+   * const effect = AuthContext.create({
    *   userId: UserId.create("550e8400-e29b-41d4-a716-446655440000"),
    *   role: UserRole.USER,
    *   authenticatedAt: new Date(),
    * });
    *
-   * if (isOk(result)) {
-   *   const authContext = result.value;
-   *   // Use authContext...
-   * } else {
-   *   console.error(result.error.message);
-   * }
+   * const authContext = yield* effect;
+   * // Use authContext...
    * ```
    */
   static create(props: {
@@ -67,11 +62,11 @@ export class AuthContext {
     role: UserRole;
     authenticatedAt: Date;
     sessionId?: string;
-  }): Result<AuthContext, ValidationError> {
+  }): Effect.Effect<AuthContext, ValidationError, never> {
     // Validate userId is provided
     if (!props.userId) {
-      return err(
-        AppError.validation({
+      return Effect.fail(
+        new ValidationError({
           field: "userId",
           message: "UserId is required",
         }),
@@ -80,8 +75,8 @@ export class AuthContext {
 
     // Validate role is a valid UserRole
     if (!Object.values(UserRole).includes(props.role)) {
-      return err(
-        AppError.validation({
+      return Effect.fail(
+        new ValidationError({
           field: "role",
           message: `Invalid role: ${props.role}`,
         }),
@@ -90,8 +85,8 @@ export class AuthContext {
 
     // Validate authenticatedAt is a valid Date
     if (!(props.authenticatedAt instanceof Date)) {
-      return err(
-        AppError.validation({
+      return Effect.fail(
+        new ValidationError({
           field: "authenticatedAt",
           message: "authenticatedAt must be a valid Date",
         }),
@@ -100,8 +95,8 @@ export class AuthContext {
 
     // Validate authenticatedAt is not in the future
     if (props.authenticatedAt.getTime() > Date.now()) {
-      return err(
-        AppError.validation({
+      return Effect.fail(
+        new ValidationError({
           field: "authenticatedAt",
           message: "authenticatedAt cannot be in the future",
         }),
@@ -111,8 +106,8 @@ export class AuthContext {
     // Validate sessionId if provided
     if (props.sessionId !== undefined) {
       if (typeof props.sessionId !== "string") {
-        return err(
-          AppError.validation({
+        return Effect.fail(
+          new ValidationError({
             field: "sessionId",
             message: "sessionId must be a string",
           }),
@@ -120,8 +115,8 @@ export class AuthContext {
       }
 
       if (props.sessionId.trim().length === 0) {
-        return err(
-          AppError.validation({
+        return Effect.fail(
+          new ValidationError({
             field: "sessionId",
             message: "sessionId cannot be empty",
           }),
@@ -129,7 +124,7 @@ export class AuthContext {
       }
     }
 
-    return ok(
+    return Effect.succeed(
       new AuthContext(
         props.userId,
         props.role,

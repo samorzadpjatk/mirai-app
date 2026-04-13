@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { updateEntity, timestamps, type Writable } from "../utils/immutable";
 import { ValidationError } from "../errors/effect-errors";
@@ -701,24 +699,5 @@ export class ActivityFeed {
 
     // Finally by id descending for stable ordering
     return otherKey.id.localeCompare(thisKey.id);
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace ActivityFeedCompat {
-  /**
-   * @deprecated Use ActivityFeed.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof ActivityFeed.create>[0],
-  ): Result<ActivityFeed, ValidationError> {
-    const effect = ActivityFeed.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

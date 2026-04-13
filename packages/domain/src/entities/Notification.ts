@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
@@ -498,24 +496,5 @@ export class Notification {
    */
   getSummary(): string {
     return `${this.title}: ${this.body.substring(0, 100)}${this.body.length > 100 ? "..." : ""}`;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace NotificationCompat {
-  /**
-   * @deprecated Use Notification.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof Notification.create>[0],
-  ): Result<Notification, ValidationError> {
-    const effect = Notification.create(props);
-    try {
-      const notification = Effect.runSync(effect);
-      return ok(notification);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

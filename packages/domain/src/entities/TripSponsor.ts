@@ -1,7 +1,5 @@
 import { Effect } from "effect";
 import { ValidationError } from "../errors/effect-errors";
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
 
 /**
  * TripSponsor entity - represents a sponsor supporting a specific trip
@@ -95,24 +93,5 @@ export class TripSponsor {
    */
   isForSponsor(sponsorId: string): boolean {
     return this.sponsorId === sponsorId;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace TripSponsorCompat {
-  /**
-   * @deprecated Use TripSponsor.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof TripSponsor.create>[0],
-  ): Result<TripSponsor, ValidationError> {
-    const effect = TripSponsor.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

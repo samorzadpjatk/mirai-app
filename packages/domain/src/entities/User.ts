@@ -128,6 +128,7 @@ export class User {
     firstName: string;
     lastName: string;
   }): Effect.Effect<User, ValidationError, never> {
+    const self = this;
     return Effect.gen(function* () {
       // Validate firstName (allow empty, but validate if non-empty)
       let firstName = props.firstName.trim();
@@ -169,7 +170,7 @@ export class User {
         }
       }
 
-      return updateEntity(this, { firstName, lastName }, User);
+      return updateEntity(self, { firstName, lastName }, User);
     });
   }
 
@@ -262,33 +263,5 @@ export class User {
     const first = this.firstName?.charAt(0)?.toUpperCase() ?? "";
     const last = this.lastName?.charAt(0)?.toUpperCase() ?? "";
     return first + last || "?";
-  }
-
-  /**
-   * Reconstitute a User from persistence (no validation)
-   * Only use when loading from database
-   */
-  static reconstitute(data: {
-    id: string;
-    authUserId: string;
-    firstName: string;
-    lastName: string;
-    role: UserRole;
-    hasAvatar: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    lastSeenOn: Date | null;
-  }): User {
-    return new User(
-      data.id,
-      data.authUserId,
-      data.firstName,
-      data.lastName,
-      data.role,
-      data.hasAvatar,
-      data.createdAt,
-      data.updatedAt,
-      data.lastSeenOn,
-    );
   }
 }

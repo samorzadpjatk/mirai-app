@@ -1,7 +1,5 @@
 import { Effect } from "effect";
 import { ValidationError } from "../errors/effect-errors";
-import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
 import type { ReportId } from "../value-objects/ReportId";
 import { ReportReason } from "../value-objects/ReportReason";
 
@@ -48,73 +46,65 @@ export class SubmissionReport {
     createdAt?: Date;
     reporter?: ReporterInfo | null;
   }): Effect.Effect<SubmissionReport, ValidationError, never> {
-    // Validate submissionId
-    if (!props.submissionId || props.submissionId.trim() === "") {
-      return Effect.fail(
-        new ValidationError({
-          message: "submissionId is required",
-          field: "general",
-        }),
-      );
-    }
-
-    // Validate reporterId
-    if (!props.reporterId || props.reporterId.trim() === "") {
-      return Effect.fail(
-        new ValidationError({
-          message: "reporterId is required",
-          field: "general",
-        }),
-      );
-    }
-
-    // Validate and create reason
-    const reasonResult = ReportReason.create(props.reason);
-    if (reasonResult.kind === "err") {
-      return Effect.fail(
-        new ValidationError({
-          message: `Invalid reason: ${reasonResult.error}`,
-          field: "reason",
-        }),
-      );
-    }
-
-    // Validate details (optional, but must not be empty if provided)
-    let details: string | null = null;
-    if (props.details !== undefined && props.details !== null) {
-      const trimmed = props.details.trim();
-      if (trimmed.length > 0) {
-        if (trimmed.length > 2000) {
-          return Effect.fail(
-            new ValidationError({
-              message: "details must be at most 2000 characters",
-              field: "general",
-            }),
-          );
-        }
-        details = trimmed;
+    return Effect.gen(function* () {
+      // Validate submissionId
+      if (!props.submissionId || props.submissionId.trim() === "") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "submissionId is required",
+            field: "general",
+          }),
+        );
       }
-    }
 
-    // Generate or use provided ID
-    let id: ReportId;
-    if (props.id) {
-      id = props.id;
-    } else {
-      id = crypto.randomUUID() as ReportId;
-    }
+      // Validate reporterId
+      if (!props.reporterId || props.reporterId.trim() === "") {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "reporterId is required",
+            field: "general",
+          }),
+        );
+      }
 
-    return Effect.succeed(
-      new SubmissionReport(
+      // Validate and create reason
+      const reasonResult = yield* ReportReason.create(props.reason);
+
+      // Validate details (optional, but must not be empty if provided)
+      let details: string | null = null;
+      if (props.details !== undefined && props.details !== null) {
+        const trimmed = props.details.trim();
+        if (trimmed.length > 0) {
+          if (trimmed.length > 2000) {
+            return yield* Effect.fail(
+              new ValidationError({
+                message: "details must be at most 2000 characters",
+                field: "general",
+              }),
+            );
+          }
+          details = trimmed;
+        }
+      }
+
+      // Generate or use provided ID
+      let id: ReportId;
+      if (props.id) {
+        id = props.id;
+      } else {
+        id = crypto.randomUUID() as ReportId;
+      }
+
+      return new SubmissionReport(
         id,
         props.submissionId.trim(),
         props.reporterId.trim(),
-        reasonResult.value,
+        reasonResult,
         details,
         props.createdAt ?? new Date(),
         props.reporter ?? null,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -247,23 +237,4 @@ export function groupReportsBySubmission(
   }
 
   return grouped;
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace SubmissionReportCompat {
-  /**
-   * @deprecated Use SubmissionReport.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof SubmissionReport.create>[0],
-  ): Result<SubmissionReport, ValidationError> {
-    const effect = SubmissionReport.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
-  }
 }

@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { timestamps } from "../utils/immutable";
 import { ValidationError } from "../errors/effect-errors";
@@ -148,24 +146,5 @@ export class CoinTransaction {
    */
   isProcessedBy(adminId: string): boolean {
     return this.adminId === adminId;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace CoinTransactionCompat {
-  /**
-   * @deprecated Use CoinTransaction.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof CoinTransaction.create>[0],
-  ): Result<CoinTransaction, ValidationError> {
-    const effect = CoinTransaction.create(props);
-    try {
-      const transaction = Effect.runSync(effect);
-      return ok(transaction);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

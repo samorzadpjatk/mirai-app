@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { timestamps, updateEntity } from "../utils/immutable";
 import { ValidationError } from "../errors/effect-errors";
@@ -373,24 +371,5 @@ export class Event {
   getSummary(): string {
     const startStr = this.startTime.toLocaleString();
     return `${this.title} @ ${this.location} (${startStr})`;
-  }
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace EventCompat {
-  /**
-   * @deprecated Use Event.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof Event.create>[0],
-  ): Result<Event, ValidationError> {
-    const effect = Event.create(props);
-    try {
-      const entity = Effect.runSync(effect);
-      return ok(entity);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
   }
 }

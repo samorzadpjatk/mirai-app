@@ -1,6 +1,4 @@
 import { Effect } from "effect";
-import type { Result } from "../utils/result";
-import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestampsWithNow } from "../utils/immutable";
@@ -384,23 +382,4 @@ export function canTransitionPurchaseStatus(
 ): boolean {
   if (from === to) return true;
   return stateMachine.canTransition(from, to);
-}
-
-// Backward compatibility: Keep synchronous Result-based methods for transition
-export namespace RewardPurchaseCompat {
-  /**
-   * @deprecated Use RewardPurchase.create instead (returns Effect)
-   * Synchronous Result-based version for backward compatibility during migration
-   */
-  export function createSync(
-    props: Parameters<typeof RewardPurchase.create>[0],
-  ): Result<RewardPurchase, ValidationError> {
-    const effect = RewardPurchase.create(props);
-    try {
-      const purchase = Effect.runSync(effect);
-      return ok(purchase);
-    } catch (e) {
-      return err(e as ValidationError);
-    }
-  }
 }
