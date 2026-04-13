@@ -1,6 +1,16 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
-GlobalRegistrator.register();
+// Skip happy-dom for backend-server tests that need native fetch
+// Backend tests run HTTP servers and need native Node.js/Bun fetch,
+// not browser fetch which causes CORS issues
+const cwd = process.cwd();
+const isBackendTest =
+  cwd.includes("apps/backend-server") ||
+  process.argv.some((arg) => arg.includes("backend-server"));
+
+if (!isBackendTest) {
+  GlobalRegistrator.register();
+}
 
 // Define React Native / Expo globals
 (globalThis as typeof globalThis & { __DEV__: boolean }).__DEV__ =
