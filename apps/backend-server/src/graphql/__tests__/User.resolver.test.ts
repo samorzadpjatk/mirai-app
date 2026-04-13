@@ -151,7 +151,12 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
     const users = [adminResult, modResult, userResult]
       .filter((r) => r.kind === "ok")
       .map((r) => r.value);
+    console.log("Seeding users:", users.length, "users");
     await Effect.runPromise(userRepo.seed(users));
+
+    // Verify users are seeded
+    const allUsers = await Effect.runPromise(userRepo.findAll());
+    console.log("Users in repo after seed:", allUsers.length);
 
     // Create auth users in InMemoryAuthAdapter
     const adminUserId = UserId.create(TEST_USERS.admin.id);
