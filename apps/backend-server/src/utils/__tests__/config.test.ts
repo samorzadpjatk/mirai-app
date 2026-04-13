@@ -3,8 +3,8 @@ import { describe, test, expect, beforeAll } from "bun:test";
 describe("[UNIT] config.ts", () => {
   // Set env vars before any tests run
   beforeAll(() => {
-    process.env.TRPC_SERVER_PORT = "3001";
-    process.env.TRPC_SERVER_HOST = "localhost";
+    process.env.HONO_SERVER_PORT = "3001";
+    process.env.HONO_SERVER_HOST = "localhost";
   });
 
   test("exports serverConfig with correct values", async () => {
@@ -12,7 +12,7 @@ describe("[UNIT] config.ts", () => {
 
     expect(serverConfig.port).toBe(3001);
     expect(serverConfig.host).toBe("localhost");
-    expect(serverConfig.prefix).toBe("/api/trpc");
+    expect(serverConfig.prefix).toBe("/graphql");
     expect(serverConfig.dev).toBe(true);
   });
 

@@ -21,7 +21,6 @@ import { schema } from "../graphql/schema";
 import { graphql } from "graphql";
 import {
   createTestContainer,
-  PORT_TOKENS,
   initializeContainer,
   AppModule,
   getContainer,
@@ -39,14 +38,8 @@ import {
   InMemoryNotificationRepository,
 } from "@mirai-app/adapters/gateways/in-memory";
 import { EventBus } from "@mirai-app/adapters";
-import {
-  User,
-  UserRole,
-  UserId,
-  type Result,
-  ok,
-  err,
-} from "@mirai-app/domain";
+import { User, UserRole, UserId } from "@mirai-app/domain";
+import { Effect } from "effect";
 import type { AwilixContainer } from "awilix";
 
 // =============================================================================
@@ -109,7 +102,7 @@ describe("[E2E] Unified Migration - All Phases", () => {
 
       // Register InMemory adapters
       ctx.container.register({
-        [PORT_TOKENS.AuthPort]: asClass(InMemoryAuthAdapter).singleton(),
+        authPort: asClass(InMemoryAuthAdapter).singleton(),
         realtimePort: asClass(InMemoryRealtimeAdapter).singleton(),
         storagePort: asClass(InMemoryStorageAdapter).singleton(),
         eventBus: asValue(ctx.eventBus),
@@ -129,7 +122,7 @@ describe("[E2E] Unified Migration - All Phases", () => {
       // Clear auth adapter between tests
       ctx.authAdapter.clear();
       ctx.eventBus.clear();
-      ctx.userRepo.clear?.();
+      ctx.userRepo.reset();
     });
 
     // -------------------------------------------------------------------------
@@ -311,56 +304,56 @@ describe("[E2E] Unified Migration - All Phases", () => {
   describe("Phase 1: Database - Dual-ORM Coexistence", () => {
     beforeEach(async () => {
       // Create test users in InMemory repository
-      const adminUser = User.create({
-        id: "550e8400-e29b-41d4-a716-446655440010",
-        authUserId: "auth-admin-001",
-        firstName: "Admin",
-        lastName: "User",
-        role: UserRole.ADMIN,
-        hasAvatar: false,
-        createdAt: new Date("2024-01-01"),
-      });
-
-      const regularUser = User.create({
-        id: "550e8400-e29b-41d4-a716-446655440011",
-        authUserId: "auth-user-001",
-        firstName: "Regular",
-        lastName: "User",
-        role: UserRole.USER,
-        hasAvatar: true,
-        createdAt: new Date("2024-01-02"),
-      });
-
-      if (adminUser.kind === "ok") {
-        await ctx.userRepo.save(adminUser.value);
-        // Create auth user and session
-        const userId = UserId.create(adminUser.value.id);
-        ctx.authAdapter.createUser({ id: userId, role: UserRole.ADMIN });
-        const session = ctx.authAdapter.createSession(userId);
-        testUsers.set("admin", {
-          id: adminUser.value.id,
-          authUserId: adminUser.value.authUserId,
-          firstName: adminUser.value.firstName,
-          lastName: adminUser.value.lastName,
+      const adminUser = await Effect.runPromise(
+        User.create({
+          id: "550e8400-e29b-41d4-a716-446655440010",
+          authUserId: "auth-admin-001",
+          firstName: "Admin",
+          lastName: "User",
           role: UserRole.ADMIN,
-          token: session.token,
-        });
-      }
+          hasAvatar: false,
+          createdAt: new Date("2024-01-01"),
+        }),
+      );
 
-      if (regularUser.kind === "ok") {
-        await ctx.userRepo.save(regularUser.value);
-        const userId = UserId.create(regularUser.value.id);
-        ctx.authAdapter.createUser({ id: userId, role: UserRole.USER });
-        const session = ctx.authAdapter.createSession(userId);
-        testUsers.set("user", {
-          id: regularUser.value.id,
-          authUserId: regularUser.value.authUserId,
-          firstName: regularUser.value.firstName,
-          lastName: regularUser.value.lastName,
+      const regularUser = await Effect.runPromise(
+        User.create({
+          id: "550e8400-e29b-41d4-a716-446655440011",
+          authUserId: "auth-user-001",
+          firstName: "Regular",
+          lastName: "User",
           role: UserRole.USER,
-          token: session.token,
-        });
-      }
+          hasAvatar: true,
+          createdAt: new Date("2024-01-02"),
+        }),
+      );
+
+      await Effect.runPromise(ctx.userRepo.create(adminUser));
+      // Create auth user and session
+      const adminUserId = UserId.create(adminUser.id);
+      ctx.authAdapter.createUser({ id: adminUserId, role: UserRole.ADMIN });
+      const adminSession = ctx.authAdapter.createSession(adminUserId);
+      testUsers.set("admin", {
+        id: adminUser.id,
+        authUserId: adminUser.authUserId,
+        firstName: adminUser.firstName,
+        lastName: adminUser.lastName,
+        role: UserRole.ADMIN,
+        token: adminSession.token,
+      });
+
+      await Effect.runPromise(ctx.userRepo.create(regularUser));
+      const regularUserId = UserId.create(regularUser.id);
+      ctx.authAdapter.createUser({ id: regularUserId, role: UserRole.USER });
+      const regularSession = ctx.authAdapter.createSession(regularUserId);
+      testUsers.set("user", {
+        id: regularUser.id,
+        authUserId: regularUser.authUserId,
+        firstName: regularUser.firstName,
+        lastName: regularUser.lastName,
+        role: UserRole.USER,
+        token: regularSession.token,
+      });
     });
 
     // -------------------------------------------------------------------------
@@ -379,44 +372,46 @@ describe("[E2E] Unified Migration - All Phases", () => {
       });
 
       it("retrieves users from InMemory repository", async () => {
-        const user = await ctx.userRepo.findById(
-          "550e8400-e29b-41d4-a716-446655440010",
+        const user = await Effect.runPromise(
+          ctx.userRepo.findById("550e8400-e29b-41d4-a716-446655440010"),
         );
         expect(user).toBeDefined();
         expect(user?.firstName).toBe("Admin");
       });
 
       it("lists all users from repository", async () => {
-        const users = await ctx.userRepo.findAll();
+        const users = await Effect.runPromise(ctx.userRepo.findAll());
         expect(users.length).toBeGreaterThanOrEqual(2);
       });
 
       it("deletes users from repository", async () => {
         // Create a user to delete
-        const userToDelete = User.create({
-          id: "550e8400-e29b-41d4-a716-446655440099",
-          authUserId: "auth-delete-me",
-          firstName: "Delete",
-          lastName: "Me",
-          role: UserRole.USER,
-          hasAvatar: false,
-          createdAt: new Date(),
-        });
+        const userToDelete = await Effect.runPromise(
+          User.create({
+            id: "550e8400-e29b-41d4-a716-446655440099",
+            authUserId: "auth-delete-me",
+            firstName: "Delete",
+            lastName: "Me",
+            role: UserRole.USER,
+            hasAvatar: false,
+            createdAt: new Date(),
+          }),
+        );
 
-        if (userToDelete.kind === "ok") {
-          await ctx.userRepo.save(userToDelete.value);
+        await Effect.runPromise(ctx.userRepo.create(userToDelete));
 
-          // Verify exists
-          let found = await ctx.userRepo.findById(userToDelete.value.id);
-          expect(found).toBeDefined();
+        // Verify exists
+        let found = await Effect.runPromise(
+          ctx.userRepo.findById(userToDelete.id),
+        );
+        expect(found).toBeDefined();
 
-          // Delete
-          await ctx.userRepo.delete(userToDelete.value.id);
+        // Delete
+        await Effect.runPromise(ctx.userRepo.delete(userToDelete.id));
 
-          // Verify deleted
-          found = await ctx.userRepo.findById(userToDelete.value.id);
-          expect(found).toBeNull();
-        }
+        // Verify deleted
+        found = await Effect.runPromise(ctx.userRepo.findById(userToDelete.id));
+        expect(found).toBeNull();
       });
     });
 
@@ -426,57 +421,59 @@ describe("[E2E] Unified Migration - All Phases", () => {
 
     describe("Data Integrity", () => {
       it("preserves user data through save and retrieve cycle", async () => {
-        const originalUser = User.create({
-          id: "550e8400-e29b-41d4-a716-446655440020",
-          authUserId: "auth-test-integrity",
-          firstName: "Test",
-          lastName: "Integrity",
-          role: UserRole.MODERATOR,
-          hasAvatar: true,
-          createdAt: new Date("2024-03-15"),
-        });
+        const originalUser = await Effect.runPromise(
+          User.create({
+            id: "550e8400-e29b-41d4-a716-446655440020",
+            authUserId: "auth-test-integrity",
+            firstName: "Test",
+            lastName: "Integrity",
+            role: UserRole.MODERATOR,
+            hasAvatar: true,
+            createdAt: new Date("2024-03-15"),
+          }),
+        );
 
-        if (originalUser.kind === "ok") {
-          await ctx.userRepo.save(originalUser.value);
-          const retrieved = await ctx.userRepo.findById(originalUser.value.id);
+        await Effect.runPromise(ctx.userRepo.create(originalUser));
+        const retrieved = await Effect.runPromise(
+          ctx.userRepo.findById(originalUser.id),
+        );
 
-          expect(retrieved).toBeDefined();
-          expect(retrieved?.firstName).toBe("Test");
-          expect(retrieved?.lastName).toBe("Integrity");
-          expect(retrieved?.role).toBe(UserRole.MODERATOR);
-          expect(retrieved?.hasAvatar).toBe(true);
-          expect(retrieved?.createdAt).toEqual(new Date("2024-03-15"));
-        }
+        expect(retrieved).toBeDefined();
+        expect(retrieved?.firstName).toBe("Test");
+        expect(retrieved?.lastName).toBe("Integrity");
+        expect(retrieved?.role).toBe(UserRole.MODERATOR);
+        expect(retrieved?.hasAvatar).toBe(true);
+        expect(retrieved?.createdAt).toEqual(new Date("2024-03-15"));
       });
 
       it("handles concurrent modifications correctly", async () => {
         const userId = "550e8400-e29b-41d4-a716-446655440021";
-        const user = User.create({
-          id: userId,
-          authUserId: "auth-concurrent",
-          firstName: "Concurrent",
-          lastName: "Test",
-          role: UserRole.USER,
-          hasAvatar: false,
-          createdAt: new Date(),
+        const user = await Effect.runPromise(
+          User.create({
+            id: userId,
+            authUserId: "auth-concurrent",
+            firstName: "Concurrent",
+            lastName: "Test",
+            role: UserRole.USER,
+            hasAvatar: false,
+            createdAt: new Date(),
+          }),
+        );
+
+        await Effect.runPromise(ctx.userRepo.create(user));
+
+        // Simulate concurrent reads
+        const read1 = Effect.runPromise(ctx.userRepo.findById(userId));
+        const read2 = Effect.runPromise(ctx.userRepo.findById(userId));
+        const read3 = Effect.runPromise(ctx.userRepo.findById(userId));
+
+        const results = await Promise.all([read1, read2, read3]);
+
+        // All reads should return the same data
+        results.forEach((result) => {
+          expect(result).toBeDefined();
+          expect(result?.firstName).toBe("Concurrent");
         });
-
-        if (user.kind === "ok") {
-          await ctx.userRepo.save(user.value);
-
-          // Simulate concurrent reads
-          const read1 = ctx.userRepo.findById(userId);
-          const read2 = ctx.userRepo.findById(userId);
-          const read3 = ctx.userRepo.findById(userId);
-
-          const results = await Promise.all([read1, read2, read3]);
-
-          // All reads should return the same data
-          results.forEach((result) => {
-            expect(result).toBeDefined();
-            expect(result?.firstName).toBe("Concurrent");
-          });
-        }
       });
     });
   });
