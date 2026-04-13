@@ -1,8 +1,8 @@
 /**
- * Hono Server Entry Point
+ * Hono Server Entry Point with Effect Integration
  *
- * Entry point for starting the Hono GraphQL server.
- * Handles server startup, shutdown, and error handling.
+ * Entry point for starting the Hono GraphQL server with Effect runtime.
+ * Handles server startup, shutdown, and error handling using Effect.
  *
  * ## Usage
  *
@@ -15,6 +15,13 @@
  * ```bash
  * bun run start:hono
  * ```
+ *
+ * ## Effect Integration
+ *
+ * The server lifecycle is now managed through Effect:
+ * - Server startup is wrapped in an Effect
+ * - Graceful shutdown uses Effect for composable error handling
+ * - DI container is wired to Effect Layers
  *
  * ## Environment Variables
  *
@@ -29,136 +36,234 @@
  * @module index-hono
  */
 
-import { createHonoServer, type HonoServer } from "./hono-server";
+import { Effect } from "effect";
+import {
+  initializeContainer,
+  AppModule,
+  setAwilixContainer,
+  initializeRuntime,
+  runEffectWith,
+} from "@mirai-app/frameworks/di";
+import { createBunServer } from "./bun-server";
 import {
   honoConfig,
   validateHonoConfig,
   printHonoConfig,
 } from "./config/hono-config";
+import {
+  HttpServerTag,
+  createBunServerLayer,
+  createServerConfigLayer,
+  startServerProgram,
+  stopServerProgram,
+  setupSignalHandlers,
+  type BunServer,
+} from "./effect-server";
 
 // =============================================================================
-// Startup
+// DI Container Initialization
 // =============================================================================
 
 /**
- * Start the Hono server
+ * Initialize the DI container and Effect runtime
+ *
+ * This sets up both the awilix container and the Effect Layer system
+ * so they work together seamlessly.
  */
-async function startServer(): Promise<HonoServer> {
+function initializeDependencies(): void {
+  // Initialize awilix container with AppModule
+  console.log("[Effect] Initializing DI container...");
+  const container = initializeContainer([AppModule]);
+
+  // Set the container for Effect integration
+  setAwilixContainer(container);
+
+  // Initialize Effect runtime
+  console.log("[Effect] Initializing Effect runtime...");
+  const AppLayer = createBunServerLayer(createBunServer(honoConfig)).pipe(
+    Layer.merge(createServerConfigLayer(honoConfig)),
+  );
+  initializeRuntime(AppLayer);
+
+  console.log("[Effect] Dependencies initialized successfully");
+}
+
+// =============================================================================
+// Server Management
+// =============================================================================
+
+/** Server instance reference for external access */
+let _server: BunServer | null = null;
+
+/**
+ * Get the current server instance
+ *
+ * @returns The active server instance or null if not running
+ */
+export function getServer(): BunServer | null {
+  return _server;
+}
+
+/**
+ * Check if server is currently running
+ *
+ * @returns True if server is running
+ */
+export function isServerRunning(): boolean {
+  return _server?.isRunning() ?? false;
+}
+
+// =============================================================================
+// Effect Programs
+// =============================================================================
+
+/**
+ * Server startup program
+ *
+ * Validates config, creates server, starts it, and logs endpoints.
+ */
+const startupProgram = Effect.gen(function* () {
+  // Validate configuration
+  validateHonoConfig();
+  printHonoConfig();
+
+  // Create Bun server with WebSocket support
+  console.log("[Effect] Creating Bun server...");
+  _server = createBunServer(honoConfig);
+
+  // Create server layer with the instance
+  const serverLayer = createBunServerLayer(_server);
+  const configLayer = createServerConfigLayer(honoConfig);
+  const AppLayer = Layer.merge(serverLayer, configLayer);
+
+  // Start server within Effect
+  yield* Effect.provide(startServerProgram(), AppLayer);
+
+  // Log startup success
+  yield* Effect.sync(() => {
+    console.log("[Effect] Server startup complete");
+    console.log(
+      `[Effect] Health check: http://${honoConfig.host}:${honoConfig.port}/health`,
+    );
+    console.log(
+      `[Effect] GraphQL endpoint: http://${honoConfig.host}:${honoConfig.port}${honoConfig.graphqlPath}`,
+    );
+    if (honoConfig.enableGraphiQL) {
+      console.log(
+        `[Effect] GraphiQL playground: http://${honoConfig.host}:${honoConfig.port}${honoConfig.graphqlPath}/graphiql`,
+      );
+    }
+  });
+
+  return _server;
+});
+
+/**
+ * Graceful shutdown program
+ *
+ * Handles SIGTERM/SIGINT signals with proper cleanup.
+ */
+const shutdownProgram = (signal: string) =>
+  Effect.gen(function* () {
+    yield* Effect.sync(() => {
+      console.log(`\n[Effect] Received ${signal}, initiating shutdown...`);
+    });
+
+    if (_server && _server.isRunning()) {
+      // Create server layer for shutdown
+      const serverLayer = createBunServerLayer(_server);
+      yield* Effect.provide(stopServerProgram(), serverLayer);
+    }
+
+    yield* Effect.sync(() => {
+      console.log("[Effect] Shutdown complete");
+    });
+  });
+
+// =============================================================================
+// Signal Handlers
+// =============================================================================
+
+/**
+ * Setup process signal handlers for graceful shutdown
+ */
+function setupShutdownHandlers(): void {
+  const handleSignal = (signal: string) => {
+    Effect.runPromise(shutdownProgram(signal)).then(
+      () => process.exit(0),
+      (error) => {
+        console.error("[Effect] Shutdown error:", error);
+        process.exit(1);
+      },
+    );
+  };
+
+  process.on("SIGTERM", () => handleSignal("SIGTERM"));
+  process.on("SIGINT", () => handleSignal("SIGINT"));
+
+  // Handle uncaught errors
+  process.on("uncaughtException", (error) => {
+    console.error("[Effect] Uncaught exception:", error);
+    handleSignal("uncaughtException");
+  });
+
+  process.on("unhandledRejection", (reason) => {
+    console.error("[Effect] Unhandled rejection:", reason);
+    handleSignal("unhandledRejection");
+  });
+}
+
+// =============================================================================
+// Main Entry Point
+// =============================================================================
+
+/**
+ * Start the server with Effect runtime
+ *
+ * This is the main entry point for server startup. It initializes
+ * dependencies and runs the startup program.
+ *
+ * @returns Promise resolving to the server instance
+ */
+export async function start(): Promise<BunServer> {
   try {
-    // Validate configuration before starting
-    validateHonoConfig();
+    // Initialize dependencies
+    initializeDependencies();
 
-    // Print configuration summary
-    printHonoConfig();
+    // Setup shutdown handlers
+    setupShutdownHandlers();
 
-    // Create server
-    const server = createHonoServer(honoConfig);
-
-    // Start server
-    await server.start();
+    // Run startup program
+    const server = await Effect.runPromise(startupProgram);
 
     return server;
   } catch (error) {
-    console.error("[Hono] Failed to start server:", error);
+    console.error("[Effect] Failed to start server:", error);
     process.exit(1);
   }
 }
 
-// =============================================================================
-// Shutdown
-// =============================================================================
-
 /**
- * Handle graceful shutdown
+ * Stop the server gracefully
+ *
+ * Can be called programmatically to shut down the server.
+ *
+ * @returns Promise that resolves when server is stopped
  */
-function handleShutdown(server: HonoServer): void {
-  // Handle graceful shutdown signals
-  const shutdown = async (signal: string) => {
-    console.log(`\n[Hono] Received ${signal}, initiating graceful shutdown...`);
+export async function stop(): Promise<void> {
+  if (!_server) {
+    console.log("[Effect] Server not running");
+    return;
+  }
 
-    try {
-      await server.stop();
-      console.log("[Hono] Shutdown complete");
-      process.exit(0);
-    } catch (error) {
-      console.error("[Hono] Error during shutdown:", error);
-      process.exit(1);
-    }
-  };
-
-  process.on("SIGTERM", () => void shutdown("SIGTERM"));
-  process.on("SIGINT", () => void shutdown("SIGINT"));
-
-  // Handle uncaught errors
-  process.on("uncaughtException", (error) => {
-    console.error("[Hono] Uncaught exception:", error);
-    void shutdown("uncaughtException");
-  });
-
-  process.on("unhandledRejection", (reason) => {
-    console.error("[Hono] Unhandled rejection:", reason);
-    void shutdown("unhandledRejection");
-  });
+  await Effect.runPromise(shutdownProgram("manual"));
 }
 
 // =============================================================================
-// Main
-// =============================================================================
-
-/**
- * Main function - starts server and sets up handlers
- */
-async function main(): Promise<HonoServer> {
-  // Start server
-  const server = await startServer();
-
-  // Setup shutdown handlers (synchronous - registers event listeners)
-  handleShutdown(server);
-
-  return server;
-}
-
-// =============================================================================
-// Export for testing
-// =============================================================================
-
-/**
- * Exported server instance (for testing)
- *
- * Can be imported in tests to verify server behavior:
- *
- * ```typescript
- * import { server } from "./index-hono";
- *
- * describe("Server", () => {
- *   it("should be running", () => {
- *     expect(server.isRunning()).toBe(true);
- *   });
- * });
- * ```
- */
-export let server: HonoServer | null = null;
-
-/**
- * Start function for programmatic use
- *
- * Can be used in tests or other entry points:
- *
- * ```typescript
- * import { start } from "./index-hono";
- * await start();
- * ```
- */
-export async function start(): Promise<HonoServer> {
-  server = await main();
-  return server;
-}
-
-// =============================================================================
-// Run if called directly
+// Direct Execution
 // =============================================================================
 
 // Check if this file is being run directly (not imported)
 if (import.meta.main) {
-  void main();
+  void start();
 }
