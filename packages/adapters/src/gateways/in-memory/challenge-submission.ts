@@ -4,6 +4,8 @@ import type {
   SubmissionStatus,
 } from "@mirai-app/domain";
 import type { ChallengeSubmissionRepository } from "@mirai-app/use-cases";
+import { DatabaseError } from "@mirai-app/use-cases/ports/ChallengeSubmissionRepository";
+import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
 /**
@@ -17,7 +19,7 @@ import { InMemoryRepository } from "./base";
  * const repo = new InMemoryChallengeSubmissionRepository();
  * repo.seed([mockSubmission]);
  *
- * const byChallenge = await repo.findByChallengeId("challenge-123");
+ * const byChallenge = await Effect.runPromise(repo.findByChallengeId("challenge-123"));
  * expect(byChallenge).toHaveLength(1);
  *
  * repo.reset(); // Clear for next test
@@ -27,61 +29,54 @@ export class InMemoryChallengeSubmissionRepository
   extends InMemoryRepository<ChallengeSubmission>
   implements ChallengeSubmissionRepository
 {
-  /**
-   * Create a new challenge submission
-   */
-  async create(submission: ChallengeSubmission): Promise<ChallengeSubmission> {
+  create(
+    submission: ChallengeSubmission,
+  ): Effect.Effect<ChallengeSubmission, DatabaseError, never> {
     return this.createGeneric(submission);
   }
 
-  /**
-   * Find submission by ID
-   * @returns Submission or null if not found
-   */
-  async findById(id: SubmissionId): Promise<ChallengeSubmission | null> {
+  findById(
+    id: SubmissionId,
+  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never> {
     return this.findByIdGeneric(id as string);
   }
 
-  /**
-   * Find submission by challenge ID and group ID
-   * @returns Submission or null if not found
-   */
-  async findByChallengeAndGroup(
+  findByChallengeAndGroup(
     challengeId: string,
     groupId: string,
-  ): Promise<ChallengeSubmission | null> {
-    return (
+  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never> {
+    return Effect.succeed(
       this.getAllItems().find(
         (s) => s.challengeId === challengeId && s.groupId === groupId,
-      ) ?? null
+      ) ?? null,
     );
   }
 
-  /**
-   * Find all submissions for a challenge
-   */
-  async findByChallengeId(challengeId: string): Promise<ChallengeSubmission[]> {
-    return this.getAllItems().filter((s) => s.challengeId === challengeId);
+  findByChallengeId(
+    challengeId: string,
+  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((s) => s.challengeId === challengeId),
+    );
   }
 
-  /**
-   * Find all submissions by a group
-   */
-  async findByGroupId(groupId: string): Promise<ChallengeSubmission[]> {
-    return this.getAllItems().filter((s) => s.groupId === groupId);
+  findByGroupId(
+    groupId: string,
+  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((s) => s.groupId === groupId),
+    );
   }
 
-  /**
-   * Find submissions by status
-   */
-  async findByStatus(status: SubmissionStatus): Promise<ChallengeSubmission[]> {
-    return this.getAllItems().filter((s) => s.status === status);
+  findByStatus(
+    status: SubmissionStatus,
+  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((s) => s.status === status),
+    );
   }
 
-  /**
-   * Find submissions with advanced filtering and sorting
-   */
-  async findMany(params: {
+  findMany(params: {
     challengeId?: string;
     groupId?: string;
     status?: SubmissionStatus;
@@ -89,10 +84,9 @@ export class InMemoryChallengeSubmissionRepository
     orderDirection?: "asc" | "desc";
     limit?: number;
     offset?: number;
-  }): Promise<ChallengeSubmission[]> {
+  }): Effect.Effect<ChallengeSubmission[], DatabaseError, never> {
     let items = this.getAllItems();
 
-    // Apply filters
     if (params.challengeId) {
       items = items.filter((s) => s.challengeId === params.challengeId);
     }
@@ -105,7 +99,6 @@ export class InMemoryChallengeSubmissionRepository
       items = items.filter((s) => s.status === params.status);
     }
 
-    // Apply sorting
     const orderBy = params.orderBy ?? "voteScore";
     const orderDirection = params.orderDirection ?? "desc";
 
@@ -116,7 +109,6 @@ export class InMemoryChallengeSubmissionRepository
         }
         return a.voteScore - b.voteScore;
       } else {
-        // createdAt
         const aTime = a.createdAt.getTime();
         const bTime = b.createdAt.getTime();
         if (orderDirection === "desc") {
@@ -126,7 +118,6 @@ export class InMemoryChallengeSubmissionRepository
       }
     });
 
-    // Apply pagination
     if (params.offset) {
       items = items.slice(params.offset);
     }
@@ -135,67 +126,53 @@ export class InMemoryChallengeSubmissionRepository
       items = items.slice(0, params.limit);
     }
 
-    return items;
+    return Effect.succeed(items);
   }
 
-  /**
-   * Update submission
-   */
-  async update(submission: ChallengeSubmission): Promise<ChallengeSubmission> {
+  update(
+    submission: ChallengeSubmission,
+  ): Effect.Effect<ChallengeSubmission, DatabaseError, never> {
     return this.updateGeneric(submission);
   }
 
-  /**
-   * Delete submission
-   */
-  async delete(id: SubmissionId): Promise<void> {
+  delete(id: SubmissionId): Effect.Effect<void, DatabaseError, never> {
     return this.deleteGeneric(id as string);
   }
 
-  /**
-   * Check if submission exists for challenge and group
-   */
-  async existsForChallengeAndGroup(
+  existsForChallengeAndGroup(
     challengeId: string,
     groupId: string,
-  ): Promise<boolean> {
-    return this.getAllItems().some(
-      (s) => s.challengeId === challengeId && s.groupId === groupId,
+  ): Effect.Effect<boolean, DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().some(
+        (s) => s.challengeId === challengeId && s.groupId === groupId,
+      ),
     );
   }
 
-  /**
-   * Count submissions for a challenge
-   */
-  async countByChallengeId(challengeId: string): Promise<number> {
-    return this.getAllItems().filter((s) => s.challengeId === challengeId)
-      .length;
+  countByChallengeId(
+    challengeId: string,
+  ): Effect.Effect<number, DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((s) => s.challengeId === challengeId).length,
+    );
   }
 
-  /**
-   * Count submissions by status for a challenge
-   */
-  async countByChallengeAndStatus(
+  countByChallengeAndStatus(
     challengeId: string,
     status: SubmissionStatus,
-  ): Promise<number> {
-    return this.getAllItems().filter(
-      (s) => s.challengeId === challengeId && s.status === status,
-    ).length;
+  ): Effect.Effect<number, DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter(
+        (s) => s.challengeId === challengeId && s.status === status,
+      ).length,
+    );
   }
 
-  /**
-   * Reset the repository - clears all stored data.
-   * Call this in beforeEach for test isolation.
-   */
   override reset(): void {
     super.reset();
   }
 
-  /**
-   * Seed the repository with initial data.
-   * Useful for setting up test scenarios.
-   */
   override seed(items: ChallengeSubmission[]): void {
     super.seed(items);
   }

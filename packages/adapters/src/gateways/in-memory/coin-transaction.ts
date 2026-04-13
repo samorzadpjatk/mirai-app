@@ -6,6 +6,7 @@ import type {
   CoinStatistics,
   MostActiveAdminStat,
 } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 
 /**
  * In-Memory Coin Transaction Repository for Testing
@@ -17,7 +18,7 @@ import type {
  * const repo = new InMemoryCoinTransactionRepository();
  * repo.seed([mockTransaction]);
  *
- * const stats = await repo.sumAddedCoins("trip-123");
+ * const stats = await Effect.runPromise(repo.sumAddedCoins("trip-123"));
  * expect(stats).toBe(100);
  *
  * repo.reset();
@@ -40,35 +41,39 @@ export class InMemoryCoinTransactionRepository implements CoinTransactionReposit
     this.groupCoins.set(groupId, coins);
   }
 
-  async count(filters?: Partial<CoinTransactionFilters>): Promise<number> {
-    return this.filterTransactions(filters).length;
-  }
-
-  async sumAmount(
+  count(
     filters?: Partial<CoinTransactionFilters>,
-  ): Promise<number | null> {
-    const filtered = this.filterTransactions(filters);
-    if (filtered.length === 0) return null;
-    return filtered.reduce((sum, t) => sum + t.amount, 0);
+  ): Effect.Effect<number, never, never> {
+    return Effect.succeed(this.filterTransactions(filters).length);
   }
 
-  async sumAddedCoins(tripId: string): Promise<number | null> {
+  sumAmount(
+    filters?: Partial<CoinTransactionFilters>,
+  ): Effect.Effect<number | null, never, never> {
+    const filtered = this.filterTransactions(filters);
+    if (filtered.length === 0) return Effect.succeed(null);
+    return Effect.succeed(filtered.reduce((sum, t) => sum + t.amount, 0));
+  }
+
+  sumAddedCoins(tripId: string): Effect.Effect<number | null, never, never> {
     const filtered = this.transactions.filter(
       (t) => t.group?.id === tripId && t.amount > 0,
     );
-    if (filtered.length === 0) return null;
-    return filtered.reduce((sum, t) => sum + t.amount, 0);
+    if (filtered.length === 0) return Effect.succeed(null);
+    return Effect.succeed(filtered.reduce((sum, t) => sum + t.amount, 0));
   }
 
-  async sumRemovedCoins(tripId: string): Promise<number | null> {
+  sumRemovedCoins(tripId: string): Effect.Effect<number | null, never, never> {
     const filtered = this.transactions.filter(
       (t) => t.group?.id === tripId && t.amount < 0,
     );
-    if (filtered.length === 0) return null;
-    return filtered.reduce((sum, t) => sum + t.amount, 0);
+    if (filtered.length === 0) return Effect.succeed(null);
+    return Effect.succeed(filtered.reduce((sum, t) => sum + t.amount, 0));
   }
 
-  async getMostActiveAdmin(tripId: string): Promise<MostActiveAdminStat[]> {
+  getMostActiveAdmin(
+    tripId: string,
+  ): Effect.Effect<MostActiveAdminStat[], never, never> {
     const filtered = this.transactions.filter((t) => t.group?.id === tripId);
     const adminMap = new Map<string, { sum: number; count: number }>();
 
@@ -80,39 +85,44 @@ export class InMemoryCoinTransactionRepository implements CoinTransactionReposit
       adminMap.set(adminId, current);
     });
 
-    return Array.from(adminMap.entries()).map(([adminId, stats]) => ({
-      adminId,
-      _sum: { amount: stats.sum },
-      _count: { id: stats.count },
-    }));
+    return Effect.succeed(
+      Array.from(adminMap.entries()).map(([adminId, stats]) => ({
+        adminId,
+        _sum: { amount: stats.sum },
+        _count: { id: stats.count },
+      })),
+    );
   }
 
-  async findMany(
+  findMany(
     filters: Partial<CoinTransactionFilters>,
     pagination: PaginationOptions,
-  ): Promise<CoinTransaction[]> {
+  ): Effect.Effect<CoinTransaction[], never, never> {
     let filtered = this.filterTransactions(filters);
     const offset = pagination.offset ?? 0;
     const limit = pagination.limit ?? 50;
     filtered = filtered.slice(offset, offset + limit);
-    return filtered;
+    return Effect.succeed(filtered);
   }
 
-  async findRecent(
+  findRecent(
     filters: Partial<CoinTransactionFilters>,
     limit: number,
-  ): Promise<CoinTransaction[]> {
+  ): Effect.Effect<CoinTransaction[], never, never> {
     let filtered = this.filterTransactions(filters);
-    // Sort by createdAt descending
     filtered = filtered.sort(
       (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
-    return filtered.slice(0, limit);
+    return Effect.succeed(filtered.slice(0, limit));
   }
 
-  async getTotalCoinsByGroup(
+  getTotalCoinsByGroup(
     tripId: string,
-  ): Promise<Array<{ groupId: string; _sum: { amount: number | null } }>> {
+  ): Effect.Effect<
+    Array<{ groupId: string; _sum: { amount: number | null } }>,
+    never,
+    never
+  > {
     const filtered = this.transactions.filter((t) => t.group?.id === tripId);
     const groupMap = new Map<string, number>();
 
@@ -122,16 +132,22 @@ export class InMemoryCoinTransactionRepository implements CoinTransactionReposit
       groupMap.set(groupId, current + t.amount);
     });
 
-    return Array.from(groupMap.entries()).map(([groupId, sum]) => ({
-      groupId,
-      _sum: { amount: sum },
-    }));
+    return Effect.succeed(
+      Array.from(groupMap.entries()).map(([groupId, sum]) => ({
+        groupId,
+        _sum: { amount: sum },
+      })),
+    );
   }
 
-  async groupByAdmin(
+  groupByAdmin(
     tripId: string,
     limit: number,
-  ): Promise<Array<{ adminId: string; _count: { id: number } }>> {
+  ): Effect.Effect<
+    Array<{ adminId: string; _count: { id: number } }>,
+    never,
+    never
+  > {
     const filtered = this.transactions.filter((t) => t.group?.id === tripId);
     const adminMap = new Map<string, number>();
 
@@ -140,20 +156,22 @@ export class InMemoryCoinTransactionRepository implements CoinTransactionReposit
       adminMap.set(adminId, (adminMap.get(adminId) ?? 0) + 1);
     });
 
-    return Array.from(adminMap.entries())
-      .slice(0, limit)
-      .map(([adminId, count]) => ({
-        adminId,
-        _count: { id: count },
-      }));
+    return Effect.succeed(
+      Array.from(adminMap.entries())
+        .slice(0, limit)
+        .map(([adminId, count]) => ({
+          adminId,
+          _count: { id: count },
+        })),
+    );
   }
 
-  async create(data: {
+  create(data: {
     groupId: string;
     amount: number;
     reason?: string;
     adminId: string;
-  }): Promise<CoinTransaction> {
+  }): Effect.Effect<CoinTransaction, never, never> {
     const transaction: CoinTransaction = {
       id: crypto.randomUUID(),
       groupId: data.groupId,
@@ -163,49 +181,58 @@ export class InMemoryCoinTransactionRepository implements CoinTransactionReposit
       createdAt: new Date(),
     };
     this.transactions.push(transaction);
-    return transaction;
+    return Effect.succeed(transaction);
   }
 
-  async incrementGroupCoins(groupId: string, amount: number): Promise<void> {
-    const current = this.groupCoins.get(groupId) ?? 0;
-    this.groupCoins.set(groupId, current + amount);
-  }
-
-  async decrementGroupCoins(
+  incrementGroupCoins(
     groupId: string,
     amount: number,
-  ): Promise<{ success: boolean; currentBalance?: number }> {
+  ): Effect.Effect<void, never, never> {
+    const current = this.groupCoins.get(groupId) ?? 0;
+    this.groupCoins.set(groupId, current + amount);
+    return Effect.succeed(undefined);
+  }
+
+  decrementGroupCoins(
+    groupId: string,
+    amount: number,
+  ): Effect.Effect<
+    { success: boolean; currentBalance?: number },
+    never,
+    never
+  > {
     const current = this.groupCoins.get(groupId) ?? 0;
     if (current < amount) {
-      return { success: false, currentBalance: current };
+      return Effect.succeed({ success: false, currentBalance: current });
     }
     this.groupCoins.set(groupId, current - amount);
-    return { success: true, currentBalance: current - amount };
+    return Effect.succeed({ success: true, currentBalance: current - amount });
   }
 
-  async getGroupCoins(groupId: string): Promise<number> {
-    return this.groupCoins.get(groupId) ?? 0;
+  getGroupCoins(groupId: string): Effect.Effect<number, never, never> {
+    return Effect.succeed(this.groupCoins.get(groupId) ?? 0);
   }
 
-  async verifyGroupInTrip(
+  verifyGroupInTrip(
     groupId: string,
     tripId: string,
-  ): Promise<{
-    exists: boolean;
-    tripId?: string;
-    isDeleted?: boolean;
-    coins?: number;
-  }> {
-    // This is a simplified implementation
-    // In real scenarios, this would check group data
-    // For testing, we simulate the behavior
+  ): Effect.Effect<
+    {
+      exists: boolean;
+      tripId?: string;
+      isDeleted?: boolean;
+      coins?: number;
+    },
+    never,
+    never
+  > {
     const coins = this.groupCoins.get(groupId) ?? 0;
-    return {
+    return Effect.succeed({
       exists: true,
       tripId,
       isDeleted: false,
       coins,
-    };
+    });
   }
 
   private filterTransactions(

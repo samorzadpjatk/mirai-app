@@ -1,5 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { SupabaseAuthAdapter } from "../SupabaseAuthAdapter";
+import { SupabaseAuthAdapter } from "../auth/SupabaseAuthAdapter";
 import {
   AuthError,
   InvalidTokenError,

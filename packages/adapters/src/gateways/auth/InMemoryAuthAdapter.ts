@@ -21,6 +21,7 @@
  * @module gateways
  */
 
+import { Effect } from "effect";
 import {
   type AuthPort,
   AuthError,
@@ -29,12 +30,9 @@ import {
 } from "@mirai-app/use-cases/ports/AuthPort";
 import {
   AuthContext,
-  type Result,
   type UserId,
   UserRole,
   UserId as UserIdFactory,
-  ok,
-  err,
 } from "@mirai-app/domain";
 
 // =============================================================================
@@ -93,10 +91,10 @@ interface InMemorySession {
  * const session = authPort.createSession(userId);
  *
  * // Validate the token
- * const result = await authPort.validateToken(session.token);
+ * const result = await Effect.runPromise(authPort.validateToken(session.token));
  *
- * // Verify
- * expect(result.kind).toBe("ok");
+ * // Verify using Effect
+ * expect(result).toBeDefined();
  * ```
  */
 export class InMemoryAuthAdapter implements AuthPort {
@@ -112,34 +110,28 @@ export class InMemoryAuthAdapter implements AuthPort {
    * AuthContext if valid and not expired.
    *
    * @param token - The authentication token to validate
-   * @returns Result<AuthContext, AuthError | InvalidTokenError>
+   * @returns Effect.Effect<AuthContext, AuthError | InvalidTokenError | SessionExpiredError, never>
    *
    * @example
    * ```typescript
-   * const result = await adapter.validateToken("test-token-1");
+   * const effect = adapter.validateToken("test-token-1");
    *
-   * if (isOk(result)) {
-   *   // Token is valid, use auth context
-   *   const { userId, role } = result.value;
-   *   console.log(`User ${userId} authenticated with role ${role}`);
-   * } else {
-   *   // Handle error based on error type
-   *   if (result.error instanceof InvalidTokenError) {
-   *     console.error("Invalid token:", result.error.message);
-   *   } else {
-   *     console.error("Auth error:", result.error.message);
-   *   }
-   * }
+   * const result = await Effect.runPromise(effect);
+   * // Token is valid, use auth context
+   * const { userId, role } = result;
+   * console.log(`User ${userId} authenticated with role ${role}`);
    * ```
    */
-  async validateToken(
+  validateToken(
     token: string,
-  ): Promise<
-    Result<AuthContext, AuthError | InvalidTokenError | SessionExpiredError>
+  ): Effect.Effect<
+    AuthContext,
+    AuthError | InvalidTokenError | SessionExpiredError,
+    never
   > {
     // Handle empty token case
     if (!token || token.trim().length === 0) {
-      return err(
+      return Effect.fail(
         new InvalidTokenError({
           message: "Token cannot be empty",
           token: token,
@@ -147,49 +139,41 @@ export class InMemoryAuthAdapter implements AuthPort {
       );
     }
 
-    try {
+    return Effect.sync(() => {
       // Look up the session by token
       const sessionId = this.tokens.get(token);
       if (!sessionId) {
-        return err(
-          new InvalidTokenError({
-            message: "Invalid or unknown token",
-            token,
-          }),
-        );
+        throw new InvalidTokenError({
+          message: "Invalid or unknown token",
+          token,
+        });
       }
 
       // Get the session
       const session = this.sessions.get(sessionId);
       if (!session) {
-        return err(
-          new InvalidTokenError({
-            message: "Session not found",
-            token,
-          }),
-        );
+        throw new InvalidTokenError({
+          message: "Session not found",
+          token,
+        });
       }
 
       // Check if session has expired
       if (session.expiresAt.getTime() < Date.now()) {
-        return err(
-          new SessionExpiredError({
-            sessionId: session.id,
-            expiredAt: session.expiresAt,
-            message: "Session has expired",
-          }),
-        );
+        throw new SessionExpiredError({
+          sessionId: session.id,
+          expiredAt: session.expiresAt,
+          message: "Session has expired",
+        });
       }
 
       // Get the user
       const user = this.users.get(UserIdFactory.toString(session.userId));
       if (!user) {
-        return err(
-          new InvalidTokenError({
-            message: "User not found",
-            token,
-          }),
-        );
+        throw new InvalidTokenError({
+          message: "User not found",
+          token,
+        });
       }
 
       // Create AuthContext
@@ -198,13 +182,29 @@ export class InMemoryAuthAdapter implements AuthPort {
         session.id,
         session.createdAt,
       );
-    } catch (error) {
-      return err(
-        new AuthError({
-          message: `Token validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        }),
-      );
-    }
+    }).pipe(
+      Effect.catchAll(
+        (
+          error: unknown,
+        ): Effect.Effect<
+          never,
+          AuthError | InvalidTokenError | SessionExpiredError,
+          never
+        > => {
+          if (error instanceof InvalidTokenError) {
+            return Effect.fail(error);
+          }
+          if (error instanceof SessionExpiredError) {
+            return Effect.fail(error);
+          }
+          return Effect.fail(
+            new AuthError({
+              message: `Token validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            }),
+          );
+        },
+      ),
+    );
   }
 
   /**
@@ -214,58 +214,48 @@ export class InMemoryAuthAdapter implements AuthPort {
    * then creates a new session with extended expiration.
    *
    * @param sessionId - The session identifier to refresh
-   * @returns Result<AuthContext, AuthError | SessionExpiredError>
+   * @returns Effect.Effect<AuthContext, AuthError | SessionExpiredError, never>
    *
    * @example
    * ```typescript
-   * const result = await adapter.refreshSession("session-123");
+   * const effect = adapter.refreshSession("session-123");
    *
-   * if (isOk(result)) {
-   *   // Session refreshed successfully
-   *   console.log("Session refreshed for user:", result.value.userId);
-   * } else {
-   *   // Handle session expiration
-   *   console.error("Failed to refresh session:", result.error.message);
-   * }
+   * const result = await Effect.runPromise(effect);
+   * // Session refreshed successfully
+   * console.log("Session refreshed for user:", result.userId);
    * ```
    */
-  async refreshSession(
+  refreshSession(
     sessionId: string,
-  ): Promise<Result<AuthContext, AuthError | SessionExpiredError>> {
-    try {
+  ): Effect.Effect<AuthContext, AuthError | SessionExpiredError, never> {
+    return Effect.sync(() => {
       // Get the session
       const session = this.sessions.get(sessionId);
       if (!session) {
-        return err(
-          new SessionExpiredError({
-            sessionId,
-            expiredAt: new Date(),
-            message: "No active session found",
-          }),
-        );
+        throw new SessionExpiredError({
+          sessionId,
+          expiredAt: new Date(),
+          message: "No active session found",
+        });
       }
 
       // Check if session has expired
       if (session.expiresAt.getTime() < Date.now()) {
-        return err(
-          new SessionExpiredError({
-            sessionId,
-            expiredAt: session.expiresAt,
-            message: "Session has expired",
-          }),
-        );
+        throw new SessionExpiredError({
+          sessionId,
+          expiredAt: session.expiresAt,
+          message: "Session has expired",
+        });
       }
 
       // Get the user
       const user = this.users.get(UserIdFactory.toString(session.userId));
       if (!user) {
-        return err(
-          new SessionExpiredError({
-            sessionId,
-            expiredAt: new Date(),
-            message: "User not found",
-          }),
-        );
+        throw new SessionExpiredError({
+          sessionId,
+          expiredAt: new Date(),
+          message: "User not found",
+        });
       }
 
       // Create AuthContext
@@ -274,15 +264,27 @@ export class InMemoryAuthAdapter implements AuthPort {
         session.id,
         session.createdAt,
       );
-    } catch (error) {
-      return err(
-        new SessionExpiredError({
-          sessionId,
-          expiredAt: new Date(),
-          message: `Session refresh failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        }),
-      );
-    }
+    }).pipe(
+      Effect.catchAll(
+        (
+          error: unknown,
+        ): Effect.Effect<never, AuthError | SessionExpiredError, never> => {
+          if (error instanceof SessionExpiredError) {
+            return Effect.fail(error);
+          }
+          if (error instanceof AuthError) {
+            return Effect.fail(error);
+          }
+          return Effect.fail(
+            new SessionExpiredError({
+              sessionId,
+              expiredAt: new Date(),
+              message: `Session refresh failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            }),
+          );
+        },
+      ),
+    );
   }
 
   /**
@@ -492,7 +494,7 @@ export class InMemoryAuthAdapter implements AuthPort {
     user: InMemoryUser,
     sessionId: string,
     authenticatedAt: Date,
-  ): Result<AuthContext, AuthError> {
+  ): AuthContext {
     const authContextResult = AuthContext.create({
       userId: user.id,
       role: user.role,
@@ -501,13 +503,11 @@ export class InMemoryAuthAdapter implements AuthPort {
     });
 
     if (authContextResult.kind === "err") {
-      return err(
-        new AuthError({
-          message: `Failed to create AuthContext: ${authContextResult.error.message}`,
-        }),
-      );
+      throw new AuthError({
+        message: `Failed to create AuthContext: ${authContextResult.error.message}`,
+      });
     }
 
-    return ok(authContextResult.value);
+    return authContextResult.value;
   }
 }

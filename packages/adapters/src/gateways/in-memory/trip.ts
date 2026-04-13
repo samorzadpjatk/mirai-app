@@ -1,5 +1,6 @@
 import type { Trip, TripStatus } from "@mirai-app/domain";
 import type { TripRepository } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
 /**
@@ -12,7 +13,7 @@ import { InMemoryRepository } from "./base";
  * const repo = new InMemoryTripRepository();
  * repo.seed([mockTrip]);
  *
- * const active = await repo.findActive();
+ * const active = await Effect.runPromise(repo.findActive());
  * expect(active).toHaveLength(1);
  *
  * repo.reset();
@@ -22,62 +23,73 @@ export class InMemoryTripRepository
   extends InMemoryRepository<Trip>
   implements TripRepository
 {
-  async create(trip: Trip): Promise<Trip> {
+  create(trip: Trip): Effect.Effect<Trip, never, never> {
     return this.createGeneric(trip);
   }
 
-  async findById(id: string): Promise<Trip | null> {
+  findById(id: string): Effect.Effect<Trip | null, never, never> {
     return this.findByIdGeneric(id);
   }
 
-  async findByStatus(status: TripStatus): Promise<Trip[]> {
-    return this.getAllItems().filter((t) => t.status === status);
+  findByStatus(status: TripStatus): Effect.Effect<Trip[], never, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((t) => t.status === status),
+    );
   }
 
-  async findActive(): Promise<Trip[]> {
+  findActive(): Effect.Effect<Trip[], never, never> {
     return this.findByStatus("ACTIVE" as TripStatus);
   }
 
-  async findAll(options?: {
+  findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<Trip[]> {
+  }): Effect.Effect<Trip[], never, never> {
     return this.findAllGeneric(options);
   }
 
-  async update(trip: Trip): Promise<Trip> {
+  update(trip: Trip): Effect.Effect<Trip, never, never> {
     return this.updateGeneric(trip);
   }
 
-  async updateStatus(id: string, status: TripStatus): Promise<Trip> {
-    const trip = await this.findById(id);
-    if (!trip) {
-      throw new Error(`Trip with id ${id} not found`);
-    }
-    // Create new trip with updated status
-    const updated = new (trip.constructor as new (...args: unknown[]) => Trip)(
-      trip.id,
-      trip.name,
-      trip.description,
-      trip.startDate,
-      trip.endDate,
-      trip.backgroundImagePath,
-      status,
-      trip.createdAt,
-      new Date(), // updatedAt
-    );
-    return this.updateGeneric(updated);
+  updateStatus(
+    id: string,
+    status: TripStatus,
+  ): Effect.Effect<Trip, never, never> {
+    return Effect.sync(() => {
+      const tripItem = this.storage.get(id);
+      if (!tripItem) {
+        throw new Error(`Trip with id ${id} not found`);
+      }
+      const updated = new (tripItem.constructor as new (
+        ...args: unknown[]
+      ) => Trip)(
+        tripItem.id,
+        tripItem.name,
+        tripItem.description,
+        tripItem.startDate,
+        tripItem.endDate,
+        tripItem.backgroundImagePath,
+        status,
+        tripItem.createdAt,
+        new Date(),
+      );
+      this.storage.set(id, updated);
+      return updated;
+    });
   }
 
-  async delete(id: string): Promise<void> {
+  delete(id: string): Effect.Effect<void, never, never> {
     return this.deleteGeneric(id);
   }
 
-  async exists(id: string): Promise<boolean> {
+  exists(id: string): Effect.Effect<boolean, never, never> {
     return this.existsGeneric(id);
   }
 
-  async countByStatus(status: TripStatus): Promise<number> {
-    return this.findByStatus(status).then((items) => items.length);
+  countByStatus(status: TripStatus): Effect.Effect<number, never, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((t) => t.status === status).length,
+    );
   }
 }

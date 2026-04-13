@@ -6,7 +6,7 @@
  * Supabase-specific operations to the domain port interface.
  *
  * Key Design Decisions:
- * - Uses Result type for explicit error handling (no exceptions for expected errors)
+ * - Uses Effect for explicit error handling and composable async operations
  * - Maps Supabase storage errors to domain StorageError types
  * - Thin wrapper with no business logic (just mapping)
  * - Compatible with awilix-modular dependency injection
@@ -14,6 +14,7 @@
  * @module gateways
  */
 
+import { Effect } from "effect";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import {
   type StoragePort,
@@ -24,8 +25,9 @@ import {
   FileNotFoundError,
   UploadError,
   BucketNotFoundError,
+  DownloadError,
+  DeleteError,
 } from "@mirai-app/use-cases/ports/StoragePort";
-import { type Result, ok, err } from "@mirai-app/domain";
 
 // =============================================================================
 // Error Mapping
@@ -39,7 +41,13 @@ function mapSupabaseErrorToStorageError(
   operation: string,
   bucket: string,
   path?: string,
-): StorageError | FileNotFoundError | UploadError | BucketNotFoundError {
+):
+  | StorageError
+  | FileNotFoundError
+  | UploadError
+  | BucketNotFoundError
+  | DownloadError
+  | DeleteError {
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
 
@@ -74,6 +82,24 @@ function mapSupabaseErrorToStorageError(
         message: `Upload failed: ${error.message}`,
         bucket,
         path: path ?? "unknown",
+      });
+    }
+
+    // Download-specific errors
+    if (operation === "download") {
+      return new DownloadError({
+        message: `Download failed: ${error.message}`,
+        bucket,
+        path: path ?? "unknown",
+      });
+    }
+
+    // Delete-specific errors
+    if (operation === "delete") {
+      return new DeleteError({
+        message: `Delete failed: ${error.message}`,
+        bucket,
+        paths: path ? [path] : [],
       });
     }
 
@@ -141,11 +167,15 @@ function mapSupabaseFileToMetadata(
  * ```typescript
  * // With DI container (awilix-modular)
  * const storagePort = container.resolve("storagePort");
- * const result = await storagePort.upload("files", "avatar.png", fileBuffer);
+ * const metadata = await Effect.runPromise(
+ *   storagePort.upload("files", "avatar.png", fileBuffer)
+ * );
  *
  * // Manual instantiation (backward-compatible)
  * const storagePort = new SupabaseStorageAdapter(supabaseClient);
- * const result = await storagePort.download("files", "document.pdf");
+ * const data = await Effect.runPromise(
+ *   storagePort.download("files", "document.pdf")
+ * );
  * ```
  */
 export class SupabaseStorageAdapter implements StoragePort {
@@ -163,71 +193,77 @@ export class SupabaseStorageAdapter implements StoragePort {
    * @param path - The file path within the bucket
    * @param file - The file data (Buffer or Blob)
    * @param options - Optional upload configuration
-   * @returns Promise<Result<FileMetadata, StorageError>>
+   * @returns Effect.Effect<FileMetadata, StorageError | UploadError | BucketNotFoundError, never>
    */
-  async upload(
+  upload(
     bucket: string,
     path: string,
     file: Buffer | Blob,
     options?: UploadOptions,
-  ): Promise<
-    Result<FileMetadata, StorageError | UploadError | BucketNotFoundError>
+  ): Effect.Effect<
+    FileMetadata,
+    StorageError | UploadError | BucketNotFoundError,
+    never
   > {
-    try {
-      const uploadOptions: {
-        contentType?: string;
-        upsert?: boolean;
-        cacheControl?: string;
-      } = {};
+    return Effect.tryPromise({
+      try: async () => {
+        const uploadOptions: {
+          contentType?: string;
+          upsert?: boolean;
+          cacheControl?: string;
+        } = {};
 
-      if (options?.contentType) {
-        uploadOptions.contentType = options.contentType;
-      }
-      if (options?.upsert !== undefined) {
-        uploadOptions.upsert = options.upsert;
-      }
-      if (options?.cacheControl) {
-        uploadOptions.cacheControl = options.cacheControl;
-      }
+        if (options?.contentType) {
+          uploadOptions.contentType = options.contentType;
+        }
+        if (options?.upsert !== undefined) {
+          uploadOptions.upsert = options.upsert;
+        }
+        if (options?.cacheControl) {
+          uploadOptions.cacheControl = options.cacheControl;
+        }
 
-      const { data, error } = await this.supabase.storage
-        .from(bucket)
-        .upload(path, file, uploadOptions);
+        const { data, error } = await this.supabase.storage
+          .from(bucket)
+          .upload(path, file, uploadOptions);
 
-      if (error) {
-        return err(
-          mapSupabaseErrorToStorageError(error, "upload", bucket, path),
-        );
-      }
+        if (error) {
+          throw mapSupabaseErrorToStorageError(error, "upload", bucket, path);
+        }
 
-      if (!data) {
-        return err(
-          new UploadError({
+        if (!data) {
+          throw new UploadError({
             message: "Upload completed but no data returned",
             bucket,
             path,
-          }),
-        );
-      }
+          });
+        }
 
-      // Fetch metadata after upload
-      const metadataResult = await this.fetchFileMetadata(bucket, path);
-      if (metadataResult.kind === "ok") {
-        return ok(metadataResult.value);
-      }
-
-      // Return basic metadata if fetch fails
-      return ok({
-        path: `${bucket}/${path}`,
-        bucket,
-        size: file instanceof Buffer ? file.length : 0,
-        contentType: options?.contentType,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    } catch (error) {
-      return err(mapSupabaseErrorToStorageError(error, "upload", bucket, path));
-    }
+        return { bucket, path, file, options };
+      },
+      catch: (e) =>
+        e instanceof StorageError ||
+        e instanceof UploadError ||
+        e instanceof BucketNotFoundError
+          ? e
+          : mapSupabaseErrorToStorageError(e, "upload", bucket, path),
+    }).pipe(
+      Effect.andThen(({ bucket, path, file, options }) =>
+        // Fetch metadata after upload - if it fails, return basic metadata
+        Effect.matchEffect(this.fetchFileMetadata(bucket, path), {
+          onSuccess: (metadata) => Effect.succeed(metadata),
+          onFailure: () =>
+            Effect.succeed({
+              path: `${bucket}/${path}`,
+              bucket,
+              size: file instanceof Buffer ? file.length : 0,
+              contentType: options?.contentType,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }),
+        }),
+      ),
+    );
   }
 
   /**
@@ -235,39 +271,66 @@ export class SupabaseStorageAdapter implements StoragePort {
    *
    * @param bucket - The bucket name
    * @param path - The file path within the bucket
-   * @returns Promise<Result<Buffer | Blob, StorageError>>
+   * @returns Effect.Effect<DownloadResult, StorageError | FileNotFoundError | DownloadError, never>
    */
-  async download(
+  download(
     bucket: string,
     path: string,
-  ): Promise<Result<Buffer | Blob, StorageError | FileNotFoundError>> {
-    try {
-      const { data, error } = await this.supabase.storage
-        .from(bucket)
-        .download(path);
+  ): Effect.Effect<
+    import("@mirai-app/use-cases/ports/StoragePort").DownloadResult,
+    StorageError | FileNotFoundError | DownloadError,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const { data, error } = await this.supabase.storage
+          .from(bucket)
+          .download(path);
 
-      if (error) {
-        return err(
-          mapSupabaseErrorToStorageError(error, "download", bucket, path),
-        );
-      }
+        if (error) {
+          throw mapSupabaseErrorToStorageError(error, "download", bucket, path);
+        }
 
-      if (!data) {
-        return err(
-          new FileNotFoundError({
+        if (!data) {
+          throw new DownloadError({
             message: "Download completed but no data returned",
             bucket,
             path,
-          }),
-        );
-      }
+          });
+        }
 
-      return ok(data);
-    } catch (error) {
-      return err(
-        mapSupabaseErrorToStorageError(error, "download", bucket, path),
-      );
-    }
+        return { bucket, path, data };
+      },
+      catch: (e) =>
+        e instanceof StorageError ||
+        e instanceof FileNotFoundError ||
+        e instanceof DownloadError
+          ? e
+          : mapSupabaseErrorToStorageError(e, "download", bucket, path),
+    }).pipe(
+      Effect.andThen(({ bucket, path, data }) =>
+        // Fetch metadata for the downloaded file
+        Effect.matchEffect(this.fetchFileMetadata(bucket, path), {
+          onSuccess: (metadata) =>
+            Effect.succeed({
+              data,
+              metadata,
+              contentType: metadata.contentType,
+            }),
+          onFailure: () =>
+            Effect.succeed({
+              data,
+              metadata: {
+                path: `${bucket}/${path}`,
+                bucket,
+                size: data instanceof Blob ? data.size : 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            }),
+        }),
+      ),
+    );
   }
 
   /**
@@ -275,43 +338,43 @@ export class SupabaseStorageAdapter implements StoragePort {
    *
    * @param bucket - The bucket name
    * @param paths - Array of file paths to delete
-   * @returns Promise<Result<void, StorageError>>
+   * @returns Effect.Effect<void, StorageError | DeleteError, never>
    */
-  async delete(
+  delete(
     bucket: string,
     paths: string[],
-  ): Promise<Result<void, StorageError | FileNotFoundError>> {
-    try {
-      const { data, error } = await this.supabase.storage
-        .from(bucket)
-        .remove(paths);
+  ): Effect.Effect<void, StorageError | DeleteError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const { data, error } = await this.supabase.storage
+          .from(bucket)
+          .remove(paths);
 
-      if (error) {
-        return err(mapSupabaseErrorToStorageError(error, "delete", bucket));
-      }
+        if (error) {
+          throw mapSupabaseErrorToStorageError(error, "delete", bucket);
+        }
 
-      // Check if any files were not found
-      if (data && Array.isArray(data)) {
-        const notFoundFiles = data.filter(
-          (item: { error?: { message?: string } }) =>
-            item.error?.message?.toLowerCase().includes("not found"),
-        );
+        // Check if any files were not found
+        if (data && Array.isArray(data)) {
+          const notFoundFiles = data.filter(
+            (item: { error?: { message?: string } }) =>
+              item.error?.message?.toLowerCase().includes("not found"),
+          );
 
-        if (notFoundFiles.length > 0) {
-          return err(
-            new FileNotFoundError({
+          if (notFoundFiles.length > 0) {
+            throw new DeleteError({
               message: `Some files were not found: ${notFoundFiles.length} files`,
               bucket,
-              path: paths.join(", "),
-            }),
-          );
+              paths,
+            });
+          }
         }
-      }
-
-      return ok(undefined);
-    } catch (error) {
-      return err(mapSupabaseErrorToStorageError(error, "delete", bucket));
-    }
+      },
+      catch: (e) =>
+        e instanceof StorageError || e instanceof DeleteError
+          ? e
+          : mapSupabaseErrorToStorageError(e, "delete", bucket),
+    });
   }
 
   /**
@@ -320,49 +383,47 @@ export class SupabaseStorageAdapter implements StoragePort {
    * @param bucket - The bucket name
    * @param path - The file path within the bucket
    * @param expiresInSeconds - URL expiration time in seconds
-   * @returns Promise<Result<SignedUrlInfo, StorageError>>
+   * @returns Effect.Effect<SignedUrlInfo, StorageError | FileNotFoundError, never>
    */
-  async createSignedUrl(
+  createSignedUrl(
     bucket: string,
     path: string,
     expiresInSeconds: number,
-  ): Promise<Result<SignedUrlInfo, StorageError | FileNotFoundError>> {
-    try {
-      const { data, error } = await this.supabase.storage
-        .from(bucket)
-        .createSignedUrl(path, expiresInSeconds);
+  ): Effect.Effect<SignedUrlInfo, StorageError | FileNotFoundError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const { data, error } = await this.supabase.storage
+          .from(bucket)
+          .createSignedUrl(path, expiresInSeconds);
 
-      if (error) {
-        return err(
-          mapSupabaseErrorToStorageError(
+        if (error) {
+          throw mapSupabaseErrorToStorageError(
             error,
             "createSignedUrl",
             bucket,
             path,
-          ),
-        );
-      }
+          );
+        }
 
-      if (!data?.signedUrl) {
-        return err(
-          new StorageError({
+        if (!data?.signedUrl) {
+          throw new StorageError({
             message: "Failed to create signed URL: no URL returned",
-          }),
-        );
-      }
+          });
+        }
 
-      const signedUrlInfo: SignedUrlInfo = {
-        url: data.signedUrl,
-        expiresAt: new Date(Date.now() + expiresInSeconds * 1000),
-        expiresInSeconds,
-      };
+        const signedUrlInfo: SignedUrlInfo = {
+          url: data.signedUrl,
+          expiresAt: new Date(Date.now() + expiresInSeconds * 1000),
+          expiresInSeconds,
+        };
 
-      return ok(signedUrlInfo);
-    } catch (error) {
-      return err(
-        mapSupabaseErrorToStorageError(error, "createSignedUrl", bucket, path),
-      );
-    }
+        return signedUrlInfo;
+      },
+      catch: (e) =>
+        e instanceof StorageError || e instanceof FileNotFoundError
+          ? e
+          : mapSupabaseErrorToStorageError(e, "createSignedUrl", bucket, path),
+    });
   }
 
   /**
@@ -370,62 +431,60 @@ export class SupabaseStorageAdapter implements StoragePort {
    *
    * @param bucket - The bucket name
    * @param path - The file path within the bucket
-   * @returns Promise<Result<FileMetadata, StorageError>>
+   * @returns Effect.Effect<FileMetadata, StorageError | FileNotFoundError, never>
    */
-  private async fetchFileMetadata(
+  private fetchFileMetadata(
     bucket: string,
     path: string,
-  ): Promise<Result<FileMetadata, StorageError>> {
-    try {
-      // List files to get metadata
-      const pathParts = path.split("/");
-      const folderPath =
-        pathParts.length > 1 ? pathParts.slice(0, -1).join("/") : "";
-      const fileName = pathParts[pathParts.length - 1];
+  ): Effect.Effect<FileMetadata, StorageError | FileNotFoundError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        // List files to get metadata
+        const pathParts = path.split("/");
+        const folderPath =
+          pathParts.length > 1 ? pathParts.slice(0, -1).join("/") : "";
+        const fileName = pathParts[pathParts.length - 1];
 
-      const { data, error } = await this.supabase.storage
-        .from(bucket)
-        .list(folderPath, {
-          search: fileName,
-          limit: 1,
-        });
+        const { data, error } = await this.supabase.storage
+          .from(bucket)
+          .list(folderPath, {
+            search: fileName,
+            limit: 1,
+          });
 
-      if (error) {
-        return err(
-          new StorageError({
+        if (error) {
+          throw new StorageError({
             message: `Failed to fetch metadata: ${error.message}`,
-          }),
-        );
-      }
+          });
+        }
 
-      if (!data || data.length === 0) {
-        return err(
-          new FileNotFoundError({
+        if (!data || data.length === 0) {
+          throw new FileNotFoundError({
             message: "File metadata not found",
             bucket,
             path,
-          }),
-        );
-      }
+          });
+        }
 
-      const fileData = data[0];
-      const metadata = mapSupabaseFileToMetadata(bucket, path, {
-        id: fileData.id,
-        name: fileData.name,
-        size: fileData.metadata?.size,
-        content_type: fileData.metadata?.mimetype,
-        created_at: fileData.created_at,
-        updated_at: fileData.updated_at,
-        metadata: { etag: fileData.metadata?.eTag },
-      });
+        const fileData = data[0];
+        const metadata = mapSupabaseFileToMetadata(bucket, path, {
+          id: fileData.id,
+          name: fileData.name,
+          size: fileData.metadata?.size,
+          content_type: fileData.metadata?.mimetype,
+          created_at: fileData.created_at,
+          updated_at: fileData.updated_at,
+          metadata: { etag: fileData.metadata?.eTag },
+        });
 
-      return ok(metadata);
-    } catch (error) {
-      return err(
-        new StorageError({
-          message: `Failed to fetch metadata: ${error instanceof Error ? error.message : "Unknown error"}`,
-        }),
-      );
-    }
+        return metadata;
+      },
+      catch: (e) =>
+        e instanceof StorageError || e instanceof FileNotFoundError
+          ? e
+          : new StorageError({
+              message: `Failed to fetch metadata: ${e instanceof Error ? e.message : "Unknown error"}`,
+            }),
+    });
   }
 }

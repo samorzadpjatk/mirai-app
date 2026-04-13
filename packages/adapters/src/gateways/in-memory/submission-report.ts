@@ -1,5 +1,6 @@
 import type { SubmissionReport } from "@mirai-app/domain";
 import type { SubmissionReportRepository } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
 /**
@@ -13,10 +14,10 @@ import { InMemoryRepository } from "./base";
  * const repo = new InMemorySubmissionReportRepository();
  * repo.seed([mockReport]);
  *
- * const found = await repo.findById("report-123");
+ * const found = await Effect.runPromise(repo.findById("report-123"));
  * expect(found).not.toBeNull();
  *
- * const reports = await repo.findBySubmissionId("submission-456");
+ * const reports = await Effect.runPromise(repo.findBySubmissionId("submission-456"));
  * expect(reports).toHaveLength(1);
  *
  * repo.reset(); // Clean up for next test
@@ -26,62 +27,51 @@ export class InMemorySubmissionReportRepository
   extends InMemoryRepository<SubmissionReport>
   implements SubmissionReportRepository
 {
-  /**
-   * Create a new submission report.
-   * Stores the report using its ID as the key.
-   */
-  async create(report: SubmissionReport): Promise<SubmissionReport> {
+  create(
+    report: SubmissionReport,
+  ): Effect.Effect<SubmissionReport, never, never> {
     return this.createGeneric(report);
   }
 
-  /**
-   * Find a report by its ID.
-   * @returns The report if found, null otherwise.
-   */
-  async findById(id: string): Promise<SubmissionReport | null> {
+  findById(id: string): Effect.Effect<SubmissionReport | null, never, never> {
     return this.findByIdGeneric(id);
   }
 
-  /**
-   * Find all reports for a specific submission.
-   * Returns reports sorted by creation date (newest first).
-   */
-  async findBySubmissionId(submissionId: string): Promise<SubmissionReport[]> {
-    return this.getAllItems()
-      .filter((report) => report.submissionId === submissionId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  findBySubmissionId(
+    submissionId: string,
+  ): Effect.Effect<SubmissionReport[], never, never> {
+    return Effect.succeed(
+      this.getAllItems()
+        .filter((report) => report.submissionId === submissionId)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    );
   }
 
-  /**
-   * Find all reports filed by a specific reporter.
-   * Returns reports sorted by creation date (newest first).
-   */
-  async findByReporterId(reporterId: string): Promise<SubmissionReport[]> {
-    return this.getAllItems()
-      .filter((report) => report.reporterId === reporterId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  findByReporterId(
+    reporterId: string,
+  ): Effect.Effect<SubmissionReport[], never, never> {
+    return Effect.succeed(
+      this.getAllItems()
+        .filter((report) => report.reporterId === reporterId)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    );
   }
 
-  /**
-   * Find reports by reason.
-   * Performs case-insensitive comparison on the reason value.
-   * Returns reports sorted by creation date (newest first).
-   */
-  async findByReason(reason: string): Promise<SubmissionReport[]> {
+  findByReason(
+    reason: string,
+  ): Effect.Effect<SubmissionReport[], never, never> {
     const normalizedReason = reason.toUpperCase();
-    return this.getAllItems()
-      .filter((report) => report.reason.value === normalizedReason)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return Effect.succeed(
+      this.getAllItems()
+        .filter((report) => report.reason.value === normalizedReason)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    );
   }
 
-  /**
-   * Find all reports with optional pagination.
-   * Returns reports sorted by creation date (newest first).
-   */
-  async findAll(options?: {
+  findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<SubmissionReport[]> {
+  }): Effect.Effect<SubmissionReport[], never, never> {
     let items = this.getAllItems().sort(
       (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
@@ -94,43 +84,37 @@ export class InMemorySubmissionReportRepository
       items = items.slice(0, options.limit);
     }
 
-    return items;
+    return Effect.succeed(items);
   }
 
-  /**
-   * Count the number of reports for a specific submission.
-   */
-  async countBySubmissionId(submissionId: string): Promise<number> {
-    return this.getAllItems().filter(
-      (report) => report.submissionId === submissionId,
-    ).length;
-  }
-
-  /**
-   * Check if a reporter has already reported a specific submission.
-   */
-  async existsBySubmissionAndReporter(
+  countBySubmissionId(
     submissionId: string,
-    reporterId: string,
-  ): Promise<boolean> {
-    return this.getAllItems().some(
-      (report) =>
-        report.submissionId === submissionId &&
-        report.reporterId === reporterId,
+  ): Effect.Effect<number, never, never> {
+    return Effect.succeed(
+      this.getAllItems().filter(
+        (report) => report.submissionId === submissionId,
+      ).length,
     );
   }
 
-  /**
-   * Delete a report by its ID.
-   */
-  async delete(id: string): Promise<void> {
+  existsBySubmissionAndReporter(
+    submissionId: string,
+    reporterId: string,
+  ): Effect.Effect<boolean, never, never> {
+    return Effect.succeed(
+      this.getAllItems().some(
+        (report) =>
+          report.submissionId === submissionId &&
+          report.reporterId === reporterId,
+      ),
+    );
+  }
+
+  delete(id: string): Effect.Effect<void, never, never> {
     return this.deleteGeneric(id);
   }
 
-  /**
-   * Check if a report exists by its ID.
-   */
-  async exists(id: string): Promise<boolean> {
+  exists(id: string): Effect.Effect<boolean, never, never> {
     return this.existsGeneric(id);
   }
 }

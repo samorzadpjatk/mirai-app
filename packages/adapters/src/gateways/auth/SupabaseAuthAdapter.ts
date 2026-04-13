@@ -6,7 +6,7 @@
  * Supabase user data to the domain AuthContext value object.
  *
  * Key Design Decisions:
- * - Uses Result type for explicit error handling (no exceptions for expected errors)
+ * - Uses Effect type for composable error handling and structured concurrency
  * - Maps Supabase errors to domain AuthError types
  * - Thin wrapper with no business logic (just mapping)
  * - Compatible with awilix-modular dependency injection
@@ -26,13 +26,11 @@ import {
 } from "@mirai-app/use-cases/ports/AuthPort";
 import {
   AuthContext,
-  type Result,
   type UserId,
   UserRole,
   UserId as UserIdFactory,
-  ok,
-  err,
 } from "@mirai-app/domain";
+import { Effect } from "effect";
 
 // =============================================================================
 // Error Mapping
@@ -163,20 +161,18 @@ function extractRoleFromSupabaseUser(supabaseUser: SupabaseUser): UserRole {
  * Map Supabase user to domain AuthContext
  *
  * @param supabaseUser - The Supabase user object
- * @returns Result<AuthContext, AuthError>
+ * @returns Effect<AuthContext, AuthError>
  */
 function mapSupabaseUserToAuthContext(
   supabaseUser: SupabaseUser,
-): Result<AuthContext, AuthError> {
-  try {
+): Effect.Effect<AuthContext, AuthError, never> {
+  return Effect.sync(() => {
     // Extract user ID from Supabase user (using authUserId from Supabase)
     const userIdString = supabaseUser.id;
     if (!userIdString) {
-      return err(
-        new AuthError({
-          message: "Supabase user missing required ID field",
-        }),
-      );
+      throw new AuthError({
+        message: "Supabase user missing required ID field",
+      });
     }
 
     // Create branded UserId (safe since Supabase UUIDs are valid)
@@ -190,20 +186,32 @@ function mapSupabaseUserToAuthContext(
       ? new Date(supabaseUser.email_confirmed_at)
       : new Date();
 
-    // Create AuthContext using factory method
-    return AuthContext.create({
+    // Create AuthContext using factory method - this returns a Result
+    const result = AuthContext.create({
       userId,
       role,
       authenticatedAt,
       sessionId: undefined, // Supabase doesn't expose session ID in getUser response
     });
-  } catch (error) {
-    return err(
-      new AuthError({
-        message: `Failed to map Supabase user: ${error instanceof Error ? error.message : "Unknown error"}`,
-      }),
-    );
-  }
+
+    // Unwrap the Result - if it's an error, throw it to be caught by Effect
+    if (result.kind === "err") {
+      throw result.error;
+    }
+
+    return result.value;
+  }).pipe(
+    Effect.catchAll((error: unknown) => {
+      if (error instanceof AuthError) {
+        return Effect.fail(error);
+      }
+      return Effect.fail(
+        new AuthError({
+          message: `Failed to map Supabase user: ${error instanceof Error ? error.message : "Unknown error"}`,
+        }),
+      );
+    }),
+  );
 }
 
 // =============================================================================
@@ -223,17 +231,18 @@ function mapSupabaseUserToAuthContext(
  * ```typescript
  * // With DI container (awilix-modular)
  * const authPort = container.resolve("authPort");
- * const result = await authPort.validateToken("jwt-token-string");
+ * const result = await Effect.runPromise(authPort.validateToken("jwt-token-string"));
  *
  * // Manual instantiation (backward-compatible)
  * const authPort = new SupabaseAuthAdapter(supabaseClient);
- * const result = await authPort.validateToken("jwt-token-string");
+ * const result = await Effect.runPromise(authPort.validateToken("jwt-token-string"));
  *
- * // Check result
- * if (isOk(result)) {
- *   console.log("Authenticated user:", result.value.userId);
- * } else {
- *   console.error("Auth failed:", result.error.message);
+ * // Handle with Effect.runPromise for direct value or error
+ * try {
+ *   const authContext = await Effect.runPromise(authPort.validateToken("token"));
+ *   console.log("Authenticated user:", authContext.userId);
+ * } catch (error) {
+ *   console.error("Auth failed:", error.message);
  * }
  * ```
  */
@@ -252,34 +261,27 @@ export class SupabaseAuthAdapter implements AuthPort {
    * user information. Maps the Supabase user to the domain AuthContext.
    *
    * @param token - The JWT token to validate
-   * @returns Result<AuthContext, AuthError | InvalidTokenError>
+   * @returns Effect<AuthContext, AuthError | InvalidTokenError, never>
    *
    * @example
    * ```typescript
-   * const result = await adapter.validateToken("eyJhbGciOiJIUzI1NiIs...");
+   * const effect = adapter.validateToken("eyJhbGciOiJIUzI1NiIs...");
    *
-   * if (isOk(result)) {
-   *   // Token is valid, use auth context
-   *   const { userId, role } = result.value;
-   *   console.log(`User ${userId} authenticated with role ${role}`);
-   * } else {
-   *   // Handle error based on error type
-   *   if (result.error instanceof InvalidTokenError) {
-   *     console.error("Invalid token:", result.error.message);
-   *   } else if (result.error instanceof SessionExpiredError) {
-   *     console.error("Session expired, please log in again");
-   *   } else {
-   *     console.error("Auth error:", result.error.message);
-   *   }
-   * }
+   * // Run the effect
+   * const result = await Effect.runPromise(effect);
+   * console.log(`User ${result.userId} authenticated with role ${result.role}`);
    * ```
    */
-  async validateToken(
+  validateToken(
     token: string,
-  ): Promise<Result<AuthContext, AuthError | InvalidTokenError>> {
-    // Handle empty token case
+  ): Effect.Effect<
+    AuthContext,
+    AuthError | InvalidTokenError | SessionExpiredError,
+    never
+  > {
+    // Handle empty token case synchronously
     if (!token || token.trim().length === 0) {
-      return err(
+      return Effect.fail(
         new InvalidTokenError({
           message: "Token cannot be empty",
           token: token,
@@ -287,31 +289,34 @@ export class SupabaseAuthAdapter implements AuthPort {
       );
     }
 
-    try {
-      // Call Supabase auth API to validate token
-      const { data, error } = await this.supabase.auth.getUser(token);
+    return Effect.tryPromise({
+      try: async () => {
+        // Call Supabase auth API to validate token
+        const { data, error } = await this.supabase.auth.getUser(token);
 
-      // Handle Supabase errors
-      if (error) {
-        return err(mapSupabaseErrorToAuthError(error, "validateToken"));
-      }
+        // Handle Supabase errors by throwing to trigger catch handler
+        if (error) {
+          throw mapSupabaseErrorToAuthError(error, "validateToken");
+        }
 
-      // Handle missing user data
-      if (!data.user) {
-        return err(
-          new InvalidTokenError({
+        // Handle missing user data
+        if (!data.user) {
+          throw new InvalidTokenError({
             message: "Token valid but user not found",
             token,
-          }),
-        );
-      }
+          });
+        }
 
-      // Map Supabase user to domain AuthContext
-      return mapSupabaseUserToAuthContext(data.user);
-    } catch (error) {
-      // Catch any unexpected errors and wrap them
-      return err(mapSupabaseErrorToAuthError(error, "validateToken"));
-    }
+        // Return the user for mapping
+        return data.user;
+      },
+      catch: (error) =>
+        error instanceof InvalidTokenError ||
+        error instanceof AuthError ||
+        error instanceof SessionExpiredError
+          ? error
+          : mapSupabaseErrorToAuthError(error, "validateToken"),
+    }).pipe(Effect.flatMap(mapSupabaseUserToAuthContext));
   }
 
   /**
@@ -322,117 +327,105 @@ export class SupabaseAuthAdapter implements AuthPort {
    * manages sessions internally via cookies/localStorage.
    *
    * @param sessionId - The session identifier (used for logging)
-   * @returns Result<AuthContext, AuthError | SessionExpiredError>
+   * @returns Effect<AuthContext, AuthError | SessionExpiredError, never>
    *
    * @example
    * ```typescript
-   * const result = await adapter.refreshSession("session-123");
+   * const effect = adapter.refreshSession("session-123");
    *
-   * if (isOk(result)) {
-   *   // Session refreshed successfully
-   *   console.log("Session refreshed for user:", result.value.userId);
-   * } else {
-   *   // Handle session expiration
-   *   console.error("Failed to refresh session:", result.error.message);
+   * // Run the effect
+   * try {
+   *   const authContext = await Effect.runPromise(effect);
+   *   console.log("Session refreshed for user:", authContext.userId);
+   * } catch (error) {
+   *   console.error("Failed to refresh session:", error.message);
    * }
    * ```
    */
-  async refreshSession(
+  refreshSession(
     sessionId: string,
-  ): Promise<Result<AuthContext, AuthError | SessionExpiredError>> {
-    try {
-      // Get current session from Supabase
-      const { data, error } = await this.supabase.auth.getSession();
+  ): Effect.Effect<AuthContext, AuthError | SessionExpiredError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        // Get current session from Supabase
+        const { data, error } = await this.supabase.auth.getSession();
 
-      // Handle Supabase errors
-      if (error) {
-        const mappedError = mapSupabaseErrorToAuthError(
-          error,
-          "refreshSession",
-        );
-        if (mappedError instanceof SessionExpiredError) {
-          return err(mappedError);
-        }
-        return err(
-          new SessionExpiredError({
+        // Handle Supabase errors
+        if (error) {
+          const mappedError = mapSupabaseErrorToAuthError(
+            error,
+            "refreshSession",
+          );
+          if (mappedError instanceof SessionExpiredError) {
+            throw mappedError;
+          }
+          throw new SessionExpiredError({
             sessionId,
             expiredAt: new Date(),
             message: mappedError.message,
-          }),
-        );
-      }
+          });
+        }
 
-      // Handle missing session
-      if (!data.session) {
-        return err(
-          new SessionExpiredError({
+        // Handle missing session
+        if (!data.session) {
+          throw new SessionExpiredError({
             sessionId,
             expiredAt: new Date(),
             message: "No active session found",
-          }),
-        );
-      }
+          });
+        }
 
-      // Check if session has expired
-      if (data.session.expires_at) {
-        const expiresAt = new Date(data.session.expires_at * 1000);
-        if (expiresAt.getTime() < Date.now()) {
-          return err(
-            new SessionExpiredError({
+        // Check if session has expired
+        if (data.session.expires_at) {
+          const expiresAt = new Date(data.session.expires_at * 1000);
+          if (expiresAt.getTime() < Date.now()) {
+            throw new SessionExpiredError({
               sessionId,
               expiredAt: expiresAt,
               message: "Session has expired",
-            }),
-          );
+            });
+          }
         }
-      }
 
-      // Validate the access token from the session to get user info
-      if (!data.session.access_token) {
-        return err(
-          new SessionExpiredError({
+        // Validate the access token from the session to get user info
+        if (!data.session.access_token) {
+          throw new SessionExpiredError({
             sessionId,
             expiredAt: new Date(),
             message: "Session missing access token",
-          }),
-        );
-      }
-
-      // Re-use validateToken to get AuthContext from session token
-      const validationResult = await this.validateToken(
-        data.session.access_token,
-      );
-
-      // If validation fails, treat as session expired
-      if (validationResult.kind === "err") {
-        if (validationResult.error instanceof SessionExpiredError) {
-          return err(validationResult.error);
+          });
         }
-        return err(
-          new SessionExpiredError({
-            sessionId,
-            expiredAt: new Date(),
-            message: validationResult.error.message,
-          }),
-        );
-      }
 
-      // Return AuthContext with session ID
-      const authContext = validationResult.value;
-      return ok(authContext.withSessionId(sessionId));
-    } catch (error) {
-      // Catch any unexpected errors
-      const mappedError = mapSupabaseErrorToAuthError(error, "refreshSession");
-      if (mappedError instanceof SessionExpiredError) {
-        return err(mappedError);
-      }
-      return err(
-        new SessionExpiredError({
-          sessionId,
-          expiredAt: new Date(),
-          message: mappedError.message,
-        }),
-      );
-    }
+        // Return the access token for validation
+        return data.session.access_token;
+      },
+      catch: (error) =>
+        error instanceof SessionExpiredError || error instanceof AuthError
+          ? error
+          : new SessionExpiredError({
+              sessionId,
+              expiredAt: new Date(),
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Session refresh failed",
+            }),
+    }).pipe(
+      Effect.flatMap((accessToken) =>
+        // Re-use validateToken to get AuthContext from session token
+        this.validateToken(accessToken).pipe(
+          Effect.mapError((error) =>
+            error instanceof SessionExpiredError
+              ? error
+              : new SessionExpiredError({
+                  sessionId,
+                  expiredAt: new Date(),
+                  message: error.message,
+                }),
+          ),
+        ),
+      ),
+      Effect.map((authContext) => authContext.withSessionId(sessionId)),
+    );
   }
 }

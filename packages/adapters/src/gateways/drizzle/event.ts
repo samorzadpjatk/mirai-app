@@ -6,10 +6,12 @@ import {
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { eq, and, gt, lt, gte, lte, sql, inArray } from "drizzle-orm";
+import { Effect } from "effect";
 import { Event } from "@mirai-app/domain";
 import type { EventRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { EventDrizzleMapper } from "../../mappers/drizzle/event";
+import { DatabaseError } from "../../errors/adapter-errors";
 
 /**
  * DrizzleEventRepository
@@ -32,375 +34,641 @@ export class DrizzleEventRepository
   /**
    * Find events by creator ID
    */
-  async findByCreatorId(creatorId: string): Promise<Event[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.creatorId, creatorId))
-      .orderBy(this.table.startTime);
+  findByCreatorId(creatorId: string): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.creatorId, creatorId))
+          .orderBy(this.table.startTime);
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByCreatorId",
+          message: "Failed to find events by creator ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find events by organizer group ID
    */
-  async findByOrganizerGroupId(groupId: string): Promise<Event[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.organizerGroupId, groupId))
-      .orderBy(this.table.startTime);
+  findByOrganizerGroupId(
+    groupId: string,
+  ): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.organizerGroupId, groupId))
+          .orderBy(this.table.startTime);
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByOrganizerGroupId",
+          message: "Failed to find events by organizer group ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find events by IDs
    */
-  async findByIds(ids: string[]): Promise<Event[]> {
-    if (ids.length === 0) return [];
+  findByIds(ids: string[]): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        if (ids.length === 0) return [];
 
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(inArray(this.table.id, ids));
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(inArray(this.table.id, ids));
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByIds",
+          message: "Failed to find events by IDs",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find all events with pagination
    */
-  override async findAll(options?: {
+  override findAll(options?: {
     limit?: number;
     offset?: number;
     orderBy?: { column: string; direction: "asc" | "desc" };
-  }): Promise<Event[]> {
-    // Build order by clause
-    const orderColumn = options?.orderBy?.column ?? "startTime";
-    const orderDirection = options?.orderBy?.direction ?? "asc";
+  }): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const orderColumn = options?.orderBy?.column ?? "startTime";
+        const orderDirection = options?.orderBy?.direction ?? "asc";
 
-    const columnRef = (this.table as unknown as Record<string, unknown>)[
-      orderColumn
-    ];
+        const columnRef = (this.table as unknown as Record<string, unknown>)[
+          orderColumn
+        ];
 
-    // Use a function to build the query to avoid type widening issues
-    const buildQuery = () => {
-      let query = this.db.select().from(this.table);
+        const buildQuery = () => {
+          let query = this.db.select().from(this.table);
 
-      if (columnRef) {
-        query = query.orderBy(
-          orderDirection === "asc"
-            ? (columnRef as never)
-            : sql`${columnRef as never} DESC`,
-        ) as unknown as typeof query;
-      }
+          if (columnRef) {
+            query = query.orderBy(
+              orderDirection === "asc"
+                ? (columnRef as never)
+                : sql`${columnRef as never} DESC`,
+            ) as unknown as typeof query;
+          }
 
-      return query;
-    };
+          return query;
+        };
 
-    // Apply pagination and execute
-    let query = buildQuery();
+        let query = buildQuery();
 
-    if (options?.limit) {
-      query = query.limit(options.limit) as unknown as typeof query;
-    }
-    if (options?.offset) {
-      query = query.offset(options.offset) as unknown as typeof query;
-    }
+        if (options?.limit) {
+          query = query.limit(options.limit) as unknown as typeof query;
+        }
+        if (options?.offset) {
+          query = query.offset(options.offset) as unknown as typeof query;
+        }
 
-    const records = await query;
-    return records.map((record) => this.mapper.toDomain(record));
+        const records = await query;
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findAll",
+          message: "Failed to find events with pagination",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find upcoming events (startTime > now)
    */
-  async findUpcoming(): Promise<Event[]> {
-    const now = new Date();
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(gt(this.table.startTime, now))
-      .orderBy(this.table.startTime);
+  findUpcoming(): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const now = new Date();
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(gt(this.table.startTime, now))
+          .orderBy(this.table.startTime);
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findUpcoming",
+          message: "Failed to find upcoming events",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find ongoing events (startTime <= now <= endTime)
    */
-  async findOngoing(): Promise<Event[]> {
-    const now = new Date();
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(and(lte(this.table.startTime, now), gte(this.table.endTime, now)))
-      .orderBy(this.table.startTime);
+  findOngoing(): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const now = new Date();
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(
+            and(lte(this.table.startTime, now), gte(this.table.endTime, now)),
+          )
+          .orderBy(this.table.startTime);
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findOngoing",
+          message: "Failed to find ongoing events",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find past events (endTime < now)
    */
-  async findPast(): Promise<Event[]> {
-    const now = new Date();
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(lt(this.table.endTime, now))
-      .orderBy(sql`${this.table.startTime} DESC`);
+  findPast(): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const now = new Date();
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(lt(this.table.endTime, now))
+          .orderBy(sql`${this.table.startTime} DESC`);
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findPast",
+          message: "Failed to find past events",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find events starting within a time range
    */
-  async findStartingBetween(start: Date, end: Date): Promise<Event[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(
-        and(gte(this.table.startTime, start), lte(this.table.startTime, end)),
-      )
-      .orderBy(this.table.startTime);
+  findStartingBetween(
+    start: Date,
+    end: Date,
+  ): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(
+            and(
+              gte(this.table.startTime, start),
+              lte(this.table.startTime, end),
+            ),
+          )
+          .orderBy(this.table.startTime);
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findStartingBetween",
+          message: "Failed to find events starting between dates",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Count total events
    */
-  async count(): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(this.table);
+  count(): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table);
 
-    return result[0]?.count ?? 0;
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "count",
+          message: "Failed to count events",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Count events by organizer group ID
    */
-  async countByOrganizerGroupId(groupId: string): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(this.table)
-      .where(eq(this.table.organizerGroupId, groupId));
+  countByOrganizerGroupId(
+    groupId: string,
+  ): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.organizerGroupId, groupId));
 
-    return result[0]?.count ?? 0;
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countByOrganizerGroupId",
+          message: "Failed to count events by organizer group ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
-
-  // ============================================================
-  // User Event Operations (Interest/Enlistment)
-  // ============================================================
 
   /**
    * Mark a user as interested in an event
    */
-  async markInterested(userId: string, eventId: string): Promise<void> {
-    await this.db
-      .insert(userEvents)
-      .values({
-        userId,
-        eventId,
-        interestedIn: true,
-        enlistedIn: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [userEvents.userId, userEvents.eventId],
-        set: { interestedIn: true, updatedAt: new Date() },
-      });
+  markInterested(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<void, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        await this.db
+          .insert(userEvents)
+          .values({
+            userId,
+            eventId,
+            interestedIn: true,
+            enlistedIn: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [userEvents.userId, userEvents.eventId],
+            set: { interestedIn: true, updatedAt: new Date() },
+          });
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "markInterested",
+          message: "Failed to mark user as interested",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Mark a user as enlisted in an event
    */
-  async markEnlisted(userId: string, eventId: string): Promise<void> {
-    await this.db
-      .insert(userEvents)
-      .values({
-        userId,
-        eventId,
-        interestedIn: false,
-        enlistedIn: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [userEvents.userId, userEvents.eventId],
-        set: { enlistedIn: true, updatedAt: new Date() },
-      });
+  markEnlisted(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<void, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        await this.db
+          .insert(userEvents)
+          .values({
+            userId,
+            eventId,
+            interestedIn: false,
+            enlistedIn: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [userEvents.userId, userEvents.eventId],
+            set: { enlistedIn: true, updatedAt: new Date() },
+          });
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "markEnlisted",
+          message: "Failed to mark user as enlisted",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Remove a user's interest in an event
    */
-  async removeInterest(userId: string, eventId: string): Promise<void> {
-    await this.db
-      .update(userEvents)
-      .set({ interestedIn: false, updatedAt: new Date() })
-      .where(
-        and(eq(userEvents.userId, userId), eq(userEvents.eventId, eventId)),
-      );
+  removeInterest(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<void, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        await this.db
+          .update(userEvents)
+          .set({ interestedIn: false, updatedAt: new Date() })
+          .where(
+            and(eq(userEvents.userId, userId), eq(userEvents.eventId, eventId)),
+          );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "removeInterest",
+          message: "Failed to remove user interest",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Remove a user's enlistment from an event
    */
-  async removeEnlistment(userId: string, eventId: string): Promise<void> {
-    await this.db
-      .update(userEvents)
-      .set({ enlistedIn: false, updatedAt: new Date() })
-      .where(
-        and(eq(userEvents.userId, userId), eq(userEvents.eventId, eventId)),
-      );
+  removeEnlistment(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<void, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        await this.db
+          .update(userEvents)
+          .set({ enlistedIn: false, updatedAt: new Date() })
+          .where(
+            and(eq(userEvents.userId, userId), eq(userEvents.eventId, eventId)),
+          );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "removeEnlistment",
+          message: "Failed to remove user enlistment",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Check if user is interested in event
    */
-  async isInterested(userId: string, eventId: string): Promise<boolean> {
-    const [record] = await this.db
-      .select({ interestedIn: userEvents.interestedIn })
-      .from(userEvents)
-      .where(
-        and(eq(userEvents.userId, userId), eq(userEvents.eventId, eventId)),
-      )
-      .limit(1);
+  isInterested(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<boolean, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .select({ interestedIn: userEvents.interestedIn })
+          .from(userEvents)
+          .where(
+            and(eq(userEvents.userId, userId), eq(userEvents.eventId, eventId)),
+          )
+          .limit(1);
 
-    return record?.interestedIn ?? false;
+        return record?.interestedIn ?? false;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "isInterested",
+          message: "Failed to check if user is interested",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Check if user is enlisted in event
    */
-  async isEnlisted(userId: string, eventId: string): Promise<boolean> {
-    const [record] = await this.db
-      .select({ enlistedIn: userEvents.enlistedIn })
-      .from(userEvents)
-      .where(
-        and(eq(userEvents.userId, userId), eq(userEvents.eventId, eventId)),
-      )
-      .limit(1);
+  isEnlisted(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<boolean, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .select({ enlistedIn: userEvents.enlistedIn })
+          .from(userEvents)
+          .where(
+            and(eq(userEvents.userId, userId), eq(userEvents.eventId, eventId)),
+          )
+          .limit(1);
 
-    return record?.enlistedIn ?? false;
+        return record?.enlistedIn ?? false;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "isEnlisted",
+          message: "Failed to check if user is enlisted",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Get interested users for an event
    */
-  async getInterestedUsers(eventId: string): Promise<string[]> {
-    const records = await this.db
-      .select({ userId: userEvents.userId })
-      .from(userEvents)
-      .where(
-        and(eq(userEvents.eventId, eventId), eq(userEvents.interestedIn, true)),
-      );
+  getInterestedUsers(eventId: string): Effect.Effect<string[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select({ userId: userEvents.userId })
+          .from(userEvents)
+          .where(
+            and(
+              eq(userEvents.eventId, eventId),
+              eq(userEvents.interestedIn, true),
+            ),
+          );
 
-    return records.map((r) => r.userId);
+        return records.map((r) => r.userId);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "getInterestedUsers",
+          message: "Failed to get interested users",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Get enlisted users for an event
    */
-  async getEnlistedUsers(eventId: string): Promise<string[]> {
-    const records = await this.db
-      .select({ userId: userEvents.userId })
-      .from(userEvents)
-      .where(
-        and(eq(userEvents.eventId, eventId), eq(userEvents.enlistedIn, true)),
-      );
+  getEnlistedUsers(eventId: string): Effect.Effect<string[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select({ userId: userEvents.userId })
+          .from(userEvents)
+          .where(
+            and(
+              eq(userEvents.eventId, eventId),
+              eq(userEvents.enlistedIn, true),
+            ),
+          );
 
-    return records.map((r) => r.userId);
+        return records.map((r) => r.userId);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "getEnlistedUsers",
+          message: "Failed to get enlisted users",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Get events a user is interested in
    */
-  async getInterestedEventsForUser(userId: string): Promise<Event[]> {
-    const records = await this.db
-      .select({
-        id: this.table.id,
-        creatorId: this.table.creatorId,
-        organizerGroupId: this.table.organizerGroupId,
-        title: this.table.title,
-        startTime: this.table.startTime,
-        endTime: this.table.endTime,
-        location: this.table.location,
-        description: this.table.description,
-        files: this.table.files,
-        createdAt: this.table.createdAt,
-        updatedAt: this.table.updatedAt,
-      })
-      .from(this.table)
-      .innerJoin(userEvents, eq(this.table.id, userEvents.eventId))
-      .where(
-        and(eq(userEvents.userId, userId), eq(userEvents.interestedIn, true)),
-      )
-      .orderBy(this.table.startTime);
+  getInterestedEventsForUser(
+    userId: string,
+  ): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select({
+            id: this.table.id,
+            creatorId: this.table.creatorId,
+            organizerGroupId: this.table.organizerGroupId,
+            title: this.table.title,
+            startTime: this.table.startTime,
+            endTime: this.table.endTime,
+            location: this.table.location,
+            description: this.table.description,
+            files: this.table.files,
+            createdAt: this.table.createdAt,
+            updatedAt: this.table.updatedAt,
+          })
+          .from(this.table)
+          .innerJoin(userEvents, eq(this.table.id, userEvents.eventId))
+          .where(
+            and(
+              eq(userEvents.userId, userId),
+              eq(userEvents.interestedIn, true),
+            ),
+          )
+          .orderBy(this.table.startTime);
 
-    return records.map((record) => this.mapper.toDomain(record as EventSelect));
+        return records.map((record) =>
+          this.mapper.toDomain(record as EventSelect),
+        );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "getInterestedEventsForUser",
+          message: "Failed to get interested events for user",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Get events a user is enlisted in
    */
-  async getEnlistedEventsForUser(userId: string): Promise<Event[]> {
-    const records = await this.db
-      .select({
-        id: this.table.id,
-        creatorId: this.table.creatorId,
-        organizerGroupId: this.table.organizerGroupId,
-        title: this.table.title,
-        startTime: this.table.startTime,
-        endTime: this.table.endTime,
-        location: this.table.location,
-        description: this.table.description,
-        files: this.table.files,
-        createdAt: this.table.createdAt,
-        updatedAt: this.table.updatedAt,
-      })
-      .from(this.table)
-      .innerJoin(userEvents, eq(this.table.id, userEvents.eventId))
-      .where(
-        and(eq(userEvents.userId, userId), eq(userEvents.enlistedIn, true)),
-      )
-      .orderBy(this.table.startTime);
+  getEnlistedEventsForUser(
+    userId: string,
+  ): Effect.Effect<Event[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select({
+            id: this.table.id,
+            creatorId: this.table.creatorId,
+            organizerGroupId: this.table.organizerGroupId,
+            title: this.table.title,
+            startTime: this.table.startTime,
+            endTime: this.table.endTime,
+            location: this.table.location,
+            description: this.table.description,
+            files: this.table.files,
+            createdAt: this.table.createdAt,
+            updatedAt: this.table.updatedAt,
+          })
+          .from(this.table)
+          .innerJoin(userEvents, eq(this.table.id, userEvents.eventId))
+          .where(
+            and(eq(userEvents.userId, userId), eq(userEvents.enlistedIn, true)),
+          )
+          .orderBy(this.table.startTime);
 
-    return records.map((record) => this.mapper.toDomain(record as EventSelect));
+        return records.map((record) =>
+          this.mapper.toDomain(record as EventSelect),
+        );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "getEnlistedEventsForUser",
+          message: "Failed to get enlisted events for user",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Count interested users for an event
    */
-  async countInterested(eventId: string): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(userEvents)
-      .where(
-        and(eq(userEvents.eventId, eventId), eq(userEvents.interestedIn, true)),
-      );
+  countInterested(eventId: string): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(userEvents)
+          .where(
+            and(
+              eq(userEvents.eventId, eventId),
+              eq(userEvents.interestedIn, true),
+            ),
+          );
 
-    return result[0]?.count ?? 0;
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countInterested",
+          message: "Failed to count interested users",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Count enlisted users for an event
    */
-  async countEnlisted(eventId: string): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(userEvents)
-      .where(
-        and(eq(userEvents.eventId, eventId), eq(userEvents.enlistedIn, true)),
-      );
+  countEnlisted(eventId: string): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(userEvents)
+          .where(
+            and(
+              eq(userEvents.eventId, eventId),
+              eq(userEvents.enlistedIn, true),
+            ),
+          );
 
-    return result[0]?.count ?? 0;
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countEnlisted",
+          message: "Failed to count enlisted users",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 }

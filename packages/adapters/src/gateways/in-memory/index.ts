@@ -44,6 +44,7 @@ export {
 export { InMemorySponsorRepository } from "./sponsor";
 export { InMemoryCoinTransactionRepository } from "./coin-transaction";
 export { InMemoryActivityFeedRepository } from "./activity-feed";
+export { InMemoryEventRepository } from "./event";
 export { InMemorySubmissionReportRepository } from "./submission-report";
 
 // =============================================================================

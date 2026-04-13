@@ -5,6 +5,8 @@ import type {
   SubmissionType,
 } from "@mirai-app/domain";
 import type { ChallengeRepository } from "@mirai-app/use-cases";
+import { DatabaseError } from "@mirai-app/use-cases/ports/ChallengeRepository";
+import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
 /**
@@ -17,7 +19,7 @@ import { InMemoryRepository } from "./base";
  * const repo = new InMemoryChallengeRepository();
  * repo.seed([mockChallenge]);
  *
- * const byTrip = await repo.findByTripId("trip-123");
+ * const byTrip = await Effect.runPromise(repo.findByTripId("trip-123"));
  * expect(byTrip).toHaveLength(1);
  *
  * repo.reset();
@@ -27,74 +29,101 @@ export class InMemoryChallengeRepository
   extends InMemoryRepository<Challenge>
   implements ChallengeRepository
 {
-  async create(challenge: Challenge): Promise<Challenge> {
+  create(challenge: Challenge): Effect.Effect<Challenge, DatabaseError, never> {
     return this.createGeneric(challenge);
   }
 
-  async findById(id: string): Promise<Challenge | null> {
+  findById(id: string): Effect.Effect<Challenge | null, DatabaseError, never> {
     return this.findByIdGeneric(id);
   }
 
-  async findByTripId(tripId: string): Promise<Challenge[]> {
-    return this.getAllItems().filter((c) => c.tripId === tripId);
-  }
-
-  async findByStatus(status: ChallengeStatus): Promise<Challenge[]> {
-    return this.getAllItems().filter((c) => c.status === status);
-  }
-
-  async findByTripIdAndStatus(
+  findByTripId(
     tripId: string,
-    status: ChallengeStatus,
-  ): Promise<Challenge[]> {
-    return this.getAllItems().filter(
-      (c) => c.tripId === tripId && c.status === status,
+  ): Effect.Effect<Challenge[], DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((c) => c.tripId === tripId),
     );
   }
 
-  async findBySubmissionType(type: SubmissionType): Promise<Challenge[]> {
-    return this.getAllItems().filter((c) => c.submissionType === type);
+  findByStatus(
+    status: ChallengeStatus,
+  ): Effect.Effect<Challenge[], DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((c) => c.status === status),
+    );
   }
 
-  async findByScoringCategory(category: ScoringCategory): Promise<Challenge[]> {
-    return this.getAllItems().filter((c) => c.scoringCategory === category);
+  findByTripIdAndStatus(
+    tripId: string,
+    status: ChallengeStatus,
+  ): Effect.Effect<Challenge[], DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter(
+        (c) => c.tripId === tripId && c.status === status,
+      ),
+    );
   }
 
-  async findActive(): Promise<Challenge[]> {
+  findBySubmissionType(
+    type: SubmissionType,
+  ): Effect.Effect<Challenge[], DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((c) => c.submissionType === type),
+    );
+  }
+
+  findByScoringCategory(
+    category: ScoringCategory,
+  ): Effect.Effect<Challenge[], DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((c) => c.scoringCategory === category),
+    );
+  }
+
+  findActive(): Effect.Effect<Challenge[], DatabaseError, never> {
     return this.findByStatus("ACTIVE" as ChallengeStatus);
   }
 
-  async findOpenForSubmission(): Promise<Challenge[]> {
+  findOpenForSubmission(): Effect.Effect<Challenge[], DatabaseError, never> {
     const now = new Date();
-    return this.getAllItems().filter((c) => {
-      if (c.status !== ("ACTIVE" as ChallengeStatus)) return false;
-      if (c.startTime && c.startTime > now) return false;
-      if (c.endTime && c.endTime < now) return false;
-      return true;
-    });
+    return Effect.succeed(
+      this.getAllItems().filter((c) => {
+        if (c.status !== ("ACTIVE" as ChallengeStatus)) return false;
+        if (c.startTime && c.startTime > now) return false;
+        if (c.endTime && c.endTime < now) return false;
+        return true;
+      }),
+    );
   }
 
-  async findRecurring(): Promise<Challenge[]> {
-    return this.getAllItems().filter((c) => c.isRecurring);
+  findRecurring(): Effect.Effect<Challenge[], DatabaseError, never> {
+    return Effect.succeed(this.getAllItems().filter((c) => c.isRecurring));
   }
 
-  async findAll(options?: {
+  findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<Challenge[]> {
+  }): Effect.Effect<Challenge[], DatabaseError, never> {
     return this.findAllGeneric(options);
   }
 
-  async update(challenge: Challenge): Promise<Challenge> {
+  update(challenge: Challenge): Effect.Effect<Challenge, DatabaseError, never> {
     return this.updateGeneric(challenge);
   }
 
-  async updateStatus(id: string, status: ChallengeStatus): Promise<Challenge> {
-    const challenge = await this.findById(id);
+  updateStatus(
+    id: string,
+    status: ChallengeStatus,
+  ): Effect.Effect<Challenge, DatabaseError, never> {
+    const challenge = this.storage.get(id);
     if (!challenge) {
-      throw new Error(`Challenge with id ${id} not found`);
+      return Effect.fail(
+        new DatabaseError({
+          operation: "updateStatus",
+          message: `Challenge with id ${id} not found`,
+        }),
+      );
     }
-    // Create new challenge with updated status
     const updated = new (challenge.constructor as new (
       ...args: unknown[]
     ) => Challenge)(
@@ -122,20 +151,22 @@ export class InMemoryChallengeRepository
       challenge.expectedValue,
       challenge.autoApprove,
       challenge.createdAt,
-      new Date(), // updatedAt
+      new Date(),
     );
     return this.updateGeneric(updated);
   }
 
-  async delete(id: string): Promise<void> {
+  delete(id: string): Effect.Effect<void, DatabaseError, never> {
     return this.deleteGeneric(id);
   }
 
-  async exists(id: string): Promise<boolean> {
+  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
     return this.existsGeneric(id);
   }
 
-  async countByTripId(tripId: string): Promise<number> {
-    return this.findByTripId(tripId).then((items) => items.length);
+  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((c) => c.tripId === tripId).length,
+    );
   }
 }

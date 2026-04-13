@@ -8,6 +8,7 @@ import {
   type ActivityReactionInsert,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
+import { Effect } from "effect";
 import {
   ActivityFeed,
   ActivityReaction,
@@ -19,6 +20,7 @@ import {
   ActivityFeedDrizzleMapper,
   ActivityReactionDrizzleMapper,
 } from "../../mappers/drizzle/activity-feed";
+import { DatabaseError } from "../../errors/adapter-errors";
 
 /**
  * DrizzleActivityFeedRepository
@@ -41,319 +43,497 @@ export class DrizzleActivityFeedRepository
     });
   }
 
-  async findByTripId(
+  findByTripId(
     tripId: string,
     options?: {
       limit?: number;
       cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
       includeHidden?: boolean;
     },
-  ): Promise<{
-    activities: ActivityFeed[];
-    nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
-    hasMore: boolean;
-  }> {
-    const limit = options?.limit ?? 20;
-    const cursor = options?.cursor;
-    const includeHidden = options?.includeHidden ?? false;
+  ): Effect.Effect<
+    {
+      activities: ActivityFeed[];
+      nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
+      hasMore: boolean;
+    },
+    never,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = options?.limit ?? 20;
+        const cursor = options?.cursor;
+        const includeHidden = options?.includeHidden ?? false;
 
-    // Build the where clause
-    let conditions = [eq(this.table.tripId, tripId)];
+        let conditions = [eq(this.table.tripId, tripId)];
 
-    if (!includeHidden) {
-      conditions.push(eq(this.table.isHidden, false));
-    }
+        if (!includeHidden) {
+          conditions.push(eq(this.table.isHidden, false));
+        }
 
-    if (cursor) {
-      // Cursor pagination: get records after the cursor
-      // Order: pinned first, then by createdAt desc
-      conditions.push(
-        sql`(${this.table.isPinned}, ${this.table.createdAt}, ${this.table.id}) <= (${cursor.isPinned}, ${cursor.createdAt}, ${cursor.id})`,
-      );
-    }
+        if (cursor) {
+          conditions.push(
+            sql`(${this.table.isPinned}, ${this.table.createdAt}, ${this.table.id}) <= (${cursor.isPinned}, ${cursor.createdAt}, ${cursor.id})`,
+          );
+        }
 
-    // Query with limit + 1 to check for more
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(and(...conditions))
-      .orderBy(desc(this.table.isPinned), desc(this.table.createdAt))
-      .limit(limit + 1);
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.isPinned), desc(this.table.createdAt))
+          .limit(limit + 1);
 
-    const hasMore = records.length > limit;
-    const activities = records
-      .slice(0, limit)
-      .map((r) => this.mapper.toDomain(r));
+        const hasMore = records.length > limit;
+        const activities = records
+          .slice(0, limit)
+          .map((r) => this.mapper.toDomain(r));
 
-    const lastRecord = records[limit - 1];
-    const nextCursor =
-      hasMore && lastRecord
-        ? {
-            id: lastRecord.id,
-            createdAt: lastRecord.createdAt,
-            isPinned: lastRecord.isPinned,
-          }
-        : null;
+        const lastRecord = records[limit - 1];
+        const nextCursor =
+          hasMore && lastRecord
+            ? {
+                id: lastRecord.id,
+                createdAt: lastRecord.createdAt,
+                isPinned: lastRecord.isPinned,
+              }
+            : null;
 
-    return {
-      activities,
-      nextCursor,
-      hasMore,
-    };
+        return {
+          activities,
+          nextCursor,
+          hasMore,
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripId",
+          message: "Failed to find activities by trip ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async findByTripIdPaged(
+  findByTripIdPaged(
     tripId: string,
     options: {
       page: number;
       pageSize: number;
       includeHidden?: boolean;
     },
-  ): Promise<{
-    activities: ActivityFeed[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-    hasMore: boolean;
-  }> {
-    const { page, pageSize, includeHidden = false } = options;
-    const offset = (page - 1) * pageSize;
+  ): Effect.Effect<
+    {
+      activities: ActivityFeed[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+      hasMore: boolean;
+    },
+    never,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const { page, pageSize, includeHidden = false } = options;
+        const offset = (page - 1) * pageSize;
 
-    // Build where conditions
-    const conditions = [eq(this.table.tripId, tripId)];
-    if (!includeHidden) {
-      conditions.push(eq(this.table.isHidden, false));
-    }
+        const conditions = [eq(this.table.tripId, tripId)];
+        if (!includeHidden) {
+          conditions.push(eq(this.table.isHidden, false));
+        }
 
-    // Get total count
-    const countResult = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(this.table)
-      .where(and(...conditions));
-    const total = countResult[0]?.count ?? 0;
+        const countResult = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(and(...conditions));
+        const total = countResult[0]?.count ?? 0;
 
-    // Get paginated activities
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(and(...conditions))
-      .orderBy(desc(this.table.isPinned), desc(this.table.createdAt))
-      .limit(pageSize)
-      .offset(offset);
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.isPinned), desc(this.table.createdAt))
+          .limit(pageSize)
+          .offset(offset);
 
-    const totalPages = Math.ceil(total / pageSize);
-    const hasMore = page < totalPages;
+        const totalPages = Math.ceil(total / pageSize);
+        const hasMore = page < totalPages;
 
-    return {
-      activities: records.map((r) => this.mapper.toDomain(r)),
-      total,
-      page,
-      pageSize,
-      totalPages,
-      hasMore,
-    };
+        return {
+          activities: records.map((r) => this.mapper.toDomain(r)),
+          total,
+          page,
+          pageSize,
+          totalPages,
+          hasMore,
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripIdPaged",
+          message: "Failed to find activities by trip ID with pagination",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async findReactionsByActivityId(
+  findReactionsByActivityId(
     activityId: ActivityId,
-  ): Promise<ActivityReaction[]> {
-    const records = await this.db
-      .select()
-      .from(activityReactions)
-      .where(eq(activityReactions.activityId, activityId));
-    return records.map((r) =>
-      ActivityReactionDrizzleMapper.instance.toDomain(r),
-    );
+  ): Effect.Effect<ActivityReaction[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(activityReactions)
+          .where(eq(activityReactions.activityId, activityId));
+        return records.map((r) =>
+          ActivityReactionDrizzleMapper.instance.toDomain(r),
+        );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findReactionsByActivityId",
+          message: "Failed to find reactions by activity ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async findUserReactions(
+  findUserReactions(
     activityId: ActivityId,
     userId: string,
-  ): Promise<ActivityReaction[]> {
-    const records = await this.db
-      .select()
-      .from(activityReactions)
-      .where(
-        and(
-          eq(activityReactions.activityId, activityId),
-          eq(activityReactions.userId, userId),
-        ),
-      );
-    return records.map((r) =>
-      ActivityReactionDrizzleMapper.instance.toDomain(r),
-    );
+  ): Effect.Effect<ActivityReaction[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(activityReactions)
+          .where(
+            and(
+              eq(activityReactions.activityId, activityId),
+              eq(activityReactions.userId, userId),
+            ),
+          );
+        return records.map((r) =>
+          ActivityReactionDrizzleMapper.instance.toDomain(r),
+        );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findUserReactions",
+          message: "Failed to find user reactions",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async getReactionCounts(activityId: ActivityId): Promise<{
-    total: number;
-    counts: { heart: number; fire: number; clap: number; star: number };
-  }> {
-    const records = await this.db
-      .select({
-        reactionType: activityReactions.reactionType,
-        count: sql<number>`count(*)::int`,
-      })
-      .from(activityReactions)
-      .where(eq(activityReactions.activityId, activityId))
-      .groupBy(activityReactions.reactionType);
+  getReactionCounts(activityId: ActivityId): Effect.Effect<
+    {
+      total: number;
+      counts: { heart: number; fire: number; clap: number; star: number };
+    },
+    never,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select({
+            reactionType: activityReactions.reactionType,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(activityReactions)
+          .where(eq(activityReactions.activityId, activityId))
+          .groupBy(activityReactions.reactionType);
 
-    const counts = {
-      heart: 0,
-      fire: 0,
-      clap: 0,
-      star: 0,
-    };
+        const counts = {
+          heart: 0,
+          fire: 0,
+          clap: 0,
+          star: 0,
+        };
 
-    for (const record of records) {
-      const type = record.reactionType.toLowerCase();
-      if (type === "heart") counts.heart = record.count;
-      else if (type === "fire") counts.fire = record.count;
-      else if (type === "clap") counts.clap = record.count;
-      else if (type === "star") counts.star = record.count;
-    }
+        for (const record of records) {
+          const type = record.reactionType.toLowerCase();
+          if (type === "heart") counts.heart = record.count;
+          else if (type === "fire") counts.fire = record.count;
+          else if (type === "clap") counts.clap = record.count;
+          else if (type === "star") counts.star = record.count;
+        }
 
-    const total = Object.values(counts).reduce((sum, c) => sum + c, 0);
+        const total = Object.values(counts).reduce((sum, c) => sum + c, 0);
 
-    return { total, counts };
+        return { total, counts };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "getReactionCounts",
+          message: "Failed to get reaction counts",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async findByTripIdAndType(
+  findByTripIdAndType(
     tripId: string,
     activityType: string,
-  ): Promise<ActivityFeed[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(
-        and(
-          eq(this.table.tripId, tripId),
-          eq(this.table.activityType, activityType),
-        ),
-      )
-      .orderBy(desc(this.table.createdAt));
-    return records.map((r) => this.mapper.toDomain(r));
+  ): Effect.Effect<ActivityFeed[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(
+            and(
+              eq(this.table.tripId, tripId),
+              eq(this.table.activityType, activityType),
+            ),
+          )
+          .orderBy(desc(this.table.createdAt));
+        return records.map((r) => this.mapper.toDomain(r));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripIdAndType",
+          message: "Failed to find activities by trip ID and type",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async findPinnedByTripId(tripId: string): Promise<ActivityFeed[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(and(eq(this.table.tripId, tripId), eq(this.table.isPinned, true)))
-      .orderBy(desc(this.table.createdAt));
-    return records.map((r) => this.mapper.toDomain(r));
+  findPinnedByTripId(
+    tripId: string,
+  ): Effect.Effect<ActivityFeed[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(
+            and(eq(this.table.tripId, tripId), eq(this.table.isPinned, true)),
+          )
+          .orderBy(desc(this.table.createdAt));
+        return records.map((r) => this.mapper.toDomain(r));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findPinnedByTripId",
+          message: "Failed to find pinned activities by trip ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async findVisibleByTripId(tripId: string): Promise<ActivityFeed[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(and(eq(this.table.tripId, tripId), eq(this.table.isHidden, false)))
-      .orderBy(desc(this.table.createdAt));
-    return records.map((r) => this.mapper.toDomain(r));
+  findVisibleByTripId(
+    tripId: string,
+  ): Effect.Effect<ActivityFeed[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(
+            and(eq(this.table.tripId, tripId), eq(this.table.isHidden, false)),
+          )
+          .orderBy(desc(this.table.createdAt));
+        return records.map((r) => this.mapper.toDomain(r));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findVisibleByTripId",
+          message: "Failed to find visible activities by trip ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async findByUserIds(userIds: string[]): Promise<ActivityFeed[]> {
-    // This would need a join with activityReactions or other user-related tables
-    return [];
+  findByUserIds(
+    userIds: string[],
+  ): Effect.Effect<ActivityFeed[], never, never> {
+    return Effect.succeed([]);
   }
 
-  async addReaction(reaction: ActivityReaction): Promise<ActivityReaction> {
-    const insertData =
-      ActivityReactionDrizzleMapper.instance.toDrizzleInsert(reaction);
+  addReaction(
+    reaction: ActivityReaction,
+  ): Effect.Effect<ActivityReaction, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const insertData =
+          ActivityReactionDrizzleMapper.instance.toDrizzleInsert(reaction);
 
-    await this.db.insert(activityReactions).values(insertData);
+        await this.db.insert(activityReactions).values(insertData);
 
-    return reaction;
+        return reaction;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "addReaction",
+          message: "Failed to add reaction",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async removeReaction(
+  removeReaction(
     activityId: string,
     userId: string,
     reactionType: string,
-  ): Promise<void> {
-    await this.db
-      .delete(activityReactions)
-      .where(
-        and(
-          eq(activityReactions.activityId, activityId),
-          eq(activityReactions.userId, userId),
-          eq(activityReactions.reactionType, reactionType),
-        ),
-      );
+  ): Effect.Effect<void, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        await this.db
+          .delete(activityReactions)
+          .where(
+            and(
+              eq(activityReactions.activityId, activityId),
+              eq(activityReactions.userId, userId),
+              eq(activityReactions.reactionType, reactionType),
+            ),
+          );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "removeReaction",
+          message: "Failed to remove reaction",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async getReactions(activityId: string): Promise<ActivityReaction[]> {
-    const records = await this.db
-      .select()
-      .from(activityReactions)
-      .where(eq(activityReactions.activityId, activityId));
-    return records.map((r) =>
-      ActivityReactionDrizzleMapper.instance.toDomain(r),
-    );
+  getReactions(
+    activityId: string,
+  ): Effect.Effect<ActivityReaction[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(activityReactions)
+          .where(eq(activityReactions.activityId, activityId));
+        return records.map((r) =>
+          ActivityReactionDrizzleMapper.instance.toDomain(r),
+        );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "getReactions",
+          message: "Failed to get reactions",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async pinActivity(id: string): Promise<ActivityFeed> {
-    const [record] = await this.db
-      .update(this.table)
-      .set({ isPinned: true, updatedAt: new Date() })
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`Activity with id ${id} not found`);
-    return this.mapper.toDomain(record);
+  pinActivity(id: string): Effect.Effect<ActivityFeed, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(this.table)
+          .set({ isPinned: true, updatedAt: new Date() })
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`Activity with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "pinActivity",
+          message: `Failed to pin activity with id ${id}`,
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async unpinActivity(id: string): Promise<ActivityFeed> {
-    const [record] = await this.db
-      .update(this.table)
-      .set({ isPinned: false, updatedAt: new Date() })
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`Activity with id ${id} not found`);
-    return this.mapper.toDomain(record);
+  unpinActivity(id: string): Effect.Effect<ActivityFeed, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(this.table)
+          .set({ isPinned: false, updatedAt: new Date() })
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`Activity with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "unpinActivity",
+          message: `Failed to unpin activity with id ${id}`,
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async hideActivity(
+  hideActivity(
     id: string,
     hiddenByAdmin: string,
     reason?: string,
-  ): Promise<ActivityFeed> {
-    const [record] = await this.db
-      .update(this.table)
-      .set({
-        isHidden: true,
-        hiddenByAdmin,
-        hiddenAt: new Date(),
-        hiddenReason: reason ?? null,
-        updatedAt: new Date(),
-      })
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`Activity with id ${id} not found`);
-    return this.mapper.toDomain(record);
+  ): Effect.Effect<ActivityFeed, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(this.table)
+          .set({
+            isHidden: true,
+            hiddenByAdmin,
+            hiddenAt: new Date(),
+            hiddenReason: reason ?? null,
+            updatedAt: new Date(),
+          })
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`Activity with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "hideActivity",
+          message: `Failed to hide activity with id ${id}`,
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async unhideActivity(id: string): Promise<ActivityFeed> {
-    const [record] = await this.db
-      .update(this.table)
-      .set({
-        isHidden: false,
-        hiddenByAdmin: null,
-        hiddenAt: null,
-        hiddenReason: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`Activity with id ${id} not found`);
-    return this.mapper.toDomain(record);
+  unhideActivity(id: string): Effect.Effect<ActivityFeed, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(this.table)
+          .set({
+            isHidden: false,
+            hiddenByAdmin: null,
+            hiddenAt: null,
+            hiddenReason: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`Activity with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "unhideActivity",
+          message: `Failed to unhide activity with id ${id}`,
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
-  async countByTripId(tripId: string): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(this.table)
-      .where(eq(this.table.tripId, tripId));
-    return result[0]?.count ?? 0;
+  countByTripId(tripId: string): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.tripId, tripId));
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countByTripId",
+          message: "Failed to count activities by trip ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 }

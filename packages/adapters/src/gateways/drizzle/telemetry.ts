@@ -6,7 +6,7 @@
  * UserAgent table for mobile app tracking and supports various event types.
  *
  * Key Design Decisions:
- * - Uses Result type for explicit error handling (no exceptions for expected errors)
+ * - Uses Effect.Effect for composable error handling (no exceptions for expected errors)
  * - Maps Drizzle errors to domain TelemetryError
  * - Thin wrapper with no business logic (just persistence)
  * - Compatible with awilix-modular dependency injection
@@ -15,13 +15,13 @@
  */
 
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { ok, err, type Result } from "@mirai-app/domain";
+import { Effect } from "effect";
 import {
   type TelemetryPort,
   type TelemetryEvent,
   TelemetryError,
 } from "@mirai-app/use-cases/ports/TelemetryPort";
-import { userAgents } from "@mirai-app/frameworks/drizzle/schema/userAgent";
+import { userAgents } from "@mirai-app/frameworks/drizzle/schema";
 
 /**
  * Drizzle error codes that we handle explicitly
@@ -205,15 +205,18 @@ function extractEndpoint(event: TelemetryEvent): string | undefined {
  * ```typescript
  * // With DI container (awilix-modular)
  * const telemetry = container.resolve("telemetryPort");
- * const result = await telemetry.log(event);
+ * const effect = telemetry.log(event);
+ * const result = await Effect.runPromise(effect);
  *
  * // Manual instantiation (backward-compatible)
  * const telemetry = new DrizzleTelemetryAdapter(db);
- * const result = await telemetry.log(event);
+ * const effect = telemetry.log(event);
+ * const result = await Effect.runPromise(effect);
  *
- * // Check result
- * if (isErr(result)) {
- *   console.error("Failed to log telemetry:", result.error.message);
+ * // Handle errors
+ * const result = await Effect.runPromise(Effect.either(telemetry.log(event)));
+ * if (Either.isLeft(result)) {
+ *   console.error("Failed to log telemetry:", result.left.message);
  * }
  * ```
  */
@@ -229,7 +232,7 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    * Log a telemetry event to the database
    *
    * @param event - The telemetry event to log
-   * @returns Result<void, TelemetryError> - ok() on success, err() on failure
+   * @returns Effect.Effect<void, TelemetryError, never> - succeeds on success, fails with TelemetryError on failure
    *
    * @example
    * ```typescript
@@ -241,34 +244,34 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    *   timestamp: new Date()
    * };
    *
-   * const result = await adapter.log(event);
-   * if (isErr(result)) {
+   * const effect = adapter.log(event);
+   * const result = await Effect.runPromise(Effect.either(effect));
+   * if (Either.isLeft(result)) {
    *   // Handle error (telemetry is usually non-critical)
-   *   console.warn("Telemetry logging failed:", result.error);
+   *   console.warn("Telemetry logging failed:", result.left.message);
    * }
    * ```
    */
-  async log(event: TelemetryEvent): Promise<Result<void, TelemetryError>> {
-    try {
-      // Transform telemetry event to UserAgent record
-      const userAgent = buildUserAgentString(event);
-      const platform = extractPlatform(event);
-      const userId = extractUserId(event);
-      const endpoint = extractEndpoint(event);
+  log(event: TelemetryEvent): Effect.Effect<void, TelemetryError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        // Transform telemetry event to UserAgent record
+        const userAgent = buildUserAgentString(event);
+        const platform = extractPlatform(event);
+        const userId = extractUserId(event);
+        const endpoint = extractEndpoint(event);
 
-      // Persist to database
-      await this.db.insert(userAgents).values({
-        userAgent,
-        platform,
-        userId: userId ?? null,
-        endpoint: endpoint ?? null,
-        timestamp: event.timestamp,
-      });
-
-      return ok(undefined);
-    } catch (error) {
-      return err(mapDrizzleErrorToTelemetryError(error, "log"));
-    }
+        // Persist to database
+        await this.db.insert(userAgents).values({
+          userAgent,
+          platform,
+          userId: userId ?? null,
+          endpoint: endpoint ?? null,
+          timestamp: event.timestamp,
+        });
+      },
+      catch: (error) => mapDrizzleErrorToTelemetryError(error, "log"),
+    });
   }
 
   /**
@@ -277,7 +280,7 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    * This implementation uses Drizzle's batch insert for efficiency.
    *
    * @param events - Array of telemetry events to log
-   * @returns Result<void, TelemetryError> - ok() on success, err() on failure
+   * @returns Effect.Effect<void, TelemetryError, never> - succeeds on success, fails with TelemetryError on failure
    *
    * @example
    * ```typescript
@@ -286,32 +289,32 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    *   { type: "metric", name: "latency", value: 150, unit: "ms", timestamp: new Date() }
    * ];
    *
-   * const result = await adapter.logBatch(events);
-   * if (isErr(result)) {
-   *   console.error("Batch telemetry failed:", result.error);
+   * const effect = adapter.logBatch(events);
+   * const result = await Effect.runPromise(Effect.either(effect));
+   * if (Either.isLeft(result)) {
+   *   console.error("Batch telemetry failed:", result.left.message);
    * }
    * ```
    */
-  async logBatch(
+  logBatch(
     events: TelemetryEvent[],
-  ): Promise<Result<void, TelemetryError>> {
-    try {
-      // Transform all events to UserAgent records
-      const records = events.map((event) => ({
-        userAgent: buildUserAgentString(event),
-        platform: extractPlatform(event),
-        userId: extractUserId(event) ?? null,
-        endpoint: extractEndpoint(event) ?? null,
-        timestamp: event.timestamp,
-      }));
+  ): Effect.Effect<void, TelemetryError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        // Transform all events to UserAgent records
+        const records = events.map((event) => ({
+          userAgent: buildUserAgentString(event),
+          platform: extractPlatform(event),
+          userId: extractUserId(event) ?? null,
+          endpoint: extractEndpoint(event) ?? null,
+          timestamp: event.timestamp,
+        }));
 
-      // Use batch insertion (more efficient)
-      await this.db.insert(userAgents).values(records);
-
-      return ok(undefined);
-    } catch (error) {
-      return err(mapDrizzleErrorToTelemetryError(error, "logBatch"));
-    }
+        // Use batch insertion (more efficient)
+        await this.db.insert(userAgents).values(records);
+      },
+      catch: (error) => mapDrizzleErrorToTelemetryError(error, "logBatch"),
+    });
   }
 
   /**
@@ -320,17 +323,18 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    * This adapter does not buffer events (they are written immediately),
    * so flush is a no-op that always succeeds.
    *
-   * @returns Result<void, TelemetryError> - always ok()
+   * @returns Effect.Effect<void, TelemetryError, never> - always succeeds
    *
    * @example
    * ```typescript
    * // Ensure all telemetry is sent before shutting down
-   * await adapter.flush();
+   * const effect = adapter.flush();
+   * await Effect.runPromise(effect);
    * ```
    */
-  async flush(): Promise<Result<void, TelemetryError>> {
+  flush(): Effect.Effect<void, TelemetryError, never> {
     // No buffering in this implementation - events are written immediately
     // This method exists for interface compliance
-    return ok(undefined);
+    return Effect.void;
   }
 }

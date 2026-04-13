@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type {
   NotificationSchedule,
   NotificationScheduleType,
@@ -11,11 +10,13 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
   notificationSchedules,
   notificationScheduleExecutions,
-} from "@mirai-app/frameworks/drizzle/schema/notificationDelivery";
-import { notifications } from "@mirai-app/frameworks/drizzle/schema/notification";
+  notifications,
+} from "@mirai-app/frameworks/drizzle/schema";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
+import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { NotificationScheduleDrizzleMapper } from "../../mappers/drizzle/notification-schedule";
+import { DatabaseError } from "../../errors/adapter-errors";
 
 /**
  * DrizzleNotificationScheduleRepository
@@ -42,260 +43,389 @@ export class DrizzleNotificationScheduleRepository
   /**
    * Find schedules by trip ID
    */
-  async findByTripId(tripId: string): Promise<NotificationSchedule[]> {
-    const records = await this.db
-      .select()
-      .from(notificationSchedules)
-      .where(eq(notificationSchedules.tripId, tripId))
-      .orderBy(desc(notificationSchedules.createdAt));
+  findByTripId(
+    tripId: string,
+  ): Effect.Effect<NotificationSchedule[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(notificationSchedules)
+          .where(eq(notificationSchedules.tripId, tripId))
+          .orderBy(desc(notificationSchedules.createdAt));
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripId",
+          message: "Failed to find notification schedules by trip ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find schedule by name
    */
-  async findByName(name: string): Promise<NotificationSchedule | null> {
-    const [record] = await this.db
-      .select()
-      .from(notificationSchedules)
-      .where(eq(notificationSchedules.name, name))
-      .limit(1);
+  findByName(
+    name: string,
+  ): Effect.Effect<NotificationSchedule | null, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .select()
+          .from(notificationSchedules)
+          .where(eq(notificationSchedules.name, name))
+          .limit(1);
 
-    return record ? this.mapper.toDomain(record) : null;
+        return record ? this.mapper.toDomain(record) : null;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByName",
+          message: "Failed to find notification schedule by name",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find schedule by trip ID and name
    */
-  async findByTripIdAndName(
+  findByTripIdAndName(
     tripId: string,
     name: string,
-  ): Promise<NotificationSchedule | null> {
-    const [record] = await this.db
-      .select()
-      .from(notificationSchedules)
-      .where(
-        and(
-          eq(notificationSchedules.tripId, tripId),
-          eq(notificationSchedules.name, name),
-        ),
-      )
-      .limit(1);
+  ): Effect.Effect<NotificationSchedule | null, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .select()
+          .from(notificationSchedules)
+          .where(
+            and(
+              eq(notificationSchedules.tripId, tripId),
+              eq(notificationSchedules.name, name),
+            ),
+          )
+          .limit(1);
 
-    return record ? this.mapper.toDomain(record) : null;
+        return record ? this.mapper.toDomain(record) : null;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripIdAndName",
+          message: "Failed to find notification schedule by trip ID and name",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find schedules by type
    */
-  async findByType(
+  findByType(
     type: NotificationScheduleType,
-  ): Promise<NotificationSchedule[]> {
-    const records = await this.db
-      .select()
-      .from(notificationSchedules)
-      .where(eq(notificationSchedules.notificationType, type.toString()))
-      .orderBy(desc(notificationSchedules.createdAt));
+  ): Effect.Effect<NotificationSchedule[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(notificationSchedules)
+          .where(eq(notificationSchedules.notificationType, type.toString()))
+          .orderBy(desc(notificationSchedules.createdAt));
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByType",
+          message: "Failed to find notification schedules by type",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find all schedules with pagination and filters
    */
-  async findAll(options?: {
+  override findAll(options?: {
     filter?: NotificationScheduleFilter;
     pagination?: PaginationOptions;
-  }): Promise<PaginatedResult<NotificationSchedule>> {
-    const whereClause = this.buildWhereClause(options?.filter);
+  }): Effect.Effect<PaginatedResult<NotificationSchedule>, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const whereClause = this.buildWhereClause(options?.filter);
 
-    const limit = options?.pagination?.limit ?? 50;
-    const offset = options?.pagination?.offset ?? 0;
+        const limit = options?.pagination?.limit ?? 50;
+        const offset = options?.pagination?.offset ?? 0;
 
-    const [records, totalResult] = await Promise.all([
-      this.db
-        .select()
-        .from(notificationSchedules)
-        .where(whereClause)
-        .orderBy(desc(notificationSchedules.createdAt))
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(notificationSchedules)
-        .where(whereClause)
-        .limit(1),
-    ]);
+        const [records, totalResult] = await Promise.all([
+          this.db
+            .select()
+            .from(notificationSchedules)
+            .where(whereClause)
+            .orderBy(desc(notificationSchedules.createdAt))
+            .limit(limit)
+            .offset(offset),
+          this.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(notificationSchedules)
+            .where(whereClause)
+            .limit(1),
+        ]);
 
-    const total = totalResult[0]?.count ?? 0;
+        const total = totalResult[0]?.count ?? 0;
 
-    return {
-      items: records.map((record) => this.mapper.toDomain(record)),
-      pagination: {
-        total,
-        limit,
-        offset,
-        hasMore: offset + limit < total,
+        return {
+          items: records.map((record) => this.mapper.toDomain(record)),
+          pagination: {
+            total,
+            limit,
+            offset,
+            hasMore: offset + limit < total,
+          },
+        };
       },
-    };
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findAll",
+          message: "Failed to find all notification schedules",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find active schedules
    */
-  async findActive(now?: Date): Promise<NotificationSchedule[]> {
-    const currentTime = now ?? new Date();
+  findActive(now?: Date): Effect.Effect<NotificationSchedule[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const currentTime = now ?? new Date();
 
-    const records = await this.db
-      .select()
-      .from(notificationSchedules)
-      .where(
-        and(
-          eq(notificationSchedules.isSent, false),
-          lte(notificationSchedules.scheduledFor, currentTime),
-        ),
-      )
-      .orderBy(asc(notificationSchedules.scheduledFor));
+        const records = await this.db
+          .select()
+          .from(notificationSchedules)
+          .where(
+            and(
+              eq(notificationSchedules.isSent, false),
+              lte(notificationSchedules.scheduledFor, currentTime),
+            ),
+          )
+          .orderBy(asc(notificationSchedules.scheduledFor));
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findActive",
+          message: "Failed to find active notification schedules",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find upcoming schedules
    */
-  async findUpcoming(
+  findUpcoming(
     days?: number,
     now?: Date,
-  ): Promise<NotificationSchedule[]> {
-    const currentTime = now ?? new Date();
-    const futureDate = new Date(currentTime);
-    futureDate.setDate(futureDate.getDate() + (days ?? 7));
+  ): Effect.Effect<NotificationSchedule[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const currentTime = now ?? new Date();
+        const futureDate = new Date(currentTime);
+        futureDate.setDate(futureDate.getDate() + (days ?? 7));
 
-    const records = await this.db
-      .select()
-      .from(notificationSchedules)
-      .where(
-        and(
-          eq(notificationSchedules.isSent, false),
-          eq(notificationSchedules.isDraft, false),
-          gte(notificationSchedules.scheduledFor, currentTime),
-          lte(notificationSchedules.scheduledFor, futureDate),
-        ),
-      )
-      .orderBy(asc(notificationSchedules.scheduledFor));
+        const records = await this.db
+          .select()
+          .from(notificationSchedules)
+          .where(
+            and(
+              eq(notificationSchedules.isSent, false),
+              eq(notificationSchedules.isDraft, false),
+              gte(notificationSchedules.scheduledFor, currentTime),
+              lte(notificationSchedules.scheduledFor, futureDate),
+            ),
+          )
+          .orderBy(asc(notificationSchedules.scheduledFor));
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findUpcoming",
+          message: "Failed to find upcoming notification schedules",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Delete multiple schedules
    */
-  async deleteMany(ids: string[]): Promise<number> {
-    if (ids.length === 0) return 0;
+  deleteMany(ids: string[]): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        if (ids.length === 0) return 0;
 
-    // Delete in batches
-    let deletedCount = 0;
-    for (const id of ids) {
-      const [result] = await this.db
-        .delete(notificationSchedules)
-        .where(eq(notificationSchedules.id, id))
-        .returning();
-      if (result) deletedCount++;
-    }
+        let deletedCount = 0;
+        for (const id of ids) {
+          const [result] = await this.db
+            .delete(notificationSchedules)
+            .where(eq(notificationSchedules.id, id))
+            .returning();
+          if (result) deletedCount++;
+        }
 
-    return deletedCount;
+        return deletedCount;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "deleteMany",
+          message: "Failed to delete multiple notification schedules",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Count schedules by filter
    */
-  async count(filter?: NotificationScheduleFilter): Promise<number> {
-    const whereClause = this.buildWhereClause(filter);
+  count(
+    filter?: NotificationScheduleFilter,
+  ): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const whereClause = this.buildWhereClause(filter);
 
-    const [result] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(notificationSchedules)
-      .where(whereClause)
-      .limit(1);
+        const [result] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(notificationSchedules)
+          .where(whereClause)
+          .limit(1);
 
-    return result?.count ?? 0;
+        return result?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "count",
+          message: "Failed to count notification schedules",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Update last run time
    */
-  async updateLastRun(
+  updateLastRun(
     id: string,
     lastRun: Date,
-  ): Promise<NotificationSchedule> {
-    const [record] = await this.db
-      .update(notificationSchedules)
-      .set({ scheduledFor: lastRun })
-      .where(eq(notificationSchedules.id, id))
-      .returning();
+  ): Effect.Effect<NotificationSchedule, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(notificationSchedules)
+          .set({ scheduledFor: lastRun })
+          .where(eq(notificationSchedules.id, id))
+          .returning();
 
-    if (!record) {
-      throw new Error(`Failed to update lastRun for schedule ${id}: not found`);
-    }
+        if (!record) {
+          throw new Error(
+            `Failed to update lastRun for schedule ${id}: not found`,
+          );
+        }
 
-    return this.mapper.toDomain(record);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "updateLastRun",
+          message: `Failed to update last run time for schedule ${id}`,
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Toggle schedule active state
    */
-  async toggleActive(id: string): Promise<NotificationSchedule> {
-    // Get current state
-    const [current] = await this.db
-      .select({ isDraft: notificationSchedules.isDraft })
-      .from(notificationSchedules)
-      .where(eq(notificationSchedules.id, id))
-      .limit(1);
+  toggleActive(id: string): Effect.Effect<NotificationSchedule, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [current] = await this.db
+          .select({ isDraft: notificationSchedules.isDraft })
+          .from(notificationSchedules)
+          .where(eq(notificationSchedules.id, id))
+          .limit(1);
 
-    if (!current) {
-      throw new Error("Notification schedule not found");
-    }
+        if (!current) {
+          throw new Error("Notification schedule not found");
+        }
 
-    const [record] = await this.db
-      .update(notificationSchedules)
-      .set({ isDraft: !current.isDraft })
-      .where(eq(notificationSchedules.id, id))
-      .returning();
+        const [record] = await this.db
+          .update(notificationSchedules)
+          .set({ isDraft: !current.isDraft })
+          .where(eq(notificationSchedules.id, id))
+          .returning();
 
-    if (!record) {
-      throw new Error(`Failed to toggle active state for schedule ${id}`);
-    }
+        if (!record) {
+          throw new Error(`Failed to toggle active state for schedule ${id}`);
+        }
 
-    return this.mapper.toDomain(record);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "toggleActive",
+          message: `Failed to toggle active state for schedule ${id}`,
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Bulk toggle active state
    */
-  async bulkToggleActive(ids: string[], isActive: boolean): Promise<number> {
-    if (ids.length === 0) return 0;
+  bulkToggleActive(
+    ids: string[],
+    isActive: boolean,
+  ): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        if (ids.length === 0) return 0;
 
-    let updatedCount = 0;
-    for (const id of ids) {
-      const [result] = await this.db
-        .update(notificationSchedules)
-        .set({ isDraft: !isActive })
-        .where(eq(notificationSchedules.id, id))
-        .returning();
-      if (result) updatedCount++;
-    }
+        let updatedCount = 0;
+        for (const id of ids) {
+          const [result] = await this.db
+            .update(notificationSchedules)
+            .set({ isDraft: !isActive })
+            .where(eq(notificationSchedules.id, id))
+            .returning();
+          if (result) updatedCount++;
+        }
 
-    return updatedCount;
+        return updatedCount;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "bulkToggleActive",
+          message: "Failed to bulk toggle active state",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Get execution history for a schedule
    */
-  async getExecutionHistory(
+  getExecutionHistory(
     scheduleId: string,
     limit: number,
-  ): Promise<
+  ): Effect.Effect<
     Array<{
       id: string;
       executedAt: Date;
@@ -305,51 +435,73 @@ export class DrizzleNotificationScheduleRepository
         body: string;
         createdAt: Date;
       } | null;
-    }>
+    }>,
+    never,
+    never
   > {
-    const executions = await this.db
-      .select({
-        id: notificationScheduleExecutions.id,
-        executedAt: notificationScheduleExecutions.executedAt,
-        notificationId: notifications.id,
-        notificationTitle: notifications.title,
-        notificationBody: notifications.body,
-        notificationCreatedAt: notifications.createdAt,
-      })
-      .from(notificationScheduleExecutions)
-      .leftJoin(
-        notifications,
-        eq(notificationScheduleExecutions.notificationId, notifications.id),
-      )
-      .where(eq(notificationScheduleExecutions.scheduleId, scheduleId))
-      .orderBy(desc(notificationScheduleExecutions.executedAt))
-      .limit(limit);
+    return Effect.tryPromise({
+      try: async () => {
+        const executions = await this.db
+          .select({
+            id: notificationScheduleExecutions.id,
+            executedAt: notificationScheduleExecutions.executedAt,
+            notificationId: notifications.id,
+            notificationTitle: notifications.title,
+            notificationBody: notifications.body,
+            notificationCreatedAt: notifications.createdAt,
+          })
+          .from(notificationScheduleExecutions)
+          .leftJoin(
+            notifications,
+            eq(notificationScheduleExecutions.notificationId, notifications.id),
+          )
+          .where(eq(notificationScheduleExecutions.scheduleId, scheduleId))
+          .orderBy(desc(notificationScheduleExecutions.executedAt))
+          .limit(limit);
 
-    return executions.map((e) => ({
-      id: e.id,
-      executedAt: e.executedAt,
-      notification: e.notificationId
-        ? {
-            id: e.notificationId,
-            title: e.notificationTitle ?? "",
-            body: e.notificationBody ?? "",
-            createdAt: e.notificationCreatedAt ?? e.executedAt,
-          }
-        : null,
-    }));
+        return executions.map((e) => ({
+          id: e.id,
+          executedAt: e.executedAt,
+          notification: e.notificationId
+            ? {
+                id: e.notificationId,
+                title: e.notificationTitle ?? "",
+                body: e.notificationBody ?? "",
+                createdAt: e.notificationCreatedAt ?? e.executedAt,
+              }
+            : null,
+        }));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "getExecutionHistory",
+          message: `Failed to get execution history for schedule ${scheduleId}`,
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Count executions for a schedule
    */
-  async countExecutions(scheduleId: string): Promise<number> {
-    const [result] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(notificationScheduleExecutions)
-      .where(eq(notificationScheduleExecutions.scheduleId, scheduleId))
-      .limit(1);
+  countExecutions(scheduleId: string): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [result] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(notificationScheduleExecutions)
+          .where(eq(notificationScheduleExecutions.scheduleId, scheduleId))
+          .limit(1);
 
-    return result?.count ?? 0;
+        return result?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countExecutions",
+          message: `Failed to count executions for schedule ${scheduleId}`,
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**

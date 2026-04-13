@@ -4,6 +4,7 @@ import type {
   ActivityId,
 } from "@mirai-app/domain";
 import type { ActivityFeedRepository } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
 /**
@@ -17,7 +18,7 @@ import { InMemoryRepository } from "./base";
  * const repo = new InMemoryActivityFeedRepository();
  * repo.seed([mockActivity]);
  *
- * const activities = await repo.findByTripId("trip-123", { limit: 10 });
+ * const activities = await Effect.runPromise(repo.findByTripId("trip-123", { limit: 10 }));
  * expect(activities.activities).toHaveLength(1);
  *
  * repo.reset(); // Clean up for next test
@@ -27,68 +28,51 @@ export class InMemoryActivityFeedRepository
   extends InMemoryRepository<ActivityFeed>
   implements ActivityFeedRepository
 {
-  /** Separate storage for reactions keyed by activity ID */
   private reactionsStorage = new Map<string, ActivityReaction[]>();
 
-  /**
-   * Reset the repository - clears all stored activities and reactions.
-   * Call this in beforeEach for test isolation.
-   */
   override reset(): void {
     super.reset();
     this.reactionsStorage.clear();
   }
 
-  /**
-   * Seed the repository with initial activities and optionally their reactions.
-   * Useful for setting up test scenarios.
-   *
-   * @param activities - Array of ActivityFeed items to seed
-   * @param reactions - Optional map of activity ID to reactions array
-   */
   override seed(activities: ActivityFeed[]): void {
     super.seed(activities);
   }
 
-  /**
-   * Seed reactions for a specific activity.
-   *
-   * @param activityId - The activity ID
-   * @param reactions - Array of reactions to associate with the activity
-   */
   seedReactions(activityId: ActivityId, reactions: ActivityReaction[]): void {
     this.reactionsStorage.set(activityId, reactions);
   }
 
-  async findById(id: ActivityId): Promise<ActivityFeed | null> {
+  findById(id: ActivityId): Effect.Effect<ActivityFeed | null, never, never> {
     return this.findByIdGeneric(id);
   }
 
-  async findByTripId(
+  findByTripId(
     tripId: string,
     options?: {
       limit?: number;
       cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
       includeHidden?: boolean;
     },
-  ): Promise<{
-    activities: ActivityFeed[];
-    nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
-    hasMore: boolean;
-  }> {
+  ): Effect.Effect<
+    {
+      activities: ActivityFeed[];
+      nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
+      hasMore: boolean;
+    },
+    never,
+    never
+  > {
     const limit = options?.limit ?? 20;
     const cursor = options?.cursor ?? null;
     const includeHidden = options?.includeHidden ?? false;
 
-    // Filter by tripId and visibility
     let activities = this.getAllItems().filter(
       (a) => a.tripId === tripId && (includeHidden || !a.isHidden),
     );
 
-    // Sort: pinned first, then by createdAt descending, then by id descending
     activities.sort((a, b) => a.compareForSort(b));
 
-    // Apply cursor-based pagination
     if (cursor) {
       const cursorIndex = activities.findIndex(
         (a) =>
@@ -101,11 +85,9 @@ export class InMemoryActivityFeedRepository
       }
     }
 
-    // Apply limit
     const hasMore = activities.length > limit;
     const paginatedActivities = activities.slice(0, limit);
 
-    // Calculate next cursor
     const lastActivity = paginatedActivities[paginatedActivities.length - 1];
     const nextCursor = lastActivity
       ? {
@@ -115,38 +97,40 @@ export class InMemoryActivityFeedRepository
         }
       : null;
 
-    return {
+    return Effect.succeed({
       activities: paginatedActivities,
       nextCursor,
       hasMore,
-    };
+    });
   }
 
-  async findByTripIdPaged(
+  findByTripIdPaged(
     tripId: string,
     options: {
       page: number;
       pageSize: number;
       includeHidden?: boolean;
     },
-  ): Promise<{
-    activities: ActivityFeed[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-    hasMore: boolean;
-  }> {
+  ): Effect.Effect<
+    {
+      activities: ActivityFeed[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+      hasMore: boolean;
+    },
+    never,
+    never
+  > {
     const page = options.page;
     const pageSize = options.pageSize;
     const includeHidden = options.includeHidden ?? false;
 
-    // Filter by tripId and visibility
     const allActivities = this.getAllItems().filter(
       (a) => a.tripId === tripId && (includeHidden || !a.isHidden),
     );
 
-    // Sort: pinned first, then by createdAt descending
     allActivities.sort((a, b) => a.compareForSort(b));
 
     const total = allActivities.length;
@@ -155,53 +139,53 @@ export class InMemoryActivityFeedRepository
     const activities = allActivities.slice(offset, offset + pageSize);
     const hasMore = page < totalPages;
 
-    return {
+    return Effect.succeed({
       activities,
       total,
       page,
       pageSize,
       totalPages,
       hasMore,
-    };
+    });
   }
 
-  async create(activity: ActivityFeed): Promise<ActivityFeed> {
+  create(activity: ActivityFeed): Effect.Effect<ActivityFeed, never, never> {
     return this.createGeneric(activity);
   }
 
-  async update(activity: ActivityFeed): Promise<ActivityFeed> {
+  update(activity: ActivityFeed): Effect.Effect<ActivityFeed, never, never> {
     return this.updateGeneric(activity);
   }
 
-  async delete(id: ActivityId): Promise<void> {
-    await this.deleteGeneric(id);
-    // Also clean up associated reactions
+  delete(id: ActivityId): Effect.Effect<void, never, never> {
     this.reactionsStorage.delete(id);
+    return this.deleteGeneric(id);
   }
 
-  async exists(id: ActivityId): Promise<boolean> {
+  exists(id: ActivityId): Effect.Effect<boolean, never, never> {
     return this.existsGeneric(id);
   }
 
-  async findReactionsByActivityId(
+  findReactionsByActivityId(
     activityId: ActivityId,
-  ): Promise<ActivityReaction[]> {
-    return this.reactionsStorage.get(activityId) ?? [];
+  ): Effect.Effect<ActivityReaction[], never, never> {
+    return Effect.succeed(this.reactionsStorage.get(activityId) ?? []);
   }
 
-  async findUserReactions(
+  findUserReactions(
     activityId: ActivityId,
     userId: string,
-  ): Promise<ActivityReaction[]> {
+  ): Effect.Effect<ActivityReaction[], never, never> {
     const reactions = this.reactionsStorage.get(activityId) ?? [];
-    return reactions.filter((r) => r.userId === userId);
+    return Effect.succeed(reactions.filter((r) => r.userId === userId));
   }
 
-  async addReaction(reaction: ActivityReaction): Promise<ActivityReaction> {
+  addReaction(
+    reaction: ActivityReaction,
+  ): Effect.Effect<ActivityReaction, never, never> {
     const activityId = reaction.activityId;
     const existingReactions = this.reactionsStorage.get(activityId) ?? [];
 
-    // Check for duplicate (same user, same type)
     const duplicateIndex = existingReactions.findIndex(
       (r) =>
         r.userId === reaction.userId &&
@@ -209,32 +193,36 @@ export class InMemoryActivityFeedRepository
     );
 
     if (duplicateIndex !== -1) {
-      // Replace existing reaction with same type
       existingReactions[duplicateIndex] = reaction;
     } else {
       existingReactions.push(reaction);
     }
 
     this.reactionsStorage.set(activityId, existingReactions);
-    return reaction;
+    return Effect.succeed(reaction);
   }
 
-  async removeReaction(
+  removeReaction(
     activityId: ActivityId,
     userId: string,
     reactionType: string,
-  ): Promise<void> {
+  ): Effect.Effect<void, never, never> {
     const reactions = this.reactionsStorage.get(activityId) ?? [];
     const filteredReactions = reactions.filter(
       (r) => !(r.userId === userId && r.reactionType === reactionType),
     );
     this.reactionsStorage.set(activityId, filteredReactions);
+    return Effect.succeed(undefined);
   }
 
-  async getReactionCounts(activityId: ActivityId): Promise<{
-    total: number;
-    counts: { heart: number; fire: number; clap: number; star: number };
-  }> {
+  getReactionCounts(activityId: ActivityId): Effect.Effect<
+    {
+      total: number;
+      counts: { heart: number; fire: number; clap: number; star: number };
+    },
+    never,
+    never
+  > {
     const reactions = this.reactionsStorage.get(activityId) ?? [];
 
     const counts = {
@@ -250,9 +238,9 @@ export class InMemoryActivityFeedRepository
       }
     }
 
-    return {
+    return Effect.succeed({
       total: reactions.length,
       counts,
-    };
+    });
   }
 }

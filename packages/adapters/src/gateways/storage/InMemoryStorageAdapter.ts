@@ -12,21 +12,25 @@
  * - Thread-safe for single-process tests (Bun test runner)
  * - Supports upload, download, delete, and signed URL operations
  * - Compatible with awilix-modular dependency injection
+ * - Uses Effect for explicit error handling and composable operations
  *
  * @module gateways
  */
 
+import { Effect } from "effect";
 import {
   type StoragePort,
   type FileMetadata,
   type UploadOptions,
   type SignedUrlInfo,
+  type DownloadResult,
   StorageError,
   FileNotFoundError,
   UploadError,
   BucketNotFoundError,
+  DownloadError,
+  DeleteError,
 } from "@mirai-app/use-cases/ports/StoragePort";
-import { type Result, ok, err } from "@mirai-app/domain";
 
 // =============================================================================
 // In-Memory File Storage
@@ -68,15 +72,19 @@ interface InMemoryFile {
  *
  * // Upload a file
  * const fileBuffer = Buffer.from("Hello World");
- * const result = await storagePort.upload("files", "test.txt", fileBuffer, {
- *   contentType: "text/plain"
- * });
+ * const metadata = await Effect.runPromise(
+ *   storagePort.upload("files", "test.txt", fileBuffer, {
+ *     contentType: "text/plain"
+ *   })
+ * );
  *
  * // Download the file
- * const downloadResult = await storagePort.download("files", "test.txt");
+ * const downloadResult = await Effect.runPromise(
+ *   storagePort.download("files", "test.txt")
+ * );
  *
  * // Verify
- * expect(downloadResult.kind).toBe("ok");
+ * expect(downloadResult.data.toString()).toBe("Hello World");
  * ```
  */
 export class InMemoryStorageAdapter implements StoragePort {
@@ -90,77 +98,82 @@ export class InMemoryStorageAdapter implements StoragePort {
    *
    * Stores the file data and metadata in memory for later retrieval.
    */
-  async upload(
+  upload(
     bucket: string,
     path: string,
     file: Buffer | Blob,
     options?: UploadOptions,
-  ): Promise<
-    Result<FileMetadata, StorageError | UploadError | BucketNotFoundError>
+  ): Effect.Effect<
+    FileMetadata,
+    StorageError | UploadError | BucketNotFoundError,
+    never
   > {
-    try {
-      // Convert Blob to Buffer if necessary
-      let buffer: Buffer;
-      if (file instanceof Blob) {
-        const arrayBuffer = await file.arrayBuffer();
-        buffer = Buffer.from(arrayBuffer);
-      } else {
-        buffer = file;
-      }
+    return Effect.tryPromise({
+      try: async () => {
+        // Convert Blob to Buffer if necessary
+        let buffer: Buffer;
+        if (file instanceof Blob) {
+          const arrayBuffer = await file.arrayBuffer();
+          buffer = Buffer.from(arrayBuffer);
+        } else {
+          buffer = file;
+        }
 
-      // Create file key
-      const fileKey = `${bucket}/${path}`;
+        // Create file key
+        const fileKey = `${bucket}/${path}`;
 
-      // Determine content type
-      const contentType = options?.contentType ?? this.detectContentType(path);
+        // Determine content type
+        const contentType =
+          options?.contentType ?? this.detectContentType(path);
 
-      // Create metadata
-      const now = new Date();
-      const metadata: FileMetadata = {
-        path: fileKey,
-        bucket,
-        size: buffer.length,
-        contentType,
-        createdAt: this.files.has(fileKey)
-          ? this.files.get(fileKey)!.metadata.createdAt
-          : now,
-        updatedAt: now,
-        etag: this.generateEtag(buffer),
-      };
+        // Create metadata
+        const now = new Date();
+        const metadata: FileMetadata = {
+          path: fileKey,
+          bucket,
+          size: buffer.length,
+          contentType,
+          createdAt: this.files.has(fileKey)
+            ? this.files.get(fileKey)!.metadata.createdAt
+            : now,
+          updatedAt: now,
+          etag: this.generateEtag(buffer),
+        };
 
-      // Check upsert option
-      if (this.files.has(fileKey) && !options?.upsert) {
-        return err(
-          new UploadError({
+        // Check upsert option
+        if (this.files.has(fileKey) && !options?.upsert) {
+          throw new UploadError({
             message: `File already exists at ${fileKey}. Use upsert option to overwrite.`,
             bucket,
             path,
-          }),
-        );
-      }
+          });
+        }
 
-      // Store the file
-      const inMemoryFile: InMemoryFile = {
-        bucket,
-        path,
-        data: buffer,
-        metadata,
-        contentType,
-      };
+        // Store the file
+        const inMemoryFile: InMemoryFile = {
+          bucket,
+          path,
+          data: buffer,
+          metadata,
+          contentType,
+        };
 
-      this.files.set(fileKey, inMemoryFile);
-      this.buckets.add(bucket);
+        this.files.set(fileKey, inMemoryFile);
+        this.buckets.add(bucket);
 
-      return ok(metadata);
-    } catch (error) {
-      return err(
-        new UploadError({
+        return metadata;
+      },
+      catch: (error) => {
+        if (error instanceof UploadError) {
+          return error;
+        }
+        return new UploadError({
           message: `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
           bucket,
           path,
-        }),
-      );
-    }
+        });
+      },
+    });
   }
 
   /**
@@ -168,33 +181,45 @@ export class InMemoryStorageAdapter implements StoragePort {
    *
    * Retrieves previously stored file data.
    */
-  async download(
+  download(
     bucket: string,
     path: string,
-  ): Promise<Result<Buffer | Blob, StorageError | FileNotFoundError>> {
-    try {
-      const fileKey = `${bucket}/${path}`;
-      const file = this.files.get(fileKey);
+  ): Effect.Effect<
+    DownloadResult,
+    StorageError | FileNotFoundError | DownloadError,
+    never
+  > {
+    return Effect.try({
+      try: () => {
+        const fileKey = `${bucket}/${path}`;
+        const file = this.files.get(fileKey);
 
-      if (!file) {
-        return err(
-          new FileNotFoundError({
+        if (!file) {
+          throw new FileNotFoundError({
             message: `File not found: ${fileKey}`,
             bucket,
             path,
-          }),
-        );
-      }
+          });
+        }
 
-      // Return a copy of the buffer to prevent external mutation
-      return ok(Buffer.from(file.data));
-    } catch (error) {
-      return err(
-        new StorageError({
+        // Return a copy of the buffer to prevent external mutation
+        return {
+          data: Buffer.from(file.data),
+          metadata: file.metadata,
+          contentType: file.contentType,
+        };
+      },
+      catch: (error) => {
+        if (error instanceof FileNotFoundError) {
+          return error;
+        }
+        return new DownloadError({
           message: `Download failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        }),
-      );
-    }
+          bucket,
+          path,
+        });
+      },
+    });
   }
 
   /**
@@ -202,51 +227,51 @@ export class InMemoryStorageAdapter implements StoragePort {
    *
    * Removes files from the in-memory store.
    */
-  async delete(
+  delete(
     bucket: string,
     paths: string[],
-  ): Promise<Result<void, StorageError | FileNotFoundError>> {
-    try {
-      const notFoundPaths: string[] = [];
+  ): Effect.Effect<void, StorageError | DeleteError, never> {
+    return Effect.try({
+      try: () => {
+        const notFoundPaths: string[] = [];
 
-      for (const path of paths) {
-        const fileKey = `${bucket}/${path}`;
+        for (const path of paths) {
+          const fileKey = `${bucket}/${path}`;
 
-        if (!this.files.has(fileKey)) {
-          notFoundPaths.push(path);
-          continue;
-        }
+          if (!this.files.has(fileKey)) {
+            notFoundPaths.push(path);
+            continue;
+          }
 
-        // Remove the file
-        this.files.delete(fileKey);
+          // Remove the file
+          this.files.delete(fileKey);
 
-        // Remove any signed URLs for this file
-        for (const [urlKey, urlInfo] of this.signedUrls) {
-          if (urlKey.startsWith(fileKey)) {
-            this.signedUrls.delete(urlKey);
+          // Remove any signed URLs for this file
+          for (const [urlKey] of this.signedUrls) {
+            if (urlKey.startsWith(fileKey)) {
+              this.signedUrls.delete(urlKey);
+            }
           }
         }
-      }
 
-      // If any files were not found, return error
-      if (notFoundPaths.length > 0) {
-        return err(
-          new FileNotFoundError({
+        // If any files were not found, return error
+        if (notFoundPaths.length > 0) {
+          throw new DeleteError({
             message: `Some files were not found: ${notFoundPaths.join(", ")}`,
             bucket,
-            path: paths.join(", "),
-          }),
-        );
-      }
-
-      return ok(undefined);
-    } catch (error) {
-      return err(
-        new StorageError({
+            paths,
+          });
+        }
+      },
+      catch: (error) => {
+        if (error instanceof DeleteError) {
+          return error;
+        }
+        return new StorageError({
           message: `Delete failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        }),
-      );
-    }
+        });
+      },
+    });
   }
 
   /**
@@ -254,46 +279,48 @@ export class InMemoryStorageAdapter implements StoragePort {
    *
    * Generates a mock signed URL that can be validated against this adapter.
    */
-  async createSignedUrl(
+  createSignedUrl(
     bucket: string,
     path: string,
     expiresInSeconds: number,
-  ): Promise<Result<SignedUrlInfo, StorageError | FileNotFoundError>> {
-    try {
-      const fileKey = `${bucket}/${path}`;
-      const file = this.files.get(fileKey);
+  ): Effect.Effect<SignedUrlInfo, StorageError | FileNotFoundError, never> {
+    return Effect.try({
+      try: () => {
+        const fileKey = `${bucket}/${path}`;
+        const file = this.files.get(fileKey);
 
-      if (!file) {
-        return err(
-          new FileNotFoundError({
+        if (!file) {
+          throw new FileNotFoundError({
             message: `File not found: ${fileKey}`,
             bucket,
             path,
-          }),
-        );
-      }
+          });
+        }
 
-      // Generate signed URL
-      this.urlCounter++;
-      const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
-      const signedUrlInfo: SignedUrlInfo = {
-        url: `inmemory://${bucket}/${path}?token=${this.generateToken()}&expires=${expiresAt.toISOString()}`,
-        expiresAt,
-        expiresInSeconds,
-      };
+        // Generate signed URL
+        this.urlCounter++;
+        const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+        const signedUrlInfo: SignedUrlInfo = {
+          url: `inmemory://${bucket}/${path}?token=${this.generateToken()}&expires=${expiresAt.toISOString()}`,
+          expiresAt,
+          expiresInSeconds,
+        };
 
-      // Store the signed URL
-      const urlKey = `${fileKey}:${this.urlCounter}`;
-      this.signedUrls.set(urlKey, signedUrlInfo);
+        // Store the signed URL
+        const urlKey = `${fileKey}:${this.urlCounter}`;
+        this.signedUrls.set(urlKey, signedUrlInfo);
 
-      return ok(signedUrlInfo);
-    } catch (error) {
-      return err(
-        new StorageError({
+        return signedUrlInfo;
+      },
+      catch: (error) => {
+        if (error instanceof FileNotFoundError) {
+          return error;
+        }
+        return new StorageError({
           message: `Failed to create signed URL: ${error instanceof Error ? error.message : "Unknown error"}`,
-        }),
-      );
-    }
+        });
+      },
+    });
   }
 
   /**
@@ -407,7 +434,9 @@ export class InMemoryStorageAdapter implements StoragePort {
     let hash = 0;
     for (let i = 0; i < buffer.length; i++) {
       const char = buffer[i];
-      hash = ((hash << 5) - hash + char) | 0;
+      if (char !== undefined) {
+        hash = ((hash << 5) - hash + char) | 0;
+      }
     }
     return `"${Math.abs(hash).toString(16)}"`;
   }

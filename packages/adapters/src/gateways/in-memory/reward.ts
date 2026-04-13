@@ -4,7 +4,9 @@ import type {
   PaginationOptions,
   PaginatedResult,
 } from "@mirai-app/use-cases";
+import { DatabaseError } from "@mirai-app/use-cases/ports/RewardRepository";
 import type { Reward, RewardPurchase, RewardId } from "@mirai-app/domain";
+import { Effect } from "effect";
 
 /**
  * In-Memory Reward Repository for Testing
@@ -16,7 +18,7 @@ import type { Reward, RewardPurchase, RewardId } from "@mirai-app/domain";
  * const repo = new InMemoryRewardRepository();
  * repo.seed([mockReward]);
  *
- * const byTrip = await repo.findByTripId("trip-123");
+ * const byTrip = await Effect.runPromise(repo.findByTripId("trip-123"));
  * expect(byTrip.items).toHaveLength(1);
  *
  * repo.reset();
@@ -39,94 +41,123 @@ export class InMemoryRewardRepository implements RewardRepository {
     purchases.forEach((p) => this.purchases.set(p.id, p));
   }
 
-  async create(reward: Reward): Promise<Reward> {
-    this.rewards.set(reward.id, reward);
-    return reward;
+  create(reward: Reward): Effect.Effect<Reward, DatabaseError, never> {
+    return Effect.sync(() => {
+      this.rewards.set(reward.id, reward);
+      return reward;
+    });
   }
 
-  async findById(id: RewardId): Promise<Reward | null> {
-    return this.rewards.get(id) ?? null;
+  findById(id: RewardId): Effect.Effect<Reward | null, DatabaseError, never> {
+    return Effect.succeed(this.rewards.get(id) ?? null);
   }
 
-  async findByTripId(
+  findByTripId(
     tripId: string,
     options?: { includeHidden?: boolean } & PaginationOptions,
-  ): Promise<PaginatedResult<Reward>> {
-    let items = Array.from(this.rewards.values()).filter(
-      (r) => r.tripId === tripId,
-    );
+  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never> {
+    return Effect.succeed(() => {
+      let items = Array.from(this.rewards.values()).filter(
+        (r) => r.tripId === tripId,
+      );
 
-    if (!options?.includeHidden) {
-      items = items.filter((r) => !r.isHidden);
-    }
+      if (!options?.includeHidden) {
+        items = items.filter((r) => !r.isHidden);
+      }
 
-    const total = items.length;
-    const offset = options?.offset ?? 0;
-    const limit = options?.limit ?? 30;
+      const total = items.length;
+      const offset = options?.offset ?? 0;
+      const limit = options?.limit ?? 30;
 
-    items = items.slice(offset, offset + limit);
+      items = items.slice(offset, offset + limit);
 
-    return {
-      items,
-      total,
-      limit,
-      offset,
-      hasMore: offset + items.length < total,
-    };
+      return {
+        items,
+        total,
+        limit,
+        offset,
+        hasMore: offset + items.length < total,
+      };
+    });
   }
 
-  async findVisibleByTripId(
+  findVisibleByTripId(
     tripId: string,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<Reward>> {
+  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never> {
     return this.findByTripId(tripId, { ...options, includeHidden: false });
   }
 
-  async update(reward: Reward): Promise<Reward> {
+  update(reward: Reward): Effect.Effect<Reward, DatabaseError, never> {
     if (!this.rewards.has(reward.id)) {
-      throw new Error(`Reward with id ${reward.id} not found`);
+      return Effect.fail(
+        new DatabaseError({
+          operation: "update",
+          message: `Reward with id ${reward.id} not found`,
+        }),
+      );
     }
     this.rewards.set(reward.id, reward);
-    return reward;
+    return Effect.succeed(reward);
   }
 
-  async delete(id: RewardId): Promise<void> {
-    this.rewards.delete(id);
+  delete(id: RewardId): Effect.Effect<void, DatabaseError, never> {
+    return Effect.sync(() => {
+      this.rewards.delete(id);
+    });
   }
 
-  async hasPurchases(id: RewardId): Promise<boolean> {
-    return Array.from(this.purchases.values()).some((p) => p.rewardId === id);
+  hasPurchases(id: RewardId): Effect.Effect<boolean, DatabaseError, never> {
+    return Effect.succeed(
+      Array.from(this.purchases.values()).some((p) => p.rewardId === id),
+    );
   }
 
-  async getPurchaseCount(id: RewardId): Promise<number> {
-    return Array.from(this.purchases.values()).filter((p) => p.rewardId === id)
-      .length;
+  getPurchaseCount(id: RewardId): Effect.Effect<number, DatabaseError, never> {
+    return Effect.succeed(
+      Array.from(this.purchases.values()).filter((p) => p.rewardId === id)
+        .length,
+    );
   }
 
-  async decrementQuantity(id: RewardId, amount: number): Promise<Reward> {
-    const reward = await this.findById(id);
+  decrementQuantity(
+    id: RewardId,
+    amount: number,
+  ): Effect.Effect<Reward, DatabaseError, never> {
+    const reward = this.rewards.get(id);
     if (!reward) {
-      throw new Error(`Reward with id ${id} not found`);
+      return Effect.fail(
+        new DatabaseError({
+          operation: "decrementQuantity",
+          message: `Reward with id ${id} not found`,
+        }),
+      );
     }
-    const decremented = reward.decrementQuantity(amount);
-    if (decremented.kind === "err") {
-      throw new Error(decremented.error);
-    }
-    this.rewards.set(id, decremented.value);
-    return decremented.value;
+    return Effect.gen(function* () {
+      const decremented = reward.decrementQuantity(amount);
+      const result = yield* decremented;
+      return result;
+    });
   }
 
-  async incrementQuantity(id: RewardId, amount: number): Promise<Reward> {
-    const reward = await this.findById(id);
+  incrementQuantity(
+    id: RewardId,
+    amount: number,
+  ): Effect.Effect<Reward, DatabaseError, never> {
+    const reward = this.rewards.get(id);
     if (!reward) {
-      throw new Error(`Reward with id ${id} not found`);
+      return Effect.fail(
+        new DatabaseError({
+          operation: "incrementQuantity",
+          message: `Reward with id ${id} not found`,
+        }),
+      );
     }
-    const incremented = reward.incrementQuantity(amount);
-    if (incremented.kind === "err") {
-      throw new Error(incremented.error);
-    }
-    this.rewards.set(id, incremented.value);
-    return incremented.value;
+    return Effect.gen(function* () {
+      const incremented = reward.incrementQuantity(amount);
+      const result = yield* incremented;
+      return result;
+    });
   }
 }
 
@@ -146,19 +177,25 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
     items.forEach((item) => this.purchases.set(item.id, item));
   }
 
-  async create(purchase: RewardPurchase): Promise<RewardPurchase> {
-    this.purchases.set(purchase.id, purchase);
-    return purchase;
+  create(
+    purchase: RewardPurchase,
+  ): Effect.Effect<RewardPurchase, DatabaseError, never> {
+    return Effect.sync(() => {
+      this.purchases.set(purchase.id, purchase);
+      return purchase;
+    });
   }
 
-  async findById(id: string): Promise<RewardPurchase | null> {
-    return this.purchases.get(id) ?? null;
+  findById(
+    id: string,
+  ): Effect.Effect<RewardPurchase | null, DatabaseError, never> {
+    return Effect.succeed(this.purchases.get(id) ?? null);
   }
 
-  async findByRewardId(
+  findByRewardId(
     rewardId: RewardId,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>> {
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
     let items = Array.from(this.purchases.values()).filter(
       (p) => p.rewardId === rewardId,
     );
@@ -169,19 +206,19 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
 
     items = items.slice(offset, offset + limit);
 
-    return {
+    return Effect.succeed({
       items,
       total,
       limit,
       offset,
       hasMore: offset + items.length < total,
-    };
+    });
   }
 
-  async findByGroupId(
+  findByGroupId(
     groupId: string,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>> {
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
     let items = Array.from(this.purchases.values()).filter(
       (p) => p.groupId === groupId,
     );
@@ -192,21 +229,19 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
 
     items = items.slice(offset, offset + limit);
 
-    return {
+    return Effect.succeed({
       items,
       total,
       limit,
       offset,
       hasMore: offset + items.length < total,
-    };
+    });
   }
 
-  async findByTripId(
+  findByTripId(
     tripId: string,
     options?: { groupId?: string } & PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>> {
-    // This requires looking up rewards by tripId, then purchases by rewardId
-    // For simplicity, we'll just filter by groupId if provided
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
     let items = Array.from(this.purchases.values());
 
     if (options?.groupId) {
@@ -219,26 +254,30 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
 
     items = items.slice(offset, offset + limit);
 
-    return {
+    return Effect.succeed({
       items,
       total,
       limit,
       offset,
       hasMore: offset + items.length < total,
-    };
+    });
   }
 
-  async updateStatus(
+  updateStatus(
     id: string,
     status: string,
     updatedById: string,
     collectionMethod?: string | null,
-  ): Promise<RewardPurchase> {
-    const purchase = await this.findById(id);
+  ): Effect.Effect<RewardPurchase, DatabaseError, never> {
+    const purchase = this.purchases.get(id);
     if (!purchase) {
-      throw new Error(`Purchase with id ${id} not found`);
+      return Effect.fail(
+        new DatabaseError({
+          operation: "updateStatus",
+          message: `Purchase with id ${id} not found`,
+        }),
+      );
     }
-    // Create updated purchase with new status
     const updated = new (purchase.constructor as new (
       ...args: unknown[]
     ) => RewardPurchase)(
@@ -250,15 +289,20 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
       purchase.purchasedById,
       status as RewardPurchase["status"],
       purchase.purchasedAt,
-      new Date(), // statusUpdatedAt
+      new Date(),
       updatedById,
       collectionMethod ?? purchase.collectionMethod,
     );
     this.purchases.set(id, updated);
-    return updated;
+    return Effect.succeed(updated);
   }
 
-  async countByRewardId(rewardId: RewardId): Promise<number> {
-    return this.findByRewardId(rewardId).then((result) => result.total);
+  countByRewardId(
+    rewardId: RewardId,
+  ): Effect.Effect<number, DatabaseError, never> {
+    return Effect.succeed(
+      Array.from(this.purchases.values()).filter((p) => p.rewardId === rewardId)
+        .length,
+    );
   }
 }

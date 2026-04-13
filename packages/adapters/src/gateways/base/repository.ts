@@ -1,6 +1,8 @@
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { eq } from "drizzle-orm";
 import type { PgTable, TableConfig } from "drizzle-orm/pg-core";
+import { Effect } from "effect";
+import { DatabaseError } from "../../errors/adapter-errors";
 
 /**
  * Generic mapper interface for domain-drizzle conversions
@@ -42,6 +44,8 @@ export interface DrizzleRepositoryConfig<
  * - Gradual migration: Switch reads, then writes, per entity
  * - Zero-downtime rollback: DI container reconfiguration
  *
+ * All methods use Effect.tryPromise for error handling (Step 4.3).
+ *
  * @example
  * ```typescript
  * class DrizzleUserRepository
@@ -53,11 +57,13 @@ export interface DrizzleRepositoryConfig<
  *   }
  *
  *   // Add custom methods
- *   async findByAuthId(authUserId: string): Promise<User | null> {
- *     const record = await this.db.query.users.findFirst({
- *       where: eq(users.authUserId, authUserId)
- *     });
- *     return record ? this.mapper.toDomain(record) : null;
+ *   findByAuthId(authUserId: string): Effect<User | null, DatabaseError, never> {
+ *     return Effect.tryPromise({
+ *       try: () => this.db.query.users.findFirst({
+ *         where: eq(users.authUserId, authUserId)
+ *       }),
+ *       catch: () => new DatabaseError("findByAuthId", "Failed to find user"),
+ *     }).pipe(Effect.map((r) => r ? this.mapper.toDomain(r) : null));
  *   }
  * }
  * ```
@@ -116,128 +122,194 @@ export abstract class BaseDrizzleRepository<
   /**
    * Create a new entity
    */
-  async create(entity: TDomain): Promise<TDomain> {
-    const insertData = this.mapper.toDrizzleInsert(entity);
-    const [record] = await this.db
-      .insert(this.table)
-      .values(insertData)
-      .returning();
+  create(entity: TDomain): Effect.Effect<TDomain, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const insertData = this.mapper.toDrizzleInsert(entity);
+        const [record] = await this.db
+          .insert(this.table)
+          .values(insertData)
+          .returning();
 
-    if (!record) {
-      throw new Error("Failed to create entity: no record returned");
-    }
+        if (!record) {
+          throw new Error("Failed to create entity: no record returned");
+        }
 
-    return this.mapper.toDomain(record as TDrizzle);
+        return this.mapper.toDomain(record as TDrizzle);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "create",
+          message: "Failed to create entity",
+          cause: error,
+        }),
+    });
   }
 
   /**
    * Find entity by ID
    */
-  async findById(id: string): Promise<TDomain | null> {
-    const tableName = this.getTableName();
-    const idColumn = (
-      this.table as unknown as Record<string, { name: string }>
-    )["id"];
+  findById(id: string): Effect.Effect<TDomain | null, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const tableName = this.getTableName();
+        const idColumn = (
+          this.table as unknown as Record<string, { name: string }>
+        )["id"];
 
-    if (!idColumn) {
-      throw new Error(`Table ${tableName} does not have an 'id' column`);
-    }
+        if (!idColumn) {
+          throw new Error(`Table ${tableName} does not have an 'id' column`);
+        }
 
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(idColumn as never, id))
-      .limit(1);
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(idColumn as never, id))
+          .limit(1);
 
-    const record = records[0];
-    return record ? this.mapper.toDomain(record as TDrizzle) : null;
+        const record = records[0];
+        return record ? this.mapper.toDomain(record as TDrizzle) : null;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findById",
+          message: "Failed to find entity",
+          cause: error,
+        }),
+    });
   }
 
   /**
    * Find all entities with optional pagination
    */
-  async findAll(options?: {
+  findAll(options?: {
     limit?: number;
     offset?: number;
     orderBy?: { column: string; direction: "asc" | "desc" };
-  }): Promise<TDomain[]> {
-    let query = this.db.select().from(this.table);
+  }): Effect.Effect<TDomain[], DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        let query = this.db.select().from(this.table);
 
-    // Apply ordering (default to createdAt desc)
-    const orderColumn = options?.orderBy?.column ?? "createdAt";
-    const orderDirection = options?.orderBy?.direction ?? "desc";
+        // Apply ordering (default to createdAt desc)
+        const orderColumn = options?.orderBy?.column ?? "createdAt";
+        const orderDirection = options?.orderBy?.direction ?? "desc";
 
-    // Get column reference
-    const columnRef = (this.table as unknown as Record<string, unknown>)[
-      orderColumn
-    ];
-    if (columnRef) {
-      query = query.orderBy(
-        orderDirection === "asc" ? (columnRef as never) : (columnRef as never),
-      );
-    }
+        // Get column reference
+        const columnRef = (this.table as unknown as Record<string, unknown>)[
+          orderColumn
+        ];
+        if (columnRef) {
+          query = query.orderBy(
+            orderDirection === "asc"
+              ? (columnRef as never)
+              : (columnRef as never),
+          );
+        }
 
-    // Apply pagination
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
-    if (options?.offset) {
-      query = query.offset(options.offset);
-    }
+        // Apply pagination
+        if (options?.limit) {
+          query = query.limit(options.limit);
+        }
+        if (options?.offset) {
+          query = query.offset(options.offset);
+        }
 
-    const records = await query;
-    return records.map((record) => this.mapper.toDomain(record as TDrizzle));
+        const records = await query;
+        return records.map((record) =>
+          this.mapper.toDomain(record as TDrizzle),
+        );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findAll",
+          message: "Failed to find entities",
+          cause: error,
+        }),
+    });
   }
 
   /**
    * Update an existing entity
    */
-  async update(entity: TDomain & { id: string }): Promise<TDomain> {
-    const updateData = this.mapper.toDrizzleUpdate(entity);
-    const idColumn = (
-      this.table as unknown as Record<string, { name: string }>
-    )["id"];
+  update(
+    entity: TDomain & { id: string },
+  ): Effect.Effect<TDomain, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const updateData = this.mapper.toDrizzleUpdate(entity);
+        const idColumn = (
+          this.table as unknown as Record<string, { name: string }>
+        )["id"];
 
-    if (!idColumn) {
-      throw new Error("Table does not have an 'id' column");
-    }
+        if (!idColumn) {
+          throw new Error("Table does not have an 'id' column");
+        }
 
-    const [record] = await this.db
-      .update(this.table)
-      .set(updateData)
-      .where(eq(idColumn as never, entity.id))
-      .returning();
+        const [record] = await this.db
+          .update(this.table)
+          .set(updateData)
+          .where(eq(idColumn as never, entity.id))
+          .returning();
 
-    if (!record) {
-      throw new Error(
-        `Failed to update entity with id ${entity.id}: not found`,
-      );
-    }
+        if (!record) {
+          throw new Error(
+            `Failed to update entity with id ${entity.id}: not found`,
+          );
+        }
 
-    return this.mapper.toDomain(record as TDrizzle);
+        return this.mapper.toDomain(record as TDrizzle);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "update",
+          message: `Failed to update entity with id ${entity.id}`,
+          cause: error,
+        }),
+    });
   }
 
   /**
    * Delete an entity by ID
    */
-  async delete(id: string): Promise<void> {
-    const idColumn = (
-      this.table as unknown as Record<string, { name: string }>
-    )["id"];
+  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const idColumn = (
+          this.table as unknown as Record<string, { name: string }>
+        )["id"];
 
-    if (!idColumn) {
-      throw new Error("Table does not have an 'id' column");
-    }
+        if (!idColumn) {
+          throw new Error("Table does not have an 'id' column");
+        }
 
-    await this.db.delete(this.table).where(eq(idColumn as never, id));
+        await this.db.delete(this.table).where(eq(idColumn as never, id));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "delete",
+          message: `Failed to delete entity with id ${id}`,
+          cause: error,
+        }),
+    });
   }
 
   /**
    * Check if an entity exists
    */
-  async exists(id: string): Promise<boolean> {
-    const record = await this.findById(id);
-    return record !== null;
+  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const record = await this.findById(id);
+        return record !== null;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "exists",
+          message: "Failed to check entity existence",
+          cause: error,
+        }),
+    });
   }
 
   /**

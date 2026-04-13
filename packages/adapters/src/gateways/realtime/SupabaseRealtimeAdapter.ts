@@ -29,7 +29,7 @@ import {
   ConnectionError,
   SubscriptionError,
 } from "@mirai-app/use-cases/ports/RealtimePort";
-import { type Result, ok, err } from "@mirai-app/domain";
+import { Effect } from "effect";
 
 // =============================================================================
 // Error Mapping
@@ -132,17 +132,17 @@ class SupabaseRealtimeSubscription implements RealtimeSubscription {
     return mapSupabaseStateToConnectionState(supabaseState);
   }
 
-  unsubscribe(): Result<void, RealtimeError> {
-    try {
-      this.supabaseChannel.unsubscribe();
-      return ok(undefined);
-    } catch (error) {
-      return err(
+  unsubscribe(): Effect.Effect<void, RealtimeError, never> {
+    return Effect.try({
+      try: () => {
+        this.supabaseChannel.unsubscribe();
+        return undefined;
+      },
+      catch: (error) =>
         new RealtimeError({
           message: `Failed to unsubscribe from channel ${this.channel}: ${error instanceof Error ? error.message : "Unknown error"}`,
         }),
-      );
-    }
+    });
   }
 }
 
@@ -191,48 +191,54 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
   subscribe(
     channel: string,
     config: ChannelConfig,
-  ): Result<RealtimeSubscription, RealtimeError | SubscriptionError> {
-    try {
-      // Create the Supabase channel
-      const supabaseChannel = this.supabase.channel(channel);
+  ): Effect.Effect<
+    RealtimeSubscription,
+    RealtimeError | SubscriptionError,
+    never
+  > {
+    return Effect.try({
+      try: () => {
+        // Create the Supabase channel
+        const supabaseChannel = this.supabase.channel(channel);
 
-      // Set up event listeners if events are specified
-      if (config.events && config.events.length > 0) {
-        for (const event of config.events) {
-          supabaseChannel.on(
-            "broadcast",
-            { event },
-            (payload: { event: string; payload: unknown }) => {
-              config.onMessage?.(payload.event, payload.payload);
-            },
-          );
+        // Set up event listeners if events are specified
+        if (config.events && config.events.length > 0) {
+          for (const event of config.events) {
+            supabaseChannel.on(
+              "broadcast",
+              { event },
+              (payload: { event: string; payload: unknown }) => {
+                config.onMessage?.(payload.event, payload.payload);
+              },
+            );
+          }
         }
-      }
 
-      // Subscribe to the channel
-      supabaseChannel.subscribe((status: string) => {
-        const state = this.mapSupabaseStatusToConnectionState(status);
-        config.onConnectionChange?.(state);
-      });
+        // Subscribe to the channel
+        supabaseChannel.subscribe((status: string) => {
+          const state = this.mapSupabaseStatusToConnectionState(status);
+          config.onConnectionChange?.(state);
+        });
 
-      // Store the channel for later management
-      this.activeChannels.set(channel, supabaseChannel);
+        // Store the channel for later management
+        this.activeChannels.set(channel, supabaseChannel);
 
-      // Generate subscription ID
-      this.subscriptionCounter++;
-      const subscriptionId = `sub-${this.subscriptionCounter}`;
+        // Generate subscription ID
+        this.subscriptionCounter++;
+        const subscriptionId = `sub-${this.subscriptionCounter}`;
 
-      // Create and return subscription wrapper
-      const subscription = new SupabaseRealtimeSubscription(
-        supabaseChannel,
-        channel,
-        subscriptionId,
-      );
+        // Create and return subscription wrapper
+        const subscription = new SupabaseRealtimeSubscription(
+          supabaseChannel,
+          channel,
+          subscriptionId,
+        );
 
-      return ok(subscription);
-    } catch (error) {
-      return err(mapSupabaseErrorToRealtimeError(error, "subscribe", channel));
-    }
+        return subscription;
+      },
+      catch: (error) =>
+        mapSupabaseErrorToRealtimeError(error, "subscribe", channel),
+    });
   }
 
   /**
@@ -240,46 +246,52 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
    *
    * Uses Supabase's broadcast API to send messages to channel subscribers.
    */
-  async broadcast(
+  broadcast(
     channel: string,
     event: string,
     payload: unknown,
-  ): Promise<Result<void, RealtimeError>> {
-    try {
-      // Get or create the channel
-      let supabaseChannel = this.activeChannels.get(channel);
+  ): Effect.Effect<void, RealtimeError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        // Get or create the channel
+        let supabaseChannel = this.activeChannels.get(channel);
 
-      if (!supabaseChannel) {
-        supabaseChannel = this.supabase.channel(channel);
-        this.activeChannels.set(channel, supabaseChannel);
+        if (!supabaseChannel) {
+          supabaseChannel = this.supabase.channel(channel);
+          this.activeChannels.set(channel, supabaseChannel);
 
-        // Subscribe first to enable broadcasting
-        await new Promise<void>((resolve, reject) => {
-          supabaseChannel!.subscribe((status: string) => {
-            if (status === "SUBSCRIBED") {
-              resolve();
-            } else if (status === "CHANNEL_ERROR") {
-              reject(new Error("Channel subscription failed"));
-            }
+          // Subscribe first to enable broadcasting
+          await new Promise<void>((resolve, reject) => {
+            supabaseChannel!.subscribe((status: string) => {
+              if (status === "SUBSCRIBED") {
+                resolve();
+              } else if (status === "CHANNEL_ERROR") {
+                reject(new Error("Channel subscription failed"));
+              }
+            });
           });
+        }
+
+        // Send the broadcast message
+        const { error } = await supabaseChannel.send({
+          type: "broadcast",
+          event,
+          payload,
         });
-      }
 
-      // Send the broadcast message
-      const { error } = await supabaseChannel.send({
-        type: "broadcast",
-        event,
-        payload,
-      });
+        if (error) {
+          throw new RealtimeError({ message: error.message });
+        }
 
-      if (error) {
-        return err(new RealtimeError({ message: error.message }));
-      }
-
-      return ok(undefined);
-    } catch (error) {
-      return err(mapSupabaseErrorToRealtimeError(error, "broadcast", channel));
-    }
+        return undefined;
+      },
+      catch: (error) => {
+        if (error instanceof RealtimeError) {
+          return error;
+        }
+        return mapSupabaseErrorToRealtimeError(error, "broadcast", channel);
+      },
+    });
   }
 
   /**
@@ -287,49 +299,53 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
    *
    * Uses Supabase's presence tracking to broadcast user state to channel members.
    */
-  async trackPresence(
+  trackPresence(
     channel: string,
     state: PresenceState,
-  ): Promise<Result<void, RealtimeError>> {
-    try {
-      // Get or create the channel
-      let supabaseChannel = this.activeChannels.get(channel);
+  ): Effect.Effect<void, RealtimeError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        // Get or create the channel
+        let supabaseChannel = this.activeChannels.get(channel);
 
-      if (!supabaseChannel) {
-        supabaseChannel = this.supabase.channel(channel);
-        this.activeChannels.set(channel, supabaseChannel);
+        if (!supabaseChannel) {
+          supabaseChannel = this.supabase.channel(channel);
+          this.activeChannels.set(channel, supabaseChannel);
 
-        // Subscribe to enable presence tracking
-        await new Promise<void>((resolve, reject) => {
-          supabaseChannel!.subscribe((status: string) => {
-            if (status === "SUBSCRIBED") {
-              resolve();
-            } else if (status === "CHANNEL_ERROR") {
-              reject(new Error("Channel subscription failed"));
-            }
+          // Subscribe to enable presence tracking
+          await new Promise<void>((resolve, reject) => {
+            supabaseChannel!.subscribe((status: string) => {
+              if (status === "SUBSCRIBED") {
+                resolve();
+              } else if (status === "CHANNEL_ERROR") {
+                reject(new Error("Channel subscription failed"));
+              }
+            });
           });
-        });
-      }
+        }
 
-      // Track presence
-      const presenceData = {
-        userId: state.userId,
-        ...state.payload,
-        timestamp: state.timestamp?.toISOString() ?? new Date().toISOString(),
-      };
+        // Track presence
+        const presenceData = {
+          userId: state.userId,
+          ...state.payload,
+          timestamp: state.timestamp?.toISOString() ?? new Date().toISOString(),
+        };
 
-      const { error } = await supabaseChannel.track(presenceData);
+        const { error } = await supabaseChannel.track(presenceData);
 
-      if (error) {
-        return err(new RealtimeError({ message: error.message }));
-      }
+        if (error) {
+          throw new RealtimeError({ message: error.message });
+        }
 
-      return ok(undefined);
-    } catch (error) {
-      return err(
-        mapSupabaseErrorToRealtimeError(error, "trackPresence", channel),
-      );
-    }
+        return undefined;
+      },
+      catch: (error) => {
+        if (error instanceof RealtimeError) {
+          return error;
+        }
+        return mapSupabaseErrorToRealtimeError(error, "trackPresence", channel);
+      },
+    });
   }
 
   /**

@@ -1,3 +1,17 @@
+import { Effect, Data } from "effect";
+
+/**
+ * DatabaseError for base repository operations
+ * Uses Effect's Data.TaggedError pattern for type-safe error handling
+ */
+export class DatabaseError extends Data.TaggedError("DatabaseError")<{
+  readonly operation: string;
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "DATABASE_ERROR" as const;
+}
+
 /**
  * Base In-Memory Repository
  *
@@ -8,100 +22,93 @@
  * ```typescript
  * const repo = new InMemoryUserRepository();
  * repo.seed([mockUser]);
- * const user = await repo.findById("user-123");
+ * const found = await Effect.runPromise(repo.findById("user-123"));
  * repo.reset(); // Clear for next test
  * ```
  */
 export abstract class InMemoryRepository<T extends { id: string }> {
   protected storage = new Map<string, T>();
 
-  /**
-   * Reset the repository - clears all stored data.
-   * Call this in beforeEach for test isolation.
-   */
-  reset(): void {
-    this.storage.clear();
+  reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      this.storage.clear();
+    });
   }
 
-  /**
-   * Seed the repository with initial data.
-   * Useful for setting up test scenarios.
-   */
-  seed(items: T[]): void {
-    items.forEach((item) => this.storage.set(item.id, item));
+  seed(items: T[]): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      items.forEach((item) => this.storage.set(item.id, item));
+    });
   }
 
-  /**
-   * Get all items as an array.
-   */
   protected getAllItems(): T[] {
     return Array.from(this.storage.values());
   }
 
-  /**
-   * Generic find by ID.
-   */
-  protected async findByIdGeneric(id: string): Promise<T | null> {
-    return this.storage.get(id) ?? null;
+  protected findByIdGeneric(
+    id: string,
+  ): Effect.Effect<T | null, DatabaseError, never> {
+    return Effect.succeed(this.storage.get(id) ?? null);
   }
 
-  /**
-   * Generic find all with optional pagination.
-   */
-  protected async findAllGeneric(options?: {
+  protected findAllGeneric(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<T[]> {
-    let items = this.getAllItems();
+  }): Effect.Effect<T[], DatabaseError, never> {
+    return Effect.sync(() => {
+      let items = this.getAllItems();
 
-    if (options?.offset) {
-      items = items.slice(options.offset);
-    }
+      if (options?.offset) {
+        items = items.slice(options.offset);
+      }
 
-    if (options?.limit !== undefined) {
-      items = items.slice(0, options.limit);
-    }
+      if (options?.limit !== undefined) {
+        items = items.slice(0, options.limit);
+      }
 
-    return items;
+      return items;
+    });
   }
 
-  /**
-   * Generic create - stores item by its ID.
-   */
-  protected async createGeneric(item: T): Promise<T> {
-    this.storage.set(item.id, item);
-    return item;
+  protected createGeneric(item: T): Effect.Effect<T, DatabaseError, never> {
+    return Effect.sync(() => {
+      this.storage.set(item.id, item);
+      return item;
+    });
   }
 
-  /**
-   * Generic update - replaces item by ID.
-   */
-  protected async updateGeneric(item: T): Promise<T> {
-    if (!this.storage.has(item.id)) {
-      throw new Error(`Item with id ${item.id} not found`);
-    }
-    this.storage.set(item.id, item);
-    return item;
+  protected updateGeneric(item: T): Effect.Effect<T, DatabaseError, never> {
+    return Effect.gen(
+      function* () {
+        if (!this.storage.has(item.id)) {
+          return yield* Effect.fail(
+            new DatabaseError({
+              operation: "updateGeneric",
+              message: `Item with id ${item.id} not found`,
+            }),
+          );
+        }
+        this.storage.set(item.id, item);
+        return yield* Effect.succeed(item);
+      }.bind(this),
+    );
   }
 
-  /**
-   * Generic delete - removes item by ID.
-   */
-  protected async deleteGeneric(id: string): Promise<void> {
-    this.storage.delete(id);
+  protected deleteGeneric(
+    id: string,
+  ): Effect.Effect<void, DatabaseError, never> {
+    return Effect.sync(() => {
+      this.storage.delete(id);
+    });
   }
 
-  /**
-   * Generic exists check.
-   */
-  protected async existsGeneric(id: string): Promise<boolean> {
-    return this.storage.has(id);
+  protected existsGeneric(
+    id: string,
+  ): Effect.Effect<boolean, DatabaseError, never> {
+    return Effect.succeed(this.storage.has(id));
   }
 
-  /**
-   * Get the count of stored items.
-   */
-  protected async countGeneric(): Promise<number> {
-    return this.storage.size;
+  protected countGeneric(): Effect.Effect<number, DatabaseError, never> {
+    return Effect.succeed(this.storage.size);
   }
 }

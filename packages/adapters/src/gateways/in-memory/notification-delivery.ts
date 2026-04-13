@@ -6,6 +6,7 @@ import type {
   DeliveryStats,
   DeliveryStatus,
 } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 
 /**
  * In-Memory Notification Delivery Repository for Testing
@@ -37,16 +38,16 @@ import type {
  * ]);
  *
  * // Find deliveries for a trip
- * const deliveries = await repo.findMany(
+ * const deliveries = await Effect.runPromise(repo.findMany(
  *   { tripId: "trip-1" },
  *   { limit: 10, offset: 0 }
- * );
+ * ));
  *
  * // Get delivery statistics
- * const stats = await repo.getStats({ tripId: "trip-1" });
+ * const stats = await Effect.runPromise(repo.getStats({ tripId: "trip-1" }));
  *
  * // Find failed deliveries
- * const failed = await repo.findFailed("trip-1", { limit: 5, offset: 0 });
+ * const failed = await Effect.runPromise(repo.findFailed("trip-1", { limit: 5, offset: 0 }));
  *
  * repo.reset(); // Clean up for next test
  * ```
@@ -54,39 +55,20 @@ import type {
 export class InMemoryNotificationDeliveryRepository implements NotificationDeliveryRepository {
   private storage = new Map<string, NotificationDelivery>();
 
-  /**
-   * Reset the repository - clears all stored data.
-   * Call this in beforeEach for test isolation.
-   */
   reset(): void {
     this.storage.clear();
   }
 
-  /**
-   * Seed the repository with initial delivery data.
-   * Useful for setting up test scenarios.
-   *
-   * @param deliveries - Array of deliveries to seed
-   */
   seed(deliveries: NotificationDelivery[]): void {
     deliveries.forEach((delivery) => this.storage.set(delivery.id, delivery));
   }
 
-  /**
-   * Find deliveries with pagination and filters.
-   * Results are sorted by deliveryStartedAt in descending order.
-   *
-   * @param filters - Optional filters (tripId, status, scheduleId, date range)
-   * @param pagination - Pagination options (limit, offset)
-   * @returns Array of matching deliveries
-   */
-  async findMany(
+  findMany(
     filters: Partial<DeliveryFilters>,
     pagination: PaginationOptions,
-  ): Promise<NotificationDelivery[]> {
+  ): Effect.Effect<NotificationDelivery[], never, never> {
     let results = Array.from(this.storage.values());
 
-    // Apply filters
     if (filters.tripId !== undefined) {
       results = results.filter((d) => d.tripId === filters.tripId);
     }
@@ -111,25 +93,19 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
       );
     }
 
-    // Sort by deliveryStartedAt desc
     results.sort(
       (a, b) => b.deliveryStartedAt.getTime() - a.deliveryStartedAt.getTime(),
     );
 
-    // Apply pagination
     const start = pagination.offset ?? 0;
     const limit = pagination.limit ?? 50;
     const end = start + limit;
-    return results.slice(start, end);
+    return Effect.succeed(results.slice(start, end));
   }
 
-  /**
-   * Count deliveries matching the given filters.
-   *
-   * @param filters - Optional filters (tripId, status, scheduleId, date range)
-   * @returns The count of matching deliveries
-   */
-  async count(filters?: Partial<DeliveryFilters>): Promise<number> {
+  count(
+    filters?: Partial<DeliveryFilters>,
+  ): Effect.Effect<number, never, never> {
     let results = Array.from(this.storage.values());
 
     if (filters?.tripId !== undefined) {
@@ -156,35 +132,23 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
       );
     }
 
-    return results.length;
+    return Effect.succeed(results.length);
   }
 
-  /**
-   * Find a delivery by its associated notification ID.
-   *
-   * @param notificationId - The notification ID to search for
-   * @returns The delivery or null if not found
-   */
-  async findByNotificationId(
+  findByNotificationId(
     notificationId: string,
-  ): Promise<NotificationDelivery | null> {
+  ): Effect.Effect<NotificationDelivery | null, never, never> {
     const results = Array.from(this.storage.values()).filter(
       (d) => d.notificationId === notificationId,
     );
-    return results.length > 0 ? results[0]! : null;
+    return Effect.succeed(results.length > 0 ? results[0]! : null);
   }
 
-  /**
-   * Get delivery statistics for the given filters.
-   * Calculates aggregated metrics including success rates and status breakdown.
-   *
-   * @param filters - Optional filters (tripId, status, scheduleId, date range)
-   * @returns Delivery statistics
-   */
-  async getStats(filters?: Partial<DeliveryFilters>): Promise<DeliveryStats> {
+  getStats(
+    filters?: Partial<DeliveryFilters>,
+  ): Effect.Effect<DeliveryStats, never, never> {
     let results = Array.from(this.storage.values());
 
-    // Apply filters
     if (filters?.tripId !== undefined) {
       results = results.filter((d) => d.tripId === filters.tripId);
     }
@@ -209,7 +173,6 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
       );
     }
 
-    // Calculate stats
     const totalDeliveries = results.length;
     const totalRecipients = results.reduce(
       (sum, d) => sum + d.totalRecipients,
@@ -226,7 +189,6 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
     const successRate =
       totalRecipients > 0 ? (totalSuccess / totalRecipients) * 100 : 0;
 
-    // Calculate status breakdown
     const statusBreakdown: Record<string, number> = {};
     const validStatuses: DeliveryStatus[] = [
       "pending",
@@ -243,7 +205,7 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
       statusBreakdown[d.status] = (statusBreakdown[d.status] ?? 0) + 1;
     });
 
-    return {
+    return Effect.succeed({
       totalDeliveries,
       totalRecipients,
       totalSuccess,
@@ -252,50 +214,36 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
       avgFailuresPerDelivery,
       successRate,
       statusBreakdown,
-    };
+    });
   }
 
-  /**
-   * Find failed or partially failed deliveries for a specific trip.
-   * Results are sorted by deliveryStartedAt in descending order.
-   *
-   * @param tripId - The trip ID to search for
-   * @param pagination - Pagination options (limit, offset)
-   * @returns Array of failed/partially failed deliveries
-   */
-  async findFailed(
+  findFailed(
     tripId: string,
     pagination: PaginationOptions,
-  ): Promise<NotificationDelivery[]> {
+  ): Effect.Effect<NotificationDelivery[], never, never> {
     let results = Array.from(this.storage.values()).filter(
       (d) =>
         d.tripId === tripId &&
         (d.status === "failure" || d.status === "partial_failure"),
     );
 
-    // Sort by deliveryStartedAt desc
     results.sort(
       (a, b) => b.deliveryStartedAt.getTime() - a.deliveryStartedAt.getTime(),
     );
 
-    // Apply pagination
     const start = pagination.offset ?? 0;
     const limit = pagination.limit ?? 50;
     const end = start + limit;
-    return results.slice(start, end);
+    return Effect.succeed(results.slice(start, end));
   }
 
-  /**
-   * Count failed or partially failed deliveries for a specific trip.
-   *
-   * @param tripId - The trip ID to count failures for
-   * @returns The count of failed/partially failed deliveries
-   */
-  async countFailed(tripId: string): Promise<number> {
-    return Array.from(this.storage.values()).filter(
-      (d) =>
-        d.tripId === tripId &&
-        (d.status === "failure" || d.status === "partial_failure"),
-    ).length;
+  countFailed(tripId: string): Effect.Effect<number, never, never> {
+    return Effect.succeed(
+      Array.from(this.storage.values()).filter(
+        (d) =>
+          d.tripId === tripId &&
+          (d.status === "failure" || d.status === "partial_failure"),
+      ).length,
+    );
   }
 }

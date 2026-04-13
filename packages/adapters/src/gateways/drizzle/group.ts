@@ -5,10 +5,12 @@ import {
   type GroupInsert,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
+import { Effect } from "effect";
 import { Group, GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { GroupDrizzleMapper } from "../../mappers/drizzle/group";
+import { DatabaseError } from "../../errors/adapter-errors";
 
 /**
  * DrizzleGroupRepository
@@ -29,101 +31,174 @@ export class DrizzleGroupRepository
   /**
    * Find groups by trip ID
    */
-  async findByTripId(tripId: string): Promise<Group[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.tripId, tripId));
+  findByTripId(tripId: string): Effect.Effect<Group[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.tripId, tripId));
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripId",
+          message: "Failed to find groups by trip ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find groups by status
    */
-  async findByStatus(status: GroupStatus): Promise<Group[]> {
-    const isDeleted = status === GroupStatus.DELETED;
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.isDeleted, isDeleted));
+  findByStatus(status: GroupStatus): Effect.Effect<Group[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const isDeleted = status === GroupStatus.DELETED;
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.isDeleted, isDeleted));
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByStatus",
+          message: "Failed to find groups by status",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find groups by trip ID and status
    */
-  async findByTripIdAndStatus(
+  findByTripIdAndStatus(
     tripId: string,
     status: GroupStatus,
-  ): Promise<Group[]> {
-    const isDeleted = status === GroupStatus.DELETED;
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(
-        and(eq(this.table.tripId, tripId), eq(this.table.isDeleted, isDeleted)),
-      );
+  ): Effect.Effect<Group[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const isDeleted = status === GroupStatus.DELETED;
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(
+            and(
+              eq(this.table.tripId, tripId),
+              eq(this.table.isDeleted, isDeleted),
+            ),
+          );
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripIdAndStatus",
+          message: "Failed to find groups by trip ID and status",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find groups by organizer ID
    */
-  async findByOrganizerId(organizerId: string): Promise<Group[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.organizerId, organizerId));
+  findByOrganizerId(organizerId: string): Effect.Effect<Group[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.organizerId, organizerId));
 
-    return records.map((record) => this.mapper.toDomain(record));
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByOrganizerId",
+          message: "Failed to find groups by organizer ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find group by code
    */
-  async findByCode(code: string): Promise<Group | null> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.code, code))
-      .limit(1);
+  findByCode(code: string): Effect.Effect<Group | null, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.code, code))
+          .limit(1);
 
-    const record = records[0];
-    return record ? this.mapper.toDomain(record) : null;
+        const record = records[0];
+        return record ? this.mapper.toDomain(record) : null;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByCode",
+          message: "Failed to find group by code",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Find groups with pagination
    */
-  override async findAll(options?: {
+  override findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<Group[]> {
-    let query = this.db.select().from(this.table);
+  }): Effect.Effect<Group[], never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        let query = this.db.select().from(this.table);
 
-    if (options?.limit) {
-      query = query.limit(options.limit) as typeof query;
-    }
-    if (options?.offset) {
-      query = query.offset(options.offset) as typeof query;
-    }
+        if (options?.limit) {
+          query = query.limit(options.limit) as typeof query;
+        }
+        if (options?.offset) {
+          query = query.offset(options.offset) as typeof query;
+        }
 
-    const records = await query;
-    return records.map((record) => this.mapper.toDomain(record));
+        const records = await query;
+        return records.map((record) => this.mapper.toDomain(record));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findAll",
+          message: "Failed to find groups with pagination",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 
   /**
    * Count groups by trip ID
    */
-  async countByTripId(tripId: string): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(this.table)
-      .where(eq(this.table.tripId, tripId));
+  countByTripId(tripId: string): Effect.Effect<number, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.tripId, tripId));
 
-    return result[0]?.count ?? 0;
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countByTripId",
+          message: "Failed to count groups by trip ID",
+          cause: error,
+        }),
+    }).pipe(Effect.orDie);
   }
 }

@@ -1,5 +1,18 @@
-import type { Role } from "@mirai-app/frameworks/auth";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+// Role type - duplicated from frameworks to avoid cross-package dependency
+type Role = "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
+
+// SupabaseClient type - for mock context
+interface SupabaseClientMock {
+  auth: {
+    getSession: () => unknown;
+    getUser: () => unknown;
+    signInWithOtp: () => unknown;
+    signOut: () => unknown;
+    onAuthStateChange: () => unknown;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
 
 // Mock types for Drizzle-based testing (Prisma migration completed)
 interface PrismaClientMock {
@@ -172,7 +185,7 @@ export function createMockContext(
 
   return {
     db: mockDb as MockPrismaClient,
-    supabase: mockSupabase as unknown as SupabaseClient,
+    supabase: mockSupabase as unknown as MockSupabaseClient,
     headers: new Headers(),
     accessToken,
     user: {

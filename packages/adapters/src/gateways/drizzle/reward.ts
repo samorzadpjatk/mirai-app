@@ -8,6 +8,7 @@ import {
   type RewardPurchaseInsert,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
+import { Effect } from "effect";
 import {
   Reward,
   RewardPurchase,
@@ -25,6 +26,7 @@ import {
   RewardDrizzleMapper,
   RewardPurchaseDrizzleMapper,
 } from "../../mappers/drizzle/reward";
+import { DatabaseError } from "../../errors/adapter-errors";
 
 /**
  * DrizzleRewardRepository
@@ -47,176 +49,295 @@ export class DrizzleRewardRepository
     });
   }
 
-  async findByTripId(
+  findByTripId(
     tripId: string,
     options?: { includeHidden?: boolean } & PaginationOptions,
-  ): Promise<PaginatedResult<Reward>> {
-    const limit = options?.limit ?? 50;
-    const offset = options?.offset ?? 0;
+  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = options?.limit ?? 50;
+        const offset = options?.offset ?? 0;
 
-    let whereClause = eq(this.table.tripId, tripId);
-    if (!options?.includeHidden) {
-      whereClause = and(whereClause, eq(this.table.isHidden, false))!;
-    }
+        let whereClause = eq(this.table.tripId, tripId);
+        if (!options?.includeHidden) {
+          whereClause = and(whereClause, eq(this.table.isHidden, false))!;
+        }
 
-    const [records, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(this.table)
-        .where(whereClause)
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(this.table)
-        .where(whereClause),
-    ]);
+        const [records, countResult] = await Promise.all([
+          this.db
+            .select()
+            .from(this.table)
+            .where(whereClause)
+            .limit(limit)
+            .offset(offset),
+          this.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(this.table)
+            .where(whereClause),
+        ]);
 
-    const total = countResult[0]?.count ?? 0;
+        const total = countResult[0]?.count ?? 0;
 
-    return {
-      items: records.map((r) => this.mapper.toDomain(r)),
-      total,
-      limit,
-      offset,
-      hasMore: offset + records.length < total,
-    };
+        return {
+          items: records.map((r) => this.mapper.toDomain(r)),
+          total,
+          limit,
+          offset,
+          hasMore: offset + records.length < total,
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripId",
+          message: "Failed to find rewards by trip ID",
+          cause: error,
+        }),
+    });
   }
 
-  async findVisibleByTripId(
+  findVisibleByTripId(
     tripId: string,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<Reward>> {
-    const limit = options?.limit ?? 50;
-    const offset = options?.offset ?? 0;
+  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = options?.limit ?? 50;
+        const offset = options?.offset ?? 0;
 
-    const whereClause = and(
-      eq(this.table.tripId, tripId),
-      eq(this.table.isHidden, false),
-    )!;
-
-    const [records, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(this.table)
-        .where(whereClause)
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(this.table)
-        .where(whereClause),
-    ]);
-
-    const total = countResult[0]?.count ?? 0;
-
-    return {
-      items: records.map((r) => this.mapper.toDomain(r)),
-      total,
-      limit,
-      offset,
-      hasMore: offset + records.length < total,
-    };
-  }
-
-  async findAvailableByTripId(tripId: string): Promise<Reward[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(
-        and(
+        const whereClause = and(
           eq(this.table.tripId, tripId),
           eq(this.table.isHidden, false),
-          sql`${this.table.availableQuantity} > 0`,
-        ),
-      );
-    return records.map((r) => this.mapper.toDomain(r));
+        )!;
+
+        const [records, countResult] = await Promise.all([
+          this.db
+            .select()
+            .from(this.table)
+            .where(whereClause)
+            .limit(limit)
+            .offset(offset),
+          this.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(this.table)
+            .where(whereClause),
+        ]);
+
+        const total = countResult[0]?.count ?? 0;
+
+        return {
+          items: records.map((r) => this.mapper.toDomain(r)),
+          total,
+          limit,
+          offset,
+          hasMore: offset + records.length < total,
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findVisibleByTripId",
+          message: "Failed to find visible rewards by trip ID",
+          cause: error,
+        }),
+    });
   }
 
-  async findByCreatorId(creatorId: string): Promise<Reward[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.createdById, creatorId));
-    return records.map((r) => this.mapper.toDomain(r));
+  findAvailableByTripId(
+    tripId: string,
+  ): Effect.Effect<Reward[], DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(
+            and(
+              eq(this.table.tripId, tripId),
+              eq(this.table.isHidden, false),
+              sql`${this.table.availableQuantity} > 0`,
+            ),
+          );
+        return records.map((r) => this.mapper.toDomain(r));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findAvailableByTripId",
+          message: "Failed to find available rewards by trip ID",
+          cause: error,
+        }),
+    });
   }
 
-  async hide(id: string): Promise<Reward> {
-    const [record] = await this.db
-      .update(this.table)
-      .set({ isHidden: true, updatedAt: new Date() })
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`Reward with id ${id} not found`);
-    return this.mapper.toDomain(record);
+  findByCreatorId(
+    creatorId: string,
+  ): Effect.Effect<Reward[], DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.createdById, creatorId));
+        return records.map((r) => this.mapper.toDomain(r));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByCreatorId",
+          message: "Failed to find rewards by creator ID",
+          cause: error,
+        }),
+    });
   }
 
-  async unhide(id: string): Promise<Reward> {
-    const [record] = await this.db
-      .update(this.table)
-      .set({ isHidden: false, updatedAt: new Date() })
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`Reward with id ${id} not found`);
-    return this.mapper.toDomain(record);
+  hide(id: string): Effect.Effect<Reward, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(this.table)
+          .set({ isHidden: true, updatedAt: new Date() })
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`Reward with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "hide",
+          message: `Failed to hide reward with id ${id}`,
+          cause: error,
+        }),
+    });
   }
 
-  async decrementAvailableQuantity(
+  unhide(id: string): Effect.Effect<Reward, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(this.table)
+          .set({ isHidden: false, updatedAt: new Date() })
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`Reward with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "unhide",
+          message: `Failed to unhide reward with id ${id}`,
+          cause: error,
+        }),
+    });
+  }
+
+  decrementAvailableQuantity(
     id: string,
     quantity: number = 1,
-  ): Promise<Reward> {
-    const [record] = await this.db
-      .update(this.table)
-      .set({
-        availableQuantity: sql`${this.table.availableQuantity} - ${quantity}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`Reward with id ${id} not found`);
-    return this.mapper.toDomain(record);
+  ): Effect.Effect<Reward, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(this.table)
+          .set({
+            availableQuantity: sql`${this.table.availableQuantity} - ${quantity}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`Reward with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "decrementAvailableQuantity",
+          message: `Failed to decrement available quantity for reward ${id}`,
+          cause: error,
+        }),
+    });
   }
 
-  // Alias for interface compatibility
-  async decrementQuantity(id: RewardId, amount: number): Promise<Reward> {
+  decrementQuantity(
+    id: RewardId,
+    amount: number,
+  ): Effect.Effect<Reward, DatabaseError, never> {
     return this.decrementAvailableQuantity(id, amount);
   }
 
-  async incrementQuantity(id: RewardId, amount: number): Promise<Reward> {
-    const [record] = await this.db
-      .update(this.table)
-      .set({
-        availableQuantity: sql`${this.table.availableQuantity} + ${amount}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`Reward with id ${id} not found`);
-    return this.mapper.toDomain(record);
+  incrementQuantity(
+    id: RewardId,
+    amount: number,
+  ): Effect.Effect<Reward, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [record] = await this.db
+          .update(this.table)
+          .set({
+            availableQuantity: sql`${this.table.availableQuantity} + ${amount}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`Reward with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "incrementQuantity",
+          message: `Failed to increment quantity for reward ${id}`,
+          cause: error,
+        }),
+    });
   }
 
-  async hasPurchases(id: RewardId): Promise<boolean> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(rewardPurchases)
-      .where(eq(rewardPurchases.rewardId, id));
-    return (result[0]?.count ?? 0) > 0;
+  hasPurchases(id: RewardId): Effect.Effect<boolean, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(rewardPurchases)
+          .where(eq(rewardPurchases.rewardId, id));
+        return (result[0]?.count ?? 0) > 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "hasPurchases",
+          message: `Failed to check if reward ${id} has purchases`,
+          cause: error,
+        }),
+    });
   }
 
-  async getPurchaseCount(id: RewardId): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(rewardPurchases)
-      .where(eq(rewardPurchases.rewardId, id));
-    return result[0]?.count ?? 0;
+  getPurchaseCount(id: RewardId): Effect.Effect<number, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(rewardPurchases)
+          .where(eq(rewardPurchases.rewardId, id));
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "getPurchaseCount",
+          message: `Failed to get purchase count for reward ${id}`,
+          cause: error,
+        }),
+    });
   }
 
-  async countByTripId(tripId: string): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(this.table)
-      .where(eq(this.table.tripId, tripId));
-    return result[0]?.count ?? 0;
+  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.tripId, tripId));
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countByTripId",
+          message: "Failed to count rewards by trip ID",
+          cause: error,
+        }),
+    });
   }
 }
 
@@ -241,152 +362,225 @@ export class DrizzleRewardPurchaseRepository
     });
   }
 
-  async findByRewardId(
+  findByRewardId(
     rewardId: RewardId,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>> {
-    const limit = options?.limit ?? 50;
-    const offset = options?.offset ?? 0;
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = options?.limit ?? 50;
+        const offset = options?.offset ?? 0;
 
-    const [records, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(this.table)
-        .where(eq(this.table.rewardId, rewardId))
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(this.table)
-        .where(eq(this.table.rewardId, rewardId)),
-    ]);
+        const [records, countResult] = await Promise.all([
+          this.db
+            .select()
+            .from(this.table)
+            .where(eq(this.table.rewardId, rewardId))
+            .limit(limit)
+            .offset(offset),
+          this.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(this.table)
+            .where(eq(this.table.rewardId, rewardId)),
+        ]);
 
-    const total = countResult[0]?.count ?? 0;
+        const total = countResult[0]?.count ?? 0;
 
-    return {
-      items: records.map((r) => this.mapper.toDomain(r)),
-      total,
-      limit,
-      offset,
-      hasMore: offset + records.length < total,
-    };
+        return {
+          items: records.map((r) => this.mapper.toDomain(r)),
+          total,
+          limit,
+          offset,
+          hasMore: offset + records.length < total,
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByRewardId",
+          message: `Failed to find purchases for reward ${rewardId}`,
+          cause: error,
+        }),
+    });
   }
 
-  async findByGroupId(
+  findByGroupId(
     groupId: string,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>> {
-    const limit = options?.limit ?? 50;
-    const offset = options?.offset ?? 0;
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = options?.limit ?? 50;
+        const offset = options?.offset ?? 0;
 
-    const [records, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(this.table)
-        .where(eq(this.table.groupId, groupId))
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(this.table)
-        .where(eq(this.table.groupId, groupId)),
-    ]);
+        const [records, countResult] = await Promise.all([
+          this.db
+            .select()
+            .from(this.table)
+            .where(eq(this.table.groupId, groupId))
+            .limit(limit)
+            .offset(offset),
+          this.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(this.table)
+            .where(eq(this.table.groupId, groupId)),
+        ]);
 
-    const total = countResult[0]?.count ?? 0;
+        const total = countResult[0]?.count ?? 0;
 
-    return {
-      items: records.map((r) => this.mapper.toDomain(r)),
-      total,
-      limit,
-      offset,
-      hasMore: offset + records.length < total,
-    };
+        return {
+          items: records.map((r) => this.mapper.toDomain(r)),
+          total,
+          limit,
+          offset,
+          hasMore: offset + records.length < total,
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByGroupId",
+          message: `Failed to find purchases for group ${groupId}`,
+          cause: error,
+        }),
+    });
   }
 
-  async findByTripId(
+  findByTripId(
     tripId: string,
     options?: { groupId?: string } & PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>> {
-    const limit = options?.limit ?? 50;
-    const offset = options?.offset ?? 0;
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = options?.limit ?? 50;
+        const offset = options?.offset ?? 0;
 
-    // Need to join with rewards table to filter by tripId
-    const baseQuery = this.db
-      .select({ purchase: this.table })
-      .from(this.table)
-      .innerJoin(rewards, eq(this.table.rewardId, rewards.id))
-      .where(eq(rewards.tripId, tripId));
+        const baseQuery = this.db
+          .select({ purchase: this.table })
+          .from(this.table)
+          .innerJoin(rewards, eq(this.table.rewardId, rewards.id))
+          .where(eq(rewards.tripId, tripId));
 
-    const [records, countResult] = await Promise.all([
-      baseQuery
-        .limit(limit)
-        .offset(offset)
-        .then((rows) => rows.map((r) => r.purchase)),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(this.table)
-        .innerJoin(rewards, eq(this.table.rewardId, rewards.id))
-        .where(eq(rewards.tripId, tripId)),
-    ]);
+        const [records, countResult] = await Promise.all([
+          baseQuery
+            .limit(limit)
+            .offset(offset)
+            .then((rows) => rows.map((r) => r.purchase)),
+          this.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(this.table)
+            .innerJoin(rewards, eq(this.table.rewardId, rewards.id))
+            .where(eq(rewards.tripId, tripId)),
+        ]);
 
-    const total = countResult[0]?.count ?? 0;
+        const total = countResult[0]?.count ?? 0;
 
-    return {
-      items: records.map((r) => this.mapper.toDomain(r)),
-      total,
-      limit,
-      offset,
-      hasMore: offset + records.length < total,
-    };
+        return {
+          items: records.map((r) => this.mapper.toDomain(r)),
+          total,
+          limit,
+          offset,
+          hasMore: offset + records.length < total,
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripId",
+          message: `Failed to find purchases for trip ${tripId}`,
+          cause: error,
+        }),
+    });
   }
 
-  async findByStatus(status: RewardPurchaseStatus): Promise<RewardPurchase[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.status, status));
-    return records.map((r) => this.mapper.toDomain(r));
+  findByStatus(
+    status: RewardPurchaseStatus,
+  ): Effect.Effect<RewardPurchase[], DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.status, status));
+        return records.map((r) => this.mapper.toDomain(r));
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByStatus",
+          message: `Failed to find purchases by status`,
+          cause: error,
+        }),
+    });
   }
 
-  async updateStatus(
+  updateStatus(
     id: string,
     status: string,
     updatedById: string,
     collectionMethod?: string | null,
-  ): Promise<RewardPurchase> {
-    const updateData: Partial<RewardPurchaseInsert> = {
-      status: status as RewardPurchaseStatus,
-      statusUpdatedById: updatedById,
-      statusUpdatedAt: new Date(),
-      updatedAt: new Date(),
-    };
+  ): Effect.Effect<RewardPurchase, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const updateData: Partial<RewardPurchaseInsert> = {
+          status: status as RewardPurchaseStatus,
+          statusUpdatedById: updatedById,
+          statusUpdatedAt: new Date(),
+          updatedAt: new Date(),
+        };
 
-    if (collectionMethod !== undefined) {
-      updateData.collectionMethod = collectionMethod;
-    }
+        if (collectionMethod !== undefined) {
+          updateData.collectionMethod = collectionMethod;
+        }
 
-    const [record] = await this.db
-      .update(this.table)
-      .set(updateData)
-      .where(eq(this.table.id, id))
-      .returning();
-    if (!record) throw new Error(`RewardPurchase with id ${id} not found`);
-    return this.mapper.toDomain(record);
+        const [record] = await this.db
+          .update(this.table)
+          .set(updateData)
+          .where(eq(this.table.id, id))
+          .returning();
+        if (!record) throw new Error(`RewardPurchase with id ${id} not found`);
+        return this.mapper.toDomain(record);
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "updateStatus",
+          message: `Failed to update status for purchase ${id}`,
+          cause: error,
+        }),
+    });
   }
 
-  async countByGroupId(groupId: string): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(this.table)
-      .where(eq(this.table.groupId, groupId));
-    return result[0]?.count ?? 0;
+  countByGroupId(groupId: string): Effect.Effect<number, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.groupId, groupId));
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countByGroupId",
+          message: `Failed to count purchases for group ${groupId}`,
+          cause: error,
+        }),
+    });
   }
 
-  async countByRewardId(rewardId: RewardId): Promise<number> {
-    const result = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(this.table)
-      .where(eq(this.table.rewardId, rewardId));
-    return result[0]?.count ?? 0;
+  countByRewardId(
+    rewardId: RewardId,
+  ): Effect.Effect<number, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.rewardId, rewardId));
+        return result[0]?.count ?? 0;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "countByRewardId",
+          message: `Failed to count purchases for reward ${rewardId}`,
+          cause: error,
+        }),
+    });
   }
 }

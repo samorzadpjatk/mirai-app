@@ -1,5 +1,6 @@
 import type { Group, GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
 /**
@@ -12,7 +13,7 @@ import { InMemoryRepository } from "./base";
  * const repo = new InMemoryGroupRepository();
  * repo.seed([mockGroup]);
  *
- * const byTrip = await repo.findByTripId("trip-123");
+ * const byTrip = await Effect.runPromise(repo.findByTripId("trip-123"));
  * expect(byTrip).toHaveLength(1);
  *
  * repo.reset();
@@ -22,59 +23,71 @@ export class InMemoryGroupRepository
   extends InMemoryRepository<Group>
   implements GroupRepository
 {
-  async create(group: Group): Promise<Group> {
+  create(group: Group): Effect.Effect<Group, never, never> {
     return this.createGeneric(group);
   }
 
-  async findById(id: string): Promise<Group | null> {
+  findById(id: string): Effect.Effect<Group | null, never, never> {
     return this.findByIdGeneric(id);
   }
 
-  async findByTripId(tripId: string): Promise<Group[]> {
-    return this.getAllItems().filter((g) => g.tripId === tripId);
-  }
-
-  async findByStatus(status: GroupStatus): Promise<Group[]> {
-    return this.getAllItems().filter((g) => g.status === status);
-  }
-
-  async findByTripIdAndStatus(
-    tripId: string,
-    status: GroupStatus,
-  ): Promise<Group[]> {
-    return this.getAllItems().filter(
-      (g) => g.tripId === tripId && g.status === status,
+  findByTripId(tripId: string): Effect.Effect<Group[], never, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((g) => g.tripId === tripId),
     );
   }
 
-  async findByOrganizerId(organizerId: string): Promise<Group[]> {
-    return this.getAllItems().filter((g) => g.organizerId === organizerId);
+  findByStatus(status: GroupStatus): Effect.Effect<Group[], never, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((g) => g.status === status),
+    );
   }
 
-  async findByCode(code: string): Promise<Group | null> {
-    return this.getAllItems().find((g) => g.code === code) ?? null;
+  findByTripIdAndStatus(
+    tripId: string,
+    status: GroupStatus,
+  ): Effect.Effect<Group[], never, never> {
+    return Effect.succeed(
+      this.getAllItems().filter(
+        (g) => g.tripId === tripId && g.status === status,
+      ),
+    );
   }
 
-  async findAll(options?: {
+  findByOrganizerId(organizerId: string): Effect.Effect<Group[], never, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((g) => g.organizerId === organizerId),
+    );
+  }
+
+  findByCode(code: string): Effect.Effect<Group | null, never, never> {
+    return Effect.succeed(
+      this.getAllItems().find((g) => g.code === code) ?? null,
+    );
+  }
+
+  findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<Group[]> {
+  }): Effect.Effect<Group[], never, never> {
     return this.findAllGeneric(options);
   }
 
-  async update(group: Group): Promise<Group> {
+  update(group: Group): Effect.Effect<Group, never, never> {
     return this.updateGeneric(group);
   }
 
-  async delete(id: string): Promise<void> {
+  delete(id: string): Effect.Effect<void, never, never> {
     return this.deleteGeneric(id);
   }
 
-  async exists(id: string): Promise<boolean> {
+  exists(id: string): Effect.Effect<boolean, never, never> {
     return this.existsGeneric(id);
   }
 
-  async countByTripId(tripId: string): Promise<number> {
-    return this.findByTripId(tripId).then((items) => items.length);
+  countByTripId(tripId: string): Effect.Effect<number, never, never> {
+    return Effect.succeed(
+      this.getAllItems().filter((g) => g.tripId === tripId).length,
+    );
   }
 }
