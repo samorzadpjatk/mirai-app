@@ -1,6 +1,20 @@
 import type { LocationUpdated } from "@mirai-app/domain";
 import type { EventBus, EventHandler } from "./EventBus";
 import type { ConnectionManager, BroadcastLocation } from "./ConnectionManager";
+import { Effect, Data } from "effect";
+
+/**
+ * LocationStreamingError for streaming operations
+ */
+export class LocationStreamingError extends Data.TaggedError(
+  "LocationStreamingError",
+)<{
+  readonly operation: string;
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "LOCATION_STREAMING_ERROR" as const;
+}
 
 /**
  * LocationStreamingService
@@ -60,7 +74,7 @@ import type { ConnectionManager, BroadcastLocation } from "./ConnectionManager";
  * ```
  */
 export class LocationStreamingService {
-  private unsubscribe: (() => void) | null = null;
+  private unsubscribe: (() => Effect.Effect<void, never, never>) | null = null;
   private isInitialized = false;
 
   constructor(
@@ -80,14 +94,43 @@ export class LocationStreamingService {
       return;
     }
 
-    // Subscribe to LocationUpdated events
-    this.unsubscribe = this.eventBus.subscribe(
+    // Subscribe to LocationUpdated events using legacy handler for compatibility
+    const subscription = this.eventBus.subscribeLegacy(
       "LocationUpdated",
-      this.handleLocationUpdated.bind(this) as EventHandler,
-    ).unsubscribe;
+      this.handleLocationUpdated.bind(this),
+    );
 
+    this.unsubscribe = subscription.unsubscribe;
     this.isInitialized = true;
     console.log("LocationStreamingService initialized");
+  }
+
+  /**
+   * Initialize using Effect-based API
+   *
+   * @returns Effect that completes when initialization is done
+   */
+  initializeEffect(): Effect.Effect<void, LocationStreamingError, never> {
+    return Effect.gen(this, function* () {
+      if (this.isInitialized) {
+        console.warn("LocationStreamingService already initialized");
+        return;
+      }
+
+      // Create Effect-based handler
+      const handler = (event: LocationUpdated) =>
+        this.handleLocationUpdatedEffect(event);
+
+      // Subscribe to LocationUpdated events
+      const subscription = this.eventBus.subscribe(
+        "LocationUpdated",
+        handler as any,
+      );
+
+      this.unsubscribe = subscription.unsubscribe;
+      this.isInitialized = true;
+      console.log("LocationStreamingService initialized");
+    });
   }
 
   /**
@@ -95,7 +138,7 @@ export class LocationStreamingService {
    */
   shutdown(): void {
     if (this.unsubscribe) {
-      this.unsubscribe();
+      Effect.runSync(this.unsubscribe());
       this.unsubscribe = null;
     }
     this.isInitialized = false;
@@ -103,7 +146,23 @@ export class LocationStreamingService {
   }
 
   /**
-   * Handle LocationUpdated events
+   * Shutdown using Effect-based API
+   *
+   * @returns Effect that completes when shutdown is done
+   */
+  shutdownEffect(): Effect.Effect<void, never, never> {
+    return Effect.gen(this, function* () {
+      if (this.unsubscribe) {
+        yield* this.unsubscribe();
+        this.unsubscribe = null;
+      }
+      this.isInitialized = false;
+      console.log("LocationStreamingService shut down");
+    });
+  }
+
+  /**
+   * Handle LocationUpdated events (legacy async version)
    */
   private async handleLocationUpdated(event: LocationUpdated): Promise<void> {
     try {
@@ -136,11 +195,13 @@ export class LocationStreamingService {
         timestamp: event.occurredAt,
       };
 
-      // Broadcast to online friends
-      const result = await this.connectionManager.broadcastLocation(
-        event.userId,
-        location,
-        onlineFriendIds,
+      // Broadcast to online friends using Effect
+      const result = await Effect.runPromise(
+        this.connectionManager.broadcastLocation(
+          event.userId,
+          location,
+          onlineFriendIds,
+        ),
       );
 
       if (result.throttled) {
@@ -173,54 +234,140 @@ export class LocationStreamingService {
   }
 
   /**
+   * Handle LocationUpdated events (Effect-based version)
+   */
+  private handleLocationUpdatedEffect(
+    event: LocationUpdated,
+  ): Effect.Effect<void, LocationStreamingError, never> {
+    return Effect.gen(this, function* () {
+      // Get list of friends who should receive this update
+      const friendIds = yield* Effect.tryPromise({
+        try: () => this.locationRepository.findFriendsToNotify(event.userId),
+        catch: (error) =>
+          new LocationStreamingError({
+            operation: "handleLocationUpdated",
+            message: `Failed to find friends to notify for user ${event.userId}`,
+            cause: error,
+          }),
+      });
+
+      if (friendIds.length === 0) {
+        return; // No friends to notify
+      }
+
+      // Check if any friends are online
+      const onlineFriendIds = friendIds.filter((id) =>
+        this.connectionManager.isUserOnline(id),
+      );
+
+      if (onlineFriendIds.length === 0) {
+        return; // No online friends to broadcast to
+      }
+
+      // Prepare broadcast location
+      const location: BroadcastLocation = {
+        userId: event.userId,
+        latitude: event.latitude,
+        longitude: event.longitude,
+        accuracy: event.accuracy,
+        altitude: event.altitude,
+        speed: event.speed,
+        timestamp: event.occurredAt,
+      };
+
+      // Broadcast to online friends
+      const result = yield* this.connectionManager.broadcastLocation(
+        event.userId,
+        location,
+        onlineFriendIds,
+      );
+
+      if (result.throttled) {
+        console.log(
+          `[LocationStreamingService] Location update throttled for user ${event.userId}`,
+        );
+        return;
+      }
+
+      if (result.success) {
+        console.log(
+          `[LocationStreamingService] Broadcast location to ${result.broadcastCount} friends for user ${event.userId}`,
+        );
+      }
+
+      // Log any errors
+      if (result.errors.length > 0) {
+        console.error(
+          `[LocationStreamingService] Broadcast errors:`,
+          result.errors,
+        );
+      }
+    });
+  }
+
+  /**
    * Manually trigger a location broadcast (for testing or direct use)
    *
    * @param userId - The user whose location is being shared
    * @param latitude - Location latitude
    * @param longitude - Location longitude
    * @param accuracy - Location accuracy (optional)
-   * @returns Broadcast result
+   * @returns Effect that resolves to broadcast result
    */
-  async broadcast(
+  broadcast(
     userId: string,
     latitude: number,
     longitude: number,
     accuracy: number | null = null,
-  ): Promise<{
-    success: boolean;
-    broadcastCount: number;
-    throttled: boolean;
-    errors: string[];
-  }> {
-    // Get friends who should receive this update
-    const friendIds = await this.locationRepository.findFriendsToNotify(userId);
+  ): Effect.Effect<
+    {
+      success: boolean;
+      broadcastCount: number;
+      throttled: boolean;
+      errors: string[];
+    },
+    LocationStreamingError,
+    never
+  > {
+    return Effect.gen(this, function* () {
+      // Get friends who should receive this update
+      const friendIds = yield* Effect.tryPromise({
+        try: () => this.locationRepository.findFriendsToNotify(userId),
+        catch: (error) =>
+          new LocationStreamingError({
+            operation: "broadcast",
+            message: `Failed to find friends to notify for user ${userId}`,
+            cause: error,
+          }),
+      });
 
-    if (friendIds.length === 0) {
-      return {
-        success: true,
-        broadcastCount: 0,
-        throttled: false,
-        errors: [],
+      if (friendIds.length === 0) {
+        return {
+          success: true,
+          broadcastCount: 0,
+          throttled: false,
+          errors: [],
+        };
+      }
+
+      // Prepare location
+      const location: BroadcastLocation = {
+        userId,
+        latitude,
+        longitude,
+        accuracy,
+        altitude: null,
+        speed: null,
+        timestamp: new Date(),
       };
-    }
 
-    // Prepare location
-    const location: BroadcastLocation = {
-      userId,
-      latitude,
-      longitude,
-      accuracy,
-      altitude: null,
-      speed: null,
-      timestamp: new Date(),
-    };
-
-    // Broadcast
-    return this.connectionManager.broadcastLocation(
-      userId,
-      location,
-      friendIds,
-    );
+      // Broadcast
+      return yield* this.connectionManager.broadcastLocation(
+        userId,
+        location,
+        friendIds,
+      );
+    });
   }
 
   /**
@@ -236,5 +383,20 @@ export class LocationStreamingService {
       totalConnections: this.connectionManager.getTotalConnectionCount(),
       isInitialized: this.isInitialized,
     };
+  }
+
+  /**
+   * Get streaming statistics using Effect
+   */
+  getStatsEffect(): Effect.Effect<
+    {
+      onlineUsers: number;
+      totalConnections: number;
+      isInitialized: boolean;
+    },
+    never,
+    never
+  > {
+    return Effect.sync(() => this.getStats());
   }
 }

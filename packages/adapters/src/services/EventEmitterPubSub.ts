@@ -4,6 +4,20 @@ import {
   PubSubError,
   type SubscriptionHandle,
 } from "@mirai-app/use-cases/ports/PubSubService";
+import { Effect, Data, Queue, Option } from "effect";
+
+/**
+ * EventEmitterPubSubError for PubSub operations
+ */
+export class EventEmitterPubSubError extends Data.TaggedError(
+  "EventEmitterPubSubError",
+)<{
+  readonly operation: string;
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "PUBSUB_ERROR" as const;
+}
 
 /**
  * EventEmitterPubSub - In-memory Pub/Sub implementation using Node.js EventEmitter
@@ -18,7 +32,7 @@ import {
  *
  * Design Decisions:
  * - EventEmitter is created per instance (not shared)
- * - Async generators handle backpressure naturally
+ * - Effect-based for composable error handling
  * - Cleanup on unsubscribe to prevent memory leaks
  * - Type-safe with generic payload types
  *
@@ -155,6 +169,56 @@ export class EventEmitterPubSub implements PubSubService {
   }
 
   /**
+   * Subscribe to a channel using Effect-based API
+   *
+   * Returns an Effect that creates a subscription with a Queue-based consumer.
+   * More composable than the async iterable approach.
+   *
+   * @param channel - The channel name to subscribe to
+   * @returns Effect that resolves to a subscription with queue and unsubscribe
+   */
+  subscribeEffect<T>(channel: string): Effect.Effect<
+    {
+      queue: Queue.Queue<T>;
+      unsubscribe: Effect.Effect<void, never, never>;
+    },
+    EventEmitterPubSubError,
+    never
+  > {
+    return Effect.gen(this, function* () {
+      // Create a bounded queue for events
+      const queue = yield* Queue.bounded<T>(100);
+
+      const subscriptionId = this.generateSubscriptionId();
+
+      // Handler for new events
+      const eventHandler = (payload: T) => {
+        // Offer to queue (drop if full)
+        Effect.runFork(Queue.offer(queue, payload));
+      };
+
+      // Subscribe to EventEmitter
+      this.emitter.on(channel, eventHandler);
+
+      // Track this subscription
+      if (!this.activeSubscriptions.has(channel)) {
+        this.activeSubscriptions.set(channel, new Set());
+      }
+      this.activeSubscriptions.get(channel)!.add(() => {
+        this.cleanupSubscription(channel, eventHandler, subscriptionId);
+      });
+
+      // Unsubscribe effect
+      const unsubscribe = Effect.sync(() => {
+        this.cleanupSubscription(channel, eventHandler, subscriptionId);
+        Effect.runFork(Queue.shutdown(queue));
+      });
+
+      return { queue, unsubscribe };
+    });
+  }
+
+  /**
    * Publish a message to a channel
    *
    * Emits the payload to all subscribers of the channel.
@@ -164,6 +228,32 @@ export class EventEmitterPubSub implements PubSubService {
    */
   publish<T>(channel: string, payload: T): void {
     this.emitter.emit(channel, payload);
+  }
+
+  /**
+   * Publish a message to a channel using Effect
+   *
+   * @param channel - The channel name to publish to
+   * @param payload - The message payload
+   * @returns Effect that completes when message is published
+   */
+  publishEffect<T>(
+    channel: string,
+    payload: T,
+  ): Effect.Effect<void, EventEmitterPubSubError, never> {
+    return Effect.sync(() => {
+      this.emitter.emit(channel, payload);
+    }).pipe(
+      Effect.catchAll((error) =>
+        Effect.fail(
+          new EventEmitterPubSubError({
+            operation: "publish",
+            message: `Failed to publish to channel ${channel}: ${error instanceof Error ? error.message : String(error)}`,
+            cause: error,
+          }),
+        ),
+      ),
+    );
   }
 
   /**
@@ -184,6 +274,18 @@ export class EventEmitterPubSub implements PubSubService {
   unsubscribeAll(): void {
     this.emitter.removeAllListeners();
     this.activeSubscriptions.clear();
+  }
+
+  /**
+   * Unsubscribe all subscriptions using Effect
+   *
+   * @returns Effect that completes when all subscriptions are cleaned up
+   */
+  unsubscribeAllEffect(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      this.emitter.removeAllListeners();
+      this.activeSubscriptions.clear();
+    });
   }
 
   /**

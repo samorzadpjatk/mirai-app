@@ -5,6 +5,8 @@
  */
 
 export {
+  // Service errors
+  ServiceError,
   // Database errors
   DatabaseError,
   DatabaseConnectionError,

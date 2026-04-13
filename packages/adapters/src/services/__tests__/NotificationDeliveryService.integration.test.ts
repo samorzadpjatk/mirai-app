@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect } from "effect";
 import { EventBus } from "../EventBus";
 import {
   NotificationDeliveryService,
@@ -402,10 +403,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
       );
 
       // Act - Should not throw
-      eventBus.publish(event);
-
-      // Wait for async delivery
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await Effect.runPromise(eventBus.publish(event));
 
       // Assert - Invalid token subscription should be removed
       expect(pushSubscriptionRepo.getSubscriptionCount()).toBe(1);
@@ -436,8 +434,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
       expect(pushSubscriptionRepo.getSubscriptionCount()).toBe(1);
 
       // Act
-      eventBus.publish(event);
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await Effect.runPromise(eventBus.publish(event));
 
       // Assert - Invalid token should be removed
       expect(pushSubscriptionRepo.getSubscriptionCount()).toBe(0);
@@ -468,8 +465,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
       expect(pushSubscriptionRepo.getSubscriptionCount()).toBe(1);
 
       // Act
-      eventBus.publish(event);
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await Effect.runPromise(eventBus.publish(event));
 
       // Assert - Unregistered device should be removed
       expect(pushSubscriptionRepo.getSubscriptionCount()).toBe(0);
@@ -559,11 +555,13 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
       });
 
       // Act
-      const results = await deliveryService.deliver(
-        "user-direct",
-        "Direct Title",
-        "Direct Body",
-        "HIGH",
+      const results = await Effect.runPromise(
+        deliveryService.deliver(
+          "user-direct",
+          "Direct Title",
+          "Direct Body",
+          "HIGH",
+        ),
       );
 
       // Assert
@@ -574,11 +572,8 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
 
     it("should return empty array when no subscriptions", async () => {
       // Act
-      const results = await deliveryService.deliver(
-        "user-no-subs",
-        "Title",
-        "Body",
-        "NORMAL",
+      const results = await Effect.runPromise(
+        deliveryService.deliver("user-no-subs", "Title", "Body", "NORMAL"),
       );
 
       // Assert
@@ -597,10 +592,8 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
       });
 
       // Act
-      const results = await deliveryService.deliver(
-        "user-default",
-        "Title",
-        "Body",
+      const results = await Effect.runPromise(
+        deliveryService.deliver("user-default", "Title", "Body"),
       );
 
       // Assert

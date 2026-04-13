@@ -5,6 +5,7 @@ import type {
 } from "@mirai-app/domain";
 import type { EventBus, EventHandler } from "./EventBus";
 import type { Expo, ExpoPushMessage, ExpoPushTicket } from "expo-server-sdk";
+import { Effect, Data } from "effect";
 
 /**
  * PushSubscription
@@ -43,6 +44,19 @@ export interface DeliveryResult {
   ticketId?: string;
   error?: string;
   deviceToken: string;
+}
+
+/**
+ * NotificationDeliveryError for delivery operations
+ */
+export class NotificationDeliveryError extends Data.TaggedError(
+  "NotificationDeliveryError",
+)<{
+  readonly operation: string;
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "NOTIFICATION_DELIVERY_ERROR" as const;
 }
 
 /**
@@ -98,7 +112,7 @@ export interface DeliveryResult {
  * ```
  */
 export class NotificationDeliveryService {
-  private unsubscribe: (() => void) | null = null;
+  private unsubscribe: (() => Effect.Effect<void, never, never>) | null = null;
   private isInitialized = false;
 
   constructor(
@@ -118,14 +132,40 @@ export class NotificationDeliveryService {
       return;
     }
 
-    // Subscribe to NotificationCreated events
-    this.unsubscribe = this.eventBus.subscribe(
+    // Subscribe to NotificationCreated events using legacy handler
+    const subscription = this.eventBus.subscribeLegacy(
       "NotificationCreated",
-      this.handleNotificationCreated.bind(this) as EventHandler,
-    ).unsubscribe;
+      this.handleNotificationCreated.bind(this),
+    );
 
+    this.unsubscribe = subscription.unsubscribe;
     this.isInitialized = true;
     console.log("NotificationDeliveryService initialized");
+  }
+
+  /**
+   * Initialize using Effect-based API
+   *
+   * @returns Effect that completes when initialization is done
+   */
+  initializeEffect(): Effect.Effect<void, NotificationDeliveryError, never> {
+    return Effect.gen(this, function* () {
+      if (this.isInitialized) {
+        console.warn("NotificationDeliveryService already initialized");
+        return;
+      }
+
+      // Subscribe to NotificationCreated events
+      const subscription = this.eventBus.subscribe(
+        "NotificationCreated",
+        (event) =>
+          this.handleNotificationCreatedEffect(event as NotificationCreated),
+      );
+
+      this.unsubscribe = subscription.unsubscribe;
+      this.isInitialized = true;
+      console.log("NotificationDeliveryService initialized");
+    });
   }
 
   /**
@@ -133,7 +173,7 @@ export class NotificationDeliveryService {
    */
   shutdown(): void {
     if (this.unsubscribe) {
-      this.unsubscribe();
+      Effect.runSync(this.unsubscribe());
       this.unsubscribe = null;
     }
     this.isInitialized = false;
@@ -141,9 +181,23 @@ export class NotificationDeliveryService {
   }
 
   /**
-   * Handle NotificationCreated events
+   * Shutdown using Effect-based API
    *
-   * This is the core event handler that triggers push delivery.
+   * @returns Effect that completes when shutdown is done
+   */
+  shutdownEffect(): Effect.Effect<void, never, never> {
+    return Effect.gen(this, function* () {
+      if (this.unsubscribe) {
+        yield* this.unsubscribe();
+        this.unsubscribe = null;
+      }
+      this.isInitialized = false;
+      console.log("NotificationDeliveryService shut down");
+    });
+  }
+
+  /**
+   * Handle NotificationCreated events (legacy async version)
    */
   private async handleNotificationCreated(
     event: NotificationCreated,
@@ -165,8 +219,10 @@ export class NotificationDeliveryService {
         return;
       }
 
-      // Deliver to each subscription
-      const results = await this.deliverToSubscriptions(event, subscriptions);
+      // Deliver to each subscription using Effect
+      const results = await Effect.runPromise(
+        this.deliverToSubscriptionsEffect(event, subscriptions),
+      );
 
       // Log results
       const successCount = results.filter((r) => r.success).length;
@@ -186,79 +242,169 @@ export class NotificationDeliveryService {
   }
 
   /**
-   * Deliver notification to all subscriptions
+   * Handle NotificationCreated events (Effect-based version)
    */
-  private async deliverToSubscriptions(
+  private handleNotificationCreatedEffect(
     event: NotificationCreated,
-    subscriptions: PushSubscription[],
-  ): Promise<DeliveryResult[]> {
-    // Create push messages
-    const messages: ExpoPushMessage[] = subscriptions.map((sub) => ({
-      to: sub.expoPushToken,
-      sound: "default",
-      title: event.title,
-      body: event.body,
-      priority: this.mapPriorityToExpo(event.priority),
-      data: {
-        notificationId: event.notificationId,
-        type: "notification",
-      },
-    }));
+  ): Effect.Effect<void, NotificationDeliveryError, never> {
+    return Effect.gen(this, function* () {
+      console.log(
+        `[NotificationDeliveryService] Processing notification ${event.notificationId}`,
+      );
 
-    // Chunk messages (Expo limits to 100 per request)
-    const chunks = this.expo.chunkPushNotifications(messages);
-    const results: DeliveryResult[] = [];
+      // Get push subscriptions for the recipient
+      const subscriptions = yield* Effect.tryPromise({
+        try: () =>
+          this.pushSubscriptionRepository.findByUserId(event.recipientId),
+        catch: (error) =>
+          new NotificationDeliveryError({
+            operation: "handleNotificationCreated",
+            message: `Failed to find subscriptions for user ${event.recipientId}`,
+            cause: error,
+          }),
+      });
 
-    for (const chunk of chunks) {
-      try {
-        const tickets = await this.expo.sendPushNotificationsAsync(chunk);
-
-        // Map tickets to results
-        chunk.forEach((message, index) => {
-          const ticket = tickets[index];
-          const deviceToken = message.to as string;
-
-          if (ticket.status === "ok") {
-            results.push({
-              success: true,
-              ticketId: ticket.id,
-              deviceToken,
-            });
-
-            // Publish delivery event
-            this.publishDeliveredEvent(event, deviceToken);
-          } else {
-            results.push({
-              success: false,
-              error: ticket.details?.error || "Unknown error",
-              deviceToken,
-            });
-
-            // Publish failure event
-            this.publishFailedEvent(
-              event,
-              deviceToken,
-              ticket.details?.error || "Unknown error",
-            );
-          }
-        });
-      } catch (error) {
-        // Chunk failed entirely
-        chunk.forEach((message) => {
-          results.push({
-            success: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-            deviceToken: message.to as string,
-          });
-        });
+      if (subscriptions.length === 0) {
+        console.log(
+          `[NotificationDeliveryService] No push subscriptions for user ${event.recipientId}`,
+        );
+        return;
       }
-    }
 
-    return results;
+      // Deliver to each subscription
+      const results = yield* this.deliverToSubscriptionsEffect(
+        event,
+        subscriptions,
+      );
+
+      // Log results
+      const successCount = results.filter((r) => r.success).length;
+      console.log(
+        `[NotificationDeliveryService] Delivered ${successCount}/${results.length} notifications`,
+      );
+
+      // Handle failures (invalid tokens, etc.)
+      yield* this.handleFailuresEffect(results, subscriptions);
+    });
   }
 
   /**
-   * Handle delivery failures (invalid tokens, etc.)
+   * Deliver notification to all subscriptions (Effect-based)
+   */
+  private deliverToSubscriptionsEffect(
+    event: NotificationCreated,
+    subscriptions: PushSubscription[],
+  ): Effect.Effect<DeliveryResult[], NotificationDeliveryError, never> {
+    return Effect.gen(this, function* () {
+      // Create push messages
+      const messages: ExpoPushMessage[] = subscriptions.map((sub) => ({
+        to: sub.expoPushToken,
+        sound: "default",
+        title: event.title,
+        body: event.body,
+        priority: this.mapPriorityToExpo(event.priority),
+        data: {
+          notificationId: event.notificationId,
+          type: "notification",
+        },
+      }));
+
+      // Chunk messages (Expo limits to 100 per request)
+      const chunks = this.expo.chunkPushNotifications(messages);
+      const results: DeliveryResult[] = [];
+
+      for (const chunk of chunks) {
+        const chunkResults = yield* Effect.tryPromise({
+          try: async () => {
+            const tickets = await this.expo.sendPushNotificationsAsync(chunk);
+            const chunkResults: DeliveryResult[] = [];
+
+            // Map tickets to results
+            chunk.forEach((message, index) => {
+              const ticket = tickets[index];
+              const deviceToken = message.to as string;
+
+              if (ticket.status === "ok") {
+                chunkResults.push({
+                  success: true,
+                  ticketId: ticket.id,
+                  deviceToken,
+                });
+
+                // Publish delivery event
+                this.publishDeliveredEvent(event, deviceToken);
+              } else {
+                chunkResults.push({
+                  success: false,
+                  error: ticket.details?.error || "Unknown error",
+                  deviceToken,
+                });
+
+                // Publish failure event
+                this.publishFailedEvent(
+                  event,
+                  deviceToken,
+                  ticket.details?.error || "Unknown error",
+                );
+              }
+            });
+
+            return chunkResults;
+          },
+          catch: (error) =>
+            new NotificationDeliveryError({
+              operation: "deliverToSubscriptions",
+              message: `Failed to send push notifications: ${error instanceof Error ? error.message : String(error)}`,
+              cause: error,
+            }),
+        });
+
+        results.push(...chunkResults);
+      }
+
+      return results;
+    });
+  }
+
+  /**
+   * Handle delivery failures (invalid tokens, etc.) - Effect-based
+   */
+  private handleFailuresEffect(
+    results: DeliveryResult[],
+    subscriptions: PushSubscription[],
+  ): Effect.Effect<void, NotificationDeliveryError, never> {
+    return Effect.gen(this, function* () {
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const subscription = subscriptions[i];
+
+        if (!result.success) {
+          // Check if token is invalid
+          if (
+            result.error?.includes("Invalid token") ||
+            result.error?.includes("DeviceNotRegistered")
+          ) {
+            console.log(
+              `[NotificationDeliveryService] Removing invalid token for user ${subscription.userId}`,
+            );
+            yield* Effect.tryPromise({
+              try: () =>
+                this.pushSubscriptionRepository.delete(subscription.id),
+              catch: (error) =>
+                new NotificationDeliveryError({
+                  operation: "handleFailures",
+                  message: `Failed to delete invalid subscription ${subscription.id}`,
+                  cause: error,
+                }),
+            });
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Handle delivery failures (legacy async version for compatibility)
    */
   private async handleFailures(
     results: DeliveryResult[],
@@ -331,38 +477,62 @@ export class NotificationDeliveryService {
   }
 
   /**
-   * Deliver notification immediately (for testing or direct use)
+   * Deliver notification immediately (for testing or direct use) - Effect-based
    *
    * @param userId - Recipient user ID
    * @param title - Notification title
    * @param body - Notification body
    * @param priority - Notification priority
-   * @returns Delivery results
+   * @returns Effect that resolves to delivery results
    */
-  async deliver(
+  deliver(
+    userId: string,
+    title: string,
+    body: string,
+    priority: "LOW" | "NORMAL" | "HIGH" | "URGENT" = "NORMAL",
+  ): Effect.Effect<DeliveryResult[], NotificationDeliveryError, never> {
+    return Effect.gen(this, function* () {
+      const mockEvent = {
+        id: crypto.randomUUID(),
+        type: "NotificationCreated" as const,
+        notificationId: crypto.randomUUID(),
+        recipientId: userId,
+        title,
+        body,
+        priority,
+        occurredAt: new Date(),
+      };
+
+      const subscriptions = yield* Effect.tryPromise({
+        try: () => this.pushSubscriptionRepository.findByUserId(userId),
+        catch: (error) =>
+          new NotificationDeliveryError({
+            operation: "deliver",
+            message: `Failed to find subscriptions for user ${userId}`,
+            cause: error,
+          }),
+      });
+
+      if (subscriptions.length === 0) {
+        return [];
+      }
+
+      return yield* this.deliverToSubscriptionsEffect(
+        mockEvent as NotificationCreated,
+        subscriptions,
+      );
+    });
+  }
+
+  /**
+   * Deliver notification immediately (legacy async version for compatibility)
+   */
+  async deliverLegacy(
     userId: string,
     title: string,
     body: string,
     priority: "LOW" | "NORMAL" | "HIGH" | "URGENT" = "NORMAL",
   ): Promise<DeliveryResult[]> {
-    const mockEvent: NotificationCreated = {
-      id: crypto.randomUUID(),
-      type: "NotificationCreated",
-      notificationId: crypto.randomUUID(),
-      recipientId: userId,
-      title,
-      body,
-      priority,
-      occurredAt: new Date(),
-    };
-
-    const subscriptions =
-      await this.pushSubscriptionRepository.findByUserId(userId);
-
-    if (subscriptions.length === 0) {
-      return [];
-    }
-
-    return this.deliverToSubscriptions(mockEvent, subscriptions);
+    return Effect.runPromise(this.deliver(userId, title, body, priority));
   }
 }

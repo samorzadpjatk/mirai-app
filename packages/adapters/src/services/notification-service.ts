@@ -4,6 +4,8 @@ import {
   type ExpoPushMessage,
   type ExpoPushTicket,
 } from "expo-server-sdk";
+import { Effect } from "effect";
+import { ServiceError } from "../errors/adapter-errors";
 
 // ============================================================================
 // Template Types and Utilities (moved from trpc-utils/notificationTemplates)
@@ -282,391 +284,433 @@ export class NotificationService {
     };
   }
 
-  private async getRankingTemplateValuesByUser(
+  private getRankingTemplateValuesByUser(
     tripId: string,
-  ): Promise<Map<string, RankingTemplateValues>> {
-    const now = new Date();
-    const [participants, rankedGroups, activeChallengesCount, trip] =
-      await Promise.all([
-        this.prisma.tripParticipant.findMany({
-          where: { tripId },
-          select: {
-            userId: true,
-            groupId: true,
-          },
-        }),
-        this.prisma.group.findMany({
-          where: { tripId, isDeleted: false },
-          select: {
-            id: true,
-            name: true,
-          },
-          orderBy: [{ coins: "desc" }, { name: "asc" }],
-        }),
-        this.prisma.challenge.count({
-          where: {
-            tripId,
-            status: "ACTIVE",
-          },
-        }),
-        this.prisma.trip.findUnique({
-          where: { id: tripId },
-          select: { name: true },
-        }),
-      ]);
+  ): Effect.Effect<Map<string, RankingTemplateValues>, ServiceError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const now = new Date();
+        const [participants, rankedGroups, activeChallengesCount, trip] =
+          await Promise.all([
+            this.prisma.tripParticipant.findMany({
+              where: { tripId },
+              select: {
+                userId: true,
+                groupId: true,
+              },
+            }),
+            this.prisma.group.findMany({
+              where: { tripId, isDeleted: false },
+              select: {
+                id: true,
+                name: true,
+              },
+              orderBy: [{ coins: "desc" }, { name: "asc" }],
+            }),
+            this.prisma.challenge.count({
+              where: {
+                tripId,
+                status: "ACTIVE",
+              },
+            }),
+            this.prisma.trip.findUnique({
+              where: { id: tripId },
+              select: { name: true },
+            }),
+          ]);
 
-    const groupById = new Map(rankedGroups.map((group) => [group.id, group]));
-    const groupRankById = new Map(
-      rankedGroups.map((group, index) => [group.id, index + 1]),
-    );
-    const groupMembersCountById = new Map<string, number>();
-    participants.forEach((participant) => {
-      if (!participant.groupId) return;
-      groupMembersCountById.set(
-        participant.groupId,
-        (groupMembersCountById.get(participant.groupId) ?? 0) + 1,
-      );
-    });
-
-    const formattedDate = formatCurrentDate(now);
-    const formattedTime = formatCurrentTime(now);
-    const totalGroupsCount = String(rankedGroups.length);
-    const tripName = trip?.name ?? FALLBACK_TEMPLATE_VALUES.tripName;
-
-    const valuesByUser = new Map<string, RankingTemplateValues>();
-
-    participants.forEach((participant) => {
-      const groupId = participant.groupId;
-      if (!groupId) {
-        valuesByUser.set(participant.userId, {
-          ...FALLBACK_TEMPLATE_VALUES,
-          activeChallengesCount: String(activeChallengesCount),
-          tripName,
-          totalGroupsCount,
-          currentDate: formattedDate,
-          currentTime: formattedTime,
+        const groupById = new Map(
+          rankedGroups.map((group) => [group.id, group]),
+        );
+        const groupRankById = new Map(
+          rankedGroups.map((group, index) => [group.id, index + 1]),
+        );
+        const groupMembersCountById = new Map<string, number>();
+        participants.forEach((participant) => {
+          if (!participant.groupId) return;
+          groupMembersCountById.set(
+            participant.groupId,
+            (groupMembersCountById.get(participant.groupId) ?? 0) + 1,
+          );
         });
-        return;
-      }
 
-      const group = groupById.get(groupId);
-      const rankingPosition = groupRankById.get(groupId);
+        const formattedDate = formatCurrentDate(now);
+        const formattedTime = formatCurrentTime(now);
+        const totalGroupsCount = String(rankedGroups.length);
+        const tripName = trip?.name ?? FALLBACK_TEMPLATE_VALUES.tripName;
 
-      valuesByUser.set(participant.userId, {
-        groupName: group?.name ?? FALLBACK_TEMPLATE_VALUES.groupName,
-        rankingPosition: rankingPosition
-          ? String(rankingPosition)
-          : FALLBACK_TEMPLATE_VALUES.rankingPosition,
-        activeChallengesCount: String(activeChallengesCount),
-        tripName,
-        totalGroupsCount,
-        groupMembersCount: String(groupMembersCountById.get(groupId) ?? 0),
-        currentDate: formattedDate,
-        currentTime: formattedTime,
-      });
+        const valuesByUser = new Map<string, RankingTemplateValues>();
+
+        participants.forEach((participant) => {
+          const groupId = participant.groupId;
+          if (!groupId) {
+            valuesByUser.set(participant.userId, {
+              ...FALLBACK_TEMPLATE_VALUES,
+              activeChallengesCount: String(activeChallengesCount),
+              tripName,
+              totalGroupsCount,
+              currentDate: formattedDate,
+              currentTime: formattedTime,
+            });
+            return;
+          }
+
+          const group = groupById.get(groupId);
+          const rankingPosition = groupRankById.get(groupId);
+
+          valuesByUser.set(participant.userId, {
+            groupName: group?.name ?? FALLBACK_TEMPLATE_VALUES.groupName,
+            rankingPosition: rankingPosition
+              ? String(rankingPosition)
+              : FALLBACK_TEMPLATE_VALUES.rankingPosition,
+            activeChallengesCount: String(activeChallengesCount),
+            tripName,
+            totalGroupsCount,
+            groupMembersCount: String(groupMembersCountById.get(groupId) ?? 0),
+            currentDate: formattedDate,
+            currentTime: formattedTime,
+          });
+        });
+
+        return valuesByUser;
+      },
+      catch: (error) =>
+        new ServiceError({
+          operation: "getRankingTemplateValuesByUser",
+          message: `Failed to get ranking template values for trip ${tripId}: ${String(error)}`,
+          cause: error,
+        }),
     });
-
-    return valuesByUser;
   }
 
-  async sendMobileNotifications(notificationId: string) {
-    const notification = await this.prisma.notification.findUnique({
-      where: { id: notificationId },
-    });
-    if (!notification) return { success: false, sent: 0, failed: 0, total: 0 };
-
-    const existingPushRows = await this.prisma.notificationPush.findMany({
-      where: { notificationId: notification.id },
-      select: {
-        targetUserId: true,
-        status: true,
-      },
-    });
-    const hasExplicitAudience = existingPushRows.length > 0;
-    const pendingAudienceUserIds = new Set(
-      existingPushRows
-        .filter((push) => push.status === "pending")
-        .map((push) => push.targetUserId),
-    );
-    const explicitAudienceUserIds = new Set(
-      existingPushRows.map((push) => push.targetUserId),
-    );
-
-    if (hasExplicitAudience && pendingAudienceUserIds.size === 0) {
-      return {
-        success: true,
-        sent: 0,
-        failed: 0,
-        total: existingPushRows.length,
-      };
-    }
-
-    const subs = await this.prisma.pushSubscription.findMany();
-    if (subs.length === 0) {
-      return { success: true, sent: 0, failed: 0, total: 0 };
-    }
-
-    const parsedAudience = parseAudienceUrl(notification.url);
-
-    let scopedSubs = subs;
-    if (hasExplicitAudience) {
-      scopedSubs = subs.filter((sub) => pendingAudienceUserIds.has(sub.userId));
-    } else if (notification.tripId) {
-      const tripParticipants = await this.prisma.tripParticipant.findMany({
-        where: { tripId: notification.tripId },
-        select: { userId: true },
-      });
-      const participantIds = new Set(
-        tripParticipants.map((participant) => participant.userId),
-      );
-      scopedSubs = subs.filter((sub) => participantIds.has(sub.userId));
-
-      if (
-        parsedAudience.audienceMode === "group" &&
-        parsedAudience.audienceGroupId
-      ) {
-        const groupParticipants = await this.prisma.tripParticipant.findMany({
-          where: {
-            tripId: notification.tripId,
-            groupId: parsedAudience.audienceGroupId,
-          },
-          select: { userId: true },
+  sendMobileNotifications(notificationId: string): Effect.Effect<
+    {
+      success: boolean;
+      sent: number;
+      failed: number;
+      total: number;
+    },
+    ServiceError,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const notification = await this.prisma.notification.findUnique({
+          where: { id: notificationId },
         });
-        const groupParticipantIds = new Set(
-          groupParticipants.map((participant) => participant.userId),
-        );
-        scopedSubs = scopedSubs.filter((sub) =>
-          groupParticipantIds.has(sub.userId),
-        );
-      }
-    }
+        if (!notification)
+          return { success: false, sent: 0, failed: 0, total: 0 };
 
-    const requiresRankingTemplate =
-      !!notification.tripId &&
-      (containsRankingTemplate(notification.title) ||
-        containsRankingTemplate(notification.body));
-
-    const rankingValuesByUser =
-      requiresRankingTemplate && notification.tripId
-        ? await this.getRankingTemplateValuesByUser(notification.tripId)
-        : new Map<string, RankingTemplateValues>();
-
-    if (scopedSubs.length === 0) {
-      if (hasExplicitAudience) {
-        await this.prisma.notificationPush.updateMany({
-          where: {
-            notificationId: notification.id,
-            status: "pending",
-          },
-          data: {
-            status: "failed",
-            sentAt: new Date(),
-            failureReason: "no_valid_push_token",
+        const existingPushRows = await this.prisma.notificationPush.findMany({
+          where: { notificationId: notification.id },
+          select: {
+            targetUserId: true,
+            status: true,
           },
         });
-      }
-      return { success: true, sent: 0, failed: 0, total: 0 };
-    }
-
-    const expoAccessToken = process.env.EXPO_ACCESS_TOKEN;
-    const expo = new Expo(
-      expoAccessToken ? { accessToken: expoAccessToken } : undefined,
-    );
-    const messages: ExpoPushMessage[] = [];
-    const userByToken = new Map<string, string>();
-    const fallbackValues: RankingTemplateValues = {
-      ...FALLBACK_TEMPLATE_VALUES,
-      currentDate: formatCurrentDate(new Date()),
-      currentTime: formatCurrentTime(new Date()),
-    };
-
-    for (const s of scopedSubs) {
-      if (!Expo.isExpoPushToken(s.token)) continue;
-      userByToken.set(s.token, s.userId);
-
-      const values = rankingValuesByUser.get(s.userId) ?? fallbackValues;
-      const title = requiresRankingTemplate
-        ? applyRankingTemplate(notification.title, values)
-        : notification.title;
-      const body = requiresRankingTemplate
-        ? applyRankingTemplate(notification.body, values)
-        : notification.body;
-
-      messages.push({
-        to: s.token,
-        title,
-        body,
-        data: { url: parsedAudience.cleanUrl },
-        sound: "default",
-        priority: "default",
-      });
-    }
-
-    if (messages.length === 0) {
-      return { success: true, sent: 0, failed: 0, total: 0 };
-    }
-
-    const chunks = expo.chunkPushNotifications(messages);
-    const tickets: ExpoPushTicket[] = [];
-
-    for (const chunk of chunks) {
-      try {
-        const t = await executeWithRetry(
-          () => expo.sendPushNotificationsAsync(chunk),
-          (err, retryAttempt) => {
-            console.error(
-              `Error sending push notification chunk (attempt ${retryAttempt + 1}):`,
-              err,
-            );
-          },
-          undefined,
-          3,
-          500,
+        const hasExplicitAudience = existingPushRows.length > 0;
+        const pendingAudienceUserIds = new Set(
+          existingPushRows
+            .filter((push) => push.status === "pending")
+            .map((push) => push.targetUserId),
         );
-        tickets.push(...t);
-      } catch {
-        tickets.push(
-          ...chunk.map(
-            (): ExpoPushTicket => ({
-              status: "error",
-              message: "network error",
-            }),
-          ),
+        const explicitAudienceUserIds = new Set(
+          existingPushRows.map((push) => push.targetUserId),
         );
-      }
-    }
 
-    const resultByUser = new Map<
-      string,
-      { hasSuccess: boolean; hasFailure: boolean }
-    >();
-
-    tickets
-      .map((t, idx) => {
-        const token = messages[idx]?.to;
-        if (!token || typeof token !== "string") return null;
-        const userId = userByToken.get(token);
-        if (!userId) return null;
-        const statusCode = t.status === "ok" ? 200 : 500;
-        return { userId, statusCode };
-      })
-      .filter((r): r is { userId: string; statusCode: number } => r !== null)
-      .forEach((r) => {
-        const current = resultByUser.get(r.userId) ?? {
-          hasSuccess: false,
-          hasFailure: false,
-        };
-        if (r.statusCode >= 200 && r.statusCode < 300) {
-          current.hasSuccess = true;
-        } else {
-          current.hasFailure = true;
+        if (hasExplicitAudience && pendingAudienceUserIds.size === 0) {
+          return {
+            success: true,
+            sent: 0,
+            failed: 0,
+            total: existingPushRows.length,
+          };
         }
-        resultByUser.set(r.userId, current);
-      });
 
-    const sentUserIds = Array.from(resultByUser.entries())
-      .filter(([, status]) => status.hasSuccess)
-      .map(([userId]) => userId);
-    const failedUserIds = Array.from(resultByUser.entries())
-      .filter(([, status]) => !status.hasSuccess && status.hasFailure)
-      .map(([userId]) => userId);
+        const subs = await this.prisma.pushSubscription.findMany();
+        if (subs.length === 0) {
+          return { success: true, sent: 0, failed: 0, total: 0 };
+        }
 
-    if (hasExplicitAudience) {
-      const attemptedUserIds = new Set(resultByUser.keys());
-      const unattemptedUserIds = Array.from(explicitAudienceUserIds).filter(
-        (userId) => !attemptedUserIds.has(userId),
-      );
+        const parsedAudience = parseAudienceUrl(notification.url);
 
-      if (sentUserIds.length > 0) {
-        await Promise.all(
-          sentUserIds.map((userId) =>
-            this.prisma.notificationPush.update({
-              where: {
-                targetUserId_notificationId: {
-                  targetUserId: userId,
-                  notificationId: notification.id,
+        let scopedSubs = subs;
+        if (hasExplicitAudience) {
+          scopedSubs = subs.filter((sub) =>
+            pendingAudienceUserIds.has(sub.userId),
+          );
+        } else if (notification.tripId) {
+          const tripParticipants = await this.prisma.tripParticipant.findMany({
+            where: { tripId: notification.tripId },
+            select: { userId: true },
+          });
+          const participantIds = new Set(
+            tripParticipants.map((participant) => participant.userId),
+          );
+          scopedSubs = subs.filter((sub) => participantIds.has(sub.userId));
+
+          if (
+            parsedAudience.audienceMode === "group" &&
+            parsedAudience.audienceGroupId
+          ) {
+            const groupParticipants =
+              await this.prisma.tripParticipant.findMany({
+                where: {
+                  tripId: notification.tripId,
+                  groupId: parsedAudience.audienceGroupId,
                 },
-              },
-              data: {
-                status: "sent",
-                sentAt: new Date(),
-                failureReason: null,
-              },
-            }),
-          ),
-        );
-      }
+                select: { userId: true },
+              });
+            const groupParticipantIds = new Set(
+              groupParticipants.map((participant) => participant.userId),
+            );
+            scopedSubs = scopedSubs.filter((sub) =>
+              groupParticipantIds.has(sub.userId),
+            );
+          }
+        }
 
-      const allFailedUserIds = Array.from(
-        new Set([...failedUserIds, ...unattemptedUserIds]),
-      );
-      if (allFailedUserIds.length > 0) {
-        await Promise.all(
-          allFailedUserIds.map((userId) =>
-            this.prisma.notificationPush.update({
+        const requiresRankingTemplate =
+          !!notification.tripId &&
+          (containsRankingTemplate(notification.title) ||
+            containsRankingTemplate(notification.body));
+
+        let rankingValuesByUser: Map<string, RankingTemplateValues>;
+        if (requiresRankingTemplate && notification.tripId) {
+          const rankingEffect = this.getRankingTemplateValuesByUser(
+            notification.tripId,
+          );
+          rankingValuesByUser = await Effect.runPromise(rankingEffect);
+        } else {
+          rankingValuesByUser = new Map<string, RankingTemplateValues>();
+        }
+
+        if (scopedSubs.length === 0) {
+          if (hasExplicitAudience) {
+            await this.prisma.notificationPush.updateMany({
               where: {
-                targetUserId_notificationId: {
-                  targetUserId: userId,
-                  notificationId: notification.id,
-                },
+                notificationId: notification.id,
+                status: "pending",
               },
               data: {
                 status: "failed",
                 sentAt: new Date(),
-                failureReason: attemptedUserIds.has(userId)
-                  ? "expo"
-                  : "no_valid_push_token",
+                failureReason: "no_valid_push_token",
               },
-            }),
-          ),
+            });
+          }
+          return { success: true, sent: 0, failed: 0, total: 0 };
+        }
+
+        const expoAccessToken = process.env.EXPO_ACCESS_TOKEN;
+        const expo = new Expo(
+          expoAccessToken ? { accessToken: expoAccessToken } : undefined,
         );
-      }
-    } else if (sentUserIds.length + failedUserIds.length > 0) {
-      await this.prisma.notificationPush.createMany({
-        data: [
-          ...sentUserIds.map((targetUserId) => ({
-            notificationId: notification.id,
-            targetUserId,
-            status: "sent",
-            sentAt: new Date(),
-            failureReason: null,
-          })),
-          ...failedUserIds.map((targetUserId) => ({
-            notificationId: notification.id,
-            targetUserId,
-            status: "failed",
-            sentAt: new Date(),
-            failureReason: "expo",
-          })),
-        ],
-        skipDuplicates: true,
-      });
-    }
+        const messages: ExpoPushMessage[] = [];
+        const userByToken = new Map<string, string>();
+        const fallbackValues: RankingTemplateValues = {
+          ...FALLBACK_TEMPLATE_VALUES,
+          currentDate: formatCurrentDate(new Date()),
+          currentTime: formatCurrentTime(new Date()),
+        };
 
-    const failedCount = hasExplicitAudience
-      ? Array.from(explicitAudienceUserIds).filter((userId) => {
-          const status = resultByUser.get(userId);
-          if (!status) return true;
-          return !status.hasSuccess;
-        }).length
-      : failedUserIds.length;
+        for (const s of scopedSubs) {
+          if (!Expo.isExpoPushToken(s.token)) continue;
+          userByToken.set(s.token, s.userId);
 
-    const sentCount = hasExplicitAudience
-      ? Array.from(explicitAudienceUserIds).filter((userId) => {
-          const status = resultByUser.get(userId);
-          return !!status?.hasSuccess;
-        }).length
-      : sentUserIds.length;
+          const values = rankingValuesByUser.get(s.userId) ?? fallbackValues;
+          const title = requiresRankingTemplate
+            ? applyRankingTemplate(notification.title, values)
+            : notification.title;
+          const body = requiresRankingTemplate
+            ? applyRankingTemplate(notification.body, values)
+            : notification.body;
 
-    const totalCount = hasExplicitAudience
-      ? explicitAudienceUserIds.size
-      : sentUserIds.length + failedUserIds.length;
+          messages.push({
+            to: s.token,
+            title,
+            body,
+            data: { url: parsedAudience.cleanUrl },
+            sound: "default",
+            priority: "default",
+          });
+        }
 
-    return {
-      success: failedCount === 0,
-      sent: sentCount,
-      failed: failedCount,
-      total: totalCount,
-    };
+        if (messages.length === 0) {
+          return { success: true, sent: 0, failed: 0, total: 0 };
+        }
+
+        const chunks = expo.chunkPushNotifications(messages);
+        const tickets: ExpoPushTicket[] = [];
+
+        for (const chunk of chunks) {
+          try {
+            const t = await executeWithRetry(
+              () => expo.sendPushNotificationsAsync(chunk),
+              (err, retryAttempt) => {
+                console.error(
+                  `Error sending push notification chunk (attempt ${retryAttempt + 1}):`,
+                  err,
+                );
+              },
+              undefined,
+              3,
+              500,
+            );
+            tickets.push(...t);
+          } catch {
+            tickets.push(
+              ...chunk.map(
+                (): ExpoPushTicket => ({
+                  status: "error",
+                  message: "network error",
+                }),
+              ),
+            );
+          }
+        }
+
+        const resultByUser = new Map<
+          string,
+          { hasSuccess: boolean; hasFailure: boolean }
+        >();
+
+        tickets
+          .map((t, idx) => {
+            const token = messages[idx]?.to;
+            if (!token || typeof token !== "string") return null;
+            const userId = userByToken.get(token);
+            if (!userId) return null;
+            const statusCode = t.status === "ok" ? 200 : 500;
+            return { userId, statusCode };
+          })
+          .filter(
+            (r): r is { userId: string; statusCode: number } => r !== null,
+          )
+          .forEach((r) => {
+            const current = resultByUser.get(r.userId) ?? {
+              hasSuccess: false,
+              hasFailure: false,
+            };
+            if (r.statusCode >= 200 && r.statusCode < 300) {
+              current.hasSuccess = true;
+            } else {
+              current.hasFailure = true;
+            }
+            resultByUser.set(r.userId, current);
+          });
+
+        const sentUserIds = Array.from(resultByUser.entries())
+          .filter(([, status]) => status.hasSuccess)
+          .map(([userId]) => userId);
+        const failedUserIds = Array.from(resultByUser.entries())
+          .filter(([, status]) => !status.hasSuccess && status.hasFailure)
+          .map(([userId]) => userId);
+
+        if (hasExplicitAudience) {
+          const attemptedUserIds = new Set(resultByUser.keys());
+          const unattemptedUserIds = Array.from(explicitAudienceUserIds).filter(
+            (userId) => !attemptedUserIds.has(userId),
+          );
+
+          if (sentUserIds.length > 0) {
+            await Promise.all(
+              sentUserIds.map((userId) =>
+                this.prisma.notificationPush.update({
+                  where: {
+                    targetUserId_notificationId: {
+                      targetUserId: userId,
+                      notificationId: notification.id,
+                    },
+                  },
+                  data: {
+                    status: "sent",
+                    sentAt: new Date(),
+                    failureReason: null,
+                  },
+                }),
+              ),
+            );
+          }
+
+          const allFailedUserIds = Array.from(
+            new Set([...failedUserIds, ...unattemptedUserIds]),
+          );
+          if (allFailedUserIds.length > 0) {
+            await Promise.all(
+              allFailedUserIds.map((userId) =>
+                this.prisma.notificationPush.update({
+                  where: {
+                    targetUserId_notificationId: {
+                      targetUserId: userId,
+                      notificationId: notification.id,
+                    },
+                  },
+                  data: {
+                    status: "failed",
+                    sentAt: new Date(),
+                    failureReason: attemptedUserIds.has(userId)
+                      ? "expo"
+                      : "no_valid_push_token",
+                  },
+                }),
+              ),
+            );
+          }
+        } else if (sentUserIds.length + failedUserIds.length > 0) {
+          await this.prisma.notificationPush.createMany({
+            data: [
+              ...sentUserIds.map((targetUserId) => ({
+                notificationId: notification.id,
+                targetUserId,
+                status: "sent",
+                sentAt: new Date(),
+                failureReason: null,
+              })),
+              ...failedUserIds.map((targetUserId) => ({
+                notificationId: notification.id,
+                targetUserId,
+                status: "failed",
+                sentAt: new Date(),
+                failureReason: "expo",
+              })),
+            ],
+            skipDuplicates: true,
+          });
+        }
+
+        const failedCount = hasExplicitAudience
+          ? Array.from(explicitAudienceUserIds).filter((userId) => {
+              const status = resultByUser.get(userId);
+              if (!status) return true;
+              return !status.hasSuccess;
+            }).length
+          : failedUserIds.length;
+
+        const sentCount = hasExplicitAudience
+          ? Array.from(explicitAudienceUserIds).filter((userId) => {
+              const status = resultByUser.get(userId);
+              return !!status?.hasSuccess;
+            }).length
+          : sentUserIds.length;
+
+        const totalCount = hasExplicitAudience
+          ? explicitAudienceUserIds.size
+          : sentUserIds.length + failedUserIds.length;
+
+        return {
+          success: failedCount === 0,
+          sent: sentCount,
+          failed: failedCount,
+          total: totalCount,
+        };
+      },
+      catch: (error) =>
+        new ServiceError({
+          operation: "sendMobileNotifications",
+          message: `Failed to send mobile notifications for notification ${notificationId}: ${String(error)}`,
+          cause: error,
+        }),
+    });
   }
 }

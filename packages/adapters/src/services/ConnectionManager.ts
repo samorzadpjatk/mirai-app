@@ -1,4 +1,18 @@
 import type { RealtimePort, ConnectionState } from "@mirai-app/use-cases";
+import { Effect, Data } from "effect";
+
+/**
+ * ServiceError for ConnectionManager operations
+ */
+export class ConnectionManagerError extends Data.TaggedError(
+  "ConnectionManagerError",
+)<{
+  readonly operation: string;
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "CONNECTION_MANAGER_ERROR" as const;
+}
 
 /**
  * ConnectionInfo
@@ -177,11 +191,11 @@ export class ConnectionManager {
    * @param userId - The user whose location updated
    * @param location - The location data to broadcast
    * @param friendIds - List of friend user IDs who should receive the update
-   * @returns Result summary
+   * @returns Effect that resolves to result summary
    *
    * @example
    * ```typescript
-   * await connectionManager.broadcastLocation(
+   * const effect = connectionManager.broadcastLocation(
    *   "user-123",
    *   {
    *     userId: "user-123",
@@ -194,74 +208,78 @@ export class ConnectionManager {
    *   },
    *   ["friend-456", "friend-789"]
    * );
+   * const result = await Effect.runPromise(effect);
    * ```
    */
-  async broadcastLocation(
+  broadcastLocation(
     userId: string,
     location: BroadcastLocation,
     friendIds: string[],
-  ): Promise<{
-    success: boolean;
-    broadcastCount: number;
-    throttled: boolean;
-    errors: string[];
-  }> {
-    const errors: string[] = [];
+  ): Effect.Effect<
+    {
+      success: boolean;
+      broadcastCount: number;
+      throttled: boolean;
+      errors: string[];
+    },
+    ConnectionManagerError,
+    never
+  > {
+    return Effect.gen(this, function* () {
+      const errors: string[] = [];
 
-    // Check throttle
-    const now = Date.now();
-    const lastUpdate = this.lastLocationUpdate.get(userId);
-    if (lastUpdate && now - lastUpdate < this.throttleMs) {
-      return {
-        success: false,
-        broadcastCount: 0,
-        throttled: true,
-        errors: ["Update throttled: too frequent"],
-      };
-    }
-
-    // Update throttle timestamp
-    this.lastLocationUpdate.set(userId, now);
-
-    // Update activity timestamp for all user connections
-    this.updateActivity(userId);
-
-    // Broadcast to each online friend
-    let broadcastCount = 0;
-    const channel = `location:${userId}`;
-
-    for (const friendId of friendIds) {
-      // Check if friend is online (has active connections)
-      if (!this.isUserOnline(friendId)) {
-        continue; // Skip offline friends
+      // Check throttle
+      const now = Date.now();
+      const lastUpdate = this.lastLocationUpdate.get(userId);
+      if (lastUpdate && now - lastUpdate < this.throttleMs) {
+        return {
+          success: false,
+          broadcastCount: 0,
+          throttled: true,
+          errors: ["Update throttled: too frequent"],
+        };
       }
 
-      try {
-        // Broadcast via RealtimePort
-        const result = await this.realtimePort.broadcast(
-          channel,
-          "location_updated",
-          location,
-        );
+      // Update throttle timestamp
+      this.lastLocationUpdate.set(userId, now);
 
-        if (result.kind === "ok") {
-          broadcastCount++;
-        } else {
-          errors.push(`Friend ${friendId}: ${result.error.message}`);
+      // Update activity timestamp for all user connections
+      this.updateActivity(userId);
+
+      // Broadcast to each online friend
+      let broadcastCount = 0;
+      const channel = `location:${userId}`;
+
+      for (const friendId of friendIds) {
+        // Check if friend is online (has active connections)
+        if (!this.isUserOnline(friendId)) {
+          continue; // Skip offline friends
         }
-      } catch (error) {
-        errors.push(
-          `Friend ${friendId}: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-      }
-    }
 
-    return {
-      success: broadcastCount > 0 || friendIds.length === 0,
-      broadcastCount,
-      throttled: false,
-      errors,
-    };
+        // Broadcast via RealtimePort - it already returns Effect
+        const broadcastResult = yield* this.realtimePort
+          .broadcast(channel, "location_updated", location)
+          .pipe(
+            Effect.matchEffect({
+              onSuccess: () => {
+                broadcastCount++;
+                return Effect.void;
+              },
+              onFailure: (error) =>
+                Effect.sync(() => {
+                  errors.push(`Friend ${friendId}: ${error.message}`);
+                }),
+            }),
+          );
+      }
+
+      return {
+        success: broadcastCount > 0 || friendIds.length === 0,
+        broadcastCount,
+        throttled: false,
+        errors,
+      };
+    });
   }
 
   /**

@@ -2,8 +2,23 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
   notificationDeliveries,
   notificationScheduleExecutions,
-} from "@mirai-app/frameworks/drizzle/schema/notificationDelivery";
+  notificationSchedules,
+} from "@mirai-app/frameworks/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { Effect, Data } from "effect";
+
+/**
+ * NotificationSenderError for notification sender operations
+ */
+export class NotificationSenderError extends Data.TaggedError(
+  "NotificationSenderError",
+)<{
+  readonly operation: string;
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "NOTIFICATION_SENDER_ERROR" as const;
+}
 
 /**
  * DrizzleNotificationSenderService
@@ -17,66 +32,93 @@ export class DrizzleNotificationSenderService {
   /**
    * Track delivery start for a notification
    */
-  async trackDeliveryStart(input: {
+  trackDeliveryStart(input: {
     notificationId: string;
-  }): Promise<{ success: true } | { success: false; error: string }> {
-    try {
-      const [scheduleExecution] = await this.db
-        .select({
-          scheduleId: notificationScheduleExecutions.scheduleId,
-        })
-        .from(notificationScheduleExecutions)
-        .where(
-          eq(
-            notificationScheduleExecutions.notificationId,
-            input.notificationId,
-          ),
-        )
-        .limit(1);
+  }): Effect.Effect<{ success: true }, NotificationSenderError, never> {
+    return Effect.gen(this, function* () {
+      // Get schedule execution for this notification
+      const scheduleExecution = yield* Effect.tryPromise({
+        try: () =>
+          this.db
+            .select({
+              scheduleId: notificationScheduleExecutions.scheduleId,
+            })
+            .from(notificationScheduleExecutions)
+            .where(
+              eq(
+                notificationScheduleExecutions.notificationId,
+                input.notificationId,
+              ),
+            )
+            .limit(1),
+        catch: (error) =>
+          new NotificationSenderError({
+            operation: "trackDeliveryStart",
+            message: "Failed to fetch schedule execution",
+            cause: error,
+          }),
+      });
 
       // Get tripId from schedule
       let tripId: string | null = null;
       let scheduleId: string | null = null;
-      if (scheduleExecution?.scheduleId) {
-        const { notificationSchedules } =
-          await import("@mirai-app/frameworks/drizzle/schema/notificationDelivery");
-        const [schedule] = await this.db
-          .select({
-            tripId: notificationSchedules.tripId,
-            id: notificationSchedules.id,
-          })
-          .from(notificationSchedules)
-          .where(eq(notificationSchedules.id, scheduleExecution.scheduleId))
-          .limit(1);
-        tripId = schedule?.tripId ?? null;
-        scheduleId = schedule?.id ?? null;
+      if (scheduleExecution?.[0]?.scheduleId) {
+        const schedule = yield* Effect.tryPromise({
+          try: () =>
+            this.db
+              .select({
+                tripId: notificationSchedules.tripId,
+                id: notificationSchedules.id,
+              })
+              .from(notificationSchedules)
+              .where(
+                eq(notificationSchedules.id, scheduleExecution[0].scheduleId),
+              )
+              .limit(1),
+          catch: (error) =>
+            new NotificationSenderError({
+              operation: "trackDeliveryStart",
+              message: "Failed to fetch schedule",
+              cause: error,
+            }),
+        });
+        tripId = schedule?.[0]?.tripId ?? null;
+        scheduleId = schedule?.[0]?.id ?? null;
       }
 
-      await this.db.insert(notificationDeliveries).values({
-        notificationId: input.notificationId,
-        tripId,
-        scheduleId,
-        deliveryStartedAt: new Date(),
-        status: "pending",
+      // Insert delivery record
+      yield* Effect.tryPromise({
+        try: () =>
+          this.db.insert(notificationDeliveries).values({
+            notificationId: input.notificationId,
+            tripId,
+            scheduleId,
+            deliveryStartedAt: new Date(),
+            status: "pending",
+          }),
+        catch: (error) =>
+          new NotificationSenderError({
+            operation: "trackDeliveryStart",
+            message: "Failed to insert delivery record",
+            cause: error,
+          }),
       });
 
       return { success: true };
-    } catch (error) {
-      return { success: false, error: "Failed to track delivery start" };
-    }
+    });
   }
 
   /**
    * Track delivery completion for a notification
    */
-  async trackDeliveryComplete(input: {
+  trackDeliveryComplete(input: {
     notificationId: string;
     totalRecipients: number;
     successCount: number;
     failureCount: number;
     errors: string | null;
-  }): Promise<{ success: true } | { success: false; error: string }> {
-    try {
+  }): Effect.Effect<{ success: true }, NotificationSenderError, never> {
+    return Effect.gen(this, function* () {
       const status =
         input.failureCount === 0
           ? "success"
@@ -84,100 +126,158 @@ export class DrizzleNotificationSenderService {
             ? "failure"
             : "partial_failure";
 
-      await this.db
-        .update(notificationDeliveries)
-        .set({
-          deliveryCompletedAt: new Date(),
-          totalRecipients: input.totalRecipients,
-          successCount: input.successCount,
-          failureCount: input.failureCount,
-          errors: input.errors,
-          status,
-        })
-        .where(eq(notificationDeliveries.notificationId, input.notificationId));
+      yield* Effect.tryPromise({
+        try: () =>
+          this.db
+            .update(notificationDeliveries)
+            .set({
+              deliveryCompletedAt: new Date(),
+              totalRecipients: input.totalRecipients,
+              successCount: input.successCount,
+              failureCount: input.failureCount,
+              errors: input.errors,
+              status,
+            })
+            .where(
+              eq(notificationDeliveries.notificationId, input.notificationId),
+            ),
+        catch: (error) =>
+          new NotificationSenderError({
+            operation: "trackDeliveryComplete",
+            message: "Failed to update delivery record",
+            cause: error,
+          }),
+      });
 
       return { success: true };
-    } catch (error) {
-      return { success: false, error: "Failed to track delivery completion" };
-    }
+    });
   }
 
   /**
    * Track delivery failure for a notification
    */
-  async trackDeliveryFailure(input: {
+  trackDeliveryFailure(input: {
     notificationId: string;
     error: string | Error;
-  }): Promise<{ success: true } | { success: false; error: string }> {
-    try {
+  }): Effect.Effect<{ success: true }, NotificationSenderError, never> {
+    return Effect.gen(this, function* () {
       const errorMessage =
         input.error instanceof Error
           ? input.error.message
           : String(input.error);
 
-      const [existing] = await this.db
-        .select({ id: notificationDeliveries.id })
-        .from(notificationDeliveries)
-        .where(eq(notificationDeliveries.notificationId, input.notificationId))
-        .limit(1);
+      // Check if delivery record exists
+      const existing = yield* Effect.tryPromise({
+        try: () =>
+          this.db
+            .select({ id: notificationDeliveries.id })
+            .from(notificationDeliveries)
+            .where(
+              eq(notificationDeliveries.notificationId, input.notificationId),
+            )
+            .limit(1),
+        catch: (error) =>
+          new NotificationSenderError({
+            operation: "trackDeliveryFailure",
+            message: "Failed to check existing delivery",
+            cause: error,
+          }),
+      });
 
-      if (existing) {
-        await this.db
-          .update(notificationDeliveries)
-          .set({
-            deliveryCompletedAt: new Date(),
-            errors: errorMessage,
-            status: "failure",
-          })
-          .where(
-            eq(notificationDeliveries.notificationId, input.notificationId),
-          );
+      if (existing?.[0]) {
+        // Update existing record
+        yield* Effect.tryPromise({
+          try: () =>
+            this.db
+              .update(notificationDeliveries)
+              .set({
+                deliveryCompletedAt: new Date(),
+                errors: errorMessage,
+                status: "failure",
+              })
+              .where(
+                eq(notificationDeliveries.notificationId, input.notificationId),
+              ),
+          catch: (error) =>
+            new NotificationSenderError({
+              operation: "trackDeliveryFailure",
+              message: "Failed to update delivery record",
+              cause: error,
+            }),
+        });
       } else {
-        const [scheduleExecution] = await this.db
-          .select({
-            scheduleId: notificationScheduleExecutions.scheduleId,
-          })
-          .from(notificationScheduleExecutions)
-          .where(
-            eq(
-              notificationScheduleExecutions.notificationId,
-              input.notificationId,
-            ),
-          )
-          .limit(1);
+        // Need to create new record with schedule info
+        const scheduleExecution = yield* Effect.tryPromise({
+          try: () =>
+            this.db
+              .select({
+                scheduleId: notificationScheduleExecutions.scheduleId,
+              })
+              .from(notificationScheduleExecutions)
+              .where(
+                eq(
+                  notificationScheduleExecutions.notificationId,
+                  input.notificationId,
+                ),
+              )
+              .limit(1),
+          catch: (error) =>
+            new NotificationSenderError({
+              operation: "trackDeliveryFailure",
+              message: "Failed to fetch schedule execution",
+              cause: error,
+            }),
+        });
 
         // Get tripId from schedule
         let tripId: string | null = null;
         let scheduleId: string | null = null;
-        if (scheduleExecution?.scheduleId) {
-          const { notificationSchedules } =
-            await import("@mirai-app/frameworks/drizzle/schema/notificationDelivery");
-          const [schedule] = await this.db
-            .select({
-              tripId: notificationSchedules.tripId,
-              id: notificationSchedules.id,
-            })
-            .from(notificationSchedules)
-            .where(eq(notificationSchedules.id, scheduleExecution.scheduleId))
-            .limit(1);
-          tripId = schedule?.tripId ?? null;
-          scheduleId = schedule?.id ?? null;
+        if (scheduleExecution?.[0]?.scheduleId) {
+          const schedule = yield* Effect.tryPromise({
+            try: () =>
+              this.db
+                .select({
+                  tripId: notificationSchedules.tripId,
+                  id: notificationSchedules.id,
+                })
+                .from(notificationSchedules)
+                .where(
+                  eq(notificationSchedules.id, scheduleExecution[0].scheduleId),
+                )
+                .limit(1),
+            catch: (error) =>
+              new NotificationSenderError({
+                operation: "trackDeliveryFailure",
+                message: "Failed to fetch schedule",
+                cause: error,
+              }),
+          });
+          tripId = schedule?.[0]?.tripId ?? null;
+          scheduleId = schedule?.[0]?.id ?? null;
         }
 
-        await this.db.insert(notificationDeliveries).values({
-          notificationId: input.notificationId,
-          tripId,
-          scheduleId,
-          deliveryStartedAt: new Date(),
-          deliveryCompletedAt: new Date(),
-          errors: errorMessage,
-          status: "failure",
+        // Insert new delivery record with failure status
+        yield* Effect.tryPromise({
+          try: () =>
+            this.db.insert(notificationDeliveries).values({
+              notificationId: input.notificationId,
+              tripId,
+              scheduleId,
+              deliveryStartedAt: new Date(),
+              deliveryCompletedAt: new Date(),
+              errors: errorMessage,
+              status: "failure",
+            }),
+          catch: (error) =>
+            new NotificationSenderError({
+              operation: "trackDeliveryFailure",
+              message: "Failed to insert delivery record",
+              cause: error,
+            }),
         });
       }
 
       return { success: true };
-    } catch (err) {
-      return { success: false, error: "Failed to track delivery failure" };
-    }
+    });
   }
 }

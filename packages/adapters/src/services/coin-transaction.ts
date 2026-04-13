@@ -1,9 +1,13 @@
+import { Effect } from "effect";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { coinTransactions } from "@mirai-app/frameworks/drizzle/schema/coinTransaction";
-import { groups } from "@mirai-app/frameworks/drizzle/schema/group";
-import { tripParticipants } from "@mirai-app/frameworks/drizzle/schema/trip";
+import {
+  coinTransactions,
+  groups,
+  tripParticipants,
+} from "@mirai-app/frameworks/drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import type { CoinTransactionController } from "../controllers/coin-transaction";
+import { ServiceError } from "../errors/adapter-errors";
 
 /**
  * DrizzleCoinTransactionService
@@ -20,12 +24,12 @@ export class DrizzleCoinTransactionService {
   /**
    * Get coin transactions for a user (with participant and group verification)
    */
-  async getCoinTransactionsForUser(input: {
+  getCoinTransactionsForUser(input: {
     userId: string;
     tripId: string;
     groupId?: string;
     limit: number;
-  }): Promise<
+  }): Effect.Effect<
     | {
         success: true;
         data: Array<{
@@ -41,49 +45,61 @@ export class DrizzleCoinTransactionService {
           } | null;
         }>;
       }
-    | { success: false; error: string }
+    | { success: false; error: string },
+    ServiceError,
+    never
   > {
-    // Verify participant
-    const [participant] = await this.db
-      .select({ userId: tripParticipants.userId })
-      .from(tripParticipants)
-      .where(
-        and(
-          eq(tripParticipants.userId, input.userId),
-          eq(tripParticipants.tripId, input.tripId),
-        ),
-      )
-      .limit(1);
+    return Effect.tryPromise({
+      try: async () => {
+        // Verify participant
+        const [participant] = await this.db
+          .select({ userId: tripParticipants.userId })
+          .from(tripParticipants)
+          .where(
+            and(
+              eq(tripParticipants.userId, input.userId),
+              eq(tripParticipants.tripId, input.tripId),
+            ),
+          )
+          .limit(1);
 
-    if (!participant) {
-      return {
-        success: false,
-        error: "You are not a participant of this trip",
-      };
-    }
+        if (!participant) {
+          return {
+            success: false as const,
+            error: "You are not a participant of this trip",
+          };
+        }
 
-    // Verify group if specified
-    if (input.groupId) {
-      const [group] = await this.db
-        .select({ tripId: groups.tripId, isDeleted: groups.isDeleted })
-        .from(groups)
-        .where(eq(groups.id, input.groupId))
-        .limit(1);
+        // Verify group if specified
+        if (input.groupId) {
+          const [group] = await this.db
+            .select({ tripId: groups.tripId, isDeleted: groups.isDeleted })
+            .from(groups)
+            .where(eq(groups.id, input.groupId))
+            .limit(1);
 
-      if (!group || group.tripId !== input.tripId || group.isDeleted) {
-        return {
-          success: false,
-          error: "Group not found",
-        };
-      }
-    }
+          if (!group || group.tripId !== input.tripId || group.isDeleted) {
+            return {
+              success: false as const,
+              error: "Group not found",
+            };
+          }
+        }
 
-    // Delegate to controller
-    return this.controller.getCoinTransactions({
-      tripId: input.tripId,
-      groupId: input.groupId,
-      limit: input.limit,
-      isParticipant: true,
+        // Delegate to controller
+        return this.controller.getCoinTransactions({
+          tripId: input.tripId,
+          groupId: input.groupId,
+          limit: input.limit,
+          isParticipant: true,
+        });
+      },
+      catch: (error) =>
+        new ServiceError({
+          operation: "getCoinTransactionsForUser",
+          message: `Failed to get coin transactions: ${String(error)}`,
+          cause: error,
+        }),
     });
   }
 }

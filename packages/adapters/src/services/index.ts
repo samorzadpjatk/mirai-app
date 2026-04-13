@@ -20,7 +20,10 @@ export {
 export { DrizzleCoinTransactionService } from "./coin-transaction";
 export { DrizzleCoinService } from "./coin";
 export { DrizzleRewardService } from "./reward";
-export { DrizzleNotificationSenderService } from "./notification-sender";
+export {
+  DrizzleNotificationSenderService,
+  NotificationSenderError,
+} from "./notification-sender";
 
 // =============================================================================
 // Pub/Sub Services (GraphQL Subscriptions Migration)
@@ -40,7 +43,16 @@ export {
 export { LocationStreamingService } from "./LocationStreamingService";
 export {
   NotificationDeliveryService,
+  NotificationDeliveryError,
   type PushSubscription,
   type PushSubscriptionRepository,
   type DeliveryResult,
 } from "./NotificationDeliveryService";
+export {
+  LocationStreamingService,
+  LocationStreamingError,
+} from "./LocationStreamingService";
+export {
+  EventEmitterPubSub,
+  EventEmitterPubSubError,
+} from "./EventEmitterPubSub";

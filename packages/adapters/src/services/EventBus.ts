@@ -1,12 +1,34 @@
 import type { AnyDomainEvent, DomainEvent } from "@mirai-app/domain";
+import { Effect, Data } from "effect";
+
+/**
+ * EventBusError for EventBus operations
+ */
+export class EventBusError extends Data.TaggedError("EventBusError")<{
+  readonly operation: string;
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "EVENT_BUS_ERROR" as const;
+}
 
 /**
  * EventHandler
  *
  * Type definition for event handlers.
- * Handlers receive the event and can perform side effects.
+ * Handlers receive the event and return an Effect.
  */
 export type EventHandler<TEvent extends DomainEvent = AnyDomainEvent> = (
+  event: TEvent,
+) => Effect.Effect<void, EventBusError, never>;
+
+/**
+ * LegacyEventHandler
+ *
+ * Backward-compatible handler that can return void or Promise<void>.
+ * Used for gradual migration.
+ */
+export type LegacyEventHandler<TEvent extends DomainEvent = AnyDomainEvent> = (
   event: TEvent,
 ) => void | Promise<void>;
 
@@ -16,13 +38,13 @@ export type EventHandler<TEvent extends DomainEvent = AnyDomainEvent> = (
  * Handle returned from subscribe() that allows unsubscribing.
  */
 export interface EventSubscription {
-  unsubscribe(): void;
+  unsubscribe(): Effect.Effect<void, never, never>;
 }
 
 /**
  * EventBus
  *
- * Typed in-process pub/sub for domain events.
+ * Typed in-process pub/sub for domain events using Effect.
  *
  * Phase 2: Real-Time Architecture
  * - Replaces external message brokers (RabbitMQ, Redis Pub/Sub) for in-process use
@@ -31,8 +53,7 @@ export interface EventSubscription {
  * - ConnectionManager subscribes to LocationUpdated
  *
  * Design Decisions:
- * - Synchronous publish (handlers execute immediately)
- * - Async handlers don't block the publisher
+ * - Handlers return Effect for composable error handling
  * - Error isolation (one handler failure doesn't affect others)
  * - Type-safe event routing
  *
@@ -50,9 +71,12 @@ export interface EventSubscription {
  * ));
  *
  * // In service: subscribe to events
- * eventBus.subscribe("NotificationCreated", async (event) => {
- *   await pushNotificationService.send(event);
- * });
+ * eventBus.subscribe("NotificationCreated", (event) =>
+ *   Effect.tryPromise({
+ *     try: () => pushNotificationService.send(event),
+ *     catch: (error) => new EventBusError({ operation: "send", message: String(error) })
+ *   })
+ * );
  * ```
  */
 export class EventBus {
@@ -62,18 +86,17 @@ export class EventBus {
    * Subscribe to events of a specific type
    *
    * @param eventType - The type of event to subscribe to
-   * @param handler - The handler function to call when events occur
+   * @param handler - The handler function that returns an Effect
    * @returns Subscription handle for unsubscribing
    *
    * @example
    * ```typescript
-   * const sub = eventBus.subscribe("NotificationCreated", async (event) => {
-   *   console.log("Notification created:", event.notificationId);
-   *   await sendPushNotification(event);
-   * });
+   * const sub = eventBus.subscribe("NotificationCreated", (event) =>
+   *   Effect.sync(() => console.log("Notification created:", event.notificationId))
+   * );
    *
    * // Later: unsubscribe
-   * sub.unsubscribe();
+   * Effect.runSync(sub.unsubscribe());
    * ```
    */
   subscribe<TEvent extends AnyDomainEvent>(
@@ -88,14 +111,49 @@ export class EventBus {
     handlersForType.add(handler as EventHandler);
 
     return {
-      unsubscribe: () => {
-        handlersForType.delete(handler as EventHandler);
-        // Clean up empty handler sets
-        if (handlersForType.size === 0) {
-          this.handlers.delete(eventType);
-        }
-      },
+      unsubscribe: () =>
+        Effect.sync(() => {
+          handlersForType.delete(handler as EventHandler);
+          // Clean up empty handler sets
+          if (handlersForType.size === 0) {
+            this.handlers.delete(eventType);
+          }
+        }),
     };
+  }
+
+  /**
+   * Subscribe with a legacy handler (void or Promise<void>)
+   *
+   * Use this for gradual migration from non-Effect code.
+   *
+   * @param eventType - The type of event to subscribe to
+   * @param handler - Legacy handler function
+   * @returns Subscription handle for unsubscribing
+   */
+  subscribeLegacy<TEvent extends AnyDomainEvent>(
+    eventType: TEvent["type"],
+    handler: LegacyEventHandler<TEvent>,
+  ): EventSubscription {
+    // Wrap legacy handler in Effect
+    const effectHandler: EventHandler<TEvent> = (event) => {
+      return Effect.tryPromise({
+        try: async () => {
+          const result = handler(event);
+          if (result instanceof Promise) {
+            await result;
+          }
+        },
+        catch: (error) =>
+          new EventBusError({
+            operation: "legacyHandler",
+            message: `Legacy handler failed for event ${eventType}: ${error instanceof Error ? error.message : String(error)}`,
+            cause: error,
+          }),
+      });
+    };
+
+    return this.subscribe(eventType, effectHandler);
   }
 
   /**
@@ -115,26 +173,28 @@ export class EventBus {
     wildcardHandlers.add(handler);
 
     return {
-      unsubscribe: () => {
-        wildcardHandlers.delete(handler);
-        if (wildcardHandlers.size === 0) {
-          this.handlers.delete(wildcardType);
-        }
-      },
+      unsubscribe: () =>
+        Effect.sync(() => {
+          wildcardHandlers.delete(handler);
+          if (wildcardHandlers.size === 0) {
+            this.handlers.delete(wildcardType);
+          }
+        }),
     };
   }
 
   /**
    * Publish an event to all subscribers
    *
-   * Handlers execute synchronously but async handlers don't block.
-   * Errors in handlers are caught and logged, not thrown to the publisher.
+   * Returns an Effect that executes all handlers. Errors in individual
+   * handlers are caught and logged, not thrown to the caller.
    *
    * @param event - The domain event to publish
+   * @returns Effect that completes when all handlers have been triggered
    *
    * @example
    * ```typescript
-   * eventBus.publish(new NotificationCreated(
+   * const publishEffect = eventBus.publish(new NotificationCreated(
    *   crypto.randomUUID(),
    *   notificationId,
    *   recipientId,
@@ -143,52 +203,72 @@ export class EventBus {
    *   priority,
    *   new Date()
    * ));
+   *
+   * // Execute the effect
+   * await Effect.runPromise(publishEffect);
    * ```
    */
-  publish<TEvent extends AnyDomainEvent>(event: TEvent): void {
-    // Execute typed handlers
-    const handlersForType = this.handlers.get(event.type);
-    if (handlersForType) {
-      for (const handler of handlersForType) {
-        this.executeHandler(handler, event);
-      }
-    }
+  publish<TEvent extends AnyDomainEvent>(
+    event: TEvent,
+  ): Effect.Effect<void, never, never> {
+    return Effect.gen(this, function* () {
+      const effects: Effect.Effect<void, EventBusError, never>[] = [];
 
-    // Execute wildcard handlers
-    const wildcardHandlers = this.handlers.get("*");
-    if (wildcardHandlers) {
-      for (const handler of wildcardHandlers) {
-        this.executeHandler(handler, event);
+      // Collect typed handlers
+      const handlersForType = this.handlers.get(event.type);
+      if (handlersForType) {
+        for (const handler of handlersForType) {
+          effects.push(
+            handler(event).pipe(
+              Effect.catchAll((error) =>
+                Effect.sync(() => {
+                  console.error(
+                    `EventBus: Handler error for event ${event.type}:`,
+                    error,
+                  );
+                }),
+              ),
+            ),
+          );
+        }
       }
-    }
+
+      // Collect wildcard handlers
+      const wildcardHandlers = this.handlers.get("*");
+      if (wildcardHandlers) {
+        for (const handler of wildcardHandlers) {
+          effects.push(
+            handler(event).pipe(
+              Effect.catchAll((error) =>
+                Effect.sync(() => {
+                  console.error(
+                    `EventBus: Wildcard handler error for event ${event.type}:`,
+                    error,
+                  );
+                }),
+              ),
+            ),
+          );
+        }
+      }
+
+      // Execute all handlers in parallel, catching individual errors
+      if (effects.length > 0) {
+        yield* Effect.all(effects, { discard: true });
+      }
+    });
   }
 
   /**
-   * Execute a handler with error isolation
+   * Publish and forget (fire-and-forget style)
+   *
+   * For cases where you don't need to wait for handlers to complete.
+   * Errors are logged but not returned.
+   *
+   * @param event - The domain event to publish
    */
-  private executeHandler<TEvent extends AnyDomainEvent>(
-    handler: EventHandler<TEvent>,
-    event: TEvent,
-  ): void {
-    try {
-      const result = handler(event);
-
-      // Handle async handlers
-      if (result instanceof Promise) {
-        result.catch((error) => {
-          console.error(
-            `EventBus: Async handler error for event ${event.type}:`,
-            error,
-          );
-        });
-      }
-    } catch (error) {
-      // Log error but don't break other handlers
-      console.error(
-        `EventBus: Sync handler error for event ${event.type}:`,
-        error,
-      );
-    }
+  publishFireAndForget<TEvent extends AnyDomainEvent>(event: TEvent): void {
+    Effect.runFork(this.publish(event));
   }
 
   /**

@@ -3,7 +3,7 @@
  *
  * These errors represent failures that occur when interacting with external
  * systems like databases, APIs, file storage, and other infrastructure.
- * They use a type-safe TaggedError pattern with `code` discriminator fields.
+ * They use Effect's Data.TaggedError pattern for type-safe error handling.
  *
  * ## Error Types
  *
@@ -17,22 +17,50 @@
  *
  * ```typescript
  * import { DatabaseError } from "@mirai-app/adapters/errors";
+ * import { Effect, Data } from "effect";
  *
- * async function findUser(id: string): Promise<User | null> {
- *   try {
- *     return await prisma.user.findUnique({ where: { id } });
- *   } catch (error) {
- *     throw new DatabaseError({
+ * const findUser = (id: string): Effect.Effect<User | null, DatabaseError, never> =>
+ *   Effect.tryPromise({
+ *     try: () => prisma.user.findUnique({ where: { id } }),
+ *     catch: (error) => new DatabaseError({
  *       operation: "findUser",
  *       message: "Failed to find user",
  *       cause: error
- *     });
- *   }
- * }
+ *     }),
+ *   });
  * ```
  *
  * @module AdapterErrors
  */
+
+import { Data } from "effect";
+
+// =============================================================================
+// Service Errors
+// =============================================================================
+
+/**
+ * Error thrown when a service operation fails
+ *
+ * Used by service layer classes that interact with external systems
+ * or perform complex business operations.
+ *
+ * @example
+ * ```typescript
+ * const error = new ServiceError({
+ *   operation: "sendNotification",
+ *   message: "Failed to send push notification",
+ *   cause: expoError,
+ * });
+ * ```
+ */
+export class ServiceError extends Data.TaggedError("ServiceError")<{
+  readonly operation: string;
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "SERVICE_ERROR" as const;
+}
 
 // =============================================================================
 // Database Errors
@@ -41,29 +69,23 @@
 /**
  * Error thrown when a database operation fails
  *
+ * Uses Effect's Data.TaggedError for type-safe error handling.
+ *
  * @example
  * ```typescript
  * const error = new DatabaseError({
  *   operation: "createUser",
  *   message: "Unique constraint violation on email",
  *   cause: prismaError,
- *   code: "DATABASE_ERROR"
  * });
  * ```
  */
-export class DatabaseError extends Error {
-  readonly _tag = "DatabaseError" as const;
-  readonly code = "DATABASE_ERROR" as const;
+export class DatabaseError extends Data.TaggedError("DatabaseError")<{
   readonly operation: string;
-  override readonly message: string;
-  override readonly cause?: unknown;
-
-  constructor(props: { operation: string; message: string; cause?: unknown }) {
-    super(`Database error in '${props.operation}': ${props.message}`);
-    this.operation = props.operation;
-    this.message = props.message;
-    this.cause = props.cause;
-  }
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "DATABASE_ERROR" as const;
 }
 
 /**
@@ -74,21 +96,16 @@ export class DatabaseError extends Error {
  * const error = new DatabaseConnectionError({
  *   message: "Connection timeout after 30s",
  *   cause: connectionError,
- *   code: "CONNECTION_ERROR"
  * });
  * ```
  */
-export class DatabaseConnectionError extends Error {
-  readonly _tag = "DatabaseConnectionError" as const;
+export class DatabaseConnectionError extends Data.TaggedError(
+  "DatabaseConnectionError",
+)<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
   readonly code = "CONNECTION_ERROR" as const;
-  override readonly message: string;
-  override readonly cause?: unknown;
-
-  constructor(props: { message: string; cause?: unknown }) {
-    super(`Database connection failed: ${props.message}`);
-    this.message = props.message;
-    this.cause = props.cause;
-  }
 }
 
 /**
@@ -100,23 +117,17 @@ export class DatabaseConnectionError extends Error {
  *   operation: "purchaseReward",
  *   message: "Transaction rolled back due to deadlock",
  *   cause: txError,
- *   code: "TRANSACTION_ERROR"
  * });
  * ```
  */
-export class DatabaseTransactionError extends Error {
-  readonly _tag = "DatabaseTransactionError" as const;
-  readonly code = "TRANSACTION_ERROR" as const;
+export class DatabaseTransactionError extends Data.TaggedError(
+  "DatabaseTransactionError",
+)<{
   readonly operation: string;
-  override readonly message: string;
-  override readonly cause?: unknown;
-
-  constructor(props: { operation: string; message: string; cause?: unknown }) {
-    super(`Transaction failed in '${props.operation}': ${props.message}`);
-    this.operation = props.operation;
-    this.message = props.message;
-    this.cause = props.cause;
-  }
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = "TRANSACTION_ERROR" as const;
 }
 
 // =============================================================================
@@ -338,6 +349,7 @@ export class ConfigurationError extends Error {
  * Union type of all adapter errors
  */
 export type AdapterError =
+  | ServiceError
   | DatabaseError
   | DatabaseConnectionError
   | DatabaseTransactionError
@@ -353,6 +365,7 @@ export type AdapterError =
  */
 export function isAdapterError(error: unknown): error is AdapterError {
   return (
+    error instanceof ServiceError ||
     error instanceof DatabaseError ||
     error instanceof DatabaseConnectionError ||
     error instanceof DatabaseTransactionError ||

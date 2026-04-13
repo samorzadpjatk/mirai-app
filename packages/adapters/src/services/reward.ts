@@ -1,6 +1,8 @@
+import { Effect } from "effect";
 import type { DrizzleTripAccessChecker } from "./trip-access";
 import type { DrizzleTripPointsCalculator } from "./trip-points";
 import type { RewardController } from "../controllers/reward";
+import { ServiceError } from "../errors/adapter-errors";
 
 /**
  * DrizzleRewardService
@@ -18,63 +20,100 @@ export class DrizzleRewardService {
   /**
    * Get reward by ID with hidden check and staff verification
    */
-  async getByIdWithAccessCheck(input: {
+  getByIdWithAccessCheck(input: {
     rewardId: string;
     userId: string;
-  }): Promise<
-    { success: true; data: unknown } | { success: false; error: string }
+  }): Effect.Effect<
+    { success: true; data: unknown } | { success: false; error: string },
+    ServiceError,
+    never
   > {
-    // Get the reward
-    const result = await this.controller.getById({ id: input.rewardId });
+    return Effect.tryPromise({
+      try: async () => {
+        // Get the reward
+        const result = await this.controller.getById({ id: input.rewardId });
 
-    if (!result.success) {
-      return result;
-    }
+        if (!result.success) {
+          return result;
+        }
 
-    // Check if reward is hidden and verify staff status
-    if (result.data.isHidden) {
-      const isStaff = await this.accessChecker.isStaff(input.userId);
-      if (!isStaff) {
-        return {
-          success: false,
-          error: "Reward not found",
-        };
-      }
-    }
+        // Check if reward is hidden and verify staff status
+        if (result.data.isHidden) {
+          const isStaffEffect = this.accessChecker.isStaff(input.userId);
+          const isStaff = await Effect.runPromise(isStaffEffect);
+          if (!isStaff) {
+            return {
+              success: false,
+              error: "Reward not found",
+            };
+          }
+        }
 
-    return result;
+        return result;
+      },
+      catch: (error) =>
+        new ServiceError({
+          operation: "getByIdWithAccessCheck",
+          message: `Failed to get reward ${input.rewardId}: ${String(error)}`,
+          cause: error,
+        }),
+    });
   }
 
   /**
    * Get purchase history with staff verification
    */
-  async getPurchaseHistoryWithAccessCheck(input: {
+  getPurchaseHistoryWithAccessCheck(input: {
     tripId: string;
     userId: string;
     pagination?: { limit?: number; offset?: number };
-  }): Promise<
-    { success: true; data: unknown } | { success: false; error: string }
+  }): Effect.Effect<
+    { success: true; data: unknown } | { success: false; error: string },
+    ServiceError,
+    never
   > {
-    // Check if user is staff
-    const isStaff = await this.accessChecker.isStaff(input.userId);
+    return Effect.tryPromise({
+      try: async () => {
+        // Check if user is staff
+        const isStaffEffect = this.accessChecker.isStaff(input.userId);
+        const isStaff = await Effect.runPromise(isStaffEffect);
 
-    // Delegate to controller
-    return this.controller.getPurchaseHistory({
-      tripId: input.tripId,
-      userId: input.userId,
-      isStaff,
-      pagination: input.pagination,
+        // Delegate to controller
+        return this.controller.getPurchaseHistory({
+          tripId: input.tripId,
+          userId: input.userId,
+          isStaff,
+          pagination: input.pagination,
+        });
+      },
+      catch: (error) =>
+        new ServiceError({
+          operation: "getPurchaseHistoryWithAccessCheck",
+          message: `Failed to get purchase history for trip ${input.tripId}: ${String(error)}`,
+          cause: error,
+        }),
     });
   }
 
   /**
    * Get total available points for a trip
    */
-  async getTotalAvailablePoints(input: {
+  getTotalAvailablePoints(input: {
     tripId: string;
-  }): Promise<{ totalPoints: number }> {
-    const totalPoints =
-      await this.pointsCalculator.calculateTotalAvailablePoints(input.tripId);
-    return { totalPoints };
+  }): Effect.Effect<{ totalPoints: number }, ServiceError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const totalPointsEffect =
+          this.pointsCalculator.calculateTotalAvailablePoints(input.tripId);
+        const totalPoints = await Effect.runPromise(totalPointsEffect);
+        return { totalPoints };
+      },
+      catch: (error) =>
+        new ServiceError({
+          operation: "getTotalAvailablePoints",
+          message: `Failed to get total available points for trip ${input.tripId}: ${String(error)}`,
+          cause: error,
+        }),
+    });
   }
 }

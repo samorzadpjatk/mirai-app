@@ -1,75 +1,137 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { NotificationService } from "../notification-service";
-import type { NotificationRepository } from "@mirai-app/use-cases";
-import type { Notification, NotificationId } from "@mirai-app/domain";
-
-// Mock Notification
-const createMockNotification = (
-  overrides?: Partial<Notification>,
-): Notification =>
-  ({
-    id: "notif-123" as NotificationId,
-    tripId: "trip-123",
-    title: "Test Notification",
-    body: "Test body",
-    url: null,
-    createdAt: new Date("2024-01-01"),
-    ...overrides,
-  }) as Notification;
+import { describe, it, expect } from "bun:test";
+import { Effect } from "effect";
+import {
+  NotificationService,
+  type RankingTemplateValues,
+} from "../notification-service";
 
 describe("[UNIT] NotificationService", () => {
-  let service: NotificationService;
-  let mockNotificationRepository: NotificationRepository;
+  describe("static factory methods", () => {
+    it("should create coins added notification", () => {
+      const notification = NotificationService.createCoinsAddedNotification(
+        "Test Group",
+        100,
+        "Bonus reward",
+      );
 
-  beforeEach(() => {
-    mockNotificationRepository = {
-      findById: mock(() => Promise.resolve(createMockNotification())),
-      findByTripId: mock(() => Promise.resolve([createMockNotification()])),
-      create: mock((notif: Notification) => Promise.resolve(notif)),
-      delete: mock(() => Promise.resolve()),
-    } as unknown as NotificationRepository;
-
-    service = new NotificationService(mockNotificationRepository);
-  });
-
-  describe("getById", () => {
-    it("should return notification by ID", async () => {
-      const result = await service.getById("notif-123");
-
-      expect(result).not.toBeNull();
-      expect(result?.title).toBe("Test Notification");
+      expect(notification.title).toBe("💰 Test Group received coins!");
+      expect(notification.body).toContain("100");
+      expect(notification.body).toContain("Bonus reward");
+      expect(notification.url).toBe("/group/my");
     });
 
-    it("should return null when not found", async () => {
-      mockNotificationRepository.findById = mock(() => Promise.resolve(null));
+    it("should create coins added notification without reason", () => {
+      const notification = NotificationService.createCoinsAddedNotification(
+        "Test Group",
+        50,
+        undefined,
+      );
 
-      const result = await service.getById("notif-123");
+      expect(notification.title).toBe("💰 Test Group received coins!");
+      expect(notification.body).toContain("50");
+      expect(notification.body).not.toContain("Reason:");
+    });
 
-      expect(result).toBeNull();
+    it("should create coins removed notification", () => {
+      const notification = NotificationService.createCoinsRemovedNotification(
+        "Test Group",
+        25,
+        "Penalty",
+      );
+
+      expect(notification.title).toBe("💸 Test Group - Coins Seized");
+      expect(notification.body).toContain("25");
+      expect(notification.body).toContain("Penalty");
+    });
+
+    it("should create new member notification", () => {
+      const notification = NotificationService.createNewMemberNotification(
+        "Test Group",
+        "John Doe",
+      );
+
+      expect(notification.title).toBe("👥 New member in Test Group!");
+      expect(notification.body).toContain("John Doe");
+      expect(notification.url).toBe("/group/my");
+    });
+
+    it("should create ranking update notification", () => {
+      const notification = NotificationService.createRankingUpdateNotification(
+        "Test Group",
+        3,
+      );
+
+      expect(notification.title).toBe("🏆 Ranking update!");
+      expect(notification.body).toContain("3 place");
+      expect(notification.url).toBe("/ranking");
     });
   });
 
-  describe("create", () => {
-    it("should create notification", async () => {
-      const input = {
-        tripId: "trip-123",
-        title: "New Notification",
-        body: "New body",
+  describe("template utilities", () => {
+    it("should create notification with correct structure", () => {
+      const notification = NotificationService.createCoinsAddedNotification(
+        "Guild Name",
+        200,
+        "Quest completion",
+      );
+
+      expect(notification).toHaveProperty("title");
+      expect(notification).toHaveProperty("body");
+      expect(notification).toHaveProperty("url");
+      expect(typeof notification.title).toBe("string");
+      expect(typeof notification.body).toBe("string");
+      expect(typeof notification.url).toBe("string");
+    });
+
+    it("should include group name in title for coins notification", () => {
+      const groupName = "My Awesome Guild";
+      const notification = NotificationService.createCoinsAddedNotification(
+        groupName,
+        50,
+        undefined,
+      );
+
+      expect(notification.title).toContain(groupName);
+    });
+  });
+
+  describe("Effect integration", () => {
+    it("sendMobileNotifications should return Effect", () => {
+      // Create a minimal mock prisma
+      const mockPrisma = {
+        notification: {
+          findUnique: () => Promise.resolve(null),
+        },
       };
 
-      const result = await service.create(input);
+      const service = new NotificationService(
+        mockPrisma as unknown as Parameters<typeof NotificationService>[0],
+      );
+      const effect = service.sendMobileNotifications("notification-123");
 
-      expect(result).not.toBeNull();
-      expect(result?.title).toBe("New Notification");
-      expect(mockNotificationRepository.create).toHaveBeenCalled();
+      // Verify it returns an Effect
+      expect(effect).toBeDefined();
+      expect(typeof effect.pipe).toBe("function");
     });
-  });
 
-  describe("getByTripId", () => {
-    it("should return notifications for trip", async () => {
-      const result = await service.getByTripId("trip-123");
+    it("should return early result when notification not found", async () => {
+      const mockPrisma = {
+        notification: {
+          findUnique: () => Promise.resolve(null),
+        },
+      };
 
-      expect(result).toHaveLength(1);
+      const service = new NotificationService(
+        mockPrisma as unknown as Parameters<typeof NotificationService>[0],
+      );
+      const result = await Effect.runPromise(
+        service.sendMobileNotifications("notification-123"),
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.sent).toBe(0);
+      expect(result.failed).toBe(0);
+      expect(result.total).toBe(0);
     });
   });
 });

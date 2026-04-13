@@ -1,6 +1,8 @@
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { challenges } from "@mirai-app/frameworks/drizzle/schema/challenge";
+import { challenges } from "@mirai-app/frameworks/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { Effect } from "effect";
+import { ServiceError } from "../errors/adapter-errors";
 
 /**
  * Calculates total available points for a trip based on challenge configurations
@@ -8,33 +10,45 @@ import { eq } from "drizzle-orm";
 export class DrizzleTripPointsCalculator {
   constructor(private db: DrizzleDb) {}
 
-  async calculateTotalAvailablePoints(tripId: string): Promise<number> {
-    const challengeRows = await this.db
-      .select({
-        basePoints: challenges.basePoints,
-        firstPlacePoints: challenges.firstPlacePoints,
-        secondPlacePoints: challenges.secondPlacePoints,
-        thirdPlacePoints: challenges.thirdPlacePoints,
-        scoringCategory: challenges.scoringCategory,
-      })
-      .from(challenges)
-      .where(eq(challenges.tripId, tripId));
+  calculateTotalAvailablePoints(
+    tripId: string,
+  ): Effect.Effect<number, ServiceError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const challengeRows = await this.db
+          .select({
+            basePoints: challenges.basePoints,
+            firstPlacePoints: challenges.firstPlacePoints,
+            secondPlacePoints: challenges.secondPlacePoints,
+            thirdPlacePoints: challenges.thirdPlacePoints,
+            scoringCategory: challenges.scoringCategory,
+          })
+          .from(challenges)
+          .where(eq(challenges.tripId, tripId));
 
-    let totalPoints = 0;
+        let totalPoints = 0;
 
-    for (const challenge of challengeRows) {
-      const basePoints = challenge.basePoints ?? 0;
+        for (const challenge of challengeRows) {
+          const basePoints = challenge.basePoints ?? 0;
 
-      if (challenge.scoringCategory === "UNLIMITED") {
-        totalPoints += basePoints;
-      } else {
-        totalPoints += basePoints;
-        totalPoints += challenge.firstPlacePoints ?? 0;
-        totalPoints += challenge.secondPlacePoints ?? 0;
-        totalPoints += challenge.thirdPlacePoints ?? 0;
-      }
-    }
+          if (challenge.scoringCategory === "UNLIMITED") {
+            totalPoints += basePoints;
+          } else {
+            totalPoints += basePoints;
+            totalPoints += challenge.firstPlacePoints ?? 0;
+            totalPoints += challenge.secondPlacePoints ?? 0;
+            totalPoints += challenge.thirdPlacePoints ?? 0;
+          }
+        }
 
-    return totalPoints;
+        return totalPoints;
+      },
+      catch: (error) =>
+        new ServiceError({
+          operation: "calculateTotalAvailablePoints",
+          message: `Failed to calculate total available points for trip ${tripId}: ${String(error)}`,
+          cause: error,
+        }),
+    });
   }
 }

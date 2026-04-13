@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect } from "effect";
 import {
   ConnectionManager,
   type BroadcastLocation,
 } from "../ConnectionManager";
 import { InMemoryRealtimeAdapter } from "../../gateways/realtime/InMemoryRealtimeAdapter";
 import { isOk } from "@mirai-app/domain";
+import { RealtimeError } from "@mirai-app/use-cases/ports/RealtimePort";
 
 describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   let realtimePort: InMemoryRealtimeAdapter;
@@ -141,18 +143,18 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
 
       // Subscribe user-2 to location channel
       let receivedMessage: unknown = null;
-      realtimePort.subscribe("location:user-1", {
-        onMessage: (event, payload) => {
-          if (event === "location_updated") {
-            receivedMessage = payload;
-          }
-        },
-      });
+      await Effect.runPromise(
+        realtimePort.subscribe("location:user-1", {
+          onMessage: (event, payload) => {
+            if (event === "location_updated") {
+              receivedMessage = payload;
+            }
+          },
+        }),
+      );
 
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2"],
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
       );
 
       expect(result.success).toBe(true);
@@ -174,10 +176,12 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // user-2 and user-3 are online, user-99 is not
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2", "user-99", "user-3"],
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, [
+          "user-2",
+          "user-99",
+          "user-3",
+        ]),
       );
 
       expect(result.success).toBe(true);
@@ -195,10 +199,8 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-99"], // Offline user
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-99"]),
       );
 
       expect(result.success).toBe(false); // No online friends to broadcast to
@@ -216,10 +218,8 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        [],
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, []),
       );
 
       expect(result.success).toBe(true);
@@ -241,15 +241,17 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
 
       // Subscribe all friends to location channel
       const receivedBy: string[] = [];
-      ["user-2", "user-3", "user-4"].forEach((userId) => {
-        realtimePort.subscribe(`location:user-1`, {
-          onMessage: (event) => {
-            if (event === "location_updated") {
-              receivedBy.push(userId);
-            }
-          },
-        });
-      });
+      for (const userId of ["user-2", "user-3", "user-4"]) {
+        await Effect.runPromise(
+          realtimePort.subscribe(`location:user-1`, {
+            onMessage: (event) => {
+              if (event === "location_updated") {
+                receivedBy.push(userId);
+              }
+            },
+          }),
+        );
+      }
 
       const location: BroadcastLocation = {
         userId: "user-1",
@@ -261,10 +263,12 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2", "user-3", "user-4"],
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, [
+          "user-2",
+          "user-3",
+          "user-4",
+        ]),
       );
 
       expect(result.broadcastCount).toBe(3);
@@ -282,13 +286,15 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       const receivedBy: string[] = [];
 
       // Subscribe user-2 (online friend)
-      realtimePort.subscribe(`location:user-1`, {
-        onMessage: (event) => {
-          if (event === "location_updated") {
-            receivedBy.push("user-2");
-          }
-        },
-      });
+      await Effect.runPromise(
+        realtimePort.subscribe(`location:user-1`, {
+          onMessage: (event) => {
+            if (event === "location_updated") {
+              receivedBy.push("user-2");
+            }
+          },
+        }),
+      );
 
       const location: BroadcastLocation = {
         userId: "user-1",
@@ -301,13 +307,11 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // Only user-2 is in friend list and online, user-3 is not connected
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        [
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, [
           "user-2",
           "user-3", // offline, should be skipped
-        ],
+        ]),
       );
 
       // Only user-2 receives because they're the only one in friend list who is online
@@ -327,11 +331,13 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       connectionManager.userConnected("user-2", "conn-2");
 
       let messageCount = 0;
-      realtimePort.subscribe("location:user-1", {
-        onMessage: () => {
-          messageCount++;
-        },
-      });
+      await Effect.runPromise(
+        realtimePort.subscribe("location:user-1", {
+          onMessage: () => {
+            messageCount++;
+          },
+        }),
+      );
 
       // First broadcast - should receive
       const location: BroadcastLocation = {
@@ -344,14 +350,18 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      await connectionManager.broadcastLocation("user-1", location, ["user-2"]);
+      await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+      );
       expect(messageCount).toBe(1);
 
       // Disconnect user-2
       connectionManager.userDisconnected("user-2", "conn-2");
 
       // Second broadcast - should not receive
-      await connectionManager.broadcastLocation("user-1", location, ["user-2"]);
+      await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+      );
       expect(messageCount).toBe(1); // No new messages
     });
 
@@ -384,13 +394,13 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // First broadcast
-      await connectionManager.broadcastLocation("user-1", location, ["user-2"]);
+      await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+      );
 
       // Second broadcast should be throttled
-      const result2 = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2"],
+      const result2 = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
       );
       expect(result2.throttled).toBe(true);
 
@@ -399,10 +409,8 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       connectionManager.userConnected("user-1", "conn-3");
 
       // Should not be throttled after reconnect
-      const result3 = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2"],
+      const result3 = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
       );
       expect(result3.throttled).toBe(false);
     });
@@ -435,19 +443,15 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // First update should succeed
-      const result1 = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2"],
+      const result1 = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
       );
       expect(result1.throttled).toBe(false);
       expect(result1.success).toBe(true);
 
       // Immediate second update should be throttled
-      const result2 = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2"],
+      const result2 = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
       );
       expect(result2.throttled).toBe(true);
       expect(result2.broadcastCount).toBe(0);
@@ -466,16 +470,16 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // First update
-      await connectionManager.broadcastLocation("user-1", location, ["user-2"]);
+      await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+      );
 
       // Wait for throttle to expire
       await new Promise((resolve) => setTimeout(resolve, 120));
 
       // Second update should succeed
-      const result2 = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2"],
+      const result2 = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
       );
       expect(result2.throttled).toBe(false);
       expect(result2.broadcastCount).toBe(1);
@@ -493,13 +497,13 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // First update
-      await connectionManager.broadcastLocation("user-1", location, ["user-2"]);
+      await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+      );
 
       // Throttled update
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2"],
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
       );
 
       expect(result.errors).toHaveLength(1);
@@ -529,7 +533,9 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      await connectionManager.broadcastLocation("user-1", location, []);
+      await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, []),
+      );
 
       const updatedConnection = connectionManager.getConnection(
         "user-1",
@@ -557,7 +563,9 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      await connectionManager.broadcastLocation("user-1", location, []);
+      await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, []),
+      );
 
       const updatedConn2 = connectionManager.getConnection("user-1", "conn-2");
       expect(updatedConn2!.lastActivityAt.getTime()).toBeGreaterThan(
@@ -659,12 +667,8 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       const mockRealtimePort = {
         subscribe: realtimePort.subscribe.bind(realtimePort),
         getConnectionState: realtimePort.getConnectionState.bind(realtimePort),
-        broadcast: async () => {
-          return {
-            kind: "err" as const,
-            error: new Error("Network error"),
-          };
-        },
+        broadcast: () =>
+          Effect.fail(new RealtimeError({ message: "Network error" })),
       };
 
       const manager = new ConnectionManager(mockRealtimePort as any);
@@ -682,9 +686,9 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // Should not throw
-      const result = await manager.broadcastLocation("user-1", location, [
-        "user-2",
-      ]);
+      const result = await Effect.runPromise(
+        manager.broadcastLocation("user-1", location, ["user-2"]),
+      );
 
       // Result should contain the error
       expect(result.errors.length).toBeGreaterThan(0);
@@ -697,12 +701,14 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       connectionManager.userConnected("user-3", "conn-3");
 
       // Set port to fail for user-2 by closing subscription
-      realtimePort.subscribe("location:user-1", {
-        onMessage: (event, payload) => {
-          // Simulate error for user-2 only
-          throw new Error("Simulated error");
-        },
-      });
+      await Effect.runPromise(
+        realtimePort.subscribe("location:user-1", {
+          onMessage: (event, payload) => {
+            // Simulate error for user-2 only
+            throw new Error("Simulated error");
+          },
+        }),
+      );
 
       const location: BroadcastLocation = {
         userId: "user-1",
@@ -714,10 +720,11 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2", "user-3"],
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, [
+          "user-2",
+          "user-3",
+        ]),
       );
 
       // Should complete without throwing
@@ -848,7 +855,9 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // First broadcast
-      await connectionManager.broadcastLocation("user-1", location, ["user-2"]);
+      await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+      );
 
       // Clear
       connectionManager.clear();
@@ -858,10 +867,8 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       connectionManager.userConnected("user-2", "conn-4");
 
       // Should not be throttled after clear
-      const result = await connectionManager.broadcastLocation(
-        "user-1",
-        location,
-        ["user-2"],
+      const result = await Effect.runPromise(
+        connectionManager.broadcastLocation("user-1", location, ["user-2"]),
       );
       expect(result.throttled).toBe(false);
     });
