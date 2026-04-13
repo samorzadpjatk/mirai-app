@@ -1,5 +1,12 @@
 import { z } from "zod";
-import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
+import { Effect } from "effect";
+import type { CoinTransactionRepository } from "@mirai-app/use-cases";
+import {
+  addCoinsUseCase,
+  removeCoinsUseCase,
+  CoinTransactionRepositoryTag,
+} from "@mirai-app/use-cases";
+import { effectToControllerResult } from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for coin controller
@@ -21,16 +28,32 @@ const schemas = {
 };
 
 /**
+ * Output type for coin operations
+ */
+type CoinOutput = {
+  id: string;
+  amount: number;
+  reason: string | null;
+  groupId: string;
+  adminId: string;
+  createdAt: Date;
+};
+
+/**
+ * Controller result type
+ */
+type CoinResult =
+  | { success: true; data: CoinOutput }
+  | { success: false; error: string };
+
+/**
  * CoinController
  *
  * Handles coin operations (add/remove) with proper validation.
  * Delegates to use cases for business logic.
  */
 export class CoinController {
-  constructor(
-    private addCoinsUseCase: AddCoinsUseCase,
-    private removeCoinsUseCase: RemoveCoinsUseCase,
-  ) {}
+  constructor(private coinRepository: CoinTransactionRepository) {}
 
   get schemas() {
     return schemas;
@@ -45,41 +68,32 @@ export class CoinController {
     amount: number;
     reason?: string;
     adminId: string;
-  }): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          amount: number;
-          reason: string | null;
-          groupId: string;
-          adminId: string;
-          createdAt: Date;
-        };
-      }
-    | { success: false; error: string }
-  > {
-    const result = await this.addCoinsUseCase.execute({
+  }): Promise<CoinResult> {
+    const effect = addCoinsUseCase({
       tripId: input.tripId,
       groupId: input.groupId,
       amount: input.amount,
       reason: input.reason,
       adminId: input.adminId,
-    });
+    }).pipe(
+      Effect.provideService(CoinTransactionRepositoryTag, this.coinRepository),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    const result = await effectToControllerResult(effect);
+
+    if (result.success === false) {
+      return result;
     }
 
     return {
       success: true,
       data: {
-        id: result.value.transaction.id,
-        amount: result.value.transaction.amount,
-        reason: result.value.transaction.reason ?? null,
-        groupId: result.value.transaction.groupId,
-        adminId: result.value.transaction.adminId,
-        createdAt: result.value.transaction.createdAt,
+        id: result.data.transaction.id,
+        amount: result.data.transaction.amount,
+        reason: result.data.transaction.reason ?? null,
+        groupId: result.data.transaction.groupId,
+        adminId: result.data.transaction.adminId,
+        createdAt: result.data.transaction.createdAt,
       },
     };
   }
@@ -93,41 +107,32 @@ export class CoinController {
     amount: number;
     reason?: string;
     adminId: string;
-  }): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          amount: number;
-          reason: string | null;
-          groupId: string;
-          adminId: string;
-          createdAt: Date;
-        };
-      }
-    | { success: false; error: string }
-  > {
-    const result = await this.removeCoinsUseCase.execute({
+  }): Promise<CoinResult> {
+    const effect = removeCoinsUseCase({
       tripId: input.tripId,
       groupId: input.groupId,
       amount: input.amount,
       reason: input.reason,
       adminId: input.adminId,
-    });
+    }).pipe(
+      Effect.provideService(CoinTransactionRepositoryTag, this.coinRepository),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    const result = await effectToControllerResult(effect);
+
+    if (result.success === false) {
+      return result;
     }
 
     return {
       success: true,
       data: {
-        id: result.value.transaction.id,
-        amount: result.value.transaction.amount,
-        reason: result.value.transaction.reason ?? null,
-        groupId: result.value.transaction.groupId,
-        adminId: result.value.transaction.adminId,
-        createdAt: result.value.transaction.createdAt,
+        id: result.data.transaction.id,
+        amount: result.data.transaction.amount,
+        reason: result.data.transaction.reason ?? null,
+        groupId: result.data.transaction.groupId,
+        adminId: result.data.transaction.adminId,
+        createdAt: result.data.transaction.createdAt,
       },
     };
   }

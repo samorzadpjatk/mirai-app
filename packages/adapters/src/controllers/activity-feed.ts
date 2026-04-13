@@ -2,13 +2,28 @@ import { z } from "zod";
 import { Effect } from "effect";
 import type { ActivityFeedRepository } from "@mirai-app/use-cases";
 import {
-  GetActivityFeedUseCase,
-  CreateActivityUseCase,
-  AddReactionUseCase,
+  getActivityFeedUseCase,
+  createActivityUseCase,
+  addReactionUseCase,
+  getActivityByIdUseCase,
+  updateActivityUseCase,
+  hideActivityUseCase,
+  unhideActivityUseCase,
+  deleteActivityUseCase,
+  ActivityFeedRepositoryTag,
   type CreateActivityInput,
   type AddReactionInput,
+  type GetActivityByIdOutput,
+  type UpdateActivityOutput,
+  type HideActivityOutput,
+  type UnhideActivityOutput,
+  type DeleteActivityOutput,
 } from "@mirai-app/use-cases";
 import type { ActivityId, ReactionType } from "@mirai-app/domain";
+import {
+  toEffectActivityFeedRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for activity feed controller
@@ -113,6 +128,11 @@ const schemas = {
     isPinned: z.boolean().optional(),
   }),
 
+  setPinned: z.object({
+    activityId: z.string().min(1, "Activity ID is required"),
+    isPinned: z.boolean(),
+  }),
+
   hide: z.object({
     activityId: z.string().min(1, "Activity ID is required"),
     hiddenByAdmin: z.string().min(1, "Admin ID is required"),
@@ -147,40 +167,7 @@ export class ActivityFeedController {
   /**
    * Get activities for a trip
    */
-  async getByTrip(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          activities: Array<{
-            id: string;
-            tripId: string;
-            activityType: string;
-            title: string;
-            description: string | null;
-            imageUrl: string | null;
-            isPinned: boolean;
-            isHidden: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            admin: {
-              id: string;
-              firstName: string;
-              lastName: string;
-            } | null;
-          }>;
-          nextCursor: {
-            id: string;
-            createdAt: Date;
-            isPinned: boolean;
-          } | null;
-          pagination: {
-            pageSize: number;
-            hasMore: boolean;
-          };
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async getByTrip(input: unknown) {
     const parsed = schemas.getByTrip.safeParse(input);
     if (!parsed.success) {
       return {
@@ -189,18 +176,15 @@ export class ActivityFeedController {
       };
     }
 
-    const useCase = new GetActivityFeedUseCase(this.activityFeedRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
+    );
+    const effect = getActivityFeedUseCase({
       tripId: parsed.data.tripId,
       pageSize: parsed.data.pageSize,
       cursor: parsed.data.cursor,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -209,23 +193,7 @@ export class ActivityFeedController {
   async getById(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          createdAt: Date;
-          updatedAt: Date;
-          admin: {
-            id: string;
-            firstName: string;
-            lastName: string;
-          } | null;
-        };
+        data: GetActivityByIdOutput;
       }
     | { success: false; error: string }
   > {
@@ -237,53 +205,20 @@ export class ActivityFeedController {
       };
     }
 
-    const activity = await this.activityFeedRepository.findById(
-      parsed.data.id as ActivityId,
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
     );
+    const effect = getActivityByIdUseCase({
+      activityId: parsed.data.id as ActivityId,
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
 
-    if (!activity) {
-      return { success: false, error: "Activity not found" };
-    }
-
-    return {
-      success: true,
-      data: {
-        id: activity.id,
-        tripId: activity.tripId,
-        activityType: activity.activityType,
-        title: activity.title,
-        description: activity.description,
-        imageUrl: activity.imageUrl,
-        isPinned: activity.isPinned,
-        isHidden: activity.isHidden,
-        createdAt: activity.createdAt,
-        updatedAt: activity.updatedAt,
-        admin: activity.admin,
-      },
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Create a custom activity (admin created)
    */
-  async createCustom(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async createCustom(input: unknown) {
     const parsed = schemas.createCustom.safeParse(input);
     if (!parsed.success) {
       return {
@@ -292,8 +227,10 @@ export class ActivityFeedController {
       };
     }
 
-    const useCase = new CreateActivityUseCase(this.activityFeedRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
+    );
+    const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "custom",
       title: parsed.data.title,
@@ -301,36 +238,14 @@ export class ActivityFeedController {
       imageUrl: parsed.data.imageUrl ?? null,
       isPinned: parsed.data.isPinned ?? false,
       createdByAdmin: parsed.data.createdByAdmin ?? null,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Create a user post activity
    */
-  async createUserPost(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async createUserPost(input: unknown) {
     const parsed = schemas.createUserPost.safeParse(input);
     if (!parsed.success) {
       return {
@@ -339,44 +254,24 @@ export class ActivityFeedController {
       };
     }
 
-    const useCase = new CreateActivityUseCase(this.activityFeedRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
+    );
+    const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "user_post",
       title: parsed.data.title,
       description: parsed.data.description ?? null,
       imageUrl: parsed.data.imageUrl ?? null,
       userPost: parsed.data.userPost,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Create a submission activity
    */
-  async createSubmission(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async createSubmission(input: unknown) {
     const parsed = schemas.createSubmission.safeParse(input);
     if (!parsed.success) {
       return {
@@ -385,8 +280,10 @@ export class ActivityFeedController {
       };
     }
 
-    const useCase = new CreateActivityUseCase(this.activityFeedRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
+    );
+    const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "submission",
       title: parsed.data.title,
@@ -402,36 +299,14 @@ export class ActivityFeedController {
         pointsAwarded: parsed.data.submissionActivity.pointsAwarded ?? null,
         currentGroupRank: null,
       },
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Create a challenge event activity
    */
-  async createChallengeEvent(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async createChallengeEvent(input: unknown) {
     const parsed = schemas.createChallengeEvent.safeParse(input);
     if (!parsed.success) {
       return {
@@ -440,8 +315,10 @@ export class ActivityFeedController {
       };
     }
 
-    const useCase = new CreateActivityUseCase(this.activityFeedRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
+    );
+    const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "challenge_event",
       title: parsed.data.title,
@@ -450,36 +327,14 @@ export class ActivityFeedController {
       isPinned: parsed.data.isPinned ?? false,
       createdByAdmin: parsed.data.createdByAdmin ?? null,
       challengeActivity: parsed.data.challengeActivity,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Create a rank change activity
    */
-  async createRankChange(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async createRankChange(input: unknown) {
     const parsed = schemas.createRankChange.safeParse(input);
     if (!parsed.success) {
       return {
@@ -488,8 +343,10 @@ export class ActivityFeedController {
       };
     }
 
-    const useCase = new CreateActivityUseCase(this.activityFeedRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
+    );
+    const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "rank_change",
       title: parsed.data.title,
@@ -498,13 +355,8 @@ export class ActivityFeedController {
       isPinned: parsed.data.isPinned ?? false,
       createdByAdmin: parsed.data.createdByAdmin ?? null,
       rankChangeActivity: parsed.data.rankChangeActivity,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -513,17 +365,7 @@ export class ActivityFeedController {
   async update(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          updatedAt: Date;
-        };
+        data: UpdateActivityOutput;
       }
     | { success: false; error: string }
   > {
@@ -535,58 +377,25 @@ export class ActivityFeedController {
       };
     }
 
-    // Find existing activity
-    const existing = await this.activityFeedRepository.findById(
-      parsed.data.activityId as ActivityId,
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
     );
+    const effect = updateActivityUseCase({
+      activityId: parsed.data.activityId as ActivityId,
+      title: parsed.data.title,
+      description: parsed.data.description,
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
 
-    if (!existing) {
-      return { success: false, error: "Activity not found" };
+    const result = await effectToControllerResult(effect);
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("not found")) {
+        return { success: false, error: "Activity not found" };
+      }
     }
 
-    try {
-      // Apply updates
-      let updated = existing;
-
-      if (
-        parsed.data.title !== undefined ||
-        parsed.data.description !== undefined
-      ) {
-        updated = await Effect.runPromise(
-          updated.updateContent({
-            title: parsed.data.title,
-            description: parsed.data.description,
-          }),
-        );
-      }
-
-      if (parsed.data.isPinned !== undefined) {
-        updated = parsed.data.isPinned ? updated.pin() : updated.unpin();
-      }
-
-      // Persist changes
-      const saved = await this.activityFeedRepository.update(updated);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          tripId: saved.tripId,
-          activityType: saved.activityType,
-          title: saved.title,
-          description: saved.description,
-          imageUrl: saved.imageUrl,
-          isPinned: saved.isPinned,
-          isHidden: saved.isHidden,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return result;
   }
 
   /**
@@ -595,26 +404,11 @@ export class ActivityFeedController {
   async setPinned(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          updatedAt: Date;
-        };
+        data: UpdateActivityOutput;
       }
     | { success: false; error: string }
   > {
-    const schema = z.object({
-      activityId: z.string().min(1, "Activity ID is required"),
-      isPinned: z.boolean(),
-    });
-
-    const parsed = schema.safeParse(input);
+    const parsed = schemas.setPinned.safeParse(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -622,39 +416,24 @@ export class ActivityFeedController {
       };
     }
 
-    const existing = await this.activityFeedRepository.findById(
-      parsed.data.activityId as ActivityId,
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
     );
+    const effect = updateActivityUseCase({
+      activityId: parsed.data.activityId as ActivityId,
+      isPinned: parsed.data.isPinned,
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
 
-    if (!existing) {
-      return { success: false, error: "Activity not found" };
+    const result = await effectToControllerResult(effect);
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("not found")) {
+        return { success: false, error: "Activity not found" };
+      }
     }
 
-    try {
-      const updated = parsed.data.isPinned ? existing.pin() : existing.unpin();
-
-      const saved = await this.activityFeedRepository.update(updated);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          tripId: saved.tripId,
-          activityType: saved.activityType,
-          title: saved.title,
-          description: saved.description,
-          imageUrl: saved.imageUrl,
-          isPinned: saved.isPinned,
-          isHidden: saved.isHidden,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return result;
   }
 
   /**
@@ -663,19 +442,7 @@ export class ActivityFeedController {
   async hide(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          hiddenAt: Date;
-          hiddenReason: string | null;
-          updatedAt: Date;
-        };
+        data: HideActivityOutput;
       }
     | { success: false; error: string }
   > {
@@ -687,44 +454,25 @@ export class ActivityFeedController {
       };
     }
 
-    const existing = await this.activityFeedRepository.findById(
-      parsed.data.activityId as ActivityId,
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
     );
+    const effect = hideActivityUseCase({
+      activityId: parsed.data.activityId as ActivityId,
+      hiddenByAdmin: parsed.data.hiddenByAdmin,
+      reason: parsed.data.reason ?? null,
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
 
-    if (!existing) {
-      return { success: false, error: "Activity not found" };
+    const result = await effectToControllerResult(effect);
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("not found")) {
+        return { success: false, error: "Activity not found" };
+      }
     }
 
-    try {
-      const updated = existing.hide(
-        parsed.data.hiddenByAdmin,
-        parsed.data.reason ?? null,
-      );
-
-      const saved = await this.activityFeedRepository.update(updated);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          tripId: saved.tripId,
-          activityType: saved.activityType,
-          title: saved.title,
-          description: saved.description,
-          imageUrl: saved.imageUrl,
-          isPinned: saved.isPinned,
-          isHidden: saved.isHidden,
-          hiddenAt: saved.hiddenAt!,
-          hiddenReason: saved.hiddenReason,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return result;
   }
 
   /**
@@ -733,17 +481,7 @@ export class ActivityFeedController {
   async unhide(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          id: string;
-          tripId: string;
-          activityType: string;
-          title: string;
-          description: string | null;
-          imageUrl: string | null;
-          isPinned: boolean;
-          isHidden: boolean;
-          updatedAt: Date;
-        };
+        data: UnhideActivityOutput;
       }
     | { success: false; error: string }
   > {
@@ -755,65 +493,29 @@ export class ActivityFeedController {
       };
     }
 
-    const existing = await this.activityFeedRepository.findById(
-      parsed.data.activityId as ActivityId,
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
     );
+    const effect = unhideActivityUseCase({
+      activityId: parsed.data.activityId as ActivityId,
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
 
-    if (!existing) {
-      return { success: false, error: "Activity not found" };
+    const result = await effectToControllerResult(effect);
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("not found")) {
+        return { success: false, error: "Activity not found" };
+      }
     }
 
-    try {
-      const updated = existing.unhide();
-
-      const saved = await this.activityFeedRepository.update(updated);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          tripId: saved.tripId,
-          activityType: saved.activityType,
-          title: saved.title,
-          description: saved.description,
-          imageUrl: saved.imageUrl,
-          isPinned: saved.isPinned,
-          isHidden: saved.isHidden,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return result;
   }
 
   /**
    * Toggle a reaction on an activity
    */
-  async toggleReaction(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          activityId: string;
-          reactionType: ReactionType;
-          isActive: boolean;
-          reactionsSummary: {
-            total: number;
-            counts: {
-              heart: number;
-              fire: number;
-              clap: number;
-              star: number;
-            };
-            myReactions: ReactionType[];
-          };
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async toggleReaction(input: unknown) {
     const parsed = schemas.addReaction.safeParse(input);
     if (!parsed.success) {
       return {
@@ -822,18 +524,15 @@ export class ActivityFeedController {
       };
     }
 
-    const useCase = new AddReactionUseCase(this.activityFeedRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
+    );
+    const effect = addReactionUseCase({
       activityId: parsed.data.activityId as ActivityId,
       userId: parsed.data.userId,
       reactionType: parsed.data.reactionType,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -853,18 +552,26 @@ export class ActivityFeedController {
       };
     }
 
-    const exists = await this.activityFeedRepository.exists(
-      parsed.data.activityId as ActivityId,
+    const effectRepo = toEffectActivityFeedRepository(
+      this.activityFeedRepository,
     );
+    const effect = deleteActivityUseCase({
+      activityId: parsed.data.activityId as ActivityId,
+    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
 
-    if (!exists) {
-      return { success: false, error: "Activity not found" };
+    const result = await effectToControllerResult(effect);
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("not found")) {
+        return { success: false, error: "Activity not found" };
+      }
     }
 
-    await this.activityFeedRepository.delete(
-      parsed.data.activityId as ActivityId,
-    );
+    if (result.success) {
+      return { success: true, data: { success: true } };
+    }
 
-    return { success: true, data: { success: true } };
+    return result;
   }
 }

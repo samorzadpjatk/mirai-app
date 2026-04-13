@@ -1,13 +1,20 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { UserRepository } from "@mirai-app/use-cases";
 import {
-  GetUserUseCase,
-  CreateUserUseCase,
-  UpdateUserUseCase,
+  getUserUseCase,
+  createUserUseCase,
+  updateUserUseCase,
+  type GetUserInput,
   type CreateUserInput,
   type UpdateUserInput,
+  UserRepositoryTag,
 } from "@mirai-app/use-cases";
 import { UserRole } from "@mirai-app/domain";
+import {
+  toEffectUserRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for user controller
@@ -65,6 +72,8 @@ const schemas = {
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated to use Effect-based use cases (Step 4.2).
  */
 export class UserController {
   constructor(private userRepository: UserRepository) {}
@@ -97,14 +106,12 @@ export class UserController {
       };
     }
 
-    const useCase = new GetUserUseCase(this.userRepository);
-    const result = await useCase.execute({ userId: parsed.data.id });
+    const effectRepo = toEffectUserRepository(this.userRepository);
+    const effect = getUserUseCase({ userId: parsed.data.id }).pipe(
+      Effect.provideService(UserRepositoryTag, effectRepo),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -134,19 +141,15 @@ export class UserController {
       };
     }
 
-    const useCase = new CreateUserUseCase(this.userRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectUserRepository(this.userRepository);
+    const effect = createUserUseCase({
       authUserId: parsed.data.authUserId,
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
       role: parsed.data.role as UserRole,
-    });
+    }).pipe(Effect.provideService(UserRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -176,19 +179,15 @@ export class UserController {
       };
     }
 
-    const useCase = new UpdateUserUseCase(this.userRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectUserRepository(this.userRepository);
+    const effect = updateUserUseCase({
       userId: parsed.data.userId,
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
       hasAvatar: parsed.data.hasAvatar,
-    });
+    }).pipe(Effect.provideService(UserRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -218,10 +217,12 @@ export class UserController {
       };
     }
 
-    const users = await this.userRepository.findAll({
-      limit: parsed.data.limit,
-      offset: parsed.data.offset,
-    });
+    const users = await Effect.runPromise(
+      this.userRepository.findAll({
+        limit: parsed.data.limit,
+        offset: parsed.data.offset,
+      }),
+    );
 
     return {
       success: true,

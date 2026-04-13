@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import { normalizeSupabaseStoragePath } from "../utils/storage";
+import { effectToControllerResult } from "../utils/controller-helpers";
 
 /**
  * Storage path resolution result
@@ -67,23 +69,11 @@ const schemas = {
  * Thin controller for storage operations.
  * Delegates to Supabase Storage for file operations.
  * No business logic here - just input validation and error handling.
+ *
+ * Updated to use Effect patterns for consistent error handling.
  */
 export class StorageController {
   constructor(private supabase: SupabaseClient) {}
-
-  /**
-   * Resolve and validate storage path
-   */
-  private resolveStoragePath(value: string): StoragePathInfo {
-    const info = normalizeSupabaseStoragePath(value);
-    if (!info) {
-      return {
-        success: false,
-        error: "Unsupported storage reference",
-      } as unknown as StoragePathInfo;
-    }
-    return info;
-  }
 
   /**
    * Get resumable upload endpoint URL
@@ -91,10 +81,7 @@ export class StorageController {
   private getResumableEndpoint(): string {
     const baseUrl = process.env.SUPABASE_URL;
     if (!baseUrl) {
-      return {
-        success: false,
-        error: "Missing SUPABASE_URL",
-      } as unknown as string;
+      throw new Error("Missing SUPABASE_URL");
     }
 
     try {
@@ -118,10 +105,7 @@ export class StorageController {
   private getPublicUrlBase(): string {
     const baseUrl = process.env.SUPABASE_PUBLIC_URL ?? process.env.SUPABASE_URL;
     if (!baseUrl) {
-      return {
-        success: false,
-        error: "Missing SUPABASE_URL or SUPABASE_PUBLIC_URL",
-      } as unknown as string;
+      throw new Error("Missing SUPABASE_URL or SUPABASE_PUBLIC_URL");
     }
 
     try {
@@ -163,37 +147,59 @@ export class StorageController {
       };
     }
 
-    const { data, error } = await this.supabase.storage
-      .from(objectInfo.bucket)
-      .createSignedUploadUrl(objectInfo.path, {
-        upsert: Boolean(parsed.data.upsert),
+    const supabase = this.supabase;
+
+    const effect = Effect.gen(function* () {
+      const resumableUrl = yield* Effect.try({
+        try: () => {
+          const baseUrl = process.env.SUPABASE_URL;
+          if (!baseUrl) {
+            throw new Error("Missing SUPABASE_URL");
+          }
+
+          try {
+            const url = new URL(baseUrl);
+            const host = url.host;
+            if (host.endsWith(".supabase.co") && !host.includes(".storage.")) {
+              url.host = host.replace(".supabase.co", ".storage.supabase.co");
+            }
+            url.pathname = "/storage/v1/upload/resumable/sign";
+            url.search = "";
+            url.hash = "";
+            return url.toString();
+          } catch {
+            return `${baseUrl.replace(/\/$/, "")}/storage/v1/upload/resumable/sign`;
+          }
+        },
+        catch: () => new Error("Missing SUPABASE_URL"),
       });
 
-    if (error || !data?.token) {
-      return {
-        success: false,
-        error: "Unable to create signed upload URL",
-      };
-    }
+      const { data, error } = yield* Effect.tryPromise({
+        try: () =>
+          supabase.storage
+            .from(objectInfo.bucket)
+            .createSignedUploadUrl(objectInfo.path, {
+              upsert: Boolean(parsed.data.upsert),
+            }),
+        catch: () => new Error("Unable to create signed upload URL"),
+      });
 
-    const resumableUrl = this.getResumableEndpoint();
-    if (typeof resumableUrl !== "string") {
-      return {
-        success: false,
-        error: "Missing SUPABASE_URL",
-      };
-    }
+      if (error || !data?.token) {
+        return yield* Effect.fail(
+          new Error("Unable to create signed upload URL"),
+        );
+      }
 
-    return {
-      success: true,
-      data: {
+      return {
         resumableUrl,
         token: data.token,
         bucket: objectInfo.bucket,
         objectPath: objectInfo.path,
         storagePath: objectInfo.storagePath,
-      },
-    };
+      };
+    });
+
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -222,36 +228,49 @@ export class StorageController {
     }
 
     const expiresIn = parsed.data.expiresInSeconds ?? 10 * 60;
+    const supabase = this.supabase;
 
-    const { data, error } = await this.supabase.storage
-      .from(objectInfo.bucket)
-      .createSignedUrl(objectInfo.path, expiresIn);
+    const effect = Effect.gen(function* () {
+      const { data, error } = yield* Effect.tryPromise({
+        try: () =>
+          supabase.storage
+            .from(objectInfo.bucket)
+            .createSignedUrl(objectInfo.path, expiresIn),
+        catch: (e) => new Error(String(e)),
+      });
 
-    if (error || !data?.signedUrl) {
-      const message =
-        typeof error?.message === "string"
-          ? error.message
-          : "Unable to create signed URL";
-      const looksLikeNotFound =
-        message.toLowerCase().includes("not found") ||
-        message.toLowerCase().includes("does not exist");
+      if (error || !data?.signedUrl) {
+        const message =
+          typeof error?.message === "string"
+            ? error.message
+            : "Unable to create signed URL";
+        const looksLikeNotFound =
+          message.toLowerCase().includes("not found") ||
+          message.toLowerCase().includes("does not exist");
+
+        return yield* Effect.fail(
+          new Error(
+            looksLikeNotFound
+              ? "Storage object not found"
+              : "Unable to create signed URL",
+          ),
+        );
+      }
 
       return {
-        success: false,
-        error: looksLikeNotFound
-          ? "Storage object not found"
-          : "Unable to create signed URL",
-        code: looksLikeNotFound ? "NOT_FOUND" : undefined,
-      };
-    }
-
-    return {
-      success: true,
-      data: {
         signedUrl: data.signedUrl,
         expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
-      },
-    };
+      };
+    });
+
+    const result = await effectToControllerResult(effect);
+
+    // Add code for NOT_FOUND case
+    if (!result.success && result.error === "Storage object not found") {
+      return { success: false, error: result.error, code: "NOT_FOUND" };
+    }
+
+    return result;
   }
 
   /**
@@ -286,19 +305,37 @@ export class StorageController {
       };
     }
 
-    const publicUrlBase = this.getPublicUrlBase();
-    if (typeof publicUrlBase !== "string") {
-      return {
-        success: false,
-        error: "Missing SUPABASE_URL or SUPABASE_PUBLIC_URL",
-      };
-    }
+    const effect = Effect.gen(function* () {
+      const publicUrlBase = yield* Effect.try({
+        try: () => {
+          const baseUrl =
+            process.env.SUPABASE_PUBLIC_URL ?? process.env.SUPABASE_URL;
+          if (!baseUrl) {
+            throw new Error("Missing SUPABASE_URL or SUPABASE_PUBLIC_URL");
+          }
 
-    return {
-      success: true,
-      data: {
+          try {
+            const url = new URL(baseUrl);
+            const host = url.host;
+            if (host.endsWith(".supabase.co") && !host.includes(".storage.")) {
+              url.host = host.replace(".supabase.co", ".storage.supabase.co");
+            }
+            url.pathname = "/storage/v1/object/public";
+            url.search = "";
+            url.hash = "";
+            return url.toString();
+          } catch {
+            return `${baseUrl.replace(/\/$/, "")}/storage/v1/object/public`;
+          }
+        },
+        catch: () => new Error("Missing SUPABASE_URL or SUPABASE_PUBLIC_URL"),
+      });
+
+      return {
         publicUrl: `${publicUrlBase}/${objectInfo.bucket}/${objectInfo.path}`,
-      },
-    };
+      };
+    });
+
+    return await effectToControllerResult(effect);
   }
 }

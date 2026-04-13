@@ -1,10 +1,25 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type {
-  GetDeliveriesUseCase,
-  GetDeliveryByNotificationIdUseCase,
-  GetDeliveryStatsUseCase,
-  GetFailedDeliveriesUseCase,
+  NotificationDeliveryRepository,
+  NotificationDelivery,
 } from "@mirai-app/use-cases";
+import {
+  getDeliveriesUseCase,
+  getDeliveryByNotificationIdUseCase,
+  getDeliveryStatsUseCase,
+  getFailedDeliveriesUseCase,
+  NotificationDeliveryRepositoryTag,
+  type GetDeliveriesInput,
+  type GetDeliveriesOutput,
+  type GetDeliveryByNotificationIdInput,
+  type GetDeliveryByNotificationIdOutput,
+  type GetDeliveryStatsInput,
+  type GetDeliveryStatsOutput,
+  type GetFailedDeliveriesInput,
+  type GetFailedDeliveriesOutput,
+} from "@mirai-app/use-cases";
+import { effectToControllerResult } from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for notification delivery controller
@@ -54,16 +69,7 @@ const schemas = {
  * Delegates to use cases for business logic.
  */
 export class NotificationDeliveryController {
-  constructor(
-    private getDeliveriesUseCase: GetDeliveriesUseCase,
-    private getDeliveryByIdUseCase: GetDeliveryByNotificationIdUseCase,
-    private getStatsUseCase: GetDeliveryStatsUseCase,
-    private getFailedUseCase: GetFailedDeliveriesUseCase,
-  ) {}
-
-  get schemas() {
-    return schemas;
-  }
+  constructor(private repository: NotificationDeliveryRepository) {}
 
   /**
    * Get deliveries with filters
@@ -106,28 +112,38 @@ export class NotificationDeliveryController {
       }
     | { success: false; error: string }
   > {
-    const result = await this.getDeliveriesUseCase.execute({
-      filters: {
-        tripId: input.tripId,
-        status: input.status,
-        scheduleId: input.scheduleId,
-        startDate: input.startDate,
-        endDate: input.endDate,
-      },
-      pagination: {
-        limit: input.limit ?? 50,
-        offset: input.offset ?? 0,
-      },
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    const parsed = schemas.getDeliveries.safeParse(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
     }
 
-    return {
-      success: true,
-      data: {
-        deliveries: result.value.deliveries.map((d) => ({
+    const inputFilters: GetDeliveriesInput["filters"] = {
+      tripId: parsed.data.tripId,
+      status: parsed.data.status,
+      scheduleId: parsed.data.scheduleId,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+    };
+
+    const inputPagination: GetDeliveriesInput["pagination"] = {
+      limit: parsed.data.limit ?? 50,
+      offset: parsed.data.offset ?? 0,
+    };
+
+    const effect = getDeliveriesUseCase({
+      filters: inputFilters,
+      pagination: inputPagination,
+    }).pipe(
+      Effect.provideService(NotificationDeliveryRepositoryTag, this.repository),
+    );
+
+    return await effectToControllerResult(
+      effect,
+      (result: GetDeliveriesOutput) => ({
+        deliveries: result.deliveries.map((d: NotificationDelivery) => ({
           id: d.id,
           notificationId: d.notificationId,
           tripId: d.tripId,
@@ -148,11 +164,11 @@ export class NotificationDeliveryController {
               }
             : null,
         })),
-        total: result.value.total,
-        limit: result.value.limit,
-        offset: result.value.offset,
-      },
-    };
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset,
+      }),
+    );
   }
 
   /**
@@ -193,16 +209,22 @@ export class NotificationDeliveryController {
       }
     | { success: false; error: string }
   > {
-    const result = await this.getDeliveryByIdUseCase.execute({
-      notificationId: input.notificationId,
-      tripId: input.tripId,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    const parsed = schemas.getDeliveryByNotificationId.safeParse(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
     }
 
-    return { success: true, data: result.value.delivery };
+    const effect = getDeliveryByNotificationIdUseCase({
+      notificationId: parsed.data.notificationId,
+      tripId: parsed.data.tripId,
+    }).pipe(
+      Effect.provideService(NotificationDeliveryRepositoryTag, this.repository),
+    );
+
+    return await effectToControllerResult(effect, (result) => result.delivery);
   }
 
   /**
@@ -229,20 +251,20 @@ export class NotificationDeliveryController {
       }
     | { success: false; error: string }
   > {
-    const result = await this.getStatsUseCase.execute({
-      filters: {
-        tripId: input.tripId,
-        startDate: input.startDate,
-        endDate: input.endDate,
-        scheduleId: input.scheduleId,
-      },
-    });
+    const inputFilters: GetDeliveryStatsInput["filters"] = {
+      tripId: input.tripId,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      scheduleId: input.scheduleId,
+    };
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
+    const effect = getDeliveryStatsUseCase({
+      filters: inputFilters,
+    }).pipe(
+      Effect.provideService(NotificationDeliveryRepositoryTag, this.repository),
+    );
 
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -290,22 +312,28 @@ export class NotificationDeliveryController {
       return { success: false, error: "Trip ID is required" };
     }
 
-    const result = await this.getFailedUseCase.execute({
-      tripId: input.tripId,
-      pagination: {
-        limit: input.limit ?? 20,
-        offset: input.offset ?? 0,
-      },
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    const parsed = schemas.getFailedDeliveries.safeParse(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
     }
 
-    return {
-      success: true,
-      data: {
-        deliveries: result.value.deliveries.map((d) => ({
+    const effect = getFailedDeliveriesUseCase({
+      tripId: parsed.data.tripId,
+      pagination: {
+        limit: parsed.data.limit ?? 20,
+        offset: parsed.data.offset ?? 0,
+      },
+    }).pipe(
+      Effect.provideService(NotificationDeliveryRepositoryTag, this.repository),
+    );
+
+    return await effectToControllerResult(
+      effect,
+      (result: GetFailedDeliveriesOutput) => ({
+        deliveries: result.deliveries.map((d: NotificationDelivery) => ({
           id: d.id,
           notificationId: d.notificationId,
           tripId: d.tripId,
@@ -326,10 +354,10 @@ export class NotificationDeliveryController {
               }
             : null,
         })),
-        total: result.value.total,
-        limit: result.value.limit,
-        offset: result.value.offset,
-      },
-    };
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset,
+      }),
+    );
   }
 }

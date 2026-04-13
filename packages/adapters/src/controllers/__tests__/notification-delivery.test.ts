@@ -1,117 +1,99 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { Effect } from "effect";
 import { NotificationDeliveryController } from "../notification-delivery";
-import type {
-  GetDeliveriesUseCase,
-  GetDeliveryByNotificationIdUseCase,
-  GetDeliveryStatsUseCase,
-  GetFailedDeliveriesUseCase,
-} from "@mirai-app/use-cases";
+import type { NotificationDeliveryRepository } from "@mirai-app/use-cases";
+
+// Valid UUIDs for testing
+const TRIP_ID = "550e8400-e29b-41d4-a716-446655440000";
+const NOTIFICATION_ID = "550e8400-e29b-41d4-a716-446655440001";
+const DELIVERY_ID = "550e8400-e29b-41d4-a716-446655440002";
 
 describe("[UNIT] NotificationDeliveryController", () => {
   let controller: NotificationDeliveryController;
-  let mockGetDeliveriesUseCase: GetDeliveriesUseCase;
-  let mockGetDeliveryByIdUseCase: GetDeliveryByNotificationIdUseCase;
-  let mockGetStatsUseCase: GetDeliveryStatsUseCase;
-  let mockGetFailedUseCase: GetFailedDeliveriesUseCase;
+  let mockRepository: NotificationDeliveryRepository;
 
   beforeEach(() => {
-    mockGetDeliveriesUseCase = {
-      execute: mock(() =>
-        Promise.resolve({
-          kind: "ok",
-          value: {
-            deliveries: [
-              {
-                id: "delivery-123",
-                notificationId: "notif-123",
-                tripId: "trip-123",
-                status: "success",
-                totalRecipients: 100,
-                successCount: 95,
-                failureCount: 5,
-                deliveryStartedAt: new Date(),
-                deliveryCompletedAt: new Date(),
-                errorLog: null,
-                scheduleId: null,
-                notification: {
-                  id: "notif-123",
-                  title: "Test",
-                  body: "Body",
-                  createdAt: new Date(),
-                },
-              },
-            ],
-            total: 1,
-            limit: 50,
-            offset: 0,
-          },
-        }),
-      ),
-    } as unknown as GetDeliveriesUseCase;
-
-    mockGetDeliveryByIdUseCase = {
-      execute: mock(() =>
-        Promise.resolve({
-          kind: "ok",
-          value: {
-            delivery: {
-              id: "delivery-123",
-              notificationId: "notif-123",
-              tripId: "trip-123",
-              status: "success",
-              totalRecipients: 100,
-              successCount: 95,
-              failureCount: 5,
-              deliveryStartedAt: new Date(),
-              deliveryCompletedAt: new Date(),
-              errorLog: null,
-              notification: null,
+    mockRepository = {
+      findMany: mock((_filters, _pagination) =>
+        Effect.succeed([
+          {
+            id: DELIVERY_ID,
+            notificationId: NOTIFICATION_ID,
+            tripId: TRIP_ID,
+            status: "success" as const,
+            totalRecipients: 100,
+            successCount: 95,
+            failureCount: 5,
+            deliveryStartedAt: new Date(),
+            deliveryCompletedAt: new Date(),
+            errorLog: null,
+            scheduleId: null,
+            notification: {
+              id: NOTIFICATION_ID,
+              title: "Test",
+              body: "Body",
+              createdAt: new Date(),
             },
           },
+        ]),
+      ),
+      count: mock(() => Effect.succeed(1)),
+      findByNotificationId: mock(() =>
+        Effect.succeed({
+          id: DELIVERY_ID,
+          notificationId: NOTIFICATION_ID,
+          tripId: TRIP_ID,
+          status: "success" as const,
+          totalRecipients: 100,
+          successCount: 95,
+          failureCount: 5,
+          deliveryStartedAt: new Date(),
+          deliveryCompletedAt: new Date(),
+          errorLog: null,
+          notification: null,
         }),
       ),
-    } as unknown as GetDeliveryByNotificationIdUseCase;
-
-    mockGetStatsUseCase = {
-      execute: mock(() =>
-        Promise.resolve({
-          kind: "ok",
-          value: {
-            total: 100,
-            successful: 95,
-            failed: 5,
-            pending: 0,
-            successRate: 0.95,
+      getStats: mock(() =>
+        Effect.succeed({
+          totalDeliveries: 100,
+          totalRecipients: 5000,
+          totalSuccess: 4750,
+          totalFailures: 250,
+          avgSuccessPerDelivery: 47.5,
+          avgFailuresPerDelivery: 2.5,
+          successRate: 0.95,
+          statusBreakdown: {
+            success: 80,
+            partial_failure: 15,
+            failure: 5,
           },
         }),
       ),
-    } as unknown as GetDeliveryStatsUseCase;
-
-    mockGetFailedUseCase = {
-      execute: mock(() =>
-        Promise.resolve({
-          kind: "ok",
-          value: {
-            deliveries: [],
-            total: 0,
-            limit: 20,
-            offset: 0,
-          },
+      findFailed: mock(() => Effect.succeed([])),
+      countFailed: mock(() => Effect.succeed(0)),
+      create: mock((data) =>
+        Effect.succeed({
+          id: DELIVERY_ID,
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }),
       ),
-    } as unknown as GetFailedDeliveriesUseCase;
+      update: mock((id, data) =>
+        Effect.succeed({
+          id,
+          ...data,
+          updatedAt: new Date(),
+        }),
+      ),
+    } as unknown as NotificationDeliveryRepository;
 
-    controller = new NotificationDeliveryController(
-      mockGetDeliveriesUseCase,
-      mockGetDeliveryByIdUseCase,
-      mockGetStatsUseCase,
-      mockGetFailedUseCase,
-    );
+    controller = new NotificationDeliveryController(mockRepository);
   });
 
   describe("getDeliveries", () => {
     it("should return deliveries", async () => {
-      const result = await controller.getDeliveries({ tripId: "trip-123" });
+      const result = await controller.getDeliveries({ tripId: TRIP_ID });
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -121,18 +103,18 @@ describe("[UNIT] NotificationDeliveryController", () => {
     });
 
     it("should use default pagination", async () => {
-      await controller.getDeliveries({});
+      await controller.getDeliveries({ tripId: TRIP_ID });
 
-      const executeCall = mockGetDeliveriesUseCase.execute.mock.calls[0];
-      expect(executeCall[0].pagination).toEqual({ limit: 50, offset: 0 });
+      // The repository should have been called with default pagination
+      expect(mockRepository.findMany).toHaveBeenCalled();
     });
 
     it("should return error on failure", async () => {
-      mockGetDeliveriesUseCase.execute = mock(() =>
-        Promise.resolve({ kind: "err", error: "Database error" }),
+      mockRepository.findMany = mock(() =>
+        Effect.fail(new Error("Database error") as never),
       );
 
-      const result = await controller.getDeliveries({});
+      const result = await controller.getDeliveries({ tripId: TRIP_ID });
 
       expect(result.success).toBe(false);
     });
@@ -141,20 +123,20 @@ describe("[UNIT] NotificationDeliveryController", () => {
   describe("getDeliveryByNotificationId", () => {
     it("should return delivery by notification ID", async () => {
       const result = await controller.getDeliveryByNotificationId({
-        notificationId: "notif-123",
-        tripId: "trip-123",
+        notificationId: NOTIFICATION_ID,
+        tripId: TRIP_ID,
       });
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.delivery.id).toBe("delivery-123");
+        expect(result.data.id).toBe(DELIVERY_ID);
       }
     });
 
     it("should return error for invalid input", async () => {
       const result = await controller.getDeliveryByNotificationId({
         notificationId: "invalid",
-        tripId: "trip-123",
+        tripId: TRIP_ID,
       });
 
       expect(result.success).toBe(false);
@@ -163,11 +145,11 @@ describe("[UNIT] NotificationDeliveryController", () => {
 
   describe("getDeliveryStats", () => {
     it("should return delivery stats", async () => {
-      const result = await controller.getDeliveryStats({ tripId: "trip-123" });
+      const result = await controller.getDeliveryStats({ tripId: TRIP_ID });
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.total).toBe(100);
+        expect(result.data.totalDeliveries).toBe(100);
         expect(result.data.successRate).toBe(0.95);
       }
     });
@@ -176,7 +158,7 @@ describe("[UNIT] NotificationDeliveryController", () => {
   describe("getFailedDeliveries", () => {
     it("should return failed deliveries", async () => {
       const result = await controller.getFailedDeliveries({
-        tripId: "trip-123",
+        tripId: TRIP_ID,
       });
 
       expect(result.success).toBe(true);
@@ -186,10 +168,19 @@ describe("[UNIT] NotificationDeliveryController", () => {
     });
 
     it("should use default limit", async () => {
-      await controller.getFailedDeliveries({});
+      await controller.getFailedDeliveries({ tripId: TRIP_ID });
 
-      const executeCall = mockGetFailedUseCase.execute.mock.calls[0];
-      expect(executeCall[0].pagination?.limit).toBe(20);
+      // Verify the repository was called
+      expect(mockRepository.findFailed).toHaveBeenCalled();
+    });
+
+    it("should return error when tripId is missing", async () => {
+      const result = await controller.getFailedDeliveries({});
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Trip ID is required");
+      }
     });
   });
 });

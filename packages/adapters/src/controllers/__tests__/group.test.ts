@@ -1,31 +1,41 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { Effect, Either } from "effect";
 import { GroupController } from "../group";
 import type { GroupRepository } from "@mirai-app/use-cases";
 import { Group, GroupStatus } from "@mirai-app/domain";
 
+// Valid UUIDs for testing
+const TEST_GROUP_ID = "550e8400-e29b-41d4-a716-446655440001";
+const TEST_TRIP_ID = "550e8400-e29b-41d4-a716-446655440002";
+const TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440003";
+
 // Mock Group domain object
 const createMockGroup = (overrides?: Partial<Group>): Group =>
   ({
-    id: "group-123",
-    tripId: "trip-123",
+    id: TEST_GROUP_ID,
+    tripId: TEST_TRIP_ID,
     name: "Test Group",
     description: "Test description",
     image: null,
-    organizerId: "user-123",
+    organizerId: TEST_USER_ID,
     code: "ABC123",
     coins: 100,
     status: GroupStatus.ACTIVE,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-02"),
     isActive: () => true,
+    isDeleted: () => false,
     updateDetails: function (props: unknown) {
-      return { kind: "ok", value: { ...this, ...props } };
+      return Effect.succeed({ ...this, ...props } as Group);
     },
     addCoins: function (amount: number) {
-      return { kind: "ok", value: { ...this, coins: this.coins + amount } };
+      return Effect.succeed({ ...this, coins: this.coins + amount } as Group);
     },
     markAsDeleted: function () {
-      return { kind: "ok", value: { ...this, status: GroupStatus.DELETED } };
+      return Effect.succeed({ ...this, status: GroupStatus.DELETED } as Group);
+    },
+    getSummary: function () {
+      return `Test Group (Code: ABC123)`;
     },
     ...overrides,
   }) as unknown as Group;
@@ -36,13 +46,18 @@ describe("[UNIT] GroupController", () => {
 
   beforeEach(() => {
     mockGroupRepository = {
-      findById: mock(() => Promise.resolve(createMockGroup())),
-      findByCode: mock(() => Promise.resolve(createMockGroup())),
-      findByTripId: mock(() => Promise.resolve([createMockGroup()])),
-      create: mock((group: Group) => Promise.resolve(group)),
-      update: mock((group: Group) => Promise.resolve(group)),
-      findAll: mock(() => Promise.resolve([createMockGroup()])),
-      findByOrganizerId: mock(() => Promise.resolve([createMockGroup()])),
+      findById: mock(() => Effect.succeed(createMockGroup())),
+      findByCode: mock(() => Effect.succeed(createMockGroup())),
+      findByTripId: mock(() => Effect.succeed([createMockGroup()])),
+      create: mock((group: Group) => Effect.succeed(group)),
+      update: mock((group: Group) => Effect.succeed(group)),
+      findAll: mock(() => Effect.succeed([createMockGroup()])),
+      findByOrganizerId: mock(() => Effect.succeed([createMockGroup()])),
+      findByStatus: mock(() => Effect.succeed([createMockGroup()])),
+      findByTripIdAndStatus: mock(() => Effect.succeed([createMockGroup()])),
+      delete: mock(() => Effect.succeed(void 0)),
+      exists: mock(() => Effect.succeed(true)),
+      countByTripId: mock(() => Effect.succeed(1)),
     } as unknown as GroupRepository;
 
     controller = new GroupController(mockGroupRepository);
@@ -50,11 +65,11 @@ describe("[UNIT] GroupController", () => {
 
   describe("getById", () => {
     it("should return group by ID", async () => {
-      const result = await controller.getById({ id: "group-123" });
+      const result = await controller.getById({ id: TEST_GROUP_ID });
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.id).toBe("group-123");
+        expect(result.data.id).toBe(TEST_GROUP_ID);
         expect(result.data.name).toBe("Test Group");
         expect(result.data.isActive).toBe(true);
       }
@@ -67,9 +82,9 @@ describe("[UNIT] GroupController", () => {
     });
 
     it("should return error when group not found", async () => {
-      mockGroupRepository.findById = mock(() => Promise.resolve(null));
+      mockGroupRepository.findById = mock(() => Effect.succeed(null));
 
-      const result = await controller.getById({ id: "group-123" });
+      const result = await controller.getById({ id: TEST_GROUP_ID });
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -93,11 +108,22 @@ describe("[UNIT] GroupController", () => {
 
       expect(result.success).toBe(false);
     });
+
+    it("should return error when group not found", async () => {
+      mockGroupRepository.findByCode = mock(() => Effect.succeed(null));
+
+      const result = await controller.getByCode({ code: "NONEXISTENT" });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("Group not found");
+      }
+    });
   });
 
   describe("getByTripId", () => {
     it("should return groups for trip", async () => {
-      const result = await controller.getByTripId({ tripId: "trip-123" });
+      const result = await controller.getByTripId({ tripId: TEST_TRIP_ID });
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -106,9 +132,9 @@ describe("[UNIT] GroupController", () => {
     });
 
     it("should return empty array when no groups", async () => {
-      mockGroupRepository.findByTripId = mock(() => Promise.resolve([]));
+      mockGroupRepository.findByTripId = mock(() => Effect.succeed([]));
 
-      const result = await controller.getByTripId({ tripId: "trip-123" });
+      const result = await controller.getByTripId({ tripId: TEST_TRIP_ID });
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -119,12 +145,12 @@ describe("[UNIT] GroupController", () => {
 
   describe("create", () => {
     it("should create group with valid input", async () => {
-      mockGroupRepository.findByCode = mock(() => Promise.resolve(null));
+      mockGroupRepository.findByCode = mock(() => Effect.succeed(null));
 
       const input = {
-        tripId: "trip-123",
+        tripId: TEST_TRIP_ID,
         name: "New Group",
-        organizerId: "user-123",
+        organizerId: TEST_USER_ID,
         code: "NEW123",
       };
 
@@ -139,13 +165,13 @@ describe("[UNIT] GroupController", () => {
 
     it("should return error when code is already in use", async () => {
       mockGroupRepository.findByCode = mock(() =>
-        Promise.resolve(createMockGroup()),
+        Effect.succeed(createMockGroup()),
       );
 
       const input = {
-        tripId: "trip-123",
+        tripId: TEST_TRIP_ID,
         name: "New Group",
-        organizerId: "user-123",
+        organizerId: TEST_USER_ID,
         code: "ABC123",
       };
 
@@ -161,7 +187,7 @@ describe("[UNIT] GroupController", () => {
       const result = await controller.create({
         tripId: "invalid",
         name: "Test",
-        organizerId: "user-123",
+        organizerId: TEST_USER_ID,
         code: "TEST123",
       });
 
@@ -172,7 +198,7 @@ describe("[UNIT] GroupController", () => {
   describe("update", () => {
     it("should update group with valid input", async () => {
       const input = {
-        groupId: "group-123",
+        groupId: TEST_GROUP_ID,
         name: "Updated Name",
       };
 
@@ -185,9 +211,9 @@ describe("[UNIT] GroupController", () => {
     });
 
     it("should return error when group not found", async () => {
-      mockGroupRepository.findById = mock(() => Promise.resolve(null));
+      mockGroupRepository.findById = mock(() => Effect.succeed(null));
 
-      const result = await controller.update({ groupId: "group-123" });
+      const result = await controller.update({ groupId: TEST_GROUP_ID });
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -197,16 +223,17 @@ describe("[UNIT] GroupController", () => {
 
     it("should return error when updating deleted group", async () => {
       mockGroupRepository.findById = mock(() =>
-        Promise.resolve(
+        Effect.succeed(
           createMockGroup({
             status: GroupStatus.DELETED,
             isActive: () => false,
+            isDeleted: () => true,
           }),
         ),
       );
 
       const result = await controller.update({
-        groupId: "group-123",
+        groupId: TEST_GROUP_ID,
         name: "New Name",
       });
 
@@ -220,7 +247,7 @@ describe("[UNIT] GroupController", () => {
   describe("addCoins", () => {
     it("should add coins to group", async () => {
       const input = {
-        groupId: "group-123",
+        groupId: TEST_GROUP_ID,
         amount: 50,
       };
 
@@ -235,7 +262,7 @@ describe("[UNIT] GroupController", () => {
 
     it("should return error for invalid amount", async () => {
       const result = await controller.addCoins({
-        groupId: "group-123",
+        groupId: TEST_GROUP_ID,
         amount: 0,
       });
 
@@ -243,10 +270,10 @@ describe("[UNIT] GroupController", () => {
     });
 
     it("should return error when group not found", async () => {
-      mockGroupRepository.findById = mock(() => Promise.resolve(null));
+      mockGroupRepository.findById = mock(() => Effect.succeed(null));
 
       const result = await controller.addCoins({
-        groupId: "group-123",
+        groupId: TEST_GROUP_ID,
         amount: 50,
       });
 
@@ -256,7 +283,7 @@ describe("[UNIT] GroupController", () => {
 
   describe("delete", () => {
     it("should soft delete group", async () => {
-      const result = await controller.delete({ id: "group-123" });
+      const result = await controller.delete({ id: TEST_GROUP_ID });
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -266,15 +293,16 @@ describe("[UNIT] GroupController", () => {
 
     it("should return error when group already deleted", async () => {
       mockGroupRepository.findById = mock(() =>
-        Promise.resolve(
+        Effect.succeed(
           createMockGroup({
             status: GroupStatus.DELETED,
             isActive: () => false,
+            isDeleted: () => true,
           }),
         ),
       );
 
-      const result = await controller.delete({ id: "group-123" });
+      const result = await controller.delete({ id: TEST_GROUP_ID });
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -286,7 +314,7 @@ describe("[UNIT] GroupController", () => {
   describe("getByOrganizer", () => {
     it("should return groups by organizer", async () => {
       const result = await controller.getByOrganizer({
-        organizerId: "user-123",
+        organizerId: TEST_USER_ID,
       });
 
       expect(result.success).toBe(true);
@@ -299,6 +327,28 @@ describe("[UNIT] GroupController", () => {
       const result = await controller.getByOrganizer({ organizerId: "" });
 
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe("list", () => {
+    it("should return paginated groups", async () => {
+      const result = await controller.list({ limit: 10, offset: 0 });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(1);
+      }
+    });
+
+    it("should return empty array when no groups", async () => {
+      mockGroupRepository.findAll = mock(() => Effect.succeed([]));
+
+      const result = await controller.list({ limit: 10, offset: 0 });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(0);
+      }
     });
   });
 });

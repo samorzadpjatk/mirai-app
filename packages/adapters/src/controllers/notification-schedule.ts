@@ -173,58 +173,16 @@ export class NotificationScheduleController {
         }
       : undefined;
 
-    const pagination: PaginationOptions = parsed.data.pagination ?? {
-      limit: 20,
-      offset: 0,
+    const pagination: PaginationOptions = {
+      limit: parsed.data.pagination?.limit ?? 20,
+      offset: parsed.data.pagination?.offset ?? 0,
     };
 
     const program = getNotificationSchedulesUseCase({
       filter,
       pagination,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -252,49 +210,7 @@ export class NotificationScheduleController {
     const program = getNotificationScheduleByIdUseCase({
       id: parsed.data.id,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -310,49 +226,7 @@ export class NotificationScheduleController {
    */
   async getActive(): Promise<ControllerResult<NotificationScheduleOutput[]>> {
     const program = getActiveNotificationSchedulesUseCase().pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -380,49 +254,7 @@ export class NotificationScheduleController {
     const program = getUpcomingNotificationSchedulesUseCase({
       days: parsed.data.days,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -462,49 +294,7 @@ export class NotificationScheduleController {
       isActive: parsed.data.isActive,
       createdById: parsed.data.createdById,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -541,49 +331,7 @@ export class NotificationScheduleController {
       minute: parsed.data.minute,
       isActive: parsed.data.isActive,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -615,53 +363,7 @@ export class NotificationScheduleController {
     const program = deleteNotificationScheduleUseCase({
       id: parsed.data.id,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        deleteExecutions: (scheduleId: string) =>
-          Effect.promise(
-            () => this.repository.delete?.(scheduleId) || Promise.resolve(),
-          ),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -694,49 +396,7 @@ export class NotificationScheduleController {
     const program = bulkDeleteNotificationSchedulesUseCase({
       ids: parsed.data.ids,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -764,49 +424,7 @@ export class NotificationScheduleController {
     const program = toggleNotificationScheduleActiveUseCase({
       id: parsed.data.id,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -835,49 +453,7 @@ export class NotificationScheduleController {
       ids: parsed.data.ids,
       isActive: parsed.data.isActive,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -909,49 +485,7 @@ export class NotificationScheduleController {
       endDate: parsed.data.endDate,
       newCreatedById: parsed.data.newCreatedById,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -980,49 +514,7 @@ export class NotificationScheduleController {
       id: parsed.data.id,
       lastRun: parsed.data.lastRun,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {
@@ -1062,49 +554,7 @@ export class NotificationScheduleController {
       scheduleId: parsed.data.scheduleId,
       limit: parsed.data.limit,
     }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, {
-        exists: (id: string) =>
-          Effect.promise(() => this.repository.exists(id)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() =>
-            this.repository.getExecutionHistory(scheduleId, limit),
-          ),
-        create: (schedule) =>
-          Effect.promise(() => this.repository.create(schedule)),
-        findById: (id: string) =>
-          Effect.promise(() => this.repository.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.repository.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => this.repository.findByName(name)),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() =>
-            this.repository.findByTripIdAndName(tripId, name),
-          ),
-        findByType: (type) =>
-          Effect.promise(() => this.repository.findByType(type)),
-        findAll: (options) =>
-          Effect.promise(() => this.repository.findAll(options)),
-        findActive: (now) =>
-          Effect.promise(() => this.repository.findActive(now)),
-        findUpcoming: (days, now) =>
-          Effect.promise(() => this.repository.findUpcoming(days, now)),
-        update: (schedule) =>
-          Effect.promise(() => this.repository.update(schedule)),
-        delete: (id: string) =>
-          Effect.promise(() => this.repository.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => this.repository.deleteMany(ids)),
-        count: (filter) => Effect.promise(() => this.repository.count(filter)),
-        updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => this.repository.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => this.repository.toggleActive(id)),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => this.repository.bulkToggleActive(ids, isActive)),
-        countExecutions: (scheduleId: string) =>
-          Effect.promise(() => this.repository.countExecutions(scheduleId)),
-      }),
+      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
     );
 
     try {

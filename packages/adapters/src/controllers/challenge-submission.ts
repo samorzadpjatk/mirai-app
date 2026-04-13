@@ -1,12 +1,14 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { ChallengeSubmissionRepository } from "@mirai-app/use-cases";
 import {
-  CreateSubmissionUseCase,
-  GetSubmissionUseCase,
-  GetSubmissionByChallengeAndGroupUseCase,
-  UpdateSubmissionUseCase,
-  DeleteSubmissionUseCase,
-  ListSubmissionsByChallengeUseCase,
+  createSubmissionUseCase,
+  getSubmissionUseCase,
+  getSubmissionByChallengeAndGroupUseCase,
+  updateSubmissionUseCase,
+  deleteSubmissionUseCase,
+  listSubmissionsByChallengeUseCase,
+  ChallengeSubmissionRepositoryTag,
   type CreateSubmissionInput,
   type UpdateSubmissionInput,
   type GetSubmissionOutput,
@@ -16,6 +18,10 @@ import {
   type UpdateSubmissionOutput,
 } from "@mirai-app/use-cases";
 import { SubmissionId } from "@mirai-app/domain";
+import {
+  toEffectChallengeSubmissionRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Helper type to convert branded SubmissionId to string in DTOs
@@ -127,12 +133,7 @@ export class ChallengeSubmissionController {
   /**
    * Get a submission by ID
    */
-  async getById(
-    input: unknown,
-  ): Promise<
-    | { success: true; data: ApiGetSubmissionOutput }
-    | { success: false; error: string }
-  > {
+  async getById(input: unknown) {
     const parsed = schemas.getById.safeParse(input);
     if (!parsed.success) {
       return {
@@ -141,28 +142,23 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const useCase = new GetSubmissionUseCase(this.submissionRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeSubmissionRepository(
+      this.submissionRepository,
+    );
+    const effect = getSubmissionUseCase({
       submissionId: SubmissionId.unsafeCreate(parsed.data.submissionId),
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    // Convert branded SubmissionId to string for API response
-    return { success: true, data: convertDtoWithSubmissionId(result.value) };
+    }).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
+    );
+    const result = await effectToControllerResult(effect);
+    if (!result.success) return result;
+    return { success: true, data: convertDtoWithSubmissionId(result.data) };
   }
 
   /**
    * Get a submission by challenge ID and group ID
    */
-  async getByChallengeAndGroup(
-    input: unknown,
-  ): Promise<
-    | { success: true; data: ApiGetSubmissionByChallengeAndGroupOutput | null }
-    | { success: false; error: string }
-  > {
+  async getByChallengeAndGroup(input: unknown) {
     const parsed = schemas.getByChallengeAndGroup.safeParse(input);
     if (!parsed.success) {
       return {
@@ -171,21 +167,19 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const useCase = new GetSubmissionByChallengeAndGroupUseCase(
+    const effectRepo = toEffectChallengeSubmissionRepository(
       this.submissionRepository,
     );
-    const result = await useCase.execute({
+    const effect = getSubmissionByChallengeAndGroupUseCase({
       challengeId: parsed.data.challengeId,
       groupId: parsed.data.groupId,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    // Convert branded SubmissionId to string for API response (if data exists)
-    const apiData = result.value
-      ? convertDtoWithSubmissionId(result.value)
+    }).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
+    );
+    const result = await effectToControllerResult(effect);
+    if (!result.success) return result;
+    const apiData = result.data
+      ? convertDtoWithSubmissionId(result.data)
       : null;
     return { success: true, data: apiData };
   }
@@ -193,13 +187,7 @@ export class ChallengeSubmissionController {
   /**
    * List submissions for a challenge
    */
-  async listByChallenge(input: unknown): Promise<
-    | {
-        success: true;
-        data: ReturnType<typeof convertListOutput>;
-      }
-    | { success: false; error: string }
-  > {
+  async listByChallenge(input: unknown) {
     const parsed = schemas.getByChallenge.safeParse(input);
     if (!parsed.success) {
       return {
@@ -208,34 +196,27 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const useCase = new ListSubmissionsByChallengeUseCase(
+    const effectRepo = toEffectChallengeSubmissionRepository(
       this.submissionRepository,
     );
-    const result = await useCase.execute({
+    const effect = listSubmissionsByChallengeUseCase({
       challengeId: parsed.data.challengeId,
       orderBy: parsed.data.orderBy,
       orderDirection: parsed.data.orderDirection,
       limit: parsed.data.limit,
       offset: parsed.data.offset,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    // Convert branded SubmissionIds to strings for API response
-    return { success: true, data: convertListOutput(result.value) };
+    }).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
+    );
+    const result = await effectToControllerResult(effect);
+    if (!result.success) return result;
+    return { success: true, data: convertListOutput(result.data) };
   }
 
   /**
    * Create a new submission
    */
-  async create(
-    input: unknown,
-  ): Promise<
-    | { success: true; data: ApiCreateSubmissionOutput }
-    | { success: false; error: string }
-  > {
+  async create(input: unknown) {
     const parsed = schemas.create.safeParse(input);
     if (!parsed.success) {
       return {
@@ -244,7 +225,9 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const useCase = new CreateSubmissionUseCase(this.submissionRepository);
+    const effectRepo = toEffectChallengeSubmissionRepository(
+      this.submissionRepository,
+    );
 
     const createInput: CreateSubmissionInput = {
       challengeId: parsed.data.challengeId,
@@ -256,25 +239,18 @@ export class ChallengeSubmissionController {
       longitude: parsed.data.longitude,
     };
 
-    const result = await useCase.execute(createInput);
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    // Convert branded SubmissionId to string for API response
-    return { success: true, data: convertDtoWithSubmissionId(result.value) };
+    const effect = createSubmissionUseCase(createInput).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
+    );
+    const result = await effectToControllerResult(effect);
+    if (!result.success) return result;
+    return { success: true, data: convertDtoWithSubmissionId(result.data) };
   }
 
   /**
    * Update a submission (content or review)
    */
-  async update(
-    input: unknown,
-  ): Promise<
-    | { success: true; data: ApiUpdateSubmissionOutput }
-    | { success: false; error: string }
-  > {
+  async update(input: unknown) {
     const parsed = schemas.update.safeParse(input);
     if (!parsed.success) {
       return {
@@ -283,7 +259,9 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const useCase = new UpdateSubmissionUseCase(this.submissionRepository);
+    const effectRepo = toEffectChallengeSubmissionRepository(
+      this.submissionRepository,
+    );
 
     const updateInput: UpdateSubmissionInput = {
       submissionId: SubmissionId.unsafeCreate(parsed.data.submissionId),
@@ -300,25 +278,18 @@ export class ChallengeSubmissionController {
       ranking: parsed.data.ranking ?? undefined,
     };
 
-    const result = await useCase.execute(updateInput);
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    // Convert branded SubmissionId to string for API response
-    return { success: true, data: convertDtoWithSubmissionId(result.value) };
+    const effect = updateSubmissionUseCase(updateInput).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
+    );
+    const result = await effectToControllerResult(effect);
+    if (!result.success) return result;
+    return { success: true, data: convertDtoWithSubmissionId(result.data) };
   }
 
   /**
    * Delete a submission
    */
-  async delete(
-    input: unknown,
-  ): Promise<
-    | { success: true; data: { success: boolean } }
-    | { success: false; error: string }
-  > {
+  async delete(input: unknown) {
     const parsed = schemas.delete.safeParse(input);
     if (!parsed.success) {
       return {
@@ -327,15 +298,14 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const useCase = new DeleteSubmissionUseCase(this.submissionRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeSubmissionRepository(
+      this.submissionRepository,
+    );
+    const effect = deleteSubmissionUseCase({
       submissionId: SubmissionId.unsafeCreate(parsed.data.submissionId),
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(
+      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
+    );
+    return await effectToControllerResult(effect);
   }
 }

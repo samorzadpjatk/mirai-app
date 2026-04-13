@@ -1,13 +1,19 @@
 import { z } from "zod";
+import { Effect } from "effect";
+import type { CoinTransactionRepository } from "@mirai-app/use-cases";
 import {
-  getUseCaseErrorMessage,
-  type GetCoinStatisticsUseCase,
-  type GetMostActiveAdminStatsUseCase,
-  type GetCoinTransactionsUseCase,
-  type GetCoinQuickStatsUseCase,
-  type GetCoinAdditionalInsightsUseCase,
+  getCoinStatisticsUseCase,
+  getMostActiveAdminStatsUseCase,
+  getCoinTransactionsUseCase,
+  getCoinQuickStatsUseCase,
+  getCoinAdditionalInsightsUseCase,
+  CoinTransactionRepositoryTag,
   type GetCoinAdditionalInsightsOutput,
 } from "@mirai-app/use-cases";
+import {
+  toEffectCoinTransactionRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for coin transaction controller
@@ -53,13 +59,7 @@ const schemas = {
  * Delegates to use cases for business logic.
  */
 export class CoinTransactionController {
-  constructor(
-    private getStatisticsUseCase: GetCoinStatisticsUseCase,
-    private getMostActiveAdminStatsUseCase: GetMostActiveAdminStatsUseCase,
-    private getTransactionsUseCase: GetCoinTransactionsUseCase,
-    private getQuickStatsUseCase: GetCoinQuickStatsUseCase,
-    private getAdditionalInsightsUseCase: GetCoinAdditionalInsightsUseCase,
-  ) {}
+  constructor(private coinRepository: CoinTransactionRepository) {}
 
   get schemas() {
     return schemas;
@@ -81,18 +81,12 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const result = await this.getStatisticsUseCase.execute({
+    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
+    const effect = getCoinStatisticsUseCase({
       tripId: input.tripId,
-    });
+    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return {
-        success: false,
-        error: getUseCaseErrorMessage(result.error),
-      };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -109,18 +103,12 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const result = await this.getMostActiveAdminStatsUseCase.execute({
+    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
+    const effect = getMostActiveAdminStatsUseCase({
       tripId: input.tripId,
-    });
+    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return {
-        success: false,
-        error: getUseCaseErrorMessage(result.error),
-      };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -155,22 +143,22 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const result = await this.getTransactionsUseCase.execute({
+    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
+    const effect = getCoinTransactionsUseCase({
       tripId: input.tripId,
       pagination: input.pagination,
-    });
+    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return {
-        success: false,
-        error: getUseCaseErrorMessage(result.error),
-      };
+    const result = await effectToControllerResult(effect);
+
+    if (!result.success) {
+      return result;
     }
 
     return {
       success: true,
       data: {
-        transactions: result.value.transactions.map((t) => ({
+        transactions: result.data.transactions.map((t) => ({
           id: t.id,
           amount: t.amount,
           reason: t.reason ?? null,
@@ -184,7 +172,7 @@ export class CoinTransactionController {
               }
             : null,
         })),
-        pagination: result.value.pagination,
+        pagination: result.data.pagination,
       },
     };
   }
@@ -206,18 +194,12 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const result = await this.getQuickStatsUseCase.execute({
+    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
+    const effect = getCoinQuickStatsUseCase({
       tripId: input.tripId,
-    });
+    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return {
-        success: false,
-        error: getUseCaseErrorMessage(result.error),
-      };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -230,26 +212,24 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const result = await this.getAdditionalInsightsUseCase.execute({
+    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
+    const effect = getCoinAdditionalInsightsUseCase({
       tripId: input.tripId,
-    });
+    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return {
-        success: false,
-        error: getUseCaseErrorMessage(result.error),
-      };
+    const result = await effectToControllerResult(effect);
+
+    if (!result.success) {
+      return result;
     }
 
-    if (!result.value) {
+    if (!result.data) {
       return { success: true, data: null };
     }
 
-    // Normalize optional nested objects for API serialization
-    // Convert undefined to null for consistent API responses
     const normalizedData: GetCoinAdditionalInsightsOutput = {
-      mostActiveAdmin: result.value.mostActiveAdmin,
-      recentTransactions: result.value.recentTransactions.map((t) => ({
+      mostActiveAdmin: result.data.mostActiveAdmin,
+      recentTransactions: result.data.recentTransactions.map((t) => ({
         id: t.id,
         groupId: t.groupId,
         adminId: t.adminId,
@@ -309,22 +289,22 @@ export class CoinTransactionController {
       };
     }
 
-    const result = await this.getTransactionsUseCase.execute({
+    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
+    const effect = getCoinTransactionsUseCase({
       tripId: input.tripId,
       groupId: input.groupId,
       pagination: { limit: input.limit, offset: 0 },
-    });
+    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return {
-        success: false,
-        error: getUseCaseErrorMessage(result.error),
-      };
+    const result = await effectToControllerResult(effect);
+
+    if (!result.success) {
+      return result;
     }
 
     return {
       success: true,
-      data: result.value.transactions.map((t) => ({
+      data: result.data.transactions.map((t) => ({
         id: t.id,
         amount: t.amount,
         reason: t.reason ?? null,

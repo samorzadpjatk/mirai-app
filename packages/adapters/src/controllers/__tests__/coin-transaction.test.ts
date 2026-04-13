@@ -1,113 +1,85 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { Effect } from "effect";
 import { CoinTransactionController } from "../coin-transaction";
-import type {
-  GetCoinStatisticsUseCase,
-  GetMostActiveAdminStatsUseCase,
-  GetCoinTransactionsUseCase,
-  GetCoinQuickStatsUseCase,
-  GetCoinAdditionalInsightsUseCase,
-} from "@mirai-app/use-cases";
-import { ok, err } from "@mirai-app/domain";
+import type { CoinTransactionRepository } from "@mirai-app/use-cases";
+
+// Valid UUIDs for testing
+const TRIP_ID = "550e8400-e29b-41d4-a716-446655440000";
+const GROUP_ID = "550e8400-e29b-41d4-a716-446655440001";
+const ADMIN_ID = "550e8400-e29b-41d4-a716-446655440002";
+const TX_ID = "550e8400-e29b-41d4-a716-446655440003";
 
 describe("[UNIT] CoinTransactionController", () => {
   let controller: CoinTransactionController;
-  let mockGetStatistics: GetCoinStatisticsUseCase;
-  let mockGetMostActiveAdmin: GetMostActiveAdminStatsUseCase;
-  let mockGetTransactions: GetCoinTransactionsUseCase;
-  let mockGetQuickStats: GetCoinQuickStatsUseCase;
-  let mockGetInsights: GetCoinAdditionalInsightsUseCase;
+  let mockCoinRepository: CoinTransactionRepository;
 
   beforeEach(() => {
-    mockGetStatistics = {
-      execute: mock(() =>
-        Promise.resolve(
-          ok({
-            transactionCount: 10,
-            addedCoins: 1000,
-            removedCoins: -200,
-            netBalance: 800,
-            time: new Date(),
-          }),
-        ),
+    mockCoinRepository = {
+      count: mock(() => Effect.succeed(10)),
+      sumAmount: mock(() => Effect.succeed(800)),
+      sumAddedCoins: mock(() => Effect.succeed(1000)),
+      sumRemovedCoins: mock(() => Effect.succeed(-200)),
+      getMostActiveAdmin: mock(() =>
+        Effect.succeed([
+          {
+            adminId: ADMIN_ID,
+            _sum: { amount: 500 },
+            _count: { id: 5 },
+          },
+        ]),
       ),
-    } as unknown as GetCoinStatisticsUseCase;
-
-    mockGetMostActiveAdmin = {
-      execute: mock(() =>
-        Promise.resolve(
-          ok({
-            adminId: "admin-1",
-            totalAmount: 500,
-            transactionCount: 5,
-          }),
-        ),
+      findMany: mock(() =>
+        Effect.succeed([
+          {
+            id: TX_ID,
+            groupId: GROUP_ID,
+            amount: 100,
+            reason: "Test",
+            adminId: ADMIN_ID,
+            createdAt: new Date(),
+            group: { id: GROUP_ID, name: "Group 1", coins: 500 },
+            admin: { id: ADMIN_ID, firstName: "Admin", lastName: "User" },
+          },
+        ]),
       ),
-    } as unknown as GetMostActiveAdminStatsUseCase;
-
-    mockGetTransactions = {
-      execute: mock(() =>
-        Promise.resolve(
-          ok({
-            transactions: [
-              {
-                id: "tx-1",
-                amount: 100,
-                reason: "Test",
-                createdAt: new Date(),
-                group: { id: "group-1", name: "Group 1", coins: 500 },
-                admin: { id: "admin-1", firstName: "Admin", lastName: "User" },
-              },
-            ],
-            pagination: {
-              total: 1,
-              limit: 50,
-              offset: 0,
-              hasMore: false,
-            },
-          }),
-        ),
+      findRecent: mock(() => Effect.succeed([])),
+      getTotalCoinsByGroup: mock(() =>
+        Effect.succeed([{ groupId: GROUP_ID, _sum: { amount: 500 } }]),
       ),
-    } as unknown as GetCoinTransactionsUseCase;
-
-    mockGetQuickStats = {
-      execute: mock(() =>
-        Promise.resolve(
-          ok({
-            totalCoins: 1000,
-            totalGroups: 5,
-            averageCoinsPerGroup: 200,
-            time: new Date(),
-          }),
-        ),
+      groupByAdmin: mock(() =>
+        Effect.succeed([{ adminId: ADMIN_ID, _count: { id: 5 } }]),
       ),
-    } as unknown as GetCoinQuickStatsUseCase;
-
-    mockGetInsights = {
-      execute: mock(() =>
-        Promise.resolve(
-          ok({
-            mostActiveAdmin: {
-              name: "admin-1",
-              transactionCount: 5,
-            },
-            recentTransactions: [],
-          }),
-        ),
+      create: mock((data) =>
+        Effect.succeed({
+          id: TX_ID,
+          groupId: data.groupId,
+          amount: data.amount,
+          reason: data.reason ?? null,
+          adminId: data.adminId,
+          createdAt: new Date(),
+        }),
       ),
-    } as unknown as GetCoinAdditionalInsightsUseCase;
+      incrementGroupCoins: mock(() => Effect.succeed(undefined)),
+      decrementGroupCoins: mock(() =>
+        Effect.succeed({ success: true, currentBalance: 400 }),
+      ),
+      getGroupCoins: mock(() => Effect.succeed(500)),
+      verifyGroupInTrip: mock(() =>
+        Effect.succeed({
+          exists: true,
+          tripId: TRIP_ID,
+          isDeleted: false,
+          coins: 500,
+        }),
+      ),
+    } as unknown as CoinTransactionRepository;
 
-    controller = new CoinTransactionController(
-      mockGetStatistics,
-      mockGetMostActiveAdmin,
-      mockGetTransactions,
-      mockGetQuickStats,
-      mockGetInsights,
-    );
+    controller = new CoinTransactionController(mockCoinRepository);
   });
 
   describe("getStatistics", () => {
     it("should return statistics", async () => {
-      const result = await controller.getStatistics({ tripId: "trip-1" });
+      const result = await controller.getStatistics({ tripId: TRIP_ID });
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -117,11 +89,11 @@ describe("[UNIT] CoinTransactionController", () => {
     });
 
     it("should return error on failure", async () => {
-      mockGetStatistics.execute = mock(() =>
-        Promise.resolve(err("Failed to get stats")),
+      mockCoinRepository.count = mock(() =>
+        Effect.fail("Database error" as never),
       );
 
-      const result = await controller.getStatistics({ tripId: "trip-1" });
+      const result = await controller.getStatistics({ tripId: TRIP_ID });
 
       expect(result.success).toBe(false);
     });
@@ -130,14 +102,14 @@ describe("[UNIT] CoinTransactionController", () => {
   describe("getAll", () => {
     it("should return paginated transactions", async () => {
       const result = await controller.getAll({
-        tripId: "trip-1",
+        tripId: TRIP_ID,
         pagination: { limit: 10, offset: 0 },
       });
 
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.transactions).toHaveLength(1);
-        expect(result.data.pagination.total).toBe(1);
+        expect(result.data.pagination.total).toBe(10);
       }
     });
   });
@@ -145,8 +117,8 @@ describe("[UNIT] CoinTransactionController", () => {
   describe("getCoinTransactions", () => {
     it("should return transactions for participant", async () => {
       const result = await controller.getCoinTransactions({
-        tripId: "trip-1",
-        groupId: "group-1",
+        tripId: TRIP_ID,
+        groupId: GROUP_ID,
         limit: 10,
         isParticipant: true,
       });
@@ -156,7 +128,7 @@ describe("[UNIT] CoinTransactionController", () => {
 
     it("should fail for non-participant", async () => {
       const result = await controller.getCoinTransactions({
-        tripId: "trip-1",
+        tripId: TRIP_ID,
         limit: 10,
         isParticipant: false,
       });

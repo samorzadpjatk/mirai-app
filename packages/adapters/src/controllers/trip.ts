@@ -1,7 +1,20 @@
 import { z } from "zod";
 import { Effect } from "effect";
 import type { TripRepository } from "@mirai-app/use-cases";
-import { Trip, TripStatus } from "@mirai-app/domain";
+import { TripRepositoryTag } from "@mirai-app/use-cases";
+import {
+  createTripUseCase,
+  updateTripUseCase,
+  getTripByIdUseCase,
+  deleteTripUseCase,
+  type CreateTripInput,
+  type UpdateTripInput,
+} from "@mirai-app/use-cases";
+import { TripStatus } from "@mirai-app/domain";
+import {
+  toEffectTripRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for trip controller
@@ -74,9 +87,9 @@ const schemas = {
 /**
  * TripController
  *
- * Thin controller that works directly with the repository.
- * Note: Use cases should be created for Trip and this controller
- * should delegate to them instead of working directly with the repository.
+ * Thin controller that delegates to use cases.
+ * No business logic here - just input validation, use case orchestration,
+ * and error handling.
  */
 export class TripController {
   constructor(private tripRepository: TripRepository) {}
@@ -97,10 +110,15 @@ export class TripController {
           status: string;
           createdAt: Date;
           updatedAt: Date;
-          isPlanning: boolean;
           isActive: boolean;
+          isPlanning: boolean;
           isCompleted: boolean;
           isCancelled: boolean;
+          isOngoing: boolean;
+          hasStarted: boolean;
+          hasEnded: boolean;
+          durationInDays: number;
+          summary: string;
         };
       }
     | { success: false; error: string }
@@ -113,30 +131,12 @@ export class TripController {
       };
     }
 
-    const trip = await this.tripRepository.findById(parsed.data.id);
+    const effectRepo = toEffectTripRepository(this.tripRepository);
+    const effect = getTripByIdUseCase({
+      tripId: parsed.data.id,
+    }).pipe(Effect.provideService(TripRepositoryTag, effectRepo));
 
-    if (!trip) {
-      return { success: false, error: "Trip not found" };
-    }
-
-    return {
-      success: true,
-      data: {
-        id: trip.id,
-        name: trip.name,
-        description: trip.description,
-        startDate: trip.startDate,
-        endDate: trip.endDate,
-        backgroundImagePath: trip.backgroundImagePath,
-        status: trip.status,
-        createdAt: trip.createdAt,
-        updatedAt: trip.updatedAt,
-        isPlanning: trip.isPlanning(),
-        isActive: trip.isActive(),
-        isCompleted: trip.isCompleted(),
-        isCancelled: trip.isCancelled(),
-      },
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -155,6 +155,9 @@ export class TripController {
           status: string;
           createdAt: Date;
           updatedAt: Date;
+          isActive: boolean;
+          isPlanning: boolean;
+          durationInDays: number;
         };
       }
     | { success: false; error: string }
@@ -172,42 +175,21 @@ export class TripController {
       return { success: false, error: "End date must be after start date" };
     }
 
-    // Create domain entity directly until CreateTripUseCase exists
-    try {
-      const trip = await Effect.runPromise(
-        Trip.create({
-          name: parsed.data.name,
-          description: parsed.data.description,
-          startDate: parsed.data.startDate,
-          endDate: parsed.data.endDate,
-          backgroundImagePath: parsed.data.backgroundImagePath,
-          status: parsed.data.status as TripStatus,
-        }),
-      );
+    const effectRepo = toEffectTripRepository(this.tripRepository);
+    const useCaseInput: CreateTripInput = {
+      name: parsed.data.name,
+      description: parsed.data.description ?? null,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+      backgroundImagePath: parsed.data.backgroundImagePath ?? null,
+      status: parsed.data.status as TripStatus,
+    };
 
-      // Persist trip
-      const saved = await this.tripRepository.create(trip);
+    const effect = createTripUseCase(useCaseInput).pipe(
+      Effect.provideService(TripRepositoryTag, effectRepo),
+    );
 
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          name: saved.name,
-          description: saved.description,
-          startDate: saved.startDate,
-          endDate: saved.endDate,
-          backgroundImagePath: saved.backgroundImagePath,
-          status: saved.status,
-          createdAt: saved.createdAt,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -237,78 +219,26 @@ export class TripController {
       };
     }
 
-    // Find existing trip
-    const trip = await this.tripRepository.findById(parsed.data.tripId);
-    if (!trip) {
-      return { success: false, error: "Trip not found" };
-    }
+    const effectRepo = toEffectTripRepository(this.tripRepository);
+    const useCaseInput: UpdateTripInput = {
+      tripId: parsed.data.tripId,
+      name: parsed.data.name,
+      description: parsed.data.description,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+      backgroundImagePath: parsed.data.backgroundImagePath,
+    };
 
-    // Check if trip can be updated (not in terminal state)
-    if (trip.isCompleted() || trip.isCancelled()) {
-      return {
-        success: false,
-        error: "Cannot update a completed or cancelled trip",
-      };
-    }
+    const effect = updateTripUseCase(useCaseInput).pipe(
+      Effect.provideService(TripRepositoryTag, effectRepo),
+    );
 
-    try {
-      // Apply updates using entity methods
-      let updatedTrip = trip;
-
-      // Update details if provided
-      if (
-        parsed.data.name !== undefined ||
-        parsed.data.description !== undefined ||
-        parsed.data.backgroundImagePath !== undefined
-      ) {
-        updatedTrip = await Effect.runPromise(
-          updatedTrip.updateDetails({
-            name: parsed.data.name,
-            description: parsed.data.description,
-            backgroundImagePath: parsed.data.backgroundImagePath,
-          }),
-        );
-      }
-
-      // Update dates if provided
-      if (
-        parsed.data.startDate !== undefined ||
-        parsed.data.endDate !== undefined
-      ) {
-        updatedTrip = await Effect.runPromise(
-          updatedTrip.updateDates({
-            startDate: parsed.data.startDate,
-            endDate: parsed.data.endDate,
-          }),
-        );
-      }
-
-      // Persist changes
-      const saved = await this.tripRepository.update(updatedTrip);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          name: saved.name,
-          description: saved.description,
-          startDate: saved.startDate,
-          endDate: saved.endDate,
-          backgroundImagePath: saved.backgroundImagePath,
-          status: saved.status,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Update trip status
+   * Note: Uses updateTripUseCase internally for now
    */
   async updateStatus(input: unknown): Promise<
     | {
@@ -316,8 +246,7 @@ export class TripController {
         data: {
           id: string;
           name: string;
-          previousStatus: string;
-          newStatus: string;
+          status: string;
           updatedAt: Date;
         };
       }
@@ -331,47 +260,33 @@ export class TripController {
       };
     }
 
-    // Find existing trip
-    const trip = await this.tripRepository.findById(parsed.data.tripId);
-    if (!trip) {
-      return { success: false, error: "Trip not found" };
+    const effectRepo = toEffectTripRepository(this.tripRepository);
+
+    // First get the trip to ensure it exists
+    const tripEffect = getTripByIdUseCase({
+      tripId: parsed.data.tripId,
+    }).pipe(Effect.provideService(TripRepositoryTag, effectRepo));
+
+    const tripResult = await Effect.runPromise(Effect.either(tripEffect));
+
+    if (tripResult._tag === "Left") {
+      return { success: false, error: tripResult.left.message };
     }
 
-    const previousStatus = trip.status;
+    // Update the trip status using updateTripUseCase
+    const updateEffect = updateTripUseCase({
+      tripId: parsed.data.tripId,
+      status: parsed.data.newStatus as TripStatus,
+    }).pipe(Effect.provideService(TripRepositoryTag, effectRepo));
 
-    // Check if transition is valid
-    if (!trip.canTransitionTo(parsed.data.newStatus as TripStatus)) {
-      return {
-        success: false,
-        error: `Invalid status transition from ${previousStatus} to ${parsed.data.newStatus}`,
-      };
-    }
+    const result = await effectToControllerResult(updateEffect, (data) => ({
+      id: data.id,
+      name: data.name,
+      status: data.status,
+      updatedAt: data.updatedAt,
+    }));
 
-    try {
-      // Apply status update
-      const updatedTrip = await Effect.runPromise(
-        trip.updateStatus(parsed.data.newStatus as TripStatus),
-      );
-
-      // Persist changes
-      const saved = await this.tripRepository.update(updatedTrip);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          name: saved.name,
-          previousStatus,
-          newStatus: saved.status,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to update status: ${error instanceof Error ? error.message : String(error)}`,
-      };
-    }
+    return result;
   }
 
   /**
@@ -400,14 +315,16 @@ export class TripController {
       };
     }
 
-    const trips = await this.tripRepository.findAll({
+    const effectRepo = toEffectTripRepository(this.tripRepository);
+
+    // Use repository directly for list operations
+    const effect = effectRepo.findAll({
       limit: parsed.data.limit,
       offset: parsed.data.offset,
     });
 
-    return {
-      success: true,
-      data: trips.map((trip) => ({
+    return await effectToControllerResult(effect, (trips) =>
+      trips.map((trip) => ({
         id: trip.id,
         name: trip.name,
         description: trip.description,
@@ -416,7 +333,7 @@ export class TripController {
         status: trip.status,
         createdAt: trip.createdAt,
       })),
-    };
+    );
   }
 
   /**
@@ -445,12 +362,19 @@ export class TripController {
       };
     }
 
-    const trips = await this.tripRepository.findByStatus(
-      parsed.data.status as TripStatus,
-    );
+    const effectRepo = toEffectTripRepository(this.tripRepository);
+
+    // Use repository directly for list by status
+    const effect = effectRepo.findByStatus(parsed.data.status as TripStatus);
+
+    const result = await effectToControllerResult(effect);
+
+    if (!result.success) {
+      return result;
+    }
 
     // Apply pagination manually
-    const paginated = trips.slice(
+    const paginated = result.data.slice(
       parsed.data.offset,
       parsed.data.offset + parsed.data.limit,
     );
@@ -487,11 +411,13 @@ export class TripController {
       }
     | { success: false; error: string }
   > {
-    const trips = await this.tripRepository.findActive();
+    const effectRepo = toEffectTripRepository(this.tripRepository);
 
-    return {
-      success: true,
-      data: trips.map((trip) => ({
+    // Use repository directly for findActive
+    const effect = effectRepo.findActive();
+
+    return await effectToControllerResult(effect, (trips) =>
+      trips.map((trip) => ({
         id: trip.id,
         name: trip.name,
         description: trip.description,
@@ -500,7 +426,7 @@ export class TripController {
         status: trip.status,
         createdAt: trip.createdAt,
       })),
-    };
+    );
   }
 
   /**
@@ -509,7 +435,7 @@ export class TripController {
   async delete(
     input: unknown,
   ): Promise<
-    | { success: true; data: { deleted: true } }
+    | { success: true; data: { deleted: true; tripId: string } }
     | { success: false; error: string }
   > {
     const parsed = schemas.getById.safeParse(input);
@@ -520,14 +446,23 @@ export class TripController {
       };
     }
 
-    // Check if trip exists
-    const exists = await this.tripRepository.exists(parsed.data.id);
-    if (!exists) {
-      return { success: false, error: "Trip not found" };
+    const effectRepo = toEffectTripRepository(this.tripRepository);
+    const effect = deleteTripUseCase({
+      tripId: parsed.data.id,
+    }).pipe(Effect.provideService(TripRepositoryTag, effectRepo));
+
+    const result = await effectToControllerResult(effect);
+
+    if (!result.success) {
+      return result;
     }
 
-    await this.tripRepository.delete(parsed.data.id);
-
-    return { success: true, data: { deleted: true } };
+    return {
+      success: true,
+      data: {
+        deleted: true as const,
+        tripId: result.data.deletedTripId,
+      },
+    };
   }
 }

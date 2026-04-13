@@ -1,19 +1,25 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type { ChallengeRepository } from "@mirai-app/use-cases";
 import {
-  GetChallengeUseCase,
-  CreateChallengeUseCase,
-  UpdateChallengeUseCase,
-  UpdateChallengeStatusUseCase,
+  getChallengeUseCase,
+  createChallengeUseCase,
+  updateChallengeUseCase,
+  updateChallengeStatusUseCase,
   type CreateChallengeInput,
   type UpdateChallengeInput,
   type UpdateChallengeStatusInput,
+  ChallengeRepositoryTag,
 } from "@mirai-app/use-cases";
 import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
 } from "@mirai-app/domain";
+import {
+  toEffectChallengeRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for challenge controller
@@ -159,6 +165,8 @@ const schemas = {
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated to use Effect-based use cases (Step 4.2).
  */
 export class ChallengeController {
   constructor(private challengeRepository: ChallengeRepository) {}
@@ -204,14 +212,12 @@ export class ChallengeController {
       };
     }
 
-    const useCase = new GetChallengeUseCase(this.challengeRepository);
-    const result = await useCase.execute({ challengeId: parsed.data.id });
+    const effectRepo = toEffectChallengeRepository(this.challengeRepository);
+    const effect = getChallengeUseCase({ challengeId: parsed.data.id }).pipe(
+      Effect.provideService(ChallengeRepositoryTag, effectRepo),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -242,24 +248,25 @@ export class ChallengeController {
       };
     }
 
-    const challenges = await this.challengeRepository.findByTripId(
-      parsed.data.tripId,
-    );
+    const effect = this.challengeRepository
+      .findByTripId(parsed.data.tripId)
+      .pipe(
+        Effect.map((challenges) =>
+          challenges.map((challenge) => ({
+            id: challenge.id,
+            tripId: challenge.tripId,
+            name: challenge.name,
+            description: challenge.description,
+            submissionType: challenge.submissionType,
+            scoringCategory: challenge.scoringCategory,
+            status: challenge.status,
+            basePoints: challenge.basePoints,
+            createdAt: challenge.createdAt,
+          })),
+        ),
+      );
 
-    return {
-      success: true,
-      data: challenges.map((challenge) => ({
-        id: challenge.id,
-        tripId: challenge.tripId,
-        name: challenge.name,
-        description: challenge.description,
-        submissionType: challenge.submissionType,
-        scoringCategory: challenge.scoringCategory,
-        status: challenge.status,
-        basePoints: challenge.basePoints,
-        createdAt: challenge.createdAt,
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -290,8 +297,8 @@ export class ChallengeController {
       };
     }
 
-    const useCase = new CreateChallengeUseCase(this.challengeRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeRepository(this.challengeRepository);
+    const effect = createChallengeUseCase({
       tripId: parsed.data.tripId,
       name: parsed.data.name,
       description: parsed.data.description,
@@ -312,13 +319,9 @@ export class ChallengeController {
       targetLongitude: parsed.data.targetLongitude,
       expectedValue: parsed.data.expectedValue,
       autoApprove: parsed.data.autoApprove,
-    });
+    }).pipe(Effect.provideService(ChallengeRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -348,8 +351,8 @@ export class ChallengeController {
       };
     }
 
-    const useCase = new UpdateChallengeUseCase(this.challengeRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeRepository(this.challengeRepository);
+    const effect = updateChallengeUseCase({
       challengeId: parsed.data.challengeId,
       name: parsed.data.name,
       description: parsed.data.description,
@@ -366,13 +369,9 @@ export class ChallengeController {
       targetLongitude: parsed.data.targetLongitude,
       expectedValue: parsed.data.expectedValue,
       autoApprove: parsed.data.autoApprove,
-    });
+    }).pipe(Effect.provideService(ChallengeRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -400,17 +399,13 @@ export class ChallengeController {
       };
     }
 
-    const useCase = new UpdateChallengeStatusUseCase(this.challengeRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeRepository(this.challengeRepository);
+    const effect = updateChallengeStatusUseCase({
       challengeId: parsed.data.challengeId,
       newStatus: parsed.data.newStatus as ChallengeStatus,
-    });
+    }).pipe(Effect.provideService(ChallengeRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -441,25 +436,28 @@ export class ChallengeController {
       };
     }
 
-    const challenges = await this.challengeRepository.findAll({
-      limit: parsed.data.limit,
-      offset: parsed.data.offset,
-    });
+    const effect = this.challengeRepository
+      .findAll({
+        limit: parsed.data.limit,
+        offset: parsed.data.offset,
+      })
+      .pipe(
+        Effect.map((challenges) =>
+          challenges.map((challenge) => ({
+            id: challenge.id,
+            tripId: challenge.tripId,
+            name: challenge.name,
+            description: challenge.description,
+            submissionType: challenge.submissionType,
+            scoringCategory: challenge.scoringCategory,
+            status: challenge.status,
+            basePoints: challenge.basePoints,
+            createdAt: challenge.createdAt,
+          })),
+        ),
+      );
 
-    return {
-      success: true,
-      data: challenges.map((challenge) => ({
-        id: challenge.id,
-        tripId: challenge.tripId,
-        name: challenge.name,
-        description: challenge.description,
-        submissionType: challenge.submissionType,
-        scoringCategory: challenge.scoringCategory,
-        status: challenge.status,
-        basePoints: challenge.basePoints,
-        createdAt: challenge.createdAt,
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -490,30 +488,29 @@ export class ChallengeController {
       };
     }
 
-    const challenges = await this.challengeRepository.findByStatus(
-      parsed.data.status as ChallengeStatus,
-    );
+    const effect = this.challengeRepository
+      .findByStatus(parsed.data.status as ChallengeStatus)
+      .pipe(
+        Effect.map((challenges) => {
+          const paginated = challenges.slice(
+            parsed.data.offset,
+            parsed.data.offset + parsed.data.limit,
+          );
+          return paginated.map((challenge) => ({
+            id: challenge.id,
+            tripId: challenge.tripId,
+            name: challenge.name,
+            description: challenge.description,
+            submissionType: challenge.submissionType,
+            scoringCategory: challenge.scoringCategory,
+            status: challenge.status,
+            basePoints: challenge.basePoints,
+            createdAt: challenge.createdAt,
+          }));
+        }),
+      );
 
-    // Apply pagination manually
-    const paginated = challenges.slice(
-      parsed.data.offset,
-      parsed.data.offset + parsed.data.limit,
-    );
-
-    return {
-      success: true,
-      data: paginated.map((challenge) => ({
-        id: challenge.id,
-        tripId: challenge.tripId,
-        name: challenge.name,
-        description: challenge.description,
-        submissionType: challenge.submissionType,
-        scoringCategory: challenge.scoringCategory,
-        status: challenge.status,
-        basePoints: challenge.basePoints,
-        createdAt: challenge.createdAt,
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -536,22 +533,23 @@ export class ChallengeController {
       }
     | { success: false; error: string }
   > {
-    const challenges = await this.challengeRepository.findActive();
+    const effect = this.challengeRepository.findActive().pipe(
+      Effect.map((challenges) =>
+        challenges.map((challenge) => ({
+          id: challenge.id,
+          tripId: challenge.tripId,
+          name: challenge.name,
+          description: challenge.description,
+          submissionType: challenge.submissionType,
+          scoringCategory: challenge.scoringCategory,
+          status: challenge.status,
+          basePoints: challenge.basePoints,
+          createdAt: challenge.createdAt,
+        })),
+      ),
+    );
 
-    return {
-      success: true,
-      data: challenges.map((challenge) => ({
-        id: challenge.id,
-        tripId: challenge.tripId,
-        name: challenge.name,
-        description: challenge.description,
-        submissionType: challenge.submissionType,
-        scoringCategory: challenge.scoringCategory,
-        status: challenge.status,
-        basePoints: challenge.basePoints,
-        createdAt: challenge.createdAt,
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -574,21 +572,22 @@ export class ChallengeController {
       }
     | { success: false; error: string }
   > {
-    const challenges = await this.challengeRepository.findOpenForSubmission();
+    const effect = this.challengeRepository.findOpenForSubmission().pipe(
+      Effect.map((challenges) =>
+        challenges.map((challenge) => ({
+          id: challenge.id,
+          tripId: challenge.tripId,
+          name: challenge.name,
+          description: challenge.description,
+          submissionType: challenge.submissionType,
+          scoringCategory: challenge.scoringCategory,
+          status: challenge.status,
+          basePoints: challenge.basePoints,
+          createdAt: challenge.createdAt,
+        })),
+      ),
+    );
 
-    return {
-      success: true,
-      data: challenges.map((challenge) => ({
-        id: challenge.id,
-        tripId: challenge.tripId,
-        name: challenge.name,
-        description: challenge.description,
-        submissionType: challenge.submissionType,
-        scoringCategory: challenge.scoringCategory,
-        status: challenge.status,
-        basePoints: challenge.basePoints,
-        createdAt: challenge.createdAt,
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 }

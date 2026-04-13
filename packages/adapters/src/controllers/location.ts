@@ -1,23 +1,18 @@
 import { z } from "zod";
 import { Effect } from "effect";
 import type { LocationRepository } from "@mirai-app/use-cases";
-import type { Location, LocationId } from "@mirai-app/domain";
 import {
-  ListLocationsUseCase,
-  UpdateSharingSettingsUseCase,
-  AddSharingUserUseCase,
-  RemoveSharingUserUseCase,
-  GetSharingSettingsUseCase,
+  listLocationsUseCase,
+  updateSharingSettingsUseCase,
+  addSharingUserUseCase,
+  removeSharingUserUseCase,
+  getSharingSettingsUseCase,
   getLocationUseCase,
   createLocationUseCase,
   updateLocationUseCase,
   LocationRepositoryTag,
-  type CreateLocationInput,
-  type UpdateLocationInput,
-  type UpdateSharingSettingsInput,
-  type AddSharingUserInput,
-  type RemoveSharingUserInput,
 } from "@mirai-app/use-cases";
+import { effectToControllerResult } from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for location controller
@@ -156,42 +151,11 @@ export class LocationController {
       };
     }
 
-    const program = getLocationUseCase({ userId: parsed.data.userId }).pipe(
-      Effect.provideService(LocationRepositoryTag, {
-        create: (location: Location) =>
-          Effect.promise(() => this.locationRepository.create(location)),
-        findById: (id: LocationId) =>
-          Effect.promise(() => this.locationRepository.findById(id)),
-        findByUserId: (userId: string) =>
-          Effect.promise(() => this.locationRepository.findByUserId(userId)),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => this.locationRepository.findAll(options)),
-        findSharingWithUser: (userId: string) =>
-          Effect.promise(() =>
-            this.locationRepository.findSharingWithUser(userId),
-          ),
-        findByUserIds: (userIds: string[]) =>
-          Effect.promise(() => this.locationRepository.findByUserIds(userIds)),
-        save: (location: Location) =>
-          Effect.promise(() => this.locationRepository.save(location)),
-        delete: (id: LocationId) =>
-          Effect.promise(() => this.locationRepository.delete(id)),
-        deleteByUserId: (userId: string) =>
-          Effect.promise(() => this.locationRepository.deleteByUserId(userId)),
-        existsForUser: (userId: string) =>
-          Effect.promise(() => this.locationRepository.existsForUser(userId)),
-      }),
+    const effect = getLocationUseCase({ userId: parsed.data.userId }).pipe(
+      Effect.provideService(LocationRepositoryTag, this.locationRepository),
     );
 
-    try {
-      const result = await Effect.runPromise(program);
-      return { success: true, data: result };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -225,7 +189,7 @@ export class LocationController {
       };
     }
 
-    const program = createLocationUseCase({
+    const effect = createLocationUseCase({
       userId: parsed.data.userId,
       latitude: parsed.data.latitude,
       longitude: parsed.data.longitude,
@@ -236,41 +200,10 @@ export class LocationController {
       speed: parsed.data.speed,
       isSharingLocation: parsed.data.isSharingLocation,
     }).pipe(
-      Effect.provideService(LocationRepositoryTag, {
-        create: (location: Location) =>
-          Effect.promise(() => this.locationRepository.create(location)),
-        findById: (id: LocationId) =>
-          Effect.promise(() => this.locationRepository.findById(id)),
-        findByUserId: (userId: string) =>
-          Effect.promise(() => this.locationRepository.findByUserId(userId)),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => this.locationRepository.findAll(options)),
-        findSharingWithUser: (userId: string) =>
-          Effect.promise(() =>
-            this.locationRepository.findSharingWithUser(userId),
-          ),
-        findByUserIds: (userIds: string[]) =>
-          Effect.promise(() => this.locationRepository.findByUserIds(userIds)),
-        save: (location: Location) =>
-          Effect.promise(() => this.locationRepository.save(location)),
-        delete: (id: LocationId) =>
-          Effect.promise(() => this.locationRepository.delete(id)),
-        deleteByUserId: (userId: string) =>
-          Effect.promise(() => this.locationRepository.deleteByUserId(userId)),
-        existsForUser: (userId: string) =>
-          Effect.promise(() => this.locationRepository.existsForUser(userId)),
-      }),
+      Effect.provideService(LocationRepositoryTag, this.locationRepository),
     );
 
-    try {
-      const result = await Effect.runPromise(program);
-      return { success: true, data: result };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -308,7 +241,7 @@ export class LocationController {
       };
     }
 
-    const program = updateLocationUseCase({
+    const effect = updateLocationUseCase({
       userId: parsed.data.userId,
       latitude: parsed.data.latitude,
       longitude: parsed.data.longitude,
@@ -319,41 +252,10 @@ export class LocationController {
       speed: parsed.data.speed,
       isSharingLocation: parsed.data.isSharingLocation,
     }).pipe(
-      Effect.provideService(LocationRepositoryTag, {
-        create: (location: Location) =>
-          Effect.promise(() => this.locationRepository.create(location)),
-        findById: (id: LocationId) =>
-          Effect.promise(() => this.locationRepository.findById(id)),
-        findByUserId: (userId: string) =>
-          Effect.promise(() => this.locationRepository.findByUserId(userId)),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => this.locationRepository.findAll(options)),
-        findSharingWithUser: (userId: string) =>
-          Effect.promise(() =>
-            this.locationRepository.findSharingWithUser(userId),
-          ),
-        findByUserIds: (userIds: string[]) =>
-          Effect.promise(() => this.locationRepository.findByUserIds(userIds)),
-        save: (location: Location) =>
-          Effect.promise(() => this.locationRepository.save(location)),
-        delete: (id: LocationId) =>
-          Effect.promise(() => this.locationRepository.delete(id)),
-        deleteByUserId: (userId: string) =>
-          Effect.promise(() => this.locationRepository.deleteByUserId(userId)),
-        existsForUser: (userId: string) =>
-          Effect.promise(() => this.locationRepository.existsForUser(userId)),
-      }),
+      Effect.provideService(LocationRepositoryTag, this.locationRepository),
     );
 
-    try {
-      const result = await Effect.runPromise(program);
-      return { success: true, data: result };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -389,42 +291,23 @@ export class LocationController {
       };
     }
 
-    const useCase = new ListLocationsUseCase(this.locationRepository);
-    const result = await useCase.execute({
+    const effect = listLocationsUseCase({
       viewerUserId: parsed.data.viewerUserId,
       targetUserIds: parsed.data.targetUserIds,
       radiusKm: parsed.data.radiusKm,
       centerLatitude: parsed.data.centerLatitude,
       centerLongitude: parsed.data.centerLongitude,
-    });
+    }).pipe(
+      Effect.provideService(LocationRepositoryTag, this.locationRepository),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Update sharing settings
    */
-  async updateSharingSettings(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          userId: string;
-          isSharingLocation: boolean;
-          usersToShareWith: Array<{
-            id: string;
-            firstName: string | null;
-            lastName: string | null;
-          }>;
-          timestamp: Date;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async updateSharingSettings(input: unknown) {
     const parsed = schemas.updateSharingSettings.safeParse(input);
     if (!parsed.success) {
       return {
@@ -433,39 +316,37 @@ export class LocationController {
       };
     }
 
-    const useCase = new UpdateSharingSettingsUseCase(this.locationRepository);
-    const result = await useCase.execute({
+    const usersToShareWith:
+      | Array<{
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+        }>
+      | undefined = parsed.data.usersToShareWith?.filter(
+      (
+        user,
+      ): user is {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+      } => typeof user.id === "string",
+    );
+
+    const effect = updateSharingSettingsUseCase({
       userId: parsed.data.userId,
       isSharingLocation: parsed.data.isSharingLocation,
-      usersToShareWith: parsed.data.usersToShareWith,
-    });
+      usersToShareWith,
+    }).pipe(
+      Effect.provideService(LocationRepositoryTag, this.locationRepository),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Add a user to sharing list
    */
-  async addSharingUser(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          userId: string;
-          isSharingLocation: boolean;
-          usersToShareWith: Array<{
-            id: string;
-            firstName: string | null;
-            lastName: string | null;
-          }>;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async addSharingUser(input: unknown) {
     const parsed = schemas.addSharingUser.safeParse(input);
     if (!parsed.success) {
       return {
@@ -474,40 +355,22 @@ export class LocationController {
       };
     }
 
-    const useCase = new AddSharingUserUseCase(this.locationRepository);
-    const result = await useCase.execute({
+    const effect = addSharingUserUseCase({
       ownerUserId: parsed.data.ownerUserId,
       userToAddId: parsed.data.userToAddId,
       userFirstName: parsed.data.userFirstName,
       userLastName: parsed.data.userLastName,
-    });
+    }).pipe(
+      Effect.provideService(LocationRepositoryTag, this.locationRepository),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Remove a user from sharing list
    */
-  async removeSharingUser(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          userId: string;
-          isSharingLocation: boolean;
-          usersToShareWith: Array<{
-            id: string;
-            firstName: string | null;
-            lastName: string | null;
-          }>;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async removeSharingUser(input: unknown) {
     const parsed = schemas.removeSharingUser.safeParse(input);
     if (!parsed.success) {
       return {
@@ -516,36 +379,20 @@ export class LocationController {
       };
     }
 
-    const useCase = new RemoveSharingUserUseCase(this.locationRepository);
-    const result = await useCase.execute({
+    const effect = removeSharingUserUseCase({
       ownerUserId: parsed.data.ownerUserId,
       userToRemoveId: parsed.data.userToRemoveId,
-    });
+    }).pipe(
+      Effect.provideService(LocationRepositoryTag, this.locationRepository),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Get sharing settings
    */
-  async getSharingSettings(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          isSharingLocation: boolean;
-          usersToShareWith: Array<{
-            id: string;
-            firstName: string | null;
-            lastName: string | null;
-          }>;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async getSharingSettings(input: unknown) {
     const parsed = schemas.getSharingSettings.safeParse(input);
     if (!parsed.success) {
       return {
@@ -554,14 +401,13 @@ export class LocationController {
       };
     }
 
-    const useCase = new GetSharingSettingsUseCase(this.locationRepository);
-    const result = await useCase.execute({ userId: parsed.data.userId });
+    const effect = getSharingSettingsUseCase({
+      userId: parsed.data.userId,
+    }).pipe(
+      Effect.provideService(LocationRepositoryTag, this.locationRepository),
+    );
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -581,7 +427,8 @@ export class LocationController {
       };
     }
 
-    await this.locationRepository.deleteByUserId(parsed.data.userId);
+    const effect = this.locationRepository.deleteByUserId(parsed.data.userId);
+    await Effect.runPromise(effect);
 
     return { success: true, data: { deleted: true } };
   }

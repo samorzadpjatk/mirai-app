@@ -1,7 +1,29 @@
 import { z } from "zod";
 import { Effect } from "effect";
 import type { GroupRepository } from "@mirai-app/use-cases";
-import { Group, GroupStatus } from "@mirai-app/domain";
+import {
+  getGroupUseCase,
+  createGroupUseCase,
+  updateGroupUseCase,
+  deleteGroupUseCase,
+  GroupRepositoryTag,
+  type GetGroupOutput,
+  type CreateGroupOutput,
+  type UpdateGroupOutput,
+  type DeleteGroupOutput,
+  GetGroupNotFoundError,
+  GroupCodeAlreadyExistsError,
+  GroupCreationError,
+  UpdateGroupNotFoundError,
+  UpdateGroupDeletedError,
+  UpdateGroupValidationError,
+  DeleteGroupNotFoundError,
+} from "@mirai-app/use-cases";
+import { GroupStatus } from "@mirai-app/domain";
+import {
+  toEffectGroupRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for group controller
@@ -63,14 +85,18 @@ const schemas = {
     limit: z.number().int().min(1).max(100).default(20),
     offset: z.number().int().min(0).default(0),
   }),
+
+  getByOrganizer: z.object({
+    organizerId: z.string().min(1, "Organizer ID is required"),
+  }),
 };
 
 /**
  * GroupController
  *
- * Thin controller that works directly with the repository.
- * Note: Use cases should be created for Group and this controller
- * should delegate to them instead of working directly with the repository.
+ * Thin controller that delegates to use cases.
+ * No business logic here - just input validation, use case orchestration,
+ * and error handling.
  */
 export class GroupController {
   constructor(private groupRepository: GroupRepository) {}
@@ -81,20 +107,7 @@ export class GroupController {
   async getById(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          id: string;
-          tripId: string;
-          name: string;
-          description: string | null;
-          image: string | null;
-          organizerId: string;
-          code: string;
-          coins: number;
-          status: string;
-          createdAt: Date;
-          updatedAt: Date;
-          isActive: boolean;
-        };
+        data: GetGroupOutput;
       }
     | { success: false; error: string }
   > {
@@ -106,29 +119,12 @@ export class GroupController {
       };
     }
 
-    const group = await this.groupRepository.findById(parsed.data.id);
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
+    const effect = getGroupUseCase({
+      groupId: parsed.data.id,
+    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
 
-    if (!group) {
-      return { success: false, error: "Group not found" };
-    }
-
-    return {
-      success: true,
-      data: {
-        id: group.id,
-        tripId: group.tripId,
-        name: group.name,
-        description: group.description,
-        image: group.image,
-        organizerId: group.organizerId,
-        code: group.code,
-        coins: group.coins,
-        status: group.status,
-        createdAt: group.createdAt,
-        updatedAt: group.updatedAt,
-        isActive: group.isActive(),
-      },
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -162,15 +158,16 @@ export class GroupController {
       };
     }
 
-    const group = await this.groupRepository.findByCode(parsed.data.code);
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
 
-    if (!group) {
-      return { success: false, error: "Group not found" };
-    }
+    // Use repository directly for findByCode (simple read operation)
+    const effect = effectRepo.findByCode(parsed.data.code);
 
-    return {
-      success: true,
-      data: {
+    const result = await effectToControllerResult(effect, (group) => {
+      if (!group) {
+        return null;
+      }
+      return {
         id: group.id,
         tripId: group.tripId,
         name: group.name,
@@ -183,8 +180,32 @@ export class GroupController {
         createdAt: group.createdAt,
         updatedAt: group.updatedAt,
         isActive: group.isActive(),
-      },
-    };
+      };
+    });
+
+    if (result.success && result.data === null) {
+      return { success: false, error: "Group not found" };
+    }
+
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            tripId: string;
+            name: string;
+            description: string | null;
+            image: string | null;
+            organizerId: string;
+            code: string;
+            coins: number;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -217,11 +238,13 @@ export class GroupController {
       };
     }
 
-    const groups = await this.groupRepository.findByTripId(parsed.data.tripId);
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
 
-    return {
-      success: true,
-      data: groups.map((group) => ({
+    // Use repository directly for findByTripId (simple read operation)
+    const effect = effectRepo.findByTripId(parsed.data.tripId);
+
+    return await effectToControllerResult(effect, (groups) =>
+      groups.map((group) => ({
         id: group.id,
         tripId: group.tripId,
         name: group.name,
@@ -234,7 +257,7 @@ export class GroupController {
         createdAt: group.createdAt,
         isActive: group.isActive(),
       })),
-    };
+    );
   }
 
   /**
@@ -243,19 +266,7 @@ export class GroupController {
   async create(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          id: string;
-          tripId: string;
-          name: string;
-          description: string | null;
-          image: string | null;
-          organizerId: string;
-          code: string;
-          coins: number;
-          status: string;
-          createdAt: Date;
-          updatedAt: Date;
-        };
+        data: CreateGroupOutput;
       }
     | { success: false; error: string }
   > {
@@ -267,54 +278,27 @@ export class GroupController {
       };
     }
 
-    // Manual implementation using repository and domain entity
-    // Check if code is already in use
-    const existingGroup = await this.groupRepository.findByCode(
-      parsed.data.code,
-    );
-    if (existingGroup) {
-      return { success: false, error: "Group code is already in use" };
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
+    const effect = createGroupUseCase({
+      tripId: parsed.data.tripId,
+      name: parsed.data.name,
+      description: parsed.data.description ?? null,
+      image: parsed.data.image ?? null,
+      organizerId: parsed.data.organizerId,
+      code: parsed.data.code,
+      coins: parsed.data.coins,
+    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+
+    const result = await effectToControllerResult(effect);
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("already exists")) {
+        return { success: false, error: "Group code is already in use" };
+      }
     }
 
-    // Create domain entity directly
-    try {
-      const group = await Effect.runPromise(
-        Group.create({
-          tripId: parsed.data.tripId,
-          name: parsed.data.name,
-          description: parsed.data.description,
-          image: parsed.data.image,
-          organizerId: parsed.data.organizerId,
-          code: parsed.data.code,
-          coins: parsed.data.coins,
-        }),
-      );
-
-      // Persist group
-      const saved = await this.groupRepository.create(group);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          tripId: saved.tripId,
-          name: saved.name,
-          description: saved.description,
-          image: saved.image,
-          organizerId: saved.organizerId,
-          code: saved.code,
-          coins: saved.coins,
-          status: saved.status,
-          createdAt: saved.createdAt,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return result;
   }
 
   /**
@@ -323,18 +307,7 @@ export class GroupController {
   async update(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          id: string;
-          tripId: string;
-          name: string;
-          description: string | null;
-          image: string | null;
-          organizerId: string;
-          code: string;
-          coins: number;
-          status: string;
-          updatedAt: Date;
-        };
+        data: UpdateGroupOutput;
       }
     | { success: false; error: string }
   > {
@@ -346,60 +319,27 @@ export class GroupController {
       };
     }
 
-    // Manual implementation using repository and domain entity
-    // Find existing group
-    const group = await this.groupRepository.findById(parsed.data.groupId);
-    if (!group) {
-      return { success: false, error: "Group not found" };
-    }
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
+    const effect = updateGroupUseCase({
+      groupId: parsed.data.groupId,
+      name: parsed.data.name,
+      description: parsed.data.description,
+      image: parsed.data.image,
+    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
 
-    // Check if group is active (can't update deleted groups)
-    if (!group.isActive()) {
-      return { success: false, error: "Cannot update a deleted group" };
-    }
+    const result = await effectToControllerResult(effect);
 
-    // Apply updates using entity method
-    let updatedGroup = group;
-
-    try {
-      if (
-        parsed.data.name !== undefined ||
-        parsed.data.description !== undefined ||
-        parsed.data.image !== undefined
-      ) {
-        updatedGroup = await Effect.runPromise(
-          updatedGroup.updateDetails({
-            name: parsed.data.name,
-            description: parsed.data.description,
-            image: parsed.data.image,
-          }),
-        );
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("not found")) {
+        return { success: false, error: "Group not found" };
       }
-
-      // Persist changes
-      const saved = await this.groupRepository.update(updatedGroup);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          tripId: saved.tripId,
-          name: saved.name,
-          description: saved.description,
-          image: saved.image,
-          organizerId: saved.organizerId,
-          code: saved.code,
-          coins: saved.coins,
-          status: saved.status,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
+      if (result.error.includes("deleted")) {
+        return { success: false, error: "Cannot update a deleted group" };
+      }
     }
+
+    return result;
   }
 
   /**
@@ -426,27 +366,43 @@ export class GroupController {
       };
     }
 
-    // Find existing group
-    const group = await this.groupRepository.findById(parsed.data.groupId);
+    // First get the group to capture previous coins state
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
+
+    const getEffect = getGroupUseCase({
+      groupId: parsed.data.groupId,
+    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+
+    const groupResult = await effectToControllerResult(getEffect);
+    if (!groupResult.success) {
+      return { success: false, error: "Group not found" };
+    }
+
+    const previousCoins = groupResult.data.coins;
+
+    // Then update the group with new coins amount
+    const updateEffect = updateGroupUseCase({
+      groupId: parsed.data.groupId,
+    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+
+    // Use repository directly to update coins (business logic should be in domain)
+    const group = await Effect.runPromise(
+      effectRepo.findById(parsed.data.groupId),
+    );
+
     if (!group) {
       return { success: false, error: "Group not found" };
     }
 
-    // Check if group is active
     if (!group.isActive()) {
       return { success: false, error: "Cannot add coins to a deleted group" };
     }
 
-    const previousCoins = group.coins;
-
     try {
-      // Apply coin update
       const updatedGroup = await Effect.runPromise(
         group.addCoins(parsed.data.amount),
       );
-
-      // Persist changes
-      const saved = await this.groupRepository.update(updatedGroup);
+      const saved = await Effect.runPromise(effectRepo.update(updatedGroup));
 
       return {
         success: true,
@@ -496,14 +452,16 @@ export class GroupController {
       };
     }
 
-    const groups = await this.groupRepository.findAll({
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
+
+    // Use repository directly for findAll (simple read operation)
+    const effect = effectRepo.findAll({
       limit: parsed.data.limit,
       offset: parsed.data.offset,
     });
 
-    return {
-      success: true,
-      data: groups.map((group) => ({
+    return await effectToControllerResult(effect, (groups) =>
+      groups.map((group) => ({
         id: group.id,
         tripId: group.tripId,
         name: group.name,
@@ -516,13 +474,13 @@ export class GroupController {
         createdAt: group.createdAt,
         isActive: group.isActive(),
       })),
-    };
+    );
   }
 
   /**
    * Get groups by organizer
    */
-  async getByOrganizer(input: { organizerId: string }): Promise<
+  async getByOrganizer(input: unknown): Promise<
     | {
         success: true;
         data: Array<{
@@ -541,20 +499,21 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    if (!input.organizerId) {
+    const parsed = schemas.getByOrganizer.safeParse(input);
+    if (!parsed.success) {
       return {
         success: false,
-        error: "Organizer ID is required",
+        error: "Invalid input: " + parsed.error.message,
       };
     }
 
-    const groups = await this.groupRepository.findByOrganizerId(
-      input.organizerId,
-    );
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
 
-    return {
-      success: true,
-      data: groups.map((group) => ({
+    // Use repository directly for findByOrganizerId (simple read operation)
+    const effect = effectRepo.findByOrganizerId(parsed.data.organizerId);
+
+    return await effectToControllerResult(effect, (groups) =>
+      groups.map((group) => ({
         id: group.id,
         tripId: group.tripId,
         name: group.name,
@@ -567,7 +526,7 @@ export class GroupController {
         createdAt: group.createdAt,
         isActive: group.isActive(),
       })),
-    };
+    );
   }
 
   /**
@@ -587,30 +546,30 @@ export class GroupController {
       };
     }
 
-    // Find existing group
-    const group = await this.groupRepository.findById(parsed.data.id);
+    const effectRepo = toEffectGroupRepository(this.groupRepository);
+
+    // First check if group exists and is active
+    const group = await Effect.runPromise(effectRepo.findById(parsed.data.id));
+
     if (!group) {
       return { success: false, error: "Group not found" };
     }
 
-    // Check if already deleted
     if (!group.isActive()) {
       return { success: false, error: "Group is already deleted" };
     }
 
-    try {
-      // Mark as deleted
-      const deletedGroup = await Effect.runPromise(group.markAsDeleted());
+    // Use deleteGroupUseCase for the actual deletion
+    const effect = deleteGroupUseCase({
+      groupId: parsed.data.id,
+    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
 
-      // Persist changes
-      await this.groupRepository.update(deletedGroup);
+    const result = await effectToControllerResult(effect);
 
-      return { success: true, data: { deleted: true } };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
+    if (!result.success) {
+      return result;
     }
+
+    return { success: true, data: { deleted: true } };
   }
 }

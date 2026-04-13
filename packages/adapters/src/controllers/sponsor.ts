@@ -1,15 +1,14 @@
 import { z } from "zod";
 import { Effect } from "effect";
 import type { SponsorRepository } from "@mirai-app/use-cases";
-import type { Sponsor } from "@mirai-app/domain";
 import {
-  ListSponsorsUseCase,
-  LinkSponsorToTripUseCase,
-  UnlinkSponsorFromTripUseCase,
   getSponsorUseCase,
   createSponsorUseCase,
   updateSponsorUseCase,
   deleteSponsorUseCase,
+  listSponsorsUseCase,
+  linkSponsorToTripUseCase,
+  unlinkSponsorFromTripUseCase,
   SponsorRepositoryTag,
   type CreateSponsorInput,
   type UpdateSponsorInput,
@@ -17,6 +16,58 @@ import {
   type LinkSponsorToTripInput,
   type UnlinkSponsorFromTripInput,
 } from "@mirai-app/use-cases";
+import { effectToControllerResult } from "../utils/controller-helpers";
+
+/**
+ * Converts a SponsorRepository to an Effect-based service for use with SponsorRepositoryTag.
+ * Since SponsorRepository already returns Effect types, we just pass it through.
+ */
+function toEffectSponsorRepository(repo: SponsorRepository): {
+  create: (
+    sponsor: Parameters<SponsorRepository["create"]>[0],
+  ) => ReturnType<SponsorRepository["create"]>;
+  findById: (id: string) => ReturnType<SponsorRepository["findById"]>;
+  findAll: (
+    options?: Parameters<SponsorRepository["findAll"]>[0],
+  ) => ReturnType<SponsorRepository["findAll"]>;
+  findActive: () => ReturnType<SponsorRepository["findActive"]>;
+  findByTripId: (
+    tripId: string,
+  ) => ReturnType<SponsorRepository["findByTripId"]>;
+  update: (
+    sponsor: Parameters<SponsorRepository["update"]>[0],
+  ) => ReturnType<SponsorRepository["update"]>;
+  delete: (id: string) => ReturnType<SponsorRepository["delete"]>;
+  exists: (id: string) => ReturnType<SponsorRepository["exists"]>;
+  isLinkedToTrip: (
+    sponsorId: string,
+    tripId: string,
+  ) => ReturnType<SponsorRepository["isLinkedToTrip"]>;
+  linkToTrip: (
+    sponsorId: string,
+    tripId: string,
+  ) => ReturnType<SponsorRepository["linkToTrip"]>;
+  unlinkFromTrip: (
+    sponsorId: string,
+    tripId: string,
+  ) => ReturnType<SponsorRepository["unlinkFromTrip"]>;
+} {
+  return {
+    create: (sponsor) => repo.create(sponsor),
+    findById: (id) => repo.findById(id),
+    findAll: (options) => repo.findAll(options),
+    findActive: () => repo.findActive(),
+    findByTripId: (tripId) => repo.findByTripId(tripId),
+    update: (sponsor) => repo.update(sponsor),
+    delete: (id) => repo.delete(id),
+    exists: (id) => repo.exists(id),
+    isLinkedToTrip: (sponsorId, tripId) =>
+      repo.isLinkedToTrip(sponsorId, tripId),
+    linkToTrip: (sponsorId, tripId) => repo.linkToTrip(sponsorId, tripId),
+    unlinkFromTrip: (sponsorId, tripId) =>
+      repo.unlinkFromTrip(sponsorId, tripId),
+  };
+}
 
 /**
  * Input validation schemas for sponsor controller
@@ -126,48 +177,12 @@ export class SponsorController {
       };
     }
 
-    const program = getSponsorUseCase({ sponsorId: parsed.data.id }).pipe(
-      Effect.provideService(SponsorRepositoryTag, {
-        create: (sponsor: Sponsor) =>
-          Effect.promise(() => this.sponsorRepository.create(sponsor)),
-        findById: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.findById(id)),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => this.sponsorRepository.findAll(options)),
-        findActive: () =>
-          Effect.promise(() => this.sponsorRepository.findActive()),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.sponsorRepository.findByTripId(tripId)),
-        update: (sponsor: Sponsor) =>
-          Effect.promise(() => this.sponsorRepository.update(sponsor)),
-        delete: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.delete(id)),
-        exists: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.exists(id)),
-        isLinkedToTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.isLinkedToTrip(sponsorId, tripId),
-          ),
-        linkToTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.linkToTrip(sponsorId, tripId),
-          ),
-        unlinkFromTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.unlinkFromTrip(sponsorId, tripId),
-          ),
-      }),
+    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
+    const effect = getSponsorUseCase({ sponsorId: parsed.data.id }).pipe(
+      Effect.provideService(SponsorRepositoryTag, effectRepo),
     );
 
-    try {
-      const result = await Effect.runPromise(program);
-      return { success: true, data: result };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -198,8 +213,8 @@ export class SponsorController {
       };
     }
 
-    const sponsors = await this.sponsorRepository.findByTripId(
-      parsed.data.tripId,
+    const sponsors = await Effect.runPromise(
+      this.sponsorRepository.findByTripId(parsed.data.tripId),
     );
 
     return {
@@ -246,7 +261,8 @@ export class SponsorController {
       };
     }
 
-    const program = createSponsorUseCase({
+    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
+    const effect = createSponsorUseCase({
       name: parsed.data.name,
       description: parsed.data.description,
       logoPath: parsed.data.logoPath,
@@ -254,48 +270,9 @@ export class SponsorController {
       offsetX: parsed.data.offsetX,
       offsetY: parsed.data.offsetY,
       isActive: parsed.data.isActive,
-    }).pipe(
-      Effect.provideService(SponsorRepositoryTag, {
-        create: (sponsor: Sponsor) =>
-          Effect.promise(() => this.sponsorRepository.create(sponsor)),
-        findById: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.findById(id)),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => this.sponsorRepository.findAll(options)),
-        findActive: () =>
-          Effect.promise(() => this.sponsorRepository.findActive()),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.sponsorRepository.findByTripId(tripId)),
-        update: (sponsor: Sponsor) =>
-          Effect.promise(() => this.sponsorRepository.update(sponsor)),
-        delete: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.delete(id)),
-        exists: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.exists(id)),
-        isLinkedToTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.isLinkedToTrip(sponsorId, tripId),
-          ),
-        linkToTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.linkToTrip(sponsorId, tripId),
-          ),
-        unlinkFromTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.unlinkFromTrip(sponsorId, tripId),
-          ),
-      }),
-    );
+    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
 
-    try {
-      const result = await Effect.runPromise(program);
-      return { success: true, data: result };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -326,7 +303,8 @@ export class SponsorController {
       };
     }
 
-    const program = updateSponsorUseCase({
+    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
+    const effect = updateSponsorUseCase({
       sponsorId: parsed.data.sponsorId,
       name: parsed.data.name,
       description: parsed.data.description,
@@ -335,48 +313,9 @@ export class SponsorController {
       offsetX: parsed.data.offsetX,
       offsetY: parsed.data.offsetY,
       isActive: parsed.data.isActive,
-    }).pipe(
-      Effect.provideService(SponsorRepositoryTag, {
-        create: (sponsor: Sponsor) =>
-          Effect.promise(() => this.sponsorRepository.create(sponsor)),
-        findById: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.findById(id)),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => this.sponsorRepository.findAll(options)),
-        findActive: () =>
-          Effect.promise(() => this.sponsorRepository.findActive()),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.sponsorRepository.findByTripId(tripId)),
-        update: (sponsor: Sponsor) =>
-          Effect.promise(() => this.sponsorRepository.update(sponsor)),
-        delete: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.delete(id)),
-        exists: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.exists(id)),
-        isLinkedToTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.isLinkedToTrip(sponsorId, tripId),
-          ),
-        linkToTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.linkToTrip(sponsorId, tripId),
-          ),
-        unlinkFromTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.unlinkFromTrip(sponsorId, tripId),
-          ),
-      }),
-    );
+    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
 
-    try {
-      const result = await Effect.runPromise(program);
-      return { success: true, data: result };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -400,48 +339,12 @@ export class SponsorController {
       };
     }
 
-    const program = deleteSponsorUseCase({ sponsorId: parsed.data.id }).pipe(
-      Effect.provideService(SponsorRepositoryTag, {
-        create: (sponsor: Sponsor) =>
-          Effect.promise(() => this.sponsorRepository.create(sponsor)),
-        findById: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.findById(id)),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => this.sponsorRepository.findAll(options)),
-        findActive: () =>
-          Effect.promise(() => this.sponsorRepository.findActive()),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => this.sponsorRepository.findByTripId(tripId)),
-        update: (sponsor: Sponsor) =>
-          Effect.promise(() => this.sponsorRepository.update(sponsor)),
-        delete: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.delete(id)),
-        exists: (id: string) =>
-          Effect.promise(() => this.sponsorRepository.exists(id)),
-        isLinkedToTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.isLinkedToTrip(sponsorId, tripId),
-          ),
-        linkToTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.linkToTrip(sponsorId, tripId),
-          ),
-        unlinkFromTrip: (sponsorId: string, tripId: string) =>
-          Effect.promise(() =>
-            this.sponsorRepository.unlinkFromTrip(sponsorId, tripId),
-          ),
-      }),
+    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
+    const effect = deleteSponsorUseCase({ sponsorId: parsed.data.id }).pipe(
+      Effect.provideService(SponsorRepositoryTag, effectRepo),
     );
 
-    try {
-      const result = await Effect.runPromise(program);
-      return { success: true, data: result };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -475,18 +378,14 @@ export class SponsorController {
       };
     }
 
-    const useCase = new ListSponsorsUseCase(this.sponsorRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
+    const effect = listSponsorsUseCase({
       limit: parsed.data.limit,
       offset: parsed.data.offset,
       activeOnly: parsed.data.activeOnly,
-    });
+    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -511,17 +410,13 @@ export class SponsorController {
       };
     }
 
-    const useCase = new LinkSponsorToTripUseCase(this.sponsorRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
+    const effect = linkSponsorToTripUseCase({
       sponsorId: parsed.data.sponsorId,
       tripId: parsed.data.tripId,
-    });
+    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -546,16 +441,12 @@ export class SponsorController {
       };
     }
 
-    const useCase = new UnlinkSponsorFromTripUseCase(this.sponsorRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
+    const effect = unlinkSponsorFromTripUseCase({
       sponsorId: parsed.data.sponsorId,
       tripId: parsed.data.tripId,
-    });
+    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
 
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    return await effectToControllerResult(effect);
   }
 }

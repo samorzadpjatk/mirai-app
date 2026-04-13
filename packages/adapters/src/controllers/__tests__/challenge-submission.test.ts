@@ -1,19 +1,73 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { Effect } from "effect";
 import { ChallengeSubmissionController } from "../challenge-submission";
 import type { ChallengeSubmissionRepository } from "@mirai-app/use-cases";
-import { ChallengeSubmission, SubmissionId } from "@mirai-app/domain";
+import {
+  ChallengeSubmission,
+  SubmissionId,
+  type SubmissionStatus,
+} from "@mirai-app/domain";
 
-// Mock ChallengeSubmission
+// Valid UUIDs for testing
+const SUBMISSION_ID = SubmissionId.unsafeCreate(
+  "550e8400-e29b-41d4-a716-446655440000",
+);
+const CHALLENGE_ID = "550e8400-e29b-41d4-a716-446655440001";
+const GROUP_ID = "550e8400-e29b-41d4-a716-446655440002";
+
+// Helper to create a mock submission
 const createMockSubmission = (
   overrides?: Partial<ChallengeSubmission>,
 ): ChallengeSubmission =>
   ({
-    id: "sub-123" as SubmissionId,
-    challengeId: "challenge-123",
-    groupId: "group-123",
-    status: "PENDING",
+    id: SUBMISSION_ID,
+    challengeId: CHALLENGE_ID,
+    groupId: GROUP_ID,
+    status: "PENDING" as SubmissionStatus,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
+    // Add required methods for the use cases
+    updateContent: function (content: {
+      imageIds?: string[];
+      videoId?: string | null;
+      textContent?: string | null;
+      latitude?: number | null;
+      longitude?: number | null;
+    }) {
+      return Effect.succeed({
+        ...this,
+        content: { ...this.content, ...content },
+        updatedAt: new Date(),
+      });
+    },
+    approve: function (props: {
+      reviewedById: string;
+      awardedPoints?: number;
+      bonusPoints?: number;
+      ranking?: number | null;
+    }) {
+      return Effect.succeed({
+        ...this,
+        status: "APPROVED" as SubmissionStatus,
+        reviewedById: props.reviewedById,
+        awardedPoints: props.awardedPoints ?? 0,
+        bonusPoints: props.bonusPoints ?? 0,
+        ranking: props.ranking ?? null,
+        updatedAt: new Date(),
+      });
+    },
+    reject: function (props: { reviewedById: string; reason?: string }) {
+      return Effect.succeed({
+        ...this,
+        status: "REJECTED" as SubmissionStatus,
+        reviewedById: props.reviewedById,
+        rejectionReason: props.reason ?? null,
+        updatedAt: new Date(),
+      });
+    },
+    canDelete: function () {
+      return true;
+    },
     ...overrides,
   }) as ChallengeSubmission;
 
@@ -23,19 +77,51 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
   beforeEach(() => {
     mockSubmissionRepository = {
-      findById: mock(() => Promise.resolve(createMockSubmission())),
-      findByChallengeId: mock(() =>
-        Promise.resolve({
-          submissions: [createMockSubmission()],
-          totalCount: 1,
-        }),
-      ),
+      findById: mock(() => Effect.succeed(createMockSubmission())),
+      findByChallengeId: mock(() => Effect.succeed([createMockSubmission()])),
       findByChallengeAndGroup: mock(() =>
-        Promise.resolve(createMockSubmission()),
+        Effect.succeed(createMockSubmission()),
       ),
-      create: mock((s: ChallengeSubmission) => Promise.resolve(s)),
-      update: mock((s: ChallengeSubmission) => Promise.resolve(s)),
-      delete: mock(() => Promise.resolve()),
+      create: mock((s: ChallengeSubmission) => Effect.succeed(s)),
+      update: mock((s: ChallengeSubmission) => Effect.succeed(s)),
+      delete: mock(() => Effect.succeed(undefined)),
+      findByGroupId: mock(() => Effect.succeed([])),
+      findByStatus: mock(() => Effect.succeed([])),
+      findMany: mock(() =>
+        Effect.succeed([
+          {
+            id: SUBMISSION_ID,
+            challengeId: CHALLENGE_ID,
+            groupId: GROUP_ID,
+            imageIds: [],
+            videoId: null,
+            textContent: null,
+            latitude: null,
+            longitude: null,
+            status: "PENDING" as SubmissionStatus,
+            reviewedById: null,
+            reviewedAt: null,
+            rejectionReason: null,
+            awardedPoints: 0,
+            bonusPoints: 0,
+            ranking: null,
+            voteCount: 0,
+            voteScore: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            group: {
+              id: GROUP_ID,
+              name: "Test Group",
+              image: null,
+              coins: 100,
+            },
+            reviewedBy: null,
+          },
+        ]),
+      ),
+      existsForChallengeAndGroup: mock(() => Effect.succeed(false)),
+      countByChallengeId: mock(() => Effect.succeed(1)),
+      countByChallengeAndStatus: mock(() => Effect.succeed(1)),
     } as unknown as ChallengeSubmissionRepository;
 
     controller = new ChallengeSubmissionController(mockSubmissionRepository);
@@ -43,18 +129,22 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
   describe("getById", () => {
     it("should return submission by ID", async () => {
-      const result = await controller.getById({ submissionId: "sub-123" });
+      const result = await controller.getById({
+        submissionId: SubmissionId.toString(SUBMISSION_ID),
+      });
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.id).toBe("sub-123");
+        expect(result.data.id).toBe(SubmissionId.toString(SUBMISSION_ID));
       }
     });
 
     it("should return error when submission not found", async () => {
-      mockSubmissionRepository.findById = mock(() => Promise.resolve(null));
+      mockSubmissionRepository.findById = mock(() => Effect.succeed(null));
 
-      const result = await controller.getById({ submissionId: "sub-123" });
+      const result = await controller.getById({
+        submissionId: SubmissionId.toString(SUBMISSION_ID),
+      });
 
       expect(result.success).toBe(false);
     });
@@ -63,24 +153,24 @@ describe("[UNIT] ChallengeSubmissionController", () => {
   describe("getByChallengeAndGroup", () => {
     it("should return submission for challenge and group", async () => {
       const result = await controller.getByChallengeAndGroup({
-        challengeId: "challenge-123",
-        groupId: "group-123",
+        challengeId: CHALLENGE_ID,
+        groupId: GROUP_ID,
       });
 
       expect(result.success).toBe(true);
       if (result.success && result.data) {
-        expect(result.data.challengeId).toBe("challenge-123");
+        expect(result.data.challengeId).toBe(CHALLENGE_ID);
       }
     });
 
     it("should return null when no submission found", async () => {
       mockSubmissionRepository.findByChallengeAndGroup = mock(() =>
-        Promise.resolve(null),
+        Effect.succeed(null),
       );
 
       const result = await controller.getByChallengeAndGroup({
-        challengeId: "challenge-123",
-        groupId: "group-123",
+        challengeId: CHALLENGE_ID,
+        groupId: GROUP_ID,
       });
 
       expect(result.success).toBe(true);
@@ -91,7 +181,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
   describe("listByChallenge", () => {
     it("should return submissions for challenge", async () => {
       const result = await controller.listByChallenge({
-        challengeId: "challenge-123",
+        challengeId: CHALLENGE_ID,
       });
 
       expect(result.success).toBe(true);
@@ -102,7 +192,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
     it("should support ordering", async () => {
       const result = await controller.listByChallenge({
-        challengeId: "challenge-123",
+        challengeId: CHALLENGE_ID,
         orderBy: "voteScore",
         orderDirection: "desc",
       });
@@ -114,8 +204,8 @@ describe("[UNIT] ChallengeSubmissionController", () => {
   describe("create", () => {
     it("should create submission with valid input", async () => {
       const input = {
-        challengeId: "challenge-123",
-        groupId: "group-123",
+        challengeId: CHALLENGE_ID,
+        groupId: GROUP_ID,
         imageIds: ["img-1", "img-2"],
       };
 
@@ -126,8 +216,8 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
     it("should support video submission", async () => {
       const input = {
-        challengeId: "challenge-123",
-        groupId: "group-123",
+        challengeId: CHALLENGE_ID,
+        groupId: GROUP_ID,
         videoId: "video-123",
       };
 
@@ -138,8 +228,8 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
     it("should support location data", async () => {
       const input = {
-        challengeId: "challenge-123",
-        groupId: "group-123",
+        challengeId: CHALLENGE_ID,
+        groupId: GROUP_ID,
         latitude: 40.7128,
         longitude: -74.006,
       };
@@ -153,7 +243,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
   describe("update", () => {
     it("should update submission content", async () => {
       const input = {
-        submissionId: "sub-123",
+        submissionId: SubmissionId.toString(SUBMISSION_ID),
         imageIds: ["new-img-1"],
       };
 
@@ -164,8 +254,8 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
     it("should support review action", async () => {
       const input = {
-        submissionId: "sub-123",
-        reviewAction: "APPROVE",
+        submissionId: SubmissionId.toString(SUBMISSION_ID),
+        reviewAction: "APPROVE" as const,
         reviewedById: "admin-123",
       };
 
@@ -176,8 +266,8 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
     it("should support rejection with reason", async () => {
       const input = {
-        submissionId: "sub-123",
-        reviewAction: "REJECT",
+        submissionId: SubmissionId.toString(SUBMISSION_ID),
+        reviewAction: "REJECT" as const,
         reviewedById: "admin-123",
         rejectionReason: "Inappropriate content",
       };
@@ -189,7 +279,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
     it("should support awarding points", async () => {
       const input = {
-        submissionId: "sub-123",
+        submissionId: SubmissionId.toString(SUBMISSION_ID),
         awardedPoints: 100,
         bonusPoints: 20,
         ranking: 1,
@@ -203,7 +293,9 @@ describe("[UNIT] ChallengeSubmissionController", () => {
 
   describe("delete", () => {
     it("should delete submission", async () => {
-      const result = await controller.delete({ submissionId: "sub-123" });
+      const result = await controller.delete({
+        submissionId: SubmissionId.toString(SUBMISSION_ID),
+      });
 
       expect(result.success).toBe(true);
     });

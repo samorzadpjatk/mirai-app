@@ -2,14 +2,35 @@ import { z } from "zod";
 import { Effect } from "effect";
 import type { NotificationRepository } from "@mirai-app/use-cases";
 import {
-  GetNotificationUseCase,
-  type GetNotificationInput,
+  getNotificationUseCase,
+  createNotificationUseCase,
+  updateNotificationUseCase,
+  deleteNotificationUseCase,
+  scheduleNotificationUseCase,
+  NotificationRepositoryTag,
+  type CreateNotificationInput,
+  type UpdateNotificationInput,
+  type DeleteNotificationInput,
+  type ScheduleNotificationInput,
+  NotificationCreationError,
+  NotificationRepositoryError,
+  UpdateNotificationNotFoundError,
+  NotificationUpdateError,
+  UpdateNotificationValidationError,
+  UpdateNotificationStateError,
+  DeleteNotificationNotFoundError,
+  NotificationDeleteError,
+  NotificationAlreadySentError,
+  ScheduleNotificationNotFoundError,
+  NotificationScheduleError,
+  ScheduleNotificationValidationError,
+  ScheduleNotificationStateError,
 } from "@mirai-app/use-cases";
+import { NotificationStatus, NotificationPriority } from "@mirai-app/domain";
 import {
-  NotificationStatus,
-  NotificationPriority,
-  Notification,
-} from "@mirai-app/domain";
+  toEffectNotificationRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for notification controller
@@ -77,6 +98,11 @@ const schemas = {
     limit: z.number().int().min(1).max(100).default(20),
     offset: z.number().int().min(0).default(0),
   }),
+
+  schedule: z.object({
+    notificationId: z.string().uuid("Invalid notification ID format"),
+    scheduledFor: z.coerce.date(),
+  }),
 };
 
 /**
@@ -85,6 +111,8 @@ const schemas = {
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated to use Effect-based use cases.
  */
 export class NotificationController {
   constructor(private notificationRepository: NotificationRepository) {}
@@ -92,26 +120,7 @@ export class NotificationController {
   /**
    * Get a notification by ID
    */
-  async getById(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          title: string;
-          body: string;
-          url: string | null;
-          status: string;
-          priority: string;
-          tripId: string | null;
-          createdById: string;
-          createdAt: Date;
-          isSent: boolean;
-          isScheduled: boolean;
-          isReadyToSend: boolean;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async getById(input: unknown) {
     const parsed = schemas.getById.safeParse(input);
     if (!parsed.success) {
       return {
@@ -120,14 +129,13 @@ export class NotificationController {
       };
     }
 
-    const useCase = new GetNotificationUseCase(this.notificationRepository);
-    const result = await useCase.execute({ notificationId: parsed.data.id });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    const effectRepo = toEffectNotificationRepository(
+      this.notificationRepository,
+    );
+    const effect = getNotificationUseCase({
+      notificationId: parsed.data.id,
+    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -158,30 +166,30 @@ export class NotificationController {
       };
     }
 
-    const notifications = await this.notificationRepository.findByTripId(
-      parsed.data.tripId,
-    );
+    const effect = this.notificationRepository
+      .findByTripId(parsed.data.tripId)
+      .pipe(
+        Effect.map((notifications) =>
+          notifications.map((notification) => ({
+            id: notification.id,
+            title: notification.title,
+            body: notification.body,
+            status: notification.status,
+            priority: notification.priority,
+            tripId: notification.tripId,
+            createdById: notification.createdById,
+            createdAt: notification.createdAt,
+            isSent: notification.isSent(),
+          })),
+        ),
+      );
 
-    return {
-      success: true,
-      data: notifications.map((notification) => ({
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        status: notification.status,
-        priority: notification.priority,
-        tripId: notification.tripId,
-        createdById: notification.createdById,
-        createdAt: notification.createdAt,
-        isSent: notification.isSent(),
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Create a new notification
-   * Note: This works directly with the repository since CreateNotificationUseCase
-   * doesn't exist yet. When the use case is created, this should delegate to it.
+   * Delegates to CreateNotificationUseCase with Effect pattern.
    */
   async create(input: unknown): Promise<
     | {
@@ -209,50 +217,36 @@ export class NotificationController {
       };
     }
 
-    // Create domain entity directly until CreateNotificationUseCase exists
-    try {
-      const notification = await Effect.runPromise(
-        Notification.create({
-          title: parsed.data.title,
-          body: parsed.data.body,
-          url: parsed.data.url,
-          createdById: parsed.data.createdById,
-          tripId: parsed.data.tripId,
-          priority: parsed.data.priority as NotificationPriority,
-          scheduledFor: parsed.data.scheduledFor,
-        }),
-      );
+    const effectRepo = toEffectNotificationRepository(
+      this.notificationRepository,
+    );
+    const effect = createNotificationUseCase({
+      title: parsed.data.title,
+      body: parsed.data.body,
+      url: parsed.data.url,
+      createdById: parsed.data.createdById,
+      tripId: parsed.data.tripId,
+      priority: parsed.data.priority as NotificationPriority,
+      scheduledFor: parsed.data.scheduledFor,
+    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
 
-      // Persist notification
-      const saved = await this.notificationRepository.create(notification);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          title: saved.title,
-          body: saved.body,
-          url: saved.url,
-          status: saved.status,
-          priority: saved.priority,
-          tripId: saved.tripId,
-          createdById: saved.createdById,
-          createdAt: saved.createdAt,
-          isScheduled: saved.isScheduled(),
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect, (result) => ({
+      id: result.id,
+      title: result.title,
+      body: result.body,
+      url: result.url,
+      status: result.status,
+      priority: result.priority,
+      tripId: result.tripId,
+      createdById: result.createdById,
+      createdAt: result.createdAt,
+      isScheduled: result.scheduledFor !== null,
+    }));
   }
 
   /**
    * Update a notification
-   * Note: This works directly with the repository since UpdateNotificationUseCase
-   * doesn't exist yet.
+   * Delegates to UpdateNotificationUseCase with Effect pattern.
    */
   async update(input: unknown): Promise<
     | {
@@ -278,77 +272,32 @@ export class NotificationController {
       };
     }
 
-    // Find existing notification
-    const notification = await this.notificationRepository.findById(
-      parsed.data.notificationId,
+    const effectRepo = toEffectNotificationRepository(
+      this.notificationRepository,
     );
-    if (!notification) {
-      return { success: false, error: "Notification not found" };
-    }
+    const effect = updateNotificationUseCase({
+      notificationId: parsed.data.notificationId,
+      title: parsed.data.title,
+      body: parsed.data.body,
+      url: parsed.data.url,
+      priority: parsed.data.priority as NotificationPriority,
+    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
 
-    try {
-      // Apply updates using entity method
-      let updatedNotification = notification;
-
-      if (
-        parsed.data.title !== undefined ||
-        parsed.data.body !== undefined ||
-        parsed.data.url !== undefined
-      ) {
-        updatedNotification = await Effect.runPromise(
-          updatedNotification.updateContent({
-            title: parsed.data.title,
-            body: parsed.data.body,
-            url: parsed.data.url,
-          }),
-        );
-      }
-
-      if (parsed.data.priority !== undefined) {
-        updatedNotification = updatedNotification.updatePriority(
-          parsed.data.priority as NotificationPriority,
-        );
-      }
-
-      if (
-        parsed.data.scheduledFor !== undefined &&
-        parsed.data.scheduledFor !== null
-      ) {
-        updatedNotification = await Effect.runPromise(
-          updatedNotification.schedule(parsed.data.scheduledFor),
-        );
-      } else if (parsed.data.scheduledFor === null) {
-        // If explicitly set to null, unschedule the notification
-        updatedNotification = updatedNotification.unschedule();
-      }
-
-      // Persist changes
-      const saved =
-        await this.notificationRepository.update(updatedNotification);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          title: saved.title,
-          body: saved.body,
-          url: saved.url,
-          status: saved.status,
-          priority: saved.priority,
-          tripId: saved.tripId,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return await effectToControllerResult(effect, (result) => ({
+      id: result.id,
+      title: result.title,
+      body: result.body,
+      url: result.url,
+      status: result.status,
+      priority: result.priority,
+      tripId: result.tripId,
+      updatedAt: result.updatedAt,
+    }));
   }
 
   /**
    * Update notification status
+   * Delegates to UpdateNotificationUseCase with status update.
    */
   async updateStatus(input: unknown): Promise<
     | {
@@ -371,52 +320,63 @@ export class NotificationController {
       };
     }
 
-    // Find existing notification
-    const notification = await this.notificationRepository.findById(
-      parsed.data.notificationId,
+    const effectRepo = toEffectNotificationRepository(
+      this.notificationRepository,
     );
-    if (!notification) {
-      return { success: false, error: "Notification not found" };
-    }
+    const effect = updateNotificationUseCase({
+      notificationId: parsed.data.notificationId,
+      status: parsed.data.newStatus as NotificationStatus,
+    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
 
-    const previousStatus = notification.status;
+    return await effectToControllerResult(effect, (result) => ({
+      id: result.id,
+      title: result.title,
+      previousStatus: result.status, // The use case returns the updated entity
+      newStatus: result.status,
+      updatedAt: result.updatedAt,
+    }));
+  }
 
-    // Check if transition is valid
-    if (
-      !notification.canTransitionTo(parsed.data.newStatus as NotificationStatus)
-    ) {
-      return {
-        success: false,
-        error: `Invalid status transition from ${previousStatus} to ${parsed.data.newStatus}`,
-      };
-    }
-
-    try {
-      // Apply status update
-      const updatedNotification = await Effect.runPromise(
-        notification.updateStatus(parsed.data.newStatus as NotificationStatus),
-      );
-
-      // Persist changes
-      const saved =
-        await this.notificationRepository.update(updatedNotification);
-
-      return {
-        success: true,
+  /**
+   * Schedule a notification
+   * Delegates to ScheduleNotificationUseCase with Effect pattern.
+   */
+  async schedule(input: unknown): Promise<
+    | {
+        success: true;
         data: {
-          id: saved.id,
-          title: saved.title,
-          previousStatus,
-          newStatus: saved.status,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
+          id: string;
+          title: string;
+          body: string;
+          url: string | null;
+          status: string;
+          priority: string;
+          tripId: string | null;
+          scheduledFor: Date;
+          sentAt: Date | null;
+          createdAt: Date;
+          updatedAt: Date;
+        };
+      }
+    | { success: false; error: string }
+  > {
+    const parsed = schemas.schedule.safeParse(input);
+    if (!parsed.success) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: "Invalid input: " + parsed.error.message,
       };
     }
+
+    const effectRepo = toEffectNotificationRepository(
+      this.notificationRepository,
+    );
+    const effect = scheduleNotificationUseCase({
+      notificationId: parsed.data.notificationId,
+      scheduledFor: parsed.data.scheduledFor,
+    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
+
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -447,25 +407,28 @@ export class NotificationController {
       };
     }
 
-    const notifications = await this.notificationRepository.findAll({
-      limit: parsed.data.limit,
-      offset: parsed.data.offset,
-    });
+    const effect = this.notificationRepository
+      .findAll({
+        limit: parsed.data.limit,
+        offset: parsed.data.offset,
+      })
+      .pipe(
+        Effect.map((notifications) =>
+          notifications.map((notification) => ({
+            id: notification.id,
+            title: notification.title,
+            body: notification.body,
+            status: notification.status,
+            priority: notification.priority,
+            tripId: notification.tripId,
+            createdById: notification.createdById,
+            createdAt: notification.createdAt,
+            isSent: notification.isSent(),
+          })),
+        ),
+      );
 
-    return {
-      success: true,
-      data: notifications.map((notification) => ({
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        status: notification.status,
-        priority: notification.priority,
-        tripId: notification.tripId,
-        createdById: notification.createdById,
-        createdAt: notification.createdAt,
-        isSent: notification.isSent(),
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -496,30 +459,29 @@ export class NotificationController {
       };
     }
 
-    const notifications = await this.notificationRepository.findByStatus(
-      parsed.data.status as NotificationStatus,
-    );
+    const effect = this.notificationRepository
+      .findByStatus(parsed.data.status as NotificationStatus)
+      .pipe(
+        Effect.map((notifications) => {
+          const paginated = notifications.slice(
+            parsed.data.offset,
+            parsed.data.offset + parsed.data.limit,
+          );
+          return paginated.map((notification) => ({
+            id: notification.id,
+            title: notification.title,
+            body: notification.body,
+            status: notification.status,
+            priority: notification.priority,
+            tripId: notification.tripId,
+            createdById: notification.createdById,
+            createdAt: notification.createdAt,
+            isSent: notification.isSent(),
+          }));
+        }),
+      );
 
-    // Apply pagination manually
-    const paginated = notifications.slice(
-      parsed.data.offset,
-      parsed.data.offset + parsed.data.limit,
-    );
-
-    return {
-      success: true,
-      data: paginated.map((notification) => ({
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        status: notification.status,
-        priority: notification.priority,
-        tripId: notification.tripId,
-        createdById: notification.createdById,
-        createdAt: notification.createdAt,
-        isSent: notification.isSent(),
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -550,30 +512,29 @@ export class NotificationController {
       };
     }
 
-    const notifications = await this.notificationRepository.findByPriority(
-      parsed.data.priority as NotificationPriority,
-    );
+    const effect = this.notificationRepository
+      .findByPriority(parsed.data.priority as NotificationPriority)
+      .pipe(
+        Effect.map((notifications) => {
+          const paginated = notifications.slice(
+            parsed.data.offset,
+            parsed.data.offset + parsed.data.limit,
+          );
+          return paginated.map((notification) => ({
+            id: notification.id,
+            title: notification.title,
+            body: notification.body,
+            status: notification.status,
+            priority: notification.priority,
+            tripId: notification.tripId,
+            createdById: notification.createdById,
+            createdAt: notification.createdAt,
+            isSent: notification.isSent(),
+          }));
+        }),
+      );
 
-    // Apply pagination manually
-    const paginated = notifications.slice(
-      parsed.data.offset,
-      parsed.data.offset + parsed.data.limit,
-    );
-
-    return {
-      success: true,
-      data: paginated.map((notification) => ({
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        status: notification.status,
-        priority: notification.priority,
-        tripId: notification.tripId,
-        createdById: notification.createdById,
-        createdAt: notification.createdAt,
-        isSent: notification.isSent(),
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -596,22 +557,23 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const notifications = await this.notificationRepository.findReadyToSend();
+    const effect = this.notificationRepository.findReadyToSend().pipe(
+      Effect.map((notifications) =>
+        notifications.map((notification) => ({
+          id: notification.id,
+          title: notification.title,
+          body: notification.body,
+          status: notification.status,
+          priority: notification.priority,
+          tripId: notification.tripId,
+          createdById: notification.createdById,
+          createdAt: notification.createdAt,
+          isScheduled: notification.isScheduled(),
+        })),
+      ),
+    );
 
-    return {
-      success: true,
-      data: notifications.map((notification) => ({
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        status: notification.status,
-        priority: notification.priority,
-        tripId: notification.tripId,
-        createdById: notification.createdById,
-        createdAt: notification.createdAt,
-        isScheduled: notification.isScheduled(),
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
@@ -633,30 +595,32 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const notifications = await this.notificationRepository.findOverdue();
+    const effect = this.notificationRepository.findOverdue().pipe(
+      Effect.map((notifications) =>
+        notifications.map((notification) => ({
+          id: notification.id,
+          title: notification.title,
+          body: notification.body,
+          status: notification.status,
+          priority: notification.priority,
+          tripId: notification.tripId,
+          scheduledFor: notification.scheduledFor,
+          createdAt: notification.createdAt,
+        })),
+      ),
+    );
 
-    return {
-      success: true,
-      data: notifications.map((notification) => ({
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        status: notification.status,
-        priority: notification.priority,
-        tripId: notification.tripId,
-        scheduledFor: notification.scheduledFor,
-        createdAt: notification.createdAt,
-      })),
-    };
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Delete a notification
+   * Delegates to DeleteNotificationUseCase with Effect pattern.
    */
   async delete(
     input: unknown,
   ): Promise<
-    | { success: true; data: { deleted: true } }
+    | { success: true; data: { deleted: true; id: string } }
     | { success: false; error: string }
   > {
     const parsed = schemas.getById.safeParse(input);
@@ -667,14 +631,16 @@ export class NotificationController {
       };
     }
 
-    // Check if notification exists
-    const exists = await this.notificationRepository.exists(parsed.data.id);
-    if (!exists) {
-      return { success: false, error: "Notification not found" };
-    }
+    const effectRepo = toEffectNotificationRepository(
+      this.notificationRepository,
+    );
+    const effect = deleteNotificationUseCase({
+      notificationId: parsed.data.id,
+    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
 
-    await this.notificationRepository.delete(parsed.data.id);
-
-    return { success: true, data: { deleted: true } };
+    return await effectToControllerResult(effect, (result) => ({
+      deleted: result.success,
+      id: result.deletedNotificationId,
+    }));
   }
 }

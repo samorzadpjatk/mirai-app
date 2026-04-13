@@ -1,22 +1,32 @@
 import { z } from "zod";
+import { Effect } from "effect";
 import type {
   ChallengeVoteRepository,
   ChallengeRepository,
   ChallengeSubmissionRepository,
 } from "@mirai-app/use-cases";
 import {
-  GetMyVotesUseCase,
-  GetVotesByChallengeUseCase,
-  GetChallengeVotingProgressUseCase,
-  GetJudgedStaffVotingProgressUseCase,
-  SubmitVoteUseCase,
-  SubmitVotesUseCase,
-  ForceEndVotingUseCase,
+  getMyVotesUseCase,
+  getVotesByChallengeUseCase,
+  getChallengeVotingProgressUseCase,
+  getJudgedStaffVotingProgressUseCase,
+  submitVoteUseCase,
+  submitVotesUseCase,
+  forceEndVotingUseCase,
+  ChallengeVoteRepositoryTag,
+  ChallengeRepositoryTag,
+  ChallengeSubmissionRepositoryTag,
   type VoteDTO,
   type ChallengeVoteDTO,
   type SubmissionVoteCount,
   type AdminVotingInfo,
 } from "@mirai-app/use-cases";
+import {
+  toEffectChallengeVoteRepository,
+  toEffectChallengeRepository,
+  toEffectChallengeSubmissionRepository,
+  effectToControllerResult,
+} from "../utils/controller-helpers";
 
 /**
  * Event payload for challenge completion callback
@@ -107,16 +117,7 @@ export class ChallengeVoteController {
   /**
    * Get my votes for a challenge
    */
-  async getMyVotes(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          votes: VoteDTO[];
-          totalVotes: number;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async getMyVotes(input: unknown) {
     const parsed = schemas.getMyVotes.safeParse(input);
     if (!parsed.success) {
       return {
@@ -125,33 +126,18 @@ export class ChallengeVoteController {
       };
     }
 
-    const useCase = new GetMyVotesUseCase(this.voteRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
+    const effect = getMyVotesUseCase({
       challengeId: parsed.data.challengeId,
       voterId: parsed.data.voterId,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Get all votes for a challenge (moderator/admin view)
    */
-  async getByChallenge(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          votes: ChallengeVoteDTO[];
-          totalVotes: number;
-          uniqueVoters: number;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async getByChallenge(input: unknown) {
     const parsed = schemas.getByChallenge.safeParse(input);
     if (!parsed.success) {
       return {
@@ -160,32 +146,17 @@ export class ChallengeVoteController {
       };
     }
 
-    const useCase = new GetVotesByChallengeUseCase(this.voteRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
+    const effect = getVotesByChallengeUseCase({
       challengeId: parsed.data.challengeId,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Get voting progress for a challenge
    */
-  async getVotingProgress(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          challengeId: string;
-          totalVotes: number;
-          submissionStats: SubmissionVoteCount[];
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async getVotingProgress(input: unknown) {
     const parsed = schemas.getVotingProgress.safeParse(input);
     if (!parsed.success) {
       return {
@@ -194,36 +165,17 @@ export class ChallengeVoteController {
       };
     }
 
-    const useCase = new GetChallengeVotingProgressUseCase(this.voteRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
+    const effect = getChallengeVotingProgressUseCase({
       challengeId: parsed.data.challengeId,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Get judged staff voting progress
    */
-  async getJudgedStaffProgress(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          requiredPositions: number;
-          eligibleSubmissionsCount: number;
-          totalAdmins: number;
-          votedAdmins: number;
-          pendingAdmins: number;
-          allAdminsVoted: boolean;
-          adminProgress: AdminVotingInfo[];
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async getJudgedStaffProgress(input: unknown) {
     const parsed = schemas.getJudgedStaffProgress.safeParse(input);
     if (!parsed.success) {
       return {
@@ -232,34 +184,21 @@ export class ChallengeVoteController {
       };
     }
 
-    const useCase = new GetJudgedStaffVotingProgressUseCase(
-      this.voteRepository,
-    );
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
+    const effect = getJudgedStaffVotingProgressUseCase({
       challengeId: parsed.data.challengeId,
       tripId: parsed.data.tripId,
       adminParticipantIds: parsed.data.adminParticipantIds,
       requiredPositions: parsed.data.requiredPositions,
       eligibleSubmissionsCount: parsed.data.eligibleSubmissionsCount,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Submit a single vote
    */
-  async submitVote(input: unknown): Promise<
-    | {
-        success: true;
-        data: VoteDTO;
-      }
-    | { success: false; error: string }
-  > {
+  async submitVote(input: unknown) {
     const parsed = schemas.submitVote.safeParse(input);
     if (!parsed.success) {
       return {
@@ -268,8 +207,8 @@ export class ChallengeVoteController {
       };
     }
 
-    const useCase = new SubmitVoteUseCase(this.voteRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
+    const effect = submitVoteUseCase({
       challengeId: parsed.data.challengeId,
       submissionId: parsed.data.submissionId,
       voterId: parsed.data.voterId,
@@ -277,28 +216,14 @@ export class ChallengeVoteController {
       points: parsed.data.points,
       normalizedWeight: parsed.data.normalizedWeight,
       allowPartial: parsed.data.allowPartial,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Submit multiple votes (batch)
    */
-  async submitVotes(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          votes: VoteDTO[];
-          totalVotesCast: number;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async submitVotes(input: unknown) {
     const parsed = schemas.submitVotes.safeParse(input);
     if (!parsed.success) {
       return {
@@ -307,37 +232,20 @@ export class ChallengeVoteController {
       };
     }
 
-    const useCase = new SubmitVotesUseCase(this.voteRepository);
-    const result = await useCase.execute({
+    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
+    const effect = submitVotesUseCase({
       challengeId: parsed.data.challengeId,
       voterId: parsed.data.voterId,
       votes: parsed.data.votes,
       requiredPositions: parsed.data.requiredPositions,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
+    return await effectToControllerResult(effect);
   }
 
   /**
    * Force end voting for a judged staff challenge
    */
-  async forceEndVoting(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          success: boolean;
-          finalized: boolean;
-          challengeId: string;
-          challengeStatus: "COMPLETED";
-          totalVotes: number;
-        };
-      }
-    | { success: false; error: string }
-  > {
+  async forceEndVoting(input: unknown) {
     const parsed = schemas.forceEndVoting.safeParse(input);
     if (!parsed.success) {
       return {
@@ -346,23 +254,26 @@ export class ChallengeVoteController {
       };
     }
 
-    const useCase = new ForceEndVotingUseCase(
-      this.voteRepository,
-      this.challengeRepository,
+    const voteRepo = toEffectChallengeVoteRepository(this.voteRepository);
+    const challengeRepo = toEffectChallengeRepository(this.challengeRepository);
+    const submissionRepo = toEffectChallengeSubmissionRepository(
       this.submissionRepository,
-      this.onChallengeCompleted,
     );
 
-    const result = await useCase.execute({
-      challengeId: parsed.data.challengeId,
-      tripId: parsed.data.tripId,
-      adminId: parsed.data.adminId,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, data: result.value };
+    const effect = forceEndVotingUseCase(
+      {
+        challengeId: parsed.data.challengeId,
+        tripId: parsed.data.tripId,
+        adminId: parsed.data.adminId,
+      },
+      {
+        onChallengeCompleted: this.onChallengeCompleted,
+      },
+    ).pipe(
+      Effect.provideService(ChallengeVoteRepositoryTag, voteRepo),
+      Effect.provideService(ChallengeRepositoryTag, challengeRepo),
+      Effect.provideService(ChallengeSubmissionRepositoryTag, submissionRepo),
+    );
+    return await effectToControllerResult(effect);
   }
 }
