@@ -1,0 +1,200 @@
+# Reusable Evaluation Specification: Fix Adapter Mapper Tests
+# Version: 1.0.0
+# Applies to: packages/adapters/src/mappers/__tests__/*Mapper.test.ts
+
+metadata:
+  name: adapter-mapper-test-fix
+  description: |
+    Fixes adapter layer mapper tests after domain entity validation changes.
+    Ensures mapper tests correctly validate error handling when domain entities
+    transition from Result<T,E> pattern to Effect.Effect pattern.
+
+  # When to apply this spec
+  triggers:
+    - "Domain entity .create() method signature changes from Result to Effect"
+    - "Mapper toDomain() throws on invalid data but tests expect throw"
+    - "Test expectations outdated due to validation behavior changes"
+
+  # Test file patterns this spec applies to
+  target_patterns:
+    - "packages/adapters/src/mappers/__tests__/*Mapper.test.ts"
+    - "packages/adapters/src/mappers/__tests__/*DrizzleMapper.test.ts"
+    - "packages/adapters/src/mappers/__tests__/*PrismaMapper.test.ts"
+
+# Pre-execution checks
+pre_checks:
+  - name: run_test_to_see_failure
+    command: "bun test {TEST_FILE_PATH}"
+    capture_output: true
+    description: "Run the failing test file to see current failure mode"
+
+  - name: read_mapper_implementation
+    file: "{MAPPER_IMPLEMENTATION_PATH}"
+    description: "Read the mapper implementation being tested"
+
+  - name: read_domain_entity
+    file: "{DOMAIN_ENTITY_PATH}"
+    description: "Read the domain entity to understand validation rules"
+
+# Core evaluation criteria
+criteria:
+  - id: C1
+    name: test_file_compiles
+    description: "Test file must compile without TypeScript errors"
+    severity: blocking
+    check: |
+      Verify no TypeScript compilation errors in test file.
+      Common issues:
+      - Type mismatches between old Result and new Effect types
+      - Missing imports for Effect types
+
+  - id: C2
+    name: invalid_data_tests_throw
+    description: |
+      Tests for invalid data must correctly expect and test throw behavior.
+      The toDomain() method should throw when domain entity validation fails.
+    severity: blocking
+    check: |
+      For each test case that tests invalid data:
+
+      1. Test must use expect(() => mapper.toDomain(invalidData)).toThrow()
+         pattern, NOT await expect(...).rejects or Result pattern
+
+      2. If the mapper implementation properly throws, test passes.
+         If mapper doesn't throw, test must be updated to match behavior.
+
+      3. Preserve intent: Test should still validate that invalid data
+         is handled (rejected/throwed) rather than silently accepted.
+
+  - id: C3
+    name: valid_data_mapping_correct
+    description: "Tests for valid data mapping must correctly verify field mapping"
+    severity: blocking
+    check: |
+      For each valid data test case:
+
+      1. Test creates domain entity using Entity.create() which now returns Effect
+      2. If test uses Result pattern (domainResult.kind), update to use Effect.runSync:
+         
+         BEFORE:
+         const domainResult = User.create({...});
+         if (domainResult.kind === "err") { throw ... }
+         const domain = domainResult.value;
+         
+         AFTER:
+         const domain = Effect.runSync(User.create({...}));
+
+      3. All field assertions must pass (id, timestamps, role/status mapping)
+
+  - id: C4
+    name: roundtrip_conversion_works
+    description: "Round-trip conversion tests must preserve data integrity"
+    severity: warning
+    check: |
+      Round-trip test flow:
+      1. Create domain entity via Effect.runSync(Entity.create({...}))
+      2. Map to persistence: mapper.toDrizzleInsert(domain)
+      3. Map back to domain: mapper.toDomain(persistenceRecord)
+      4. Verify key fields preserved: id, names, codes, etc.
+
+  - id: C5
+    name: test_intent_preserved
+    description: "The original test intent must be preserved, not just made to pass"
+    severity: blocking
+    check: |
+      For each modified test:
+      - What was the original purpose? (e.g., "verify invalid authUserId rejected")
+      - Does the updated test still verify this? 
+      - If test was checking validation, it must still check validation
+
+# Mapper implementation fix requirements (if needed)
+mapper_fixes:
+  when: "Domain entity returns Effect instead of Result"
+  changes_required:
+    - description: "Update toDomain() to handle Effect-based entity creation"
+      code_pattern: |
+        // BEFORE (Result pattern):
+        const result = User.create({...});
+        if (result.kind === "err") {
+          throw new Error(`Failed to map: ${result.error}`);
+        }
+        return result.value;
+
+        // AFTER (Effect pattern):
+        try {
+          return Effect.runSync(User.create({...}));
+        } catch (error) {
+          throw new Error(`Failed to map User from Drizzle: ${error}`);
+        }
+
+    - description: "Add Effect import if missing"
+      import: 'import { Effect } from "effect";'
+
+# Test fix patterns
+test_fix_patterns:
+  pattern_1:
+    name: "Effect-based entity creation in tests"
+    description: "Update test to use Effect.runSync for entity creation"
+    before: |
+      const domainResult = User.create({...});
+      if (domainResult.kind === "err") {
+        throw new Error("Failed to create test user");
+      }
+      const domain = domainResult.value;
+    after: |
+      const domain = Effect.runSync(User.create({...}));
+
+  pattern_2:
+    name: "Validation error expectations"
+    description: "Ensure tests expect toDomain to throw on invalid data"
+    before: |
+      it("should throw on invalid authUserId", () => {
+        const record = createMockUserSelect({ authUserId: "" });
+        expect(() => mapper.toDomain(record)).toThrow();
+      });
+    after: |
+      // Same - no change needed if test already expects throw
+      // Only fix if mapper was changed and no longer throws
+      it("should throw on invalid authUserId", () => {
+        const record = createMockUserSelect({ authUserId: "" });
+        expect(() => mapper.toDomain(record)).toThrow();
+      });
+
+  pattern_3:
+    name: "Import additions"
+    description: "Add Effect import to test files"
+    code: 'import { Effect } from "effect";'
+
+# Verification steps
+verification:
+  - step: 1
+    name: run_fixed_test
+    command: "bun test {TEST_FILE_PATH}"
+    expected: "All tests pass (exit code 0)"
+
+  - step: 2
+    name: verify_no_regression
+    command: "bun test packages/adapters/src/mappers/__tests__/"
+    expected: "All mapper tests in package pass"
+
+# Success criteria summary
+success_criteria:
+  - All tests in target file pass
+  - Test intent preserved (validation still tested, just with correct pattern)
+  - No compilation errors
+  - Effect import added where needed
+  - "Either mapper implementation fixed OR tests updated to match behavior"
+
+# Common pitfalls to avoid
+warnings:
+  - "Don't change business logic (domain entities) - only fix mappers/tests"
+  - "Don't remove validation tests - fix them to use correct pattern"
+  - "Ensure Effect.runSync is used, not direct Result handling"
+  - "Add proper error handling in toDomain catch blocks"
+  - "Verify imports are correct (Effect from effect package)"
+
+# Documentation references
+references:
+  domain_error_handling: "CLAUDE.md - Domain layer uses Effect.Effect"
+  test_patterns: "CLAUDE.md - Adapter tests in __tests__ folder"
+  effect_usage: "Effect.runSync documentation"
