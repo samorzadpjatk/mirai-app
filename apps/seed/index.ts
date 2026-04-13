@@ -1,8 +1,8 @@
-import { createPrismaClient } from "@mirai-app/frameworks/prisma";
-import { env } from "./src/config/env";
+import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
+import { env } from "./config/env";
 import { runSeed } from "./src/seed";
 
-const db = await createPrismaClient(env.databaseUrl);
+const db = createDrizzleClient(env.databaseUrl);
 
 try {
   await runSeed();
@@ -10,5 +10,7 @@ try {
   console.error("Seed failed:", error);
   process.exitCode = 1;
 } finally {
-  await db.$disconnect();
+  // Drizzle doesn't have a direct disconnect method, but the pool will be closed
+  // when the process exits
+  console.log("Seed process completed");
 }

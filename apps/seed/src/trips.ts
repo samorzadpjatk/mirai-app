@@ -1,5 +1,5 @@
 import { createAuthUserByEmail, ensureGhostAuthUser } from "./auth";
-import { supabase } from "./config/supabase";
+import { getSupabaseClient } from "./config/supabase";
 import { env } from "./config/env";
 import { seedUrqlClient } from "./graphql-client";
 import type { TripConfig, AuthUserByEmail } from "./types";
@@ -144,11 +144,12 @@ export const seedTrip = async (
 
       if (size > 0) {
         // Generate storage path: trips/{trip-key}/background.{ext}
+        const client = getSupabaseClient();
         const ext =
           tripConfig.background.split(".").pop()?.toLowerCase() || "jpg";
         const storagePath = `trips/${tripConfig.key}/background.${ext}`;
 
-        const { error } = await supabase.storage
+        const { error } = await client.storage
           .from(env.imageBucket)
           .upload(storagePath, backgroundFile, {
             upsert: true,

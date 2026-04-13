@@ -2,7 +2,7 @@ import type { SeedEnv, TripInfoConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile, readFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import { supabase } from "./config/supabase";
+import { getSupabaseClient } from "./config/supabase";
 import { env } from "./config/env";
 import { assetsRoot } from "./constants";
 
@@ -42,6 +42,7 @@ export const seedTripInfo = async (
       let publicUrl = resourceConfig.publicUrl;
       if (resourceConfig.storagePath && !publicUrl) {
         try {
+          const client = getSupabaseClient();
           const envRoot = joinPath(assetsRoot, seedEnv);
           const filePath = joinPath(envRoot, resourceConfig.storagePath);
 
@@ -67,7 +68,7 @@ export const seedTripInfo = async (
           }
 
           const file = readFile(filePath);
-          const { error: uploadError } = await supabase.storage
+          const { error: uploadError } = await client.storage
             .from(bucketName)
             .upload(objectPath, file, {
               upsert: true,
@@ -82,7 +83,7 @@ export const seedTripInfo = async (
 
             // Get public URL for public bucket files
             if (bucketName === env.publicBucket) {
-              const { data: publicUrlData } = supabase.storage
+              const { data: publicUrlData } = client.storage
                 .from(bucketName)
                 .getPublicUrl(objectPath);
               publicUrl = publicUrlData.publicUrl;

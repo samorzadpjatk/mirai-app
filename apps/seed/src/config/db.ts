@@ -1,4 +1,4 @@
-import { createPrismaClient } from "@mirai-app/frameworks/prisma";
+import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
 import { env } from "./env";
 
-export const prisma = await createPrismaClient(env.databaseUrl);
+export const db = createDrizzleClient(env.databaseUrl);
