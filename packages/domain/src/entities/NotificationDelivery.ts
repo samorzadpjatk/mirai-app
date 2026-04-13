@@ -66,7 +66,6 @@ export class NotificationDelivery {
     public failureCount: number,
     public readonly errors: string | null,
     public status: NotificationDeliveryStatus,
-    // NEW: Nested push delivery records
     public pushes: readonly PushDeliveryRecord[],
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
@@ -90,142 +89,88 @@ export class NotificationDelivery {
     failureCount?: number;
     errors?: string | null;
     status?: NotificationDeliveryStatus;
-    // NEW: Pushes parameter
     pushes?: PushDeliveryRecord[];
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<NotificationDelivery, ValidationError, never> {
-    // Validate notificationId
-    const notificationId = validate.id(props.notificationId, "notificationId");
-    if (isError(notificationId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: notificationId.error.message,
-          field: "notificationId",
-        }),
+    return Effect.gen(function* () {
+      const notificationId = yield* validate.id(
+        props.notificationId,
+        "notificationId",
       );
-    }
 
-    // Validate counts
-    const totalRecipients = validate.number(
-      props.totalRecipients ?? 0,
-      "totalRecipients",
-      {
-        required: true,
-        min: 0,
-        integer: true,
-      },
-    );
-    if (isError(totalRecipients)) {
-      return Effect.fail(
-        new ValidationError({
-          message: totalRecipients.error.message,
-          field: "totalRecipients",
-        }),
+      const totalRecipients = yield* validate.number(
+        props.totalRecipients ?? 0,
+        "totalRecipients",
+        { required: true, min: 0, integer: true },
       );
-    }
 
-    const successCount = validate.number(
-      props.successCount ?? 0,
-      "successCount",
-      {
-        required: true,
-        min: 0,
-        integer: true,
-      },
-    );
-    if (isError(successCount)) {
-      return Effect.fail(
-        new ValidationError({
-          message: successCount.error.message,
-          field: "successCount",
-        }),
+      const successCount = yield* validate.number(
+        props.successCount ?? 0,
+        "successCount",
+        { required: true, min: 0, integer: true },
       );
-    }
 
-    const failureCount = validate.number(
-      props.failureCount ?? 0,
-      "failureCount",
-      {
-        required: true,
-        min: 0,
-        integer: true,
-      },
-    );
-    if (isError(failureCount)) {
-      return Effect.fail(
-        new ValidationError({
-          message: failureCount.error.message,
-          field: "failureCount",
-        }),
+      const failureCount = yield* validate.number(
+        props.failureCount ?? 0,
+        "failureCount",
+        { required: true, min: 0, integer: true },
       );
-    }
 
-    // Validate counts relationship
-    if (successCount.value + failureCount.value > totalRecipients.value) {
-      return Effect.fail(
-        new ValidationError({
-          message: "successCount + failureCount cannot exceed totalRecipients",
-          field: "counts",
-        }),
-      );
-    }
-
-    // Validate errors length if provided
-    if (props.errors) {
-      const validated = validate.string(props.errors, "errors", {
-        required: false,
-        maxLength: 2000,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
+      if (successCount + failureCount > totalRecipients) {
+        return yield* Effect.fail(
           new ValidationError({
-            message: validated.error.message,
-            field: "errors",
+            message:
+              "successCount + failureCount cannot exceed totalRecipients",
+            field: "counts",
           }),
         );
       }
-    }
 
-    // Validate completedAt is after startedAt if both present
-    const startedAt = props.deliveryStartedAt ?? new Date();
-    if (
-      props.deliveryCompletedAt &&
-      props.deliveryCompletedAt.getTime() < startedAt.getTime()
-    ) {
-      return Effect.fail(
-        new ValidationError({
-          message: "deliveryCompletedAt must be after deliveryStartedAt",
-          field: "deliveryCompletedAt",
-        }),
-      );
-    }
+      let validatedErrors: string | null = null;
+      if (props.errors) {
+        validatedErrors = yield* validate.string(props.errors, "errors", {
+          required: false,
+          maxLength: 2000,
+        });
+      }
 
-    const ts = timestamps(props);
+      const startedAt = props.deliveryStartedAt ?? new Date();
+      if (
+        props.deliveryCompletedAt &&
+        props.deliveryCompletedAt.getTime() < startedAt.getTime()
+      ) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "deliveryCompletedAt must be after deliveryStartedAt",
+            field: "deliveryCompletedAt",
+          }),
+        );
+      }
 
-    return Effect.succeed(
-      new NotificationDelivery(
+      const ts = timestamps(props);
+
+      return new NotificationDelivery(
         props.id ?? crypto.randomUUID(),
         props.tripId ?? null,
-        notificationId.value,
+        notificationId,
         props.scheduleId ?? null,
         startedAt,
         props.deliveryCompletedAt ?? null,
-        totalRecipients.value,
-        successCount.value,
-        failureCount.value,
-        props.errors ?? null,
+        totalRecipients,
+        successCount,
+        failureCount,
+        validatedErrors,
         props.status ?? NotificationDeliveryStatus.PENDING,
         Object.freeze(props.pushes ?? []),
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**
    * Start delivery
-   * Returns a new NotificationDelivery instance (immutable)
    */
   start(): NotificationDelivery {
     return updateEntity(
@@ -240,7 +185,6 @@ export class NotificationDelivery {
 
   /**
    * Mark delivery as completed
-   * Returns a new NotificationDelivery instance (immutable)
    */
   complete(): NotificationDelivery {
     return updateEntity(
@@ -255,83 +199,76 @@ export class NotificationDelivery {
 
   /**
    * Mark delivery as failed
-   * Returns a Effect with new NotificationDelivery instance or ValidationError
    */
   markAsFailed(
     errors: string,
   ): Effect.Effect<NotificationDelivery, ValidationError, never> {
-    const validated = validate.string(errors, "errors", {
-      required: true,
-      maxLength: 2000,
-      trim: true,
-    });
-    if (isError(validated)) {
-      return Effect.fail(
-        new ValidationError({
-          message: validated.error.message,
-          field: "errors",
-        }),
-      );
-    }
+    const self = this;
+    return Effect.gen(function* () {
+      const validated = yield* validate.string(errors, "errors", {
+        required: true,
+        maxLength: 2000,
+        trim: true,
+      });
 
-    return Effect.succeed(
-      updateEntity(
-        this,
+      return updateEntity(
+        self,
         {
           deliveryCompletedAt: new Date(),
-          errors: validated.value,
+          errors: validated,
           status: NotificationDeliveryStatus.FAILED,
         },
         NotificationDelivery,
-      ),
-    );
+      );
+    });
   }
 
   /**
    * Update delivery statistics
-   * Returns a Effect with new NotificationDelivery instance or ValidationError
    */
   updateStats(props: {
     totalRecipients?: number;
     successCount?: number;
     failureCount?: number;
   }): Effect.Effect<NotificationDelivery, ValidationError, never> {
-    const total = props.totalRecipients ?? this.totalRecipients;
-    const success = props.successCount ?? this.successCount;
-    const failure = props.failureCount ?? this.failureCount;
+    const self = this;
+    return Effect.gen(function* () {
+      const total = props.totalRecipients ?? self.totalRecipients;
+      const success = props.successCount ?? self.successCount;
+      const failure = props.failureCount ?? self.failureCount;
 
-    if (total < 0 || success < 0 || failure < 0) {
-      return Effect.fail(
-        new ValidationError({
-          message: "counts must be non-negative",
-          field: "counts",
-        }),
-      );
-    }
+      if (total < 0 || success < 0 || failure < 0) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "counts must be non-negative",
+            field: "counts",
+          }),
+        );
+      }
 
-    if (success + failure > total) {
-      return Effect.fail(
-        new ValidationError({
-          message: "success + failure cannot exceed total",
-          field: "counts",
-        }),
-      );
-    }
+      if (success + failure > total) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "success + failure cannot exceed total",
+            field: "counts",
+          }),
+        );
+      }
 
-    const updates: Partial<NotificationDelivery> = {};
-    if (props.totalRecipients !== undefined)
-      updates.totalRecipients = props.totalRecipients;
-    if (props.successCount !== undefined)
-      updates.successCount = props.successCount;
-    if (props.failureCount !== undefined)
-      updates.failureCount = props.failureCount;
+      const updates: Partial<NotificationDelivery> = {};
+      if (props.totalRecipients !== undefined)
+        updates.totalRecipients = props.totalRecipients;
+      if (props.successCount !== undefined)
+        updates.successCount = props.successCount;
+      if (props.failureCount !== undefined)
+        updates.failureCount = props.failureCount;
 
-    return Effect.succeed(updateEntity(this, updates, NotificationDelivery));
+      return updateEntity(self, updates, NotificationDelivery);
+    });
   }
 
   /**
    * Record a push delivery attempt
-   * Returns a new NotificationDelivery instance (immutable)
    */
   recordPush(
     userId: string,
@@ -356,118 +293,70 @@ export class NotificationDelivery {
     );
   }
 
-  /**
-   * Get all failed push deliveries
-   */
   getFailedPushes(): PushDeliveryRecord[] {
     return this.pushes.filter((p) => p.status === "FAILED");
   }
 
-  /**
-   * Get all successful push deliveries
-   */
   getSuccessfulPushes(): PushDeliveryRecord[] {
     return this.pushes.filter((p) => p.status === "SENT");
   }
 
-  /**
-   * Check if delivery is complete (all recipients have been processed)
-   */
   isComplete(): boolean {
     return this.pushes.length >= this.totalRecipients;
   }
 
-  /**
-   * Check if a specific user has been sent a push
-   */
   isPushSentToUser(userId: string): boolean {
     return this.pushes.some(
       (p) => p.targetUserId === userId && p.status === "SENT",
     );
   }
 
-  /**
-   * Get push record for a specific user
-   */
   getPushForUser(userId: string): PushDeliveryRecord | undefined {
     return this.pushes.find((p) => p.targetUserId === userId);
   }
 
-  /**
-   * Check if delivery is pending
-   */
   isPending(): boolean {
     return this.status === NotificationDeliveryStatus.PENDING;
   }
 
-  /**
-   * Check if delivery is in progress
-   */
   isInProgress(): boolean {
     return this.status === NotificationDeliveryStatus.IN_PROGRESS;
   }
 
-  /**
-   * Check if delivery is completed
-   */
   isCompleted(): boolean {
     return this.status === NotificationDeliveryStatus.COMPLETED;
   }
 
-  /**
-   * Check if delivery failed
-   */
   isFailed(): boolean {
     return this.status === NotificationDeliveryStatus.FAILED;
   }
 
-  /**
-   * Check if delivery is in a terminal state
-   */
   isTerminal(): boolean {
     return stateMachine.isTerminal(this.status);
   }
 
-  /**
-   * Get success rate as percentage
-   */
   getSuccessRate(): number {
     if (this.totalRecipients === 0) return 0;
     return Math.round((this.successCount / this.totalRecipients) * 100);
   }
 
-  /**
-   * Get failure rate as percentage
-   */
   getFailureRate(): number {
     if (this.totalRecipients === 0) return 0;
     return Math.round((this.failureCount / this.totalRecipients) * 100);
   }
 
-  /**
-   * Check if delivery is scheduled (has scheduleId)
-   */
   isScheduled(): boolean {
     return this.scheduleId !== null;
   }
 
-  /**
-   * Check if delivery is for a specific trip
-   */
   isForTrip(tripId: string): boolean {
     return this.tripId === tripId;
   }
 
-  /**
-   * Check if delivery is for a specific notification
-   */
   isForNotification(notificationId: string): boolean {
     return this.notificationId === notificationId;
   }
 
-  /**
-   * Get duration of delivery in milliseconds
-   */
   getDurationMs(): number | null {
     if (!this.deliveryCompletedAt) return null;
     return (

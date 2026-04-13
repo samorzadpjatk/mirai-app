@@ -63,66 +63,46 @@ export class Trip {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<Trip, ValidationError, never> {
-    // Validate name
-    const name = validate.string(props.name, "name", {
-      required: true,
-      maxLength: 200,
-      trim: true,
-    });
-    if (isError(name)) {
-      return Effect.fail(
-        new ValidationError({
-          message: name.error.message,
-          field: "name",
-        }),
-      );
-    }
-
-    // Validate description (optional)
-    const description = validate.string(
-      props.description ?? "",
-      "description",
-      {
-        required: false,
-        maxLength: 2000,
+    return Effect.gen(function* () {
+      // Validate name
+      const name = yield* validate.string(props.name, "name", {
+        required: true,
+        maxLength: 200,
         trim: true,
-      },
-    );
-    if (isError(description)) {
-      return Effect.fail(
-        new ValidationError({
-          message: description.error.message,
-          field: "description",
-        }),
-      );
-    }
+      });
 
-    // Validate date range
-    const dateRangeResult = validate.dateRange(props.startDate, props.endDate);
-    if (isError(dateRangeResult)) {
-      return Effect.fail(
-        new ValidationError({
-          message: "endDate must be after startDate",
-          field: "endDate",
-        }),
-      );
-    }
+      // Validate description (optional)
+      let description: string | null = null;
+      if (props.description) {
+        const validatedDesc = yield* validate.string(
+          props.description,
+          "description",
+          {
+            required: false,
+            maxLength: 2000,
+            trim: true,
+          },
+        );
+        description = validatedDesc || null;
+      }
 
-    const ts = timestamps(props);
+      // Validate date range
+      yield* validate.dateRange(props.startDate, props.endDate);
 
-    return Effect.succeed(
-      new Trip(
+      const ts = timestamps(props);
+
+      return new Trip(
         props.id ?? crypto.randomUUID(),
-        name.value,
-        description.value || null,
+        name,
+        description,
         props.startDate,
         props.endDate,
         props.backgroundImagePath ?? null,
         props.status ?? TripStatus.PLANNING,
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -134,46 +114,41 @@ export class Trip {
     description?: string | null;
     backgroundImagePath?: string | null;
   }): Effect.Effect<Trip, ValidationError | StateTransitionError, never> {
-    // Cannot update completed or cancelled trips
-    if (this.isTerminal()) {
-      return Effect.fail(
-        new StateTransitionError({
-          from: this.status,
-          to: this.status,
-          entityType: "Trip",
-        }),
-      );
-    }
-
-    const updates: Partial<Trip> = {};
-
-    // Validate name if provided
-    if (props.name !== undefined) {
-      const validated = validate.string(props.name, "name", {
-        required: true,
-        maxLength: 200,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "name",
+    const self = this;
+    return Effect.gen(function* () {
+      // Cannot update completed or cancelled trips
+      if (self.isTerminal()) {
+        return yield* Effect.fail(
+          new StateTransitionError({
+            from: self.status,
+            to: self.status,
+            entityType: "Trip",
           }),
         );
       }
-      updates.name = validated.value;
-    }
 
-    if (props.description !== undefined) {
-      updates.description = props.description;
-    }
+      const updates: Partial<Trip> = {};
 
-    if (props.backgroundImagePath !== undefined) {
-      updates.backgroundImagePath = props.backgroundImagePath;
-    }
+      // Validate name if provided
+      if (props.name !== undefined) {
+        const validated = yield* validate.string(props.name, "name", {
+          required: true,
+          maxLength: 200,
+          trim: true,
+        });
+        updates.name = validated;
+      }
 
-    return Effect.succeed(updateEntity(this, updates, Trip));
+      if (props.description !== undefined) {
+        updates.description = props.description;
+      }
+
+      if (props.backgroundImagePath !== undefined) {
+        updates.backgroundImagePath = props.backgroundImagePath;
+      }
+
+      return updateEntity(self, updates, Trip);
+    });
   }
 
   /**
@@ -184,36 +159,31 @@ export class Trip {
     startDate?: Date;
     endDate?: Date;
   }): Effect.Effect<Trip, ValidationError | StateTransitionError, never> {
-    // Cannot update completed or cancelled trips
-    if (this.isTerminal()) {
-      return Effect.fail(
-        new StateTransitionError({
-          from: this.status,
-          to: this.status,
-          entityType: "Trip",
-        }),
-      );
-    }
+    const self = this;
+    return Effect.gen(function* () {
+      // Cannot update completed or cancelled trips
+      if (self.isTerminal()) {
+        return yield* Effect.fail(
+          new StateTransitionError({
+            from: self.status,
+            to: self.status,
+            entityType: "Trip",
+          }),
+        );
+      }
 
-    const newStartDate = props.startDate ?? this.startDate;
-    const newEndDate = props.endDate ?? this.endDate;
+      const newStartDate = props.startDate ?? self.startDate;
+      const newEndDate = props.endDate ?? self.endDate;
 
-    // Validate date range
-    const dateRangeResult = validate.dateRange(newStartDate, newEndDate);
-    if (isError(dateRangeResult)) {
-      return Effect.fail(
-        new ValidationError({
-          message: "endDate must be after startDate",
-          field: "endDate",
-        }),
-      );
-    }
+      // Validate date range
+      yield* validate.dateRange(newStartDate, newEndDate);
 
-    const updates: Partial<Trip> = {};
-    if (props.startDate !== undefined) updates.startDate = props.startDate;
-    if (props.endDate !== undefined) updates.endDate = props.endDate;
+      const updates: Partial<Trip> = {};
+      if (props.startDate !== undefined) updates.startDate = props.startDate;
+      if (props.endDate !== undefined) updates.endDate = props.endDate;
 
-    return Effect.succeed(updateEntity(this, updates, Trip));
+      return updateEntity(self, updates, Trip);
+    });
   }
 
   /**

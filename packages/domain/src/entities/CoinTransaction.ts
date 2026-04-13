@@ -35,67 +35,45 @@ export class CoinTransaction {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<CoinTransaction, ValidationError, never> {
-    // Validate groupId
-    const groupId = validate.id(props.groupId, "groupId");
-    if (isError(groupId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: groupId.error.message,
-          field: "groupId",
-        }),
-      );
-    }
+    return Effect.gen(function* () {
+      // Validate groupId
+      const groupId = yield* validate.id(props.groupId, "groupId");
 
-    // Validate amount (must be non-zero)
-    if (props.amount === 0) {
-      return Effect.fail(
-        new ValidationError({
-          message: "amount cannot be zero",
-          field: "amount",
-        }),
-      );
-    }
-
-    // Validate adminId
-    const adminId = validate.id(props.adminId, "adminId");
-    if (isError(adminId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: adminId.error.message,
-          field: "adminId",
-        }),
-      );
-    }
-
-    // Validate reason if provided
-    if (props.reason) {
-      const validated = validate.string(props.reason, "reason", {
-        required: false,
-        maxLength: 500,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
+      // Validate amount (must be non-zero)
+      if (props.amount === 0) {
+        return yield* Effect.fail(
           new ValidationError({
-            message: validated.error.message,
-            field: "reason",
+            message: "amount cannot be zero",
+            field: "amount",
           }),
         );
       }
-    }
 
-    const ts = timestamps(props);
+      // Validate adminId
+      const adminId = yield* validate.id(props.adminId, "adminId");
 
-    return Effect.succeed(
-      new CoinTransaction(
+      // Validate reason if provided
+      let reason: string | null = props.reason ?? null;
+      if (props.reason) {
+        const validatedReason = yield* validate.string(props.reason, "reason", {
+          required: false,
+          maxLength: 500,
+        });
+        reason = validatedReason;
+      }
+
+      const ts = timestamps(props);
+
+      return new CoinTransaction(
         props.id ?? crypto.randomUUID(),
-        groupId.value,
+        groupId,
         props.amount,
-        props.reason ?? null,
-        adminId.value,
+        reason,
+        adminId,
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**

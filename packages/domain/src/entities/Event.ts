@@ -43,101 +43,59 @@ export class Event {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<Event, ValidationError, never> {
-    // Validate creatorId
-    const creatorId = validate.id(props.creatorId, "creatorId");
-    if (isError(creatorId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: creatorId.error.message,
-          field: "creatorId",
-        }),
+    return Effect.gen(function* () {
+      // Validate creatorId
+      const creatorId = yield* validate.id(props.creatorId, "creatorId");
+
+      // Validate title
+      const title = yield* validate.string(props.title, "title", {
+        required: true,
+        maxLength: 200,
+        trim: true,
+      });
+
+      // Validate location
+      const location = yield* validate.string(props.location, "location", {
+        required: true,
+        maxLength: 300,
+        trim: true,
+      });
+
+      // Validate description
+      const description = yield* validate.string(
+        props.description,
+        "description",
+        {
+          required: true,
+          maxLength: 2000,
+          trim: true,
+        },
       );
-    }
 
-    // Validate title
-    const title = validate.string(props.title, "title", {
-      required: true,
-      maxLength: 200,
-      trim: true,
-    });
-    if (isError(title)) {
-      return Effect.fail(
-        new ValidationError({
-          message: title.error.message,
-          field: "title",
-        }),
-      );
-    }
+      // Validate time range
+      yield* validate.dateRange(props.startTime, props.endTime);
 
-    // Validate location
-    const location = validate.string(props.location, "location", {
-      required: true,
-      maxLength: 300,
-      trim: true,
-    });
-    if (isError(location)) {
-      return Effect.fail(
-        new ValidationError({
-          message: location.error.message,
-          field: "location",
-        }),
-      );
-    }
+      // Validate files array
+      const files = yield* validate.array(props.files ?? [], "files", {
+        maxItems: 10,
+      });
 
-    // Validate description
-    const description = validate.string(props.description, "description", {
-      required: true,
-      maxLength: 2000,
-      trim: true,
-    });
-    if (isError(description)) {
-      return Effect.fail(
-        new ValidationError({
-          message: description.error.message,
-          field: "description",
-        }),
-      );
-    }
+      const ts = timestamps(props);
 
-    // Validate time range
-    const timeRange = validate.dateRange(props.startTime, props.endTime);
-    if (isError(timeRange)) {
-      return Effect.fail(
-        new ValidationError({
-          message: timeRange.error.message,
-          field: "startTime/endTime",
-        }),
-      );
-    }
-
-    // Validate files array
-    const files = validate.array(props.files ?? [], "files", { maxItems: 10 });
-    if (isError(files)) {
-      return Effect.fail(
-        new ValidationError({
-          message: files.error.message,
-          field: "files",
-        }),
-      );
-    }
-
-    const ts = timestamps(props);
-
-    return Effect.succeed(
-      new Event(
+      return new Event(
         props.id ?? crypto.randomUUID(),
-        creatorId.value,
+        creatorId,
         props.organizerGroupId ?? null,
-        title.value,
+        title,
         props.startTime,
         props.endTime,
-        location.value,
-        description.value,
-        Object.freeze([...files.value]),
+        location,
+        description,
+        Object.freeze([...files]),
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -151,70 +109,40 @@ export class Event {
     location?: string;
     description?: string;
   }): Effect.Effect<Event, ValidationError, never> {
-    // Validate title if provided
-    let title = this.title;
-    if (props.title !== undefined) {
-      const titleValidated = validate.string(props.title, "title", {
-        required: true,
-        maxLength: 200,
-        trim: true,
-      });
-      if (isError(titleValidated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: titleValidated.error.message,
-            field: "title",
-          }),
-        );
+    const self = this;
+    return Effect.gen(function* () {
+      // Validate title if provided
+      let title = self.title;
+      if (props.title !== undefined) {
+        title = yield* validate.string(props.title, "title", {
+          required: true,
+          maxLength: 200,
+          trim: true,
+        });
       }
-      title = titleValidated.value;
-    }
 
-    // Validate location if provided
-    let location = this.location;
-    if (props.location !== undefined) {
-      const locationValidated = validate.string(props.location, "location", {
-        required: true,
-        maxLength: 300,
-        trim: true,
-      });
-      if (isError(locationValidated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: locationValidated.error.message,
-            field: "location",
-          }),
-        );
+      // Validate location if provided
+      let location = self.location;
+      if (props.location !== undefined) {
+        location = yield* validate.string(props.location, "location", {
+          required: true,
+          maxLength: 300,
+          trim: true,
+        });
       }
-      location = locationValidated.value;
-    }
 
-    // Validate description if provided
-    let description = this.description;
-    if (props.description !== undefined) {
-      const descriptionValidated = validate.string(
-        props.description,
-        "description",
-        {
+      // Validate description if provided
+      let description = self.description;
+      if (props.description !== undefined) {
+        description = yield* validate.string(props.description, "description", {
           required: true,
           maxLength: 2000,
           trim: true,
-        },
-      );
-      if (isError(descriptionValidated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: descriptionValidated.error.message,
-            field: "description",
-          }),
-        );
+        });
       }
-      description = descriptionValidated.value;
-    }
 
-    return Effect.succeed(
-      updateEntity(this, { title, location, description }, Event),
-    );
+      return updateEntity(self, { title, location, description }, Event);
+    });
   }
 
   /**
@@ -227,26 +155,19 @@ export class Event {
     startTime?: Date;
     endTime?: Date;
   }): Effect.Effect<Event, ValidationError, never> {
-    const newStartTime = props.startTime ?? this.startTime;
-    const newEndTime = props.endTime ?? this.endTime;
+    const self = this;
+    return Effect.gen(function* () {
+      const newStartTime = props.startTime ?? self.startTime;
+      const newEndTime = props.endTime ?? self.endTime;
 
-    const timeRange = validate.dateRange(newStartTime, newEndTime);
-    if (isError(timeRange)) {
-      return Effect.fail(
-        new ValidationError({
-          message: timeRange.error.message,
-          field: "startTime/endTime",
-        }),
-      );
-    }
+      yield* validate.dateRange(newStartTime, newEndTime);
 
-    return Effect.succeed(
-      updateEntity(
-        this,
+      return updateEntity(
+        self,
         { startTime: newStartTime, endTime: newEndTime },
         Event,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -256,19 +177,12 @@ export class Event {
    * Returns Effect<Event, ValidationError, never>
    */
   assignToGroup(groupId: string): Effect.Effect<Event, ValidationError, never> {
-    const validatedGroupId = validate.id(groupId, "groupId");
-    if (isError(validatedGroupId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: validatedGroupId.error.message,
-          field: "groupId",
-        }),
-      );
-    }
+    const self = this;
+    return Effect.gen(function* () {
+      const validatedGroupId = yield* validate.id(groupId, "groupId");
 
-    return Effect.succeed(
-      updateEntity(this, { organizerGroupId: validatedGroupId.value }, Event),
-    );
+      return updateEntity(self, { organizerGroupId: validatedGroupId }, Event);
+    });
   }
 
   /**
@@ -286,33 +200,18 @@ export class Event {
    * Returns Effect<Event, ValidationError, never>
    */
   addFile(filePath: string): Effect.Effect<Event, ValidationError, never> {
-    const validatedFilePath = validate.string(filePath, "filePath", {
-      required: true,
-      trim: true,
+    const self = this;
+    return Effect.gen(function* () {
+      const validatedFilePath = yield* validate.string(filePath, "filePath", {
+        required: true,
+        trim: true,
+      });
+
+      const newFiles = [...self.files, validatedFilePath];
+      const files = yield* validate.array(newFiles, "files", { maxItems: 10 });
+
+      return updateEntity(self, { files: Object.freeze([...files]) }, Event);
     });
-    if (isError(validatedFilePath)) {
-      return Effect.fail(
-        new ValidationError({
-          message: validatedFilePath.error.message,
-          field: "filePath",
-        }),
-      );
-    }
-
-    const newFiles = [...this.files, validatedFilePath.value];
-    const files = validate.array(newFiles, "files", { maxItems: 10 });
-    if (isError(files)) {
-      return Effect.fail(
-        new ValidationError({
-          message: files.error.message,
-          field: "files",
-        }),
-      );
-    }
-
-    return Effect.succeed(
-      updateEntity(this, { files: Object.freeze([...files.value]) }, Event),
-    );
   }
 
   /**

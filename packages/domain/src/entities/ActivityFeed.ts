@@ -296,96 +296,80 @@ export class ActivityFeed {
     admin?: AdminInfo | null;
     hiddenBy?: AdminInfo | null;
   }): Effect.Effect<ActivityFeed, ValidationError, never> {
-    // Validate tripId
-    const tripId = validate.id(props.tripId, "tripId");
-    if (isError(tripId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: tripId.error.message,
-          field: "tripId",
-        }),
-      );
-    }
+    return Effect.gen(function* () {
+      // Validate tripId
+      const tripId = yield* validate.id(props.tripId, "tripId");
 
-    // Validate title
-    const title = validate.string(props.title, "title", {
-      required: true,
-      maxLength: 500,
-      trim: true,
-    });
-    if (isError(title)) {
-      return Effect.fail(
-        new ValidationError({
-          message: title.error.message,
-          field: "title",
-        }),
-      );
-    }
+      // Validate title
+      const title = yield* validate.string(props.title, "title", {
+        required: true,
+        maxLength: 500,
+        trim: true,
+      });
 
-    // Validate activity type-specific requirements
-    if (
-      props.activityType === "submission" &&
-      !props.submissionActivity &&
-      !props.submissionMetadata
-    ) {
-      return Effect.fail(
-        new ValidationError({
-          message:
-            "submissionActivity or submissionMetadata is required for submission type",
-          field: "submissionMetadata",
-        }),
-      );
-    }
+      // Validate activity type-specific requirements
+      if (
+        props.activityType === "submission" &&
+        !props.submissionActivity &&
+        !props.submissionMetadata
+      ) {
+        yield* Effect.fail(
+          new ValidationError({
+            message:
+              "submissionActivity or submissionMetadata is required for submission type",
+            field: "submissionMetadata",
+          }),
+        );
+      }
 
-    if (
-      props.activityType === "challenge_event" &&
-      !props.challengeActivity &&
-      !props.challengeMetadata
-    ) {
-      return Effect.fail(
-        new ValidationError({
-          message:
-            "challengeActivity or challengeMetadata is required for challenge_event type",
-          field: "challengeMetadata",
-        }),
-      );
-    }
+      if (
+        props.activityType === "challenge_event" &&
+        !props.challengeActivity &&
+        !props.challengeMetadata
+      ) {
+        yield* Effect.fail(
+          new ValidationError({
+            message:
+              "challengeActivity or challengeMetadata is required for challenge_event type",
+            field: "challengeMetadata",
+          }),
+        );
+      }
 
-    if (
-      props.activityType === "rank_change" &&
-      !props.rankChangeActivity &&
-      !props.rankChangeMetadata
-    ) {
-      return Effect.fail(
-        new ValidationError({
-          message:
-            "rankChangeActivity or rankChangeMetadata is required for rank_change type",
-          field: "rankChangeMetadata",
-        }),
-      );
-    }
+      if (
+        props.activityType === "rank_change" &&
+        !props.rankChangeActivity &&
+        !props.rankChangeMetadata
+      ) {
+        yield* Effect.fail(
+          new ValidationError({
+            message:
+              "rankChangeActivity or rankChangeMetadata is required for rank_change type",
+            field: "rankChangeMetadata",
+          }),
+        );
+      }
 
-    if (
-      props.activityType === "user_post" &&
-      !props.userPost &&
-      !props.postMetadata
-    ) {
-      return Effect.fail(
-        new ValidationError({
-          message: "userPost or postMetadata is required for user_post type",
-          field: "postMetadata",
-        }),
-      );
-    }
+      if (
+        props.activityType === "user_post" &&
+        !props.userPost &&
+        !props.postMetadata
+      ) {
+        yield* Effect.fail(
+          new ValidationError({
+            message: "userPost or postMetadata is required for user_post type",
+            field: "postMetadata",
+          }),
+        );
+      }
 
-    const ts = timestamps(props);
+      const ts = timestamps(props);
 
-    return Effect.succeed(
-      new ActivityFeed(
+      return new ActivityFeed(
         props.id ?? (crypto.randomUUID() as ActivityId),
-        tripId.value,
+        tripId,
         props.activityType,
-        title.value,
+        title,
         props.description ?? null,
         props.imageUrl ?? null,
         props.isPinned ?? false,
@@ -408,8 +392,8 @@ export class ActivityFeed {
         props.userPost ?? null,
         props.admin ?? null,
         props.hiddenBy ?? null,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -616,30 +600,25 @@ export class ActivityFeed {
     title?: string;
     description?: string | null;
   }): Effect.Effect<ActivityFeed, ValidationError, never> {
-    const updates: Partial<ActivityFeed> = {};
+    const self = this;
+    return Effect.gen(function* () {
+      const updates: Partial<ActivityFeed> = {};
 
-    if (props.title !== undefined) {
-      const validated = validate.string(props.title, "title", {
-        required: true,
-        maxLength: 500,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "title",
-          }),
-        );
+      if (props.title !== undefined) {
+        const validated = yield* validate.string(props.title, "title", {
+          required: true,
+          maxLength: 500,
+          trim: true,
+        });
+        updates.title = validated;
       }
-      updates.title = validated.value;
-    }
 
-    if (props.description !== undefined) {
-      updates.description = props.description;
-    }
+      if (props.description !== undefined) {
+        updates.description = props.description;
+      }
 
-    return Effect.succeed(updateEntity(this, updates, ActivityFeed));
+      return updateEntity(self, updates, ActivityFeed);
+    });
   }
 
   /**

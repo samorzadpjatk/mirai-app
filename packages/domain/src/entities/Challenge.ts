@@ -141,147 +141,134 @@ export class Challenge {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<Challenge, ValidationError, never> {
-    // Validate tripId
-    const tripId = validate.id(props.tripId, "tripId");
-    if (tripId.kind === "err") return Effect.fail(tripId.error);
-
-    // Validate name
-    const name = validate.string(props.name, "name", {
-      required: true,
-      maxLength: 200,
-      trim: true,
-    });
-    if (name.kind === "err") return Effect.fail(name.error);
-
-    // Validate description (optional)
-    const description = validate.string(
-      props.description ?? "",
-      "description",
-      {
-        required: false,
-        maxLength: 2000,
+    return Effect.gen(function* () {
+      const tripId = yield* validate.id(props.tripId, "tripId");
+      const name = yield* validate.string(props.name, "name", {
+        required: true,
+        maxLength: 200,
         trim: true,
-      },
-    );
-    if (description.kind === "err") return Effect.fail(description.error);
-
-    // Validate basePoints
-    const basePoints = validate.number(props.basePoints ?? 0, "basePoints", {
-      required: true,
-      min: 0,
-      max: 10000,
-    });
-    if (basePoints.kind === "err") return Effect.fail(basePoints.error);
-
-    // Validate firstPlacePoints
-    let firstPlacePoints: number | null = null;
-    if (
-      props.firstPlacePoints !== undefined &&
-      props.firstPlacePoints !== null
-    ) {
-      const result = validate.number(
-        props.firstPlacePoints,
-        "firstPlacePoints",
+      });
+      const description = yield* validate.string(
+        props.description ?? "",
+        "description",
+        {
+          required: false,
+          maxLength: 2000,
+          trim: true,
+        },
+      );
+      const basePoints = yield* validate.number(
+        props.basePoints ?? 0,
+        "basePoints",
         {
           required: true,
           min: 0,
+          max: 10000,
         },
       );
-      if (result.kind === "err") return Effect.fail(result.error);
-      firstPlacePoints = result.value;
-    }
 
-    // Validate secondPlacePoints
-    let secondPlacePoints: number | null = null;
-    if (
-      props.secondPlacePoints !== undefined &&
-      props.secondPlacePoints !== null
-    ) {
-      const result = validate.number(
-        props.secondPlacePoints,
-        "secondPlacePoints",
-        {
-          required: true,
-          min: 0,
-        },
-      );
-      if (result.kind === "err") return Effect.fail(result.error);
-      secondPlacePoints = result.value;
-    }
-
-    // Validate thirdPlacePoints
-    let thirdPlacePoints: number | null = null;
-    if (
-      props.thirdPlacePoints !== undefined &&
-      props.thirdPlacePoints !== null
-    ) {
-      const result = validate.number(
-        props.thirdPlacePoints,
-        "thirdPlacePoints",
-        {
-          required: true,
-          min: 0,
-        },
-      );
-      if (result.kind === "err") return Effect.fail(result.error);
-      thirdPlacePoints = result.value;
-    }
-
-    // Validate date range
-    if (props.startTime && props.endTime) {
-      const rangeResult = validate.dateRange(props.startTime, props.endTime);
-      if (rangeResult.kind === "err") {
-        return Effect.fail(
-          new ValidationError({
-            message: "endTime must be after startTime",
-            field: "endTime",
-          }),
+      // Validate firstPlacePoints
+      let firstPlacePoints: number | null = null;
+      if (
+        props.firstPlacePoints !== undefined &&
+        props.firstPlacePoints !== null
+      ) {
+        firstPlacePoints = yield* validate.number(
+          props.firstPlacePoints,
+          "firstPlacePoints",
+          {
+            required: true,
+            min: 0,
+          },
         );
       }
-    }
 
-    // Validate daily time format
-    let dailyStartTime: string | null = null;
-    if (props.dailyStartTime) {
-      if (!DAILY_TIME_FORMAT.test(props.dailyStartTime)) {
-        return Effect.fail(
-          new ValidationError({
-            message: "dailyStartTime must be in HH:MM format",
-            field: "dailyStartTime",
-          }),
+      // Validate secondPlacePoints
+      let secondPlacePoints: number | null = null;
+      if (
+        props.secondPlacePoints !== undefined &&
+        props.secondPlacePoints !== null
+      ) {
+        secondPlacePoints = yield* validate.number(
+          props.secondPlacePoints,
+          "secondPlacePoints",
+          {
+            required: true,
+            min: 0,
+          },
         );
       }
-      dailyStartTime = props.dailyStartTime;
-    }
 
-    let dailyEndTime: string | null = null;
-    if (props.dailyEndTime) {
-      if (!DAILY_TIME_FORMAT.test(props.dailyEndTime)) {
-        return Effect.fail(
-          new ValidationError({
-            message: "dailyEndTime must be in HH:MM format",
-            field: "dailyEndTime",
-          }),
+      // Validate thirdPlacePoints
+      let thirdPlacePoints: number | null = null;
+      if (
+        props.thirdPlacePoints !== undefined &&
+        props.thirdPlacePoints !== null
+      ) {
+        thirdPlacePoints = yield* validate.number(
+          props.thirdPlacePoints,
+          "thirdPlacePoints",
+          {
+            required: true,
+            min: 0,
+          },
         );
       }
-      dailyEndTime = props.dailyEndTime;
-    }
 
-    const ts = timestamps(props);
+      // Validate date range
+      if (props.startTime && props.endTime) {
+        yield* validate.dateRange(props.startTime, props.endTime).pipe(
+          Effect.mapError(
+            () =>
+              new ValidationError({
+                message: "endTime must be after startTime",
+                field: "endTime",
+              }),
+          ),
+        );
+      }
 
-    return Effect.succeed(
-      new Challenge(
+      // Validate daily time format
+      let dailyStartTime: string | null = null;
+      if (props.dailyStartTime) {
+        if (!DAILY_TIME_FORMAT.test(props.dailyStartTime)) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "dailyStartTime must be in HH:MM format",
+              field: "dailyStartTime",
+            }),
+          );
+        }
+        dailyStartTime = props.dailyStartTime;
+      }
+
+      let dailyEndTime: string | null = null;
+      if (props.dailyEndTime) {
+        if (!DAILY_TIME_FORMAT.test(props.dailyEndTime)) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "dailyEndTime must be in HH:MM format",
+              field: "dailyEndTime",
+            }),
+          );
+        }
+        dailyEndTime = props.dailyEndTime;
+      }
+
+      const ts = timestamps(props);
+
+      return new Challenge(
         props.id ?? crypto.randomUUID(),
-        tripId.value,
-        name.value,
-        description.value || null,
+        tripId,
+        name,
+        description || null,
         props.image ?? null,
         props.submissionType,
         props.scoringCategory,
         props.isRecurring ?? false,
         dailyStartTime,
         dailyEndTime,
-        basePoints.value,
+        basePoints,
         firstPlacePoints,
         secondPlacePoints,
         thirdPlacePoints,
@@ -296,8 +283,8 @@ export class Challenge {
         props.autoApprove ?? false,
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -309,37 +296,40 @@ export class Challenge {
     description?: string | null;
     image?: string | null;
   }): Effect.Effect<Challenge, ValidationError, never> {
-    const updates: Partial<Challenge> = {};
+    const self = this;
+    return Effect.gen(function* () {
+      const updates: Partial<Challenge> = {};
 
-    // Validate name if provided
-    if (props.name !== undefined) {
-      const validated = validate.string(props.name, "name", {
-        required: true,
-        maxLength: 200,
-        trim: true,
-      });
-      if (validated.kind === "err") return Effect.fail(validated.error);
-      updates.name = validated.value;
-    }
+      // Validate name if provided
+      if (props.name !== undefined) {
+        updates.name = yield* validate.string(props.name, "name", {
+          required: true,
+          maxLength: 200,
+          trim: true,
+        });
+      }
 
-    // Validate description if provided
-    if (props.description !== undefined && props.description !== null) {
-      const validated = validate.string(props.description, "description", {
-        required: false,
-        maxLength: 2000,
-        trim: true,
-      });
-      if (validated.kind === "err") return Effect.fail(validated.error);
-      updates.description = validated.value;
-    } else if (props.description === null) {
-      updates.description = null;
-    }
+      // Validate description if provided
+      if (props.description !== undefined && props.description !== null) {
+        updates.description = yield* validate.string(
+          props.description,
+          "description",
+          {
+            required: false,
+            maxLength: 2000,
+            trim: true,
+          },
+        );
+      } else if (props.description === null) {
+        updates.description = null;
+      }
 
-    if (props.image !== undefined) {
-      updates.image = props.image;
-    }
+      if (props.image !== undefined) {
+        updates.image = props.image;
+      }
 
-    return Effect.succeed(updateEntity(this, updates, Challenge));
+      return updateEntity(self, updates, Challenge);
+    });
   }
 
   /**
@@ -372,68 +362,58 @@ export class Challenge {
     secondPlacePoints?: number | null;
     thirdPlacePoints?: number | null;
   }): Effect.Effect<Challenge, ValidationError, never> {
-    const updates: Partial<Challenge> = {};
+    const self = this;
+    return Effect.gen(function* () {
+      const updates: Partial<Challenge> = {};
 
-    // Validate basePoints if provided
-    if (props.basePoints !== undefined) {
-      const validated = validate.number(props.basePoints, "basePoints", {
-        required: true,
-        min: 0,
-        max: 10000,
-      });
-      if (validated.kind === "err") return Effect.fail(validated.error);
-      updates.basePoints = validated.value;
-    }
-
-    // Validate firstPlacePoints
-    if (props.firstPlacePoints !== undefined) {
-      if (props.firstPlacePoints !== null) {
-        const validated = validate.number(
-          props.firstPlacePoints,
-          "firstPlacePoints",
+      // Validate basePoints if provided
+      if (props.basePoints !== undefined) {
+        updates.basePoints = yield* validate.number(
+          props.basePoints,
+          "basePoints",
           {
             required: true,
             min: 0,
+            max: 10000,
           },
         );
-        if (validated.kind === "err") return Effect.fail(validated.error);
       }
-      updates.firstPlacePoints = props.firstPlacePoints;
-    }
 
-    // Validate secondPlacePoints
-    if (props.secondPlacePoints !== undefined) {
-      if (props.secondPlacePoints !== null) {
-        const validated = validate.number(
-          props.secondPlacePoints,
-          "secondPlacePoints",
-          {
+      // Validate firstPlacePoints
+      if (props.firstPlacePoints !== undefined) {
+        if (props.firstPlacePoints !== null) {
+          yield* validate.number(props.firstPlacePoints, "firstPlacePoints", {
             required: true,
             min: 0,
-          },
-        );
-        if (validated.kind === "err") return Effect.fail(validated.error);
+          });
+        }
+        updates.firstPlacePoints = props.firstPlacePoints;
       }
-      updates.secondPlacePoints = props.secondPlacePoints;
-    }
 
-    // Validate thirdPlacePoints
-    if (props.thirdPlacePoints !== undefined) {
-      if (props.thirdPlacePoints !== null) {
-        const validated = validate.number(
-          props.thirdPlacePoints,
-          "thirdPlacePoints",
-          {
+      // Validate secondPlacePoints
+      if (props.secondPlacePoints !== undefined) {
+        if (props.secondPlacePoints !== null) {
+          yield* validate.number(props.secondPlacePoints, "secondPlacePoints", {
             required: true,
             min: 0,
-          },
-        );
-        if (validated.kind === "err") return Effect.fail(validated.error);
+          });
+        }
+        updates.secondPlacePoints = props.secondPlacePoints;
       }
-      updates.thirdPlacePoints = props.thirdPlacePoints;
-    }
 
-    return Effect.succeed(updateEntity(this, updates, Challenge));
+      // Validate thirdPlacePoints
+      if (props.thirdPlacePoints !== undefined) {
+        if (props.thirdPlacePoints !== null) {
+          yield* validate.number(props.thirdPlacePoints, "thirdPlacePoints", {
+            required: true,
+            min: 0,
+          });
+        }
+        updates.thirdPlacePoints = props.thirdPlacePoints;
+      }
+
+      return updateEntity(self, updates, Challenge);
+    });
   }
 
   /**
@@ -448,63 +428,66 @@ export class Challenge {
     dailyStartTime?: string | null;
     dailyEndTime?: string | null;
   }): Effect.Effect<Challenge, ValidationError, never> {
-    const updates: Partial<Challenge> = {};
+    const self = this;
+    return Effect.gen(function* () {
+      const updates: Partial<Challenge> = {};
 
-    const newStartTime =
-      props.startTime !== undefined ? props.startTime : this.startTime;
-    const newEndTime =
-      props.endTime !== undefined ? props.endTime : this.endTime;
+      const newStartTime =
+        props.startTime !== undefined ? props.startTime : self.startTime;
+      const newEndTime =
+        props.endTime !== undefined ? props.endTime : self.endTime;
 
-    // Validate time range
-    if (newStartTime && newEndTime) {
-      const rangeResult = validate.dateRange(newStartTime, newEndTime);
-      if (rangeResult.kind === "err") {
-        return Effect.fail(
-          new ValidationError({
-            message: "endTime must be after startTime",
-            field: "endTime",
-          }),
+      // Validate time range
+      if (newStartTime && newEndTime) {
+        yield* validate.dateRange(newStartTime, newEndTime).pipe(
+          Effect.mapError(
+            () =>
+              new ValidationError({
+                message: "endTime must be after startTime",
+                field: "endTime",
+              }),
+          ),
         );
       }
-    }
 
-    if (props.startTime !== undefined) updates.startTime = props.startTime;
-    if (props.endTime !== undefined) updates.endTime = props.endTime;
-    if (props.votingStartTime !== undefined)
-      updates.votingStartTime = props.votingStartTime;
-    if (props.votingEndTime !== undefined)
-      updates.votingEndTime = props.votingEndTime;
+      if (props.startTime !== undefined) updates.startTime = props.startTime;
+      if (props.endTime !== undefined) updates.endTime = props.endTime;
+      if (props.votingStartTime !== undefined)
+        updates.votingStartTime = props.votingStartTime;
+      if (props.votingEndTime !== undefined)
+        updates.votingEndTime = props.votingEndTime;
 
-    // Validate daily time format
-    if (props.dailyStartTime !== undefined && props.dailyStartTime !== null) {
-      if (!DAILY_TIME_FORMAT.test(props.dailyStartTime)) {
-        return Effect.fail(
-          new ValidationError({
-            message: "dailyStartTime must be in HH:MM format",
-            field: "dailyStartTime",
-          }),
-        );
+      // Validate daily time format
+      if (props.dailyStartTime !== undefined && props.dailyStartTime !== null) {
+        if (!DAILY_TIME_FORMAT.test(props.dailyStartTime)) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "dailyStartTime must be in HH:MM format",
+              field: "dailyStartTime",
+            }),
+          );
+        }
+        updates.dailyStartTime = props.dailyStartTime;
+      } else if (props.dailyStartTime === null) {
+        updates.dailyStartTime = null;
       }
-      updates.dailyStartTime = props.dailyStartTime;
-    } else if (props.dailyStartTime === null) {
-      updates.dailyStartTime = null;
-    }
 
-    if (props.dailyEndTime !== undefined && props.dailyEndTime !== null) {
-      if (!DAILY_TIME_FORMAT.test(props.dailyEndTime)) {
-        return Effect.fail(
-          new ValidationError({
-            message: "dailyEndTime must be in HH:MM format",
-            field: "dailyEndTime",
-          }),
-        );
+      if (props.dailyEndTime !== undefined && props.dailyEndTime !== null) {
+        if (!DAILY_TIME_FORMAT.test(props.dailyEndTime)) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "dailyEndTime must be in HH:MM format",
+              field: "dailyEndTime",
+            }),
+          );
+        }
+        updates.dailyEndTime = props.dailyEndTime;
+      } else if (props.dailyEndTime === null) {
+        updates.dailyEndTime = null;
       }
-      updates.dailyEndTime = props.dailyEndTime;
-    } else if (props.dailyEndTime === null) {
-      updates.dailyEndTime = null;
-    }
 
-    return Effect.succeed(updateEntity(this, updates, Challenge));
+      return updateEntity(self, updates, Challenge);
+    });
   }
 
   /**

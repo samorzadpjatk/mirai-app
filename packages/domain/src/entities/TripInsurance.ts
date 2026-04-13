@@ -64,196 +64,205 @@ export class TripInsurance {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<TripInsurance, ValidationError, never> {
-    // Validate tripId
-    const tripId = validate.id(props.tripId, "tripId");
-    if (isError(tripId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: tripId.error.message,
-          field: "tripId",
-        }),
+    return Effect.gen(function* () {
+      // Validate tripId
+      const tripId = yield* validate.id(props.tripId, "tripId").pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              message: error.message,
+              field: "tripId",
+            }),
+        ),
       );
-    }
 
-    // Validate label
-    const label = validate.string(props.label, "label", {
-      required: true,
-      maxLength: 100,
-      trim: true,
-    });
-    if (isError(label)) {
-      return Effect.fail(
-        new ValidationError({
-          message: label.error.message,
-          field: "label",
-        }),
-      );
-    }
-
-    // Validate phoneNumber
-    const phoneNumber = validate.string(props.phoneNumber, "phoneNumber", {
-      required: true,
-      maxLength: 50,
-      trim: true,
-    });
-    if (isError(phoneNumber)) {
-      return Effect.fail(
-        new ValidationError({
-          message: phoneNumber.error.message,
-          field: "phoneNumber",
-        }),
-      );
-    }
-
-    // Validate phoneDisplay
-    const phoneDisplay = validate.string(props.phoneDisplay, "phoneDisplay", {
-      required: true,
-      maxLength: 50,
-      trim: true,
-    });
-    if (isError(phoneDisplay)) {
-      return Effect.fail(
-        new ValidationError({
-          message: phoneDisplay.error.message,
-          field: "phoneDisplay",
-        }),
-      );
-    }
-
-    // Validate policyNumber
-    const policyNumber = validate.string(props.policyNumber, "policyNumber", {
-      required: true,
-      maxLength: 100,
-      trim: true,
-    });
-    if (isError(policyNumber)) {
-      return Effect.fail(
-        new ValidationError({
-          message: policyNumber.error.message,
-          field: "policyNumber",
-        }),
-      );
-    }
-
-    // Validate contractNumber
-    const contractNumber = validate.string(
-      props.contractNumber,
-      "contractNumber",
-      {
-        required: true,
-        maxLength: 100,
-        trim: true,
-      },
-    );
-    if (isError(contractNumber)) {
-      return Effect.fail(
-        new ValidationError({
-          message: contractNumber.error.message,
-          field: "contractNumber",
-        }),
-      );
-    }
-
-    // Validate providerName
-    const providerName = validate.string(props.providerName, "providerName", {
-      required: true,
-      maxLength: 100,
-      trim: true,
-    });
-    if (isError(providerName)) {
-      return Effect.fail(
-        new ValidationError({
-          message: providerName.error.message,
-          field: "providerName",
-        }),
-      );
-    }
-
-    // Validate optional hospital fields
-    if (props.hospitalName) {
-      const validated = validate.string(props.hospitalName, "hospitalName", {
-        required: false,
-        maxLength: 200,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "hospitalName",
-          }),
-        );
-      }
-    }
-
-    if (props.hospitalAddress) {
-      const validated = validate.string(
-        props.hospitalAddress,
-        "hospitalAddress",
-        {
-          required: false,
-          maxLength: 500,
-        },
-      );
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "hospitalAddress",
-          }),
-        );
-      }
-    }
-
-    if (props.hospitalDistance) {
-      const validated = validate.string(
-        props.hospitalDistance,
-        "hospitalDistance",
-        {
-          required: false,
+      // Validate label
+      const label = yield* validate
+        .string(props.label, "label", {
+          required: true,
           maxLength: 100,
-        },
-      );
-      if (isError(validated)) {
-        return Effect.fail(
+          trim: true,
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new ValidationError({
+                message: error.message,
+                field: "label",
+              }),
+          ),
+        );
+
+      // Validate phoneNumber
+      const phoneNumber = yield* validate
+        .string(props.phoneNumber, "phoneNumber", {
+          required: true,
+          maxLength: 50,
+          trim: true,
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new ValidationError({
+                message: error.message,
+                field: "phoneNumber",
+              }),
+          ),
+        );
+
+      // Validate phoneDisplay
+      const phoneDisplay = yield* validate
+        .string(props.phoneDisplay, "phoneDisplay", {
+          required: true,
+          maxLength: 50,
+          trim: true,
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new ValidationError({
+                message: error.message,
+                field: "phoneDisplay",
+              }),
+          ),
+        );
+
+      // Validate policyNumber
+      const policyNumber = yield* validate
+        .string(props.policyNumber, "policyNumber", {
+          required: true,
+          maxLength: 100,
+          trim: true,
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new ValidationError({
+                message: error.message,
+                field: "policyNumber",
+              }),
+          ),
+        );
+
+      // Validate contractNumber
+      const contractNumber = yield* validate
+        .string(props.contractNumber, "contractNumber", {
+          required: true,
+          maxLength: 100,
+          trim: true,
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new ValidationError({
+                message: error.message,
+                field: "contractNumber",
+              }),
+          ),
+        );
+
+      // Validate providerName
+      const providerName = yield* validate
+        .string(props.providerName, "providerName", {
+          required: true,
+          maxLength: 100,
+          trim: true,
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new ValidationError({
+                message: error.message,
+                field: "providerName",
+              }),
+          ),
+        );
+
+      // Validate optional hospital fields
+      let hospitalName: string | null = props.hospitalName ?? null;
+      if (props.hospitalName) {
+        hospitalName = yield* validate
+          .string(props.hospitalName, "hospitalName", {
+            required: false,
+            maxLength: 200,
+          })
+          .pipe(
+            Effect.mapError(
+              (error) =>
+                new ValidationError({
+                  message: error.message,
+                  field: "hospitalName",
+                }),
+            ),
+          );
+      }
+
+      let hospitalAddress: string | null = props.hospitalAddress ?? null;
+      if (props.hospitalAddress) {
+        hospitalAddress = yield* validate
+          .string(props.hospitalAddress, "hospitalAddress", {
+            required: false,
+            maxLength: 500,
+          })
+          .pipe(
+            Effect.mapError(
+              (error) =>
+                new ValidationError({
+                  message: error.message,
+                  field: "hospitalAddress",
+                }),
+            ),
+          );
+      }
+
+      let hospitalDistance: string | null = props.hospitalDistance ?? null;
+      if (props.hospitalDistance) {
+        hospitalDistance = yield* validate
+          .string(props.hospitalDistance, "hospitalDistance", {
+            required: false,
+            maxLength: 100,
+          })
+          .pipe(
+            Effect.mapError(
+              (error) =>
+                new ValidationError({
+                  message: error.message,
+                  field: "hospitalDistance",
+                }),
+            ),
+          );
+      }
+
+      // Validate steps array (max 20 steps)
+      const steps = props.steps ?? [];
+      if (steps.length > 20) {
+        return yield* Effect.fail(
           new ValidationError({
-            message: validated.error.message,
-            field: "hospitalDistance",
+            message: "Maximum 20 steps allowed",
+            field: "steps",
           }),
         );
       }
-    }
 
-    // Validate steps array (max 20 steps)
-    const steps = props.steps ?? [];
-    if (steps.length > 20) {
-      return Effect.fail(
-        new ValidationError({
-          message: "Maximum 20 steps allowed",
-          field: "steps",
-        }),
-      );
-    }
+      const ts = timestamps(props);
 
-    const ts = timestamps(props);
-
-    return Effect.succeed(
-      new TripInsurance(
+      return new TripInsurance(
         props.id ?? crypto.randomUUID(),
-        tripId.value,
-        label.value,
-        phoneNumber.value,
-        phoneDisplay.value,
-        policyNumber.value,
-        contractNumber.value,
-        providerName.value,
-        props.hospitalName ?? null,
-        props.hospitalAddress ?? null,
-        props.hospitalDistance ?? null,
+        tripId,
+        label,
+        phoneNumber,
+        phoneDisplay,
+        policyNumber,
+        contractNumber,
+        providerName,
+        hospitalName,
+        hospitalAddress,
+        hospitalDistance,
         Object.freeze([...steps]),
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -270,121 +279,127 @@ export class TripInsurance {
     contractNumber?: string;
     providerName?: string;
   }): Effect.Effect<TripInsurance, ValidationError, never> {
-    const updates: Partial<TripInsurance> = {};
+    return Effect.gen(
+      function* () {
+        const updates: Partial<TripInsurance> = {};
 
-    // Validate label if provided
-    if (props.label !== undefined) {
-      const validated = validate.string(props.label, "label", {
-        required: true,
-        maxLength: 100,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "label",
-          }),
-        );
-      }
-      updates.label = validated.value;
-    }
+        // Validate label if provided
+        if (props.label !== undefined) {
+          updates.label = yield* validate
+            .string(props.label, "label", {
+              required: true,
+              maxLength: 100,
+              trim: true,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "label",
+                  }),
+              ),
+            );
+        }
 
-    // Validate phoneNumber if provided
-    if (props.phoneNumber !== undefined) {
-      const validated = validate.string(props.phoneNumber, "phoneNumber", {
-        required: true,
-        maxLength: 50,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "phoneNumber",
-          }),
-        );
-      }
-      updates.phoneNumber = validated.value;
-    }
+        // Validate phoneNumber if provided
+        if (props.phoneNumber !== undefined) {
+          updates.phoneNumber = yield* validate
+            .string(props.phoneNumber, "phoneNumber", {
+              required: true,
+              maxLength: 50,
+              trim: true,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "phoneNumber",
+                  }),
+              ),
+            );
+        }
 
-    // Validate phoneDisplay if provided
-    if (props.phoneDisplay !== undefined) {
-      const validated = validate.string(props.phoneDisplay, "phoneDisplay", {
-        required: true,
-        maxLength: 50,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "phoneDisplay",
-          }),
-        );
-      }
-      updates.phoneDisplay = validated.value;
-    }
+        // Validate phoneDisplay if provided
+        if (props.phoneDisplay !== undefined) {
+          updates.phoneDisplay = yield* validate
+            .string(props.phoneDisplay, "phoneDisplay", {
+              required: true,
+              maxLength: 50,
+              trim: true,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "phoneDisplay",
+                  }),
+              ),
+            );
+        }
 
-    // Validate policyNumber if provided
-    if (props.policyNumber !== undefined) {
-      const validated = validate.string(props.policyNumber, "policyNumber", {
-        required: true,
-        maxLength: 100,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "policyNumber",
-          }),
-        );
-      }
-      updates.policyNumber = validated.value;
-    }
+        // Validate policyNumber if provided
+        if (props.policyNumber !== undefined) {
+          updates.policyNumber = yield* validate
+            .string(props.policyNumber, "policyNumber", {
+              required: true,
+              maxLength: 100,
+              trim: true,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "policyNumber",
+                  }),
+              ),
+            );
+        }
 
-    // Validate contractNumber if provided
-    if (props.contractNumber !== undefined) {
-      const validated = validate.string(
-        props.contractNumber,
-        "contractNumber",
-        {
-          required: true,
-          maxLength: 100,
-          trim: true,
-        },
-      );
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "contractNumber",
-          }),
-        );
-      }
-      updates.contractNumber = validated.value;
-    }
+        // Validate contractNumber if provided
+        if (props.contractNumber !== undefined) {
+          updates.contractNumber = yield* validate
+            .string(props.contractNumber, "contractNumber", {
+              required: true,
+              maxLength: 100,
+              trim: true,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "contractNumber",
+                  }),
+              ),
+            );
+        }
 
-    // Validate providerName if provided
-    if (props.providerName !== undefined) {
-      const validated = validate.string(props.providerName, "providerName", {
-        required: true,
-        maxLength: 100,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "providerName",
-          }),
-        );
-      }
-      updates.providerName = validated.value;
-    }
+        // Validate providerName if provided
+        if (props.providerName !== undefined) {
+          updates.providerName = yield* validate
+            .string(props.providerName, "providerName", {
+              required: true,
+              maxLength: 100,
+              trim: true,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "providerName",
+                  }),
+              ),
+            );
+        }
 
-    return Effect.succeed(updateEntity(this, updates, TripInsurance));
+        return updateEntity(this, updates, TripInsurance);
+      }.bind(this),
+    );
   }
 
   /**
@@ -398,73 +413,77 @@ export class TripInsurance {
     hospitalAddress?: string | null;
     hospitalDistance?: string | null;
   }): Effect.Effect<TripInsurance, ValidationError, never> {
-    const updates: Partial<TripInsurance> = {};
+    return Effect.gen(
+      function* () {
+        const updates: Partial<TripInsurance> = {};
 
-    // Validate hospitalName if provided
-    if (props.hospitalName !== undefined && props.hospitalName !== null) {
-      const validated = validate.string(props.hospitalName, "hospitalName", {
-        required: false,
-        maxLength: 200,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "hospitalName",
-          }),
-        );
-      }
-      updates.hospitalName = validated.value;
-    } else if (props.hospitalName === null) {
-      updates.hospitalName = null;
-    }
-
-    // Validate hospitalAddress if provided
-    if (props.hospitalAddress !== undefined && props.hospitalAddress !== null) {
-      const validated = validate.string(
-        props.hospitalAddress,
-        "hospitalAddress",
-        {
-          required: false,
-          maxLength: 500,
-        },
-      );
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "hospitalAddress",
-          }),
-        );
-      }
-      updates.hospitalAddress = validated.value;
-    } else if (props.hospitalAddress === null) {
-      updates.hospitalAddress = null;
-    }
-
-    if (props.hospitalDistance !== undefined) {
-      if (props.hospitalDistance !== null) {
-        const validated = validate.string(
-          props.hospitalDistance,
-          "hospitalDistance",
-          {
-            required: false,
-            maxLength: 100,
-          },
-        );
-        if (isError(validated)) {
-          return Effect.fail(
-            new ValidationError({
-              message: validated.error.message,
-              field: "hospitalDistance",
-            }),
-          );
+        // Validate hospitalName if provided
+        if (props.hospitalName !== undefined && props.hospitalName !== null) {
+          updates.hospitalName = yield* validate
+            .string(props.hospitalName, "hospitalName", {
+              required: false,
+              maxLength: 200,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "hospitalName",
+                  }),
+              ),
+            );
+        } else if (props.hospitalName === null) {
+          updates.hospitalName = null;
         }
-      }
-      updates.hospitalDistance = props.hospitalDistance;
-    }
 
-    return Effect.succeed(updateEntity(this, updates, TripInsurance));
+        // Validate hospitalAddress if provided
+        if (
+          props.hospitalAddress !== undefined &&
+          props.hospitalAddress !== null
+        ) {
+          updates.hospitalAddress = yield* validate
+            .string(props.hospitalAddress, "hospitalAddress", {
+              required: false,
+              maxLength: 500,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "hospitalAddress",
+                  }),
+              ),
+            );
+        } else if (props.hospitalAddress === null) {
+          updates.hospitalAddress = null;
+        }
+
+        if (props.hospitalDistance !== undefined) {
+          if (props.hospitalDistance !== null) {
+            updates.hospitalDistance = yield* validate
+              .string(props.hospitalDistance, "hospitalDistance", {
+                required: false,
+                maxLength: 100,
+              })
+              .pipe(
+                Effect.mapError(
+                  (error) =>
+                    new ValidationError({
+                      message: error.message,
+                      field: "hospitalDistance",
+                    }),
+                ),
+              );
+          } else {
+            updates.hospitalDistance = null;
+          }
+        }
+
+        return updateEntity(this, updates, TripInsurance);
+      }.bind(this),
+    );
   }
 
   /**
@@ -476,59 +495,65 @@ export class TripInsurance {
   addStep(
     step: Omit<InsuranceStep, "stepNumber">,
   ): Effect.Effect<TripInsurance, ValidationError, never> {
-    if (this.steps.length >= 20) {
-      return Effect.fail(
-        new ValidationError({
-          message: "Maximum 20 steps allowed",
-          field: "steps",
-        }),
-      );
-    }
+    return Effect.gen(
+      function* () {
+        if (this.steps.length >= 20) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: "Maximum 20 steps allowed",
+              field: "steps",
+            }),
+          );
+        }
 
-    // Validate step title
-    const title = validate.string(step.title, "title", {
-      required: true,
-      maxLength: 200,
-      trim: true,
-    });
-    if (isError(title)) {
-      return Effect.fail(
-        new ValidationError({
-          message: title.error.message,
-          field: "title",
-        }),
-      );
-    }
+        // Validate step title
+        const title = yield* validate
+          .string(step.title, "title", {
+            required: true,
+            maxLength: 200,
+            trim: true,
+          })
+          .pipe(
+            Effect.mapError(
+              (error) =>
+                new ValidationError({
+                  message: error.message,
+                  field: "title",
+                }),
+            ),
+          );
 
-    // Validate step text
-    const text = validate.string(step.text, "text", {
-      required: true,
-      maxLength: 2000,
-      trim: true,
-    });
-    if (isError(text)) {
-      return Effect.fail(
-        new ValidationError({
-          message: text.error.message,
-          field: "text",
-        }),
-      );
-    }
+        // Validate step text
+        const text = yield* validate
+          .string(step.text, "text", {
+            required: true,
+            maxLength: 2000,
+            trim: true,
+          })
+          .pipe(
+            Effect.mapError(
+              (error) =>
+                new ValidationError({
+                  message: error.message,
+                  field: "text",
+                }),
+            ),
+          );
 
-    const stepNumber = this.steps.length + 1;
-    const newStep: InsuranceStep = {
-      ...step,
-      stepNumber,
-      title: title.value,
-      text: text.value,
-    };
+        const stepNumber = this.steps.length + 1;
+        const newStep: InsuranceStep = {
+          ...step,
+          stepNumber,
+          title,
+          text,
+        };
 
-    return Effect.succeed(
-      updateEntity(
-        this,
-        { steps: Object.freeze([...this.steps, newStep]) },
-        TripInsurance,
-      ),
+        return updateEntity(
+          this,
+          { steps: Object.freeze([...this.steps, newStep]) },
+          TripInsurance,
+        );
+      }.bind(this),
     );
   }
 
@@ -558,70 +583,78 @@ export class TripInsurance {
     stepNumber: number,
     updates: Partial<Omit<InsuranceStep, "stepNumber">>,
   ): Effect.Effect<TripInsurance, ValidationError, never> {
-    const step = this.steps.find((s) => s.stepNumber === stepNumber);
-    if (!step) {
-      return Effect.fail(
-        new ValidationError({
-          message: `Step ${stepNumber} not found`,
-          field: "stepNumber",
-        }),
-      );
-    }
+    return Effect.gen(
+      function* () {
+        const step = this.steps.find((s) => s.stepNumber === stepNumber);
+        if (!step) {
+          return yield* Effect.fail(
+            new ValidationError({
+              message: `Step ${stepNumber} not found`,
+              field: "stepNumber",
+            }),
+          );
+        }
 
-    const finalUpdates: Partial<InsuranceStep> = {};
+        const finalUpdates: Partial<InsuranceStep> = {};
 
-    // Validate title if provided
-    if (updates.title !== undefined) {
-      const validated = validate.string(updates.title, "title", {
-        required: true,
-        maxLength: 200,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "title",
-          }),
+        // Validate title if provided
+        if (updates.title !== undefined) {
+          finalUpdates.title = yield* validate
+            .string(updates.title, "title", {
+              required: true,
+              maxLength: 200,
+              trim: true,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "title",
+                  }),
+              ),
+            );
+        }
+
+        // Validate text if provided
+        if (updates.text !== undefined) {
+          finalUpdates.text = yield* validate
+            .string(updates.text, "text", {
+              required: true,
+              maxLength: 2000,
+              trim: true,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new ValidationError({
+                    message: error.message,
+                    field: "text",
+                  }),
+              ),
+            );
+        }
+
+        if (updates.requiredInfo !== undefined) {
+          finalUpdates.requiredInfo = updates.requiredInfo;
+        }
+        if (updates.exampleCall !== undefined) {
+          finalUpdates.exampleCall = updates.exampleCall;
+        }
+        if (updates.additionalText !== undefined) {
+          finalUpdates.additionalText = updates.additionalText;
+        }
+
+        const newSteps = this.steps.map((s) =>
+          s.stepNumber === stepNumber ? { ...s, ...finalUpdates } : s,
         );
-      }
-      finalUpdates.title = validated.value;
-    }
 
-    // Validate text if provided
-    if (updates.text !== undefined) {
-      const validated = validate.string(updates.text, "text", {
-        required: true,
-        maxLength: 2000,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "text",
-          }),
+        return updateEntity(
+          this,
+          { steps: Object.freeze(newSteps) },
+          TripInsurance,
         );
-      }
-      finalUpdates.text = validated.value;
-    }
-
-    if (updates.requiredInfo !== undefined) {
-      finalUpdates.requiredInfo = updates.requiredInfo;
-    }
-    if (updates.exampleCall !== undefined) {
-      finalUpdates.exampleCall = updates.exampleCall;
-    }
-    if (updates.additionalText !== undefined) {
-      finalUpdates.additionalText = updates.additionalText;
-    }
-
-    const newSteps = this.steps.map((s) =>
-      s.stepNumber === stepNumber ? { ...s, ...finalUpdates } : s,
-    );
-
-    return Effect.succeed(
-      updateEntity(this, { steps: Object.freeze(newSteps) }, TripInsurance),
+      }.bind(this),
     );
   }
 

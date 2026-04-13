@@ -93,76 +93,54 @@ export class Notification {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<Notification, ValidationError, never> {
-    // Validate title
-    const title = validate.string(props.title, "title", {
-      required: true,
-      maxLength: 200,
-      trim: true,
+    return Effect.gen(function* () {
+      // Validate title
+      const title = yield* validate.string(props.title, "title", {
+        required: true,
+        maxLength: 200,
+        trim: true,
+      });
+
+      // Validate body
+      const body = yield* validate.string(props.body, "body", {
+        required: true,
+        maxLength: 2000,
+        trim: true,
+      });
+
+      // Validate createdById
+      const createdById = yield* validate.id(props.createdById, "createdById");
+
+      // Validate scheduledFor is not in the past
+      if (props.scheduledFor && props.scheduledFor.getTime() < Date.now()) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "scheduledFor must be in the future",
+            field: "scheduledFor",
+          }),
+        );
+      }
+
+      const ts = timestamps(props);
+
+      return yield* Effect.succeed(
+        new Notification(
+          props.id ?? crypto.randomUUID(),
+          title,
+          body,
+          props.url ?? null,
+          createdById,
+          props.tripId ?? null,
+          props.status ?? NotificationStatus.DRAFT,
+          props.priority ?? NotificationPriority.NORMAL,
+          props.scheduledFor ?? null,
+          props.sentAt ?? null,
+          props.failureReason ?? null,
+          ts.createdAt,
+          ts.updatedAt,
+        ),
+      );
     });
-    if (isError(title)) {
-      return Effect.fail(
-        new ValidationError({
-          message: title.error.message,
-          field: "title",
-        }),
-      );
-    }
-
-    // Validate body
-    const body = validate.string(props.body, "body", {
-      required: true,
-      maxLength: 2000,
-      trim: true,
-    });
-    if (isError(body)) {
-      return Effect.fail(
-        new ValidationError({
-          message: body.error.message,
-          field: "body",
-        }),
-      );
-    }
-
-    // Validate createdById
-    const createdById = validate.id(props.createdById, "createdById");
-    if (isError(createdById)) {
-      return Effect.fail(
-        new ValidationError({
-          message: createdById.error.message,
-          field: "createdById",
-        }),
-      );
-    }
-
-    // Validate scheduledFor is not in the past
-    if (props.scheduledFor && props.scheduledFor.getTime() < Date.now()) {
-      return Effect.fail(
-        new ValidationError({
-          message: "scheduledFor must be in the future",
-          field: "scheduledFor",
-        }),
-      );
-    }
-
-    const ts = timestamps(props);
-
-    return Effect.succeed(
-      new Notification(
-        props.id ?? crypto.randomUUID(),
-        title.value,
-        body.value,
-        props.url ?? null,
-        createdById.value,
-        props.tripId ?? null,
-        props.status ?? NotificationStatus.DRAFT,
-        props.priority ?? NotificationPriority.NORMAL,
-        props.scheduledFor ?? null,
-        props.sentAt ?? null,
-        props.failureReason ?? null,
-        ts.createdAt,
-        ts.updatedAt,
-      ),
-    );
   }
 
   /**
@@ -181,60 +159,50 @@ export class Notification {
     ValidationError | StateTransitionError,
     never
   > {
-    // Cannot update after sent
-    if (this.isSent()) {
-      return Effect.fail(
-        new StateTransitionError({
-          from: this.status,
-          to: this.status,
-          entityType: "Notification",
-        }),
-      );
-    }
+    return Effect.gen(
+      function* () {
+        // Cannot update after sent
+        if (this.isSent()) {
+          return yield* Effect.fail(
+            new StateTransitionError({
+              from: this.status,
+              to: this.status,
+              entityType: "Notification",
+            }),
+          );
+        }
 
-    const updates: Partial<Notification> = {};
+        let title = this.title;
+        let body = this.body;
+        let url = this.url;
 
-    // Validate title if provided
-    if (props.title !== undefined) {
-      const validated = validate.string(props.title, "title", {
-        required: true,
-        maxLength: 200,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "title",
-          }),
+        // Validate title if provided
+        if (props.title !== undefined) {
+          title = yield* validate.string(props.title, "title", {
+            required: true,
+            maxLength: 200,
+            trim: true,
+          });
+        }
+
+        // Validate body if provided
+        if (props.body !== undefined) {
+          body = yield* validate.string(props.body, "body", {
+            required: true,
+            maxLength: 2000,
+            trim: true,
+          });
+        }
+
+        if (props.url !== undefined) {
+          url = props.url;
+        }
+
+        return yield* Effect.succeed(
+          updateEntity(this, { title, body, url }, Notification),
         );
-      }
-      updates.title = validated.value;
-    }
-
-    // Validate body if provided
-    if (props.body !== undefined) {
-      const validated = validate.string(props.body, "body", {
-        required: true,
-        maxLength: 2000,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "body",
-          }),
-        );
-      }
-      updates.body = validated.value;
-    }
-
-    if (props.url !== undefined) {
-      updates.url = props.url;
-    }
-
-    return Effect.succeed(updateEntity(this, updates, Notification));
+      }.bind(this),
+    );
   }
 
   /**

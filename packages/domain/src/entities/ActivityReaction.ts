@@ -32,68 +32,48 @@ export class ActivityReaction {
     reactionType: string;
     createdAt?: Date;
   }): Effect.Effect<ActivityReaction, ValidationError, never> {
-    // Validate activityId
-    const activityId = validate.id(props.activityId, "activityId");
-    if (isError(activityId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: activityId.error.message,
-          field: "activityId",
-        }),
+    return Effect.gen(function* () {
+      // Validate activityId
+      const activityId = yield* validate.id(props.activityId, "activityId");
+
+      // Validate userId
+      const userId = yield* validate.id(props.userId, "userId");
+
+      // Validate reactionType
+      const reactionType = yield* validate.string(
+        props.reactionType,
+        "reactionType",
+        {
+          required: true,
+          maxLength: 50,
+          trim: true,
+        },
       );
-    }
 
-    // Validate userId
-    const userId = validate.id(props.userId, "userId");
-    if (isError(userId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: userId.error.message,
-          field: "userId",
-        }),
-      );
-    }
+      // Validate reaction type is one of the allowed types
+      if (
+        !REACTION_TYPES.includes(
+          reactionType as (typeof REACTION_TYPES)[number],
+        )
+      ) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: `Invalid reaction type: ${reactionType}. Must be one of: ${REACTION_TYPES.join(", ")}`,
+            field: "reactionType",
+          }),
+        );
+      }
 
-    // Validate reactionType
-    const reactionType = validate.string(props.reactionType, "reactionType", {
-      required: true,
-      maxLength: 50,
-      trim: true,
-    });
-    if (isError(reactionType)) {
-      return Effect.fail(
-        new ValidationError({
-          message: reactionType.error.message,
-          field: "reactionType",
-        }),
-      );
-    }
+      const ts = timestamps(props);
 
-    // Validate reaction type is one of the allowed types
-    if (
-      !REACTION_TYPES.includes(
-        reactionType.value as (typeof REACTION_TYPES)[number],
-      )
-    ) {
-      return Effect.fail(
-        new ValidationError({
-          message: `Invalid reaction type: ${reactionType.value}. Must be one of: ${REACTION_TYPES.join(", ")}`,
-          field: "reactionType",
-        }),
-      );
-    }
-
-    const ts = timestamps(props);
-
-    return Effect.succeed(
-      new ActivityReaction(
+      return new ActivityReaction(
         props.id ?? crypto.randomUUID(),
-        activityId.value,
-        userId.value,
-        reactionType.value,
+        activityId,
+        userId,
+        reactionType,
         ts.createdAt,
-      ),
-    );
+      );
+    });
   }
 
   /**

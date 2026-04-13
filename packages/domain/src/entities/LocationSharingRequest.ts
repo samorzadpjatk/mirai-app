@@ -61,50 +61,34 @@ export class LocationSharingRequest {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<LocationSharingRequest, ValidationError, never> {
-    // Validate senderId
-    const senderId = validate.id(props.senderId, "senderId");
-    if (isError(senderId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: senderId.error.message,
-          field: "senderId",
-        }),
-      );
-    }
+    return Effect.gen(function* () {
+      // Validate senderId
+      const senderId = yield* validate.id(props.senderId, "senderId");
 
-    // Validate receiverId
-    const receiverId = validate.id(props.receiverId, "receiverId");
-    if (isError(receiverId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: receiverId.error.message,
-          field: "receiverId",
-        }),
-      );
-    }
+      // Validate receiverId
+      const receiverId = yield* validate.id(props.receiverId, "receiverId");
 
-    // Check that sender and receiver are different
-    if (senderId.value === receiverId.value) {
-      return Effect.fail(
-        new ValidationError({
-          message: "senderId and receiverId must be different",
-          field: "receiverId",
-        }),
-      );
-    }
+      // Check that sender and receiver are different
+      if (senderId === receiverId) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "senderId and receiverId must be different",
+            field: "receiverId",
+          }),
+        );
+      }
 
-    const ts = timestamps(props);
+      const ts = timestamps(props);
 
-    return Effect.succeed(
-      new LocationSharingRequest(
+      return new LocationSharingRequest(
         props.id ?? crypto.randomUUID(),
-        senderId.value,
-        receiverId.value,
+        senderId,
+        receiverId,
         props.status ?? LocationSharingRequestStatus.PENDING,
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**

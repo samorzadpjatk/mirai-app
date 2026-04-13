@@ -81,111 +81,65 @@ export class RewardPurchase {
     statusUpdatedAt?: Date;
     purchasedAt?: Date;
   }): Effect.Effect<RewardPurchase, ValidationError, never> {
-    // Validate rewardId
-    const rewardId = validate.id(props.rewardId, "rewardId");
-    if (isError(rewardId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: rewardId.error.message,
-          field: "rewardId",
-        }),
-      );
-    }
+    return Effect.gen(function* () {
+      // Validate rewardId
+      const rewardId = yield* validate.id(props.rewardId, "rewardId");
 
-    // Validate groupId
-    const groupId = validate.id(props.groupId, "groupId");
-    if (isError(groupId)) {
-      return Effect.fail(
-        new ValidationError({
-          message: groupId.error.message,
-          field: "groupId",
-        }),
-      );
-    }
+      // Validate groupId
+      const groupId = yield* validate.id(props.groupId, "groupId");
 
-    // Validate quantity
-    const quantity = validate.number(props.quantity, "quantity", {
-      required: true,
-      min: 1,
-      integer: true,
-    });
-    if (isError(quantity)) {
-      return Effect.fail(
-        new ValidationError({
-          message: quantity.error.message,
-          field: "quantity",
-        }),
-      );
-    }
+      // Validate quantity
+      const quantity = yield* validate.number(props.quantity, "quantity", {
+        required: true,
+        min: 1,
+        integer: true,
+      });
 
-    // Validate totalCost
-    const totalCost = validate.number(props.totalCost, "totalCost", {
-      required: true,
-      min: 0,
-    });
-    if (isError(totalCost)) {
-      return Effect.fail(
-        new ValidationError({
-          message: totalCost.error.message,
-          field: "totalCost",
-        }),
-      );
-    }
+      // Validate totalCost
+      const totalCost = yield* validate.number(props.totalCost, "totalCost", {
+        required: true,
+        min: 0,
+      });
 
-    // Validate purchasedById
-    const purchasedById = validate.id(props.purchasedById, "purchasedById");
-    if (isError(purchasedById)) {
-      return Effect.fail(
-        new ValidationError({
-          message: purchasedById.error.message,
-          field: "purchasedById",
-        }),
+      // Validate purchasedById
+      const purchasedById = yield* validate.id(
+        props.purchasedById,
+        "purchasedById",
       );
-    }
 
-    // Validate collectionMethod if provided
-    let collectionMethod: string | null = null;
-    if (props.collectionMethod) {
-      const validated = validate.string(
-        props.collectionMethod,
-        "collectionMethod",
-        {
-          required: false,
-          maxLength: 200,
-        },
-      );
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "collectionMethod",
-          }),
+      // Validate collectionMethod if provided
+      let collectionMethod: string | null = null;
+      if (props.collectionMethod) {
+        collectionMethod = yield* validate.string(
+          props.collectionMethod,
+          "collectionMethod",
+          {
+            required: false,
+            maxLength: 200,
+          },
         );
       }
-      collectionMethod = validated.value;
-    }
 
-    const now = new Date();
-    const ts = timestampsWithNow(now, {
-      createdAt: props.purchasedAt,
-      updatedAt: props.statusUpdatedAt,
-    });
+      const now = new Date();
+      const ts = timestampsWithNow(now, {
+        createdAt: props.purchasedAt,
+        updatedAt: props.statusUpdatedAt,
+      });
 
-    return Effect.succeed(
-      new RewardPurchase(
+      return new RewardPurchase(
         props.id ?? crypto.randomUUID(),
-        rewardId.value,
-        groupId.value,
-        quantity.value,
-        totalCost.value,
+        rewardId,
+        groupId,
+        quantity,
+        totalCost,
         props.status ?? RewardPurchaseStatus.BOUGHT,
         collectionMethod,
-        purchasedById.value,
+        purchasedById,
         props.statusUpdatedById ?? null,
         ts.updatedAt,
         ts.createdAt,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -200,36 +154,30 @@ export class RewardPurchase {
     ValidationError | StateTransitionError,
     never
   > {
-    if (!stateMachine.canTransition(this.status, newStatus)) {
-      return Effect.fail(
-        new StateTransitionError({
-          from: this.status,
-          to: newStatus,
-          entityType: "RewardPurchase",
-        }),
-      );
-    }
+    return Effect.gen(
+      function* () {
+        if (!stateMachine.canTransition(this.status, newStatus)) {
+          return yield* Effect.fail(
+            new StateTransitionError({
+              from: this.status,
+              to: newStatus,
+              entityType: "RewardPurchase",
+            }),
+          );
+        }
 
-    const validated = validate.id(updatedById, "updatedById");
-    if (isError(validated)) {
-      return Effect.fail(
-        new ValidationError({
-          message: validated.error.message,
-          field: "updatedById",
-        }),
-      );
-    }
+        const validated = yield* validate.id(updatedById, "updatedById");
 
-    return Effect.succeed(
-      updateEntity(
-        this,
-        {
-          status: newStatus,
-          statusUpdatedById: validated.value,
-          statusUpdatedAt: new Date(),
-        },
-        RewardPurchase,
-      ),
+        return updateEntity(
+          this,
+          {
+            status: newStatus,
+            statusUpdatedById: validated,
+            statusUpdatedAt: new Date(),
+          },
+          RewardPurchase,
+        );
+      }.bind(this),
     );
   }
 
@@ -292,23 +240,22 @@ export class RewardPurchase {
   updateCollectionMethod(
     method: string | null,
   ): Effect.Effect<RewardPurchase, ValidationError, never> {
-    if (method !== null) {
-      const validated = validate.string(method, "collectionMethod", {
-        required: false,
-        maxLength: 200,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "collectionMethod",
-          }),
-        );
-      }
-    }
+    return Effect.gen(
+      function* () {
+        let collectionMethod: string | null = method;
+        if (method !== null) {
+          collectionMethod = yield* validate.string(
+            method,
+            "collectionMethod",
+            {
+              required: false,
+              maxLength: 200,
+            },
+          );
+        }
 
-    return Effect.succeed(
-      updateEntity(this, { collectionMethod: method }, RewardPurchase),
+        return updateEntity(this, { collectionMethod }, RewardPurchase);
+      }.bind(this),
     );
   }
 

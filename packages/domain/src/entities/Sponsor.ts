@@ -42,124 +42,73 @@ export class Sponsor {
     createdAt?: Date;
     updatedAt?: Date;
   }): Effect.Effect<Sponsor, ValidationError, never> {
-    // Validate name
-    const nameResult = validate.string(props.name, "name", {
-      required: true,
-      maxLength: 200,
-      trim: true,
-    });
-    if (isError(nameResult)) {
-      return Effect.fail(
-        new ValidationError({
-          message: nameResult.error.message,
-          field: "name",
-        }),
-      );
-    }
-
-    // Validate description
-    const descriptionResult = validate.string(
-      props.description,
-      "description",
-      {
+    return Effect.gen(function* () {
+      // Validate name
+      const name = yield* validate.string(props.name, "name", {
         required: true,
-        maxLength: 2000,
+        maxLength: 200,
         trim: true,
-      },
-    );
-    if (isError(descriptionResult)) {
-      return Effect.fail(
-        new ValidationError({
-          message: descriptionResult.error.message,
-          field: "description",
-        }),
+      });
+
+      // Validate description
+      const description = yield* validate.string(
+        props.description,
+        "description",
+        {
+          required: true,
+          maxLength: 2000,
+          trim: true,
+        },
       );
-    }
 
-    // Validate logoPath
-    const logoPathResult = validate.string(props.logoPath, "logoPath", {
-      required: true,
-      trim: true,
-    });
-    if (isError(logoPathResult)) {
-      return Effect.fail(
-        new ValidationError({
-          message: logoPathResult.error.message,
-          field: "logoPath",
-        }),
-      );
-    }
-
-    // Validate height (only if provided and not null)
-    let height: number | null = null;
-    if (props.height !== undefined && props.height !== null) {
-      const heightResult = validate.number(props.height, "height", {
-        min: 0,
+      // Validate logoPath
+      const logoPath = yield* validate.string(props.logoPath, "logoPath", {
+        required: true,
+        trim: true,
       });
-      if (isError(heightResult)) {
-        return Effect.fail(
-          new ValidationError({
-            message: heightResult.error.message,
-            field: "height",
-          }),
-        );
+
+      // Validate height (only if provided and not null)
+      let height: number | null = null;
+      if (props.height !== undefined && props.height !== null) {
+        height = yield* validate.number(props.height, "height", {
+          min: 0,
+        });
       }
-      height = heightResult.value;
-    }
 
-    // Validate offsetX (only if provided and not null)
-    let offsetX: number | null = null;
-    if (props.offsetX !== undefined && props.offsetX !== null) {
-      const offsetXResult = validate.number(props.offsetX, "offsetX", {
-        min: 0,
-      });
-      if (isError(offsetXResult)) {
-        return Effect.fail(
-          new ValidationError({
-            message: offsetXResult.error.message,
-            field: "offsetX",
-          }),
-        );
+      // Validate offsetX (only if provided and not null)
+      let offsetX: number | null = null;
+      if (props.offsetX !== undefined && props.offsetX !== null) {
+        offsetX = yield* validate.number(props.offsetX, "offsetX", {
+          min: 0,
+        });
       }
-      offsetX = offsetXResult.value;
-    }
 
-    // Validate offsetY (only if provided and not null)
-    let offsetY: number | null = null;
-    if (props.offsetY !== undefined && props.offsetY !== null) {
-      const offsetYResult = validate.number(props.offsetY, "offsetY", {
-        min: 0,
-      });
-      if (isError(offsetYResult)) {
-        return Effect.fail(
-          new ValidationError({
-            message: offsetYResult.error.message,
-            field: "offsetY",
-          }),
-        );
+      // Validate offsetY (only if provided and not null)
+      let offsetY: number | null = null;
+      if (props.offsetY !== undefined && props.offsetY !== null) {
+        offsetY = yield* validate.number(props.offsetY, "offsetY", {
+          min: 0,
+        });
       }
-      offsetY = offsetYResult.value;
-    }
 
-    // Generate ID if not provided
-    const id: SponsorId = props.id ?? (crypto.randomUUID() as SponsorId);
+      // Generate ID if not provided
+      const id: SponsorId = props.id ?? (crypto.randomUUID() as SponsorId);
 
-    const ts = timestamps(props);
+      const ts = timestamps(props);
 
-    return Effect.succeed(
-      new Sponsor(
+      return new Sponsor(
         id,
-        nameResult.value,
-        descriptionResult.value,
-        logoPathResult.value,
+        name,
+        description,
+        logoPath,
         height,
         offsetX,
         offsetY,
         props.isActive ?? true,
         ts.createdAt,
         ts.updatedAt,
-      ),
-    );
+      );
+    });
   }
 
   /**
@@ -177,120 +126,76 @@ export class Sponsor {
     offsetY?: number | null;
     isActive?: boolean;
   }): Effect.Effect<Sponsor, ValidationError, never> {
-    const updates: Partial<Sponsor> = {};
+    const self = this;
+    return Effect.gen(function* () {
+      const updates: Partial<Sponsor> = {};
 
-    // Validate name if provided
-    if (props.name !== undefined) {
-      const validated = validate.string(props.name, "name", {
-        required: true,
-        maxLength: 200,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "name",
-          }),
+      // Validate name if provided
+      if (props.name !== undefined) {
+        updates.name = yield* validate.string(props.name, "name", {
+          required: true,
+          maxLength: 200,
+          trim: true,
+        });
+      }
+
+      // Validate description if provided
+      if (props.description !== undefined) {
+        updates.description = yield* validate.string(
+          props.description,
+          "description",
+          {
+            required: true,
+            maxLength: 2000,
+            trim: true,
+          },
         );
       }
-      updates.name = validated.value;
-    }
 
-    // Validate description if provided
-    if (props.description !== undefined) {
-      const validated = validate.string(props.description, "description", {
-        required: true,
-        maxLength: 2000,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "description",
-          }),
-        );
-      }
-      updates.description = validated.value;
-    }
-
-    // Validate logoPath if provided
-    if (props.logoPath !== undefined) {
-      const validated = validate.string(props.logoPath, "logoPath", {
-        required: true,
-        trim: true,
-      });
-      if (isError(validated)) {
-        return Effect.fail(
-          new ValidationError({
-            message: validated.error.message,
-            field: "logoPath",
-          }),
-        );
-      }
-      updates.logoPath = validated.value;
-    }
-
-    // Validate height if provided
-    if (props.height !== undefined) {
-      if (props.height !== null) {
-        const validated = validate.number(props.height, "height", {
-          min: 0,
+      // Validate logoPath if provided
+      if (props.logoPath !== undefined) {
+        updates.logoPath = yield* validate.string(props.logoPath, "logoPath", {
+          required: true,
+          trim: true,
         });
-        if (isError(validated)) {
-          return Effect.fail(
-            new ValidationError({
-              message: validated.error.message,
-              field: "height",
-            }),
-          );
-        }
       }
-      updates.height = props.height;
-    }
 
-    // Validate offsetX if provided
-    if (props.offsetX !== undefined) {
-      if (props.offsetX !== null) {
-        const validated = validate.number(props.offsetX, "offsetX", {
-          min: 0,
-        });
-        if (isError(validated)) {
-          return Effect.fail(
-            new ValidationError({
-              message: validated.error.message,
-              field: "offsetX",
-            }),
-          );
+      // Validate height if provided
+      if (props.height !== undefined) {
+        if (props.height !== null) {
+          yield* validate.number(props.height, "height", {
+            min: 0,
+          });
         }
+        updates.height = props.height;
       }
-      updates.offsetX = props.offsetX;
-    }
 
-    // Validate offsetY if provided
-    if (props.offsetY !== undefined) {
-      if (props.offsetY !== null) {
-        const validated = validate.number(props.offsetY, "offsetY", {
-          min: 0,
-        });
-        if (isError(validated)) {
-          return Effect.fail(
-            new ValidationError({
-              message: validated.error.message,
-              field: "offsetY",
-            }),
-          );
+      // Validate offsetX if provided
+      if (props.offsetX !== undefined) {
+        if (props.offsetX !== null) {
+          yield* validate.number(props.offsetX, "offsetX", {
+            min: 0,
+          });
         }
+        updates.offsetX = props.offsetX;
       }
-      updates.offsetY = props.offsetY;
-    }
 
-    if (props.isActive !== undefined) {
-      updates.isActive = props.isActive;
-    }
+      // Validate offsetY if provided
+      if (props.offsetY !== undefined) {
+        if (props.offsetY !== null) {
+          yield* validate.number(props.offsetY, "offsetY", {
+            min: 0,
+          });
+        }
+        updates.offsetY = props.offsetY;
+      }
 
-    return Effect.succeed(updateEntity(this, updates, Sponsor));
+      if (props.isActive !== undefined) {
+        updates.isActive = props.isActive;
+      }
+
+      return updateEntity(self, updates, Sponsor);
+    });
   }
 
   /**
