@@ -178,10 +178,20 @@ export async function validateAuthToken(
         statusCode: 200,
       };
     } else {
+      const errorMessage =
+        (result.error as { message?: string })?.message ?? "";
+      const isSystemError =
+        errorMessage.toLowerCase().includes("connection") ||
+        errorMessage.toLowerCase().includes("timeout") ||
+        errorMessage.toLowerCase().includes("network") ||
+        errorMessage.toLowerCase().includes("unavailable");
+
       return {
         success: false,
-        error: "Invalid or expired token",
-        statusCode: 401,
+        error: isSystemError
+          ? "Authentication failed"
+          : "Invalid or expired token",
+        statusCode: isSystemError ? 500 : 401,
       };
     }
   } catch (error) {

@@ -1,5 +1,7 @@
 /**
  * Minimal Debug Test
+ *
+ * Verifies cookie header behavior in Bun.
  */
 
 import { describe, it, expect } from "bun:test";
@@ -13,13 +15,6 @@ describe("[DEBUG] Minimal", () => {
     });
 
     const cookieHeader = request.headers.get("cookie");
-
-    if (cookieHeader === null) {
-      throw new Error(
-        `Cookie header is null. Headers: ${JSON.stringify(Array.from(request.headers.entries()))}`,
-      );
-    }
-
     expect(cookieHeader).toBe("auth-token=test-value-123");
   });
 });

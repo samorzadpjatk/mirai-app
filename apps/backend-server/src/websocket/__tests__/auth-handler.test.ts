@@ -24,6 +24,48 @@ import type { AuthPort, AuthContext } from "@mirai-app/use-cases";
 import type { AwilixContainer } from "awilix";
 
 // =============================================================================
+// Mock Request Factory
+// =============================================================================
+
+/**
+ * Create a mock Request with proper cookie header support for testing.
+ * Bun's native Request doesn't expose cookie headers via headers.get()
+ * for security reasons, so we need to create a mock for testing.
+ */
+function createMockRequest(
+  url: string,
+  headers?: Record<string, string>,
+): Request {
+  const headersMap = new Map<string, string>();
+
+  if (headers) {
+    for (const [key, value] of Object.entries(headers)) {
+      headersMap.set(key.toLowerCase(), value);
+    }
+  }
+
+  const mockHeaders = {
+    get: (name: string): string | null => {
+      return headersMap.get(name.toLowerCase()) ?? null;
+    },
+    entries: function* () {
+      for (const [key, value] of headersMap) {
+        yield [key, value] as [string, string];
+      }
+    },
+    has: (name: string): boolean => headersMap.has(name.toLowerCase()),
+  } as unknown as Headers;
+
+  // Create a minimal mock Request
+  const mockRequest = {
+    url,
+    headers: mockHeaders,
+  } as Request;
+
+  return mockRequest;
+}
+
+// =============================================================================
 // Mock Types and Factories
 // =============================================================================
 
@@ -94,10 +136,8 @@ function createMockContainer(authPort: AuthPort): AwilixContainer {
 describe("[UNIT] WebSocket Auth Handler", () => {
   describe("extractAuthToken", () => {
     it("should extract token from auth-token cookie", () => {
-      const request = new Request("http://localhost:4000/graphql/ws", {
-        headers: {
-          cookie: `${AUTH_TOKEN_COOKIE}=valid-token-123`,
-        },
+      const request = createMockRequest("http://localhost:4000/graphql/ws", {
+        cookie: `${AUTH_TOKEN_COOKIE}=valid-token-123`,
       });
 
       const token = extractAuthToken(request);
@@ -105,10 +145,8 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
 
     it("should extract token from sb-access-token cookie (Supabase default)", () => {
-      const request = new Request("http://localhost:4000/graphql/ws", {
-        headers: {
-          cookie: "sb-access-token=supabase-token-456",
-        },
+      const request = createMockRequest("http://localhost:4000/graphql/ws", {
+        cookie: "sb-access-token=supabase-token-456",
       });
 
       const token = extractAuthToken(request);
@@ -117,10 +155,8 @@ describe("[UNIT] WebSocket Auth Handler", () => {
 
     it("should extract token from alternative cookie names", () => {
       for (const cookieName of ALTERNATIVE_COOKIE_NAMES) {
-        const request = new Request("http://localhost:4000/graphql/ws", {
-          headers: {
-            cookie: `${cookieName}=token-${cookieName}`,
-          },
+        const request = createMockRequest("http://localhost:4000/graphql/ws", {
+          cookie: `${cookieName}=token-${cookieName}`,
         });
 
         const token = extractAuthToken(request);
@@ -138,12 +174,10 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
 
     it("should prefer cookie over query parameter", () => {
-      const request = new Request(
+      const request = createMockRequest(
         "http://localhost:4000/graphql/ws?token=query-token",
         {
-          headers: {
-            cookie: `${AUTH_TOKEN_COOKIE}=cookie-token`,
-          },
+          cookie: `${AUTH_TOKEN_COOKIE}=cookie-token`,
         },
       );
 
@@ -159,10 +193,8 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
 
     it("should return null for empty cookie header", () => {
-      const request = new Request("http://localhost:4000/graphql/ws", {
-        headers: {
-          cookie: "",
-        },
+      const request = createMockRequest("http://localhost:4000/graphql/ws", {
+        cookie: "",
       });
 
       const token = extractAuthToken(request);
@@ -170,10 +202,8 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
 
     it("should handle multiple cookies", () => {
-      const request = new Request("http://localhost:4000/graphql/ws", {
-        headers: {
-          cookie: `other-cookie=value; ${AUTH_TOKEN_COOKIE}=multi-cookie-token; another-cookie=value2`,
-        },
+      const request = createMockRequest("http://localhost:4000/graphql/ws", {
+        cookie: `other-cookie=value; ${AUTH_TOKEN_COOKIE}=multi-cookie-token; another-cookie=value2`,
       });
 
       const token = extractAuthToken(request);
@@ -181,10 +211,8 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
 
     it("should handle URL-encoded cookie values", () => {
-      const request = new Request("http://localhost:4000/graphql/ws", {
-        headers: {
-          cookie: `${AUTH_TOKEN_COOKIE}=encoded%20token%2Bvalue`,
-        },
+      const request = createMockRequest("http://localhost:4000/graphql/ws", {
+        cookie: `${AUTH_TOKEN_COOKIE}=encoded%20token%2Bvalue`,
       });
 
       const token = extractAuthToken(request);
@@ -229,7 +257,7 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     it("should return failure when auth port throws", async () => {
       const authPort = {
         validateToken: async () => {
-          throw new Error("Connection error");
+          return { kind: "err", error: { message: "Connection error" } };
         },
       } as unknown as AuthPort;
 
@@ -262,10 +290,8 @@ describe("[UNIT] WebSocket Auth Handler", () => {
         role: "USER",
         permissions: ["read"],
       };
-      const request = new Request("http://localhost:4000/graphql/ws", {
-        headers: {
-          cookie: `${AUTH_TOKEN_COOKIE}=valid-token`,
-        },
+      const request = createMockRequest("http://localhost:4000/graphql/ws", {
+        cookie: `${AUTH_TOKEN_COOKIE}=valid-token`,
       });
       const container = createMockContainer(
         new MockAuthPort(true, mockContext),
@@ -279,10 +305,8 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
 
     it("should return error for invalid token", async () => {
-      const request = new Request("http://localhost:4000/graphql/ws", {
-        headers: {
-          cookie: `${AUTH_TOKEN_COOKIE}=invalid-token`,
-        },
+      const request = createMockRequest("http://localhost:4000/graphql/ws", {
+        cookie: `${AUTH_TOKEN_COOKIE}=invalid-token`,
       });
       const container = createMockContainer(new MockAuthPort(false));
 

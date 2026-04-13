@@ -1,5 +1,7 @@
 /**
  * Debug Request Headers Test
+ *
+ * Verifies that the extractAuthToken function works correctly with Bun's Request.
  */
 
 import { describe, it, expect } from "bun:test";
@@ -13,16 +15,7 @@ describe("[DEBUG] Request Headers", () => {
       },
     });
 
-    const cookieHeader = request.headers.get("cookie");
     const token = extractAuthToken(request);
-
-    // Fail with detailed info
-    if (token !== "test-value-123") {
-      throw new Error(
-        `Token extraction failed: expected "test-value-123" but got "${token}". Cookie header: "${cookieHeader}"`,
-      );
-    }
-
     expect(token).toBe("test-value-123");
   });
 });

@@ -1,11 +1,13 @@
 /**
  * Cookie Header Variations Test
+ *
+ * Verifies different ways of setting cookie headers work in Bun.
  */
 
 import { describe, it, expect } from "bun:test";
 
 describe("[DEBUG] Cookie Header Variations", () => {
-  it("should test different cookie header cases", () => {
+  it("should access cookie headers set in various ways", () => {
     // Test 1: lowercase 'cookie'
     const req1 = new Request("http://localhost:4000/graphql/ws", {
       headers: { cookie: "value1" },
@@ -23,24 +25,9 @@ describe("[DEBUG] Cookie Header Variations", () => {
       headers: headers,
     });
 
-    const results = {
-      lowercase: req1.headers.get("cookie"),
-      capitalized: req2.headers.get("cookie"),
-      viaHeaders: req3.headers.get("cookie"),
-    };
-
-    // Log results
-    console.error("Cookie header results:", JSON.stringify(results));
-
-    // At least one should work
-    const hasValue = Object.values(results).some((v) => v !== null);
-
-    if (!hasValue) {
-      throw new Error(
-        `No cookie header worked. Results: ${JSON.stringify(results)}`,
-      );
-    }
-
-    expect(true).toBe(true);
+    // All should work in Bun
+    expect(req1.headers.get("cookie")).toBe("value1");
+    expect(req2.headers.get("cookie")).toBe("value2");
+    expect(req3.headers.get("cookie")).toBe("value3");
   });
 });
