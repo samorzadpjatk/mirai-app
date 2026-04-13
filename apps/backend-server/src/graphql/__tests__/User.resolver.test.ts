@@ -11,11 +11,13 @@ import { describe, it, expect, beforeEach, beforeAll } from "bun:test";
 import { graphql, printSchema } from "graphql";
 import { schema } from "../schema";
 import { createTestContainer, PORT_TOKENS } from "@mirai-app/frameworks/di";
-import { asClass } from "awilix";
+import { asClass, asValue } from "awilix";
 import { UserController, InMemoryAuthAdapter } from "@mirai-app/adapters";
 import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
 import { User, UserRole, UserId } from "@mirai-app/domain";
 import type { AwilixContainer } from "awilix";
+import { Runtime } from "effect";
+import type { AuthContext } from "@mirai-app/domain";
 
 // =============================================================================
 // Test Setup
@@ -27,6 +29,34 @@ import type { AwilixContainer } from "awilix";
 interface TestContext {
   container: AwilixContainer;
   authAdapter: InMemoryAuthAdapter;
+}
+
+/**
+ * Helper to create GraphQL context for tests
+ * Includes the required runtime field for Effect integration
+ */
+function createTestGraphQLContext(
+  container: AwilixContainer,
+  authToken?: string,
+  authContext?: AuthContext,
+): {
+  container: AwilixContainer;
+  request: Request;
+  runtime: Runtime.Runtime<never>;
+  authContext?: AuthContext;
+} {
+  return {
+    container,
+    request: new Request("http://localhost/graphql", {
+      headers: authToken
+        ? {
+            Authorization: `Bearer ${authToken}`,
+          }
+        : {},
+    }),
+    runtime: Runtime.defaultRuntime,
+    authContext,
+  };
 }
 
 // Test users
@@ -61,6 +91,8 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
   let context: TestContext;
   let adminToken: string;
   let userToken: string;
+  let adminAuthContext: AuthContext;
+  let userAuthContext: AuthContext;
 
   beforeAll(async () => {
     // Setup container
@@ -69,15 +101,18 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       authAdapter: new InMemoryAuthAdapter(),
     };
 
-    // Register auth adapter
+    // Register auth adapter, user repository, and user controller
+    // Using asValue to avoid PROXY mode issues with Effect-based repositories
+    const userRepo = new InMemoryUserRepository();
     context.container.register({
       [PORT_TOKENS.AuthPort]: asClass(InMemoryAuthAdapter).singleton(),
+      userRepository: asValue(userRepo),
+      userController: asValue(new UserController(userRepo)),
     });
 
     // Get repository and auth adapter
-    const userRepo = context.container.resolve<InMemoryUserRepository>(
-      PORT_TOKENS.UserRepository,
-    );
+    const userRepo =
+      context.container.resolve<InMemoryUserRepository>("userRepository");
     const authAdapter = context.container.resolve<InMemoryAuthAdapter>(
       PORT_TOKENS.AuthPort,
     );
@@ -144,6 +179,38 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
 
     const userSession = authAdapter.createSession(regularUserId);
     userToken = userSession.token;
+
+    // Create auth contexts for tests
+    const { AuthContext: AuthContextClass, Effect } =
+      await import("@mirai-app/domain");
+
+    // Run admin auth context Effect
+    const adminAuthEffect = AuthContextClass.create({
+      userId: adminUserId,
+      role: UserRole.ADMIN,
+      authenticatedAt: new Date(),
+      sessionId: adminSession.id,
+    });
+    const adminAuthEither = await Effect.runPromise(
+      Effect.either(adminAuthEffect),
+    );
+    if (adminAuthEither._tag === "Right") {
+      adminAuthContext = adminAuthEither.right;
+    }
+
+    // Run user auth context Effect
+    const userAuthEffect = AuthContextClass.create({
+      userId: regularUserId,
+      role: UserRole.USER,
+      authenticatedAt: new Date(),
+      sessionId: userSession.id,
+    });
+    const userAuthEither = await Effect.runPromise(
+      Effect.either(userAuthEffect),
+    );
+    if (userAuthEither._tag === "Right") {
+      userAuthContext = userAuthEither.right;
+    }
   });
 
   beforeEach(() => {
@@ -176,14 +243,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USER_QUERY,
         variableValues: { id: TEST_USERS.regular.id },
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(
+          context.container,
+          userToken,
+          userAuthContext,
+        ),
       });
 
       expect(result.errors).toBeUndefined();
@@ -202,14 +266,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USER_QUERY,
         variableValues: { id: TEST_USERS.admin.id },
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(
+          context.container,
+          userToken,
+          userAuthContext,
+        ),
       });
 
       expect(result.errors).toBeUndefined();
@@ -224,14 +285,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USER_QUERY,
         variableValues: { id: "550e8400-e29b-41d4-a716-446655440999" },
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(
+          context.container,
+          userToken,
+          userAuthContext,
+        ),
       });
 
       expect(result.errors).toBeUndefined();
@@ -243,10 +301,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USER_QUERY,
         variableValues: { id: TEST_USERS.regular.id },
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql"),
-        },
+        contextValue: createTestGraphQLContext(context.container),
       });
 
       expect(result.errors).toBeDefined();
@@ -259,14 +314,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USER_QUERY,
         variableValues: { id: TEST_USERS.regular.id },
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: "Bearer invalid-token",
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(context.container, "invalid"),
       });
 
       expect(result.errors).toBeDefined();
@@ -295,14 +343,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USERS_QUERY,
         variableValues: {},
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(
+          context.container,
+          adminToken,
+          adminAuthContext,
+        ),
       });
 
       expect(result.errors).toBeUndefined();
@@ -316,14 +361,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USERS_QUERY,
         variableValues: {},
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(
+          context.container,
+          userToken,
+          userAuthContext,
+        ),
       });
 
       expect(result.errors).toBeDefined();
@@ -335,14 +377,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USERS_QUERY,
         variableValues: { limit: 2, offset: 0 },
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(
+          context.container,
+          adminToken,
+          adminAuthContext,
+        ),
       });
 
       expect(result.errors).toBeUndefined();
@@ -376,14 +415,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       const result = await graphql({
         schema,
         source: ME_QUERY,
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(
+          context.container,
+          userToken,
+          userAuthContext,
+        ),
       });
 
       expect(result.errors).toBeUndefined();
@@ -399,14 +435,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       const result = await graphql({
         schema,
         source: ME_QUERY,
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(
+          context.container,
+          adminToken,
+          adminAuthContext,
+        ),
       });
 
       expect(result.errors).toBeUndefined();
@@ -420,10 +453,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       const result = await graphql({
         schema,
         source: ME_QUERY,
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql"),
-        },
+        contextValue: createTestGraphQLContext(context.container),
       });
 
       expect(result.errors).toBeDefined();
@@ -434,14 +464,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       const result = await graphql({
         schema,
         source: ME_QUERY,
-        contextValue: {
-          container: context.container,
-          request: new Request("http://localhost/graphql", {
-            headers: {
-              Authorization: "MalformedToken",
-            },
-          }),
-        },
+        contextValue: createTestGraphQLContext(context.container, "invalid"),
       });
 
       expect(result.errors).toBeDefined();

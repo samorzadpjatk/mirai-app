@@ -272,6 +272,193 @@ export function assertValid(
 }
 
 // =============================================================================
+// Effect-based Error Handling
+// =============================================================================
+
+import { Effect, Either, Data } from "effect";
+
+/**
+ * GraphQL error for Effect-based workflows
+ */
+export class GraphQLErrorEffect extends Data.TaggedError("GraphQLErrorEffect")<{
+  message: string;
+  code: GraphQLErrorCode;
+  originalError?: unknown;
+}> {
+  toGraphQLError(): GraphQLError {
+    return new GraphQLError(this.message, {
+      extensions: {
+        code: this.code,
+        originalError: this.originalError,
+      },
+    });
+  }
+}
+
+/**
+ * Handle a Result<T,E> and convert to Effect
+ *
+ * Takes a Result<T,E> and converts it to an Effect that either:
+ * - Succeeds with the value T
+ * - Fails with a GraphQLErrorEffect containing the error E
+ *
+ * @example
+ * ```typescript
+ * const result = someUseCase.execute(input);
+ * const effect = handleResultEffect(result);
+ * const value = yield* effect; // GraphQLErrorEffect on error
+ * ```
+ */
+export function handleResultEffect<T, E>(
+  result: Result<T, E>,
+): Effect.Effect<T, GraphQLErrorEffect, never> {
+  if (result.kind === "err") {
+    const error = result.error;
+    const graphqlError = mapErrorToGraphQL(error);
+    const code =
+      (graphqlError.extensions?.code as GraphQLErrorCode) ??
+      "INTERNAL_SERVER_ERROR";
+    return Effect.fail(
+      new GraphQLErrorEffect({
+        message: graphqlError.message,
+        code,
+        originalError: error,
+      }),
+    );
+  }
+
+  return Effect.succeed(result.value);
+}
+
+/**
+ * Handle a Result<T,E> with async transformation (Effect version)
+ *
+ * @example
+ * ```typescript
+ * const result = someUseCase.execute(input);
+ * const effect = handleResultEffectAsync(result, async (value) => {
+ *   // async transformation
+ *   return transformedValue;
+ * });
+ * ```
+ */
+export function handleResultEffectAsync<T, E, R>(
+  result: Result<T, E>,
+  transform: (value: T) => Promise<R>,
+): Effect.Effect<R, GraphQLErrorEffect, never> {
+  return Effect.gen(function* () {
+    const value = yield* handleResultEffect(result);
+    return yield* Effect.tryPromise(() => transform(value));
+  });
+}
+
+/**
+ * Convert an Either<Error, T> to an Effect with GraphQL error
+ *
+ * @example
+ * ```typescript
+ * const either = yield* someEffect.pipe(Effect.either);
+ * const result = yield* eitherToGraphQLEffect(either);
+ * ```
+ */
+export function eitherToGraphQLEffect<E, T>(
+  either: Either.Either<E, T>,
+): Effect.Effect<T, GraphQLErrorEffect, never> {
+  if (either._tag === "Left") {
+    const error = either.left;
+    const graphqlError = mapErrorToGraphQL(error);
+    const code =
+      (graphqlError.extensions?.code as GraphQLErrorCode) ??
+      "INTERNAL_SERVER_ERROR";
+    return Effect.fail(
+      new GraphQLErrorEffect({
+        message: graphqlError.message,
+        code,
+        originalError: error,
+      }),
+    );
+  }
+
+  return Effect.succeed(either.right);
+}
+
+/**
+ * Run an Effect and convert error to GraphQLError for resolvers
+ *
+ * This utility runs an Effect and either:
+ * - Returns the success value
+ * - Throws a GraphQLError on failure (for GraphQL resolver consumption)
+ *
+ * @example
+ * ```typescript
+ * const effect = Effect.gen(function* () {
+ *   // ... effect logic
+ *   return result;
+ * });
+ *
+ * const value = await runEffectToGraphQL(effect);
+ * ```
+ */
+export async function runEffectToGraphQL<T, E>(
+  effect: Effect.Effect<T, E, never>,
+): Promise<T> {
+  const result = await Effect.runPromise(Effect.either(effect));
+
+  if (result._tag === "Left") {
+    throw mapErrorToGraphQL(result.left);
+  }
+
+  return result.right;
+}
+
+/**
+ * Run an Effect with runtime and convert error to GraphQLError
+ *
+ * This is the primary utility for running Effects in GraphQL resolvers.
+ * It uses the context's runtime and throws GraphQL errors on failure.
+ *
+ * @example
+ * ```typescript
+ * resolve: async (_root, args, ctx) => {
+ *   const effect = Effect.gen(function* () {
+ *     const auth = yield* requireAuthEffect(ctx);
+ *     const controller = ctx.container.resolve("userController");
+ *     return yield* Effect.tryPromise(() => controller.getById({ id: args.id }));
+ *   });
+ *   return runEffectWithGraphQL(ctx.runtime)(effect);
+ * }
+ * ```
+ */
+export function runEffectWithGraphQL<T, E>(
+  runtime: Runtime.Runtime<never>,
+): <A>(effect: Effect.Effect<A, E, never>) => Promise<A> {
+  return async <A>(effect: Effect.Effect<A, E, never>): Promise<A> => {
+    const runnable = Runtime.runPromise(runtime)(effect);
+    const result = await runnable;
+
+    // Handle Either results from the controller
+    if (
+      result &&
+      typeof result === "object" &&
+      "kind" in result &&
+      (result.kind === "ok" || result.kind === "err")
+    ) {
+      const resultObj = result as unknown as {
+        kind: string;
+        value?: A;
+        error?: unknown;
+      };
+      if (resultObj.kind === "err") {
+        throw mapErrorToGraphQL(resultObj.error);
+      }
+      return resultObj.value as A;
+    }
+
+    return result as A;
+  };
+}
+
+// =============================================================================
 // Export
 // =============================================================================
 

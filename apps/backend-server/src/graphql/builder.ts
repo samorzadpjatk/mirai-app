@@ -86,9 +86,12 @@ import type { NotificationScheduleOutput } from "@mirai-app/adapters";
  */
 export interface PothosTypes {
   // Context type - available in all resolvers
+  // Updated to include Effect runtime for GraphQL integration
   Context: {
     container: import("@mirai-app/frameworks/di").AwilixContainer;
     request: Request;
+    authContext?: import("@mirai-app/domain").AuthContext;
+    runtime: import("effect").Runtime<never>;
   };
 
   // Auth scopes for @pothos/plugin-scope-auth
@@ -838,12 +841,19 @@ export const builder = new SchemaBuilder<PothosTypes>({
   // Scope auth configuration
   scopeAuth: {
     // Default auth scopes initializer
-    authScopes: async (context) => ({
-      public: true,
-      authenticated: false, // Will be set based on auth context
-      admin: false,
-      moderator: false,
-    }),
+    // Reads from context.authContext if pre-resolved by context factory
+    authScopes: async (context) => {
+      const authContext = context.authContext;
+      return {
+        public: true,
+        authenticated: !!authContext,
+        admin: authContext?.role === "ADMIN" || authContext?.role === "SERVICE",
+        moderator:
+          authContext?.role === "MODERATOR" ||
+          authContext?.role === "ADMIN" ||
+          authContext?.role === "SERVICE",
+      };
+    },
   },
 
   // Relay options for pagination

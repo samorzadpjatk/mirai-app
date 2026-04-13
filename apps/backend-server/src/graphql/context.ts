@@ -3,13 +3,14 @@
  *
  * Creates GraphQL context from Hono requests.
  * Extracts authentication tokens, resolves auth context,
- * and provides DI container access to resolvers.
+ * and provides DI container access to resolvers with Effect runtime.
  *
  * ## Architecture
  *
  * Context is created per-request and includes:
  * - `container`: Request-scoped DI container
  * - `request`: Hono request object for header access
+ * - `runtime`: Effect runtime for executing effects
  *
  * The auth context is resolved lazily within resolvers using
  * the `requireAuth()` and `getOptionalAuth()` helpers from auth-helpers.ts.
@@ -31,8 +32,13 @@
 import type { Context as HonoContext } from "hono";
 import type { AwilixContainer } from "awilix";
 import type { AuthContext } from "@mirai-app/domain";
-import type { Result } from "@mirai-app/domain";
-import type { AuthenticateUserUseCase } from "@mirai-app/use-cases";
+import { Effect, Runtime } from "effect";
+import type { Runtime as EffectRuntime } from "effect";
+import {
+  authenticateUserUseCase,
+  AuthPortTag,
+  type AuthPort,
+} from "@mirai-app/use-cases";
 import { TokenExtractor } from "@mirai-app/adapters";
 
 // =============================================================================
@@ -40,10 +46,17 @@ import { TokenExtractor } from "@mirai-app/adapters";
 // =============================================================================
 
 /**
+ * Effect runtime type for GraphQL context
+ * Uses never for requirements since we build from the container
+ */
+export type GraphQLRuntime = EffectRuntime<never>;
+
+/**
  * GraphQL context type
  *
- * Passed to all GraphQL resolvers. Contains the DI container
- * and Hono request for accessing headers and other request data.
+ * Passed to all GraphQL resolvers. Contains the DI container,
+ * Hono request for accessing headers, and Effect runtime for
+ * executing effects.
  */
 export interface GraphQLContext {
   /** Request-scoped DI container */
@@ -54,6 +67,27 @@ export interface GraphQLContext {
 
   /** Optional pre-resolved auth context (populated by auth helpers) */
   authContext?: AuthContext;
+
+  /** Effect runtime for executing effects */
+  runtime: GraphQLRuntime;
+}
+
+// =============================================================================
+// Runtime Factory
+// =============================================================================
+
+/**
+ * Create a new Effect runtime from the container
+ *
+ * This creates a fresh runtime per request using the default runtime.
+ * For more advanced use cases, you can build a custom runtime from layers.
+ *
+ * @returns Effect runtime for GraphQL context
+ */
+function createGraphQLRuntime(): GraphQLRuntime {
+  // Use the default Effect runtime
+  // The runtime provides the execution environment for effects
+  return Runtime.defaultRuntime;
 }
 
 // =============================================================================
@@ -65,9 +99,9 @@ export interface GraphQLContext {
  *
  * Returns a function that creates context from Hono context.
  * The factory extracts the request-scoped DI container from Hono
- * and creates a standard GraphQL context.
+ * and creates a standard GraphQL context with Effect runtime.
  *
- * @param rootContainer - The root DI container (for type inference)
+ * @param _rootContainer - The root DI container (for type inference)
  * @returns Context factory function for Yoga
  *
  * @example
@@ -101,6 +135,9 @@ export function createContextFactory(
       );
     }
 
+    // Create Effect runtime for this request
+    const runtime = createGraphQLRuntime();
+
     // Extract auth token and resolve auth context if present
     const authHeader =
       honoContext.req.header("authorization") ??
@@ -111,15 +148,20 @@ export function createContextFactory(
 
     if (token) {
       try {
-        // Resolve auth context from token
-        const authUseCase = container.resolve<AuthenticateUserUseCase>(
-          "authenticateUserUseCase",
+        // Resolve auth context from token using Effect-based use case
+        const authPort = container.resolve<AuthPort>("authPort");
+        const authEffect = authenticateUserUseCase({ token }).pipe(
+          Effect.provideService(AuthPortTag, authPort),
         );
-        const authResult: Result<AuthContext, Error> =
-          await authUseCase.execute({ token });
+        const authEither = await Effect.runPromise(Effect.either(authEffect));
 
-        if (authResult.kind === "ok") {
-          authContext = authResult.value;
+        if (authEither._tag === "Right") {
+          authContext = {
+            userId: authEither.right.userId,
+            role: authEither.right.role as AuthContext["role"],
+            authenticatedAt: authEither.right.authenticatedAt,
+            sessionId: authEither.right.sessionId,
+          };
         }
       } catch {
         // Auth failed - resolver will handle authentication requirements
@@ -130,7 +172,8 @@ export function createContextFactory(
     return {
       container,
       request: honoContext.req.raw,
-      ...(authContext && { authContext }),
+      runtime,
+      ...(authContext ? { authContext } : {}),
     };
   };
 }
@@ -157,9 +200,13 @@ export function createSimpleContextFactory(): (
       );
     }
 
+    // Create Effect runtime for this request
+    const runtime = createGraphQLRuntime();
+
     return {
       container,
       request: honoContext.req.raw,
+      runtime,
     };
   };
 }

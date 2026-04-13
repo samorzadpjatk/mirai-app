@@ -71,16 +71,8 @@ describe("[UNIT] GraphQL Schema Build", () => {
   });
 
   it("should build schema successfully", async () => {
-    // Import all modules and build schema
-    const { builder } = await import("../builder");
-    await import("../types/User");
-    await import("../resolvers/User");
-    await import("../types/challengeSubmission");
-    await import("../resolvers/challengeSubmission");
-    await import("../types/Query");
-
-    // Build schema
-    const schema = builder.toSchema();
+    // Import the full schema - it handles all type registrations in correct order
+    const { schema } = await import("../schema");
     expect(schema).toBeDefined();
 
     // Verify schema has expected types
