@@ -208,16 +208,15 @@ export const ControllerModule: StaticModule<ControllerModuleDef> =
           ),
       ),
       [CONTROLLER_TOKENS.CoinController]: scoped(
-        (c) => new CoinController(c.addCoinsUseCase, c.removeCoinsUseCase),
+        (c) =>
+          new CoinController(
+            c.coinTransactionRepository as CoinTransactionRepository,
+          ),
       ),
       [CONTROLLER_TOKENS.CoinTransactionController]: scoped(
         (c) =>
           new CoinTransactionController(
-            c.getCoinStatisticsUseCase,
-            c.getMostActiveAdminStatsUseCase,
-            c.getCoinTransactionsUseCase,
-            c.getCoinQuickStatsUseCase,
-            c.getCoinAdditionalInsightsUseCase,
+            c.coinTransactionRepository as CoinTransactionRepository,
           ),
       ),
       [CONTROLLER_TOKENS.SponsorController]: scoped(

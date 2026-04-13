@@ -121,9 +121,13 @@ import { Lifetime } from "awilix";
 // =============================================================================
 
 import {
-  AuthenticateUserUseCase,
+  authenticateUserUseCase,
+  type AuthenticateUserInput,
+  type AuthenticateUserOutput,
   AuthorizeAdminUseCase,
+  authorizeAdminUseCase,
   AuthorizeModeratorUseCase,
+  authorizeModeratorUseCase,
   logTelemetryUseCase,
   TelemetryPortTag,
 } from "@mirai-app/use-cases/interactors";
@@ -154,6 +158,7 @@ import type {
   TelemetryPort,
   PubSubService,
 } from "@mirai-app/use-cases";
+import { AuthPortTag } from "@mirai-app/use-cases/ports/AuthPort";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 
@@ -358,12 +363,20 @@ function createDrizzleTelemetryAdapter(cradle: Cradle): TelemetryPort {
 }
 
 /**
- * Create AuthenticateUserUseCase instance
+ * Create AuthenticateUserUseCase function wrapper
+ *
+ * Returns a function that executes the authenticateUserUseCase Effect
+ * with the authPort from the container provided via Effect.provideService.
  */
 function createAuthenticateUserUseCase(
   cradle: Cradle,
-): AuthenticateUserUseCase {
-  return new AuthenticateUserUseCase(cradle.authPort as AuthPort);
+): (input: AuthenticateUserInput) => Promise<AuthenticateUserOutput> {
+  const authPort = cradle.authPort as AuthPort;
+  return async (input: AuthenticateUserInput) => {
+    const effect = authenticateUserUseCase(input);
+    const runnable = effect.pipe(Effect.provideService(AuthPortTag, authPort));
+    return await Effect.runPromise(runnable);
+  };
 }
 
 /**
@@ -421,8 +434,10 @@ export interface UseCaseModuleDeps {
   /** Token extraction utility */
   [UTILITY_TOKENS.TokenExtractor]: typeof TokenExtractor;
 
-  /** Authenticate user use case */
-  [AUTH_USE_CASE_TOKENS.AuthenticateUserUseCase]: AuthenticateUserUseCase;
+  /** Authenticate user use case - function-based Effect */
+  [AUTH_USE_CASE_TOKENS.AuthenticateUserUseCase]: (
+    input: AuthenticateUserInput,
+  ) => Promise<AuthenticateUserOutput>;
 
   /** Authorize admin use case */
   [AUTH_USE_CASE_TOKENS.AuthorizeAdminUseCase]: AuthorizeAdminUseCase;

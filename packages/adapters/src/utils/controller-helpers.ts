@@ -116,6 +116,244 @@ import {
   mapDomainErrorToHttpError,
   mapErrorToGraphQL,
 } from "./effect-executor";
+import type {
+  UserRepository,
+  NotificationRepository,
+  ChallengeRepository,
+  ActivityFeedRepository,
+  ChallengeSubmissionRepository,
+  ChallengeVoteRepository,
+  CoinTransactionRepository,
+  LocationRepository,
+  RewardRepository,
+  RewardPurchaseRepository,
+  TripPointsCalculator,
+  GroupCoinsService,
+  TripAccessChecker,
+  TripRepository,
+} from "@mirai-app/use-cases";
+import type {
+  User,
+  UserRole,
+  Notification,
+  NotificationStatus,
+  NotificationPriority,
+  Challenge,
+  ChallengeStatus,
+  SubmissionType,
+  ScoringCategory,
+  ActivityId,
+  ActivityFeed,
+  ActivityReaction,
+  ChallengeSubmission,
+  SubmissionId,
+  ChallengeVote,
+  Location,
+  LocationId,
+  Reward,
+  RewardId,
+  RewardPurchase,
+  CoinTransaction,
+  PaginationOptions,
+} from "@mirai-app/domain";
+
+/**
+ * Converts a Promise-based repository method to an Effect-based method.
+ * This is a bridge for legacy Promise-based code that needs to integrate with Effect.
+ *
+ * @example
+ * ```typescript
+ * const effectBasedRepo = {
+ *   findById: promiseToEffect(repo.findById),
+ *   findAll: promiseToEffect(repo.findAll),
+ * };
+ * ```
+ */
+export function promiseToEffect<T, Args extends unknown[]>(
+  fn: (...args: Args) => Promise<T>,
+): (...args: Args) => Effect.Effect<T, never, never> {
+  return (...args: Args) =>
+    Effect.tryPromise({
+      try: () => fn(...args),
+      catch: (_e: unknown) => undefined,
+    }) as Effect.Effect<T, never, never>;
+}
+
+/**
+ * Effect-based UserRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectUserRepository(repo: UserRepository): UserRepository {
+  return repo;
+}
+
+/**
+ * Effect-based NotificationRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectNotificationRepository(
+  repo: NotificationRepository,
+): NotificationRepository {
+  return repo;
+}
+
+/**
+ * Effect-based ChallengeRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectChallengeRepository(
+  repo: ChallengeRepository,
+): ChallengeRepository {
+  return repo;
+}
+
+/**
+ * Effect-based ActivityFeedRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectActivityFeedRepository(
+  repo: ActivityFeedRepository,
+): ActivityFeedRepository {
+  return repo;
+}
+
+/**
+ * Effect-based ChallengeSubmissionRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectChallengeSubmissionRepository(
+  repo: ChallengeSubmissionRepository,
+): ChallengeSubmissionRepository {
+  return repo;
+}
+
+/**
+ * Effect-based ChallengeVoteRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectChallengeVoteRepository(
+  repo: ChallengeVoteRepository,
+): ChallengeVoteRepository {
+  return repo;
+}
+
+/**
+ * Effect-based CoinTransactionRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectCoinTransactionRepository(
+  repo: CoinTransactionRepository,
+): CoinTransactionRepository {
+  return repo;
+}
+
+/**
+ * Effect-based LocationRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectLocationRepository(
+  repo: LocationRepository,
+): LocationRepository {
+  return repo;
+}
+
+/**
+ * Effect-based RewardRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectRewardRepository(
+  repo: RewardRepository,
+): RewardRepository {
+  return repo;
+}
+
+/**
+ * Effect-based RewardPurchaseRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectRewardPurchaseRepository(
+  repo: RewardPurchaseRepository,
+): RewardPurchaseRepository {
+  return repo;
+}
+
+/**
+ * Effect-based TripPointsCalculator interface
+ *
+ * Services are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectTripPointsCalculator(
+  calc: TripPointsCalculator,
+): TripPointsCalculator {
+  return calc;
+}
+
+/**
+ * Effect-based GroupCoinsService interface
+ *
+ * Services are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectGroupCoinsService(
+  service: GroupCoinsService,
+): GroupCoinsService {
+  return service;
+}
+
+/**
+ * Effect-based TripAccessChecker interface
+ *
+ * Services are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectTripAccessChecker(
+  checker: TripAccessChecker,
+): TripAccessChecker {
+  return checker;
+}
+
+/**
+ * Effect-based TripRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectTripRepository(repo: TripRepository): TripRepository {
+  return repo;
+}
+
+/**
+ * Effect-based GroupRepository interface
+ *
+ * Repositories are now Effect-based (Step 4.3+), so this directly exposes
+ * the Effect-returning methods.
+ */
+export function toEffectGroupRepository(
+  repo: GroupRepository,
+): GroupRepository {
+  return repo;
+}
 
 /**
  * Runs an Effect and returns the result, mapping errors to HTTP errors.

@@ -132,28 +132,41 @@ function getErrorHandler<E extends DomainError, R>(
     onStateTransition?: (error: StateTransitionError) => R;
     onDefault?: (error: DomainError) => R;
   },
-): ((error: E) => R) | undefined {
+): ((error: DomainError) => R) | undefined {
   switch (error._tag) {
     case "ValidationError":
-      return handlers.onValidationError as (error: E) => R;
+      return (
+        (handlers.onValidationError as (error: DomainError) => R) ?? undefined
+      );
     case "NotFoundError":
-      return handlers.onNotFound as (error: E) => R;
+      return (handlers.onNotFound as (error: DomainError) => R) ?? undefined;
     case "UnauthorizedError":
-      return handlers.onUnauthorized as (error: E) => R;
+      return (
+        (handlers.onUnauthorized as (error: DomainError) => R) ?? undefined
+      );
     case "ConflictError":
-      return handlers.onConflict as (error: E) => R;
+      return (handlers.onConflict as (error: DomainError) => R) ?? undefined;
     case "InvariantError":
-      return handlers.onInvariant as (error: E) => R;
+      return (handlers.onInvariant as (error: DomainError) => R) ?? undefined;
     case "InvalidStateError":
-      return handlers.onInvalidState as (error: E) => R;
+      return (
+        (handlers.onInvalidState as (error: DomainError) => R) ?? undefined
+      );
     case "ResourceUnavailableError":
-      return handlers.onResourceUnavailable as (error: E) => R;
+      return (
+        (handlers.onResourceUnavailable as (error: DomainError) => R) ??
+        undefined
+      );
     case "QuotaExceededError":
-      return handlers.onQuotaExceeded as (error: E) => R;
+      return (
+        (handlers.onQuotaExceeded as (error: DomainError) => R) ?? undefined
+      );
     case "StateTransitionError":
-      return handlers.onStateTransition as (error: E) => R;
+      return (
+        (handlers.onStateTransition as (error: DomainError) => R) ?? undefined
+      );
     default:
-      return handlers.onDefault as (error: E) => R;
+      return (handlers.onDefault as (error: DomainError) => R) ?? undefined;
   }
 }
 
