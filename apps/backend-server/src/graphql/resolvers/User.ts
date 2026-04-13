@@ -18,6 +18,8 @@
  * @module User/resolvers
  */
 
+console.log("[User Resolver] Loading User resolver module...");
+
 import { builder } from "../builder";
 import type {
   GetUserOutput,
@@ -26,7 +28,13 @@ import type {
 } from "@mirai-app/use-cases";
 import { UserController } from "@mirai-app/adapters";
 import { requireAuth, requireAdmin } from "../utils/auth-helpers";
-import { handleResult, mapErrorToGraphQL } from "../utils/error-mapper";
+import {
+  handleControllerResult,
+  mapErrorToGraphQL,
+} from "../utils/error-mapper";
+
+// Import User types for side effects (registers them with builder)
+import "../types/User";
 import {
   UserCreateResultType,
   UserUpdateResultType,
@@ -55,11 +63,18 @@ const UserInput = builder.inputType("UserInput", {
 // Query Fields
 // =============================================================================
 
+console.log("[User Resolver] Registering query fields...");
+
 /**
  * Query: user(id: ID!) - Get user by ID
  *
  * Requires authentication. Users can view any user's profile.
  */
+console.log("[User Resolver] About to register 'user' query field");
+console.log(
+  "[User Resolver] Builder queryTypeKeys before:",
+  Object.keys((builder as any).queryType || {}),
+);
 builder.queryField("user", (t) =>
   t.field({
     description: "Get a user by their unique ID",
@@ -85,19 +100,29 @@ builder.queryField("user", (t) =>
       // Fetch user and handle result
       const result = await controller.getById({ id: args.id });
 
-      // Handle errors manually to support "not found" -> null semantics
-      if (result.kind === "err") {
-        const error = result.error as Error;
-        // Return null for not found, throw for other errors
-        if (error.message?.toLowerCase().includes("not found")) {
-          return null;
-        }
-        throw mapErrorToGraphQL(error);
+      // Debug logging
+      if (process.env.ENABLE_TEST_LOGS === "1") {
+        console.log("[User Resolver] getById result:", result);
       }
 
-      return result.value;
+      // Handle errors manually to support "not found" -> null semantics
+      if (result.success === false) {
+        // Return null for not found, throw for other errors
+        if (result.error.toLowerCase().includes("not found")) {
+          return null;
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return result.data;
     },
   }),
+);
+
+console.log("[User Resolver] Registered 'user' query field");
+console.log(
+  "[User Resolver] Builder queryType keys after user:",
+  Object.keys((builder as any).queryType || {}),
 );
 
 /**
@@ -132,8 +157,8 @@ builder.queryField("users", (t) =>
       const controller =
         context.container.resolve<UserController>("userController");
 
-      // Fetch users using error mapper for consistent handling
-      return handleResult(
+      // Fetch users using controller result handler
+      return handleControllerResult(
         await controller.list({
           limit: args.limit ?? 20,
           offset: args.offset ?? 0,
@@ -142,6 +167,8 @@ builder.queryField("users", (t) =>
     },
   }),
 );
+
+console.log("[User Resolver] Registered 'users' query field");
 
 /**
  * Query: me - Get current authenticated user
@@ -170,19 +197,20 @@ builder.queryField("me", (t) =>
       });
 
       // Handle errors manually to support "not found" -> null semantics
-      if (result.kind === "err") {
-        const error = result.error as Error;
+      if (result.success === false) {
         // Return null for not found, throw for other errors
-        if (error.message?.toLowerCase().includes("not found")) {
+        if (result.error.toLowerCase().includes("not found")) {
           return null;
         }
-        throw mapErrorToGraphQL(error);
+        throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 );
+
+console.log("[User Resolver] Registered 'me' query field");
 
 // =============================================================================
 // Mutation Fields
@@ -294,6 +322,10 @@ builder.mutationField("updateUser", (t) =>
 // =============================================================================
 // Export
 // =============================================================================
+
+console.log(
+  "[User Resolver] Module loaded successfully - all fields registered",
+);
 
 // Resolvers are registered automatically by importing this file
 export {};

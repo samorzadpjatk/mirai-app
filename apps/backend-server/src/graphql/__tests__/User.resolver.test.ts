@@ -115,8 +115,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       PORT_TOKENS.AuthPort,
     );
 
-    // Create users and seed repository
-    const adminResult = User.create({
+    // Import Effect for running Effects
+    const { Effect } = await import("effect");
+
+    // Create users using Effect and run them
+    const adminEffect = User.create({
       id: TEST_USERS.admin.id,
       authUserId: TEST_USERS.admin.authUserId,
       firstName: TEST_USERS.admin.firstName,
@@ -125,7 +128,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       hasAvatar: TEST_USERS.admin.hasAvatar,
       createdAt: new Date("2024-01-01"),
     });
-    const modResult = User.create({
+    const modEffect = User.create({
       id: TEST_USERS.moderator.id,
       authUserId: TEST_USERS.moderator.authUserId,
       firstName: TEST_USERS.moderator.firstName,
@@ -134,7 +137,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       hasAvatar: TEST_USERS.moderator.hasAvatar,
       createdAt: new Date("2024-01-02"),
     });
-    const userResult = User.create({
+    const userEffect = User.create({
       id: TEST_USERS.regular.id,
       authUserId: TEST_USERS.regular.authUserId,
       firstName: TEST_USERS.regular.firstName,
@@ -144,19 +147,45 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       createdAt: new Date("2024-01-03"),
     });
 
-    // Import Effect for running Effects
-    const { Effect } = await import("effect");
+    // Run Effects and collect successful results
+    const users: import("@mirai-app/domain").User[] = [];
 
-    // Seed all users to repository
-    const users = [adminResult, modResult, userResult]
-      .filter((r) => r.kind === "ok")
-      .map((r) => r.value);
+    const adminEither = await Effect.runPromise(Effect.either(adminEffect));
+    if (adminEither._tag === "Right") users.push(adminEither.right);
+    else console.log("Admin creation failed:", adminEither.left.message);
+
+    const modEither = await Effect.runPromise(Effect.either(modEffect));
+    if (modEither._tag === "Right") users.push(modEither.right);
+    else console.log("Mod creation failed:", modEither.left.message);
+
+    const userEither = await Effect.runPromise(Effect.either(userEffect));
+    if (userEither._tag === "Right") users.push(userEither.right);
+    else console.log("User creation failed:", userEither.left.message);
+
     console.log("Seeding users:", users.length, "users");
     await Effect.runPromise(userRepo.seed(users));
 
     // Verify users are seeded
     const allUsers = await Effect.runPromise(userRepo.findAll());
     console.log("Users in repo after seed:", allUsers.length);
+    console.log(
+      "User IDs in repo:",
+      allUsers.map((u) => u.id),
+    );
+
+    // Try to find a specific user
+    const foundUser = await Effect.runPromise(
+      userRepo.findById(TEST_USERS.regular.id),
+    );
+    console.log("Found user by ID:", foundUser ? foundUser.id : null);
+
+    // Verify controller has the same repository
+    const resolvedController =
+      context.container.resolve<UserController>("userController");
+    const controllerRepoUsers = await Effect.runPromise(
+      resolvedController["userRepository"].findAll(),
+    );
+    console.log("Users via controller's repo:", controllerRepoUsers.length);
 
     // Create auth users in InMemoryAuthAdapter
     const adminUserId = UserId.create(TEST_USERS.admin.id);
@@ -248,10 +277,8 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         ),
       });
 
-      // Debug: log errors if any
-      if (result.errors) {
-        console.log("GraphQL errors:", JSON.stringify(result.errors, null, 2));
-      }
+      // Debug: log full result
+      console.log("GraphQL result:", JSON.stringify(result, null, 2));
       expect(result.errors).toBeUndefined();
       expect(result.data).toBeDefined();
       expect(result.data?.user).toBeDefined();
@@ -480,7 +507,32 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
 
   describe("Schema Generation", () => {
     it("generates valid GraphQL schema", () => {
+      console.log("[Test] About to print schema...");
       const sdl = printSchema(schema);
+      console.log("[Test] Schema length:", sdl.length);
+      console.log("[Test] Has type User:", sdl.includes("type User"));
+      console.log("[Test] Has user(id:", sdl.includes("user(id"));
+
+      // Check Query type specifically - print first 5000 chars of Query section
+      const queryStart = sdl.indexOf("type Query {");
+      if (queryStart >= 0) {
+        const querySection = sdl.slice(queryStart, queryStart + 5000);
+        console.log("[Test] Query type section (first 5000 chars):");
+        console.log(querySection);
+        console.log(
+          "[Test] user(id: ID!): User in section:",
+          querySection.includes("user(id: ID!): User"),
+        );
+        console.log(
+          "[Test] just 'user(' in section:",
+          querySection.includes("user("),
+        );
+      } else {
+        console.log("[Test] Query type not found in schema");
+        // Print all type definitions
+        const allTypes = sdl.match(/type \w+ \{/g);
+        console.log("[Test] All types in schema:", allTypes);
+      }
 
       expect(sdl).toContain("type User");
       expect(sdl).toContain("type Query");

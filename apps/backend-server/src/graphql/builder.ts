@@ -854,6 +854,49 @@ export const builder = new SchemaBuilder<PothosTypes>({
           authContext?.role === "SERVICE",
       };
     },
+    // Custom unauthorized error handler to return GraphQLError with proper extensions
+    unauthorizedError: (_parent, _context, _info, result) => {
+      const { GraphQLError } = require("graphql");
+      // Determine the error code based on the failure type
+      let code = "INTERNAL_SERVER_ERROR";
+
+      // Handle AnyAuthScopes failure type (array of failures)
+      if (result.failure.kind === "AnyAuthScopes") {
+        const failures = result.failure.failures || [];
+        // Check if any failure is for authenticated scope
+        const authFailure = failures.find(
+          (f: { kind: string; scope: string }) =>
+            f.kind === "AuthScope" && f.scope === "authenticated",
+        );
+        if (authFailure) {
+          code = "UNAUTHENTICATED";
+        } else {
+          // Check for admin/moderator failures
+          const adminFailure = failures.find(
+            (f: { kind: string; scope: string }) =>
+              f.kind === "AuthScope" &&
+              (f.scope === "admin" || f.scope === "moderator"),
+          );
+          if (adminFailure) {
+            code = "FORBIDDEN";
+          }
+        }
+      } else if (
+        result.failure.kind === "AuthScope" &&
+        result.failure.scope === "authenticated"
+      ) {
+        code = "UNAUTHENTICATED";
+      } else if (
+        result.failure.kind === "AuthScope" &&
+        (result.failure.scope === "admin" ||
+          result.failure.scope === "moderator")
+      ) {
+        code = "FORBIDDEN";
+      }
+      return new GraphQLError(result.message, {
+        extensions: { code },
+      });
+    },
   },
 
   // Relay options for pagination
@@ -898,12 +941,14 @@ export const UserRoleEnum = builder.enumType("UserRole", {
  *
  * This will be extended by individual domain types.
  */
+console.log("[Builder] Creating Query type");
 builder.queryType({
   description: "Root query type for fetching data",
   authScopes: {
     public: true,
   },
 });
+console.log("[Builder] Query type created");
 
 /**
  * Create the root Mutation type

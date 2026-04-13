@@ -93,12 +93,14 @@ import "../resolvers/sponsor";
  * Extend the Query type if additional root fields are needed.
  * Individual domain resolvers should prefer builder.queryField().
  */
+console.log("[Query.ts] Calling builder.queryType()");
 builder.queryType({
   description: "Root query type for fetching data",
   authScopes: {
     public: true,
   },
 });
+console.log("[Query.ts] builder.queryType() done");
 
 // =============================================================================
 // Export

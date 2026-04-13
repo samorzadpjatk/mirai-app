@@ -131,7 +131,7 @@ function mapErrorToGraphQL(error: unknown): GraphQLError {
 }
 
 // =============================================================================
-// Result Handling
+// Result Handling (Result<T,E> format)
 // =============================================================================
 
 /**
@@ -140,6 +140,49 @@ function mapErrorToGraphQL(error: unknown): GraphQLError {
 export interface HandleResultOptions<T, R = T> {
   /** Transform the success value before returning */
   transform?: (value: T) => R;
+}
+
+// =============================================================================
+// Controller Result Handling ({ success, data, error } format)
+// =============================================================================
+
+/**
+ * Controller result type - { success, data, error } format
+ */
+export type ControllerResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+/**
+ * Handle a controller result and either return the data or throw GraphQL error
+ *
+ * Controllers return { success, data, error } format (not Result<T,E>).
+ * This helper converts that to GraphQL errors on failure.
+ *
+ * @param result - The controller result to handle
+ * @param options - Optional transformation function
+ * @returns The data value or throws GraphQLError
+ *
+ * @example
+ * ```typescript
+ * const result = await controller.getById({ id: args.id });
+ * return handleControllerResult(result);
+ *
+ * // With transformation
+ * const dto = handleControllerResult(result, { transform: (user) => UserDTO.from(user) });
+ * ```
+ */
+export function handleControllerResult<T, R = T>(
+  result: ControllerResult<T>,
+  options?: HandleResultOptions<T, R>,
+): R {
+  if (result.success === false) {
+    throw mapErrorToGraphQL(new Error(result.error));
+  }
+
+  return options?.transform
+    ? options.transform(result.data)
+    : (result.data as unknown as R);
 }
 
 /**

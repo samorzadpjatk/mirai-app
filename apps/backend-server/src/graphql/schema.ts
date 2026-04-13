@@ -81,6 +81,18 @@ import "./types/subscriptions";
 import "./types/Query";
 
 /**
+ * Import User resolvers
+ *
+ * This imports all User queries and mutations including:
+ * - user(id: ID!): User
+ * - users(limit: Int, offset: Int): [User!]!
+ * - me: User
+ * - createUser(input: CreateUserInput!): UserCreateResult
+ * - updateUser(input: UpdateUserInput!): UserUpdateResult
+ */
+import "./resolvers/User";
+
+/**
  * Import notification sender resolvers
  *
  * This imports all notification sender mutations including:
