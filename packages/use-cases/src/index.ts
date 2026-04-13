@@ -231,6 +231,43 @@ export {
 } from "./interactors/GetNotification";
 
 export {
+  createNotificationUseCase,
+  type CreateNotificationInput,
+  type CreateNotificationOutput,
+  NotificationCreationError,
+  NotificationRepositoryError as CreateNotificationRepositoryError,
+} from "./interactors/CreateNotification";
+
+export {
+  updateNotificationUseCase,
+  type UpdateNotificationInput,
+  type UpdateNotificationOutput,
+  NotificationNotFoundError as UpdateNotificationNotFoundError,
+  NotificationUpdateError,
+  NotificationValidationError as UpdateNotificationValidationError,
+  NotificationStateError as UpdateNotificationStateError,
+} from "./interactors/UpdateNotification";
+
+export {
+  deleteNotificationUseCase,
+  type DeleteNotificationInput,
+  type DeleteNotificationOutput,
+  NotificationNotFoundError as DeleteNotificationNotFoundError,
+  NotificationDeleteError,
+  NotificationAlreadySentError,
+} from "./interactors/DeleteNotification";
+
+export {
+  scheduleNotificationUseCase,
+  type ScheduleNotificationInput,
+  type ScheduleNotificationOutput,
+  NotificationNotFoundError as ScheduleNotificationNotFoundError,
+  NotificationScheduleError,
+  NotificationValidationError as ScheduleNotificationValidationError,
+  NotificationStateError as ScheduleNotificationStateError,
+} from "./interactors/ScheduleNotification";
+
+export {
   getActivityFeedUseCase,
   type GetActivityFeedInput,
   type GetActivityFeedOutput,
@@ -247,6 +284,47 @@ export {
   type AddReactionInput,
   type AddReactionOutput,
 } from "./interactors/AddReaction";
+
+export {
+  getActivityByIdUseCase,
+  type GetActivityByIdInput,
+  type GetActivityByIdOutput,
+  ActivityNotFoundError as GetActivityByIdNotFoundError,
+  ActivityRepositoryError as GetActivityByIdRepositoryError,
+} from "./interactors/GetActivityById";
+
+export {
+  updateActivityUseCase,
+  type UpdateActivityInput,
+  type UpdateActivityOutput,
+  UpdateActivityNotFoundError,
+  UpdateActivityValidationError,
+  UpdateActivityRepositoryError,
+} from "./interactors/UpdateActivity";
+
+export {
+  hideActivityUseCase,
+  type HideActivityInput,
+  type HideActivityOutput,
+  HideActivityNotFoundError,
+  HideActivityRepositoryError,
+} from "./interactors/HideActivity";
+
+export {
+  unhideActivityUseCase,
+  type UnhideActivityInput,
+  type UnhideActivityOutput,
+  UnhideActivityNotFoundError,
+  UnhideActivityRepositoryError,
+} from "./interactors/UnhideActivity";
+
+export {
+  deleteActivityUseCase,
+  type DeleteActivityInput,
+  type DeleteActivityOutput,
+  DeleteActivityNotFoundError,
+  DeleteActivityRepositoryError,
+} from "./interactors/DeleteActivity";
 
 // Challenge Submission Use Cases (Effect-based)
 export {
@@ -765,6 +843,11 @@ export {
   type UseCaseModuleDeps,
   type UseCaseToken,
 } from "./modules/UseCaseModule";
+
+// =============================================================================
+// Context Tags (Effect Dependency Injection)
+// =============================================================================
+export * from "./context/tags";
 
 // =============================================================================
 // Re-export domain types for convenience

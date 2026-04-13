@@ -2,6 +2,25 @@ import type { Reward, RewardPurchase, RewardId } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 
 /**
+ * Repository error type for port interfaces
+ * This is a common error type used across all repository implementations
+ */
+export class DatabaseError extends Error {
+  readonly _tag = "DatabaseError" as const;
+  readonly code = "DATABASE_ERROR" as const;
+  readonly operation: string;
+  override readonly message: string;
+  override readonly cause?: unknown;
+
+  constructor(props: { operation: string; message: string; cause?: unknown }) {
+    super(`Database error in '${props.operation}': ${props.message}`);
+    this.operation = props.operation;
+    this.message = props.message;
+    this.cause = props.cause;
+  }
+}
+
+/**
  * Pagination options for list queries
  */
 export interface PaginationOptions {
@@ -34,13 +53,13 @@ export interface RewardRepository {
   /**
    * Create a new reward
    */
-  create(reward: Reward): Promise<Reward>;
+  create(reward: Reward): Effect.Effect<Reward, DatabaseError, never>;
 
   /**
    * Find reward by ID
    * @returns Reward or null if not found
    */
-  findById(id: RewardId): Promise<Reward | null>;
+  findById(id: RewardId): Effect.Effect<Reward | null, DatabaseError, never>;
 
   /**
    * Find all rewards for a trip
@@ -48,7 +67,7 @@ export interface RewardRepository {
   findByTripId(
     tripId: string,
     options?: { includeHidden?: boolean } & PaginationOptions,
-  ): Promise<PaginatedResult<Reward>>;
+  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never>;
 
   /**
    * Find all visible (not hidden) rewards for a trip
@@ -56,39 +75,45 @@ export interface RewardRepository {
   findVisibleByTripId(
     tripId: string,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<Reward>>;
+  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never>;
 
   /**
    * Update reward
    */
-  update(reward: Reward): Promise<Reward>;
+  update(reward: Reward): Effect.Effect<Reward, DatabaseError, never>;
 
   /**
    * Delete reward (only allowed if no purchases exist)
    */
-  delete(id: RewardId): Promise<void>;
+  delete(id: RewardId): Effect.Effect<void, DatabaseError, never>;
 
   /**
    * Check if reward has any purchases
    */
-  hasPurchases(id: RewardId): Promise<boolean>;
+  hasPurchases(id: RewardId): Effect.Effect<boolean, DatabaseError, never>;
 
   /**
    * Get purchase count for a reward
    */
-  getPurchaseCount(id: RewardId): Promise<number>;
+  getPurchaseCount(id: RewardId): Effect.Effect<number, DatabaseError, never>;
 
   /**
    * Decrement available quantity (atomic operation)
    * Used during purchase transactions
    */
-  decrementQuantity(id: RewardId, amount: number): Promise<Reward>;
+  decrementQuantity(
+    id: RewardId,
+    amount: number,
+  ): Effect.Effect<Reward, DatabaseError, never>;
 
   /**
    * Increment available quantity (atomic operation)
    * Used during refund/cancellation
    */
-  incrementQuantity(id: RewardId, amount: number): Promise<Reward>;
+  incrementQuantity(
+    id: RewardId,
+    amount: number,
+  ): Effect.Effect<Reward, DatabaseError, never>;
 }
 
 /**
@@ -97,28 +122,34 @@ export interface RewardRepository {
 export class RewardRepositoryTag extends Context.Tag("RewardRepository")<
   RewardRepositoryTag,
   {
-    create: (reward: Reward) => Effect.Effect<Reward, never, never>;
-    findById: (id: RewardId) => Effect.Effect<Reward | null, never, never>;
+    create: (reward: Reward) => Effect.Effect<Reward, DatabaseError, never>;
+    findById: (
+      id: RewardId,
+    ) => Effect.Effect<Reward | null, DatabaseError, never>;
     findByTripId: (
       tripId: string,
       options?: { includeHidden?: boolean } & PaginationOptions,
-    ) => Effect.Effect<PaginatedResult<Reward>, never, never>;
+    ) => Effect.Effect<PaginatedResult<Reward>, DatabaseError, never>;
     findVisibleByTripId: (
       tripId: string,
       options?: PaginationOptions,
-    ) => Effect.Effect<PaginatedResult<Reward>, never, never>;
-    update: (reward: Reward) => Effect.Effect<Reward, never, never>;
-    delete: (id: RewardId) => Effect.Effect<void, never, never>;
-    hasPurchases: (id: RewardId) => Effect.Effect<boolean, never, never>;
-    getPurchaseCount: (id: RewardId) => Effect.Effect<number, never, never>;
+    ) => Effect.Effect<PaginatedResult<Reward>, DatabaseError, never>;
+    update: (reward: Reward) => Effect.Effect<Reward, DatabaseError, never>;
+    delete: (id: RewardId) => Effect.Effect<void, DatabaseError, never>;
+    hasPurchases: (
+      id: RewardId,
+    ) => Effect.Effect<boolean, DatabaseError, never>;
+    getPurchaseCount: (
+      id: RewardId,
+    ) => Effect.Effect<number, DatabaseError, never>;
     decrementQuantity: (
       id: RewardId,
       amount: number,
-    ) => Effect.Effect<Reward, never, never>;
+    ) => Effect.Effect<Reward, DatabaseError, never>;
     incrementQuantity: (
       id: RewardId,
       amount: number,
-    ) => Effect.Effect<Reward, never, never>;
+    ) => Effect.Effect<Reward, DatabaseError, never>;
   }
 >() {}
 
@@ -131,12 +162,16 @@ export interface RewardPurchaseRepository {
   /**
    * Create a new purchase
    */
-  create(purchase: RewardPurchase): Promise<RewardPurchase>;
+  create(
+    purchase: RewardPurchase,
+  ): Effect.Effect<RewardPurchase, DatabaseError, never>;
 
   /**
    * Find purchase by ID
    */
-  findById(id: string): Promise<RewardPurchase | null>;
+  findById(
+    id: string,
+  ): Effect.Effect<RewardPurchase | null, DatabaseError, never>;
 
   /**
    * Find purchases by reward ID
@@ -144,7 +179,7 @@ export interface RewardPurchaseRepository {
   findByRewardId(
     rewardId: RewardId,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>>;
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never>;
 
   /**
    * Find purchases by group ID
@@ -152,7 +187,7 @@ export interface RewardPurchaseRepository {
   findByGroupId(
     groupId: string,
     options?: PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>>;
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never>;
 
   /**
    * Find all purchases for a trip
@@ -160,7 +195,7 @@ export interface RewardPurchaseRepository {
   findByTripId(
     tripId: string,
     options?: { groupId?: string } & PaginationOptions,
-  ): Promise<PaginatedResult<RewardPurchase>>;
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never>;
 
   /**
    * Update purchase status
@@ -170,12 +205,14 @@ export interface RewardPurchaseRepository {
     status: string,
     updatedById: string,
     collectionMethod?: string | null,
-  ): Promise<RewardPurchase>;
+  ): Effect.Effect<RewardPurchase, DatabaseError, never>;
 
   /**
    * Count purchases for a reward
    */
-  countByRewardId(rewardId: RewardId): Promise<number>;
+  countByRewardId(
+    rewardId: RewardId,
+  ): Effect.Effect<number, DatabaseError, never>;
 }
 
 /**
@@ -188,31 +225,31 @@ export class RewardPurchaseRepositoryTag extends Context.Tag(
   {
     create: (
       purchase: RewardPurchase,
-    ) => Effect.Effect<RewardPurchase, never, never>;
+    ) => Effect.Effect<RewardPurchase, DatabaseError, never>;
     findById: (
       id: string,
-    ) => Effect.Effect<RewardPurchase | null, never, never>;
+    ) => Effect.Effect<RewardPurchase | null, DatabaseError, never>;
     findByRewardId: (
       rewardId: RewardId,
       options?: PaginationOptions,
-    ) => Effect.Effect<PaginatedResult<RewardPurchase>, never, never>;
+    ) => Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never>;
     findByGroupId: (
       groupId: string,
       options?: PaginationOptions,
-    ) => Effect.Effect<PaginatedResult<RewardPurchase>, never, never>;
+    ) => Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never>;
     findByTripId: (
       tripId: string,
       options?: { groupId?: string } & PaginationOptions,
-    ) => Effect.Effect<PaginatedResult<RewardPurchase>, never, never>;
+    ) => Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never>;
     updateStatus: (
       id: string,
       status: string,
       updatedById: string,
       collectionMethod?: string | null,
-    ) => Effect.Effect<RewardPurchase, never, never>;
+    ) => Effect.Effect<RewardPurchase, DatabaseError, never>;
     countByRewardId: (
       rewardId: RewardId,
-    ) => Effect.Effect<number, never, never>;
+    ) => Effect.Effect<number, DatabaseError, never>;
   }
 >() {}
 
@@ -226,7 +263,9 @@ export interface TripPointsCalculator {
    * Calculate total available points for a trip
    * Based on challenges and their point values
    */
-  calculateTotalAvailablePoints(tripId: string): Promise<number>;
+  calculateTotalAvailablePoints(
+    tripId: string,
+  ): Effect.Effect<number, DatabaseError, never>;
 }
 
 /**
@@ -239,7 +278,7 @@ export class TripPointsCalculatorTag extends Context.Tag(
   {
     calculateTotalAvailablePoints: (
       tripId: string,
-    ) => Effect.Effect<number, never, never>;
+    ) => Effect.Effect<number, DatabaseError, never>;
   }
 >() {}
 
@@ -252,7 +291,7 @@ export interface GroupCoinsService {
   /**
    * Get current coin balance for a group
    */
-  getBalance(groupId: string): Promise<number>;
+  getBalance(groupId: string): Effect.Effect<number, never, never>;
 
   /**
    * Deduct coins from a group (atomic)
@@ -263,7 +302,7 @@ export interface GroupCoinsService {
     amount: number,
     reason: string,
     adminId: string,
-  ): Promise<void>;
+  ): Effect.Effect<void, never, never>;
 
   /**
    * Add coins to a group (atomic)
@@ -274,7 +313,7 @@ export interface GroupCoinsService {
     amount: number,
     reason: string,
     adminId: string,
-  ): Promise<void>;
+  ): Effect.Effect<void, never, never>;
 }
 
 /**
@@ -311,22 +350,26 @@ export interface TripAccessChecker {
   isGroupLeader(
     userId: string,
     tripId: string,
-  ): Promise<{
-    isLeader: boolean;
-    groupId?: string;
-    groupName?: string;
-    coins?: number;
-  }>;
+  ): Effect.Effect<
+    {
+      isLeader: boolean;
+      groupId?: string;
+      groupName?: string;
+      coins?: number;
+    },
+    never,
+    never
+  >;
 
   /**
    * Check if user is staff (admin or moderator)
    */
-  isStaff(userId: string): Promise<boolean>;
+  isStaff(userId: string): Effect.Effect<boolean, never, never>;
 
   /**
    * Check if trip has ended
    */
-  hasTripEnded(tripId: string): Promise<boolean>;
+  hasTripEnded(tripId: string): Effect.Effect<boolean, never, never>;
 }
 
 /**

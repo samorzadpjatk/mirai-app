@@ -6,11 +6,11 @@
  * (Supabase Storage, S3, local filesystem, etc.) in the adapters layer.
  *
  * Key Design Decisions:
- * - Uses Result type for explicit error handling
+ * - Uses Effect for explicit error handling and composable async operations
  * - Supports upload, download, delete, and signed URL operations
  * - Uses Buffer/Blob for file data (implementation-agnostic)
- * - No framework dependencies (pure TypeScript interface)
- * - Async operations return Promises
+ * - No framework dependencies (pure TypeScript interface, except Effect types)
+ * - Operations return Effect for composability
  *
  * Implementations:
  * - SupabaseStorageAdapter: Uses Supabase Storage
@@ -21,7 +21,6 @@
  * @module ports
  */
 
-import type { Result } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 
 // =============================================================================
@@ -226,23 +225,21 @@ export interface StoragePort {
    * @param path - The file path within the bucket
    * @param file - The file data (Buffer or Blob)
    * @param options - Optional upload configuration
-   * @returns Promise<Result<FileMetadata, StorageError>>
+   * @returns Effect.Effect<FileMetadata, StorageError | UploadError | BucketNotFoundError, never>
    *
    * @example
    * ```typescript
    * const fileBuffer = Buffer.from("Hello World");
-   * const result = await storagePort.upload(
-   *   "user-files",
-   *   "user-123/avatar.png",
-   *   fileBuffer,
-   *   { contentType: "image/png", upsert: true }
+   * const metadata = await Effect.runPromise(
+   *   storagePort.upload(
+   *     "user-files",
+   *     "user-123/avatar.png",
+   *     fileBuffer,
+   *     { contentType: "image/png", upsert: true }
+   *   )
    * );
    *
-   * if (isOk(result)) {
-   *   console.log("File uploaded:", result.value.path);
-   * } else {
-   *   console.error("Upload failed:", result.error.message);
-   * }
+   * console.log("File uploaded:", metadata.path);
    * ```
    */
   upload(
@@ -250,8 +247,10 @@ export interface StoragePort {
     path: string,
     file: Buffer | Blob,
     options?: UploadOptions,
-  ): Promise<
-    Result<FileMetadata, StorageError | UploadError | BucketNotFoundError>
+  ): Effect.Effect<
+    FileMetadata,
+    StorageError | UploadError | BucketNotFoundError,
+    never
   >;
 
   /**
@@ -259,30 +258,25 @@ export interface StoragePort {
    *
    * @param bucket - The bucket/container name
    * @param path - The file path within the bucket
-   * @returns Promise<Result<DownloadResult, StorageError | FileNotFoundError>>
+   * @returns Effect.Effect<DownloadResult, StorageError | FileNotFoundError | DownloadError, never>
    *
    * @example
    * ```typescript
-   * const result = await storagePort.download(
-   *   "user-files",
-   *   "user-123/avatar.png"
+   * const downloadResult = await Effect.runPromise(
+   *   storagePort.download("user-files", "user-123/avatar.png")
    * );
    *
-   * if (isOk(result)) {
-   *   const fileData = result.value.data;
-   *   // Process file data
-   * } else if (result.error instanceof FileNotFoundError) {
-   *   console.error("File not found");
-   * } else {
-   *   console.error("Download failed:", result.error.message);
-   * }
+   * const fileData = downloadResult.data;
+   * // Process file data
    * ```
    */
   download(
     bucket: string,
     path: string,
-  ): Promise<
-    Result<DownloadResult, StorageError | FileNotFoundError | DownloadError>
+  ): Effect.Effect<
+    DownloadResult,
+    StorageError | FileNotFoundError | DownloadError,
+    never
   >;
 
   /**
@@ -290,26 +284,21 @@ export interface StoragePort {
    *
    * @param bucket - The bucket/container name
    * @param paths - Array of file paths to delete
-   * @returns Promise<Result<void, StorageError | DeleteError>>
+   * @returns Effect.Effect<void, StorageError | DeleteError, never>
    *
    * @example
    * ```typescript
-   * const result = await storagePort.delete(
-   *   "user-files",
-   *   ["user-123/avatar.png", "user-123/document.pdf"]
+   * await Effect.runPromise(
+   *   storagePort.delete("user-files", ["user-123/avatar.png", "user-123/document.pdf"])
    * );
    *
-   * if (isOk(result)) {
-   *   console.log("Files deleted successfully");
-   * } else {
-   *   console.error("Delete failed:", result.error.message);
-   * }
+   * console.log("Files deleted successfully");
    * ```
    */
   delete(
     bucket: string,
     paths: string[],
-  ): Promise<Result<void, StorageError | DeleteError>>;
+  ): Effect.Effect<void, StorageError | DeleteError, never>;
 
   /**
    * Create a signed URL for temporary access to a file
@@ -317,29 +306,23 @@ export interface StoragePort {
    * @param bucket - The bucket/container name
    * @param path - The file path within the bucket
    * @param expiresInSeconds - URL expiration time in seconds
-   * @returns Promise<Result<SignedUrlInfo, StorageError>>
+   * @returns Effect.Effect<SignedUrlInfo, StorageError | FileNotFoundError, never>
    *
    * @example
    * ```typescript
-   * const result = await storagePort.createSignedUrl(
-   *   "private-files",
-   *   "confidential.pdf",
-   *   3600 // 1 hour
+   * const signedUrlInfo = await Effect.runPromise(
+   *   storagePort.createSignedUrl("private-files", "confidential.pdf", 3600) // 1 hour
    * );
    *
-   * if (isOk(result)) {
-   *   console.log("Signed URL:", result.value.url);
-   *   console.log("Expires at:", result.value.expiresAt);
-   * } else {
-   *   console.error("Failed to create signed URL:", result.error.message);
-   * }
+   * console.log("Signed URL:", signedUrlInfo.url);
+   * console.log("Expires at:", signedUrlInfo.expiresAt);
    * ```
    */
   createSignedUrl(
     bucket: string,
     path: string,
     expiresInSeconds: number,
-  ): Promise<Result<SignedUrlInfo, StorageError | FileNotFoundError>>;
+  ): Effect.Effect<SignedUrlInfo, StorageError | FileNotFoundError, never>;
 }
 
 /**

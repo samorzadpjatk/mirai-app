@@ -1,5 +1,4 @@
-import type { Location, SharingUserInfo } from "@mirai-app/domain";
-import type { LocationId } from "@mirai-app/domain";
+import type { Location, SharingUserInfo, LocationId } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 
 /**
@@ -16,54 +15,57 @@ export interface LocationRepository {
   /**
    * Create a new location
    */
-  create(location: Location): Promise<Location>;
+  create(location: Location): Effect.Effect<Location, never, never>;
 
   /**
    * Find location by ID
    * @returns Location or null if not found
    */
-  findById(id: LocationId): Promise<Location | null>;
+  findById(id: LocationId): Effect.Effect<Location | null, never, never>;
 
   /**
    * Find location by user ID
    * @returns Location or null if not found
    */
-  findByUserId(userId: string): Promise<Location | null>;
+  findByUserId(userId: string): Effect.Effect<Location | null, never, never>;
 
   /**
    * Find all locations with pagination
    */
-  findAll(options?: { limit?: number; offset?: number }): Promise<Location[]>;
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+  }): Effect.Effect<Location[], never, never>;
 
   /**
    * Find locations for users that are sharing with a specific user
    */
-  findSharingWithUser(userId: string): Promise<Location[]>;
+  findSharingWithUser(userId: string): Effect.Effect<Location[], never, never>;
 
   /**
    * Find locations by user IDs
    */
-  findByUserIds(userIds: string[]): Promise<Location[]>;
+  findByUserIds(userIds: string[]): Effect.Effect<Location[], never, never>;
 
   /**
    * Update location (upsert pattern for user locations)
    */
-  save(location: Location): Promise<Location>;
+  save(location: Location): Effect.Effect<Location, never, never>;
 
   /**
    * Delete location
    */
-  delete(id: LocationId): Promise<void>;
+  delete(id: LocationId): Effect.Effect<void, never, never>;
 
   /**
    * Delete location by user ID
    */
-  deleteByUserId(userId: string): Promise<void>;
+  deleteByUserId(userId: string): Effect.Effect<void, never, never>;
 
   /**
    * Check if location exists for user
    */
-  existsForUser(userId: string): Promise<boolean>;
+  existsForUser(userId: string): Effect.Effect<boolean, never, never>;
 }
 
 /**

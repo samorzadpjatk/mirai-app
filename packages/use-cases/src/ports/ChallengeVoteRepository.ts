@@ -2,6 +2,25 @@ import type { ChallengeVote } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 
 /**
+ * Repository error type for port interfaces
+ * This is a common error type used across all repository implementations
+ */
+export class DatabaseError extends Error {
+  readonly _tag = "DatabaseError" as const;
+  readonly code = "DATABASE_ERROR" as const;
+  readonly operation: string;
+  override readonly message: string;
+  override readonly cause?: unknown;
+
+  constructor(props: { operation: string; message: string; cause?: unknown }) {
+    super(`Database error in '${props.operation}': ${props.message}`);
+    this.operation = props.operation;
+    this.message = props.message;
+    this.cause = props.cause;
+  }
+}
+
+/**
  * ChallengeVoteRepository Port
  *
  * This interface defines what operations the application needs
@@ -15,23 +34,31 @@ export interface ChallengeVoteRepository {
   /**
    * Create a new vote
    */
-  create(vote: ChallengeVote): Promise<ChallengeVote>;
+  create(
+    vote: ChallengeVote,
+  ): Effect.Effect<ChallengeVote, DatabaseError, never>;
 
   /**
    * Create multiple votes in a batch
    */
-  createMany(votes: ChallengeVote[]): Promise<ChallengeVote[]>;
+  createMany(
+    votes: ChallengeVote[],
+  ): Effect.Effect<ChallengeVote[], DatabaseError, never>;
 
   /**
    * Find vote by ID
    * @returns Vote or null if not found
    */
-  findById(id: string): Promise<ChallengeVote | null>;
+  findById(
+    id: string,
+  ): Effect.Effect<ChallengeVote | null, DatabaseError, never>;
 
   /**
    * Find all votes for a challenge
    */
-  findByChallengeId(challengeId: string): Promise<ChallengeVote[]>;
+  findByChallengeId(
+    challengeId: string,
+  ): Effect.Effect<ChallengeVote[], DatabaseError, never>;
 
   /**
    * Find all votes by a specific voter in a challenge
@@ -39,17 +66,22 @@ export interface ChallengeVoteRepository {
   findByChallengeAndVoter(
     challengeId: string,
     voterId: string,
-  ): Promise<ChallengeVote[]>;
+  ): Effect.Effect<ChallengeVote[], DatabaseError, never>;
 
   /**
    * Find all votes for a specific submission
    */
-  findBySubmissionId(submissionId: string): Promise<ChallengeVote[]>;
+  findBySubmissionId(
+    submissionId: string,
+  ): Effect.Effect<ChallengeVote[], DatabaseError, never>;
 
   /**
    * Check if a voter has already voted in a challenge
    */
-  hasVoted(challengeId: string, voterId: string): Promise<boolean>;
+  hasVoted(
+    challengeId: string,
+    voterId: string,
+  ): Effect.Effect<boolean, DatabaseError, never>;
 
   /**
    * Check if a voter has voted for a specific position in a challenge
@@ -58,22 +90,27 @@ export interface ChallengeVoteRepository {
     challengeId: string,
     voterId: string,
     position: number,
-  ): Promise<boolean>;
+  ): Effect.Effect<boolean, DatabaseError, never>;
 
   /**
    * Get vote positions filled by a voter in a challenge
    */
-  getVotedPositions(challengeId: string, voterId: string): Promise<number[]>;
+  getVotedPositions(
+    challengeId: string,
+    voterId: string,
+  ): Effect.Effect<number[], DatabaseError, never>;
 
   /**
    * Delete a vote
    */
-  delete(id: string): Promise<void>;
+  delete(id: string): Effect.Effect<void, DatabaseError, never>;
 
   /**
    * Delete all votes for a challenge (useful for testing/reset)
    */
-  deleteByChallengeId(challengeId: string): Promise<void>;
+  deleteByChallengeId(
+    challengeId: string,
+  ): Effect.Effect<void, DatabaseError, never>;
 }
 
 /**
@@ -84,37 +121,41 @@ export class ChallengeVoteRepositoryTag extends Context.Tag(
 )<
   ChallengeVoteRepositoryTag,
   {
-    create: (vote: ChallengeVote) => Effect.Effect<ChallengeVote, never, never>;
+    create: (
+      vote: ChallengeVote,
+    ) => Effect.Effect<ChallengeVote, DatabaseError, never>;
     createMany: (
       votes: ChallengeVote[],
-    ) => Effect.Effect<ChallengeVote[], never, never>;
-    findById: (id: string) => Effect.Effect<ChallengeVote | null, never, never>;
+    ) => Effect.Effect<ChallengeVote[], DatabaseError, never>;
+    findById: (
+      id: string,
+    ) => Effect.Effect<ChallengeVote | null, DatabaseError, never>;
     findByChallengeId: (
       challengeId: string,
-    ) => Effect.Effect<ChallengeVote[], never, never>;
+    ) => Effect.Effect<ChallengeVote[], DatabaseError, never>;
     findByChallengeAndVoter: (
       challengeId: string,
       voterId: string,
-    ) => Effect.Effect<ChallengeVote[], never, never>;
+    ) => Effect.Effect<ChallengeVote[], DatabaseError, never>;
     findBySubmissionId: (
       submissionId: string,
-    ) => Effect.Effect<ChallengeVote[], never, never>;
+    ) => Effect.Effect<ChallengeVote[], DatabaseError, never>;
     hasVoted: (
       challengeId: string,
       voterId: string,
-    ) => Effect.Effect<boolean, never, never>;
+    ) => Effect.Effect<boolean, DatabaseError, never>;
     hasVotedForPosition: (
       challengeId: string,
       voterId: string,
       position: number,
-    ) => Effect.Effect<boolean, never, never>;
+    ) => Effect.Effect<boolean, DatabaseError, never>;
     getVotedPositions: (
       challengeId: string,
       voterId: string,
-    ) => Effect.Effect<number[], never, never>;
-    delete: (id: string) => Effect.Effect<void, never, never>;
+    ) => Effect.Effect<number[], DatabaseError, never>;
+    delete: (id: string) => Effect.Effect<void, DatabaseError, never>;
     deleteByChallengeId: (
       challengeId: string,
-    ) => Effect.Effect<void, never, never>;
+    ) => Effect.Effect<void, DatabaseError, never>;
   }
 >() {}

@@ -11,63 +11,69 @@ export interface GroupRepository {
   /**
    * Create a new group
    */
-  create(group: Group): Promise<Group>;
+  create(group: Group): Effect.Effect<Group, never, never>;
 
   /**
    * Find group by ID
    * @returns Group or null if not found
    */
-  findById(id: string): Promise<Group | null>;
+  findById(id: string): Effect.Effect<Group | null, never, never>;
 
   /**
    * Find groups by trip ID
    */
-  findByTripId(tripId: string): Promise<Group[]>;
+  findByTripId(tripId: string): Effect.Effect<Group[], never, never>;
 
   /**
    * Find groups by status
    */
-  findByStatus(status: GroupStatus): Promise<Group[]>;
+  findByStatus(status: GroupStatus): Effect.Effect<Group[], never, never>;
 
   /**
    * Find groups by trip ID and status
    */
-  findByTripIdAndStatus(tripId: string, status: GroupStatus): Promise<Group[]>;
+  findByTripIdAndStatus(
+    tripId: string,
+    status: GroupStatus,
+  ): Effect.Effect<Group[], never, never>;
 
   /**
    * Find groups by organizer ID
    */
-  findByOrganizerId(organizerId: string): Promise<Group[]>;
+  findByOrganizerId(organizerId: string): Effect.Effect<Group[], never, never>;
 
   /**
    * Find group by code
    */
-  findByCode(code: string): Promise<Group | null>;
+  findByCode(code: string): Effect.Effect<Group | null, never, never>;
 
   /**
    * Find all groups with pagination
    */
-  findAll(options?: { limit?: number; offset?: number }): Promise<Group[]>;
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+  }): Effect.Effect<Group[], never, never>;
 
   /**
    * Update group
    */
-  update(group: Group): Promise<Group>;
+  update(group: Group): Effect.Effect<Group, never, never>;
 
   /**
    * Delete group
    */
-  delete(id: string): Promise<void>;
+  delete(id: string): Effect.Effect<void, never, never>;
 
   /**
    * Check if group exists
    */
-  exists(id: string): Promise<boolean>;
+  exists(id: string): Effect.Effect<boolean, never, never>;
 
   /**
    * Count groups by trip ID
    */
-  countByTripId(tripId: string): Promise<number>;
+  countByTripId(tripId: string): Effect.Effect<number, never, never>;
 }
 
 /**

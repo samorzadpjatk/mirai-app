@@ -6,10 +6,10 @@
  * (Supabase Auth, JWT, etc.) in the adapters layer.
  *
  * Key Design Decisions:
- * - Uses Result type for explicit error handling
+ * - Uses Effect type for composable error handling
  * - Returns AuthContext domain value object on success
  * - No framework dependencies (pure TypeScript interface)
- * - Async operations return Promises
+ * - Supports structured concurrency patterns
  *
  * Implementations:
  * - SupabaseAuthAdapter: Uses Supabase Auth
@@ -19,7 +19,6 @@
  * @module ports
  */
 
-import type { Result } from "@mirai-app/domain";
 import type { AuthContext } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 
@@ -84,51 +83,56 @@ export class SessionExpiredError extends Error {
  *
  * This port abstracts the authentication mechanism from the use cases,
  * enabling different implementations without changing business logic.
+ *
+ * Note: This interface uses Effect for composable error handling and
+ * supports structured concurrency patterns.
  */
 export interface AuthPort {
   /**
    * Validate an authentication token and return the auth context
    *
    * @param token - The authentication token to validate
-   * @returns Result<AuthContext, AuthError | InvalidTokenError>
+   * @returns Effect<AuthContext, AuthError | InvalidTokenError | SessionExpiredError, never>
    *
    * @example
    * ```typescript
-   * const result = await authPort.validateToken("jwt-token-string");
-   * if (isOk(result)) {
-   *   const context = result.value;
+   * const effect = authPort.validateToken("jwt-token-string");
+   * try {
+   *   const context = await Effect.runPromise(effect);
    *   // Use context.userId, context.role, etc.
-   * } else {
-   *   // Handle error: result.error
+   * } catch (error) {
+   *   // Handle error
    * }
    * ```
    */
   validateToken(
     token: string,
-  ): Promise<
-    Result<AuthContext, AuthError | InvalidTokenError | SessionExpiredError>
+  ): Effect.Effect<
+    AuthContext,
+    AuthError | InvalidTokenError | SessionExpiredError,
+    never
   >;
 
   /**
    * Refresh an existing session and return updated auth context
    *
    * @param sessionId - The session identifier to refresh
-   * @returns Result<AuthContext, AuthError | SessionExpiredError>
+   * @returns Effect<AuthContext, AuthError | SessionExpiredError, never>
    *
    * @example
    * ```typescript
-   * const result = await authPort.refreshSession("session-123");
-   * if (isOk(result)) {
-   *   const context = result.value;
+   * const effect = authPort.refreshSession("session-123");
+   * try {
+   *   const context = await Effect.runPromise(effect);
    *   // Session refreshed, new tokens issued
-   * } else {
+   * } catch (error) {
    *   // Handle session expiration or other errors
    * }
    * ```
    */
   refreshSession(
     sessionId: string,
-  ): Promise<Result<AuthContext, AuthError | SessionExpiredError>>;
+  ): Effect.Effect<AuthContext, AuthError | SessionExpiredError, never>;
 }
 
 /**

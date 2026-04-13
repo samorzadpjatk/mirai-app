@@ -75,24 +75,28 @@ export interface NotificationDeliveryRepository {
   findMany(
     filters: Partial<DeliveryFilters>,
     pagination: PaginationOptions,
-  ): Promise<NotificationDelivery[]>;
+  ): Effect.Effect<NotificationDelivery[], never, never>;
 
   /**
    * Count deliveries by filters
    */
-  count(filters?: Partial<DeliveryFilters>): Promise<number>;
+  count(
+    filters?: Partial<DeliveryFilters>,
+  ): Effect.Effect<number, never, never>;
 
   /**
    * Find delivery by notification ID
    */
   findByNotificationId(
     notificationId: string,
-  ): Promise<NotificationDelivery | null>;
+  ): Effect.Effect<NotificationDelivery | null, never, never>;
 
   /**
    * Get delivery statistics
    */
-  getStats(filters?: Partial<DeliveryFilters>): Promise<DeliveryStats>;
+  getStats(
+    filters?: Partial<DeliveryFilters>,
+  ): Effect.Effect<DeliveryStats, never, never>;
 
   /**
    * Find failed or partially failed deliveries
@@ -100,12 +104,12 @@ export interface NotificationDeliveryRepository {
   findFailed(
     tripId: string,
     pagination: PaginationOptions,
-  ): Promise<NotificationDelivery[]>;
+  ): Effect.Effect<NotificationDelivery[], never, never>;
 
   /**
    * Count failed deliveries
    */
-  countFailed(tripId: string): Promise<number>;
+  countFailed(tripId: string): Effect.Effect<number, never, never>;
 }
 
 /**

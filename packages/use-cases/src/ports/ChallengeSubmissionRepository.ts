@@ -6,6 +6,25 @@ import type {
 import { Context, Effect } from "effect";
 
 /**
+ * Repository error type for port interfaces
+ * This is a common error type used across all repository implementations
+ */
+export class DatabaseError extends Error {
+  readonly _tag = "DatabaseError" as const;
+  readonly code = "DATABASE_ERROR" as const;
+  readonly operation: string;
+  override readonly message: string;
+  override readonly cause?: unknown;
+
+  constructor(props: { operation: string; message: string; cause?: unknown }) {
+    super(`Database error in '${props.operation}': ${props.message}`);
+    this.operation = props.operation;
+    this.message = props.message;
+    this.cause = props.cause;
+  }
+}
+
+/**
  * ChallengeSubmissionRepository Port
  *
  * This interface defines what operations the application needs
@@ -19,13 +38,17 @@ export interface ChallengeSubmissionRepository {
   /**
    * Create a new challenge submission
    */
-  create(submission: ChallengeSubmission): Promise<ChallengeSubmission>;
+  create(
+    submission: ChallengeSubmission,
+  ): Effect.Effect<ChallengeSubmission, DatabaseError, never>;
 
   /**
    * Find submission by ID
    * @returns Submission or null if not found
    */
-  findById(id: SubmissionId): Promise<ChallengeSubmission | null>;
+  findById(
+    id: SubmissionId,
+  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never>;
 
   /**
    * Find submission by challenge ID and group ID
@@ -34,22 +57,28 @@ export interface ChallengeSubmissionRepository {
   findByChallengeAndGroup(
     challengeId: string,
     groupId: string,
-  ): Promise<ChallengeSubmission | null>;
+  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never>;
 
   /**
    * Find all submissions for a challenge
    */
-  findByChallengeId(challengeId: string): Promise<ChallengeSubmission[]>;
+  findByChallengeId(
+    challengeId: string,
+  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
 
   /**
    * Find all submissions by a group
    */
-  findByGroupId(groupId: string): Promise<ChallengeSubmission[]>;
+  findByGroupId(
+    groupId: string,
+  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
 
   /**
    * Find submissions by status
    */
-  findByStatus(status: SubmissionStatus): Promise<ChallengeSubmission[]>;
+  findByStatus(
+    status: SubmissionStatus,
+  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
 
   /**
    * Find submissions with advanced filtering
@@ -62,17 +91,19 @@ export interface ChallengeSubmissionRepository {
     orderDirection?: "asc" | "desc";
     limit?: number;
     offset?: number;
-  }): Promise<ChallengeSubmission[]>;
+  }): Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
 
   /**
    * Update submission
    */
-  update(submission: ChallengeSubmission): Promise<ChallengeSubmission>;
+  update(
+    submission: ChallengeSubmission,
+  ): Effect.Effect<ChallengeSubmission, DatabaseError, never>;
 
   /**
    * Delete submission
    */
-  delete(id: SubmissionId): Promise<void>;
+  delete(id: SubmissionId): Effect.Effect<void, DatabaseError, never>;
 
   /**
    * Check if submission exists for challenge and group
@@ -80,12 +111,14 @@ export interface ChallengeSubmissionRepository {
   existsForChallengeAndGroup(
     challengeId: string,
     groupId: string,
-  ): Promise<boolean>;
+  ): Effect.Effect<boolean, DatabaseError, never>;
 
   /**
    * Count submissions for a challenge
    */
-  countByChallengeId(challengeId: string): Promise<number>;
+  countByChallengeId(
+    challengeId: string,
+  ): Effect.Effect<number, DatabaseError, never>;
 
   /**
    * Count submissions by status for a challenge
@@ -93,7 +126,7 @@ export interface ChallengeSubmissionRepository {
   countByChallengeAndStatus(
     challengeId: string,
     status: SubmissionStatus,
-  ): Promise<number>;
+  ): Effect.Effect<number, DatabaseError, never>;
 }
 
 /**
@@ -106,23 +139,23 @@ export class ChallengeSubmissionRepositoryTag extends Context.Tag(
   {
     create: (
       submission: ChallengeSubmission,
-    ) => Effect.Effect<ChallengeSubmission, never, never>;
+    ) => Effect.Effect<ChallengeSubmission, DatabaseError, never>;
     findById: (
       id: SubmissionId,
-    ) => Effect.Effect<ChallengeSubmission | null, never, never>;
+    ) => Effect.Effect<ChallengeSubmission | null, DatabaseError, never>;
     findByChallengeAndGroup: (
       challengeId: string,
       groupId: string,
-    ) => Effect.Effect<ChallengeSubmission | null, never, never>;
+    ) => Effect.Effect<ChallengeSubmission | null, DatabaseError, never>;
     findByChallengeId: (
       challengeId: string,
-    ) => Effect.Effect<ChallengeSubmission[], never, never>;
+    ) => Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
     findByGroupId: (
       groupId: string,
-    ) => Effect.Effect<ChallengeSubmission[], never, never>;
+    ) => Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
     findByStatus: (
       status: SubmissionStatus,
-    ) => Effect.Effect<ChallengeSubmission[], never, never>;
+    ) => Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
     findMany: (params: {
       challengeId?: string;
       groupId?: string;
@@ -131,21 +164,21 @@ export class ChallengeSubmissionRepositoryTag extends Context.Tag(
       orderDirection?: "asc" | "desc";
       limit?: number;
       offset?: number;
-    }) => Effect.Effect<ChallengeSubmission[], never, never>;
+    }) => Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
     update: (
       submission: ChallengeSubmission,
-    ) => Effect.Effect<ChallengeSubmission, never, never>;
-    delete: (id: SubmissionId) => Effect.Effect<void, never, never>;
+    ) => Effect.Effect<ChallengeSubmission, DatabaseError, never>;
+    delete: (id: SubmissionId) => Effect.Effect<void, DatabaseError, never>;
     existsForChallengeAndGroup: (
       challengeId: string,
       groupId: string,
-    ) => Effect.Effect<boolean, never, never>;
+    ) => Effect.Effect<boolean, DatabaseError, never>;
     countByChallengeId: (
       challengeId: string,
-    ) => Effect.Effect<number, never, never>;
+    ) => Effect.Effect<number, DatabaseError, never>;
     countByChallengeAndStatus: (
       challengeId: string,
       status: SubmissionStatus,
-    ) => Effect.Effect<number, never, never>;
+    ) => Effect.Effect<number, DatabaseError, never>;
   }
 >() {}

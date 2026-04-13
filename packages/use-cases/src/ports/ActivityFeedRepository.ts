@@ -20,7 +20,7 @@ export interface ActivityFeedRepository {
    * Find activity by ID
    * @returns ActivityFeed or null if not found
    */
-  findById(id: ActivityId): Promise<ActivityFeed | null>;
+  findById(id: ActivityId): Effect.Effect<ActivityFeed | null, never, never>;
 
   /**
    * Find activities by trip ID with pagination
@@ -34,11 +34,15 @@ export interface ActivityFeedRepository {
       cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
       includeHidden?: boolean;
     },
-  ): Promise<{
-    activities: ActivityFeed[];
-    nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
-    hasMore: boolean;
-  }>;
+  ): Effect.Effect<
+    {
+      activities: ActivityFeed[];
+      nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
+      hasMore: boolean;
+    },
+    never,
+    never
+  >;
 
   /**
    * Get activities with offset pagination (legacy support)
@@ -52,41 +56,45 @@ export interface ActivityFeedRepository {
       pageSize: number;
       includeHidden?: boolean;
     },
-  ): Promise<{
-    activities: ActivityFeed[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-    hasMore: boolean;
-  }>;
+  ): Effect.Effect<
+    {
+      activities: ActivityFeed[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+      hasMore: boolean;
+    },
+    never,
+    never
+  >;
 
   /**
    * Create a new activity
    */
-  create(activity: ActivityFeed): Promise<ActivityFeed>;
+  create(activity: ActivityFeed): Effect.Effect<ActivityFeed, never, never>;
 
   /**
    * Update an activity
    */
-  update(activity: ActivityFeed): Promise<ActivityFeed>;
+  update(activity: ActivityFeed): Effect.Effect<ActivityFeed, never, never>;
 
   /**
    * Delete an activity
    */
-  delete(id: ActivityId): Promise<void>;
+  delete(id: ActivityId): Effect.Effect<void, never, never>;
 
   /**
    * Check if activity exists
    */
-  exists(id: ActivityId): Promise<boolean>;
+  exists(id: ActivityId): Effect.Effect<boolean, never, never>;
 
   /**
    * Find reactions for an activity
    */
   findReactionsByActivityId(
     activityId: ActivityId,
-  ): Promise<ActivityReaction[]>;
+  ): Effect.Effect<ActivityReaction[], never, never>;
 
   /**
    * Find user's reactions for an activity
@@ -94,12 +102,14 @@ export interface ActivityFeedRepository {
   findUserReactions(
     activityId: ActivityId,
     userId: string,
-  ): Promise<ActivityReaction[]>;
+  ): Effect.Effect<ActivityReaction[], never, never>;
 
   /**
    * Add a reaction to an activity
    */
-  addReaction(reaction: ActivityReaction): Promise<ActivityReaction>;
+  addReaction(
+    reaction: ActivityReaction,
+  ): Effect.Effect<ActivityReaction, never, never>;
 
   /**
    * Remove a reaction from an activity
@@ -108,15 +118,19 @@ export interface ActivityFeedRepository {
     activityId: ActivityId,
     userId: string,
     reactionType: string,
-  ): Promise<void>;
+  ): Effect.Effect<void, never, never>;
 
   /**
    * Get reaction counts for an activity
    */
-  getReactionCounts(activityId: ActivityId): Promise<{
-    total: number;
-    counts: { heart: number; fire: number; clap: number; star: number };
-  }>;
+  getReactionCounts(activityId: ActivityId): Effect.Effect<
+    {
+      total: number;
+      counts: { heart: number; fire: number; clap: number; star: number };
+    },
+    never,
+    never
+  >;
 }
 
 /**

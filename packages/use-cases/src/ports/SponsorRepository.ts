@@ -2,66 +2,97 @@ import type { Sponsor } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 
 /**
+ * Repository error type for port interfaces
+ * This is a common error type used across all repository implementations
+ */
+export class DatabaseError extends Error {
+  readonly _tag = "DatabaseError" as const;
+  readonly code = "DATABASE_ERROR" as const;
+  readonly operation: string;
+  override readonly message: string;
+  override readonly cause?: unknown;
+
+  constructor(props: { operation: string; message: string; cause?: unknown }) {
+    super(`Database error in '${props.operation}': ${props.message}`);
+    this.operation = props.operation;
+    this.message = props.message;
+    this.cause = props.cause;
+  }
+}
+
+/**
  * SponsorRepository
  *
  * Port interface for sponsor persistence.
- * Implemented by adapters (e.g., PrismaSponsorRepository).
+ * Implemented by adapters (e.g., DrizzleSponsorRepository).
  */
 export interface SponsorRepository {
   /**
    * Create a new sponsor
    */
-  create(sponsor: Sponsor): Promise<Sponsor>;
+  create(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never>;
 
   /**
    * Find a sponsor by ID
    */
-  findById(id: string): Promise<Sponsor | null>;
+  findById(id: string): Effect.Effect<Sponsor | null, DatabaseError, never>;
 
   /**
    * Find all sponsors
    */
-  findAll(options?: { limit?: number; offset?: number }): Promise<Sponsor[]>;
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+  }): Effect.Effect<Sponsor[], DatabaseError, never>;
 
   /**
    * Find all active sponsors
    */
-  findActive(): Promise<Sponsor[]>;
+  findActive(): Effect.Effect<Sponsor[], DatabaseError, never>;
 
   /**
    * Find sponsors by trip ID
    */
-  findByTripId(tripId: string): Promise<Sponsor[]>;
+  findByTripId(tripId: string): Effect.Effect<Sponsor[], DatabaseError, never>;
 
   /**
    * Update an existing sponsor
    */
-  update(sponsor: Sponsor): Promise<Sponsor>;
+  update(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never>;
 
   /**
    * Delete a sponsor by ID
    */
-  delete(id: string): Promise<void>;
+  delete(id: string): Effect.Effect<void, DatabaseError, never>;
 
   /**
    * Check if a sponsor exists
    */
-  exists(id: string): Promise<boolean>;
+  exists(id: string): Effect.Effect<boolean, DatabaseError, never>;
 
   /**
    * Check if a sponsor is associated with a trip
    */
-  isLinkedToTrip(sponsorId: string, tripId: string): Promise<boolean>;
+  isLinkedToTrip(
+    sponsorId: string,
+    tripId: string,
+  ): Effect.Effect<boolean, DatabaseError, never>;
 
   /**
    * Link a sponsor to a trip
    */
-  linkToTrip(sponsorId: string, tripId: string): Promise<void>;
+  linkToTrip(
+    sponsorId: string,
+    tripId: string,
+  ): Effect.Effect<void, DatabaseError, never>;
 
   /**
    * Unlink a sponsor from a trip
    */
-  unlinkFromTrip(sponsorId: string, tripId: string): Promise<void>;
+  unlinkFromTrip(
+    sponsorId: string,
+    tripId: string,
+  ): Effect.Effect<void, DatabaseError, never>;
 }
 
 /**
@@ -70,28 +101,32 @@ export interface SponsorRepository {
 export class SponsorRepositoryTag extends Context.Tag("SponsorRepository")<
   SponsorRepositoryTag,
   {
-    create: (sponsor: Sponsor) => Effect.Effect<Sponsor, never, never>;
-    findById: (id: string) => Effect.Effect<Sponsor | null, never, never>;
+    create: (sponsor: Sponsor) => Effect.Effect<Sponsor, DatabaseError, never>;
+    findById: (
+      id: string,
+    ) => Effect.Effect<Sponsor | null, DatabaseError, never>;
     findAll: (options?: {
       limit?: number;
       offset?: number;
-    }) => Effect.Effect<Sponsor[], never, never>;
-    findActive: () => Effect.Effect<Sponsor[], never, never>;
-    findByTripId: (tripId: string) => Effect.Effect<Sponsor[], never, never>;
-    update: (sponsor: Sponsor) => Effect.Effect<Sponsor, never, never>;
-    delete: (id: string) => Effect.Effect<void, never, never>;
-    exists: (id: string) => Effect.Effect<boolean, never, never>;
+    }) => Effect.Effect<Sponsor[], DatabaseError, never>;
+    findActive: () => Effect.Effect<Sponsor[], DatabaseError, never>;
+    findByTripId: (
+      tripId: string,
+    ) => Effect.Effect<Sponsor[], DatabaseError, never>;
+    update: (sponsor: Sponsor) => Effect.Effect<Sponsor, DatabaseError, never>;
+    delete: (id: string) => Effect.Effect<void, DatabaseError, never>;
+    exists: (id: string) => Effect.Effect<boolean, DatabaseError, never>;
     isLinkedToTrip: (
       sponsorId: string,
       tripId: string,
-    ) => Effect.Effect<boolean, never, never>;
+    ) => Effect.Effect<boolean, DatabaseError, never>;
     linkToTrip: (
       sponsorId: string,
       tripId: string,
-    ) => Effect.Effect<void, never, never>;
+    ) => Effect.Effect<void, DatabaseError, never>;
     unlinkFromTrip: (
       sponsorId: string,
       tripId: string,
-    ) => Effect.Effect<void, never, never>;
+    ) => Effect.Effect<void, DatabaseError, never>;
   }
 >() {}

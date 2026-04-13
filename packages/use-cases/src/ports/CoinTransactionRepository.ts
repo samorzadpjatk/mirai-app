@@ -61,27 +61,33 @@ export interface CoinTransactionRepository {
   /**
    * Count transactions by filters
    */
-  count(filters?: Partial<CoinTransactionFilters>): Promise<number>;
+  count(
+    filters?: Partial<CoinTransactionFilters>,
+  ): Effect.Effect<number, never, never>;
 
   /**
    * Sum amounts with filters
    */
-  sumAmount(filters?: Partial<CoinTransactionFilters>): Promise<number | null>;
+  sumAmount(
+    filters?: Partial<CoinTransactionFilters>,
+  ): Effect.Effect<number | null, never, never>;
 
   /**
    * Sum positive amounts (added coins)
    */
-  sumAddedCoins(tripId: string): Promise<number | null>;
+  sumAddedCoins(tripId: string): Effect.Effect<number | null, never, never>;
 
   /**
    * Sum negative amounts (removed coins)
    */
-  sumRemovedCoins(tripId: string): Promise<number | null>;
+  sumRemovedCoins(tripId: string): Effect.Effect<number | null, never, never>;
 
   /**
    * Get most active admin by transaction volume
    */
-  getMostActiveAdmin(tripId: string): Promise<MostActiveAdminStat[]>;
+  getMostActiveAdmin(
+    tripId: string,
+  ): Effect.Effect<MostActiveAdminStat[], never, never>;
 
   /**
    * Find transactions with pagination
@@ -89,7 +95,7 @@ export interface CoinTransactionRepository {
   findMany(
     filters: Partial<CoinTransactionFilters>,
     pagination: PaginationOptions,
-  ): Promise<CoinTransaction[]>;
+  ): Effect.Effect<CoinTransaction[], never, never>;
 
   /**
    * Find recent transactions
@@ -97,16 +103,18 @@ export interface CoinTransactionRepository {
   findRecent(
     filters: Partial<CoinTransactionFilters>,
     limit: number,
-  ): Promise<CoinTransaction[]>;
+  ): Effect.Effect<CoinTransaction[], never, never>;
 
   /**
    * Get total coins by group
    */
-  getTotalCoinsByGroup(tripId: string): Promise<
+  getTotalCoinsByGroup(tripId: string): Effect.Effect<
     Array<{
       groupId: string;
       _sum: { amount: number | null };
-    }>
+    }>,
+    never,
+    never
   >;
 
   /**
@@ -115,11 +123,13 @@ export interface CoinTransactionRepository {
   groupByAdmin(
     tripId: string,
     limit: number,
-  ): Promise<
+  ): Effect.Effect<
     Array<{
       adminId: string;
       _count: { id: number };
-    }>
+    }>,
+    never,
+    never
   >;
 
   /**
@@ -130,12 +140,15 @@ export interface CoinTransactionRepository {
     amount: number;
     reason?: string;
     adminId: string;
-  }): Promise<CoinTransaction>;
+  }): Effect.Effect<CoinTransaction, never, never>;
 
   /**
    * Increment group coins
    */
-  incrementGroupCoins(groupId: string, amount: number): Promise<void>;
+  incrementGroupCoins(
+    groupId: string,
+    amount: number,
+  ): Effect.Effect<void, never, never>;
 
   /**
    * Decrement group coins (with balance check)
@@ -143,12 +156,12 @@ export interface CoinTransactionRepository {
   decrementGroupCoins(
     groupId: string,
     amount: number,
-  ): Promise<{ success: boolean; currentBalance?: number }>;
+  ): Effect.Effect<{ success: boolean; currentBalance?: number }, never, never>;
 
   /**
    * Get group coins
    */
-  getGroupCoins(groupId: string): Promise<number>;
+  getGroupCoins(groupId: string): Effect.Effect<number, never, never>;
 
   /**
    * Verify group belongs to trip and is not deleted
@@ -156,12 +169,16 @@ export interface CoinTransactionRepository {
   verifyGroupInTrip(
     groupId: string,
     tripId: string,
-  ): Promise<{
-    exists: boolean;
-    tripId?: string;
-    isDeleted?: boolean;
-    coins?: number;
-  }>;
+  ): Effect.Effect<
+    {
+      exists: boolean;
+      tripId?: string;
+      isDeleted?: boolean;
+      coins?: number;
+    },
+    never,
+    never
+  >;
 }
 
 /**
@@ -189,7 +206,7 @@ export class CoinTransactionRepositoryTag extends Context.Tag(
     ) => Effect.Effect<MostActiveAdminStat[], never, never>;
     findMany: (
       filters: Partial<CoinTransactionFilters>,
-      pagination: CoinTransactionPaginationOptions,
+      pagination: PaginationOptions,
     ) => Effect.Effect<CoinTransaction[], never, never>;
     findRecent: (
       filters: Partial<CoinTransactionFilters>,

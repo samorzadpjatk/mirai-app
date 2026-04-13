@@ -11,53 +11,59 @@ export interface TripRepository {
   /**
    * Create a new trip
    */
-  create(trip: Trip): Promise<Trip>;
+  create(trip: Trip): Effect.Effect<Trip, never, never>;
 
   /**
    * Find trip by ID
    * @returns Trip or null if not found
    */
-  findById(id: string): Promise<Trip | null>;
+  findById(id: string): Effect.Effect<Trip | null, never, never>;
 
   /**
    * Find trips by status
    */
-  findByStatus(status: TripStatus): Promise<Trip[]>;
+  findByStatus(status: TripStatus): Effect.Effect<Trip[], never, never>;
 
   /**
    * Find active trips
    */
-  findActive(): Promise<Trip[]>;
+  findActive(): Effect.Effect<Trip[], never, never>;
 
   /**
    * Find all trips with pagination
    */
-  findAll(options?: { limit?: number; offset?: number }): Promise<Trip[]>;
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+  }): Effect.Effect<Trip[], never, never>;
 
   /**
    * Update trip
    */
-  update(trip: Trip): Promise<Trip>;
+  update(trip: Trip): Effect.Effect<Trip, never, never>;
 
   /**
    * Update trip status
    */
-  updateStatus(id: string, status: TripStatus): Promise<Trip>;
+  updateStatus(
+    id: string,
+    status: TripStatus,
+  ): Effect.Effect<Trip, never, never>;
 
   /**
    * Delete trip
    */
-  delete(id: string): Promise<void>;
+  delete(id: string): Effect.Effect<void, never, never>;
 
   /**
    * Check if trip exists
    */
-  exists(id: string): Promise<boolean>;
+  exists(id: string): Effect.Effect<boolean, never, never>;
 
   /**
    * Count trips by status
    */
-  countByStatus(status: TripStatus): Promise<number>;
+  countByStatus(status: TripStatus): Effect.Effect<number, never, never>;
 }
 
 /**

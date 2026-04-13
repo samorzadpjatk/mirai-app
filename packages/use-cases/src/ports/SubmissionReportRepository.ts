@@ -11,28 +11,34 @@ export interface SubmissionReportRepository {
   /**
    * Create a new submission report
    */
-  create(report: SubmissionReport): Promise<SubmissionReport>;
+  create(
+    report: SubmissionReport,
+  ): Effect.Effect<SubmissionReport, never, never>;
 
   /**
    * Find report by ID
    * @returns Report or null if not found
    */
-  findById(id: string): Promise<SubmissionReport | null>;
+  findById(id: string): Effect.Effect<SubmissionReport | null, never, never>;
 
   /**
    * Find all reports for a submission
    */
-  findBySubmissionId(submissionId: string): Promise<SubmissionReport[]>;
+  findBySubmissionId(
+    submissionId: string,
+  ): Effect.Effect<SubmissionReport[], never, never>;
 
   /**
    * Find all reports filed by a reporter
    */
-  findByReporterId(reporterId: string): Promise<SubmissionReport[]>;
+  findByReporterId(
+    reporterId: string,
+  ): Effect.Effect<SubmissionReport[], never, never>;
 
   /**
    * Find reports by reason
    */
-  findByReason(reason: string): Promise<SubmissionReport[]>;
+  findByReason(reason: string): Effect.Effect<SubmissionReport[], never, never>;
 
   /**
    * Find reports with pagination
@@ -40,12 +46,14 @@ export interface SubmissionReportRepository {
   findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<SubmissionReport[]>;
+  }): Effect.Effect<SubmissionReport[], never, never>;
 
   /**
    * Count reports for a submission
    */
-  countBySubmissionId(submissionId: string): Promise<number>;
+  countBySubmissionId(
+    submissionId: string,
+  ): Effect.Effect<number, never, never>;
 
   /**
    * Check if a reporter has already reported a submission
@@ -53,17 +61,17 @@ export interface SubmissionReportRepository {
   existsBySubmissionAndReporter(
     submissionId: string,
     reporterId: string,
-  ): Promise<boolean>;
+  ): Effect.Effect<boolean, never, never>;
 
   /**
    * Delete a report
    */
-  delete(id: string): Promise<void>;
+  delete(id: string): Effect.Effect<void, never, never>;
 
   /**
    * Check if report exists
    */
-  exists(id: string): Promise<boolean>;
+  exists(id: string): Effect.Effect<boolean, never, never>;
 }
 
 /**

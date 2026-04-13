@@ -19,28 +19,28 @@ export interface EventRepository {
   /**
    * Create a new event
    */
-  create(event: Event): Promise<Event>;
+  create(event: Event): Effect.Effect<Event, never, never>;
 
   /**
    * Find event by ID
    * @returns Event or null if not found
    */
-  findById(id: string): Promise<Event | null>;
+  findById(id: string): Effect.Effect<Event | null, never, never>;
 
   /**
    * Find events by creator ID
    */
-  findByCreatorId(creatorId: string): Promise<Event[]>;
+  findByCreatorId(creatorId: string): Effect.Effect<Event[], never, never>;
 
   /**
    * Find events by organizer group ID
    */
-  findByOrganizerGroupId(groupId: string): Promise<Event[]>;
+  findByOrganizerGroupId(groupId: string): Effect.Effect<Event[], never, never>;
 
   /**
    * Find events by IDs
    */
-  findByIds(ids: string[]): Promise<Event[]>;
+  findByIds(ids: string[]): Effect.Effect<Event[], never, never>;
 
   /**
    * Find all events with optional pagination
@@ -49,52 +49,55 @@ export interface EventRepository {
     limit?: number;
     offset?: number;
     orderBy?: { column: string; direction: "asc" | "desc" };
-  }): Promise<Event[]>;
+  }): Effect.Effect<Event[], never, never>;
 
   /**
    * Find upcoming events (startTime > now)
    */
-  findUpcoming(): Promise<Event[]>;
+  findUpcoming(): Effect.Effect<Event[], never, never>;
 
   /**
    * Find ongoing events (startTime <= now <= endTime)
    */
-  findOngoing(): Promise<Event[]>;
+  findOngoing(): Effect.Effect<Event[], never, never>;
 
   /**
    * Find past events (endTime < now)
    */
-  findPast(): Promise<Event[]>;
+  findPast(): Effect.Effect<Event[], never, never>;
 
   /**
    * Find events starting within a time range
    */
-  findStartingBetween(start: Date, end: Date): Promise<Event[]>;
+  findStartingBetween(
+    start: Date,
+    end: Date,
+  ): Effect.Effect<Event[], never, never>;
 
   /**
    * Update event
    */
-  update(event: Event): Promise<Event>;
+  update(event: Event): Effect.Effect<Event, never, never>;
 
   /**
    * Delete event
    */
-  delete(id: string): Promise<void>;
+  delete(id: string): Effect.Effect<void, never, never>;
 
   /**
    * Check if event exists
    */
-  exists(id: string): Promise<boolean>;
+  exists(id: string): Effect.Effect<boolean, never, never>;
 
   /**
    * Count total events
    */
-  count(): Promise<number>;
+  count(): Effect.Effect<number, never, never>;
 
   /**
    * Count events by organizer group ID
    */
-  countByOrganizerGroupId(groupId: string): Promise<number>;
+  countByOrganizerGroupId(groupId: string): Effect.Effect<number, never, never>;
 
   // ============================================================
   // User Event Operations (Interest/Enlistment)
@@ -103,62 +106,84 @@ export interface EventRepository {
   /**
    * Mark a user as interested in an event
    */
-  markInterested(userId: string, eventId: string): Promise<void>;
+  markInterested(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<void, never, never>;
 
   /**
    * Mark a user as enlisted in an event
    */
-  markEnlisted(userId: string, eventId: string): Promise<void>;
+  markEnlisted(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<void, never, never>;
 
   /**
    * Remove a user's interest in an event
    */
-  removeInterest(userId: string, eventId: string): Promise<void>;
+  removeInterest(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<void, never, never>;
 
   /**
    * Remove a user's enlistment from an event
    */
-  removeEnlistment(userId: string, eventId: string): Promise<void>;
+  removeEnlistment(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<void, never, never>;
 
   /**
    * Check if user is interested in event
    */
-  isInterested(userId: string, eventId: string): Promise<boolean>;
+  isInterested(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<boolean, never, never>;
 
   /**
    * Check if user is enlisted in event
    */
-  isEnlisted(userId: string, eventId: string): Promise<boolean>;
+  isEnlisted(
+    userId: string,
+    eventId: string,
+  ): Effect.Effect<boolean, never, never>;
 
   /**
    * Get interested users for an event
    */
-  getInterestedUsers(eventId: string): Promise<string[]>;
+  getInterestedUsers(eventId: string): Effect.Effect<string[], never, never>;
 
   /**
    * Get enlisted users for an event
    */
-  getEnlistedUsers(eventId: string): Promise<string[]>;
+  getEnlistedUsers(eventId: string): Effect.Effect<string[], never, never>;
 
   /**
    * Get events a user is interested in
    */
-  getInterestedEventsForUser(userId: string): Promise<Event[]>;
+  getInterestedEventsForUser(
+    userId: string,
+  ): Effect.Effect<Event[], never, never>;
 
   /**
    * Get events a user is enlisted in
    */
-  getEnlistedEventsForUser(userId: string): Promise<Event[]>;
+  getEnlistedEventsForUser(
+    userId: string,
+  ): Effect.Effect<Event[], never, never>;
 
   /**
    * Count interested users for an event
    */
-  countInterested(eventId: string): Promise<number>;
+  countInterested(eventId: string): Effect.Effect<number, never, never>;
 
   /**
    * Count enlisted users for an event
    */
-  countEnlisted(eventId: string): Promise<number>;
+  countEnlisted(eventId: string): Effect.Effect<number, never, never>;
 }
 
 /**

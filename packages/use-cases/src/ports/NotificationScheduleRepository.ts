@@ -31,23 +31,31 @@ export interface NotificationScheduleRepository {
   /**
    * Create a new notification schedule
    */
-  create(schedule: NotificationSchedule): Promise<NotificationSchedule>;
+  create(
+    schedule: NotificationSchedule,
+  ): Effect.Effect<NotificationSchedule, never, never>;
 
   /**
    * Find notification schedule by ID
    * @returns NotificationSchedule or null if not found
    */
-  findById(id: string): Promise<NotificationSchedule | null>;
+  findById(
+    id: string,
+  ): Effect.Effect<NotificationSchedule | null, never, never>;
 
   /**
    * Find notification schedules by trip ID
    */
-  findByTripId(tripId: string): Promise<NotificationSchedule[]>;
+  findByTripId(
+    tripId: string,
+  ): Effect.Effect<NotificationSchedule[], never, never>;
 
   /**
    * Find notification schedules by name (exact match)
    */
-  findByName(name: string): Promise<NotificationSchedule | null>;
+  findByName(
+    name: string,
+  ): Effect.Effect<NotificationSchedule | null, never, never>;
 
   /**
    * Find notification schedule by trip ID and name
@@ -55,12 +63,14 @@ export interface NotificationScheduleRepository {
   findByTripIdAndName(
     tripId: string,
     name: string,
-  ): Promise<NotificationSchedule | null>;
+  ): Effect.Effect<NotificationSchedule | null, never, never>;
 
   /**
    * Find notification schedules by type
    */
-  findByType(type: NotificationScheduleType): Promise<NotificationSchedule[]>;
+  findByType(
+    type: NotificationScheduleType,
+  ): Effect.Effect<NotificationSchedule[], never, never>;
 
   /**
    * Find all notification schedules with filtering and pagination
@@ -68,61 +78,74 @@ export interface NotificationScheduleRepository {
   findAll(options?: {
     filter?: NotificationScheduleFilter;
     pagination?: PaginationOptions;
-  }): Promise<PaginatedResult<NotificationSchedule>>;
+  }): Effect.Effect<PaginatedResult<NotificationSchedule>, never, never>;
 
   /**
    * Find currently active schedules
    * (isActive=true and current time is within the schedule window)
    */
-  findActive(now?: Date): Promise<NotificationSchedule[]>;
+  findActive(now?: Date): Effect.Effect<NotificationSchedule[], never, never>;
 
   /**
    * Find upcoming schedules
    * (startDate is in the future)
    */
-  findUpcoming(days?: number, now?: Date): Promise<NotificationSchedule[]>;
+  findUpcoming(
+    days?: number,
+    now?: Date,
+  ): Effect.Effect<NotificationSchedule[], never, never>;
 
   /**
    * Update notification schedule
    */
-  update(schedule: NotificationSchedule): Promise<NotificationSchedule>;
+  update(
+    schedule: NotificationSchedule,
+  ): Effect.Effect<NotificationSchedule, never, never>;
 
   /**
    * Delete notification schedule
    */
-  delete(id: string): Promise<void>;
+  delete(id: string): Effect.Effect<void, never, never>;
 
   /**
    * Delete multiple notification schedules
    * @returns count of deleted schedules
    */
-  deleteMany(ids: string[]): Promise<number>;
+  deleteMany(ids: string[]): Effect.Effect<number, never, never>;
 
   /**
    * Check if notification schedule exists
    */
-  exists(id: string): Promise<boolean>;
+  exists(id: string): Effect.Effect<boolean, never, never>;
 
   /**
    * Count notification schedules by filter
    */
-  count(filter?: NotificationScheduleFilter): Promise<number>;
+  count(
+    filter?: NotificationScheduleFilter,
+  ): Effect.Effect<number, never, never>;
 
   /**
    * Update the lastRun timestamp
    */
-  updateLastRun(id: string, lastRun: Date): Promise<NotificationSchedule>;
+  updateLastRun(
+    id: string,
+    lastRun: Date,
+  ): Effect.Effect<NotificationSchedule, never, never>;
 
   /**
    * Toggle isActive status for a schedule
    */
-  toggleActive(id: string): Promise<NotificationSchedule>;
+  toggleActive(id: string): Effect.Effect<NotificationSchedule, never, never>;
 
   /**
    * Update isActive status for multiple schedules
    * @returns count of updated schedules
    */
-  bulkToggleActive(ids: string[], isActive: boolean): Promise<number>;
+  bulkToggleActive(
+    ids: string[],
+    isActive: boolean,
+  ): Effect.Effect<number, never, never>;
 
   /**
    * Get execution history for a schedule
@@ -130,12 +153,12 @@ export interface NotificationScheduleRepository {
   getExecutionHistory(
     scheduleId: string,
     limit: number,
-  ): Promise<NotificationScheduleExecutionRecord[]>;
+  ): Effect.Effect<NotificationScheduleExecutionRecord[], never, never>;
 
   /**
    * Count executions for a schedule
    */
-  countExecutions(scheduleId: string): Promise<number>;
+  countExecutions(scheduleId: string): Effect.Effect<number, never, never>;
 }
 
 /**

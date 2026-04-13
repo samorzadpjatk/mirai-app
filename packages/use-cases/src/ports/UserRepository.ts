@@ -15,44 +15,49 @@ export interface UserRepository {
   /**
    * Create a new user
    */
-  create(user: User): Promise<User>;
+  create(user: User): Effect.Effect<User, never, never>;
 
   /**
    * Find user by ID
    * @returns User or null if not found
    */
-  findById(id: string): Promise<User | null>;
+  findById(id: string): Effect.Effect<User | null, never, never>;
 
   /**
    * Find user by auth user ID (from Supabase Auth)
    * @returns User or null if not found
    */
-  findByAuthUserId(authUserId: string): Promise<User | null>;
+  findByAuthUserId(
+    authUserId: string,
+  ): Effect.Effect<User | null, never, never>;
 
   /**
    * Find users by role
    */
-  findByRole(role: UserRole): Promise<User[]>;
+  findByRole(role: UserRole): Effect.Effect<User[], never, never>;
 
   /**
    * Find all users with pagination
    */
-  findAll(options?: { limit?: number; offset?: number }): Promise<User[]>;
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+  }): Effect.Effect<User[], never, never>;
 
   /**
    * Update user
    */
-  update(user: User): Promise<User>;
+  update(user: User): Effect.Effect<User, never, never>;
 
   /**
    * Delete user
    */
-  delete(id: string): Promise<void>;
+  delete(id: string): Effect.Effect<void, never, never>;
 
   /**
    * Check if user exists by auth user ID
    */
-  existsByAuthUserId(authUserId: string): Promise<boolean>;
+  existsByAuthUserId(authUserId: string): Effect.Effect<boolean, never, never>;
 }
 
 /**

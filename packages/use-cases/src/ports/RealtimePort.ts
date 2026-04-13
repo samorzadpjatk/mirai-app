@@ -6,11 +6,11 @@
  * (Supabase Realtime, custom WebSocket, Server-Sent Events, etc.) in the adapters layer.
  *
  * Key Design Decisions:
- * - Uses Result type for explicit error handling
+ * - Uses Effect type for explicit error handling and composability
  * - Abstracts WebSocket implementation details
  * - Supports subscriptions, broadcasts, and presence tracking
  * - No framework dependencies (pure TypeScript interface)
- * - Async operations return Promises for broadcast/presence
+ * - Operations return Effect for better composability
  *
  * Implementations:
  * - SupabaseRealtimeAdapter: Uses Supabase Realtime
@@ -20,7 +20,6 @@
  * @module ports
  */
 
-import type { Result } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 
 // =============================================================================
@@ -112,7 +111,7 @@ export interface RealtimeSubscription {
   /** Current connection state */
   readonly state: ConnectionState;
   /** Unsubscribe from the channel */
-  unsubscribe(): Result<void, RealtimeError>;
+  unsubscribe(): Effect.Effect<void, RealtimeError, never>;
 }
 
 /**
@@ -143,29 +142,29 @@ export interface RealtimePort {
    *
    * @param channel - The channel name to subscribe to
    * @param config - Configuration for the subscription
-   * @returns Result<RealtimeSubscription, RealtimeError>
+   * @returns Effect.Effect<RealtimeSubscription, RealtimeError | SubscriptionError, never>
    *
    * @example
    * ```typescript
-   * const result = realtimePort.subscribe("notifications:user-123", {
+   * const effect = realtimePort.subscribe("notifications:user-123", {
    *   events: ["new_notification"],
    *   onMessage: (event, payload) => {
    *     console.log(`Received ${event}:`, payload);
    *   }
    * });
    *
-   * if (isOk(result)) {
-   *   const subscription = result.value;
-   *   // Store subscription for later cleanup
-   * } else {
-   *   // Handle subscription error
-   * }
+   * const subscription = await Effect.runPromise(effect);
+   * // Store subscription for later cleanup
    * ```
    */
   subscribe(
     channel: string,
     config: ChannelConfig,
-  ): Result<RealtimeSubscription, RealtimeError | SubscriptionError>;
+  ): Effect.Effect<
+    RealtimeSubscription,
+    RealtimeError | SubscriptionError,
+    never
+  >;
 
   /**
    * Broadcast a message to all subscribers of a channel
@@ -173,54 +172,48 @@ export interface RealtimePort {
    * @param channel - The channel name to broadcast to
    * @param event - The event type/name
    * @param payload - The message payload
-   * @returns Promise<Result<void, RealtimeError>>
+   * @returns Effect.Effect<void, RealtimeError, never>
    *
    * @example
    * ```typescript
-   * const result = await realtimePort.broadcast(
+   * const effect = realtimePort.broadcast(
    *   "challenge:challenge-456",
    *   "submission_received",
    *   { submissionId: "sub-789", userId: "user-123" }
    * );
    *
-   * if (isOk(result)) {
-   *   console.log("Broadcast successful");
-   * } else {
-   *   console.error("Broadcast failed:", result.error.message);
-   * }
+   * await Effect.runPromise(effect);
+   * console.log("Broadcast successful");
    * ```
    */
   broadcast(
     channel: string,
     event: string,
     payload: unknown,
-  ): Promise<Result<void, RealtimeError>>;
+  ): Effect.Effect<void, RealtimeError, never>;
 
   /**
    * Track presence state for the current user in a channel
    *
    * @param channel - The channel name
    * @param state - The presence state to track
-   * @returns Promise<Result<void, RealtimeError>>
+   * @returns Effect.Effect<void, RealtimeError, never>
    *
    * @example
    * ```typescript
-   * const result = await realtimePort.trackPresence(
+   * const effect = realtimePort.trackPresence(
    *   "trip:trip-789",
    *   { userId: "user-123", payload: { location: { lat: 40.7, lng: -74 } } }
    * );
    *
-   * if (isOk(result)) {
-   *   console.log("Presence tracked");
-   * } else {
-   *   console.error("Presence tracking failed:", result.error.message);
-   * }
+   * await Effect.runPromise(effect);
+   * console.log("Presence tracked");
    * ```
    */
   trackPresence(
     channel: string,
     state: PresenceState,
-  ): Promise<Result<void, RealtimeError>>;
+  ): Effect.Effect<void, RealtimeError, never>;
 
   /**
    * Get the current connection state
