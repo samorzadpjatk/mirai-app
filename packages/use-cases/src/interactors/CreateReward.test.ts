@@ -5,7 +5,7 @@ import {
   CreateRewardError,
   RewardRepositoryError,
 } from "./CreateReward";
-import { Reward, UserRole } from "@mirai-app/domain";
+import { Reward, UserRole, RewardId } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import {
   RewardRepositoryTag,
@@ -39,24 +39,20 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
   ) => {
     const program = createRewardUseCase(input).pipe(
       Effect.provideService(RewardRepositoryTag, {
-        create: (reward: Reward) =>
-          Effect.promise(() => rewardRepo.create(reward)),
-        findById: (id: string) => Effect.promise(() => rewardRepo.findById(id)),
+        create: (reward: Reward) => rewardRepo.create(reward),
+        findById: (id: RewardId) => rewardRepo.findById(id),
         findByTripId: (tripId: string, options?) =>
-          Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+          rewardRepo.findByTripId(tripId, options),
         findVisibleByTripId: (tripId: string, options?) =>
-          Effect.promise(() => rewardRepo.findVisibleByTripId(tripId, options)),
-        update: (reward: Reward) =>
-          Effect.promise(() => rewardRepo.update(reward)),
-        delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-        hasPurchases: (id: string) =>
-          Effect.promise(() => rewardRepo.hasPurchases(id)),
-        getPurchaseCount: (id: string) =>
-          Effect.promise(() => rewardRepo.getPurchaseCount(id)),
-        decrementQuantity: (id: string, amount: number) =>
-          Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
-        incrementQuantity: (id: string, amount: number) =>
-          Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+          rewardRepo.findVisibleByTripId(tripId, options),
+        update: (reward: Reward) => rewardRepo.update(reward),
+        delete: (id: RewardId) => rewardRepo.delete(id),
+        hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
+        getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
+        decrementQuantity: (id: RewardId, amount: number) =>
+          rewardRepo.decrementQuantity(id, amount),
+        incrementQuantity: (id: RewardId, amount: number) =>
+          rewardRepo.incrementQuantity(id, amount),
       }),
       Effect.provideService(TripAccessCheckerTag, {
         isGroupLeader: () =>
@@ -87,7 +83,7 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       expect(result.canBePurchased).toBe(true);
 
       // Verify reward was actually stored
-      const stored = await rewardRepo.findByTripId("trip-123");
+      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
       expect(stored.items).toHaveLength(1);
       expect(stored.items[0]?.name).toBe("Test Reward");
     });
@@ -112,7 +108,7 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       ]);
 
       // Verify stored reward
-      const stored = await rewardRepo.findByTripId("trip-123");
+      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
       expect(stored.items[0]?.images).toHaveLength(2);
     });
 
@@ -140,27 +136,20 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       // Act
       const program = createRewardUseCase(input).pipe(
         Effect.provideService(RewardRepositoryTag, {
-          create: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.create(reward)),
-          findById: (id: string) =>
-            Effect.promise(() => rewardRepo.findById(id)),
+          create: (reward: Reward) => rewardRepo.create(reward),
+          findById: (id: RewardId) => rewardRepo.findById(id),
           findByTripId: (tripId: string, options?) =>
-            Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+            rewardRepo.findByTripId(tripId, options),
           findVisibleByTripId: (tripId: string, options?) =>
-            Effect.promise(() =>
-              rewardRepo.findVisibleByTripId(tripId, options),
-            ),
-          update: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.update(reward)),
-          delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-          hasPurchases: (id: string) =>
-            Effect.promise(() => rewardRepo.hasPurchases(id)),
-          getPurchaseCount: (id: string) =>
-            Effect.promise(() => rewardRepo.getPurchaseCount(id)),
-          decrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
-          incrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+            rewardRepo.findVisibleByTripId(tripId, options),
+          update: (reward: Reward) => rewardRepo.update(reward),
+          delete: (id: RewardId) => rewardRepo.delete(id),
+          hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
+          getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
+          decrementQuantity: (id: RewardId, amount: number) =>
+            rewardRepo.decrementQuantity(id, amount),
+          incrementQuantity: (id: RewardId, amount: number) =>
+            rewardRepo.incrementQuantity(id, amount),
         }),
         Effect.provideService(TripAccessCheckerTag, {
           isGroupLeader: () => Effect.succeed({ isLeader: false }),
@@ -178,7 +167,7 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       }
 
       // Verify no reward was stored
-      const stored = await rewardRepo.findByTripId("trip-123");
+      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
       expect(stored.items).toHaveLength(0);
     });
 
@@ -189,27 +178,20 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       // Act
       const program = createRewardUseCase(input).pipe(
         Effect.provideService(RewardRepositoryTag, {
-          create: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.create(reward)),
-          findById: (id: string) =>
-            Effect.promise(() => rewardRepo.findById(id)),
+          create: (reward: Reward) => rewardRepo.create(reward),
+          findById: (id: RewardId) => rewardRepo.findById(id),
           findByTripId: (tripId: string, options?) =>
-            Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+            rewardRepo.findByTripId(tripId, options),
           findVisibleByTripId: (tripId: string, options?) =>
-            Effect.promise(() =>
-              rewardRepo.findVisibleByTripId(tripId, options),
-            ),
-          update: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.update(reward)),
-          delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-          hasPurchases: (id: string) =>
-            Effect.promise(() => rewardRepo.hasPurchases(id)),
-          getPurchaseCount: (id: string) =>
-            Effect.promise(() => rewardRepo.getPurchaseCount(id)),
-          decrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
-          incrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+            rewardRepo.findVisibleByTripId(tripId, options),
+          update: (reward: Reward) => rewardRepo.update(reward),
+          delete: (id: RewardId) => rewardRepo.delete(id),
+          hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
+          getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
+          decrementQuantity: (id: RewardId, amount: number) =>
+            rewardRepo.decrementQuantity(id, amount),
+          incrementQuantity: (id: RewardId, amount: number) =>
+            rewardRepo.incrementQuantity(id, amount),
         }),
         Effect.provideService(TripAccessCheckerTag, {
           isGroupLeader: () =>
@@ -228,7 +210,7 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       }
 
       // Verify no reward was stored
-      const stored = await rewardRepo.findByTripId("trip-123");
+      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
       expect(stored.items).toHaveLength(0);
     });
 
@@ -242,27 +224,20 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       // Act
       const program = createRewardUseCase(input).pipe(
         Effect.provideService(RewardRepositoryTag, {
-          create: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.create(reward)),
-          findById: (id: string) =>
-            Effect.promise(() => rewardRepo.findById(id)),
+          create: (reward: Reward) => rewardRepo.create(reward),
+          findById: (id: RewardId) => rewardRepo.findById(id),
           findByTripId: (tripId: string, options?) =>
-            Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+            rewardRepo.findByTripId(tripId, options),
           findVisibleByTripId: (tripId: string, options?) =>
-            Effect.promise(() =>
-              rewardRepo.findVisibleByTripId(tripId, options),
-            ),
-          update: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.update(reward)),
-          delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-          hasPurchases: (id: string) =>
-            Effect.promise(() => rewardRepo.hasPurchases(id)),
-          getPurchaseCount: (id: string) =>
-            Effect.promise(() => rewardRepo.getPurchaseCount(id)),
-          decrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
-          incrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+            rewardRepo.findVisibleByTripId(tripId, options),
+          update: (reward: Reward) => rewardRepo.update(reward),
+          delete: (id: RewardId) => rewardRepo.delete(id),
+          hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
+          getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
+          decrementQuantity: (id: RewardId, amount: number) =>
+            rewardRepo.decrementQuantity(id, amount),
+          incrementQuantity: (id: RewardId, amount: number) =>
+            rewardRepo.incrementQuantity(id, amount),
         }),
         Effect.provideService(TripAccessCheckerTag, {
           isGroupLeader: () =>
@@ -281,7 +256,7 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       }
 
       // Verify no reward was stored
-      const stored = await rewardRepo.findByTripId("trip-123");
+      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
       expect(stored.items).toHaveLength(0);
     });
 
@@ -295,27 +270,20 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
       // Act
       const program = createRewardUseCase(input).pipe(
         Effect.provideService(RewardRepositoryTag, {
-          create: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.create(reward)),
-          findById: (id: string) =>
-            Effect.promise(() => rewardRepo.findById(id)),
+          create: (reward: Reward) => rewardRepo.create(reward),
+          findById: (id: RewardId) => rewardRepo.findById(id),
           findByTripId: (tripId: string, options?) =>
-            Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+            rewardRepo.findByTripId(tripId, options),
           findVisibleByTripId: (tripId: string, options?) =>
-            Effect.promise(() =>
-              rewardRepo.findVisibleByTripId(tripId, options),
-            ),
-          update: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.update(reward)),
-          delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-          hasPurchases: (id: string) =>
-            Effect.promise(() => rewardRepo.hasPurchases(id)),
-          getPurchaseCount: (id: string) =>
-            Effect.promise(() => rewardRepo.getPurchaseCount(id)),
-          decrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
-          incrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+            rewardRepo.findVisibleByTripId(tripId, options),
+          update: (reward: Reward) => rewardRepo.update(reward),
+          delete: (id: RewardId) => rewardRepo.delete(id),
+          hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
+          getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
+          decrementQuantity: (id: RewardId, amount: number) =>
+            rewardRepo.decrementQuantity(id, amount),
+          incrementQuantity: (id: RewardId, amount: number) =>
+            rewardRepo.incrementQuantity(id, amount),
         }),
         Effect.provideService(TripAccessCheckerTag, {
           isGroupLeader: () =>

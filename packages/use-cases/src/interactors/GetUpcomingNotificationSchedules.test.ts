@@ -54,38 +54,30 @@ describe("[UNIT] getUpcomingNotificationSchedulesUseCase (Effect)", () => {
   const runUseCase = async (input: GetUpcomingNotificationSchedulesInput) => {
     const program = getUpcomingNotificationSchedulesUseCase(input).pipe(
       Effect.provideService(NotificationScheduleRepositoryTag, {
-        findUpcoming: (days?: number) =>
-          Effect.promise(() => repo.findUpcoming(days)),
-        create: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.create(schedule)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => repo.findByName(name)),
+        findUpcoming: (days?: number) => repo.findUpcoming(days),
+        create: (schedule: NotificationSchedule) => repo.create(schedule),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByName: (name: string) => repo.findByName(name),
         findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
-        findByType: (type: string) =>
-          Effect.promise(() => repo.findByType(type as any)),
-        findAll: (options?: any) => Effect.promise(() => repo.findAll(options)),
-        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
-        update: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.update(schedule)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => repo.deleteMany(ids)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+          repo.findByTripIdAndName(tripId, name),
+        findByType: (type: string) => repo.findByType(type as any),
+        findAll: (options?: any) => repo.findAll(options),
+        findActive: (now?: Date) => repo.findActive(now),
+        update: (schedule: NotificationSchedule) => repo.update(schedule),
+        delete: (id: string) => repo.delete(id),
+        deleteMany: (ids: string[]) => repo.deleteMany(ids),
+        exists: (id: string) => repo.exists(id),
+        count: (filter?: any) => repo.count(filter),
         updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => repo.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => repo.toggleActive(id)),
+          repo.updateLastRun(id, lastRun),
+        toggleActive: (id: string) => repo.toggleActive(id),
         bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+          repo.bulkToggleActive(ids, isActive),
         getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+          repo.getExecutionHistory(scheduleId, limit),
         countExecutions: (scheduleId: string) =>
-          Effect.promise(() => repo.countExecutions(scheduleId)),
+          repo.countExecutions(scheduleId),
       }),
     );
     return await Effect.runPromise(program);
@@ -108,7 +100,7 @@ describe("[UNIT] getUpcomingNotificationSchedulesUseCase (Effect)", () => {
 
       // Add schedules to repo
       for (const schedule of mockSchedules) {
-        await repo.create(schedule);
+        Effect.runSync(repo.create(schedule));
       }
 
       const input: GetUpcomingNotificationSchedulesInput = {};
@@ -133,7 +125,7 @@ describe("[UNIT] getUpcomingNotificationSchedulesUseCase (Effect)", () => {
 
     it("should calculate status flags for each schedule", async () => {
       const mockSchedule = createMockSchedule("schedule-123", true);
-      await repo.create(mockSchedule);
+      Effect.runSync(repo.create(mockSchedule));
 
       const input: GetUpcomingNotificationSchedulesInput = {};
       const result = await runUseCase(input);
@@ -151,7 +143,7 @@ describe("[UNIT] getUpcomingNotificationSchedulesUseCase (Effect)", () => {
       (mockSchedule as any).minute = 30;
       (mockSchedule as any).createdById = "admin-123";
 
-      await repo.create(mockSchedule);
+      Effect.runSync(repo.create(mockSchedule));
 
       const input: GetUpcomingNotificationSchedulesInput = {};
       const result = await runUseCase(input);

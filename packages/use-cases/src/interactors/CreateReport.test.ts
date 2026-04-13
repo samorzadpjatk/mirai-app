@@ -7,7 +7,7 @@ import {
 } from "./CreateReport";
 import { Effect, Either } from "effect";
 import { SubmissionReportRepositoryTag } from "../ports/SubmissionReportRepository";
-import { SubmissionReport } from "@mirai-app/domain";
+import { SubmissionReport, ReportReason } from "@mirai-app/domain";
 
 // Mock SubmissionReport domain object
 const createMockReport = (
@@ -17,7 +17,7 @@ const createMockReport = (
     id: "report-123",
     submissionId: "submission-123",
     reporterId: "reporter-123",
-    reason: { value: "inappropriate" },
+    reason: ReportReason.inappropriate(),
     details: "Test details",
     getReasonDisplay: () => "Inappropriate Content",
     createdAt: new Date("2024-01-01"),
@@ -74,7 +74,7 @@ describe("[UNIT] createReportUseCase (Effect)", () => {
     expect(result.id).toBe("report-123");
     expect(result.submissionId).toBe("submission-123");
     expect(result.reporterId).toBe("reporter-123");
-    expect(result.reason).toBe("inappropriate");
+    expect(result.reason).toBe("INAPPROPRIATE");
     expect(result.reasonDisplay).toBe("Inappropriate Content");
   });
 
@@ -126,18 +126,18 @@ describe("[UNIT] createReportUseCase (Effect)", () => {
   });
 
   it("should handle different report reasons", async () => {
-    const reasons = [
-      "inappropriate",
-      "spam",
-      "harassment",
-      "copyright",
-      "other",
+    const testReasons: Array<{ input: string; reason: ReportReason }> = [
+      { input: "inappropriate", reason: ReportReason.inappropriate() },
+      { input: "spam", reason: ReportReason.spam() },
+      { input: "harassment", reason: ReportReason.unsafeCreate("harassment") },
+      { input: "copyright", reason: ReportReason.unsafeCreate("copyright") },
+      { input: "other", reason: ReportReason.other() },
     ];
 
-    for (const reason of reasons) {
+    for (const { input: reasonInput, reason } of testReasons) {
       const mockReport = createMockReport({
-        reason: { value: reason },
-        getReasonDisplay: () => reason,
+        reason,
+        getReasonDisplay: () => reason.getDisplayText(),
       });
 
       const repoService = createMockRepoService({
@@ -147,7 +147,7 @@ describe("[UNIT] createReportUseCase (Effect)", () => {
       const input: CreateReportInput = {
         submissionId: "submission-123",
         reporterId: "reporter-123",
-        reason,
+        reason: reasonInput,
       };
 
       const program = createReportUseCase(input).pipe(
@@ -155,7 +155,7 @@ describe("[UNIT] createReportUseCase (Effect)", () => {
       );
 
       const result = await Effect.runPromise(program);
-      expect(result.reason).toBe(reason);
+      expect(result.reason).toBe(reasonInput.toUpperCase());
     }
   });
 
@@ -210,7 +210,7 @@ describe("[UNIT] createReportUseCase (Effect)", () => {
 
   it("should map reason display correctly", async () => {
     const mockReport = createMockReport({
-      reason: { value: "harassment" },
+      reason: ReportReason.unsafeCreate("harassment"),
       getReasonDisplay: () => "Harassment or Bullying",
     });
 
@@ -230,7 +230,7 @@ describe("[UNIT] createReportUseCase (Effect)", () => {
 
     const result = await Effect.runPromise(program);
 
-    expect(result.reason).toBe("harassment");
+    expect(result.reason).toBe("HARASSMENT");
     expect(result.reasonDisplay).toBe("Harassment or Bullying");
   });
 

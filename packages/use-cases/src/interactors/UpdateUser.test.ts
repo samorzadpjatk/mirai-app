@@ -45,18 +45,17 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
   const runUseCase = async (input: UpdateUserInput) => {
     const program = updateUserUseCase(input).pipe(
       Effect.provideService(UserRepositoryTag, {
-        create: (user: User) => Effect.promise(() => repo.create(user)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        create: (user: User) => repo.create(user),
+        findById: (id: string) => repo.findById(id),
         findByAuthUserId: (authUserId: string) =>
-          Effect.promise(() => repo.findByAuthUserId(authUserId)),
-        findByRole: (role: UserRole) =>
-          Effect.promise(() => repo.findByRole(role)),
+          repo.findByAuthUserId(authUserId),
+        findByRole: (role: UserRole) => repo.findByRole(role),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (user: User) => Effect.promise(() => repo.update(user)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          repo.findAll(options),
+        update: (user: User) => repo.update(user),
+        delete: (id: string) => repo.delete(id),
         existsByAuthUserId: (authUserId: string) =>
-          Effect.promise(() => repo.existsByAuthUserId(authUserId)),
+          repo.existsByAuthUserId(authUserId),
       }),
     );
     return await Effect.runPromise(program);
@@ -66,7 +65,7 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
     it("should update user first and last name", async () => {
       // Arrange
       const existingUser = createValidUser({ id: "user-456" });
-      await repo.create(existingUser);
+      await Effect.runPromise(repo.create(existingUser));
 
       const input: UpdateUserInput = {
         userId: "user-456",
@@ -89,7 +88,7 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
         id: "user-789",
         lastName: "Original",
       });
-      await repo.create(existingUser);
+      await Effect.runPromise(repo.create(existingUser));
 
       const input: UpdateUserInput = {
         userId: "user-789",
@@ -111,7 +110,7 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
         id: "user-abc",
         firstName: "Original",
       });
-      await repo.create(existingUser);
+      await Effect.runPromise(repo.create(existingUser));
 
       const input: UpdateUserInput = {
         userId: "user-abc",
@@ -133,7 +132,7 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
         id: "user-avatar",
         hasAvatar: false,
       });
-      await repo.create(existingUser);
+      await Effect.runPromise(repo.create(existingUser));
 
       const input: UpdateUserInput = {
         userId: "user-avatar",
@@ -157,18 +156,17 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
       // Act
       const program = updateUserUseCase(input).pipe(
         Effect.provideService(UserRepositoryTag, {
-          create: (user: User) => Effect.promise(() => repo.create(user)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          create: (user: User) => repo.create(user),
+          findById: (id: string) => repo.findById(id),
           findByAuthUserId: (authUserId: string) =>
-            Effect.promise(() => repo.findByAuthUserId(authUserId)),
-          findByRole: (role: UserRole) =>
-            Effect.promise(() => repo.findByRole(role)),
+            repo.findByAuthUserId(authUserId),
+          findByRole: (role: UserRole) => repo.findByRole(role),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (user: User) => Effect.promise(() => repo.update(user)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+            repo.findAll(options),
+          update: (user: User) => repo.update(user),
+          delete: (id: string) => repo.delete(id),
           existsByAuthUserId: (authUserId: string) =>
-            Effect.promise(() => repo.existsByAuthUserId(authUserId)),
+            repo.existsByAuthUserId(authUserId),
         }),
       );
 
@@ -183,7 +181,7 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
     it("should fail when name validation fails", async () => {
       // Arrange
       const existingUser = createValidUser({ id: "user-invalid" });
-      await repo.create(existingUser);
+      await Effect.runPromise(repo.create(existingUser));
 
       const input: UpdateUserInput = {
         userId: "user-invalid",
@@ -194,18 +192,17 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
       // Act
       const program = updateUserUseCase(input).pipe(
         Effect.provideService(UserRepositoryTag, {
-          create: (user: User) => Effect.promise(() => repo.create(user)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          create: (user: User) => repo.create(user),
+          findById: (id: string) => repo.findById(id),
           findByAuthUserId: (authUserId: string) =>
-            Effect.promise(() => repo.findByAuthUserId(authUserId)),
-          findByRole: (role: UserRole) =>
-            Effect.promise(() => repo.findByRole(role)),
+            repo.findByAuthUserId(authUserId),
+          findByRole: (role: UserRole) => repo.findByRole(role),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (user: User) => Effect.promise(() => repo.update(user)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+            repo.findAll(options),
+          update: (user: User) => repo.update(user),
+          delete: (id: string) => repo.delete(id),
           existsByAuthUserId: (authUserId: string) =>
-            Effect.promise(() => repo.existsByAuthUserId(authUserId)),
+            repo.existsByAuthUserId(authUserId),
         }),
       );
 
@@ -220,7 +217,7 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
     it("should fail when name contains digits", async () => {
       // Arrange
       const existingUser = createValidUser({ id: "user-digits" });
-      await repo.create(existingUser);
+      await Effect.runPromise(repo.create(existingUser));
 
       const input: UpdateUserInput = {
         userId: "user-digits",
@@ -231,18 +228,17 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
       // Act
       const program = updateUserUseCase(input).pipe(
         Effect.provideService(UserRepositoryTag, {
-          create: (user: User) => Effect.promise(() => repo.create(user)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          create: (user: User) => repo.create(user),
+          findById: (id: string) => repo.findById(id),
           findByAuthUserId: (authUserId: string) =>
-            Effect.promise(() => repo.findByAuthUserId(authUserId)),
-          findByRole: (role: UserRole) =>
-            Effect.promise(() => repo.findByRole(role)),
+            repo.findByAuthUserId(authUserId),
+          findByRole: (role: UserRole) => repo.findByRole(role),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (user: User) => Effect.promise(() => repo.update(user)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+            repo.findAll(options),
+          update: (user: User) => repo.update(user),
+          delete: (id: string) => repo.delete(id),
           existsByAuthUserId: (authUserId: string) =>
-            Effect.promise(() => repo.existsByAuthUserId(authUserId)),
+            repo.existsByAuthUserId(authUserId),
         }),
       );
 
@@ -262,7 +258,7 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
         lastName: "Name",
         hasAvatar: false,
       });
-      await repo.create(existingUser);
+      await Effect.runPromise(repo.create(existingUser));
 
       const input: UpdateUserInput = {
         userId: "user-multi",

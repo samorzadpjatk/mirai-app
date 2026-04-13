@@ -48,20 +48,18 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
   const runUseCase = async (input: GetTripByIdInput) => {
     const program = getTripByIdUseCase(input).pipe(
       Effect.provideService(TripRepositoryTag, {
-        create: (trip: Trip) => Effect.promise(() => repo.create(trip)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByStatus: (status: TripStatus) =>
-          Effect.promise(() => repo.findByStatus(status)),
-        findActive: () => Effect.promise(() => repo.findActive()),
+        create: (trip: Trip) => repo.create(trip),
+        findById: (id: string) => repo.findById(id),
+        findByStatus: (status: TripStatus) => repo.findByStatus(status),
+        findActive: () => repo.findActive(),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (trip: Trip) => Effect.promise(() => repo.update(trip)),
+          repo.findAll(options),
+        update: (trip: Trip) => repo.update(trip),
         updateStatus: (id: string, status: TripStatus) =>
-          Effect.promise(() => repo.updateStatus(id, status)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        countByStatus: (status: TripStatus) =>
-          Effect.promise(() => repo.countByStatus(status)),
+          repo.updateStatus(id, status),
+        delete: (id: string) => repo.delete(id),
+        exists: (id: string) => repo.exists(id),
+        countByStatus: (status: TripStatus) => repo.countByStatus(status),
       }),
     );
     return await Effect.runPromise(program);
@@ -75,7 +73,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
         name: "Found Trip",
         status: TripStatus.ACTIVE,
       });
-      await repo.create(existingTrip);
+      Effect.runSync(repo.create(existingTrip));
 
       const input: GetTripByIdInput = {
         tripId: "trip-456",
@@ -106,7 +104,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
         startDate,
         endDate,
       });
-      await repo.create(existingTrip);
+      Effect.runSync(repo.create(existingTrip));
 
       const input: GetTripByIdInput = {
         tripId: "trip-detail",
@@ -132,7 +130,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
         id: "trip-planning",
         status: TripStatus.PLANNING,
       });
-      await repo.create(existingTrip);
+      Effect.runSync(repo.create(existingTrip));
 
       const input: GetTripByIdInput = {
         tripId: "trip-planning",
@@ -154,7 +152,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
         id: "trip-active",
         status: TripStatus.ACTIVE,
       });
-      await repo.create(existingTrip);
+      Effect.runSync(repo.create(existingTrip));
 
       const input: GetTripByIdInput = {
         tripId: "trip-active",
@@ -176,7 +174,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
         id: "trip-completed",
         status: TripStatus.COMPLETED,
       });
-      await repo.create(existingTrip);
+      Effect.runSync(repo.create(existingTrip));
 
       const input: GetTripByIdInput = {
         tripId: "trip-completed",
@@ -198,7 +196,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
         id: "trip-cancelled",
         status: TripStatus.CANCELLED,
       });
-      await repo.create(existingTrip);
+      Effect.runSync(repo.create(existingTrip));
 
       const input: GetTripByIdInput = {
         tripId: "trip-cancelled",
@@ -223,20 +221,18 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
       // Act
       const program = getTripByIdUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => Effect.promise(() => repo.create(trip)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findActive: () => Effect.promise(() => repo.findActive()),
+          create: (trip: Trip) => repo.create(trip),
+          findById: (id: string) => repo.findById(id),
+          findByStatus: (status: TripStatus) => repo.findByStatus(status),
+          findActive: () => repo.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (trip: Trip) => Effect.promise(() => repo.update(trip)),
+            repo.findAll(options),
+          update: (trip: Trip) => repo.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.updateStatus(id, status),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
+          countByStatus: (status: TripStatus) => repo.countByStatus(status),
         }),
       );
 
@@ -256,7 +252,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
         name: "Null Fields Trip",
         description: null,
       });
-      await repo.create(existingTrip);
+      Effect.runSync(repo.create(existingTrip));
 
       const input: GetTripByIdInput = {
         tripId: "trip-null-fields",

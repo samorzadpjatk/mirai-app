@@ -47,7 +47,7 @@ export class UpdateSharingSettingsRepositoryError extends Error {
   readonly _tag = "UpdateSharingSettingsRepositoryError";
   constructor(
     public readonly operation: string,
-    public readonly cause?: unknown,
+    public override readonly cause?: unknown,
   ) {
     super(`Failed to ${operation}`);
   }
@@ -132,13 +132,16 @@ export function updateSharingSettingsUseCase(
 
       // Update sharing users if provided
       if (input.usersToShareWith !== undefined) {
-        const usersResult = location.updateSharingUsers(input.usersToShareWith);
-        if (usersResult.kind === "err") {
-          return yield* Effect.fail(
-            new UpdateSharingSettingsValidationError(usersResult.error.message),
+        location = yield* location
+          .updateSharingUsers(input.usersToShareWith)
+          .pipe(
+            Effect.mapError(
+              (validationError) =>
+                new UpdateSharingSettingsValidationError(
+                  validationError.message,
+                ),
+            ),
           );
-        }
-        location = usersResult.value;
       }
     }
 

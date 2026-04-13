@@ -4,7 +4,11 @@ import {
   type GetActivityFeedInput,
   ActivityFeedQueryError,
 } from "./GetActivityFeed";
-import { ActivityFeed, type ActivityId } from "@mirai-app/domain";
+import {
+  ActivityFeed,
+  ActivityReaction,
+  type ActivityId,
+} from "@mirai-app/domain";
 import { ActivityFeedRepositoryTag } from "../ports/ActivityFeedRepository";
 import { Effect, Either } from "effect";
 
@@ -119,7 +123,7 @@ const createInMemoryRepository = (initialActivities: ActivityFeed[] = []) => {
       Effect.promise(async () => []),
     findUserReactions: (activityId: string, userId: string) =>
       Effect.promise(async () => []),
-    addReaction: (reaction: unknown) => Effect.promise(async () => reaction),
+    addReaction: (reaction: ActivityReaction) => Effect.succeed(reaction),
     removeReaction: (
       activityId: string,
       userId: string,

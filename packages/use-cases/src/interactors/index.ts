@@ -311,3 +311,43 @@ export {
   RewardRepositoryError as ListRewardRepositoryError,
   TripPointsCalculatorError as ListRewardsTripPointsCalculatorError,
 } from "./ListRewards";
+
+export {
+  setRewardHiddenUseCase,
+  type SetRewardHiddenInput,
+  type SetRewardHiddenOutput,
+  RewardNotFoundError as SetRewardHiddenNotFoundError,
+} from "./SetRewardHidden";
+
+export {
+  purchaseRewardUseCase,
+  type PurchaseRewardInput,
+  type PurchaseRewardOutput,
+  type PurchaseRewardError,
+  type RewardNotFoundError as PurchaseRewardNotFoundError,
+  type TripEndedError,
+  type RewardHiddenError,
+  type InsufficientQuantityError,
+  type NotGroupLeaderError,
+  InsufficientCoinsError as PurchaseRewardInsufficientCoinsError,
+} from "./PurchaseReward";
+
+export {
+  updatePurchaseStatusUseCase,
+  type UpdatePurchaseStatusInput,
+  type UpdatePurchaseStatusOutput,
+} from "./UpdatePurchaseStatus";
+
+export {
+  updateMyPurchaseStatusUseCase,
+  type UpdateMyPurchaseStatusInput,
+  type UpdateMyPurchaseStatusOutput,
+} from "./UpdateMyPurchaseStatus";
+
+export {
+  getPurchaseHistoryUseCase,
+  type GetPurchaseHistoryInput,
+  type GetPurchaseHistoryOutput,
+  type PurchaseWithDetails,
+  type GetPurchaseHistoryError,
+} from "./GetPurchaseHistory";

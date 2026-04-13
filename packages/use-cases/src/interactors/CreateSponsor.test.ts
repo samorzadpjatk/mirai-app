@@ -4,17 +4,17 @@ import {
   type CreateSponsorInput,
   CreateSponsorValidationError,
 } from "./CreateSponsor";
-import { Sponsor } from "@mirai-app/domain";
+import { Sponsor, SponsorId } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 describe("[UNIT] createSponsorUseCase (Effect)", () => {
   // Helper to create a valid sponsor using Effect
   const createValidSponsor = (
-    overrides?: Partial<{ id: string; name: string }>,
+    overrides?: Partial<{ id: SponsorId; name: string }>,
   ): Sponsor => {
     const effect = Sponsor.create({
-      id: overrides?.id ?? "sponsor-123",
+      id: overrides?.id ?? ("sponsor-123" as SponsorId),
       name: overrides?.name ?? "Test Sponsor",
       description: "A test sponsor description",
       logoPath: "/logos/test.png",
@@ -72,7 +72,7 @@ describe("[UNIT] createSponsorUseCase (Effect)", () => {
       // Create a mock sponsor that matches the input
       const mockSponsor = Effect.runSync(
         Sponsor.create({
-          id: "sponsor-456",
+          id: "sponsor-456" as SponsorId,
           name: "Acme Corp",
           description: "A leading technology company",
           logoPath: "/logos/acme.png",
@@ -89,7 +89,7 @@ describe("[UNIT] createSponsorUseCase (Effect)", () => {
           description: "A leading technology company",
           logoPath: "/logos/acme.png",
         },
-        { create: () => Promise.resolve(mockSponsor) },
+        { create: async () => mockSponsor },
       );
 
       expect(result.name).toBe("Acme Corp");
@@ -148,7 +148,9 @@ describe("[UNIT] createSponsorUseCase (Effect)", () => {
     });
 
     it("should create sponsor with optional positioning fields", async () => {
-      const mockSponsor = createValidSponsor({ id: "sponsor-789" });
+      const mockSponsor = createValidSponsor({
+        id: "sponsor-789" as SponsorId,
+      });
 
       const result = await runUseCase(
         {
@@ -159,7 +161,7 @@ describe("[UNIT] createSponsorUseCase (Effect)", () => {
           offsetX: 10,
           offsetY: 20,
         },
-        { create: () => Promise.resolve(mockSponsor) },
+        { create: async () => mockSponsor },
       );
 
       expect(result.id).toBe("sponsor-789");
@@ -167,7 +169,7 @@ describe("[UNIT] createSponsorUseCase (Effect)", () => {
 
     it("should create inactive sponsor when specified", async () => {
       const inactiveEffect = Sponsor.create({
-        id: "sponsor-inactive",
+        id: "sponsor-inactive" as SponsorId,
         name: "Inactive Sponsor",
         description: "This sponsor is inactive",
         logoPath: "/logos/inactive.png",
@@ -185,7 +187,7 @@ describe("[UNIT] createSponsorUseCase (Effect)", () => {
           logoPath: "/logos/inactive.png",
           isActive: false,
         },
-        { create: () => Promise.resolve(mockSponsor) },
+        { create: async () => mockSponsor },
       );
 
       expect(result.isActive).toBe(false);

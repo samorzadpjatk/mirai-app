@@ -30,38 +30,33 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
         status,
       }),
     );
-    return await repo.create(notification);
+    return Effect.runSync(repo.create(notification));
   };
 
   // Helper to run use case with repository
   const runUseCase = async (input: ScheduleNotificationInput) => {
     const program = scheduleNotificationUseCase(input).pipe(
       Effect.provideService(NotificationRepositoryTag, {
-        create: (notification: Notification) =>
-          Effect.promise(() => repo.create(notification)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByStatus: (status: NotificationStatus) =>
-          Effect.promise(() => repo.findByStatus(status)),
+        create: (notification: Notification) => repo.create(notification),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByStatus: (status: NotificationStatus) => repo.findByStatus(status),
         findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-          Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-        findByPriority: (priority) =>
-          Effect.promise(() => repo.findByPriority(priority)),
-        findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-        findOverdue: () => Effect.promise(() => repo.findOverdue()),
+          repo.findByTripIdAndStatus(tripId, status),
+        findByPriority: (priority) => repo.findByPriority(priority),
+        findReadyToSend: () => repo.findReadyToSend(),
+        findOverdue: () => repo.findOverdue(),
         findByCreatedById: (createdById: string) =>
-          Effect.promise(() => repo.findByCreatedById(createdById)),
+          repo.findByCreatedById(createdById),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (notification: Notification) =>
-          Effect.promise(() => repo.update(notification)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
+          repo.findAll(options),
+        update: (notification: Notification) => repo.update(notification),
+        delete: (id: string) => repo.delete(id),
+        exists: (id: string) => repo.exists(id),
         countByStatus: (status: NotificationStatus) =>
-          Effect.promise(() => repo.countByStatus(status)),
+          repo.countByStatus(status),
         countPendingByTripId: (tripId: string) =>
-          Effect.promise(() => repo.countPendingByTripId(tripId)),
+          repo.countPendingByTripId(tripId),
       }),
     );
     return await Effect.runPromise(program);
@@ -88,7 +83,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       expect(result.status).toBe("READY"); // Status should transition to READY
 
       // Verify stored notification
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored?.scheduledFor).toEqual(scheduledFor);
       expect(stored?.status).toBe(NotificationStatus.READY);
     });
@@ -114,7 +109,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       expect(result.scheduledFor).toEqual(scheduledFor);
 
       // Verify stored notification
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored?.status).toBe(NotificationStatus.READY);
     });
 
@@ -129,7 +124,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       notification = await Effect.runPromise(
         notification.updateStatus(NotificationStatus.READY),
       );
-      await repo.update(notification);
+      Effect.runSync(repo.update(notification));
 
       const newScheduledFor = new Date(Date.now() + 7200000); // 2 hours from now
       const input: ScheduleNotificationInput = {
@@ -155,31 +150,27 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       // Act
       const program = scheduleNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findByPriority: (priority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByTripIdAndStatus(tripId, status),
+          findByPriority: (priority) => repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -198,7 +189,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
         NotificationStatus.READY,
       );
       notification = await Effect.runPromise(notification.markAsSent());
-      await repo.update(notification);
+      Effect.runSync(repo.update(notification));
 
       const scheduledFor = new Date(Date.now() + 3600000);
       const input: ScheduleNotificationInput = {
@@ -209,31 +200,27 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       // Act
       const program = scheduleNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findByPriority: (priority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByTripIdAndStatus(tripId, status),
+          findByPriority: (priority) => repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -252,7 +239,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
         NotificationStatus.DRAFT,
       );
       notification = await Effect.runPromise(notification.cancel());
-      await repo.update(notification);
+      Effect.runSync(repo.update(notification));
 
       const scheduledFor = new Date(Date.now() + 3600000);
       const input: ScheduleNotificationInput = {
@@ -263,31 +250,27 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       // Act
       const program = scheduleNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findByPriority: (priority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByTripIdAndStatus(tripId, status),
+          findByPriority: (priority) => repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -311,31 +294,27 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       // Act
       const program = scheduleNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findByPriority: (priority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByTripIdAndStatus(tripId, status),
+          findByPriority: (priority) => repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -348,7 +327,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       }
 
       // Verify notification was not changed
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored?.status).toBe(NotificationStatus.DRAFT);
       expect(stored?.scheduledFor).toBeNull();
     });
@@ -363,31 +342,27 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       // Act
       const program = scheduleNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findByPriority: (priority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByTripIdAndStatus(tripId, status),
+          findByPriority: (priority) => repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -407,7 +382,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       notification = await Effect.runPromise(
         notification.markAsFailed("Test failure"),
       );
-      await repo.update(notification);
+      Effect.runSync(repo.update(notification));
 
       const scheduledFor = new Date(Date.now() + 3600000);
       const input: ScheduleNotificationInput = {
@@ -423,7 +398,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
       expect(result.scheduledFor).toEqual(scheduledFor);
 
       // Verify stored notification
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored?.status).toBe(NotificationStatus.READY);
     });
   });

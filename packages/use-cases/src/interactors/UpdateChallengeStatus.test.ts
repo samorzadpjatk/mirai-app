@@ -21,7 +21,7 @@ describe("[UNIT] updateChallengeStatusUseCase (Effect)", () => {
     id: string,
     status: ChallengeStatus,
   ): Challenge => {
-    const result = Challenge.create({
+    const effect = Challenge.create({
       id,
       tripId: "trip-123",
       name: "Test Challenge",
@@ -30,10 +30,7 @@ describe("[UNIT] updateChallengeStatusUseCase (Effect)", () => {
       status,
       basePoints: 100,
     });
-    if (result.kind === "err") {
-      throw new Error(`Failed to create challenge: ${result.error}`);
-    }
-    return result.value;
+    return Effect.runSync(effect);
   };
 
   // Helper to update challenge status
@@ -41,11 +38,8 @@ describe("[UNIT] updateChallengeStatusUseCase (Effect)", () => {
     challenge: Challenge,
     newStatus: ChallengeStatus,
   ): Challenge => {
-    const result = challenge.updateStatus(newStatus);
-    if (result.kind === "err") {
-      throw new Error(`Failed to update status: ${result.error}`);
-    }
-    return result.value;
+    const effect = challenge.updateStatus(newStatus);
+    return Effect.runSync(effect);
   };
 
   // Create mock repository service

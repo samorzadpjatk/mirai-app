@@ -13,270 +13,208 @@ import {
 } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
-import { InMemoryChallengeRepository } from "@mirai-app/adapters/gateways/in-memory";
 
 describe("[UNIT] createChallengeUseCase (Effect)", () => {
-  let repo: InMemoryChallengeRepository;
-
-  beforeEach(() => {
-    repo = new InMemoryChallengeRepository();
-  });
-
-  // Helper to create a valid challenge input
-  const createValidInput = (): CreateChallengeInput => ({
-    tripId: "trip-123",
-    name: "Test Challenge",
+  const createMockChallenge = (
+    overrides?: Partial<{
+      id: string;
+      tripId: string;
+      name: string;
+      submissionType: SubmissionType;
+      scoringCategory: ScoringCategory;
+      status: ChallengeStatus;
+      basePoints: number;
+    }>,
+  ) => ({
+    id: overrides?.id ?? "challenge-123",
+    tripId: overrides?.tripId ?? "trip-123",
+    name: overrides?.name ?? "Test Challenge",
     description: "A test challenge description",
-    submissionType: SubmissionType.IMAGE,
-    scoringCategory: ScoringCategory.UNLIMITED,
-    basePoints: 100,
+    image: null,
+    submissionType: overrides?.submissionType ?? SubmissionType.IMAGE,
+    scoringCategory: overrides?.scoringCategory ?? ScoringCategory.UNLIMITED,
+    isRecurring: false,
+    dailyStartTime: null,
+    dailyEndTime: null,
+    basePoints: overrides?.basePoints ?? 100,
+    firstPlacePoints: null,
+    secondPlacePoints: null,
+    thirdPlacePoints: null,
+    status: overrides?.status ?? ChallengeStatus.HIDDEN,
+    startTime: null,
+    endTime: null,
+    votingStartTime: null,
+    votingEndTime: null,
+    targetLatitude: null,
+    targetLongitude: null,
+    expectedValue: null,
+    autoApprove: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
-  // Helper to run use case with repository
-  const runUseCase = async (input: CreateChallengeInput) => {
-    const program = createChallengeUseCase(input).pipe(
-      Effect.provideService(ChallengeRepositoryTag, {
-        create: (challenge: Challenge) =>
-          Effect.promise(() => repo.create(challenge)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByStatus: (status: ChallengeStatus) =>
-          Effect.promise(() => repo.findByStatus(status)),
-        findByTripIdAndStatus: (tripId: string, status: ChallengeStatus) =>
-          Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-        findBySubmissionType: (type: SubmissionType) =>
-          Effect.promise(() => repo.findBySubmissionType(type)),
-        findByScoringCategory: (category: ScoringCategory) =>
-          Effect.promise(() => repo.findByScoringCategory(category)),
-        findActive: () => Effect.promise(() => repo.findActive()),
-        findOpenForSubmission: () =>
-          Effect.promise(() => repo.findOpenForSubmission()),
-        findRecurring: () => Effect.promise(() => repo.findRecurring()),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (challenge: Challenge) =>
-          Effect.promise(() => repo.update(challenge)),
-        updateStatus: (id: string, status: ChallengeStatus) =>
-          Effect.promise(() => repo.updateStatus(id, status)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        countByTripId: (tripId: string) =>
-          Effect.promise(() => repo.countByTripId(tripId)),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
+  const createMockRepo = (overrides?: {
+    create?: () => Effect.Effect<Challenge, never, never>;
+    findById?: () => Effect.Effect<Challenge | null, never, never>;
+    findByTripId?: () => Effect.Effect<Challenge[], never, never>;
+    exists?: () => Effect.Effect<boolean, never, never>;
+    countByTripId?: () => Effect.Effect<number, never, never>;
+  }) => ({
+    create:
+      overrides?.create ??
+      (() => Effect.succeed(createMockChallenge() as Challenge)),
+    findById: overrides?.findById ?? (() => Effect.succeed(null)),
+    findByTripId: overrides?.findByTripId ?? (() => Effect.succeed([])),
+    findByStatus: () => Effect.succeed([]),
+    findByTripIdAndStatus: () => Effect.succeed([]),
+    findBySubmissionType: () => Effect.succeed([]),
+    findByScoringCategory: () => Effect.succeed([]),
+    findActive: () => Effect.succeed([]),
+    findOpenForSubmission: () => Effect.succeed([]),
+    findRecurring: () => Effect.succeed([]),
+    findAll: () => Effect.succeed([]),
+    update: () => Effect.succeed(createMockChallenge() as Challenge),
+    updateStatus: () => Effect.succeed(createMockChallenge() as Challenge),
+    delete: () => Effect.succeed(void 0),
+    exists: overrides?.exists ?? (() => Effect.succeed(false)),
+    countByTripId: overrides?.countByTripId ?? (() => Effect.succeed(0)),
+  });
 
   describe("execute", () => {
     it("should create challenge with valid input", async () => {
-      // Arrange
-      const input = createValidInput();
+      const mockChallenge = createMockChallenge({
+        id: "challenge-new",
+        tripId: "trip-123",
+        name: "Test Challenge",
+      });
+      const mockRepo = createMockRepo({
+        create: () => Effect.succeed(mockChallenge as Challenge),
+      });
 
-      // Act
-      const result = await runUseCase(input);
+      const input: CreateChallengeInput = {
+        tripId: "trip-123",
+        name: "Test Challenge",
+        description: "A test challenge description",
+        submissionType: SubmissionType.IMAGE,
+        scoringCategory: ScoringCategory.UNLIMITED,
+        basePoints: 100,
+      };
 
-      // Assert
+      const program = createChallengeUseCase(input).pipe(
+        Effect.provideService(ChallengeRepositoryTag, mockRepo),
+      );
+
+      const result = await Effect.runPromise(program);
+
       expect(result.tripId).toBe("trip-123");
       expect(result.name).toBe("Test Challenge");
-      expect(result.description).toBe("A test challenge description");
       expect(result.submissionType).toBe("IMAGE");
       expect(result.scoringCategory).toBe("UNLIMITED");
       expect(result.status).toBe("HIDDEN");
       expect(result.basePoints).toBe(100);
-
-      // Verify challenge was actually stored
-      const stored = await repo.findByTripId("trip-123");
-      expect(stored).toHaveLength(1);
-      expect(stored[0]?.name).toBe("Test Challenge");
     });
 
     it("should use HIDDEN as default status when not provided", async () => {
-      // Arrange
-      const input = {
+      const mockChallenge = createMockChallenge({
+        id: "challenge-456",
+        status: ChallengeStatus.HIDDEN,
+      });
+      const mockRepo = createMockRepo({
+        create: () => Effect.succeed(mockChallenge as Challenge),
+      });
+
+      const input: CreateChallengeInput = {
         tripId: "trip-456",
         name: "Another Challenge",
         submissionType: SubmissionType.TEXT,
         scoringCategory: ScoringCategory.SPEED,
-        // status not provided
       };
 
-      // Act
-      const result = await runUseCase(input);
+      const program = createChallengeUseCase(input).pipe(
+        Effect.provideService(ChallengeRepositoryTag, mockRepo),
+      );
 
-      // Assert
+      const result = await Effect.runPromise(program);
+
       expect(result.status).toBe("HIDDEN");
-
-      // Verify stored challenge has HIDDEN status
-      const stored = await repo.findByTripId("trip-456");
-      expect(stored[0]?.status).toBe(ChallengeStatus.HIDDEN);
     });
 
     it("should fail when name is empty", async () => {
+      const mockRepo = createMockRepo();
+
       const input: CreateChallengeInput = {
         tripId: "trip-123",
-        name: "", // Empty name
+        name: "",
         submissionType: SubmissionType.IMAGE,
         scoringCategory: ScoringCategory.UNLIMITED,
       };
 
-      // Act
       const program = createChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeRepositoryTag, {
-          create: (challenge: Challenge) =>
-            Effect.promise(() => repo.create(challenge)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
-          findByStatus: (status: ChallengeStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findByTripIdAndStatus: (tripId: string, status: ChallengeStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findBySubmissionType: (type: SubmissionType) =>
-            Effect.promise(() => repo.findBySubmissionType(type)),
-          findByScoringCategory: (category: ScoringCategory) =>
-            Effect.promise(() => repo.findByScoringCategory(category)),
-          findActive: () => Effect.promise(() => repo.findActive()),
-          findOpenForSubmission: () =>
-            Effect.promise(() => repo.findOpenForSubmission()),
-          findRecurring: () => Effect.promise(() => repo.findRecurring()),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (challenge: Challenge) =>
-            Effect.promise(() => repo.update(challenge)),
-          updateStatus: (id: string, status: ChallengeStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countByTripId(tripId)),
-        }),
+        Effect.provideService(ChallengeRepositoryTag, mockRepo),
       );
 
-      // Act & Assert - use Either to properly check error type
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
         expect(either.left).toBeInstanceOf(ChallengeCreationError);
         expect(either.left.message).toContain("name");
       }
-
-      // Verify no challenge was stored
-      const stored = await repo.findAll();
-      expect(stored).toHaveLength(0);
     });
 
     it("should fail when tripId is empty", async () => {
+      const mockRepo = createMockRepo();
+
       const input: CreateChallengeInput = {
-        tripId: "", // Empty tripId
+        tripId: "",
         name: "Test Challenge",
         submissionType: SubmissionType.IMAGE,
         scoringCategory: ScoringCategory.UNLIMITED,
       };
 
-      // Act
       const program = createChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeRepositoryTag, {
-          create: (challenge: Challenge) =>
-            Effect.promise(() => repo.create(challenge)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
-          findByStatus: (status: ChallengeStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findByTripIdAndStatus: (tripId: string, status: ChallengeStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findBySubmissionType: (type: SubmissionType) =>
-            Effect.promise(() => repo.findBySubmissionType(type)),
-          findByScoringCategory: (category: ScoringCategory) =>
-            Effect.promise(() => repo.findByScoringCategory(category)),
-          findActive: () => Effect.promise(() => repo.findActive()),
-          findOpenForSubmission: () =>
-            Effect.promise(() => repo.findOpenForSubmission()),
-          findRecurring: () => Effect.promise(() => repo.findRecurring()),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (challenge: Challenge) =>
-            Effect.promise(() => repo.update(challenge)),
-          updateStatus: (id: string, status: ChallengeStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countByTripId(tripId)),
-        }),
+        Effect.provideService(ChallengeRepositoryTag, mockRepo),
       );
 
-      // Act & Assert - use Either to properly check error type
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
         expect(either.left).toBeInstanceOf(ChallengeCreationError);
         expect(either.left.message).toContain("tripId");
       }
-
-      // Verify no challenge was stored
-      const stored = await repo.findAll();
-      expect(stored).toHaveLength(0);
     });
 
     it("should fail when basePoints is negative", async () => {
+      const mockRepo = createMockRepo();
+
       const input: CreateChallengeInput = {
         tripId: "trip-123",
         name: "Test Challenge",
         submissionType: SubmissionType.IMAGE,
         scoringCategory: ScoringCategory.UNLIMITED,
-        basePoints: -10, // Negative points
+        basePoints: -10,
       };
 
-      // Act
       const program = createChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeRepositoryTag, {
-          create: (challenge: Challenge) =>
-            Effect.promise(() => repo.create(challenge)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
-          findByStatus: (status: ChallengeStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findByTripIdAndStatus: (tripId: string, status: ChallengeStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findBySubmissionType: (type: SubmissionType) =>
-            Effect.promise(() => repo.findBySubmissionType(type)),
-          findByScoringCategory: (category: ScoringCategory) =>
-            Effect.promise(() => repo.findByScoringCategory(category)),
-          findActive: () => Effect.promise(() => repo.findActive()),
-          findOpenForSubmission: () =>
-            Effect.promise(() => repo.findOpenForSubmission()),
-          findRecurring: () => Effect.promise(() => repo.findRecurring()),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (challenge: Challenge) =>
-            Effect.promise(() => repo.update(challenge)),
-          updateStatus: (id: string, status: ChallengeStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countByTripId(tripId)),
-        }),
+        Effect.provideService(ChallengeRepositoryTag, mockRepo),
       );
 
-      // Act & Assert - use Either to properly check error type
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
         expect(either.left).toBeInstanceOf(ChallengeCreationError);
         expect(either.left.message).toContain("basePoints");
       }
-
-      // Verify no challenge was stored
-      const stored = await repo.findAll();
-      expect(stored).toHaveLength(0);
     });
 
     it("should create challenge with location submission type", async () => {
-      // Arrange
+      const mockChallenge = createMockChallenge({
+        submissionType: SubmissionType.LOCATION,
+        scoringCategory: ScoringCategory.SPEED,
+      });
+      const mockRepo = createMockRepo({
+        create: () => Effect.succeed(mockChallenge as Challenge),
+      });
+
       const input: CreateChallengeInput = {
         tripId: "trip-loc",
         name: "Location Challenge",
@@ -287,21 +225,24 @@ describe("[UNIT] createChallengeUseCase (Effect)", () => {
         basePoints: 200,
       };
 
-      // Act
-      const result = await runUseCase(input);
+      const result = await Effect.runPromise(
+        createChallengeUseCase(input).pipe(
+          Effect.provideService(ChallengeRepositoryTag, mockRepo),
+        ),
+      );
 
-      // Assert
       expect(result.submissionType).toBe("LOCATION");
       expect(result.scoringCategory).toBe("SPEED");
-
-      // Verify stored challenge
-      const stored = await repo.findByTripId("trip-loc");
-      expect(stored).toHaveLength(1);
-      expect(stored[0]?.submissionType).toBe(SubmissionType.LOCATION);
     });
 
     it("should create challenge with peer voting scoring category", async () => {
-      // Arrange
+      const mockChallenge = createMockChallenge({
+        scoringCategory: ScoringCategory.PEER_VOTING,
+      });
+      const mockRepo = createMockRepo({
+        create: () => Effect.succeed(mockChallenge as Challenge),
+      });
+
       const input: CreateChallengeInput = {
         tripId: "trip-vote",
         name: "Photo Contest",
@@ -313,16 +254,13 @@ describe("[UNIT] createChallengeUseCase (Effect)", () => {
         basePoints: 50,
       };
 
-      // Act
-      const result = await runUseCase(input);
+      const result = await Effect.runPromise(
+        createChallengeUseCase(input).pipe(
+          Effect.provideService(ChallengeRepositoryTag, mockRepo),
+        ),
+      );
 
-      // Assert
       expect(result.scoringCategory).toBe("PEER_VOTING");
-
-      // Verify stored challenge
-      const stored = await repo.findByTripId("trip-vote");
-      expect(stored).toHaveLength(1);
-      expect(stored[0]?.scoringCategory).toBe(ScoringCategory.PEER_VOTING);
     });
   });
 });

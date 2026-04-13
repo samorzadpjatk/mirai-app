@@ -114,7 +114,7 @@ export function createNotificationScheduleUseCase(
     }
 
     // Create the domain entity (validation happens here)
-    const createResult = NotificationSchedule.create({
+    const schedule = yield* NotificationSchedule.create({
       name: input.name,
       ...(input.tripId !== undefined && { tripId: input.tripId }),
       notificationType: input.notificationType,
@@ -133,15 +133,12 @@ export function createNotificationScheduleUseCase(
       minute: input.minute,
       ...(input.isActive !== undefined && { isActive: input.isActive }),
       createdById: input.createdById,
-    });
-
-    if (createResult.kind === "err") {
-      return yield* Effect.fail(
-        new ScheduleValidationError(createResult.error),
-      );
-    }
-
-    const schedule = createResult.value;
+    }).pipe(
+      Effect.mapError(
+        (validationError) =>
+          new ScheduleValidationError(validationError.message),
+      ),
+    );
 
     // Save to repository
     const saved = yield* repo.create(schedule);

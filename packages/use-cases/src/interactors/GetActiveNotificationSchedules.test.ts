@@ -45,38 +45,31 @@ describe("[UNIT] getActiveNotificationSchedulesUseCase (Effect)", () => {
   const runUseCase = async () => {
     const program = getActiveNotificationSchedulesUseCase().pipe(
       Effect.provideService(NotificationScheduleRepositoryTag, {
-        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
-        create: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.create(schedule)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => repo.findByName(name)),
+        findActive: (now?: Date) => repo.findActive(now),
+        create: (schedule: NotificationSchedule) => repo.create(schedule),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByName: (name: string) => repo.findByName(name),
         findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
-        findByType: (type: string) =>
-          Effect.promise(() => repo.findByType(type as any)),
-        findAll: (options?: any) => Effect.promise(() => repo.findAll(options)),
+          repo.findByTripIdAndName(tripId, name),
+        findByType: (type: string) => repo.findByType(type as any),
+        findAll: (options?: any) => repo.findAll(options),
         findUpcoming: (days?: number, now?: Date) =>
-          Effect.promise(() => repo.findUpcoming(days, now)),
-        update: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.update(schedule)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => repo.deleteMany(ids)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+          repo.findUpcoming(days, now),
+        update: (schedule: NotificationSchedule) => repo.update(schedule),
+        delete: (id: string) => repo.delete(id),
+        deleteMany: (ids: string[]) => repo.deleteMany(ids),
+        exists: (id: string) => repo.exists(id),
+        count: (filter?: any) => repo.count(filter),
         updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => repo.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => repo.toggleActive(id)),
+          repo.updateLastRun(id, lastRun),
+        toggleActive: (id: string) => repo.toggleActive(id),
         bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+          repo.bulkToggleActive(ids, isActive),
         getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+          repo.getExecutionHistory(scheduleId, limit),
         countExecutions: (scheduleId: string) =>
-          Effect.promise(() => repo.countExecutions(scheduleId)),
+          repo.countExecutions(scheduleId),
       }),
     );
     return await Effect.runPromise(program);
@@ -97,7 +90,7 @@ describe("[UNIT] getActiveNotificationSchedulesUseCase (Effect)", () => {
 
       // Add schedules to repo
       for (const schedule of mockSchedules) {
-        await repo.create(schedule);
+        Effect.runSync(repo.create(schedule));
       }
 
       const result = await runUseCase();
@@ -109,7 +102,7 @@ describe("[UNIT] getActiveNotificationSchedulesUseCase (Effect)", () => {
 
     it("should calculate isCurrentlyActive as true", async () => {
       const mockSchedule = createMockSchedule("schedule-123", true);
-      await repo.create(mockSchedule);
+      Effect.runSync(repo.create(mockSchedule));
 
       const result = await runUseCase();
 
@@ -130,7 +123,7 @@ describe("[UNIT] getActiveNotificationSchedulesUseCase (Effect)", () => {
       mockSchedule.minute = 0;
       mockSchedule.createdById = "user-456";
 
-      await repo.create(mockSchedule);
+      Effect.runSync(repo.create(mockSchedule));
 
       const result = await runUseCase();
 
@@ -147,7 +140,7 @@ describe("[UNIT] getActiveNotificationSchedulesUseCase (Effect)", () => {
       const mockSchedule = createMockSchedule("schedule-123", true);
       (mockSchedule as any).tripId = null;
 
-      await repo.create(mockSchedule);
+      Effect.runSync(repo.create(mockSchedule));
 
       const result = await runUseCase();
 

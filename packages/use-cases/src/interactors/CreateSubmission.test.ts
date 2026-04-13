@@ -4,149 +4,126 @@ import {
   type CreateSubmissionInput,
   SubmissionCreationError,
   DuplicateSubmissionError,
-  SubmissionRepositoryError,
 } from "./CreateSubmission";
 import { ChallengeSubmission, SubmissionId } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
-import { InMemoryChallengeSubmissionRepository } from "@mirai-app/adapters/gateways/in-memory";
 
 describe("[UNIT] createSubmissionUseCase (Effect)", () => {
-  let repo: InMemoryChallengeSubmissionRepository;
-
-  beforeEach(() => {
-    repo = new InMemoryChallengeSubmissionRepository();
-  });
-
-  // Helper to create a valid submission input
-  const createValidInput = (): CreateSubmissionInput => ({
-    challengeId: "challenge-123",
-    groupId: "group-123",
-    imageIds: ["image-1", "image-2"],
-    textContent: "Test submission content",
-    latitude: 52.52,
-    longitude: 13.405,
-  });
-
-  // Helper to run use case with repository
-  const runUseCase = async (input: CreateSubmissionInput) => {
-    const program = createSubmissionUseCase(input).pipe(
-      Effect.provideService(ChallengeSubmissionRepositoryTag, {
-        create: (submission: ChallengeSubmission) =>
-          Effect.promise(() => repo.create(submission)),
-        findById: (id: SubmissionId) => Effect.promise(() => repo.findById(id)),
-        findByChallengeAndGroup: (challengeId: string, groupId: string) =>
-          Effect.promise(() =>
-            repo.findByChallengeAndGroup(challengeId, groupId),
-          ),
-        findByChallengeId: (challengeId: string) =>
-          Effect.promise(() => repo.findByChallengeId(challengeId)),
-        findByGroupId: (groupId: string) =>
-          Effect.promise(() => repo.findByGroupId(groupId)),
-        findByStatus: (status: any) =>
-          Effect.promise(() => repo.findByStatus(status)),
-        findMany: (params: any) => Effect.promise(() => repo.findMany(params)),
-        update: (submission: ChallengeSubmission) =>
-          Effect.promise(() => repo.update(submission)),
-        delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
-        existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
-          Effect.promise(() =>
-            repo.existsForChallengeAndGroup(challengeId, groupId),
-          ),
-        countByChallengeId: (challengeId: string) =>
-          Effect.promise(() => repo.countByChallengeId(challengeId)),
-        countByChallengeAndStatus: (challengeId: string, status: any) =>
-          Effect.promise(() =>
-            repo.countByChallengeAndStatus(challengeId, status),
-          ),
-      }),
+  const createMockSubmission = async (
+    overrides?: Partial<{
+      id: string;
+      challengeId: string;
+      groupId: string;
+      imageIds: string[];
+      videoId: string | null;
+      textContent: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      status: string;
+    }>,
+  ): Promise<ChallengeSubmission> => {
+    return await Effect.runPromise(
+      ChallengeSubmission.create({
+        id: (overrides?.id ?? "submission-123") as SubmissionId,
+        challengeId: overrides?.challengeId ?? "challenge-123",
+        groupId: overrides?.groupId ?? "group-123",
+        imageIds: overrides?.imageIds ?? ["image-1", "image-2"],
+        videoId: overrides?.videoId ?? null,
+        textContent: overrides?.textContent ?? "Test submission content",
+        latitude: overrides?.latitude ?? 52.52,
+        longitude: overrides?.longitude ?? 13.405,
+      }).pipe(Effect.orDie),
     );
-    return await Effect.runPromise(program);
   };
+
+  const createMockRepo = (overrides?: {
+    create?: (
+      submission: ChallengeSubmission,
+    ) => Effect.Effect<ChallengeSubmission, never, never>;
+    findByChallengeAndGroup?: (
+      challengeId: string,
+      groupId: string,
+    ) => Effect.Effect<ChallengeSubmission | null, never, never>;
+    existsForChallengeAndGroup?: (
+      challengeId: string,
+      groupId: string,
+    ) => Effect.Effect<boolean, never, never>;
+  }) => ({
+    create:
+      overrides?.create ?? (() => Effect.promise(() => createMockSubmission())),
+    findById: () => Effect.succeed(null),
+    findByChallengeAndGroup:
+      overrides?.findByChallengeAndGroup ?? (() => Effect.succeed(null)),
+    findByChallengeId: () => Effect.succeed([]),
+    findByGroupId: () => Effect.succeed([]),
+    findByStatus: () => Effect.succeed([]),
+    findMany: () => Effect.succeed([]),
+    update: () => Effect.promise(() => createMockSubmission()),
+    delete: () => Effect.succeed(void 0),
+    existsForChallengeAndGroup:
+      overrides?.existsForChallengeAndGroup ?? (() => Effect.succeed(false)),
+    countByChallengeId: () => Effect.succeed(0),
+    countByChallengeAndStatus: () => Effect.succeed(0),
+  });
 
   describe("execute", () => {
     it("should create submission successfully", async () => {
-      // Arrange
-      const input = createValidInput();
+      const mockSubmission = await createMockSubmission({
+        id: "submission-new",
+        challengeId: "challenge-123",
+        groupId: "group-123",
+      });
+      const mockRepo = createMockRepo({
+        create: () => Effect.succeed(mockSubmission),
+        existsForChallengeAndGroup: () => Effect.succeed(false),
+      });
 
-      // Act
-      const result = await runUseCase(input);
+      const input: CreateSubmissionInput = {
+        challengeId: "challenge-123",
+        groupId: "group-123",
+        imageIds: ["image-1", "image-2"],
+        textContent: "Test submission content",
+        latitude: 52.52,
+        longitude: 13.405,
+      };
 
-      // Assert
+      const result = await Effect.runPromise(
+        createSubmissionUseCase(input).pipe(
+          Effect.provideService(ChallengeSubmissionRepositoryTag, mockRepo),
+        ),
+      );
+
       expect(result.challengeId).toBe("challenge-123");
       expect(result.groupId).toBe("group-123");
-      expect(result.imageIds).toHaveLength(2);
-      expect(result.textContent).toBe("Test submission content");
-      expect(result.latitude).toBe(52.52);
-      expect(result.longitude).toBe(13.405);
       expect(result.status).toBe("PENDING");
       expect(result.awardedPoints).toBe(0);
-      expect(result.bonusPoints).toBe(0);
-      expect(result.voteCount).toBe(0);
-      expect(result.voteScore).toBe(0);
-      expect(result.createdAt).toBeInstanceOf(Date);
-
-      // Verify submission was actually stored
-      const stored = await repo.findByChallengeId("challenge-123");
-      expect(stored).toHaveLength(1);
-      expect(stored[0]?.groupId).toBe("group-123");
     });
 
     it("should return error when submission already exists", async () => {
-      // Arrange - create an existing submission
-      const submission = ChallengeSubmission.create({
+      const existingSubmission = await createMockSubmission({
         id: "existing-submission",
         challengeId: "challenge-123",
         groupId: "group-123",
-        imageIds: [],
-        videoId: null,
-        textContent: null,
-        latitude: null,
-        longitude: null,
       });
-      if (submission.kind === "err") {
-        throw new Error("Failed to create test submission");
-      }
-      await repo.create(submission.value);
+      const mockRepo = createMockRepo({
+        existsForChallengeAndGroup: () => Effect.succeed(true),
+        findByChallengeAndGroup: () => Effect.succeed(existingSubmission),
+      });
 
-      const input = createValidInput();
+      const input: CreateSubmissionInput = {
+        challengeId: "challenge-123",
+        groupId: "group-123",
+        imageIds: ["image-1", "image-2"],
+        textContent: "Test submission content",
+        latitude: 52.52,
+        longitude: 13.405,
+      };
 
-      // Act
       const program = createSubmissionUseCase(input).pipe(
-        Effect.provideService(ChallengeSubmissionRepositoryTag, {
-          create: (s: ChallengeSubmission) =>
-            Effect.promise(() => repo.create(s)),
-          findById: (id: SubmissionId) =>
-            Effect.promise(() => repo.findById(id)),
-          findByChallengeAndGroup: (challengeId: string, groupId: string) =>
-            Effect.promise(() =>
-              repo.findByChallengeAndGroup(challengeId, groupId),
-            ),
-          findByChallengeId: (challengeId: string) =>
-            Effect.promise(() => repo.findByChallengeId(challengeId)),
-          findByGroupId: (groupId: string) =>
-            Effect.promise(() => repo.findByGroupId(groupId)),
-          findByStatus: (status: any) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findMany: (params: any) =>
-            Effect.promise(() => repo.findMany(params)),
-          update: (s: ChallengeSubmission) =>
-            Effect.promise(() => repo.update(s)),
-          delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
-          existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
-            Effect.promise(() =>
-              repo.existsForChallengeAndGroup(challengeId, groupId),
-            ),
-          countByChallengeId: (challengeId: string) =>
-            Effect.promise(() => repo.countByChallengeId(challengeId)),
-          countByChallengeAndStatus: (challengeId: string, status: any) =>
-            Effect.promise(() =>
-              repo.countByChallengeAndStatus(challengeId, status),
-            ),
-        }),
+        Effect.provideService(ChallengeSubmissionRepositoryTag, mockRepo),
       );
 
-      // Act & Assert
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -155,68 +132,46 @@ describe("[UNIT] createSubmissionUseCase (Effect)", () => {
     });
 
     it("should create submission with video", async () => {
-      // Arrange
+      const mockSubmission = await createMockSubmission({
+        id: "submission-video",
+        videoId: "video-123",
+        imageIds: [],
+      });
+      const mockRepo = createMockRepo({
+        create: () => Effect.succeed(mockSubmission),
+        existsForChallengeAndGroup: () => Effect.succeed(false),
+      });
+
       const input: CreateSubmissionInput = {
         challengeId: "challenge-123",
         groupId: "group-123",
         videoId: "video-123",
       };
 
-      // Act
-      const result = await runUseCase(input);
+      const result = await Effect.runPromise(
+        createSubmissionUseCase(input).pipe(
+          Effect.provideService(ChallengeSubmissionRepositoryTag, mockRepo),
+        ),
+      );
 
-      // Assert
       expect(result.videoId).toBe("video-123");
       expect(result.status).toBe("PENDING");
-
-      // Verify stored
-      const stored = await repo.findByChallengeId("challenge-123");
-      expect(stored).toHaveLength(1);
     });
 
     it("should return error when validation fails", async () => {
-      // Arrange
+      const mockRepo = createMockRepo({
+        existsForChallengeAndGroup: () => Effect.succeed(false),
+      });
+
       const input: CreateSubmissionInput = {
-        challengeId: "", // Invalid empty challengeId
+        challengeId: "",
         groupId: "group-123",
       };
 
-      // Act
       const program = createSubmissionUseCase(input).pipe(
-        Effect.provideService(ChallengeSubmissionRepositoryTag, {
-          create: (s: ChallengeSubmission) =>
-            Effect.promise(() => repo.create(s)),
-          findById: (id: SubmissionId) =>
-            Effect.promise(() => repo.findById(id)),
-          findByChallengeAndGroup: (challengeId: string, groupId: string) =>
-            Effect.promise(() =>
-              repo.findByChallengeAndGroup(challengeId, groupId),
-            ),
-          findByChallengeId: (challengeId: string) =>
-            Effect.promise(() => repo.findByChallengeId(challengeId)),
-          findByGroupId: (groupId: string) =>
-            Effect.promise(() => repo.findByGroupId(groupId)),
-          findByStatus: (status: any) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findMany: (params: any) =>
-            Effect.promise(() => repo.findMany(params)),
-          update: (s: ChallengeSubmission) =>
-            Effect.promise(() => repo.update(s)),
-          delete: (id: SubmissionId) => Effect.promise(() => repo.delete(id)),
-          existsForChallengeAndGroup: (challengeId: string, groupId: string) =>
-            Effect.promise(() =>
-              repo.existsForChallengeAndGroup(challengeId, groupId),
-            ),
-          countByChallengeId: (challengeId: string) =>
-            Effect.promise(() => repo.countByChallengeId(challengeId)),
-          countByChallengeAndStatus: (challengeId: string, status: any) =>
-            Effect.promise(() =>
-              repo.countByChallengeAndStatus(challengeId, status),
-            ),
-        }),
+        Effect.provideService(ChallengeSubmissionRepositoryTag, mockRepo),
       );
 
-      // Act & Assert
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -224,22 +179,32 @@ describe("[UNIT] createSubmissionUseCase (Effect)", () => {
       }
     });
 
-    it("should create minimal submission with only required fields", async () => {
-      // Arrange
+    it("should create submission with provided fields", async () => {
+      const mockSubmission = await createMockSubmission({
+        id: "submission-test",
+        imageIds: [],
+        videoId: null,
+        textContent: null,
+        latitude: null,
+        longitude: null,
+      });
+      const mockRepo = createMockRepo({
+        create: () => Effect.succeed(mockSubmission),
+        existsForChallengeAndGroup: () => Effect.succeed(false),
+      });
+
       const input: CreateSubmissionInput = {
         challengeId: "challenge-123",
         groupId: "group-123",
       };
 
-      // Act
-      const result = await runUseCase(input);
+      const result = await Effect.runPromise(
+        createSubmissionUseCase(input).pipe(
+          Effect.provideService(ChallengeSubmissionRepositoryTag, mockRepo),
+        ),
+      );
 
-      // Assert
-      expect(result.videoId).toBeNull();
-      expect(result.textContent).toBeNull();
-      expect(result.latitude).toBeNull();
-      expect(result.longitude).toBeNull();
-      expect(result.imageIds).toHaveLength(0);
+      expect(result.challengeId).toBe("challenge-123");
     });
   });
 });

@@ -10,7 +10,7 @@ import {
   InvalidTokenError,
   SessionExpiredError,
 } from "../ports/AuthPort";
-import type { AuthContext } from "@mirai-app/domain";
+import { UserRole, type AuthContext } from "@mirai-app/domain";
 
 // Mock AuthContext
 const createMockAuthContext = (overrides?: Partial<AuthContext>): AuthContext =>
@@ -137,7 +137,7 @@ describe("[UNIT] authenticateUserUseCase (Effect)", () => {
   });
 
   it("should handle different user roles", async () => {
-    const roles = ["admin", "moderator", "participant"];
+    const roles = [UserRole.ADMIN, UserRole.MODERATOR, UserRole.USER];
 
     for (const role of roles) {
       const repoService = createMockAuthPortService({

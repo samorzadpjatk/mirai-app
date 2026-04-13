@@ -15,7 +15,7 @@ import {
   ScoringCategory,
   SubmissionType,
 } from "@mirai-app/domain";
-import { ChallengeVote } from "@mirai-app/domain";
+import { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
 import type {
   ChallengeVote as ChallengeVoteType,
   Challenge as ChallengeType,
@@ -31,7 +31,7 @@ const createValidChallenge = (
     tripId: string;
   }>,
 ): Challenge => {
-  const result = Challenge.create({
+  const effect = Challenge.create({
     id: overrides?.id ?? "challenge-123",
     tripId: overrides?.tripId ?? "trip-123",
     name: "Test Challenge",
@@ -42,22 +42,18 @@ const createValidChallenge = (
     status: overrides?.status ?? ChallengeStatus.ACTIVE,
     startTime: new Date("2026-01-01"),
     endTime: new Date(Date.now() - 86400000), // Yesterday
-    createdById: "user-123",
   });
-  if (result.kind === "err") {
-    throw new Error(`Failed to create test challenge: ${result.error}`);
-  }
-  return result.value;
+  return Effect.runSync(effect);
 };
 
 const createValidVote = (
   overrides?: Partial<{
-    id: string;
+    id: ChallengeVoteId;
     challengeId: string;
   }>,
 ): ChallengeVote => {
-  const result = ChallengeVote.create({
-    id: overrides?.id ?? "vote-123",
+  const effect = ChallengeVote.create({
+    id: overrides?.id ?? ChallengeVoteId.unsafeCreate("vote-123"),
     challengeId: overrides?.challengeId ?? "challenge-123",
     submissionId: "submission-123",
     voterId: "voter-123",
@@ -65,10 +61,7 @@ const createValidVote = (
     points: 10,
     weight: 1.0,
   });
-  if (result.kind === "err") {
-    throw new Error(`Failed to create test vote: ${result.error}`);
-  }
-  return result.value;
+  return Effect.runSync(effect);
 };
 
 // Create mock repository services
@@ -106,6 +99,10 @@ const createMockChallengeRepoService = (overrides?: {
   findByTripIdAndStatus: () => Effect.promise(() => Promise.resolve([])),
   findBySubmissionType: () => Effect.promise(() => Promise.resolve([])),
   findByScoringCategory: () => Effect.promise(() => Promise.resolve([])),
+  findActive: () => Effect.promise(() => Promise.resolve([])),
+  findOpenForSubmission: () => Effect.promise(() => Promise.resolve([])),
+  findRecurring: () => Effect.promise(() => Promise.resolve([])),
+  findAll: () => Effect.promise(() => Promise.resolve([])),
   findActiveForTrip: () => Effect.promise(() => Promise.resolve([])),
   findVisibleForTrip: () => Effect.promise(() => Promise.resolve([])),
   findUpcomingForTrip: () => Effect.promise(() => Promise.resolve([])),

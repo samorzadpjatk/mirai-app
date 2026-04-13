@@ -20,7 +20,7 @@ describe("[UNIT] getLocationUseCase (Effect)", () => {
       isSharingLocation: boolean;
     }>,
   ): Location => {
-    const result = Location.create({
+    const effect = Location.create({
       id: overrides?.id ?? "loc-123",
       userId: overrides?.userId ?? "user-123",
       latitude: overrides?.latitude ?? 52.52,
@@ -33,12 +33,7 @@ describe("[UNIT] getLocationUseCase (Effect)", () => {
       isSharingLocation: overrides?.isSharingLocation ?? false,
       usersToShareWith: [],
     });
-    if (result.kind === "err") {
-      throw new Error(
-        `Failed to create test location: ${result.error.message}`,
-      );
-    }
-    return result.value;
+    return Effect.runSync(effect);
   };
 
   const createMockRepoService = (overrides?: {

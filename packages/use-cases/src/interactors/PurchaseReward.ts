@@ -242,10 +242,13 @@ export function purchaseRewardUseCase(
       );
 
     // Calculate total cost (returns Effect)
-    const totalCost = yield* reward.calculateTotalCost(
-      input.quantity,
-      totalPoints,
-    );
+    const totalCost = yield* reward
+      .calculateTotalCost(input.quantity, totalPoints)
+      .pipe(
+        Effect.mapError(
+          () => new RewardRepositoryError("Failed to calculate total cost"),
+        ),
+      );
 
     // Check if group has enough coins
     const groupCoins = yield* coinsService
@@ -300,14 +303,15 @@ export function purchaseRewardUseCase(
       statusUpdatedById: input.userId,
     });
 
-    if (purchaseResult.kind === "err") {
-      return yield* Effect.fail(
-        new PurchaseCreationError(purchaseResult.error),
-      );
-    }
+    const purchase = yield* purchaseResult.pipe(
+      Effect.mapError(
+        (error: { message: string }) =>
+          new PurchaseCreationError(error.message),
+      ),
+    );
 
     const savedPurchase = yield* purchaseRepo
-      .create(purchaseResult.value)
+      .create(purchase)
       .pipe(
         Effect.mapError(
           () => new RewardRepositoryError("Failed to save purchase"),

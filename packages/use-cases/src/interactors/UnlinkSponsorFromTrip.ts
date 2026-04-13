@@ -25,7 +25,7 @@ export class UnlinkSponsorRepositoryError extends Error {
   readonly _tag = "UnlinkSponsorRepositoryError";
   constructor(
     public readonly operation: string,
-    public readonly cause?: unknown,
+    public override readonly cause?: unknown,
   ) {
     super(`Failed to ${operation}`);
   }

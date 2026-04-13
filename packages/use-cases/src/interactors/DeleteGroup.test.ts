@@ -16,7 +16,6 @@ describe("[UNIT] deleteGroupUseCase (Effect)", () => {
     repo = new InMemoryGroupRepository();
   });
 
-  // Helper to create a valid group
   const createValidGroup = (
     overrides?: Partial<{
       id: string;
@@ -26,7 +25,7 @@ describe("[UNIT] deleteGroupUseCase (Effect)", () => {
       organizerId: string;
     }>,
   ): Group => {
-    const result = Group.create({
+    const effect = Group.create({
       id: overrides?.id ?? "group-123",
       tripId: overrides?.tripId ?? "trip-123",
       name: overrides?.name ?? "Test Group",
@@ -37,35 +36,27 @@ describe("[UNIT] deleteGroupUseCase (Effect)", () => {
       coins: 100,
       status: GroupStatus.ACTIVE,
     });
-    if (result.kind === "err") {
-      throw new Error(`Failed to create test group: ${result.error.message}`);
-    }
-    return result.value;
+    return Effect.runSync(effect);
   };
 
-  // Helper to run use case with repository
   const runUseCase = async (input: DeleteGroupInput) => {
     const program = deleteGroupUseCase(input).pipe(
       Effect.provideService(GroupRepositoryTag, {
-        create: (group: Group) => Effect.promise(() => repo.create(group)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByStatus: (status: GroupStatus) =>
-          Effect.promise(() => repo.findByStatus(status)),
+        create: (group: Group) => repo.create(group),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByStatus: (status: GroupStatus) => repo.findByStatus(status),
         findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-          Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+          repo.findByTripIdAndStatus(tripId, status),
         findByOrganizerId: (organizerId: string) =>
-          Effect.promise(() => repo.findByOrganizerId(organizerId)),
-        findByCode: (code: string) =>
-          Effect.promise(() => repo.findByCode(code)),
+          repo.findByOrganizerId(organizerId),
+        findByCode: (code: string) => repo.findByCode(code),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (group: Group) => Effect.promise(() => repo.update(group)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        countByTripId: (tripId: string) =>
-          Effect.promise(() => repo.countByTripId(tripId)),
+          repo.findAll(options),
+        update: (group: Group) => repo.update(group),
+        delete: (id: string) => repo.delete(id),
+        exists: (id: string) => repo.exists(id),
+        countByTripId: (tripId: string) => repo.countByTripId(tripId),
       }),
     );
     return await Effect.runPromise(program);
@@ -73,62 +64,54 @@ describe("[UNIT] deleteGroupUseCase (Effect)", () => {
 
   describe("execute", () => {
     it("should delete group when found", async () => {
-      // Arrange
       const existingGroup = createValidGroup({ id: "group-to-delete" });
-      await repo.create(existingGroup);
+      await Effect.runPromise(repo.create(existingGroup));
 
       const input: DeleteGroupInput = {
         groupId: "group-to-delete",
       };
 
-      // Verify group exists before deletion
-      const beforeDelete = await repo.findById("group-to-delete");
+      const beforeDelete = await Effect.runPromise(
+        repo.findById("group-to-delete"),
+      );
       expect(beforeDelete).not.toBeNull();
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.success).toBe(true);
       expect(result.deletedGroupId).toBe("group-to-delete");
 
-      // Verify group was actually deleted
-      const afterDelete = await repo.findById("group-to-delete");
+      const afterDelete = await Effect.runPromise(
+        repo.findById("group-to-delete"),
+      );
       expect(afterDelete).toBeNull();
     });
 
     it("should fail when group not found", async () => {
-      // Arrange
       const input: DeleteGroupInput = {
         groupId: "non-existent-id",
       };
 
-      // Act
       const program = deleteGroupUseCase(input).pipe(
         Effect.provideService(GroupRepositoryTag, {
-          create: (group: Group) => Effect.promise(() => repo.create(group)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
-          findByStatus: (status: GroupStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+          create: (group: Group) => repo.create(group),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
+          findByStatus: (status: GroupStatus) => repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+            repo.findByTripIdAndStatus(tripId, status),
           findByOrganizerId: (organizerId: string) =>
-            Effect.promise(() => repo.findByOrganizerId(organizerId)),
-          findByCode: (code: string) =>
-            Effect.promise(() => repo.findByCode(code)),
+            repo.findByOrganizerId(organizerId),
+          findByCode: (code: string) => repo.findByCode(code),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (group: Group) => Effect.promise(() => repo.update(group)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countByTripId(tripId)),
+            repo.findAll(options),
+          update: (group: Group) => repo.update(group),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
+          countByTripId: (tripId: string) => repo.countByTripId(tripId),
         }),
       );
 
-      // Act & Assert - use Either to properly check error type
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -137,24 +120,21 @@ describe("[UNIT] deleteGroupUseCase (Effect)", () => {
     });
 
     it("should not affect other groups when deleting one", async () => {
-      // Arrange
       const group1 = createValidGroup({ id: "user-1", code: "CODE1" });
       const group2 = createValidGroup({ id: "user-2", code: "CODE2" });
       const group3 = createValidGroup({ id: "user-3", code: "CODE3" });
 
-      await repo.create(group1);
-      await repo.create(group2);
-      await repo.create(group3);
+      await Effect.runPromise(repo.create(group1));
+      await Effect.runPromise(repo.create(group2));
+      await Effect.runPromise(repo.create(group3));
 
       const input: DeleteGroupInput = {
         groupId: "user-2",
       };
 
-      // Act
       await runUseCase(input);
 
-      // Assert
-      const allGroups = await repo.findAll();
+      const allGroups = await Effect.runPromise(repo.findAll());
       expect(allGroups).toHaveLength(2);
       expect(allGroups.find((g) => g.id === "user-1")).not.toBeNull();
       expect(allGroups.find((g) => g.id === "user-2")).toBeUndefined();

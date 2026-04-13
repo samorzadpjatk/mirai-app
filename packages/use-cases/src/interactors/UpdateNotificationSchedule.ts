@@ -124,13 +124,12 @@ export function updateNotificationScheduleUseCase(
       ...(input.isActive !== undefined && { isActive: input.isActive }),
     });
 
-    if (updateResult.kind === "err") {
-      return yield* Effect.fail(
-        new UpdateScheduleValidationError(updateResult.error),
-      );
-    }
-
-    const updated = updateResult.value;
+    const updated = yield* updateResult.pipe(
+      Effect.mapError(
+        (validationError) =>
+          new UpdateScheduleValidationError(validationError.message),
+      ),
+    );
 
     // Save to repository
     const saved = yield* repo.update(updated);

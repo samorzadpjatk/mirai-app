@@ -62,7 +62,7 @@ export class ForceEndOperationError extends Error {
   readonly _tag = "ForceEndOperationError";
   constructor(
     public readonly operation: string,
-    public readonly cause?: unknown,
+    public override readonly cause?: unknown,
   ) {
     super(`Failed to ${operation}`);
   }

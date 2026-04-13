@@ -19,12 +19,12 @@ describe("[UNIT] deleteLocationUseCase (Effect)", () => {
   // Helper to create a valid location
   const createValidLocation = (
     overrides?: Partial<{
-      id: string;
+      id: LocationId;
       userId: string;
     }>,
   ): Location => {
     const effect = Location.create({
-      id: overrides?.id ?? "loc-123",
+      id: overrides?.id ?? ("loc-123" as LocationId),
       userId: overrides?.userId ?? "user-123",
       latitude: 52.52,
       longitude: 13.405,
@@ -47,25 +47,18 @@ describe("[UNIT] deleteLocationUseCase (Effect)", () => {
   const runUseCase = async (input: DeleteLocationInput) => {
     const program = deleteLocationUseCase(input).pipe(
       Effect.provideService(LocationRepositoryTag, {
-        create: (location: Location) =>
-          Effect.promise(() => repo.create(location)),
-        findById: (id: string) =>
-          Effect.promise(() => repo.findById(id as LocationId)),
-        findByUserId: (userId: string) =>
-          Effect.promise(() => repo.findByUserId(userId)),
+        create: (location: Location) => repo.create(location),
+        findById: (id: string) => repo.findById(id as LocationId),
+        findByUserId: (userId: string) => repo.findByUserId(userId),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
+          repo.findAll(options),
         findSharingWithUser: (userId: string) =>
-          Effect.promise(() => repo.findSharingWithUser(userId)),
-        findByUserIds: (userIds: string[]) =>
-          Effect.promise(() => repo.findByUserIds(userIds)),
-        save: (location: Location) => Effect.promise(() => repo.save(location)),
-        delete: (id: string) =>
-          Effect.promise(() => repo.delete(id as LocationId)),
-        deleteByUserId: (userId: string) =>
-          Effect.promise(() => repo.deleteByUserId(userId)),
-        existsForUser: (userId: string) =>
-          Effect.promise(() => repo.existsForUser(userId)),
+          repo.findSharingWithUser(userId),
+        findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
+        save: (location: Location) => repo.save(location),
+        delete: (id: string) => repo.delete(id as LocationId),
+        deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
+        existsForUser: (userId: string) => repo.existsForUser(userId),
       }),
     );
     return await Effect.runPromise(program);
@@ -74,15 +67,19 @@ describe("[UNIT] deleteLocationUseCase (Effect)", () => {
   describe("execute", () => {
     it("should delete location when found", async () => {
       // Arrange
-      const existingLocation = createValidLocation({ id: "loc-to-delete" });
-      await repo.create(existingLocation);
+      const existingLocation = createValidLocation({
+        id: "loc-to-delete" as LocationId,
+      });
+      Effect.runSync(repo.create(existingLocation));
 
       const input: DeleteLocationInput = {
         locationId: "loc-to-delete" as LocationId,
       };
 
       // Verify location exists before deletion
-      const beforeDelete = await repo.findById("loc-to-delete" as LocationId);
+      const beforeDelete = Effect.runSync(
+        repo.findById("loc-to-delete" as LocationId),
+      );
       expect(beforeDelete).not.toBeNull();
 
       // Act
@@ -93,7 +90,9 @@ describe("[UNIT] deleteLocationUseCase (Effect)", () => {
       expect(result.deletedLocationId).toBe("loc-to-delete");
 
       // Verify location was actually deleted
-      const afterDelete = await repo.findById("loc-to-delete" as LocationId);
+      const afterDelete = Effect.runSync(
+        repo.findById("loc-to-delete" as LocationId),
+      );
       expect(afterDelete).toBeNull();
     });
 
@@ -106,26 +105,18 @@ describe("[UNIT] deleteLocationUseCase (Effect)", () => {
       // Act
       const program = deleteLocationUseCase(input).pipe(
         Effect.provideService(LocationRepositoryTag, {
-          create: (location: Location) =>
-            Effect.promise(() => repo.create(location)),
-          findById: (id: string) =>
-            Effect.promise(() => repo.findById(id as LocationId)),
-          findByUserId: (userId: string) =>
-            Effect.promise(() => repo.findByUserId(userId)),
+          create: (location: Location) => repo.create(location),
+          findById: (id: string) => repo.findById(id as LocationId),
+          findByUserId: (userId: string) => repo.findByUserId(userId),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
+            repo.findAll(options),
           findSharingWithUser: (userId: string) =>
-            Effect.promise(() => repo.findSharingWithUser(userId)),
-          findByUserIds: (userIds: string[]) =>
-            Effect.promise(() => repo.findByUserIds(userIds)),
-          save: (location: Location) =>
-            Effect.promise(() => repo.save(location)),
-          delete: (id: string) =>
-            Effect.promise(() => repo.delete(id as LocationId)),
-          deleteByUserId: (userId: string) =>
-            Effect.promise(() => repo.deleteByUserId(userId)),
-          existsForUser: (userId: string) =>
-            Effect.promise(() => repo.existsForUser(userId)),
+            repo.findSharingWithUser(userId),
+          findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
+          save: (location: Location) => repo.save(location),
+          delete: (id: string) => repo.delete(id as LocationId),
+          deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
+          existsForUser: (userId: string) => repo.existsForUser(userId),
         }),
       );
 
@@ -139,13 +130,22 @@ describe("[UNIT] deleteLocationUseCase (Effect)", () => {
 
     it("should not affect other locations when deleting one", async () => {
       // Arrange
-      const location1 = createValidLocation({ id: "loc-1", userId: "user-1" });
-      const location2 = createValidLocation({ id: "loc-2", userId: "user-2" });
-      const location3 = createValidLocation({ id: "loc-3", userId: "user-3" });
+      const location1 = createValidLocation({
+        id: "loc-1" as LocationId,
+        userId: "user-1",
+      });
+      const location2 = createValidLocation({
+        id: "loc-2" as LocationId,
+        userId: "user-2",
+      });
+      const location3 = createValidLocation({
+        id: "loc-3" as LocationId,
+        userId: "user-3",
+      });
 
-      await repo.create(location1);
-      await repo.create(location2);
-      await repo.create(location3);
+      Effect.runSync(repo.create(location1));
+      Effect.runSync(repo.create(location2));
+      Effect.runSync(repo.create(location3));
 
       const input: DeleteLocationInput = {
         locationId: "loc-2" as LocationId,
@@ -155,7 +155,7 @@ describe("[UNIT] deleteLocationUseCase (Effect)", () => {
       await runUseCase(input);
 
       // Assert
-      const allLocations = await repo.findAll();
+      const allLocations = Effect.runSync(repo.findAll());
       expect(allLocations).toHaveLength(2);
       expect(allLocations.find((l) => l.id === "loc-1")).not.toBeNull();
       expect(allLocations.find((l) => l.id === "loc-2")).toBeUndefined();

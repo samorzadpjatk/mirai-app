@@ -45,38 +45,31 @@ describe("[UNIT] bulkDeleteNotificationSchedulesUseCase (Effect)", () => {
   const runUseCase = async (input: BulkDeleteNotificationSchedulesInput) => {
     const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
       Effect.provideService(NotificationScheduleRepositoryTag, {
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => repo.deleteMany(ids)),
-        create: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.create(schedule)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => repo.findByName(name)),
+        exists: (id: string) => repo.exists(id),
+        deleteMany: (ids: string[]) => repo.deleteMany(ids),
+        create: (schedule: NotificationSchedule) => repo.create(schedule),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByName: (name: string) => repo.findByName(name),
         findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
-        findByType: (type: string) =>
-          Effect.promise(() => repo.findByType(type as any)),
-        findAll: (options?: any) => Effect.promise(() => repo.findAll(options)),
-        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
+          repo.findByTripIdAndName(tripId, name),
+        findByType: (type: string) => repo.findByType(type as any),
+        findAll: (options?: any) => repo.findAll(options),
+        findActive: (now?: Date) => repo.findActive(now),
         findUpcoming: (days?: number, now?: Date) =>
-          Effect.promise(() => repo.findUpcoming(days, now)),
-        update: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.update(schedule)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+          repo.findUpcoming(days, now),
+        update: (schedule: NotificationSchedule) => repo.update(schedule),
+        delete: (id: string) => repo.delete(id),
+        count: (filter?: any) => repo.count(filter),
         updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => repo.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => repo.toggleActive(id)),
+          repo.updateLastRun(id, lastRun),
+        toggleActive: (id: string) => repo.toggleActive(id),
         bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+          repo.bulkToggleActive(ids, isActive),
         getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+          repo.getExecutionHistory(scheduleId, limit),
         countExecutions: (scheduleId: string) =>
-          Effect.promise(() => repo.countExecutions(scheduleId)),
+          repo.countExecutions(scheduleId),
       }),
     );
     return await Effect.runPromise(program);
@@ -87,8 +80,8 @@ describe("[UNIT] bulkDeleteNotificationSchedulesUseCase (Effect)", () => {
       // Create schedules first
       const schedule1 = createMockSchedule("schedule-1");
       const schedule2 = createMockSchedule("schedule-2");
-      await repo.create(schedule1);
-      await repo.create(schedule2);
+      Effect.runSync(repo.create(schedule1));
+      Effect.runSync(repo.create(schedule2));
 
       const input: BulkDeleteNotificationSchedulesInput = {
         ids: ["schedule-1", "schedule-2"],
@@ -108,40 +101,31 @@ describe("[UNIT] bulkDeleteNotificationSchedulesUseCase (Effect)", () => {
 
       const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
         Effect.provideService(NotificationScheduleRepositoryTag, {
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          deleteMany: (ids: string[]) =>
-            Effect.promise(() => repo.deleteMany(ids)),
-          create: (schedule: NotificationSchedule) =>
-            Effect.promise(() => repo.create(schedule)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
-          findByName: (name: string) =>
-            Effect.promise(() => repo.findByName(name)),
+          exists: (id: string) => repo.exists(id),
+          deleteMany: (ids: string[]) => repo.deleteMany(ids),
+          create: (schedule: NotificationSchedule) => repo.create(schedule),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
+          findByName: (name: string) => repo.findByName(name),
           findByTripIdAndName: (tripId: string, name: string) =>
-            Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
-          findByType: (type: string) =>
-            Effect.promise(() => repo.findByType(type as any)),
-          findAll: (options?: any) =>
-            Effect.promise(() => repo.findAll(options)),
-          findActive: (now?: Date) =>
-            Effect.promise(() => repo.findActive(now)),
+            repo.findByTripIdAndName(tripId, name),
+          findByType: (type: string) => repo.findByType(type as any),
+          findAll: (options?: any) => repo.findAll(options),
+          findActive: (now?: Date) => repo.findActive(now),
           findUpcoming: (days?: number, now?: Date) =>
-            Effect.promise(() => repo.findUpcoming(days, now)),
-          update: (schedule: NotificationSchedule) =>
-            Effect.promise(() => repo.update(schedule)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+            repo.findUpcoming(days, now),
+          update: (schedule: NotificationSchedule) => repo.update(schedule),
+          delete: (id: string) => repo.delete(id),
+          count: (filter?: any) => repo.count(filter),
           updateLastRun: (id: string, lastRun: Date) =>
-            Effect.promise(() => repo.updateLastRun(id, lastRun)),
-          toggleActive: (id: string) =>
-            Effect.promise(() => repo.toggleActive(id)),
+            repo.updateLastRun(id, lastRun),
+          toggleActive: (id: string) => repo.toggleActive(id),
           bulkToggleActive: (ids: string[], isActive: boolean) =>
-            Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+            repo.bulkToggleActive(ids, isActive),
           getExecutionHistory: (scheduleId: string, limit: number) =>
-            Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+            repo.getExecutionHistory(scheduleId, limit),
           countExecutions: (scheduleId: string) =>
-            Effect.promise(() => repo.countExecutions(scheduleId)),
+            repo.countExecutions(scheduleId),
         }),
       );
 
@@ -156,7 +140,7 @@ describe("[UNIT] bulkDeleteNotificationSchedulesUseCase (Effect)", () => {
     it("should identify not found IDs", async () => {
       // Create only one schedule
       const schedule1 = createMockSchedule("schedule-1");
-      await repo.create(schedule1);
+      Effect.runSync(repo.create(schedule1));
 
       const input: BulkDeleteNotificationSchedulesInput = {
         ids: ["schedule-1", "schedule-2", "schedule-3"],
@@ -183,7 +167,7 @@ describe("[UNIT] bulkDeleteNotificationSchedulesUseCase (Effect)", () => {
     it("should delete only existing schedules", async () => {
       // Create only schedule-1
       const schedule1 = createMockSchedule("schedule-1");
-      await repo.create(schedule1);
+      Effect.runSync(repo.create(schedule1));
 
       const input: BulkDeleteNotificationSchedulesInput = {
         ids: ["schedule-1", "schedule-2"],
@@ -192,13 +176,13 @@ describe("[UNIT] bulkDeleteNotificationSchedulesUseCase (Effect)", () => {
       await runUseCase(input);
 
       // Verify only schedule-1 was deleted
-      const remaining = await repo.findById("schedule-1");
+      const remaining = Effect.runSync(repo.findById("schedule-1"));
       expect(remaining).toBeNull();
     });
 
     it("should handle single ID deletion", async () => {
       const schedule1 = createMockSchedule("schedule-1");
-      await repo.create(schedule1);
+      Effect.runSync(repo.create(schedule1));
 
       const input: BulkDeleteNotificationSchedulesInput = {
         ids: ["schedule-1"],

@@ -18,7 +18,6 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
     repo = new InMemoryTripRepository();
   });
 
-  // Helper to create a valid trip
   const createValidTrip = (
     overrides?: Partial<{
       id: string;
@@ -43,29 +42,24 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
       backgroundImagePath: null,
       status: overrides?.status ?? TripStatus.PLANNING,
     });
-    // Since Trip.create returns Effect, we need to run it
-    const trip = Effect.runSync(result);
-    return trip;
+    return Effect.runSync(result);
   };
 
-  // Helper to run use case with repository
   const runUseCase = async (input: UpdateTripInput) => {
     const program = updateTripUseCase(input).pipe(
       Effect.provideService(TripRepositoryTag, {
-        create: (trip: Trip) => Effect.promise(() => repo.create(trip)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByStatus: (status: TripStatus) =>
-          Effect.promise(() => repo.findByStatus(status)),
-        findActive: () => Effect.promise(() => repo.findActive()),
+        create: (trip: Trip) => repo.create(trip),
+        findById: (id: string) => repo.findById(id),
+        findByStatus: (status: TripStatus) => repo.findByStatus(status),
+        findActive: () => repo.findActive(),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (trip: Trip) => Effect.promise(() => repo.update(trip)),
+          repo.findAll(options),
+        update: (trip: Trip) => repo.update(trip),
         updateStatus: (id: string, status: TripStatus) =>
-          Effect.promise(() => repo.updateStatus(id, status)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        countByStatus: (status: TripStatus) =>
-          Effect.promise(() => repo.countByStatus(status)),
+          repo.updateStatus(id, status),
+        delete: (id: string) => repo.delete(id),
+        exists: (id: string) => repo.exists(id),
+        countByStatus: (status: TripStatus) => repo.countByStatus(status),
       }),
     );
     return await Effect.runPromise(program);
@@ -73,48 +67,40 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
   describe("execute", () => {
     it("should update trip name", async () => {
-      // Arrange - seed existing trip
       const existingTrip = createValidTrip({ id: "trip-456" });
-      await repo.create(existingTrip);
+      await Effect.runPromise(repo.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-456",
         name: "Updated Trip Name",
       };
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.name).toBe("Updated Trip Name");
       expect(result.id).toBe("trip-456");
 
-      // Verify repository was updated
-      const stored = await repo.findById("trip-456");
+      const stored = await Effect.runPromise(repo.findById("trip-456"));
       expect(stored?.name).toBe("Updated Trip Name");
     });
 
     it("should update trip description", async () => {
-      // Arrange
       const existingTrip = createValidTrip({ id: "trip-789" });
-      await repo.create(existingTrip);
+      await Effect.runPromise(repo.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-789",
         description: "Updated description",
       };
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.description).toBe("Updated description");
     });
 
     it("should update trip dates", async () => {
-      // Arrange
       const existingTrip = createValidTrip({ id: "trip-date" });
-      await repo.create(existingTrip);
+      await Effect.runPromise(repo.create(existingTrip));
 
       const newStartDate = new Date("2026-07-01");
       const newEndDate = new Date("2026-07-10");
@@ -125,75 +111,64 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         endDate: newEndDate,
       };
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.startDate).toEqual(newStartDate);
       expect(result.endDate).toEqual(newEndDate);
       expect(result.durationInDays).toBe(9);
     });
 
     it("should update trip status from PLANNING to ACTIVE", async () => {
-      // Arrange
       const existingTrip = createValidTrip({
         id: "trip-status",
         status: TripStatus.PLANNING,
       });
-      await repo.create(existingTrip);
+      await Effect.runPromise(repo.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-status",
         status: TripStatus.ACTIVE,
       };
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.status).toBe(TripStatus.ACTIVE);
       expect(result.isActive).toBe(true);
       expect(result.isPlanning).toBe(false);
     });
 
     it("should update trip status from ACTIVE to COMPLETED", async () => {
-      // Arrange
       const existingTrip = createValidTrip({
         id: "trip-complete",
         status: TripStatus.ACTIVE,
       });
-      await repo.create(existingTrip);
+      await Effect.runPromise(repo.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-complete",
         status: TripStatus.COMPLETED,
       };
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.status).toBe(TripStatus.COMPLETED);
       expect(result.isCompleted).toBe(true);
     });
 
     it("should update trip status from PLANNING to CANCELLED", async () => {
-      // Arrange
       const existingTrip = createValidTrip({
         id: "trip-cancel",
         status: TripStatus.PLANNING,
       });
-      await repo.create(existingTrip);
+      await Effect.runPromise(repo.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-cancel",
         status: TripStatus.CANCELLED,
       };
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.status).toBe(TripStatus.CANCELLED);
       expect(result.isCancelled).toBe(true);
     });
@@ -204,27 +179,23 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         name: "New Name",
       };
 
-      // Act
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => Effect.promise(() => repo.create(trip)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findActive: () => Effect.promise(() => repo.findActive()),
+          create: (trip: Trip) => repo.create(trip),
+          findById: (id: string) => repo.findById(id),
+          findByStatus: (status: TripStatus) => repo.findByStatus(status),
+          findActive: () => repo.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (trip: Trip) => Effect.promise(() => repo.update(trip)),
+            repo.findAll(options),
+          update: (trip: Trip) => repo.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.updateStatus(id, status),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
+          countByStatus: (status: TripStatus) => repo.countByStatus(status),
         }),
       );
 
-      // Act & Assert
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -233,39 +204,34 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
     });
 
     it("should fail when updating a completed trip", async () => {
-      // Arrange
       const completedTrip = createValidTrip({
         id: "trip-completed",
         status: TripStatus.COMPLETED,
       });
-      await repo.create(completedTrip);
+      await Effect.runPromise(repo.create(completedTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-completed",
         name: "Should Fail",
       };
 
-      // Act
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => Effect.promise(() => repo.create(trip)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findActive: () => Effect.promise(() => repo.findActive()),
+          create: (trip: Trip) => repo.create(trip),
+          findById: (id: string) => repo.findById(id),
+          findByStatus: (status: TripStatus) => repo.findByStatus(status),
+          findActive: () => repo.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (trip: Trip) => Effect.promise(() => repo.update(trip)),
+            repo.findAll(options),
+          update: (trip: Trip) => repo.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.updateStatus(id, status),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
+          countByStatus: (status: TripStatus) => repo.countByStatus(status),
         }),
       );
 
-      // Act & Assert
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -275,39 +241,34 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
     });
 
     it("should fail when updating a cancelled trip", async () => {
-      // Arrange
       const cancelledTrip = createValidTrip({
         id: "trip-cancelled",
         status: TripStatus.CANCELLED,
       });
-      await repo.create(cancelledTrip);
+      await Effect.runPromise(repo.create(cancelledTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-cancelled",
         name: "Should Fail",
       };
 
-      // Act
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => Effect.promise(() => repo.create(trip)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findActive: () => Effect.promise(() => repo.findActive()),
+          create: (trip: Trip) => repo.create(trip),
+          findById: (id: string) => repo.findById(id),
+          findByStatus: (status: TripStatus) => repo.findByStatus(status),
+          findActive: () => repo.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (trip: Trip) => Effect.promise(() => repo.update(trip)),
+            repo.findAll(options),
+          update: (trip: Trip) => repo.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.updateStatus(id, status),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
+          countByStatus: (status: TripStatus) => repo.countByStatus(status),
         }),
       );
 
-      // Act & Assert
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -317,39 +278,34 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
     });
 
     it("should fail for invalid status transition", async () => {
-      // Arrange - try to go from COMPLETED to ACTIVE (invalid)
       const completedTrip = createValidTrip({
         id: "trip-bad-transition",
         status: TripStatus.COMPLETED,
       });
-      await repo.create(completedTrip);
+      await Effect.runPromise(repo.create(completedTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-bad-transition",
         status: TripStatus.ACTIVE,
       };
 
-      // Act
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => Effect.promise(() => repo.create(trip)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findActive: () => Effect.promise(() => repo.findActive()),
+          create: (trip: Trip) => repo.create(trip),
+          findById: (id: string) => repo.findById(id),
+          findByStatus: (status: TripStatus) => repo.findByStatus(status),
+          findActive: () => repo.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (trip: Trip) => Effect.promise(() => repo.update(trip)),
+            repo.findAll(options),
+          update: (trip: Trip) => repo.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.updateStatus(id, status),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
+          countByStatus: (status: TripStatus) => repo.countByStatus(status),
         }),
       );
 
-      // Act & Assert
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -358,36 +314,31 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
     });
 
     it("should fail when name validation fails", async () => {
-      // Arrange
       const existingTrip = createValidTrip({ id: "trip-invalid" });
-      await repo.create(existingTrip);
+      await Effect.runPromise(repo.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-invalid",
-        name: "", // Invalid empty name
+        name: "",
       };
 
-      // Act
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => Effect.promise(() => repo.create(trip)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
-          findActive: () => Effect.promise(() => repo.findActive()),
+          create: (trip: Trip) => repo.create(trip),
+          findById: (id: string) => repo.findById(id),
+          findByStatus: (status: TripStatus) => repo.findByStatus(status),
+          findActive: () => repo.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (trip: Trip) => Effect.promise(() => repo.update(trip)),
+            repo.findAll(options),
+          update: (trip: Trip) => repo.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            Effect.promise(() => repo.updateStatus(id, status)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          countByStatus: (status: TripStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.updateStatus(id, status),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
+          countByStatus: (status: TripStatus) => repo.countByStatus(status),
         }),
       );
 
-      // Act & Assert
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -397,9 +348,8 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
     });
 
     it("should update multiple fields at once", async () => {
-      // Arrange
       const existingTrip = createValidTrip({ id: "trip-multi" });
-      await repo.create(existingTrip);
+      await Effect.runPromise(repo.create(existingTrip));
 
       const newStartDate = new Date("2026-08-01");
       const newEndDate = new Date("2026-08-10");
@@ -414,10 +364,8 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         status: TripStatus.ACTIVE,
       };
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.name).toBe("New Name");
       expect(result.description).toBe("New Description");
       expect(result.startDate).toEqual(newStartDate);

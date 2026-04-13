@@ -24,7 +24,7 @@ describe("[UNIT] getNotificationUseCase (Effect)", () => {
       tripId: string | null;
     }>,
   ): Notification => {
-    const result = Notification.create({
+    const effect = Notification.create({
       id: overrides?.id ?? "notification-123",
       title: overrides?.title ?? "Test Notification",
       body: overrides?.body ?? "This is a test notification body",
@@ -33,10 +33,7 @@ describe("[UNIT] getNotificationUseCase (Effect)", () => {
       status: overrides?.status ?? NotificationStatus.DRAFT,
       priority: overrides?.priority ?? NotificationPriority.NORMAL,
     });
-    if (result.kind === "err") {
-      throw new Error(`Failed to create notification: ${result.error}`);
-    }
-    return result.value;
+    return Effect.runSync(effect);
   };
 
   const createMockRepo = (overrides?: {

@@ -5,23 +5,26 @@ import {
 } from "./AddSharingUser";
 import { Effect, Either } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
-import type { Location, LocationId } from "@mirai-app/domain";
+import type { Location, LocationId, SharingUserInfo } from "@mirai-app/domain";
 
 // Mock Location domain object
-const createMockLocation = (overrides?: Partial<Location>): Location =>
-  ({
+const createMockLocation = (overrides?: Partial<Location>): Location => {
+  const baseUsersToShareWith: SharingUserInfo[] = [];
+  const mockLoc = {
     id: "loc-123" as LocationId,
     userId: "user-123",
-    usersToShareWith: [],
+    usersToShareWith: baseUsersToShareWith,
     isSharingLocation: () => true,
-    addSharingUser: function (user: unknown) {
-      return {
-        kind: "ok",
-        value: { ...this, usersToShareWith: [...this.usersToShareWith, user] },
-      };
+    addSharingUser: function (user: SharingUserInfo) {
+      return Effect.succeed({
+        ...this,
+        usersToShareWith: [...(this.usersToShareWith ?? []), user],
+      } as Location);
     },
     ...overrides,
-  }) as unknown as Location;
+  };
+  return mockLoc as unknown as Location;
+};
 
 // Create mock repository service
 const createMockRepoService = (overrides?: {
@@ -88,8 +91,9 @@ describe("[UNIT] addSharingUserUseCase (Effect)", () => {
 
       expect(result.userId).toBe("user-123");
       expect(result.isSharingLocation).toBe(true);
-      expect(result.usersToShareWith).toHaveLength(1);
-      expect(result.usersToShareWith[0]).toEqual({
+      const resultUsers = result.usersToShareWith ?? [];
+      expect(resultUsers).toHaveLength(1);
+      expect(resultUsers[0]).toEqual({
         id: "user-456",
         firstName: "John",
         lastName: "Doe",
@@ -97,18 +101,17 @@ describe("[UNIT] addSharingUserUseCase (Effect)", () => {
     });
 
     it("should add user to existing location", async () => {
+      const existingUsers: SharingUserInfo[] = [
+        { id: "user-1", firstName: "Alice", lastName: "Smith" },
+      ];
       const existingLocation = createMockLocation({
-        usersToShareWith: [
-          { id: "user-1", firstName: "Alice", lastName: "Smith" },
-        ],
-        addSharingUser: function (user: unknown) {
-          return {
-            kind: "ok",
-            value: {
-              ...this,
-              usersToShareWith: [...this.usersToShareWith, user],
-            },
-          };
+        usersToShareWith: existingUsers,
+        addSharingUser: function (user: SharingUserInfo) {
+          const currentUsers = this.usersToShareWith ?? [];
+          return Effect.succeed({
+            ...this,
+            usersToShareWith: [...currentUsers, user],
+          } as Location);
         },
       });
 
@@ -123,8 +126,9 @@ describe("[UNIT] addSharingUserUseCase (Effect)", () => {
         findByUserId: () => Promise.resolve(existingLocation),
       });
 
-      expect(result.usersToShareWith).toHaveLength(2);
-      expect(result.usersToShareWith[1].id).toBe("user-456");
+      const resultUsers = result.usersToShareWith ?? [];
+      expect(resultUsers).toHaveLength(2);
+      expect(resultUsers[1]?.id).toBe("user-456");
     });
 
     it("should handle null first and last names", async () => {
@@ -139,8 +143,9 @@ describe("[UNIT] addSharingUserUseCase (Effect)", () => {
         findByUserId: () => Promise.resolve(null),
       });
 
-      expect(result.usersToShareWith[0].firstName).toBeNull();
-      expect(result.usersToShareWith[0].lastName).toBeNull();
+      const resultUsers = result.usersToShareWith ?? [];
+      expect(resultUsers[0]?.firstName).toBeNull();
+      expect(resultUsers[0]?.lastName).toBeNull();
     });
   });
 });

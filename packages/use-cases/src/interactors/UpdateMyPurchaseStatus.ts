@@ -91,7 +91,7 @@ export class UpdateMyPurchaseOperationError extends Error {
   readonly _tag = "UpdateMyPurchaseOperationError";
   constructor(
     public readonly operation: string,
-    public readonly cause?: unknown,
+    public override readonly cause?: unknown,
   ) {
     super(`Failed to ${operation}`);
   }

@@ -94,7 +94,7 @@ export function getCoinTransactionsUseCase(
       },
     };
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catchAll((error: unknown) =>
       Effect.fail(
         new GetTransactionsError(
           error instanceof Error ? error.message : String(error),

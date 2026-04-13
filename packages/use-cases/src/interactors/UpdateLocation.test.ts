@@ -51,23 +51,18 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
   const runUseCase = async (input: UpdateLocationInput) => {
     const program = updateLocationUseCase(input).pipe(
       Effect.provideService(LocationRepositoryTag, {
-        create: (location: Location) =>
-          Effect.promise(() => repo.create(location)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByUserId: (userId: string) =>
-          Effect.promise(() => repo.findByUserId(userId)),
+        create: (location: Location) => repo.create(location),
+        findById: (id: string) => repo.findById(id),
+        findByUserId: (userId: string) => repo.findByUserId(userId),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
+          repo.findAll(options),
         findSharingWithUser: (userId: string) =>
-          Effect.promise(() => repo.findSharingWithUser(userId)),
-        findByUserIds: (userIds: string[]) =>
-          Effect.promise(() => repo.findByUserIds(userIds)),
-        save: (location: Location) => Effect.promise(() => repo.save(location)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        deleteByUserId: (userId: string) =>
-          Effect.promise(() => repo.deleteByUserId(userId)),
-        existsForUser: (userId: string) =>
-          Effect.promise(() => repo.existsForUser(userId)),
+          repo.findSharingWithUser(userId),
+        findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
+        save: (location: Location) => repo.save(location),
+        delete: (id: string) => repo.delete(id),
+        deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
+        existsForUser: (userId: string) => repo.existsForUser(userId),
       }),
     );
     return await Effect.runPromise(program);
@@ -91,7 +86,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
       expect(result.longitude).toBe(2.3522);
 
       // Verify location was created
-      const stored = await repo.findByUserId("user-123");
+      const stored = Effect.runSync(repo.findByUserId("user-123"));
       expect(stored).not.toBeNull();
     });
 
@@ -102,7 +97,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
         latitude: 50.0,
         longitude: 10.0,
       });
-      await repo.create(existingLocation);
+      Effect.runSync(repo.create(existingLocation));
 
       const input: UpdateLocationInput = {
         userId: "user-123",
@@ -118,7 +113,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
       expect(result.longitude).toBe(13.405);
 
       // Verify location was updated
-      const stored = await repo.findByUserId("user-123");
+      const stored = Effect.runSync(repo.findByUserId("user-123"));
       expect(stored?.latitude).toBe(52.52);
       expect(stored?.longitude).toBe(13.405);
     });
@@ -129,7 +124,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
         userId: "user-123",
         isSharingLocation: false,
       });
-      await repo.create(existingLocation);
+      Effect.runSync(repo.create(existingLocation));
 
       const input: UpdateLocationInput = {
         userId: "user-123",
@@ -143,7 +138,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
       expect(result.isSharingLocation).toBe(true);
 
       // Verify location was updated
-      const stored = await repo.findByUserId("user-123");
+      const stored = Effect.runSync(repo.findByUserId("user-123"));
       expect(stored?.isSharingLocation()).toBe(true);
     });
 
@@ -153,7 +148,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
         userId: "user-123",
         isSharingLocation: true,
       });
-      await repo.create(existingLocation);
+      Effect.runSync(repo.create(existingLocation));
 
       const input: UpdateLocationInput = {
         userId: "user-123",
@@ -167,7 +162,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
       expect(result.isSharingLocation).toBe(false);
 
       // Verify location was updated
-      const stored = await repo.findByUserId("user-123");
+      const stored = Effect.runSync(repo.findByUserId("user-123"));
       expect(stored?.isSharingLocation()).toBe(false);
     });
 
@@ -180,24 +175,18 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
       // Act
       const program = updateLocationUseCase(input).pipe(
         Effect.provideService(LocationRepositoryTag, {
-          create: (location: Location) =>
-            Effect.promise(() => repo.create(location)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByUserId: (userId: string) =>
-            Effect.promise(() => repo.findByUserId(userId)),
+          create: (location: Location) => repo.create(location),
+          findById: (id: string) => repo.findById(id),
+          findByUserId: (userId: string) => repo.findByUserId(userId),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
+            repo.findAll(options),
           findSharingWithUser: (userId: string) =>
-            Effect.promise(() => repo.findSharingWithUser(userId)),
-          findByUserIds: (userIds: string[]) =>
-            Effect.promise(() => repo.findByUserIds(userIds)),
-          save: (location: Location) =>
-            Effect.promise(() => repo.save(location)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          deleteByUserId: (userId: string) =>
-            Effect.promise(() => repo.deleteByUserId(userId)),
-          existsForUser: (userId: string) =>
-            Effect.promise(() => repo.existsForUser(userId)),
+            repo.findSharingWithUser(userId),
+          findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
+          save: (location: Location) => repo.save(location),
+          delete: (id: string) => repo.delete(id),
+          deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
+          existsForUser: (userId: string) => repo.existsForUser(userId),
         }),
       );
 
@@ -212,7 +201,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
     it("should update altitude, heading, and speed", async () => {
       // Arrange - seed existing location
       const existingLocation = createValidLocation({ userId: "user-123" });
-      await repo.create(existingLocation);
+      Effect.runSync(repo.create(existingLocation));
 
       const input: UpdateLocationInput = {
         userId: "user-123",
@@ -231,14 +220,14 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
       expect(result.latitude).toBe(52.52);
 
       // Verify location was updated
-      const stored = await repo.findByUserId("user-123");
+      const stored = Effect.runSync(repo.findByUserId("user-123"));
       expect(stored).not.toBeNull();
     });
 
     it("should fail when coordinate validation fails", async () => {
       // Arrange - seed existing location
       const existingLocation = createValidLocation({ userId: "user-123" });
-      await repo.create(existingLocation);
+      Effect.runSync(repo.create(existingLocation));
 
       const input: UpdateLocationInput = {
         userId: "user-123",
@@ -248,24 +237,18 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
       // Act
       const program = updateLocationUseCase(input).pipe(
         Effect.provideService(LocationRepositoryTag, {
-          create: (location: Location) =>
-            Effect.promise(() => repo.create(location)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByUserId: (userId: string) =>
-            Effect.promise(() => repo.findByUserId(userId)),
+          create: (location: Location) => repo.create(location),
+          findById: (id: string) => repo.findById(id),
+          findByUserId: (userId: string) => repo.findByUserId(userId),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
+            repo.findAll(options),
           findSharingWithUser: (userId: string) =>
-            Effect.promise(() => repo.findSharingWithUser(userId)),
-          findByUserIds: (userIds: string[]) =>
-            Effect.promise(() => repo.findByUserIds(userIds)),
-          save: (location: Location) =>
-            Effect.promise(() => repo.save(location)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          deleteByUserId: (userId: string) =>
-            Effect.promise(() => repo.deleteByUserId(userId)),
-          existsForUser: (userId: string) =>
-            Effect.promise(() => repo.existsForUser(userId)),
+            repo.findSharingWithUser(userId),
+          findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
+          save: (location: Location) => repo.save(location),
+          delete: (id: string) => repo.delete(id),
+          deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
+          existsForUser: (userId: string) => repo.existsForUser(userId),
         }),
       );
 
@@ -284,7 +267,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
         latitude: 50.0,
         longitude: 10.0,
       });
-      await repo.create(existingLocation);
+      Effect.runSync(repo.create(existingLocation));
 
       const input: UpdateLocationInput = {
         userId: "user-123",
@@ -298,7 +281,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
       expect(result.latitude).toBe(55.0);
 
       // Verify location was updated
-      const stored = await repo.findByUserId("user-123");
+      const stored = Effect.runSync(repo.findByUserId("user-123"));
       expect(stored?.latitude).toBe(55.0);
     });
   });

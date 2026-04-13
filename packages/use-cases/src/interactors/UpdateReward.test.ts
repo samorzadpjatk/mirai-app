@@ -50,24 +50,20 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
   const runUseCase = async (input: UpdateRewardInput) => {
     const program = updateRewardUseCase(input).pipe(
       Effect.provideService(RewardRepositoryTag, {
-        create: (reward: Reward) =>
-          Effect.promise(() => rewardRepo.create(reward)),
-        findById: (id: string) => Effect.promise(() => rewardRepo.findById(id)),
+        create: (reward: Reward) => rewardRepo.create(reward),
+        findById: (id: string) => rewardRepo.findById(id),
         findByTripId: (tripId: string, options?) =>
-          Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+          rewardRepo.findByTripId(tripId, options),
         findVisibleByTripId: (tripId: string, options?) =>
-          Effect.promise(() => rewardRepo.findVisibleByTripId(tripId, options)),
-        update: (reward: Reward) =>
-          Effect.promise(() => rewardRepo.update(reward)),
-        delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-        hasPurchases: (id: string) =>
-          Effect.promise(() => rewardRepo.hasPurchases(id)),
-        getPurchaseCount: (id: string) =>
-          Effect.promise(() => rewardRepo.getPurchaseCount(id)),
+          rewardRepo.findVisibleByTripId(tripId, options),
+        update: (reward: Reward) => rewardRepo.update(reward),
+        delete: (id: string) => rewardRepo.delete(id),
+        hasPurchases: (id: string) => rewardRepo.hasPurchases(id),
+        getPurchaseCount: (id: string) => rewardRepo.getPurchaseCount(id),
         decrementQuantity: (id: string, amount: number) =>
-          Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
+          rewardRepo.decrementQuantity(id, amount),
         incrementQuantity: (id: string, amount: number) =>
-          Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+          rewardRepo.incrementQuantity(id, amount),
       }),
     );
     return await Effect.runPromise(program);
@@ -81,7 +77,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
         id: "reward-456",
         name: "Old Name",
       });
-      await rewardRepo.create(existingReward);
+      Effect.runSync(rewardRepo.create(existingReward));
 
       const input: UpdateRewardInput = {
         rewardId,
@@ -96,7 +92,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
       expect(result.id).toBe("reward-456");
 
       // Verify stored reward was updated
-      const stored = await rewardRepo.findById("reward-456");
+      const stored = Effect.runSync(rewardRepo.findById("reward-456"));
       expect(stored?.name).toBe("New Name");
     });
 
@@ -104,7 +100,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
       // Arrange
       const rewardId = RewardId.unsafeCreate("reward-456");
       const existingReward = createValidReward({ id: "reward-456" });
-      await rewardRepo.create(existingReward);
+      Effect.runSync(rewardRepo.create(existingReward));
 
       const input: UpdateRewardInput = {
         rewardId,
@@ -125,7 +121,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
         id: "reward-456",
         availableQuantity: 10,
       });
-      await rewardRepo.create(existingReward);
+      Effect.runSync(rewardRepo.create(existingReward));
 
       const input: UpdateRewardInput = {
         rewardId,
@@ -143,7 +139,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
       // Arrange
       const rewardId = RewardId.unsafeCreate("reward-456");
       const existingReward = createValidReward({ id: "reward-456" });
-      await rewardRepo.create(existingReward);
+      Effect.runSync(rewardRepo.create(existingReward));
 
       const input: UpdateRewardInput = {
         rewardId,
@@ -167,7 +163,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
       // Arrange
       const rewardId = RewardId.unsafeCreate("reward-456");
       const existingReward = createValidReward({ id: "reward-456" });
-      await rewardRepo.create(existingReward);
+      Effect.runSync(rewardRepo.create(existingReward));
 
       const input: UpdateRewardInput = {
         rewardId,
@@ -193,27 +189,20 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
       // Act
       const program = updateRewardUseCase(input).pipe(
         Effect.provideService(RewardRepositoryTag, {
-          create: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.create(reward)),
-          findById: (id: string) =>
-            Effect.promise(() => rewardRepo.findById(id)),
+          create: (reward: Reward) => rewardRepo.create(reward),
+          findById: (id: string) => rewardRepo.findById(id),
           findByTripId: (tripId: string, options?) =>
-            Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+            rewardRepo.findByTripId(tripId, options),
           findVisibleByTripId: (tripId: string, options?) =>
-            Effect.promise(() =>
-              rewardRepo.findVisibleByTripId(tripId, options),
-            ),
-          update: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.update(reward)),
-          delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-          hasPurchases: (id: string) =>
-            Effect.promise(() => rewardRepo.hasPurchases(id)),
-          getPurchaseCount: (id: string) =>
-            Effect.promise(() => rewardRepo.getPurchaseCount(id)),
+            rewardRepo.findVisibleByTripId(tripId, options),
+          update: (reward: Reward) => rewardRepo.update(reward),
+          delete: (id: string) => rewardRepo.delete(id),
+          hasPurchases: (id: string) => rewardRepo.hasPurchases(id),
+          getPurchaseCount: (id: string) => rewardRepo.getPurchaseCount(id),
           decrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
+            rewardRepo.decrementQuantity(id, amount),
           incrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+            rewardRepo.incrementQuantity(id, amount),
         }),
       );
 
@@ -230,7 +219,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
       // Arrange
       const rewardId = RewardId.unsafeCreate("reward-456");
       const existingReward = createValidReward({ id: "reward-456" });
-      await rewardRepo.create(existingReward);
+      Effect.runSync(rewardRepo.create(existingReward));
 
       const input: UpdateRewardInput = {
         rewardId,
@@ -240,27 +229,20 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
       // Act
       const program = updateRewardUseCase(input).pipe(
         Effect.provideService(RewardRepositoryTag, {
-          create: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.create(reward)),
-          findById: (id: string) =>
-            Effect.promise(() => rewardRepo.findById(id)),
+          create: (reward: Reward) => rewardRepo.create(reward),
+          findById: (id: string) => rewardRepo.findById(id),
           findByTripId: (tripId: string, options?) =>
-            Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+            rewardRepo.findByTripId(tripId, options),
           findVisibleByTripId: (tripId: string, options?) =>
-            Effect.promise(() =>
-              rewardRepo.findVisibleByTripId(tripId, options),
-            ),
-          update: (reward: Reward) =>
-            Effect.promise(() => rewardRepo.update(reward)),
-          delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-          hasPurchases: (id: string) =>
-            Effect.promise(() => rewardRepo.hasPurchases(id)),
-          getPurchaseCount: (id: string) =>
-            Effect.promise(() => rewardRepo.getPurchaseCount(id)),
+            rewardRepo.findVisibleByTripId(tripId, options),
+          update: (reward: Reward) => rewardRepo.update(reward),
+          delete: (id: string) => rewardRepo.delete(id),
+          hasPurchases: (id: string) => rewardRepo.hasPurchases(id),
+          getPurchaseCount: (id: string) => rewardRepo.getPurchaseCount(id),
           decrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
+            rewardRepo.decrementQuantity(id, amount),
           incrementQuantity: (id: string, amount: number) =>
-            Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+            rewardRepo.incrementQuantity(id, amount),
         }),
       );
 
@@ -276,7 +258,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
       // Arrange
       const rewardId = RewardId.unsafeCreate("reward-456");
       const existingReward = createValidReward({ id: "reward-456" });
-      await rewardRepo.create(existingReward);
+      Effect.runSync(rewardRepo.create(existingReward));
 
       const input: UpdateRewardInput = {
         rewardId,

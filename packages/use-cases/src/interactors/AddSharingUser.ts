@@ -53,7 +53,7 @@ export class AddSharingUserRepositoryError extends Error {
   readonly _tag = "AddSharingUserRepositoryError";
   constructor(
     public readonly operation: string,
-    public readonly cause?: unknown,
+    override readonly cause?: unknown,
   ) {
     super(`Failed to ${operation}`);
   }
@@ -134,21 +134,22 @@ export function addSharingUserUseCase(
     }
 
     // Add user to sharing list
-    const addResult = location.addSharingUser({
-      id: input.userToAddId,
-      firstName: input.userFirstName,
-      lastName: input.userLastName,
-    });
-
-    if (addResult.kind === "err") {
-      return yield* Effect.fail(
-        new AddSharingUserValidationError(addResult.error.message),
+    const updatedLocation = yield* location
+      .addSharingUser({
+        id: input.userToAddId,
+        firstName: input.userFirstName,
+        lastName: input.userLastName,
+      })
+      .pipe(
+        Effect.mapError(
+          (validationError) =>
+            new AddSharingUserValidationError(validationError.message),
+        ),
       );
-    }
 
     // Persist changes
     const saved = yield* locationRepo
-      .save(addResult.value)
+      .save(updatedLocation)
       .pipe(
         Effect.mapError(
           (cause) => new AddSharingUserRepositoryError("save location", cause),

@@ -51,37 +51,30 @@ describe("[UNIT] bulkToggleNotificationScheduleActiveUseCase (Effect)", () => {
     const program = bulkToggleNotificationScheduleActiveUseCase(input).pipe(
       Effect.provideService(NotificationScheduleRepositoryTag, {
         bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
-        create: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.create(schedule)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => repo.findByName(name)),
+          repo.bulkToggleActive(ids, isActive),
+        create: (schedule: NotificationSchedule) => repo.create(schedule),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByName: (name: string) => repo.findByName(name),
         findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
-        findByType: (type: string) =>
-          Effect.promise(() => repo.findByType(type as any)),
-        findAll: (options?: any) => Effect.promise(() => repo.findAll(options)),
-        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
+          repo.findByTripIdAndName(tripId, name),
+        findByType: (type: string) => repo.findByType(type as any),
+        findAll: (options?: any) => repo.findAll(options),
+        findActive: (now?: Date) => repo.findActive(now),
         findUpcoming: (days?: number, now?: Date) =>
-          Effect.promise(() => repo.findUpcoming(days, now)),
-        update: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.update(schedule)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => repo.deleteMany(ids)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+          repo.findUpcoming(days, now),
+        update: (schedule: NotificationSchedule) => repo.update(schedule),
+        delete: (id: string) => repo.delete(id),
+        deleteMany: (ids: string[]) => repo.deleteMany(ids),
+        exists: (id: string) => repo.exists(id),
+        count: (filter?: any) => repo.count(filter),
         updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => repo.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => repo.toggleActive(id)),
+          repo.updateLastRun(id, lastRun),
+        toggleActive: (id: string) => repo.toggleActive(id),
         getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+          repo.getExecutionHistory(scheduleId, limit),
         countExecutions: (scheduleId: string) =>
-          Effect.promise(() => repo.countExecutions(scheduleId)),
+          repo.countExecutions(scheduleId),
       }),
     );
     return await Effect.runPromise(program);
@@ -90,9 +83,9 @@ describe("[UNIT] bulkToggleNotificationScheduleActiveUseCase (Effect)", () => {
   describe("execute", () => {
     it("should activate multiple schedules", async () => {
       // Create schedules first
-      await repo.create(createMockSchedule("schedule-1", false));
-      await repo.create(createMockSchedule("schedule-2", false));
-      await repo.create(createMockSchedule("schedule-3", false));
+      Effect.runSync(repo.create(createMockSchedule("schedule-1", false)));
+      Effect.runSync(repo.create(createMockSchedule("schedule-2", false)));
+      Effect.runSync(repo.create(createMockSchedule("schedule-3", false)));
 
       const input: BulkToggleNotificationScheduleActiveInput = {
         ids: ["schedule-1", "schedule-2", "schedule-3"],
@@ -106,8 +99,8 @@ describe("[UNIT] bulkToggleNotificationScheduleActiveUseCase (Effect)", () => {
     });
 
     it("should deactivate multiple schedules", async () => {
-      await repo.create(createMockSchedule("schedule-1", true));
-      await repo.create(createMockSchedule("schedule-2", true));
+      Effect.runSync(repo.create(createMockSchedule("schedule-1", true)));
+      Effect.runSync(repo.create(createMockSchedule("schedule-2", true)));
 
       const input: BulkToggleNotificationScheduleActiveInput = {
         ids: ["schedule-1", "schedule-2"],
@@ -129,39 +122,30 @@ describe("[UNIT] bulkToggleNotificationScheduleActiveUseCase (Effect)", () => {
       const program = bulkToggleNotificationScheduleActiveUseCase(input).pipe(
         Effect.provideService(NotificationScheduleRepositoryTag, {
           bulkToggleActive: (ids: string[], isActive: boolean) =>
-            Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
-          create: (schedule: NotificationSchedule) =>
-            Effect.promise(() => repo.create(schedule)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
-          findByName: (name: string) =>
-            Effect.promise(() => repo.findByName(name)),
+            repo.bulkToggleActive(ids, isActive),
+          create: (schedule: NotificationSchedule) => repo.create(schedule),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
+          findByName: (name: string) => repo.findByName(name),
           findByTripIdAndName: (tripId: string, name: string) =>
-            Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
-          findByType: (type: string) =>
-            Effect.promise(() => repo.findByType(type as any)),
-          findAll: (options?: any) =>
-            Effect.promise(() => repo.findAll(options)),
-          findActive: (now?: Date) =>
-            Effect.promise(() => repo.findActive(now)),
+            repo.findByTripIdAndName(tripId, name),
+          findByType: (type: string) => repo.findByType(type as any),
+          findAll: (options?: any) => repo.findAll(options),
+          findActive: (now?: Date) => repo.findActive(now),
           findUpcoming: (days?: number, now?: Date) =>
-            Effect.promise(() => repo.findUpcoming(days, now)),
-          update: (schedule: NotificationSchedule) =>
-            Effect.promise(() => repo.update(schedule)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          deleteMany: (ids: string[]) =>
-            Effect.promise(() => repo.deleteMany(ids)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
-          count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+            repo.findUpcoming(days, now),
+          update: (schedule: NotificationSchedule) => repo.update(schedule),
+          delete: (id: string) => repo.delete(id),
+          deleteMany: (ids: string[]) => repo.deleteMany(ids),
+          exists: (id: string) => repo.exists(id),
+          count: (filter?: any) => repo.count(filter),
           updateLastRun: (id: string, lastRun: Date) =>
-            Effect.promise(() => repo.updateLastRun(id, lastRun)),
-          toggleActive: (id: string) =>
-            Effect.promise(() => repo.toggleActive(id)),
+            repo.updateLastRun(id, lastRun),
+          toggleActive: (id: string) => repo.toggleActive(id),
           getExecutionHistory: (scheduleId: string, limit: number) =>
-            Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
+            repo.getExecutionHistory(scheduleId, limit),
           countExecutions: (scheduleId: string) =>
-            Effect.promise(() => repo.countExecutions(scheduleId)),
+            repo.countExecutions(scheduleId),
         }),
       );
 
@@ -174,7 +158,7 @@ describe("[UNIT] bulkToggleNotificationScheduleActiveUseCase (Effect)", () => {
     });
 
     it("should handle partial updates", async () => {
-      await repo.create(createMockSchedule("schedule-1", true));
+      Effect.runSync(repo.create(createMockSchedule("schedule-1", true)));
       // Don't create schedule-2 and schedule-3
 
       const input: BulkToggleNotificationScheduleActiveInput = {
@@ -189,7 +173,7 @@ describe("[UNIT] bulkToggleNotificationScheduleActiveUseCase (Effect)", () => {
     });
 
     it("should handle single ID", async () => {
-      await repo.create(createMockSchedule("schedule-1", false));
+      Effect.runSync(repo.create(createMockSchedule("schedule-1", false)));
 
       const input: BulkToggleNotificationScheduleActiveInput = {
         ids: ["schedule-1"],

@@ -32,31 +32,27 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
   const runUseCase = async (input: CreateNotificationInput) => {
     const program = createNotificationUseCase(input).pipe(
       Effect.provideService(NotificationRepositoryTag, {
-        create: (notification: Notification) =>
-          Effect.promise(() => repo.create(notification)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByStatus: (status: NotificationStatus) =>
-          Effect.promise(() => repo.findByStatus(status)),
+        create: (notification: Notification) => repo.create(notification),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByStatus: (status: NotificationStatus) => repo.findByStatus(status),
         findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-          Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+          repo.findByTripIdAndStatus(tripId, status),
         findByPriority: (priority: NotificationPriority) =>
-          Effect.promise(() => repo.findByPriority(priority)),
-        findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-        findOverdue: () => Effect.promise(() => repo.findOverdue()),
+          repo.findByPriority(priority),
+        findReadyToSend: () => repo.findReadyToSend(),
+        findOverdue: () => repo.findOverdue(),
         findByCreatedById: (createdById: string) =>
-          Effect.promise(() => repo.findByCreatedById(createdById)),
+          repo.findByCreatedById(createdById),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (notification: Notification) =>
-          Effect.promise(() => repo.update(notification)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
+          repo.findAll(options),
+        update: (notification: Notification) => repo.update(notification),
+        delete: (id: string) => repo.delete(id),
+        exists: (id: string) => repo.exists(id),
         countByStatus: (status: NotificationStatus) =>
-          Effect.promise(() => repo.countByStatus(status)),
+          repo.countByStatus(status),
         countPendingByTripId: (tripId: string) =>
-          Effect.promise(() => repo.countPendingByTripId(tripId)),
+          repo.countPendingByTripId(tripId),
       }),
     );
     return await Effect.runPromise(program);
@@ -82,7 +78,7 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       expect(result.sentAt).toBeNull();
 
       // Verify notification was actually stored
-      const stored = await repo.findByCreatedById("admin-123");
+      const stored = Effect.runSync(repo.findByCreatedById("admin-123"));
       expect(stored).toHaveLength(1);
       expect(stored[0]?.title).toBe("Test Notification");
     });
@@ -105,7 +101,9 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       expect(result.priority).toBe("URGENT");
 
       // Verify stored notification
-      const stored = await repo.findByStatus(NotificationStatus.READY);
+      const stored = Effect.runSync(
+        repo.findByStatus(NotificationStatus.READY),
+      );
       expect(stored).toHaveLength(1);
       expect(stored[0]?.priority).toBe(NotificationPriority.URGENT);
     });
@@ -126,7 +124,7 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       expect(result.tripId).toBe("trip-abc");
 
       // Verify stored notification
-      const stored = await repo.findByTripId("trip-abc");
+      const stored = Effect.runSync(repo.findByTripId("trip-abc"));
       expect(stored).toHaveLength(1);
       expect(stored[0]?.title).toBe("Trip Update");
     });
@@ -174,31 +172,28 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       // Act
       const program = createNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+            repo.findByTripIdAndStatus(tripId, status),
           findByPriority: (priority: NotificationPriority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -211,7 +206,7 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       }
 
       // Verify no notification was stored
-      const stored = await repo.findAll();
+      const stored = Effect.runSync(repo.findAll());
       expect(stored).toHaveLength(0);
     });
 
@@ -225,31 +220,28 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       // Act
       const program = createNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+            repo.findByTripIdAndStatus(tripId, status),
           findByPriority: (priority: NotificationPriority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -262,7 +254,7 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       }
 
       // Verify no notification was stored
-      const stored = await repo.findAll();
+      const stored = Effect.runSync(repo.findAll());
       expect(stored).toHaveLength(0);
     });
 
@@ -276,31 +268,28 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       // Act
       const program = createNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+            repo.findByTripIdAndStatus(tripId, status),
           findByPriority: (priority: NotificationPriority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -313,7 +302,7 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       }
 
       // Verify no notification was stored
-      const stored = await repo.findAll();
+      const stored = Effect.runSync(repo.findAll());
       expect(stored).toHaveLength(0);
     });
 
@@ -328,31 +317,28 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       // Act
       const program = createNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
+            repo.findByTripIdAndStatus(tripId, status),
           findByPriority: (priority: NotificationPriority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -365,7 +351,7 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       }
 
       // Verify no notification was stored
-      const stored = await repo.findAll();
+      const stored = Effect.runSync(repo.findAll());
       expect(stored).toHaveLength(0);
     });
 
@@ -384,7 +370,9 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
       expect(result.priority).toBe("HIGH");
 
       // Verify stored notification
-      const stored = await repo.findByPriority(NotificationPriority.HIGH);
+      const stored = Effect.runSync(
+        repo.findByPriority(NotificationPriority.HIGH),
+      );
       expect(stored).toHaveLength(1);
     });
 

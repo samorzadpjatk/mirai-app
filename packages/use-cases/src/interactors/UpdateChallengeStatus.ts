@@ -51,7 +51,7 @@ export class InvalidStatusTransitionError extends Error {
  */
 export class ChallengeUpdateError extends Error {
   readonly _tag = "ChallengeUpdateError";
-  constructor(public readonly cause: unknown) {
+  constructor(public override readonly cause: unknown) {
     super("Failed to update challenge");
   }
 }
@@ -98,14 +98,16 @@ export function updateChallengeStatusUseCase(
     }
 
     // Apply status update
-    const updateResult = challenge.updateStatus(input.newStatus);
-
-    if (updateResult.kind === "err") {
-      return yield* Effect.fail(new ChallengeUpdateError(updateResult.error));
-    }
+    const updatedChallenge = yield* challenge
+      .updateStatus(input.newStatus)
+      .pipe(
+        Effect.mapError(
+          (stateError) => new ChallengeUpdateError(stateError.message),
+        ),
+      );
 
     // Persist changes
-    const saved = yield* challengeRepo.update(updateResult.value);
+    const saved = yield* challengeRepo.update(updatedChallenge);
 
     return {
       id: saved.id,

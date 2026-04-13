@@ -1,8 +1,6 @@
 import { Effect } from "effect";
-import {
-  LocationRepositoryTag,
-  type LocationId,
-} from "../ports/LocationRepository";
+import type { LocationId } from "@mirai-app/domain";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
 
 /**
  * Input for DeleteLocation use case

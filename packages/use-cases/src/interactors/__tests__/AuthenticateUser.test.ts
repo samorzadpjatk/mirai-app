@@ -15,9 +15,9 @@ import { UserRole, UserId as UserIdFactory } from "@mirai-app/domain";
 // =============================================================================
 
 /**
- * Mock implementation of AuthPort for Effect-based testing
+ * Mock implementation for AuthPortTag Effect-based testing
  */
-class MockAuthPort implements AuthPort {
+class MockAuthPort {
   private scenarios: Map<
     string,
     | { kind: "ok"; value: AuthContext }
@@ -184,7 +184,7 @@ describe("[UNIT] authenticateUserUseCase", () => {
       const result = await runUseCase(input);
 
       // Assert - Effect-based version returns the value directly
-      expect(UserIdFactory.toString(result.userId)).toBe("user-123");
+      expect(result.userId).toBe("user-123");
       expect(result.role).toBe(UserRole.USER);
       expect(result.sessionId).toBe("session-abc");
     });
@@ -209,7 +209,7 @@ describe("[UNIT] authenticateUserUseCase", () => {
       const result = await runUseCase(input);
 
       // Assert - AuthenticateUserOutput contains role string
-      expect(UserIdFactory.toString(result.userId)).toBe("admin-789");
+      expect(result.userId).toBe("admin-789");
       expect(result.role).toBe(UserRole.ADMIN);
     });
 
@@ -233,7 +233,7 @@ describe("[UNIT] authenticateUserUseCase", () => {
       const result = await runUseCase(input);
 
       // Assert
-      expect(UserIdFactory.toString(result.userId)).toBe("moderator-456");
+      expect(result.userId).toBe("moderator-456");
       expect(result.role).toBe(UserRole.MODERATOR);
     });
 
@@ -293,7 +293,7 @@ describe("[UNIT] authenticateUserUseCase", () => {
       const result = await runUseCase({ token: "token-with-details" });
 
       // Assert - AuthenticateUserOutput is a plain object with extracted properties
-      expect(UserIdFactory.toString(result.userId)).toBe("specific-user-123");
+      expect(result.userId).toBe("specific-user-123");
       expect(result.role).toBe(UserRole.USER);
       expect(result.authenticatedAt).toBe(specificDate);
       expect(result.sessionId).toBe("specific-session-456");

@@ -79,7 +79,7 @@ export function getCoinStatisticsUseCase(
       time: new Date(),
     };
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catchAll((error: unknown) =>
       Effect.fail(
         new GetStatisticsError(
           error instanceof Error ? error.message : String(error),

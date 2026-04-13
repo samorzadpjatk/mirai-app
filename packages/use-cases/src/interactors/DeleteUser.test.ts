@@ -16,7 +16,6 @@ describe("[UNIT] deleteUserUseCase (Effect)", () => {
     repo = new InMemoryUserRepository();
   });
 
-  // Helper to create a valid user
   const createValidUser = (
     overrides?: Partial<{
       id: string;
@@ -39,22 +38,20 @@ describe("[UNIT] deleteUserUseCase (Effect)", () => {
     }
   };
 
-  // Helper to run use case with repository
   const runUseCase = async (input: DeleteUserInput) => {
     const program = deleteUserUseCase(input).pipe(
       Effect.provideService(UserRepositoryTag, {
-        create: (user: User) => Effect.promise(() => repo.create(user)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        create: (user: User) => repo.create(user),
+        findById: (id: string) => repo.findById(id),
         findByAuthUserId: (authUserId: string) =>
-          Effect.promise(() => repo.findByAuthUserId(authUserId)),
-        findByRole: (role: UserRole) =>
-          Effect.promise(() => repo.findByRole(role)),
+          repo.findByAuthUserId(authUserId),
+        findByRole: (role: UserRole) => repo.findByRole(role),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (user: User) => Effect.promise(() => repo.update(user)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          repo.findAll(options),
+        update: (user: User) => repo.update(user),
+        delete: (id: string) => repo.delete(id),
         existsByAuthUserId: (authUserId: string) =>
-          Effect.promise(() => repo.existsByAuthUserId(authUserId)),
+          repo.existsByAuthUserId(authUserId),
       }),
     );
     return await Effect.runPromise(program);
@@ -62,55 +59,50 @@ describe("[UNIT] deleteUserUseCase (Effect)", () => {
 
   describe("execute", () => {
     it("should delete user when found", async () => {
-      // Arrange
       const existingUser = createValidUser({ id: "user-to-delete" });
-      await repo.create(existingUser);
+      await Effect.runPromise(repo.create(existingUser));
 
       const input: DeleteUserInput = {
         userId: "user-to-delete",
       };
 
-      // Verify user exists before deletion
-      const beforeDelete = await repo.findById("user-to-delete");
+      const beforeDelete = await Effect.runPromise(
+        repo.findById("user-to-delete"),
+      );
       expect(beforeDelete).not.toBeNull();
 
-      // Act
       const result = await runUseCase(input);
 
-      // Assert
       expect(result.success).toBe(true);
       expect(result.deletedUserId).toBe("user-to-delete");
 
-      // Verify user was actually deleted
-      const afterDelete = await repo.findById("user-to-delete");
+      const afterDelete = await Effect.runPromise(
+        repo.findById("user-to-delete"),
+      );
       expect(afterDelete).toBeNull();
     });
 
     it("should fail when user not found", async () => {
-      // Arrange
       const input: DeleteUserInput = {
         userId: "non-existent-id",
       };
 
-      // Act
       const program = deleteUserUseCase(input).pipe(
         Effect.provideService(UserRepositoryTag, {
-          create: (user: User) => Effect.promise(() => repo.create(user)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          create: (user: User) => repo.create(user),
+          findById: (id: string) => repo.findById(id),
           findByAuthUserId: (authUserId: string) =>
-            Effect.promise(() => repo.findByAuthUserId(authUserId)),
-          findByRole: (role: UserRole) =>
-            Effect.promise(() => repo.findByRole(role)),
+            repo.findByAuthUserId(authUserId),
+          findByRole: (role: UserRole) => repo.findByRole(role),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (user: User) => Effect.promise(() => repo.update(user)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+            repo.findAll(options),
+          update: (user: User) => repo.update(user),
+          delete: (id: string) => repo.delete(id),
           existsByAuthUserId: (authUserId: string) =>
-            Effect.promise(() => repo.existsByAuthUserId(authUserId)),
+            repo.existsByAuthUserId(authUserId),
         }),
       );
 
-      // Act & Assert - use Either to properly check error type
       const either = await Effect.runPromise(Effect.either(program));
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
@@ -119,24 +111,21 @@ describe("[UNIT] deleteUserUseCase (Effect)", () => {
     });
 
     it("should not affect other users when deleting one", async () => {
-      // Arrange
       const user1 = createValidUser({ id: "user-1", authUserId: "auth-1" });
       const user2 = createValidUser({ id: "user-2", authUserId: "auth-2" });
       const user3 = createValidUser({ id: "user-3", authUserId: "auth-3" });
 
-      await repo.create(user1);
-      await repo.create(user2);
-      await repo.create(user3);
+      await Effect.runPromise(repo.create(user1));
+      await Effect.runPromise(repo.create(user2));
+      await Effect.runPromise(repo.create(user3));
 
       const input: DeleteUserInput = {
         userId: "user-2",
       };
 
-      // Act
       await runUseCase(input);
 
-      // Assert
-      const allUsers = await repo.findAll();
+      const allUsers = await Effect.runPromise(repo.findAll());
       expect(allUsers).toHaveLength(2);
       expect(allUsers.find((u) => u.id === "user-1")).not.toBeNull();
       expect(allUsers.find((u) => u.id === "user-2")).toBeUndefined();

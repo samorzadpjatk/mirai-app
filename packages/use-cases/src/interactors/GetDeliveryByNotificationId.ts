@@ -111,7 +111,7 @@ export function getDeliveryByNotificationIdUseCase(
   input: GetDeliveryByNotificationIdInput,
 ): Effect.Effect<
   GetDeliveryByNotificationIdOutput,
-  DeliveryNotFoundError | GetDeliveryError,
+  DeliveryNotFoundError,
   NotificationDeliveryRepositoryTag
 > {
   return Effect.gen(function* () {
@@ -124,13 +124,5 @@ export function getDeliveryByNotificationIdUseCase(
     }
 
     return toOutput(delivery);
-  }).pipe(
-    Effect.catchAll((error) => {
-      // Don't wrap DeliveryNotFoundError in GetDeliveryError
-      if (error instanceof DeliveryNotFoundError) {
-        return Effect.fail(error);
-      }
-      return Effect.fail(new GetDeliveryError(error));
-    }),
-  );
+  });
 }

@@ -39,14 +39,14 @@ describe("[UNIT] getDeliveryStatsUseCase (Effect)", () => {
     const program = getDeliveryStatsUseCase(input).pipe(
       Effect.provideService(NotificationDeliveryRepositoryTag, {
         findMany: (filters, pagination) =>
-          Effect.promise(() => repo.findMany(filters, pagination)),
-        count: (filters) => Effect.promise(() => repo.count(filters)),
+          repo.findMany(filters, pagination),
+        count: (filters) => repo.count(filters),
         findByNotificationId: (notificationId) =>
-          Effect.promise(() => repo.findByNotificationId(notificationId)),
-        getStats: (filters) => Effect.promise(() => repo.getStats(filters)),
+          repo.findByNotificationId(notificationId),
+        getStats: (filters) => repo.getStats(filters),
         findFailed: (tripId, pagination) =>
-          Effect.promise(() => repo.findFailed(tripId, pagination)),
-        countFailed: (tripId) => Effect.promise(() => repo.countFailed(tripId)),
+          repo.findFailed(tripId, pagination),
+        countFailed: (tripId) => repo.countFailed(tripId),
       }),
     );
     return await Effect.runPromise(program);

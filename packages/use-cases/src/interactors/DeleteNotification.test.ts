@@ -29,38 +29,33 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
         status,
       }),
     );
-    return await repo.create(notification);
+    return Effect.runSync(repo.create(notification));
   };
 
   // Helper to run use case with repository
   const runUseCase = async (input: DeleteNotificationInput) => {
     const program = deleteNotificationUseCase(input).pipe(
       Effect.provideService(NotificationRepositoryTag, {
-        create: (notification: Notification) =>
-          Effect.promise(() => repo.create(notification)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByStatus: (status: NotificationStatus) =>
-          Effect.promise(() => repo.findByStatus(status)),
+        create: (notification: Notification) => repo.create(notification),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByStatus: (status: NotificationStatus) => repo.findByStatus(status),
         findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-          Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-        findByPriority: (priority) =>
-          Effect.promise(() => repo.findByPriority(priority)),
-        findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-        findOverdue: () => Effect.promise(() => repo.findOverdue()),
+          repo.findByTripIdAndStatus(tripId, status),
+        findByPriority: (priority) => repo.findByPriority(priority),
+        findReadyToSend: () => repo.findReadyToSend(),
+        findOverdue: () => repo.findOverdue(),
         findByCreatedById: (createdById: string) =>
-          Effect.promise(() => repo.findByCreatedById(createdById)),
+          repo.findByCreatedById(createdById),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          Effect.promise(() => repo.findAll(options)),
-        update: (notification: Notification) =>
-          Effect.promise(() => repo.update(notification)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
+          repo.findAll(options),
+        update: (notification: Notification) => repo.update(notification),
+        delete: (id: string) => repo.delete(id),
+        exists: (id: string) => repo.exists(id),
         countByStatus: (status: NotificationStatus) =>
-          Effect.promise(() => repo.countByStatus(status)),
+          repo.countByStatus(status),
         countPendingByTripId: (tripId: string) =>
-          Effect.promise(() => repo.countPendingByTripId(tripId)),
+          repo.countPendingByTripId(tripId),
       }),
     );
     return await Effect.runPromise(program);
@@ -84,7 +79,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
       expect(result.deletedNotificationId).toBe(notification.id);
 
       // Verify notification was deleted
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored).toBeNull();
     });
 
@@ -104,7 +99,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
       expect(result.success).toBe(true);
 
       // Verify notification was deleted
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored).toBeNull();
     });
 
@@ -116,31 +111,27 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
       // Act
       const program = deleteNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findByPriority: (priority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByTripIdAndStatus(tripId, status),
+          findByPriority: (priority) => repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -159,7 +150,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
         NotificationStatus.READY,
       );
       notification = await Effect.runPromise(notification.markAsSent());
-      await repo.update(notification);
+      Effect.runSync(repo.update(notification));
 
       const input: DeleteNotificationInput = {
         notificationId: notification.id,
@@ -168,31 +159,27 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
       // Act
       const program = deleteNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) =>
-            Effect.promise(() => repo.create(notification)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
+          create: (notification: Notification) => repo.create(notification),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.findByStatus(status)),
+            repo.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            Effect.promise(() => repo.findByTripIdAndStatus(tripId, status)),
-          findByPriority: (priority) =>
-            Effect.promise(() => repo.findByPriority(priority)),
-          findReadyToSend: () => Effect.promise(() => repo.findReadyToSend()),
-          findOverdue: () => Effect.promise(() => repo.findOverdue()),
+            repo.findByTripIdAndStatus(tripId, status),
+          findByPriority: (priority) => repo.findByPriority(priority),
+          findReadyToSend: () => repo.findReadyToSend(),
+          findOverdue: () => repo.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            Effect.promise(() => repo.findByCreatedById(createdById)),
+            repo.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => repo.findAll(options)),
-          update: (notification: Notification) =>
-            Effect.promise(() => repo.update(notification)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          exists: (id: string) => Effect.promise(() => repo.exists(id)),
+            repo.findAll(options),
+          update: (notification: Notification) => repo.update(notification),
+          delete: (id: string) => repo.delete(id),
+          exists: (id: string) => repo.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            Effect.promise(() => repo.countByStatus(status)),
+            repo.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            Effect.promise(() => repo.countPendingByTripId(tripId)),
+            repo.countPendingByTripId(tripId),
         }),
       );
 
@@ -205,7 +192,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
       }
 
       // Verify notification was not deleted
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored).not.toBeNull();
     });
 
@@ -217,7 +204,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
       notification = await Effect.runPromise(
         notification.markAsFailed("Test failure"),
       );
-      await repo.update(notification);
+      Effect.runSync(repo.update(notification));
 
       const input: DeleteNotificationInput = {
         notificationId: notification.id,
@@ -230,7 +217,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
       expect(result.success).toBe(true);
 
       // Verify notification was deleted
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored).toBeNull();
     });
 
@@ -240,7 +227,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
         NotificationStatus.DRAFT,
       );
       notification = await Effect.runPromise(notification.cancel());
-      await repo.update(notification);
+      Effect.runSync(repo.update(notification));
 
       const input: DeleteNotificationInput = {
         notificationId: notification.id,
@@ -253,7 +240,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
       expect(result.success).toBe(true);
 
       // Verify notification was deleted
-      const stored = await repo.findById(notification.id);
+      const stored = Effect.runSync(repo.findById(notification.id));
       expect(stored).toBeNull();
     });
   });

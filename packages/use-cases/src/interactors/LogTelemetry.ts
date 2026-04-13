@@ -58,7 +58,7 @@ export interface LogTelemetryOutput {
  */
 export class LogTelemetryError extends Error {
   readonly _tag = "LogTelemetryError";
-  constructor(public readonly cause: unknown) {
+  constructor(public override readonly cause: unknown) {
     super("Failed to log telemetry");
   }
 }

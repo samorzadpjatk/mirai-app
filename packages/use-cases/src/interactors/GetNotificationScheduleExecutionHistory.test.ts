@@ -7,7 +7,10 @@ import {
 } from "./GetNotificationScheduleExecutionHistory";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
-import type { NotificationSchedule } from "@mirai-app/domain";
+import type {
+  NotificationSchedule,
+  NotificationScheduleExecutionRecord,
+} from "@mirai-app/domain";
 
 describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () => {
   let repo: InMemoryNotificationScheduleRepository;
@@ -16,7 +19,6 @@ describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () =>
     repo = new InMemoryNotificationScheduleRepository();
   });
 
-  // Helper to create mock notification schedule
   const createMockSchedule = (id: string): NotificationSchedule =>
     ({
       id,
@@ -41,44 +43,90 @@ describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () =>
       getFormattedTime: () => "09:00",
     }) as NotificationSchedule;
 
-  // Helper to run use case with repository
+  const createMockHistory = (
+    overrides?: Partial<NotificationScheduleExecutionRecord>[],
+  ): NotificationScheduleExecutionRecord[] =>
+    overrides?.map((o, i) => ({
+      id: o?.id ?? `exec-${i + 1}`,
+      executedAt: o?.executedAt ?? new Date(`2024-01-0${i + 1}T09:00:00Z`),
+      notification: o?.notification ?? {
+        id: `notif-${i + 1}`,
+        title: `Test ${i + 1}`,
+        body: `Body ${i + 1}`,
+        createdAt: new Date(`2024-01-0${i + 1}T09:00:00Z`),
+      },
+    })) ?? [];
+
   const runUseCase = async (
     input: GetNotificationScheduleExecutionHistoryInput,
+    mockHistory?: NotificationScheduleExecutionRecord[],
+  ) => {
+    const history = mockHistory ?? createMockHistory();
+    const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
+      Effect.provideService(NotificationScheduleRepositoryTag, {
+        exists: (id: string) => repo.exists(id),
+        getExecutionHistory: (scheduleId: string, limit: number) =>
+          Effect.succeed(history),
+        create: (schedule: NotificationSchedule) => repo.create(schedule),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByName: (name: string) => repo.findByName(name),
+        findByTripIdAndName: (tripId: string, name: string) =>
+          repo.findByTripIdAndName(tripId, name),
+        findByType: (type: string) => repo.findByType(type as any),
+        findAll: (options?: any) => repo.findAll(options),
+        findActive: (now?: Date) => repo.findActive(now),
+        findUpcoming: (days?: number, now?: Date) =>
+          repo.findUpcoming(days, now),
+        update: (schedule: NotificationSchedule) => repo.update(schedule),
+        delete: (id: string) => repo.delete(id),
+        deleteMany: (ids: string[]) => repo.deleteMany(ids),
+        count: (filter?: any) => repo.count(filter),
+        updateLastRun: (id: string, lastRun: Date) =>
+          repo.updateLastRun(id, lastRun),
+        toggleActive: (id: string) => repo.toggleActive(id),
+        bulkToggleActive: (ids: string[], isActive: boolean) =>
+          repo.bulkToggleActive(ids, isActive),
+        countExecutions: (scheduleId: string) =>
+          repo.countExecutions(scheduleId),
+      }),
+    );
+    return await Effect.runPromise(program);
+  };
+
+  const runUseCaseWithLimitCapture = async (
+    input: GetNotificationScheduleExecutionHistoryInput,
+    captureLimit: (limit: number) => void,
   ) => {
     const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
       Effect.provideService(NotificationScheduleRepositoryTag, {
-        exists: (id: string) => Effect.promise(() => repo.exists(id)),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
-        create: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.create(schedule)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
-        findByTripId: (tripId: string) =>
-          Effect.promise(() => repo.findByTripId(tripId)),
-        findByName: (name: string) =>
-          Effect.promise(() => repo.findByName(name)),
+        exists: (id: string) => repo.exists(id),
+        getExecutionHistory: (scheduleId: string, limit: number) => {
+          captureLimit(limit);
+          return Effect.succeed([]);
+        },
+        create: (schedule: NotificationSchedule) => repo.create(schedule),
+        findById: (id: string) => repo.findById(id),
+        findByTripId: (tripId: string) => repo.findByTripId(tripId),
+        findByName: (name: string) => repo.findByName(name),
         findByTripIdAndName: (tripId: string, name: string) =>
-          Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
-        findByType: (type: string) =>
-          Effect.promise(() => repo.findByType(type as any)),
-        findAll: (options?: any) => Effect.promise(() => repo.findAll(options)),
-        findActive: (now?: Date) => Effect.promise(() => repo.findActive(now)),
+          repo.findByTripIdAndName(tripId, name),
+        findByType: (type: string) => repo.findByType(type as any),
+        findAll: (options?: any) => repo.findAll(options),
+        findActive: (now?: Date) => repo.findActive(now),
         findUpcoming: (days?: number, now?: Date) =>
-          Effect.promise(() => repo.findUpcoming(days, now)),
-        update: (schedule: NotificationSchedule) =>
-          Effect.promise(() => repo.update(schedule)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
-        deleteMany: (ids: string[]) =>
-          Effect.promise(() => repo.deleteMany(ids)),
-        count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+          repo.findUpcoming(days, now),
+        update: (schedule: NotificationSchedule) => repo.update(schedule),
+        delete: (id: string) => repo.delete(id),
+        deleteMany: (ids: string[]) => repo.deleteMany(ids),
+        count: (filter?: any) => repo.count(filter),
         updateLastRun: (id: string, lastRun: Date) =>
-          Effect.promise(() => repo.updateLastRun(id, lastRun)),
-        toggleActive: (id: string) =>
-          Effect.promise(() => repo.toggleActive(id)),
+          repo.updateLastRun(id, lastRun),
+        toggleActive: (id: string) => repo.toggleActive(id),
         bulkToggleActive: (ids: string[], isActive: boolean) =>
-          Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+          repo.bulkToggleActive(ids, isActive),
         countExecutions: (scheduleId: string) =>
-          Effect.promise(() => repo.countExecutions(scheduleId)),
+          repo.countExecutions(scheduleId),
       }),
     );
     return await Effect.runPromise(program);
@@ -86,42 +134,35 @@ describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () =>
 
   describe("execute", () => {
     it("should return execution history for schedule", async () => {
-      // Create schedule first
       const schedule = createMockSchedule("schedule-123");
-      await repo.create(schedule);
+      await Effect.runPromise(repo.create(schedule));
 
-      // Add execution history manually to repo
-      const executionHistory = [
+      const executionHistory = createMockHistory([
         {
           id: "exec-1",
-          executedAt: new Date("2024-01-01T09:00:00"),
           notification: {
             id: "notif-1",
             title: "Test 1",
             body: "Body 1",
-            createdAt: new Date("2024-01-01T09:00:00"),
+            createdAt: new Date(),
           },
         },
         {
           id: "exec-2",
-          executedAt: new Date("2024-01-02T09:00:00"),
           notification: {
             id: "notif-2",
             title: "Test 2",
             body: "Body 2",
-            createdAt: new Date("2024-01-02T09:00:00"),
+            createdAt: new Date(),
           },
         },
-      ];
-
-      // Mock the getExecutionHistory method
-      repo.getExecutionHistory = async () => executionHistory;
+      ]);
 
       const input: GetNotificationScheduleExecutionHistoryInput = {
         scheduleId: "schedule-123",
       };
 
-      const result = await runUseCase(input);
+      const result = await runUseCase(input, executionHistory);
 
       expect(result.executions).toHaveLength(2);
       expect(result.executions[0].id).toBe("exec-1");
@@ -139,38 +180,29 @@ describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () =>
         Effect.provideService(NotificationScheduleRepositoryTag, {
           exists: () => Effect.succeed(false),
           getExecutionHistory: (scheduleId: string, limit: number) =>
-            Effect.promise(() => repo.getExecutionHistory(scheduleId, limit)),
-          create: (schedule: NotificationSchedule) =>
-            Effect.promise(() => repo.create(schedule)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
-          findByTripId: (tripId: string) =>
-            Effect.promise(() => repo.findByTripId(tripId)),
-          findByName: (name: string) =>
-            Effect.promise(() => repo.findByName(name)),
+            Effect.succeed([]),
+          create: (schedule: NotificationSchedule) => repo.create(schedule),
+          findById: (id: string) => repo.findById(id),
+          findByTripId: (tripId: string) => repo.findByTripId(tripId),
+          findByName: (name: string) => repo.findByName(name),
           findByTripIdAndName: (tripId: string, name: string) =>
-            Effect.promise(() => repo.findByTripIdAndName(tripId, name)),
-          findByType: (type: string) =>
-            Effect.promise(() => repo.findByType(type as any)),
-          findAll: (options?: any) =>
-            Effect.promise(() => repo.findAll(options)),
-          findActive: (now?: Date) =>
-            Effect.promise(() => repo.findActive(now)),
+            repo.findByTripIdAndName(tripId, name),
+          findByType: (type: string) => repo.findByType(type as any),
+          findAll: (options?: any) => repo.findAll(options),
+          findActive: (now?: Date) => repo.findActive(now),
           findUpcoming: (days?: number, now?: Date) =>
-            Effect.promise(() => repo.findUpcoming(days, now)),
-          update: (schedule: NotificationSchedule) =>
-            Effect.promise(() => repo.update(schedule)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
-          deleteMany: (ids: string[]) =>
-            Effect.promise(() => repo.deleteMany(ids)),
-          count: (filter?: any) => Effect.promise(() => repo.count(filter)),
+            repo.findUpcoming(days, now),
+          update: (schedule: NotificationSchedule) => repo.update(schedule),
+          delete: (id: string) => repo.delete(id),
+          deleteMany: (ids: string[]) => repo.deleteMany(ids),
+          count: (filter?: any) => repo.count(filter),
           updateLastRun: (id: string, lastRun: Date) =>
-            Effect.promise(() => repo.updateLastRun(id, lastRun)),
-          toggleActive: (id: string) =>
-            Effect.promise(() => repo.toggleActive(id)),
+            repo.updateLastRun(id, lastRun),
+          toggleActive: (id: string) => repo.toggleActive(id),
           bulkToggleActive: (ids: string[], isActive: boolean) =>
-            Effect.promise(() => repo.bulkToggleActive(ids, isActive)),
+            repo.bulkToggleActive(ids, isActive),
           countExecutions: (scheduleId: string) =>
-            Effect.promise(() => repo.countExecutions(scheduleId)),
+            repo.countExecutions(scheduleId),
         }),
       );
 
@@ -183,84 +215,71 @@ describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () =>
 
     it("should use default limit of 20", async () => {
       const schedule = createMockSchedule("schedule-123");
-      await repo.create(schedule);
+      await Effect.runPromise(repo.create(schedule));
 
-      // Mock to capture the limit parameter
       let capturedLimit: number | undefined;
-      repo.getExecutionHistory = async (_scheduleId: string, limit: number) => {
-        capturedLimit = limit;
-        return [];
-      };
-
       const input: GetNotificationScheduleExecutionHistoryInput = {
         scheduleId: "schedule-123",
       };
 
-      await runUseCase(input);
+      await runUseCaseWithLimitCapture(input, (limit) => {
+        capturedLimit = limit;
+      });
 
       expect(capturedLimit).toBe(20);
     });
 
     it("should use custom limit when provided", async () => {
       const schedule = createMockSchedule("schedule-123");
-      await repo.create(schedule);
+      await Effect.runPromise(repo.create(schedule));
 
-      // Mock to capture the limit parameter
       let capturedLimit: number | undefined;
-      repo.getExecutionHistory = async (_scheduleId: string, limit: number) => {
-        capturedLimit = limit;
-        return [];
-      };
-
       const input: GetNotificationScheduleExecutionHistoryInput = {
         scheduleId: "schedule-123",
         limit: 50,
       };
 
-      await runUseCase(input);
+      await runUseCaseWithLimitCapture(input, (limit) => {
+        capturedLimit = limit;
+      });
 
       expect(capturedLimit).toBe(50);
     });
 
     it("should handle empty execution history", async () => {
       const schedule = createMockSchedule("schedule-123");
-      await repo.create(schedule);
-
-      repo.getExecutionHistory = async () => [];
+      await Effect.runPromise(repo.create(schedule));
 
       const input: GetNotificationScheduleExecutionHistoryInput = {
         scheduleId: "schedule-123",
       };
 
-      const result = await runUseCase(input);
+      const result = await runUseCase(input, []);
 
       expect(result.executions).toEqual([]);
     });
 
     it("should return execution with notification details", async () => {
       const schedule = createMockSchedule("schedule-123");
-      await repo.create(schedule);
+      await Effect.runPromise(repo.create(schedule));
 
-      const executionHistory = [
+      const executionHistory = createMockHistory([
         {
           id: "exec-1",
-          executedAt: new Date("2024-01-01T09:00:00"),
           notification: {
             id: "notif-1",
             title: "Test 1",
             body: "Body 1",
-            createdAt: new Date("2024-01-01T09:00:00"),
+            createdAt: new Date(),
           },
         },
-      ];
-
-      repo.getExecutionHistory = async () => executionHistory;
+      ]);
 
       const input: GetNotificationScheduleExecutionHistoryInput = {
         scheduleId: "schedule-123",
       };
 
-      const result = await runUseCase(input);
+      const result = await runUseCase(input, executionHistory);
 
       const execution = result.executions[0];
       expect(execution.id).toBe("exec-1");

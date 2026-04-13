@@ -2,6 +2,7 @@ import {
   ChallengeSubmission,
   SubmissionId,
   ValidationError,
+  StateTransitionError,
 } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
@@ -149,8 +150,8 @@ export function updateSubmissionUseCase(
           })
           .pipe(
             Effect.mapError(
-              (validationError: ValidationError) =>
-                new SubmissionUpdateValidationError(validationError.message),
+              (error: ValidationError | StateTransitionError) =>
+                new SubmissionUpdateValidationError(error.message),
             ),
           );
         updatedSubmission = approved;
@@ -162,8 +163,8 @@ export function updateSubmissionUseCase(
           })
           .pipe(
             Effect.mapError(
-              (validationError: ValidationError) =>
-                new SubmissionUpdateValidationError(validationError.message),
+              (error: ValidationError | StateTransitionError) =>
+                new SubmissionUpdateValidationError(error.message),
             ),
           );
         updatedSubmission = rejected;
@@ -184,8 +185,8 @@ export function updateSubmissionUseCase(
         })
         .pipe(
           Effect.mapError(
-            (validationError: ValidationError) =>
-              new SubmissionUpdateValidationError(validationError.message),
+            (error: ValidationError | StateTransitionError) =>
+              new SubmissionUpdateValidationError(error.message),
           ),
         );
       updatedSubmission = updated;

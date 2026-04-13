@@ -68,7 +68,7 @@ export function getMostActiveAdminStatsUseCase(
       .getMostActiveAdmin(input.tripId)
       .pipe(
         Effect.mapError(
-          (error) =>
+          (error: unknown) =>
             new CoinTransactionRepositoryError(
               `Failed to get most active admin stats: ${error instanceof Error ? error.message : String(error)}`,
             ),

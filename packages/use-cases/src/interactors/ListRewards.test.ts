@@ -52,24 +52,20 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
   ) => {
     const program = listRewardsUseCase(input).pipe(
       Effect.provideService(RewardRepositoryTag, {
-        create: (reward: Reward) =>
-          Effect.promise(() => rewardRepo.create(reward)),
-        findById: (id: string) => Effect.promise(() => rewardRepo.findById(id)),
+        create: (reward: Reward) => rewardRepo.create(reward),
+        findById: (id: string) => rewardRepo.findById(id),
         findByTripId: (tripId: string, options?) =>
-          Effect.promise(() => rewardRepo.findByTripId(tripId, options)),
+          rewardRepo.findByTripId(tripId, options),
         findVisibleByTripId: (tripId: string, options?) =>
-          Effect.promise(() => rewardRepo.findVisibleByTripId(tripId, options)),
-        update: (reward: Reward) =>
-          Effect.promise(() => rewardRepo.update(reward)),
-        delete: (id: string) => Effect.promise(() => rewardRepo.delete(id)),
-        hasPurchases: (id: string) =>
-          Effect.promise(() => rewardRepo.hasPurchases(id)),
-        getPurchaseCount: (id: string) =>
-          Effect.promise(() => rewardRepo.getPurchaseCount(id)),
+          rewardRepo.findVisibleByTripId(tripId, options),
+        update: (reward: Reward) => rewardRepo.update(reward),
+        delete: (id: string) => rewardRepo.delete(id),
+        hasPurchases: (id: string) => rewardRepo.hasPurchases(id),
+        getPurchaseCount: (id: string) => rewardRepo.getPurchaseCount(id),
         decrementQuantity: (id: string, amount: number) =>
-          Effect.promise(() => rewardRepo.decrementQuantity(id, amount)),
+          rewardRepo.decrementQuantity(id, amount),
         incrementQuantity: (id: string, amount: number) =>
-          Effect.promise(() => rewardRepo.incrementQuantity(id, amount)),
+          rewardRepo.incrementQuantity(id, amount),
       }),
       Effect.provideService(TripPointsCalculatorTag, {
         calculateTotalAvailablePoints: () => Effect.succeed(totalPoints),
@@ -87,8 +83,8 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
       // Arrange
       const reward1 = createValidReward({ id: "reward-1", name: "Reward 1" });
       const reward2 = createValidReward({ id: "reward-2", name: "Reward 2" });
-      await rewardRepo.create(reward1);
-      await rewardRepo.create(reward2);
+      Effect.runSync(rewardRepo.create(reward1));
+      Effect.runSync(rewardRepo.create(reward2));
 
       const input: ListRewardsInput = {
         tripId: "trip-123",
@@ -114,8 +110,8 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
         name: "Hidden Reward",
         isHidden: true,
       });
-      await rewardRepo.create(visibleReward);
-      await rewardRepo.create(hiddenReward);
+      Effect.runSync(rewardRepo.create(visibleReward));
+      Effect.runSync(rewardRepo.create(hiddenReward));
 
       const input: ListRewardsInput = {
         tripId: "trip-123",
@@ -141,8 +137,8 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
         name: "Hidden Reward",
         isHidden: true,
       });
-      await rewardRepo.create(visibleReward);
-      await rewardRepo.create(hiddenReward);
+      Effect.runSync(rewardRepo.create(visibleReward));
+      Effect.runSync(rewardRepo.create(hiddenReward));
 
       const input: ListRewardsInput = {
         tripId: "trip-123",
@@ -159,7 +155,7 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
     it("should calculate dynamic coin costs", async () => {
       // Arrange
       const reward = createValidReward({ id: "reward-1", name: "Reward 1" });
-      await rewardRepo.create(reward);
+      Effect.runSync(rewardRepo.create(reward));
 
       const input: ListRewardsInput = {
         tripId: "trip-123",
@@ -178,7 +174,7 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
     it("should calculate affordability when groupCoins provided", async () => {
       // Arrange
       const reward = createValidReward({ id: "reward-1", name: "Reward 1" });
-      await rewardRepo.create(reward);
+      Effect.runSync(rewardRepo.create(reward));
 
       const input: ListRewardsInput = {
         tripId: "trip-123",
@@ -201,7 +197,7 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
         name: "Reward 1",
         availableQuantity: 5,
       });
-      await rewardRepo.create(reward);
+      Effect.runSync(rewardRepo.create(reward));
 
       // With totalPoints=10000 and coinCostPercentage=10, dynamicCost=1000
       // Group has only 50 coins, so cannot afford
@@ -224,7 +220,7 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
           id: `reward-${i}`,
           name: `Reward ${i}`,
         });
-        await rewardRepo.create(reward);
+        Effect.runSync(rewardRepo.create(reward));
       }
 
       const input: ListRewardsInput = {
@@ -259,7 +255,7 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
     it("should include calculated fields in output", async () => {
       // Arrange
       const reward = createValidReward({ id: "reward-1", name: "Reward 1" });
-      await rewardRepo.create(reward);
+      Effect.runSync(rewardRepo.create(reward));
 
       const input: ListRewardsInput = {
         tripId: "trip-123",

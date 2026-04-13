@@ -13,52 +13,40 @@ import { InMemoryCoinTransactionRepository } from "@mirai-app/adapters/gateways/
 describe("[UNIT] addCoinsUseCase (Effect)", () => {
   let repo: InMemoryCoinTransactionRepository;
 
-  // Helper to create a service wrapper from the in-memory repo
-  const createRepoService = (repo: InMemoryCoinTransactionRepository) => ({
-    count: (filters?: any) => Effect.promise(() => repo.count(filters)),
-    sumAmount: (filters?: any) => Effect.promise(() => repo.sumAmount(filters)),
-    sumAddedCoins: (tripId: string) =>
-      Effect.promise(() => repo.sumAddedCoins(tripId)),
-    sumRemovedCoins: (tripId: string) =>
-      Effect.promise(() => repo.sumRemovedCoins(tripId)),
-    getMostActiveAdmin: (tripId: string) =>
-      Effect.promise(() => repo.getMostActiveAdmin(tripId)),
-    findMany: (filters: any, pagination: any) =>
-      Effect.promise(() => repo.findMany(filters, pagination)),
-    findRecent: (filters: any, limit: number) =>
-      Effect.promise(() => repo.findRecent(filters, limit)),
-    getTotalCoinsByGroup: (tripId: string) =>
-      Effect.promise(() => repo.getTotalCoinsByGroup(tripId)),
-    groupByAdmin: (tripId: string, limit: number) =>
-      Effect.promise(() => repo.groupByAdmin(tripId, limit)),
-    create: (data: any) => Effect.promise(() => repo.create(data)),
-    incrementGroupCoins: (groupId: string, amount: number) =>
-      Effect.promise(() => repo.incrementGroupCoins(groupId, amount)),
-    decrementGroupCoins: (groupId: string, amount: number) =>
-      Effect.promise(() => repo.decrementGroupCoins(groupId, amount)),
-    getGroupCoins: (groupId: string) =>
-      Effect.promise(() => repo.getGroupCoins(groupId)),
-    verifyGroupInTrip: (groupId: string, tripId: string) =>
-      Effect.promise(() => repo.verifyGroupInTrip(groupId, tripId)),
-  });
-
   beforeEach(() => {
     repo = new InMemoryCoinTransactionRepository();
   });
 
-  // Helper to run use case with repository
   const runUseCase = async (input: AddCoinsInput) => {
     const program = addCoinsUseCase(input).pipe(
-      Effect.provideService(
-        CoinTransactionRepositoryTag,
-        createRepoService(repo),
-      ),
+      Effect.provideService(CoinTransactionRepositoryTag, {
+        count: (filters?: any) => repo.count(filters),
+        sumAmount: (filters?: any) => repo.sumAmount(filters),
+        sumAddedCoins: (tripId: string) => repo.sumAddedCoins(tripId),
+        sumRemovedCoins: (tripId: string) => repo.sumRemovedCoins(tripId),
+        getMostActiveAdmin: (tripId: string) => repo.getMostActiveAdmin(tripId),
+        findMany: (filters: any, pagination: any) =>
+          repo.findMany(filters, pagination),
+        findRecent: (filters: any, limit: number) =>
+          repo.findRecent(filters, limit),
+        getTotalCoinsByGroup: (tripId: string) =>
+          repo.getTotalCoinsByGroup(tripId),
+        groupByAdmin: (tripId: string, limit: number) =>
+          repo.groupByAdmin(tripId, limit),
+        create: (data: any) => repo.create(data),
+        incrementGroupCoins: (groupId: string, amount: number) =>
+          repo.incrementGroupCoins(groupId, amount),
+        decrementGroupCoins: (groupId: string, amount: number) =>
+          repo.decrementGroupCoins(groupId, amount),
+        getGroupCoins: (groupId: string) => repo.getGroupCoins(groupId),
+        verifyGroupInTrip: (groupId: string, tripId: string) =>
+          repo.verifyGroupInTrip(groupId, tripId),
+      }),
     );
     return await Effect.runPromise(program);
   };
 
   it("should add coins successfully", async () => {
-    // Arrange - seed group coins for the verification to pass
     repo.seedGroupCoins("group-1", 0);
 
     const input = {
@@ -69,20 +57,16 @@ describe("[UNIT] addCoinsUseCase (Effect)", () => {
       adminId: "admin-1",
     };
 
-    // Act
     const result = await runUseCase(input);
 
-    // Assert
     expect(result.transaction.amount).toBe(100);
     expect(result.transaction.groupId).toBe("group-1");
 
-    // Verify group coins were incremented
-    const groupCoins = await repo.getGroupCoins("group-1");
+    const groupCoins = await Effect.runPromise(repo.getGroupCoins("group-1"));
     expect(groupCoins).toBe(100);
   });
 
   it("should work without reason", async () => {
-    // Arrange
     repo.seedGroupCoins("group-1", 50);
 
     const input = {
@@ -92,21 +76,42 @@ describe("[UNIT] addCoinsUseCase (Effect)", () => {
       adminId: "admin-1",
     };
 
-    // Act
     const result = await runUseCase(input);
 
-    // Assert
     expect(result.transaction.reason).toBeNull();
     expect(result.transaction.amount).toBe(50);
 
-    // Verify group coins were incremented
-    const groupCoins = await repo.getGroupCoins("group-1");
+    const groupCoins = await Effect.runPromise(repo.getGroupCoins("group-1"));
     expect(groupCoins).toBe(100);
   });
 
   it("should fail when group not found", async () => {
-    // Override verifyGroupInTrip to return not found
-    repo.verifyGroupInTrip = async () => ({ exists: false });
+    const mockRepo = {
+      count: (filters?: any) => Effect.succeed(0),
+      sumAmount: (filters?: any) => Effect.succeed(null),
+      sumAddedCoins: (tripId: string) => Effect.succeed(null),
+      sumRemovedCoins: (tripId: string) => Effect.succeed(null),
+      getMostActiveAdmin: (tripId: string) => Effect.succeed([]),
+      findMany: (filters: any, pagination: any) => Effect.succeed([]),
+      findRecent: (filters: any, limit: number) => Effect.succeed([]),
+      getTotalCoinsByGroup: (tripId: string) => Effect.succeed([]),
+      groupByAdmin: (tripId: string, limit: number) => Effect.succeed([]),
+      create: (data: any) =>
+        Effect.succeed({
+          id: "tx-1",
+          groupId: data.groupId,
+          amount: data.amount,
+          reason: data.reason ?? null,
+          adminId: data.adminId,
+          createdAt: new Date(),
+        }),
+      incrementGroupCoins: (groupId: string, amount: number) =>
+        Effect.succeed(undefined),
+      decrementGroupCoins: (groupId: string, amount: number) =>
+        Effect.succeed({ success: true, currentBalance: 400 }),
+      getGroupCoins: (groupId: string) => Effect.succeed(500),
+      verifyGroupInTrip: () => Effect.succeed({ exists: false }),
+    };
 
     const input = {
       tripId: "trip-1",
@@ -116,10 +121,7 @@ describe("[UNIT] addCoinsUseCase (Effect)", () => {
     };
 
     const program = addCoinsUseCase(input).pipe(
-      Effect.provideService(
-        CoinTransactionRepositoryTag,
-        createRepoService(repo),
-      ),
+      Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
     );
 
     const either = await Effect.runPromise(Effect.either(program));
@@ -130,12 +132,37 @@ describe("[UNIT] addCoinsUseCase (Effect)", () => {
   });
 
   it("should fail when group is deleted", async () => {
-    // Override verifyGroupInTrip to return deleted
-    repo.verifyGroupInTrip = async () => ({
-      exists: true,
-      tripId: "trip-1",
-      isDeleted: true,
-    });
+    const mockRepo = {
+      count: (filters?: any) => Effect.succeed(0),
+      sumAmount: (filters?: any) => Effect.succeed(null),
+      sumAddedCoins: (tripId: string) => Effect.succeed(null),
+      sumRemovedCoins: (tripId: string) => Effect.succeed(null),
+      getMostActiveAdmin: (tripId: string) => Effect.succeed([]),
+      findMany: (filters: any, pagination: any) => Effect.succeed([]),
+      findRecent: (filters: any, limit: number) => Effect.succeed([]),
+      getTotalCoinsByGroup: (tripId: string) => Effect.succeed([]),
+      groupByAdmin: (tripId: string, limit: number) => Effect.succeed([]),
+      create: (data: any) =>
+        Effect.succeed({
+          id: "tx-1",
+          groupId: data.groupId,
+          amount: data.amount,
+          reason: data.reason ?? null,
+          adminId: data.adminId,
+          createdAt: new Date(),
+        }),
+      incrementGroupCoins: (groupId: string, amount: number) =>
+        Effect.succeed(undefined),
+      decrementGroupCoins: (groupId: string, amount: number) =>
+        Effect.succeed({ success: true, currentBalance: 400 }),
+      getGroupCoins: (groupId: string) => Effect.succeed(500),
+      verifyGroupInTrip: () =>
+        Effect.succeed({
+          exists: true,
+          tripId: "trip-1",
+          isDeleted: true,
+        }),
+    };
 
     const input = {
       tripId: "trip-1",
@@ -145,10 +172,7 @@ describe("[UNIT] addCoinsUseCase (Effect)", () => {
     };
 
     const program = addCoinsUseCase(input).pipe(
-      Effect.provideService(
-        CoinTransactionRepositoryTag,
-        createRepoService(repo),
-      ),
+      Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
     );
 
     const either = await Effect.runPromise(Effect.either(program));
@@ -159,12 +183,37 @@ describe("[UNIT] addCoinsUseCase (Effect)", () => {
   });
 
   it("should fail when group not in trip", async () => {
-    // Override verifyGroupInTrip to return wrong trip
-    repo.verifyGroupInTrip = async () => ({
-      exists: true,
-      tripId: "wrong-trip",
-      isDeleted: false,
-    });
+    const mockRepo = {
+      count: (filters?: any) => Effect.succeed(0),
+      sumAmount: (filters?: any) => Effect.succeed(null),
+      sumAddedCoins: (tripId: string) => Effect.succeed(null),
+      sumRemovedCoins: (tripId: string) => Effect.succeed(null),
+      getMostActiveAdmin: (tripId: string) => Effect.succeed([]),
+      findMany: (filters: any, pagination: any) => Effect.succeed([]),
+      findRecent: (filters: any, limit: number) => Effect.succeed([]),
+      getTotalCoinsByGroup: (tripId: string) => Effect.succeed([]),
+      groupByAdmin: (tripId: string, limit: number) => Effect.succeed([]),
+      create: (data: any) =>
+        Effect.succeed({
+          id: "tx-1",
+          groupId: data.groupId,
+          amount: data.amount,
+          reason: data.reason ?? null,
+          adminId: data.adminId,
+          createdAt: new Date(),
+        }),
+      incrementGroupCoins: (groupId: string, amount: number) =>
+        Effect.succeed(undefined),
+      decrementGroupCoins: (groupId: string, amount: number) =>
+        Effect.succeed({ success: true, currentBalance: 400 }),
+      getGroupCoins: (groupId: string) => Effect.succeed(500),
+      verifyGroupInTrip: () =>
+        Effect.succeed({
+          exists: true,
+          tripId: "wrong-trip",
+          isDeleted: false,
+        }),
+    };
 
     const input = {
       tripId: "trip-1",
@@ -174,10 +223,7 @@ describe("[UNIT] addCoinsUseCase (Effect)", () => {
     };
 
     const program = addCoinsUseCase(input).pipe(
-      Effect.provideService(
-        CoinTransactionRepositoryTag,
-        createRepoService(repo),
-      ),
+      Effect.provideService(CoinTransactionRepositoryTag, mockRepo),
     );
 
     const either = await Effect.runPromise(Effect.either(program));

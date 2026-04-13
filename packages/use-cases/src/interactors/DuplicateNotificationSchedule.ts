@@ -104,21 +104,22 @@ export function duplicateNotificationScheduleUseCase(
     }
 
     // Create duplicate using domain method
-    const duplicateResult = original.duplicate({
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.startDate !== undefined && { startDate: input.startDate }),
-      ...(input.endDate !== undefined && { endDate: input.endDate }),
-      newCreatedById: input.newCreatedById,
-    });
-
-    if (duplicateResult.kind === "err") {
-      return yield* Effect.fail(
-        new DuplicateScheduleError(String(duplicateResult.error)),
+    const duplicateResult = yield* original
+      .duplicate({
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.startDate !== undefined && { startDate: input.startDate }),
+        ...(input.endDate !== undefined && { endDate: input.endDate }),
+        newCreatedById: input.newCreatedById,
+      })
+      .pipe(
+        Effect.mapError(
+          (validationError) =>
+            new DuplicateScheduleError(validationError.message),
+        ),
       );
-    }
 
     // Save to repository
-    const saved = yield* repo.create(duplicateResult.value);
+    const saved = yield* repo.create(duplicateResult);
 
     return {
       schedule: toOutput(saved),

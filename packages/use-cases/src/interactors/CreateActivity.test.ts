@@ -5,7 +5,7 @@ import {
   ActivityCreationError,
   ActivityRepositoryError,
 } from "./CreateActivity";
-import { ActivityFeed } from "@mirai-app/domain";
+import { ActivityFeed, ActivityReaction } from "@mirai-app/domain";
 import { ActivityFeedRepositoryTag } from "../ports/ActivityFeedRepository";
 import { Effect, Either } from "effect";
 
@@ -81,7 +81,7 @@ const createInMemoryRepository = () => {
       Effect.promise(async () => []),
     findUserReactions: (activityId: string, userId: string) =>
       Effect.promise(async () => []),
-    addReaction: (reaction: unknown) => Effect.promise(async () => reaction),
+    addReaction: (reaction: ActivityReaction) => Effect.succeed(reaction),
     removeReaction: (
       activityId: string,
       userId: string,

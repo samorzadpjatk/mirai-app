@@ -52,15 +52,13 @@ describe("[UNIT] getDeliveryByNotificationIdUseCase (Effect)", () => {
   const runUseCase = async (input: GetDeliveryByNotificationIdInput) => {
     const program = getDeliveryByNotificationIdUseCase(input).pipe(
       Effect.provideService(NotificationDeliveryRepositoryTag, {
-        findMany: (filters, pagination) =>
-          Effect.promise(() => repo.findMany(filters, pagination)),
-        count: (filters) => Effect.promise(() => repo.count(filters)),
+        findMany: (filters, pagination) => repo.findMany(filters, pagination),
+        count: (filters) => repo.count(filters),
         findByNotificationId: (notificationId) =>
-          Effect.promise(() => repo.findByNotificationId(notificationId)),
-        getStats: (filters) => Effect.promise(() => repo.getStats(filters)),
-        findFailed: (tripId, pagination) =>
-          Effect.promise(() => repo.findFailed(tripId, pagination)),
-        countFailed: (tripId) => Effect.promise(() => repo.countFailed(tripId)),
+          repo.findByNotificationId(notificationId),
+        getStats: (filters) => repo.getStats(filters),
+        findFailed: (tripId, pagination) => repo.findFailed(tripId, pagination),
+        countFailed: (tripId) => repo.countFailed(tripId),
       }),
     );
     return await Effect.runPromise(program);
@@ -90,16 +88,14 @@ describe("[UNIT] getDeliveryByNotificationIdUseCase (Effect)", () => {
 
       const program = getDeliveryByNotificationIdUseCase(input).pipe(
         Effect.provideService(NotificationDeliveryRepositoryTag, {
-          findMany: (filters, pagination) =>
-            Effect.promise(() => repo.findMany(filters, pagination)),
-          count: (filters) => Effect.promise(() => repo.count(filters)),
+          findMany: (filters, pagination) => repo.findMany(filters, pagination),
+          count: (filters) => repo.count(filters),
           findByNotificationId: () =>
             Effect.promise(() => Promise.resolve(null)),
-          getStats: (filters) => Effect.promise(() => repo.getStats(filters)),
+          getStats: (filters) => repo.getStats(filters),
           findFailed: (tripId, pagination) =>
-            Effect.promise(() => repo.findFailed(tripId, pagination)),
-          countFailed: (tripId) =>
-            Effect.promise(() => repo.countFailed(tripId)),
+            repo.findFailed(tripId, pagination),
+          countFailed: (tripId) => repo.countFailed(tripId),
         }),
       );
 
@@ -121,16 +117,13 @@ describe("[UNIT] getDeliveryByNotificationIdUseCase (Effect)", () => {
 
       const program = getDeliveryByNotificationIdUseCase(input).pipe(
         Effect.provideService(NotificationDeliveryRepositoryTag, {
-          findMany: (filters, pagination) =>
-            Effect.promise(() => repo.findMany(filters, pagination)),
-          count: (filters) => Effect.promise(() => repo.count(filters)),
-          findByNotificationId: () =>
-            Effect.promise(() => repo.findByNotificationId("notif-123")),
-          getStats: (filters) => Effect.promise(() => repo.getStats(filters)),
+          findMany: (filters, pagination) => repo.findMany(filters, pagination),
+          count: (filters) => repo.count(filters),
+          findByNotificationId: () => repo.findByNotificationId("notif-123"),
+          getStats: (filters) => repo.getStats(filters),
           findFailed: (tripId, pagination) =>
-            Effect.promise(() => repo.findFailed(tripId, pagination)),
-          countFailed: (tripId) =>
-            Effect.promise(() => repo.countFailed(tripId)),
+            repo.findFailed(tripId, pagination),
+          countFailed: (tripId) => repo.countFailed(tripId),
         }),
       );
 

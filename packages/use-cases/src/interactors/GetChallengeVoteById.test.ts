@@ -4,7 +4,7 @@ import {
   type GetChallengeVoteByIdInput,
   ChallengeVoteNotFoundError,
 } from "./GetChallengeVoteById";
-import { ChallengeVote } from "@mirai-app/domain";
+import { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 import { InMemoryChallengeVoteRepository } from "@mirai-app/adapters/gateways/in-memory";
@@ -19,7 +19,7 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
   // Helper to create a test vote
   const createTestVote = async (
     overrides?: Partial<{
-      id: string;
+      id: ChallengeVoteId;
       challengeId: string;
       submissionId: string;
       voterId: string;
@@ -39,41 +39,34 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
         weight: overrides?.weight ?? 1.0,
       }),
     );
-    return repo.create(vote);
+    return Effect.runSync(repo.create(vote));
   };
 
   // Helper to run use case with repository
   const runUseCase = async (input: GetChallengeVoteByIdInput) => {
     const program = getChallengeVoteByIdUseCase(input).pipe(
       Effect.provideService(ChallengeVoteRepositoryTag, {
-        create: (vote: ChallengeVote) =>
-          Effect.promise(() => repo.create(vote)),
-        createMany: (votes: ChallengeVote[]) =>
-          Effect.promise(() => repo.createMany(votes)),
-        findById: (id: string) => Effect.promise(() => repo.findById(id)),
+        create: (vote: ChallengeVote) => repo.create(vote),
+        createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
+        findById: (id: string) => repo.findById(id),
         findByChallengeId: (challengeId: string) =>
-          Effect.promise(() => repo.findByChallengeId(challengeId)),
+          repo.findByChallengeId(challengeId),
         findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-          Effect.promise(() =>
-            repo.findByChallengeAndVoter(challengeId, voterId),
-          ),
+          repo.findByChallengeAndVoter(challengeId, voterId),
         findBySubmissionId: (submissionId: string) =>
-          Effect.promise(() => repo.findBySubmissionId(submissionId)),
+          repo.findBySubmissionId(submissionId),
         hasVoted: (challengeId: string, voterId: string) =>
-          Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+          repo.hasVoted(challengeId, voterId),
         hasVotedForPosition: (
           challengeId: string,
           voterId: string,
           position: number,
-        ) =>
-          Effect.promise(() =>
-            repo.hasVotedForPosition(challengeId, voterId, position),
-          ),
+        ) => repo.hasVotedForPosition(challengeId, voterId, position),
         getVotedPositions: (challengeId: string, voterId: string) =>
-          Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
-        delete: (id: string) => Effect.promise(() => repo.delete(id)),
+          repo.getVotedPositions(challengeId, voterId),
+        delete: (id: string) => repo.delete(id),
         deleteByChallengeId: (challengeId: string) =>
-          Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+          repo.deleteByChallengeId(challengeId),
       }),
     );
     return await Effect.runPromise(program);
@@ -83,7 +76,7 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
     it("should retrieve vote by id", async () => {
       // Arrange
       const existingVote = await createTestVote({
-        id: "vote-123",
+        id: ChallengeVoteId.unsafeCreate("vote-123"),
         challengeId: "challenge-123",
         submissionId: "submission-456",
         voterId: "voter-789",
@@ -113,7 +106,7 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
     it("should retrieve vote with custom points and weight", async () => {
       // Arrange
       const existingVote = await createTestVote({
-        id: "vote-456",
+        id: ChallengeVoteId.unsafeCreate("vote-456"),
         position: 2,
         points: 10,
         weight: 1.5,
@@ -140,34 +133,27 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
       // Act
       const program = getChallengeVoteByIdUseCase(input).pipe(
         Effect.provideService(ChallengeVoteRepositoryTag, {
-          create: (vote: ChallengeVote) =>
-            Effect.promise(() => repo.create(vote)),
-          createMany: (votes: ChallengeVote[]) =>
-            Effect.promise(() => repo.createMany(votes)),
-          findById: (id: string) => Effect.promise(() => repo.findById(id)),
+          create: (vote: ChallengeVote) => repo.create(vote),
+          createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
+          findById: (id: string) => repo.findById(id),
           findByChallengeId: (challengeId: string) =>
-            Effect.promise(() => repo.findByChallengeId(challengeId)),
+            repo.findByChallengeId(challengeId),
           findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-            Effect.promise(() =>
-              repo.findByChallengeAndVoter(challengeId, voterId),
-            ),
+            repo.findByChallengeAndVoter(challengeId, voterId),
           findBySubmissionId: (submissionId: string) =>
-            Effect.promise(() => repo.findBySubmissionId(submissionId)),
+            repo.findBySubmissionId(submissionId),
           hasVoted: (challengeId: string, voterId: string) =>
-            Effect.promise(() => repo.hasVoted(challengeId, voterId)),
+            repo.hasVoted(challengeId, voterId),
           hasVotedForPosition: (
             challengeId: string,
             voterId: string,
             position: number,
-          ) =>
-            Effect.promise(() =>
-              repo.hasVotedForPosition(challengeId, voterId, position),
-            ),
+          ) => repo.hasVotedForPosition(challengeId, voterId, position),
           getVotedPositions: (challengeId: string, voterId: string) =>
-            Effect.promise(() => repo.getVotedPositions(challengeId, voterId)),
-          delete: (id: string) => Effect.promise(() => repo.delete(id)),
+            repo.getVotedPositions(challengeId, voterId),
+          delete: (id: string) => repo.delete(id),
           deleteByChallengeId: (challengeId: string) =>
-            Effect.promise(() => repo.deleteByChallengeId(challengeId)),
+            repo.deleteByChallengeId(challengeId),
         }),
       );
 
@@ -183,13 +169,13 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
     it("should retrieve different votes independently", async () => {
       // Arrange
       const vote1 = await createTestVote({
-        id: "vote-1",
+        id: ChallengeVoteId.unsafeCreate("vote-1"),
         challengeId: "challenge-a",
         voterId: "voter-1",
         position: 1,
       });
       const vote2 = await createTestVote({
-        id: "vote-2",
+        id: ChallengeVoteId.unsafeCreate("vote-2"),
         challengeId: "challenge-b",
         voterId: "voter-2",
         position: 2,
@@ -216,7 +202,7 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
     it("should retrieve correct vote data after updates", async () => {
       // Arrange - Create and then manually update via repo
       const vote = await createTestVote({
-        id: "vote-update-test",
+        id: ChallengeVoteId.unsafeCreate("vote-update-test"),
         position: 1,
         points: 3,
       });
@@ -233,7 +219,7 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
           votedAt: vote.votedAt,
         }),
       );
-      await repo.create(updatedVote);
+      Effect.runSync(repo.create(updatedVote));
 
       // Act
       const result = await runUseCase({ voteId: vote.id });
