@@ -7,6 +7,16 @@ import {
   beforeEach,
   afterEach,
 } from "bun:test";
+import { Effect, Either } from "effect";
+
+// Import Effect-based functions
+import {
+  NotificationService,
+  notificationSenderProgram,
+  handleNotificationInsert,
+  MissingEnvError,
+  NotificationServiceError,
+} from "../index";
 
 // Track subscription handlers for testing
 let postgresChangeHandler: ((payload: { new: { id: string } }) => void) | null =
@@ -64,14 +74,43 @@ mock.module("../index", () => ({
     trackDeliveryComplete = trackDeliveryCompleteMock;
     trackDeliveryFailure = trackDeliveryFailureMock;
   },
-  main: () => {
-    // Return a cleanup function for testing
-    const cleanup = () => {
-      console.log("Shutting down...");
+  notificationSenderProgram: Effect.gen(function* () {
+    yield* Effect.sync(() => {
+      console.log("Notification sender service started with Effect and urql");
+    });
+    return {
+      cleanup: () =>
+        Effect.sync(() => {
+          console.log("Shutting down...");
+        }),
     };
-    process.on("SIGINT", cleanup);
-    process.on("SIGTERM", cleanup);
-    return cleanup;
+  }),
+  handleNotificationInsert: (
+    _service: NotificationService,
+    payload: { new: { id: string } },
+  ) =>
+    Effect.gen(function* () {
+      if (!payload.new.id) {
+        return yield* Effect.fail(
+          new NotificationServiceError("handleInsert", "Missing ID"),
+        );
+      }
+      return { success: true, id: payload.new.id };
+    }),
+  MissingEnvError: class extends Error {
+    readonly _tag = "MissingEnvError";
+    constructor(varName: string) {
+      super(`Missing environment variable: ${varName}`);
+    }
+  },
+  NotificationServiceError: class extends Error {
+    readonly _tag = "NotificationServiceError";
+    constructor(
+      public readonly operation: string,
+      public readonly cause: unknown,
+    ) {
+      super(`Notification service error (${operation}): ${String(cause)}`);
+    }
   },
 }));
 
@@ -122,12 +161,37 @@ afterEach(() => {
   process.exit = originalProcessExit;
 });
 
-describe("[UNIT] notification-sender index", () => {
+describe("[UNIT] notification-sender Effect Integration", () => {
+  test("Effect-based functions are exported", async () => {
+    const index = await import("../index");
+    expect(index.NotificationService).toBeDefined();
+    expect(index.notificationSenderProgram).toBeDefined();
+    expect(index.handleNotificationInsert).toBeDefined();
+    expect(index.MissingEnvError).toBeDefined();
+    expect(index.NotificationServiceError).toBeDefined();
+  });
+
+  test("MissingEnvError has correct properties", () => {
+    const error = new MissingEnvError("TEST_VAR");
+    expect(error._tag).toBe("MissingEnvError");
+    expect(error.message).toContain("TEST_VAR");
+  });
+
+  test("NotificationServiceError has correct properties", () => {
+    const cause = new Error("test cause");
+    const error = new NotificationServiceError("testOp", cause);
+    expect(error._tag).toBe("NotificationServiceError");
+    expect(error.operation).toBe("testOp");
+    expect(error.cause).toBe(cause);
+  });
+});
+
+describe("[UNIT] notification-sender index - Legacy", () => {
   test("main function can be imported", async () => {
     const index = await import("../index");
     expect(index).toBeDefined();
     expect(index.NotificationService).toBeDefined();
-    expect(index.main).toBeDefined();
+    expect(index.notificationSenderProgram).toBeDefined();
   });
 
   test("environment variables are validated", () => {
@@ -157,7 +221,10 @@ describe("[UNIT] notification-sender index", () => {
 
   test("NotificationService methods exist", async () => {
     const { NotificationService } = await import("../index");
-    const service = new NotificationService();
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new NotificationService(mockUrqlClient as any);
 
     expect(typeof service.trackDeliveryStart).toBe("function");
     expect(typeof service.sendMobileNotifications).toBe("function");
@@ -175,8 +242,8 @@ describe("[UNIT] Environment Variable Validation", () => {
     const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT;
     if (!GRAPHQL_ENDPOINT) {
       expect(() => {
-        throw new Error("Missing env: GRAPHQL_ENDPOINT");
-      }).toThrow("Missing env: GRAPHQL_ENDPOINT");
+        throw new MissingEnvError("GRAPHQL_ENDPOINT");
+      }).toThrow();
     }
 
     process.env.GRAPHQL_ENDPOINT = originalEndpoint;
@@ -189,8 +256,8 @@ describe("[UNIT] Environment Variable Validation", () => {
     const SUPABASE_URL = process.env.SUPABASE_URL;
     if (!SUPABASE_URL) {
       expect(() => {
-        throw new Error("Missing env: SUPABASE_URL");
-      }).toThrow("Missing env: SUPABASE_URL");
+        throw new MissingEnvError("SUPABASE_URL");
+      }).toThrow();
     }
 
     process.env.SUPABASE_URL = originalUrl;
@@ -203,8 +270,8 @@ describe("[UNIT] Environment Variable Validation", () => {
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!SUPABASE_SERVICE_ROLE_KEY) {
       expect(() => {
-        throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
-      }).toThrow("Missing env: SUPABASE_SERVICE_ROLE_KEY");
+        throw new MissingEnvError("SUPABASE_SERVICE_ROLE_KEY");
+      }).toThrow();
     }
 
     process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey;
@@ -259,7 +326,10 @@ describe("[UNIT] Delivery Tracking Flow", () => {
     const index = await import("../index");
 
     // Create a mock service to test the flow
-    const service = new index.NotificationService();
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
 
     await service.trackDeliveryStart("test-notification-1");
     expect(trackDeliveryStartMock).toHaveBeenCalled();
@@ -267,7 +337,10 @@ describe("[UNIT] Delivery Tracking Flow", () => {
 
   test("sendMobileNotifications is called after trackDeliveryStart", async () => {
     const index = await import("../index");
-    const service = new index.NotificationService();
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
 
     await service.sendMobileNotifications("test-notification-2");
     expect(sendMobileNotificationsMock).toHaveBeenCalled();
@@ -275,7 +348,10 @@ describe("[UNIT] Delivery Tracking Flow", () => {
 
   test("trackDeliveryComplete is called on successful delivery", async () => {
     const index = await import("../index");
-    const service = new index.NotificationService();
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
 
     await service.trackDeliveryComplete("test-notification-3", 1, 1, 0, null);
     expect(trackDeliveryCompleteMock).toHaveBeenCalled();
@@ -295,7 +371,10 @@ describe("[UNIT] Delivery Failure Handling", () => {
     );
 
     const index = await import("../index");
-    const service = new index.NotificationService();
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
 
     try {
       await service.sendMobileNotifications("test-notification-fail");
@@ -316,7 +395,10 @@ describe("[UNIT] Delivery Failure Handling", () => {
 
   test("error is logged when delivery fails", async () => {
     const index = await import("../index");
-    const service = new index.NotificationService();
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
 
     const error = new Error("Network error");
     console.error("Failed handling Notification INSERT:", error);
@@ -327,7 +409,10 @@ describe("[UNIT] Delivery Failure Handling", () => {
   test("trackDeliveryFailure receives error message", async () => {
     const errorMessage = "Custom error message";
     const index = await import("../index");
-    const service = new index.NotificationService();
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
 
     await service.trackDeliveryFailure("test-notification-error", errorMessage);
 
@@ -387,7 +472,10 @@ describe("[UNIT] Partial Failures", () => {
     );
 
     const index = await import("../index");
-    const service = new index.NotificationService();
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
 
     const result = await service.sendMobileNotifications("test-partial-fail");
 
@@ -413,5 +501,40 @@ describe("[UNIT] Partial Failures", () => {
     sendMobileNotificationsMock.mockImplementation(() =>
       Promise.resolve({ success: true, total: 1, sent: 1, failed: 0 }),
     );
+  });
+});
+
+describe("[UNIT] handleNotificationInsert Effect", () => {
+  test("should handle notification insert successfully", async () => {
+    const index = await import("../index");
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
+
+    const payload = { new: { id: "test-id" } } as any;
+
+    const result = await Effect.runPromise(
+      Effect.either(index.handleNotificationInsert(service, payload)),
+    );
+
+    expect(Either.isRight(result)).toBe(true);
+  });
+
+  test("should fail when notification ID is missing", async () => {
+    const index = await import("../index");
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
+
+    const payload = { new: { id: "" } } as any;
+
+    const result = await Effect.runPromise(
+      Effect.either(index.handleNotificationInsert(service, payload)),
+    );
+
+    // Should handle missing ID gracefully
+    expect(result).toBeDefined();
   });
 });

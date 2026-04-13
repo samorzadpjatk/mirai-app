@@ -6,11 +6,10 @@
  *
  * ## Architecture
  *
- * This service is designed to run as a background worker. It:
- * 1. Connects to Supabase Realtime to listen for new Notification INSERT events
- * 2. Calls the GraphQL API using urql to track delivery status
- * 3. Sends mobile push notifications via the notification service
- * 4. Tracks delivery completion or failure
+ * This service is designed to run as a background worker with Effect at the boundary:
+ * - Uses Effect for structured error handling and resource management
+ * - Effect.runPromise at the boundary for composable effects
+ * - Maintains all existing functionality with improved error handling
  *
  * ## Environment Variables
  *
@@ -45,6 +44,7 @@ import {
   type TrackDeliveryCompleteMutation,
   type TrackDeliveryFailureMutation,
 } from "@mirai-app/graphql-client/urql";
+import { Effect, Console } from "effect";
 
 // =============================================================================
 // Environment Configuration
@@ -54,10 +54,44 @@ const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!GRAPHQL_ENDPOINT) throw new Error("Missing env: GRAPHQL_ENDPOINT");
-if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
-if (!SUPABASE_SERVICE_ROLE_KEY)
-  throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
+// =============================================================================
+// Error Types
+// =============================================================================
+
+class MissingEnvError extends Error {
+  readonly _tag = "MissingEnvError";
+  constructor(varName: string) {
+    super(`Missing environment variable: ${varName}`);
+  }
+}
+
+class NotificationServiceError extends Error {
+  readonly _tag = "NotificationServiceError";
+  constructor(
+    public readonly operation: string,
+    public readonly cause: unknown,
+  ) {
+    super(`Notification service error (${operation}): ${String(cause)}`);
+  }
+}
+
+// =============================================================================
+// Environment Validation Effect
+// =============================================================================
+
+const validateEnvironment = Effect.gen(function* () {
+  if (!GRAPHQL_ENDPOINT) {
+    return yield* Effect.fail(new MissingEnvError("GRAPHQL_ENDPOINT"));
+  }
+  if (!SUPABASE_URL) {
+    return yield* Effect.fail(new MissingEnvError("SUPABASE_URL"));
+  }
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    return yield* Effect.fail(new MissingEnvError("SUPABASE_SERVICE_ROLE_KEY"));
+  }
+  yield* Console.log("✓ Environment variables validated");
+  return { GRAPHQL_ENDPOINT, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY };
+});
 
 // =============================================================================
 // GraphQL Client (urql)
@@ -66,16 +100,19 @@ if (!SUPABASE_SERVICE_ROLE_KEY)
 /**
  * Create urql client with service account authentication
  */
-const urqlClient = createUrqlClient({
-  url: GRAPHQL_ENDPOINT,
-  exchanges: [cacheExchange, fetchExchange],
-  fetchOptions: {
-    headers: {
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      "X-Service-Account": "notification-sender",
-    },
-  },
-});
+const createUrqlClientEffect = (endpoint: string, apiKey: string) =>
+  Effect.sync(() =>
+    createUrqlClient({
+      url: endpoint,
+      exchanges: [cacheExchange, fetchExchange],
+      fetchOptions: {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "X-Service-Account": "notification-sender",
+        },
+      },
+    }),
+  );
 
 // =============================================================================
 // Types
@@ -94,12 +131,16 @@ interface NotificationRow {
  * Replaces the previous SDK pattern with urql's core client
  */
 class NotificationService {
+  constructor(
+    private readonly urqlClient: ReturnType<typeof createUrqlClient>,
+  ) {}
+
   /**
    * Track delivery start via urql mutation
    */
   async trackDeliveryStart(notificationId: string): Promise<boolean> {
     try {
-      const result = await urqlClient.mutation<TrackDeliveryStartMutation>(
+      const result = await this.urqlClient.mutation<TrackDeliveryStartMutation>(
         TrackDeliveryStartDocument,
         { notificationId },
       );
@@ -126,10 +167,11 @@ class NotificationService {
     total: number;
   }> {
     try {
-      const result = await urqlClient.mutation<SendMobileNotificationsMutation>(
-        SendMobileNotificationsDocument,
-        { notificationId },
-      );
+      const result =
+        await this.urqlClient.mutation<SendMobileNotificationsMutation>(
+          SendMobileNotificationsDocument,
+          { notificationId },
+        );
 
       if (result.error) {
         console.error("Failed to send mobile notifications:", result.error);
@@ -160,16 +202,17 @@ class NotificationService {
     errors: string | null,
   ): Promise<boolean> {
     try {
-      const result = await urqlClient.mutation<TrackDeliveryCompleteMutation>(
-        TrackDeliveryCompleteDocument,
-        {
-          notificationId,
-          totalRecipients,
-          successCount,
-          failureCount,
-          errors,
-        },
-      );
+      const result =
+        await this.urqlClient.mutation<TrackDeliveryCompleteMutation>(
+          TrackDeliveryCompleteDocument,
+          {
+            notificationId,
+            totalRecipients,
+            successCount,
+            failureCount,
+            errors,
+          },
+        );
 
       if (result.error) {
         console.error("Failed to track delivery completion:", result.error);
@@ -191,10 +234,11 @@ class NotificationService {
     error: string,
   ): Promise<boolean> {
     try {
-      const result = await urqlClient.mutation<TrackDeliveryFailureMutation>(
-        TrackDeliveryFailureDocument,
-        { notificationId, error },
-      );
+      const result =
+        await this.urqlClient.mutation<TrackDeliveryFailureMutation>(
+          TrackDeliveryFailureDocument,
+          { notificationId, error },
+        );
 
       if (result.error) {
         console.error("Failed to track delivery failure:", result.error);
@@ -210,85 +254,194 @@ class NotificationService {
 }
 
 // =============================================================================
-// Main Function
+// Effect-based Notification Handler
 // =============================================================================
 
-function main(): () => void {
+/**
+ * Handle a notification INSERT event using Effect
+ */
+const handleNotificationInsert = (
+  notificationService: NotificationService,
+  payload: RealtimePostgresInsertPayload<NotificationRow>,
+) =>
+  Effect.gen(function* () {
+    const id = payload.new.id;
+    if (!id) {
+      yield* Console.error("Missing notification ID in payload");
+      return yield* Effect.fail(
+        new NotificationServiceError("handleInsert", "Missing ID"),
+      );
+    }
+
+    yield* Console.log(`Processing notification: ${id}`);
+
+    // Track delivery start
+    const startResult = yield* Effect.tryPromise({
+      try: () => notificationService.trackDeliveryStart(id),
+      catch: (error) =>
+        new NotificationServiceError("trackDeliveryStart", error),
+    });
+
+    if (!startResult) {
+      yield* Console.error(`Failed to track delivery start for ${id}`);
+    }
+
+    // Send mobile notifications
+    const mobileResult = yield* Effect.tryPromise({
+      try: () => notificationService.sendMobileNotifications(id),
+      catch: (error) =>
+        new NotificationServiceError("sendMobileNotifications", error),
+    });
+
+    yield* Console.log("Delivery summary:", mobileResult);
+
+    // Track completion
+    const completeResult = yield* Effect.tryPromise({
+      try: () =>
+        notificationService.trackDeliveryComplete(
+          id,
+          mobileResult.total,
+          mobileResult.sent,
+          mobileResult.failed,
+          mobileResult.success ? null : "Some deliveries failed",
+        ),
+      catch: (error) =>
+        new NotificationServiceError("trackDeliveryComplete", error),
+    });
+
+    if (!completeResult) {
+      yield* Console.error(`Failed to track delivery completion for ${id}`);
+    }
+
+    return { success: true, id };
+  }).pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Console.error("Failed handling Notification INSERT:", error);
+
+        // Try to track the failure
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        yield* Effect.tryPromise({
+          try: () => notificationService.trackDeliveryFailure(id, errorMessage),
+          catch: () => undefined, // Ignore tracking failure errors
+        });
+
+        return { success: false, id, error: errorMessage };
+      }),
+    ),
+  );
+
+// =============================================================================
+// Main Program with Effect
+// =============================================================================
+
+/**
+ * Main Effect program that sets up and runs the notification sender
+ */
+const notificationSenderProgram = Effect.gen(function* () {
+  // Validate environment
+  const env = yield* validateEnvironment;
+
+  // Create clients
+  const urqlClient = yield* createUrqlClientEffect(
+    env.GRAPHQL_ENDPOINT,
+    env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+  const notificationService = new NotificationService(urqlClient);
+
+  // Create Supabase client
   const supabase = createClient(
-    SUPABASE_URL!,
-    SUPABASE_SERVICE_ROLE_KEY!,
+    env.SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
     undefined,
     { realtime: { params: { eventsPerSecond: 2 } } },
   );
 
-  const notificationService = new NotificationService();
-
+  // Set up realtime subscription
   const channel = supabase
     .channel("public:Notification:insert")
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "Notification" },
       (payload: RealtimePostgresInsertPayload<NotificationRow>) => {
-        void (async () => {
-          const id = payload.new.id;
-          if (!id) {
-            console.error("Missing notification ID in payload");
-            return;
-          }
-          try {
-            await notificationService.trackDeliveryStart(id);
-
-            const mobile =
-              await notificationService.sendMobileNotifications(id);
-            console.log("Delivery summary:", { mobile });
-
-            await notificationService.trackDeliveryComplete(
-              id,
-              mobile.total,
-              mobile.sent,
-              mobile.failed,
-              mobile.success ? null : "Some deliveries failed",
-            );
-          } catch (err) {
-            console.error("Failed handling Notification INSERT:", err);
-
-            await notificationService.trackDeliveryFailure(
-              id,
-              err instanceof Error ? err.message : String(err),
-            );
-          }
-        })();
+        // Run the handler in Effect
+        void Effect.runPromise(
+          handleNotificationInsert(notificationService, payload),
+        );
       },
     )
     .subscribe((status) => {
       console.log("Realtime channel status:", status);
     });
 
-  const cleanup = () => {
-    void (async () => {
-      console.log("Shutting down...");
-      await supabase.removeChannel(channel);
-      process.exit(0);
-    })();
+  yield* Console.log(
+    "Notification sender service started with Effect and urql",
+  );
+
+  // Return cleanup function
+  return {
+    cleanup: () =>
+      Effect.gen(function* () {
+        yield* Console.log("Shutting down...");
+        yield* Effect.tryPromise({
+          try: () => supabase.removeChannel(channel),
+          catch: (error) => new NotificationServiceError("cleanup", error),
+        });
+        yield* Console.log("Shutdown complete");
+      }),
   };
+});
 
-  process.on("SIGINT", cleanup);
-  process.on("SIGTERM", cleanup);
+// =============================================================================
+// Entry Point - Run Effects at Boundary
+// =============================================================================
 
-  return cleanup;
+const program = Effect.gen(function* () {
+  const { cleanup } = yield* notificationSenderProgram;
+
+  // Set up signal handlers
+  const handleSignal = (signal: string) =>
+    Effect.gen(function* () {
+      yield* Console.log(
+        `\nReceived ${signal}, initiating graceful shutdown...`,
+      );
+      yield* cleanup();
+      process.exit(0);
+    });
+
+  process.on("SIGTERM", () => {
+    void Effect.runPromise(handleSignal("SIGTERM"));
+  });
+
+  process.on("SIGINT", () => {
+    void Effect.runPromise(handleSignal("SIGINT"));
+  });
+
+  // Keep the program running
+  yield* Effect.sleep("Infinity");
+});
+
+/**
+ * Run the notification sender application
+ */
+export async function run(): Promise<void> {
+  await Effect.runPromise(program);
 }
 
-// =============================================================================
-// Entry Point
-// =============================================================================
-
-try {
-  main();
-  console.log("Notification sender service started with urql");
-} catch (err) {
-  console.error("Failed to start notification sender:", err);
-  process.exit(1);
+// Run the program at the boundary only when executed directly
+if (import.meta.main) {
+  Effect.runPromise(program).catch((error) => {
+    console.error("Failed to start notification sender:", error);
+    process.exit(1);
+  });
 }
 
 // Export for testing
-export { NotificationService, main };
+export {
+  NotificationService,
+  notificationSenderProgram,
+  handleNotificationInsert,
+  MissingEnvError,
+  NotificationServiceError,
+};
