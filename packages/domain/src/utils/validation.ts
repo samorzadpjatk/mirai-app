@@ -1,12 +1,12 @@
+import { Effect } from "effect";
+import { ValidationError } from "../errors/effect-errors";
+
 /**
  * Pure validation utilities
  *
  * These functions perform validation without side effects.
  * They return booleans or validation results.
  */
-
-import type { Result } from "./result";
-import { ok, err } from "./result";
 
 /**
  * Email validation regex (simplified, covers most common cases)
@@ -21,16 +21,28 @@ export function isValidEmail(email: string): boolean {
 }
 
 /**
- * Validate email with Result type
+ * Validate email with Effect type
  */
-export function validateEmail(email: string): Result<string, string> {
+export function validateEmail(
+  email: string,
+): Effect.Effect<string, ValidationError, never> {
   if (!email || email.trim() === "") {
-    return err("Email is required");
+    return Effect.fail(
+      new ValidationError({
+        message: "Email is required",
+        field: "email",
+      }),
+    );
   }
   if (!isValidEmail(email)) {
-    return err("Invalid email format");
+    return Effect.fail(
+      new ValidationError({
+        message: "Invalid email format",
+        field: "email",
+      }),
+    );
   }
-  return ok(email.toLowerCase().trim());
+  return Effect.succeed(email.toLowerCase().trim());
 }
 
 /**
@@ -39,11 +51,16 @@ export function validateEmail(email: string): Result<string, string> {
 export function validateNotEmpty(
   value: string,
   fieldName: string,
-): Result<string, string> {
+): Effect.Effect<string, ValidationError, never> {
   if (!value || value.trim() === "") {
-    return err(`${fieldName} is required`);
+    return Effect.fail(
+      new ValidationError({
+        message: `${fieldName} is required`,
+        field: fieldName,
+      }),
+    );
   }
-  return ok(value.trim());
+  return Effect.succeed(value.trim());
 }
 
 /**
@@ -53,11 +70,16 @@ export function validateMinLength(
   value: string,
   minLength: number,
   fieldName: string,
-): Result<string, string> {
+): Effect.Effect<string, ValidationError, never> {
   if (!value || value.length < minLength) {
-    return err(`${fieldName} must be at least ${minLength} characters`);
+    return Effect.fail(
+      new ValidationError({
+        message: `${fieldName} must be at least ${minLength} characters`,
+        field: fieldName,
+      }),
+    );
   }
-  return ok(value);
+  return Effect.succeed(value);
 }
 
 /**
@@ -67,11 +89,16 @@ export function validateMaxLength(
   value: string,
   maxLength: number,
   fieldName: string,
-): Result<string, string> {
+): Effect.Effect<string, ValidationError, never> {
   if (value && value.length > maxLength) {
-    return err(`${fieldName} must be at most ${maxLength} characters`);
+    return Effect.fail(
+      new ValidationError({
+        message: `${fieldName} must be at most ${maxLength} characters`,
+        field: fieldName,
+      }),
+    );
   }
-  return ok(value || "");
+  return Effect.succeed(value || "");
 }
 
 /**
@@ -84,19 +111,29 @@ export function isValidUUID(id: string): boolean {
 }
 
 /**
- * Validate UUID with Result type
+ * Validate UUID with Effect type
  */
 export function validateUUID(
   id: string,
   fieldName = "ID",
-): Result<string, string> {
+): Effect.Effect<string, ValidationError, never> {
   if (!id || id.trim() === "") {
-    return err(`${fieldName} is required`);
+    return Effect.fail(
+      new ValidationError({
+        message: `${fieldName} is required`,
+        field: fieldName,
+      }),
+    );
   }
   if (!isValidUUID(id)) {
-    return err(`Invalid ${fieldName} format`);
+    return Effect.fail(
+      new ValidationError({
+        message: `Invalid ${fieldName} format`,
+        field: fieldName,
+      }),
+    );
   }
-  return ok(id.toLowerCase());
+  return Effect.succeed(id.toLowerCase());
 }
 
 /**

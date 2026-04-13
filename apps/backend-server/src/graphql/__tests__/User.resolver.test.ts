@@ -110,14 +110,12 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       userController: asValue(new UserController(userRepo)),
     });
 
-    // Get repository and auth adapter
-    const userRepo =
-      context.container.resolve<InMemoryUserRepository>("userRepository");
+    // Get auth adapter (userRepo already declared above)
     const authAdapter = context.container.resolve<InMemoryAuthAdapter>(
       PORT_TOKENS.AuthPort,
     );
 
-    // Create admin user in repository
+    // Create users and seed repository
     const adminResult = User.create({
       id: TEST_USERS.admin.id,
       authUserId: TEST_USERS.admin.authUserId,
@@ -127,11 +125,6 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       hasAvatar: TEST_USERS.admin.hasAvatar,
       createdAt: new Date("2024-01-01"),
     });
-    if (adminResult.kind === "ok") {
-      await userRepo.save(adminResult.value);
-    }
-
-    // Create moderator user in repository
     const modResult = User.create({
       id: TEST_USERS.moderator.id,
       authUserId: TEST_USERS.moderator.authUserId,
@@ -141,11 +134,6 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       hasAvatar: TEST_USERS.moderator.hasAvatar,
       createdAt: new Date("2024-01-02"),
     });
-    if (modResult.kind === "ok") {
-      await userRepo.save(modResult.value);
-    }
-
-    // Create regular user in repository
     const userResult = User.create({
       id: TEST_USERS.regular.id,
       authUserId: TEST_USERS.regular.authUserId,
@@ -155,9 +143,15 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       hasAvatar: TEST_USERS.regular.hasAvatar,
       createdAt: new Date("2024-01-03"),
     });
-    if (userResult.kind === "ok") {
-      await userRepo.save(userResult.value);
-    }
+
+    // Import Effect for running Effects
+    const { Effect } = await import("effect");
+
+    // Seed all users to repository
+    const users = [adminResult, modResult, userResult]
+      .filter((r) => r.kind === "ok")
+      .map((r) => r.value);
+    await Effect.runPromise(userRepo.seed(users));
 
     // Create auth users in InMemoryAuthAdapter
     const adminUserId = UserId.create(TEST_USERS.admin.id);
@@ -181,8 +175,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
     userToken = userSession.token;
 
     // Create auth contexts for tests
-    const { AuthContext: AuthContextClass, Effect } =
-      await import("@mirai-app/domain");
+    const { AuthContext: AuthContextClass } = await import("@mirai-app/domain");
 
     // Run admin auth context Effect
     const adminAuthEffect = AuthContextClass.create({
@@ -250,6 +243,10 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         ),
       });
 
+      // Debug: log errors if any
+      if (result.errors) {
+        console.log("GraphQL errors:", JSON.stringify(result.errors, null, 2));
+      }
       expect(result.errors).toBeUndefined();
       expect(result.data).toBeDefined();
       expect(result.data?.user).toBeDefined();

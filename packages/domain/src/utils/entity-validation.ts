@@ -2,7 +2,7 @@
  * Entity Validation Framework
  *
  * Composable validators for entity properties.
- * Returns Effect<T, ValidationError, never> for explicit error handling.
+ * Returns Effect<T, ValidationError> for explicit error handling.
  *
  * @module entity-validation
  */
@@ -72,8 +72,8 @@ function isEmptyString(value: string): boolean {
  *
  * @example
  * ```typescript
- * const validated = yield* validate.string(name, "name", { required: true, minLength: 3 });
- * // validated is the trimmed string
+ * const effect = validate.string(name, "name", { required: true, minLength: 3 });
+ * const user = yield* effect;
  * ```
  */
 function validateString(
@@ -120,8 +120,8 @@ function validateString(
  *
  * @example
  * ```typescript
- * const validated = yield* validate.number(count, "count", { required: true, min: 0, integer: true });
- * // validated is the number
+ * const effect = validate.number(count, "count", { required: true, min: 0, integer: true });
+ * const count = yield* effect;
  * ```
  */
 function validateNumber(
@@ -179,8 +179,8 @@ function validateNumber(
  *
  * @example
  * ```typescript
- * const validated = yield* validate.id(tripId, "tripId");
- * // validated is the ID string
+ * const effect = validate.id(tripId, "tripId");
+ * const id = yield* effect;
  * ```
  */
 function validateId(
@@ -206,8 +206,8 @@ function validateId(
  *
  * @example
  * ```typescript
- * const validated = yield* validate.array(items, "items", { required: true, maxItems: 10 });
- * // validated is the array
+ * const effect = validate.array(items, "items", { required: true, maxItems: 10 });
+ * const items = yield* effect;
  * ```
  */
 function validateArray<T>(
@@ -253,8 +253,8 @@ function validateArray<T>(
  *
  * @example
  * ```typescript
- * const validated = yield* validate.dateRange(startDate, endDate);
- * // if success, dates are valid
+ * const effect = validate.dateRange(startDate, endDate);
+ * yield* effect;
  * ```
  */
 function validateDateRange(
