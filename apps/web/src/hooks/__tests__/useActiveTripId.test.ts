@@ -25,7 +25,7 @@ describe("[UNIT] useActiveTripId", () => {
     window.localStorage.clear();
   });
 
-  describe("URL search params", () => {
+  describe("[UNIT] URL search params", () => {
     test("extracts tripId from URL search params", () => {
       // Mock window.location.search with tripId param
       Object.defineProperty(window, "location", {
@@ -62,7 +62,7 @@ describe("[UNIT] useActiveTripId", () => {
     });
   });
 
-  describe("localStorage fallback", () => {
+  describe("[UNIT] localStorage fallback", () => {
     test("falls back to localStorage when no URL param", () => {
       // No tripId in URL
       Object.defineProperty(window, "location", {
@@ -104,7 +104,7 @@ describe("[UNIT] useActiveTripId", () => {
     });
   });
 
-  describe("empty result cases", () => {
+  describe("[UNIT] empty result cases", () => {
     test("returns empty string when neither source has value", () => {
       Object.defineProperty(window, "location", {
         value: { search: "" },
@@ -145,7 +145,7 @@ describe("[UNIT] useActiveTripId", () => {
     });
   });
 
-  describe("SSR safety", () => {
+  describe("[UNIT] SSR safety", () => {
     test("hook code includes typeof window check for SSR", () => {
       // Read the hook source and verify SSR check exists
       // This is a static analysis test since RTL requires window
@@ -208,7 +208,7 @@ describe("[UNIT] useActiveTripId", () => {
     });
   });
 
-  describe("ACTIVE_TRIP_STORAGE_KEY constant", () => {
+  describe("[UNIT] ACTIVE_TRIP_STORAGE_KEY constant", () => {
     test("storage key has correct value", () => {
       expect(ACTIVE_TRIP_STORAGE_KEY).toBe("admin:selectedTripId");
     });

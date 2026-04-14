@@ -22,6 +22,7 @@ import {
   type SSRExchange,
 } from "@urql/core";
 import { createClient as createWSClient } from "graphql-ws";
+import { apiLogger } from "@mirai-app/shared";
 import { env } from "./env";
 
 // =============================================================================
@@ -87,13 +88,19 @@ const getWSClient = (): ReturnType<typeof createWSClient> => {
       },
       on: {
         connected: () => {
-          console.log("[WebSocket] Connected");
+          apiLogger.info("[WebSocket] Connected");
         },
         error: (error) => {
-          console.error("[WebSocket] Error:", error);
+          apiLogger.error(
+            "[WebSocket] Error:",
+            error instanceof Error ? error : new Error(String(error)),
+          );
         },
         closed: (event) => {
-          console.log("[WebSocket] Closed:", event.code, event.reason);
+          apiLogger.info("[WebSocket] Closed", {
+            code: event.code,
+            reason: event.reason,
+          });
         },
       },
     });

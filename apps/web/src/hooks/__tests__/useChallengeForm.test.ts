@@ -6,7 +6,7 @@ import { useChallengeForm } from "../admin/useChallengeForm";
 import type { ChallengeFormState } from "../../components/admin/challenges/challengeFormConstants";
 
 describe("[UNIT] useChallengeForm", () => {
-  describe("initial state", () => {
+  describe("[UNIT] initial state", () => {
     test("has default empty form state for new challenge", () => {
       const { result } = renderHook(() => useChallengeForm());
 
@@ -59,7 +59,7 @@ describe("[UNIT] useChallengeForm", () => {
     });
   });
 
-  describe("updateField", () => {
+  describe("[UNIT] updateField", () => {
     test("updates a single field", () => {
       const { result } = renderHook(() => useChallengeForm());
 
@@ -104,7 +104,7 @@ describe("[UNIT] useChallengeForm", () => {
     });
   });
 
-  describe("setSubmissionType", () => {
+  describe("[UNIT] setSubmissionType", () => {
     test("updates submission type", () => {
       const { result } = renderHook(() => useChallengeForm());
 
@@ -209,7 +209,7 @@ describe("[UNIT] useChallengeForm", () => {
     });
   });
 
-  describe("setScoringCategory", () => {
+  describe("[UNIT] setScoringCategory", () => {
     test("updates scoring category", () => {
       const { result } = renderHook(() => useChallengeForm());
 
@@ -261,7 +261,7 @@ describe("[UNIT] useChallengeForm", () => {
     });
   });
 
-  describe("setStatus", () => {
+  describe("[UNIT] setStatus", () => {
     test("sets valid status for new challenge", () => {
       const { result } = renderHook(() =>
         useChallengeForm({ isNewChallenge: true }),
@@ -299,7 +299,7 @@ describe("[UNIT] useChallengeForm", () => {
     });
   });
 
-  describe("setAutoApprove", () => {
+  describe("[UNIT] setAutoApprove", () => {
     test("sets autoApprove when allowed (TEXT type)", () => {
       const { result } = renderHook(() =>
         useChallengeForm({ initialData: { submissionType: "TEXT" } }),
@@ -355,7 +355,7 @@ describe("[UNIT] useChallengeForm", () => {
     });
   });
 
-  describe("resetForm", () => {
+  describe("[UNIT] resetForm", () => {
     test("resets form to defaults", () => {
       const { result } = renderHook(() => useChallengeForm());
 
@@ -406,7 +406,7 @@ describe("[UNIT] useChallengeForm", () => {
     });
   });
 
-  describe("computed values", () => {
+  describe("[UNIT] computed values", () => {
     test("isPeerVoting is true when scoringCategory is PEER_VOTING", () => {
       const { result } = renderHook(() =>
         useChallengeForm({
@@ -467,7 +467,7 @@ describe("[UNIT] useChallengeForm", () => {
     });
   });
 
-  describe("form workflow", () => {
+  describe("[UNIT] form workflow", () => {
     test("complete form setup workflow", () => {
       const { result } = renderHook(() => useChallengeForm());
 

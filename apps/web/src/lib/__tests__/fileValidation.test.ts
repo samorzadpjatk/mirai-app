@@ -9,7 +9,7 @@ import {
 } from "../fileValidation";
 
 describe("[UNIT] formatBytes", () => {
-  describe("edge cases", () => {
+  describe("[UNIT] edge cases", () => {
     test("returns '0 B' for zero bytes", () => {
       expect(formatBytes(0)).toBe("0 B");
     });
@@ -33,7 +33,7 @@ describe("[UNIT] formatBytes", () => {
     });
   });
 
-  describe("unit conversion", () => {
+  describe("[UNIT] unit conversion", () => {
     test("returns bytes for values less than 1024", () => {
       expect(formatBytes(1)).toBe("1 B");
       expect(formatBytes(512)).toBe("512 B");
@@ -66,7 +66,7 @@ describe("[UNIT] formatBytes", () => {
     });
   });
 
-  describe("decimal formatting", () => {
+  describe("[UNIT] decimal formatting", () => {
     test("uses one decimal place", () => {
       expect(formatBytes(1500)).toBe("1.5 KB");
       expect(formatBytes(1600)).toBe("1.6 KB");
@@ -79,11 +79,11 @@ describe("[UNIT] formatBytes", () => {
   });
 });
 
-describe("validateFileType", () => {
+describe("[UNIT] validateFileType", () => {
   const createMockFile = (type: string): File =>
     new File([""], "test.txt", { type });
 
-  describe("with allowed types", () => {
+  describe("[UNIT] with allowed types", () => {
     test("returns null for allowed MIME type", () => {
       const file = createMockFile("image/jpeg");
       const allowed = ["image/jpeg", "image/png"];
@@ -113,14 +113,14 @@ describe("validateFileType", () => {
     });
   });
 
-  describe("with empty allowed list", () => {
+  describe("[UNIT] with empty allowed list", () => {
     test("returns null when no types are specified", () => {
       const file = createMockFile("application/pdf");
       expect(validateFileType(file, [])).toBeNull();
     });
   });
 
-  describe("error message formatting", () => {
+  describe("[UNIT] error message formatting", () => {
     test("includes the actual file type in error", () => {
       const file = createMockFile("video/mp4");
       const result = validateFileType(file, ["image/jpeg"]);
@@ -135,12 +135,12 @@ describe("validateFileType", () => {
   });
 });
 
-describe("validateFileSize", () => {
+describe("[UNIT] validateFileSize", () => {
   const MB_IN_BYTES = 1024 * 1024;
   const createMockFile = (sizeBytes: number): File =>
     new File([new ArrayBuffer(sizeBytes)], "test.txt");
 
-  describe("within limit", () => {
+  describe("[UNIT] within limit", () => {
     test("returns null when file is within size limit", () => {
       const file = createMockFile(1 * MB_IN_BYTES);
       expect(validateFileSize(file, 10)).toBeNull();
@@ -157,7 +157,7 @@ describe("validateFileSize", () => {
     });
   });
 
-  describe("exceeding limit", () => {
+  describe("[UNIT] exceeding limit", () => {
     test("returns error when file exceeds limit", () => {
       const file = createMockFile(11 * MB_IN_BYTES);
       const result = validateFileSize(file, 10);
@@ -174,7 +174,7 @@ describe("validateFileSize", () => {
     });
   });
 
-  describe("edge cases", () => {
+  describe("[UNIT] edge cases", () => {
     test("handles zero or negative maxSizeMb by treating as 1 MB", () => {
       const file = createMockFile(2 * MB_IN_BYTES);
       expect(validateFileSize(file, 0)).toContain("too large");
@@ -183,12 +183,12 @@ describe("validateFileSize", () => {
   });
 });
 
-describe("validateImageFile", () => {
+describe("[UNIT] validateImageFile", () => {
   const MB_IN_BYTES = 1024 * 1024;
   const createMockImageFile = (type: string, sizeBytes: number): File =>
     new File([new ArrayBuffer(sizeBytes)], "image.jpg", { type });
 
-  describe("combining type and size validation", () => {
+  describe("[UNIT] combining type and size validation", () => {
     test("returns null for valid image within limits", () => {
       const file = createMockImageFile("image/jpeg", 1 * MB_IN_BYTES);
       expect(validateImageFile(file)).toBeNull();
@@ -213,7 +213,7 @@ describe("validateImageFile", () => {
     });
   });
 
-  describe("custom options", () => {
+  describe("[UNIT] custom options", () => {
     test("uses custom max size when provided", () => {
       const file = createMockImageFile("image/jpeg", 15 * MB_IN_BYTES);
       expect(validateImageFile(file, { maxSizeMb: 20 })).toBeNull();
@@ -229,7 +229,7 @@ describe("validateImageFile", () => {
     });
   });
 
-  describe("default options", () => {
+  describe("[UNIT] default options", () => {
     test("uses DEFAULT_MAX_FILE_SIZE_MB (10) when not specified", () => {
       const file = createMockImageFile("image/jpeg", 11 * MB_IN_BYTES);
       expect(validateImageFile(file)).toContain("too large");
@@ -245,7 +245,7 @@ describe("validateImageFile", () => {
   });
 });
 
-describe("constants", () => {
+describe("[UNIT] constants", () => {
   test("DEFAULT_MAX_FILE_SIZE_MB is 10", () => {
     expect(DEFAULT_MAX_FILE_SIZE_MB).toBe(10);
   });

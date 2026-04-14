@@ -89,7 +89,7 @@ describe("[UNIT] useJudgement", () => {
     mockCompletePending = false;
   });
 
-  describe("challenge data", () => {
+  describe("[UNIT] challenge data", () => {
     test("returns undefined challenge by default", () => {
       const { result } = renderHook(() =>
         useJudgement("trip-123", "challenge-456"),
@@ -121,7 +121,7 @@ describe("[UNIT] useJudgement", () => {
     });
   });
 
-  describe("submissions", () => {
+  describe("[UNIT] submissions", () => {
     test("returns empty submissions by default", () => {
       const { result } = renderHook(() =>
         useJudgement("trip-123", "challenge-456"),
@@ -221,7 +221,7 @@ describe("[UNIT] useJudgement", () => {
     });
   });
 
-  describe("ranked submissions", () => {
+  describe("[UNIT] ranked submissions", () => {
     test("sorts by ranking", () => {
       mockSubmissionsData = [
         {
@@ -289,7 +289,7 @@ describe("[UNIT] useJudgement", () => {
     });
   });
 
-  describe("loading states", () => {
+  describe("[UNIT] loading states", () => {
     test("isLoading true when challenge is loading", () => {
       mockChallengeLoading = true;
 
@@ -330,7 +330,7 @@ describe("[UNIT] useJudgement", () => {
     });
   });
 
-  describe("actions", () => {
+  describe("[UNIT] actions", () => {
     test("exposes reviewSubmission function", () => {
       const { result } = renderHook(() =>
         useJudgement("trip-123", "challenge-456"),
@@ -348,7 +348,7 @@ describe("[UNIT] useJudgement", () => {
     });
   });
 
-  describe("challenge parsing", () => {
+  describe("[UNIT] challenge parsing", () => {
     test("parses valid challenge", () => {
       const rawChallenge = {
         id: "ch-1",
@@ -384,7 +384,7 @@ describe("[UNIT] useJudgement", () => {
     });
   });
 
-  describe("hook return shape", () => {
+  describe("[UNIT] hook return shape", () => {
     test("returns all expected properties", () => {
       const { result } = renderHook(() =>
         useJudgement("trip-123", "challenge-456"),

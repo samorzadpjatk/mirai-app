@@ -34,7 +34,7 @@ describe("[UNIT] useStaffVoting", () => {
     // Reset any mocks if needed
   });
 
-  describe("constants", () => {
+  describe("[UNIT] constants", () => {
     test("returns MIN_SUBMISSIONS_TO_VOTE constant", () => {
       const { result } = renderHook(() => useStaffVoting(defaultProps));
 
@@ -48,7 +48,7 @@ describe("[UNIT] useStaffVoting", () => {
     });
   });
 
-  describe("phase and state", () => {
+  describe("[UNIT] phase and state", () => {
     test("returns phase as string", () => {
       const { result } = renderHook(() => useStaffVoting(defaultProps));
 
@@ -73,7 +73,7 @@ describe("[UNIT] useStaffVoting", () => {
     });
   });
 
-  describe("comparison state", () => {
+  describe("[UNIT] comparison state", () => {
     test("returns comparisonCount as number", () => {
       const { result } = renderHook(() => useStaffVoting(defaultProps));
 
@@ -115,7 +115,7 @@ describe("[UNIT] useStaffVoting", () => {
     });
   });
 
-  describe("current pair", () => {
+  describe("[UNIT] current pair", () => {
     test("returns currentLeft as submission or null", () => {
       const submissions = [
         createMockSubmission({ id: "sub-1", groupId: "group-1" }),
@@ -154,7 +154,7 @@ describe("[UNIT] useStaffVoting", () => {
     });
   });
 
-  describe("ranking", () => {
+  describe("[UNIT] ranking", () => {
     test("returns ranking array", () => {
       const submissions = [
         createMockSubmission({ id: "sub-1", groupId: "group-1" }),
@@ -189,7 +189,7 @@ describe("[UNIT] useStaffVoting", () => {
     });
   });
 
-  describe("voting actions", () => {
+  describe("[UNIT] voting actions", () => {
     test("exposes handlePickWinner function", () => {
       const { result } = renderHook(() => useStaffVoting(defaultProps));
 
@@ -215,7 +215,7 @@ describe("[UNIT] useStaffVoting", () => {
     });
   });
 
-  describe("edge cases", () => {
+  describe("[UNIT] edge cases", () => {
     test("handles empty submissions", () => {
       const { result } = renderHook(() =>
         useStaffVoting({
@@ -267,7 +267,7 @@ describe("[UNIT] useStaffVoting", () => {
     });
   });
 
-  describe("hook return shape", () => {
+  describe("[UNIT] hook return shape", () => {
     test("returns all expected properties", () => {
       const { result } = renderHook(() => useStaffVoting(defaultProps));
 

@@ -80,7 +80,7 @@ describe("[UNIT] useChallengeSubmissions", () => {
     mockFlagMutation = createMockMutationResult();
   });
 
-  describe("query configuration", () => {
+  describe("[UNIT] query configuration", () => {
     test("returns empty submissions array by default", () => {
       const { result } = renderHook(() =>
         useChallengeSubmissions("trip-123", "challenge-456"),
@@ -106,7 +106,7 @@ describe("[UNIT] useChallengeSubmissions", () => {
     });
   });
 
-  describe("loading states", () => {
+  describe("[UNIT] loading states", () => {
     test("returns isLoading true when loading", () => {
       mockQueryResult = createMockQueryResult({ isLoading: true });
 
@@ -128,7 +128,7 @@ describe("[UNIT] useChallengeSubmissions", () => {
     });
   });
 
-  describe("submissions data", () => {
+  describe("[UNIT] submissions data", () => {
     test("returns parsed submissions from query data", () => {
       const mockSubmissions: SubmissionItem[] = [
         {
@@ -172,7 +172,7 @@ describe("[UNIT] useChallengeSubmissions", () => {
     });
   });
 
-  describe("review submission", () => {
+  describe("[UNIT] review submission", () => {
     test("exposes reviewSubmission function", () => {
       const { result } = renderHook(() =>
         useChallengeSubmissions("trip-123", "challenge-456"),
@@ -192,7 +192,7 @@ describe("[UNIT] useChallengeSubmissions", () => {
     });
   });
 
-  describe("flag submission", () => {
+  describe("[UNIT] flag submission", () => {
     test("exposes flagSubmission function", () => {
       const { result } = renderHook(() =>
         useChallengeSubmissions("trip-123", "challenge-456"),
@@ -212,7 +212,7 @@ describe("[UNIT] useChallengeSubmissions", () => {
     });
   });
 
-  describe("refetch", () => {
+  describe("[UNIT] refetch", () => {
     test("exposes refetch function", () => {
       const { result } = renderHook(() =>
         useChallengeSubmissions("trip-123", "challenge-456"),
@@ -222,7 +222,7 @@ describe("[UNIT] useChallengeSubmissions", () => {
     });
   });
 
-  describe("submission parsing", () => {
+  describe("[UNIT] submission parsing", () => {
     test("parses valid submission correctly", async () => {
       const rawSubmission = {
         id: "sub-1",
@@ -320,7 +320,7 @@ describe("[UNIT] useChallengeSubmissions", () => {
     });
   });
 
-  describe("hook return shape", () => {
+  describe("[UNIT] hook return shape", () => {
     test("returns all expected properties", () => {
       const { result } = renderHook(() =>
         useChallengeSubmissions("trip-123", "challenge-456"),

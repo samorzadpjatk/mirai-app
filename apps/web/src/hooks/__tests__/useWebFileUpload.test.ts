@@ -71,7 +71,7 @@ mock.module("@mirai-app/frameworks/auth/client", () => ({
 // Store reference to the hook (loaded dynamically)
 let useWebFileUpload: typeof useWebFileUploadType;
 
-describe("[UNIT] useWebFileUpload", () => {
+describe("[UNIT] useWebFileUpload () => {
   // Load the hook module inside describe but outside tests
   // This runs after mocks are set up but before tests run
   beforeEach(async () => {
@@ -83,7 +83,7 @@ describe("[UNIT] useWebFileUpload", () => {
     }
   });
 
-  describe("initial state", () => {
+  describe("[UNIT] initial state", () => {
     test("starts with idle status", () => {
       const { result } = renderHook(() => useWebFileUpload());
       expect(result.current.status).toBe("idle");
@@ -117,7 +117,7 @@ describe("[UNIT] useWebFileUpload", () => {
     });
   });
 
-  describe("selectFile", () => {
+  describe("[UNIT] selectFile", () => {
     test("selects a valid file", () => {
       const { result } = renderHook(() => useWebFileUpload());
       const mockFile = new File(["test content"], "test.jpg", {
@@ -159,7 +159,7 @@ describe("[UNIT] useWebFileUpload", () => {
     });
   });
 
-  describe("clearSelection", () => {
+  describe("[UNIT] clearSelection", () => {
     test("clears selected file", () => {
       const { result } = renderHook(() => useWebFileUpload());
       const mockFile = new File(["test"], "test.jpg", { type: "image/jpeg" });
@@ -184,7 +184,7 @@ describe("[UNIT] useWebFileUpload", () => {
     });
   });
 
-  describe("reset", () => {
+  describe("[UNIT] reset", () => {
     test("resets status to idle", () => {
       const { result } = renderHook(() => useWebFileUpload());
       act(() => {
@@ -220,7 +220,7 @@ describe("[UNIT] useWebFileUpload", () => {
     });
   });
 
-  describe("file validation", () => {
+  describe("[UNIT] file validation", () => {
     test("validates file type", () => {
       const { result } = renderHook(() =>
         useWebFileUpload({ allowedMimeTypes: ["image/jpeg", "image/png"] }),
@@ -259,7 +259,7 @@ describe("[UNIT] useWebFileUpload", () => {
     });
   });
 
-  describe("upload function", () => {
+  describe("[UNIT] upload function", () => {
     test("throws error when no file selected", async () => {
       const { result } = renderHook(() => useWebFileUpload());
 
@@ -280,21 +280,21 @@ describe("[UNIT] useWebFileUpload", () => {
     });
   });
 
-  describe("verifyFileAccessible", () => {
+  describe("[UNIT] verifyFileAccessible", () => {
     test("exposes verifyFileAccessible function", () => {
       const { result } = renderHook(() => useWebFileUpload());
       expect(typeof result.current.verifyFileAccessible).toBe("function");
     });
   });
 
-  describe("onFileInputChange", () => {
+  describe("[UNIT] onFileInputChange", () => {
     test("exposes onFileInputChange function", () => {
       const { result } = renderHook(() => useWebFileUpload());
       expect(typeof result.current.onFileInputChange).toBe("function");
     });
   });
 
-  describe("hook return shape", () => {
+  describe("[UNIT] hook return shape", () => {
     test("returns all expected properties", () => {
       const { result } = renderHook(() => useWebFileUpload());
 

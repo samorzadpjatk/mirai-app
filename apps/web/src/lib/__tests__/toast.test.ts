@@ -57,7 +57,7 @@ describe("[UNIT] appToast.success", () => {
   });
 });
 
-describe("appToast.error", () => {
+describe("[UNIT] appToast.error", () => {
   test("calls toast.error with message", () => {
     appToast.error("Something went wrong!");
 
@@ -81,7 +81,7 @@ describe("appToast.error", () => {
   });
 });
 
-describe("appToast.info", () => {
+describe("[UNIT] appToast.info", () => {
   test("calls toast with message", () => {
     appToast.info("Information message");
 
@@ -105,7 +105,7 @@ describe("appToast.info", () => {
   });
 });
 
-describe("appToast.loading", () => {
+describe("[UNIT] appToast.loading", () => {
   test("calls toast.loading with message", () => {
     appToast.loading("Loading...");
 
@@ -128,7 +128,7 @@ describe("appToast.loading", () => {
   });
 });
 
-describe("appToast.dismiss", () => {
+describe("[UNIT] appToast.dismiss", () => {
   test("dismisses all toasts when called without id", () => {
     appToast.dismiss();
 
@@ -152,7 +152,7 @@ describe("appToast.dismiss", () => {
   });
 });
 
-describe("appToast integration", () => {
+describe("[UNIT] appToast integration", () => {
   test("can chain different toast types", () => {
     const loadingId = appToast.loading("Saving...");
     appToast.dismiss(loadingId as string);

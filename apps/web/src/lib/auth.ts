@@ -1,5 +1,6 @@
 import { authStore, type AuthUser } from "@mirai-app/frameworks/auth/client";
 import { getTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import { apiLogger } from "@mirai-app/shared";
 import { supabase } from "./supabase";
 import { env } from "./env";
 
@@ -85,10 +86,9 @@ export const onAuthUserFetch = async (
       role: me.role,
     });
   } catch (error) {
-    console.warn(
-      "[web] GraphQL me query failed, falling back to Supabase",
+    apiLogger.warn("[web] GraphQL me query failed, falling back to Supabase", {
       error,
-    );
+    });
 
     const { data, error: supabaseError } = await supabase.auth.getUser(
       session.access_token,
