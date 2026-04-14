@@ -1,100 +1,128 @@
 const config = {
   forbidden: [
-    // Layer rules: inward dependencies only
+    // === Layer Boundary Rules (DDD/Clean Architecture) ===
+    // Dependency direction: Frameworks → Adapters → Use Cases → Domain
     {
-      name: "domain-no-deps",
-      comment: "Domain layer must be pure",
+      name: "domain-pure",
+      comment:
+        "Domain layer must have no external dependencies (pure business logic)",
       severity: "error",
-      from: { path: "^packages/domain" },
-      to: { path: "^packages/(application|infrastructure|shared|apps)" },
+      from: { path: "^packages/domain/" },
+      to: {
+        path: "^packages/(use-cases|adapters|frameworks|shared|apps|graphql-client)/",
+      },
     },
     {
-      name: "application-only-depends-on-domain",
+      name: "use-cases-depends-on-domain-only",
+      comment:
+        "Use cases can only depend on domain and node_modules (test files may use adapters)",
       severity: "error",
-      from: { path: "^packages/application" },
-      to: { pathNot: "^packages/domain" },
+      from: {
+        path: "^packages/use-cases/",
+        pathNot: [
+          // Test files may import from adapters for mock implementations
+          "\\.(test|spec)\\.tsx?$",
+          "__tests__/",
+        ],
+      },
+      to: {
+        path: "^packages/(adapters|frameworks|shared|apps|graphql-client)/",
+      },
     },
     {
-      name: "infrastructure-only-depends-on-inner-layers",
+      name: "adapters-depends-on-inner-layers",
+      comment:
+        "Adapters can depend on use-cases, domain, shared, and frameworks (not apps)",
       severity: "error",
-      from: { path: "^packages/infrastructure" },
-      to: { pathNot: "^packages/(application|domain)" },
+      from: {
+        path: "^packages/adapters/",
+        pathNot: [
+          // Test files can use internal modules and testing frameworks
+          "\\.(test|spec)\\.tsx?$",
+          "__tests__/",
+        ],
+      },
+      to: {
+        path: "^apps/",
+      },
     },
     {
       name: "packages-no-app-deps",
+      comment: "Shared packages cannot depend on apps",
       severity: "error",
       from: { path: "^packages/" },
       to: { path: "^apps/" },
     },
 
-    // API boundaries: enforce public API only
+    // === API Boundary Rules ===
     {
-      name: "apps-use-package-public-api",
-      comment: "Apps must use package public APIs",
+      name: "use-public-apis",
+      comment: "Use package index.ts exports instead of internal modules",
       severity: "warn",
       from: {
         path: "^apps/",
         pathNot: [
-          "\\.(test|spec|bench)\\.ts$",
-          "\\.e2e\\.test\\.ts$",
+          // Tests and special files
+          "\\.(test|spec|bench)\\.tsx?$",
+          "\\.e2e\\.test\\.tsx?$",
           "__tests__/",
           "^apps/seed/",
         ],
       },
       to: {
-        path: "^packages/.+/src/",
+        path: "^packages/[^/]+/src/.+",
         pathNot: [
-          // Package indices (main entry and subdirectories)
+          // Allow package index files (public API)
           "^packages/[^/]+/src/index\\.ts$",
-          "^packages/[^/]+/src/[^/]+/index\\.ts$",
-          // Frameworks package exports
-          "^packages/frameworks/src/(supabase|auth|graphql|drizzle|stores|storage|di|layers|prisma|trpc)/",
-          "^packages/frameworks/src/(supabase|auth)/react\\.tsx$",
-          "^packages/frameworks/src/(supabase|auth)/client\\.ts$",
-          "^packages/frameworks/src/auth/server\\.ts$",
-          "^packages/frameworks/src/graphql/(client|native-client|server|builder|schema)\\.tsx?$",
-          "^packages/frameworks/src/auth/store/index\\.ts$",
-          "^packages/frameworks/src/auth/hooks/index\\.ts$",
-          // GraphQL client compiled exports
-          "^packages/graphql-client/dist/src/(index|generated/urql)\\.js$",
+          // Allow frameworks sub-module exports (intended public API)
+          "^packages/frameworks/src/[^/]+/(index|client|server|react|hooks|store)\\.tsx?$",
+          // Allow graphql-client dist exports
+          "^packages/graphql-client/dist/",
         ],
       },
     },
 
-    // Quality rules
+    // === Quality Rules ===
     {
       name: "no-circular-deps",
+      comment: "Circular dependencies create tight coupling",
       severity: "error",
       from: {},
       to: { circular: true },
     },
     {
       name: "no-orphans",
-      comment: "Flag unimported files",
+      comment: "Files should be imported or be entry points",
       severity: "warn",
       from: {
         orphan: true,
         pathNot: [
-          "\\.(test|spec|bench)\\.ts$",
-          "\\.e2e\\.test\\.ts$",
+          // Tests
+          "\\.(test|spec|bench)\\.tsx?$",
+          "\\.e2e\\.test\\.tsx?$",
           "__tests__/",
           "__mocks__/",
-          "\\.mocks\\.",
-          "index\\.ts$",
-          "server\\.ts$",
-          "noop-preload\\.ts$",
-          "codegen\\.ts$",
+          // Entry points
+          "index\\.tsx?$",
+          "server\\.tsx?$",
+          "client\\.tsx?$",
+          "react\\.tsx?$",
+          // Config
           "(tailwind|metro|babel|jest|commitlint)\\.config\\.",
           "jest\\.setup\\.",
           "runtimeEnv\\.ts$",
+          "codegen\\.ts$",
+          // Dev/Build
           "\\.dependency-cruiser\\.mjs$",
-          "types\\.ts$",
+          "noop-preload\\.ts$",
+          // Types
+          "types\\.tsx?$",
           "/types/",
-          "constants\\.ts$",
-          "challengeFormConstants\\.ts$",
+          "constants\\.tsx?$",
+          // Coverage
           "coverage/",
-          "test-helpers",
-          "testHelpers",
+          // Test helpers
+          "(test-helpers|testHelpers)",
         ],
       },
       to: {},
