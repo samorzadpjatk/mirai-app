@@ -1,5 +1,7 @@
 # Migration Guide: tRPC Middleware to DDD Layers
 
+> **Note on Current Migration Status:** This guide documents the completed migration from tRPC middleware to DDD layers using `Result<T,E>` patterns. The codebase is currently migrating **TO Effect** for improved type safety and composability. See [CLAUDE.md Section 10](./CLAUDE.md#10-effect-framework-patterns--migration-guide) for the current Effect patterns.
+
 ## Overview
 
 This guide documents the migration of authentication and authorization logic from tRPC middleware to proper DDD layers (Domain, Use Cases, Adapters).

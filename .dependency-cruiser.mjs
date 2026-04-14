@@ -1,197 +1,114 @@
 const config = {
   forbidden: [
-    // ─────────────────────────────────────────────────────────────
-    // Clean architecture layer rules
-    // ─────────────────────────────────────────────────────────────
-
+    // Layer rules: inward dependencies only
     {
       name: "domain-no-deps",
+      comment: "Domain layer must be pure",
       severity: "error",
       from: { path: "^packages/domain" },
-      to: {
-        path: "^packages/(application|infrastructure|shared|apps)",
-      },
+      to: { path: "^packages/(application|infrastructure|shared|apps)" },
     },
-
     {
-      name: "application-only-depends-on-domain-and-shared",
+      name: "application-only-depends-on-domain",
       severity: "error",
       from: { path: "^packages/application" },
-      to: {
-        pathNot: "^packages/(domain|shared)",
-      },
+      to: { pathNot: "^packages/domain" },
     },
-
     {
-      name: "infrastructure-no-apps",
+      name: "infrastructure-only-depends-on-inner-layers",
       severity: "error",
       from: { path: "^packages/infrastructure" },
-      to: {
-        path: "^apps/",
-      },
+      to: { pathNot: "^packages/(application|domain)" },
     },
-
     {
-      name: "no-app-imports-into-packages",
+      name: "packages-no-app-deps",
       severity: "error",
       from: { path: "^packages/" },
-      to: {
-        path: "^apps/",
-      },
+      to: { path: "^apps/" },
     },
 
-    // ─────────────────────────────────────────────────────────────
-    // Workspace boundary enforcement
-    // ─────────────────────────────────────────────────────────────
-
+    // API boundaries: enforce public API only
     {
-      name: "domain-no-cross-imports",
-      severity: "error",
-      from: { path: "^packages/domain/" },
-      to: {
-        path: "^packages/",
-        pathNot: "^packages/domain/",
-      },
-    },
-    {
-      name: "apps-no-deep-package-imports",
-      comment: "Flag imports that bypass package public API (index.ts exports)",
+      name: "apps-use-package-public-api",
+      comment: "Apps must use package public APIs",
       severity: "warn",
       from: {
         path: "^apps/",
-        // Exclude test files (they may need internal APIs for testing)
         pathNot: [
-          "\\.test\\.ts$",
-          "\\.spec\\.ts$",
-          "__tests__/",
-          "\\.bench\\.ts$",
+          "\\.(test|spec|bench)\\.ts$",
           "\\.e2e\\.test\\.ts$",
-          // Seed app is a utility with special access needs
+          "__tests__/",
           "^apps/seed/",
         ],
       },
       to: {
         path: "^packages/.+/src/",
-        // Allow package index files and export paths defined in package.json
         pathNot: [
-          // Package index files (public API entry points)
+          // Package indices (main entry and subdirectories)
           "^packages/[^/]+/src/index\\.ts$",
-          // Frameworks package exports (defined in package.json exports field)
-          "^packages/frameworks/src/(supabase|auth|graphql|drizzle|stores|storage|di|layers)/index\\.ts$",
-          "^packages/frameworks/src/(supabase|auth|graphql|drizzle)/react\\.tsx$",
+          "^packages/[^/]+/src/[^/]+/index\\.ts$",
+          // Frameworks package exports
+          "^packages/frameworks/src/(supabase|auth|graphql|drizzle|stores|storage|di|layers|prisma|trpc)/",
+          "^packages/frameworks/src/(supabase|auth)/react\\.tsx$",
           "^packages/frameworks/src/(supabase|auth)/client\\.ts$",
           "^packages/frameworks/src/auth/server\\.ts$",
+          "^packages/frameworks/src/graphql/(client|native-client|server|builder|schema)\\.tsx?$",
           "^packages/frameworks/src/auth/store/index\\.ts$",
           "^packages/frameworks/src/auth/hooks/index\\.ts$",
-          "^packages/frameworks/src/graphql/(client|native-client|server|builder|schema)\\.tsx?$",
           // GraphQL client compiled exports
           "^packages/graphql-client/dist/src/(index|generated/urql)\\.js$",
-          // Deep imports from same package (internal organization)
-          "^packages/[^/]+/src/[^/]+/index\\.ts$",
         ],
       },
     },
 
-    // ─────────────────────────────────────────────────────────────
-    // Technical hygiene
-    // ─────────────────────────────────────────────────────────────
-
+    // Quality rules
     {
       name: "no-circular-deps",
       severity: "error",
       from: {},
-      to: {
-        circular: true,
-      },
+      to: { circular: true },
     },
-
     {
       name: "no-orphans",
+      comment: "Flag unimported files",
       severity: "warn",
       from: {
         orphan: true,
         pathNot: [
-          "\\.test\\.ts$",
-          "\\.spec\\.ts$",
-          "index\\.ts$",
-          // Config files used by tooling
-          "codegen\\.ts$",
-          "tailwind\\.config\\.",
-          "metro\\.config\\.",
-          "babel\\.config\\.",
-          "jest\\.config\\.",
-          "jest\\.setup\\.",
-          "commitlint\\.config\\.",
-          "\.dependency-cruiser\\.mjs$",
-          // Mock files for testing
-          "__mocks__",
+          "\\.(test|spec|bench)\\.ts$",
+          "\\.e2e\\.test\\.ts$",
+          "__tests__/",
+          "__mocks__/",
           "\\.mocks\\.",
-          // Test helpers
-          "__tests__/(test-helpers|testHelpers)",
-          // Coverage report artifacts
-          "coverage/",
-          // Server entry points
-          "apps/backend-server/src/server\\.ts$",
-          "apps/backend-server/noop-preload\\.ts$",
-          // Types files are often imported via path aliases (matches files in types/ folders or named types.ts)
+          "index\\.ts$",
+          "server\\.ts$",
+          "noop-preload\\.ts$",
+          "codegen\\.ts$",
+          "(tailwind|metro|babel|jest|commitlint)\\.config\\.",
+          "jest\\.setup\\.",
+          "runtimeEnv\\.ts$",
+          "\\.dependency-cruiser\\.mjs$",
           "types\\.ts$",
           "/types/",
-          // Constants/config files used via path aliases
           "constants\\.ts$",
-          "runtimeEnv\\.ts$",
           "challengeFormConstants\\.ts$",
-          // Seed app internal types
-          "apps/seed/src/types\\.ts$",
+          "coverage/",
+          "test-helpers",
+          "testHelpers",
         ],
       },
       to: {},
     },
-
-    {
-      name: "ignore-orphans-in-ports-and-prisma",
-      severity: "ignore",
-      from: {
-        path: "(ports|prisma/lib/models)",
-      },
-      to: {},
-    },
-
-    {
-      name: "apps-can-import-frameworks-public-api",
-      severity: "ignore",
-      from: { path: "^apps/" },
-      to: {
-        path: "^packages/frameworks/src/(trpc|auth|supabase|prisma)/",
-      },
-    },
   ],
-
   options: {
-    // Bun + TS friendly
-    tsConfig: {
-      fileName: "tsconfig.json",
-    },
-
-    // Respect package.json exports
+    tsConfig: { fileName: "tsconfig.json" },
     enhancedResolveOptions: {
       exportsFields: ["exports"],
       conditionNames: ["import", "default"],
     },
-
-    // Ignore build artifacts
-    doNotFollow: {
-      path: ["node_modules", "dist", "build", "\\.d\\.ts$"],
-    },
-
-    // ESM support
+    doNotFollow: { path: ["node_modules", "dist", "build", "\\.d\\.ts$"] },
     moduleSystems: ["es6"],
-
-    // Keep output deterministic
-    reporterOptions: {
-      dot: {
-        collapsePattern: "node_modules/[^/]+",
-      },
-    },
+    reporterOptions: { dot: { collapsePattern: "node_modules/[^/]+" } },
   },
 };
 

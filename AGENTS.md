@@ -106,9 +106,9 @@ bun test --coverage
 
 #### Testing rules
 
-- **Domain tests:** Use `Result<T,E>` (pure, no async, no DI).
-- **Use case tests:** Use `async/await` and mock ports via DI container.
-- **Adapter tests:** Integration tests; wrap external calls with `Effect.tryPromise(...)`, but prefer `Result` for domain interactions.
+- **Domain tests:** Use `Effect<T,E,never>` (pure Effects, no DI required).
+- **Use case tests:** Use `Effect.gen` + mock ports via `Layer.succeed` + `Effect.provide`.
+- **Adapter tests:** Integration tests; wrap external calls with `Effect.tryPromise(...)`, convert errors at boundaries.
 
 ---
 
@@ -118,7 +118,7 @@ bun test --coverage
 
 - **Domain purity:** ZERO external dependencies in domain.
 - **Dependency direction:** Always inward (Frameworks → Adapters → Use Cases → Domain).
-- **Error handling model:** Domain uses `Result<T,E>`; use-cases use `async/await` + `Promise<Result<T,E>>`.
+- **Error handling model:** Domain uses `Effect<T,E,never>`; use-cases use `Effect.gen` with Context.Tags for dependencies.
 - **ID types:** Use branded types; do not mix IDs across aggregates.
 - **No UUID/time randomness in domain:** Pass `id` and `createdAt` in.
 
@@ -126,30 +126,12 @@ bun test --coverage
 
 ```ts
 // packages/domain/src/entities/MyEntity.ts
-import type { Result } from "./result";
-import { ok, err } from "./result";
+import { Effect, Data } from "effect";
 
-export class ValidationError extends Error {
-  readonly _tag = "ValidationError";
-}
-
-export class MyEntity {
-  private constructor(
-    readonly id: string,
-    readonly name: string,
-    readonly createdAt: Date,
-  ) {}
-
-  static create(props: {
-    id: string;
-    name: string;
-    createdAt: Date;
-  }): Result<MyEntity, ValidationError> {
-    if (props.name.trim().length === 0)
-      return err(new ValidationError("Name is required"));
-    return ok(new MyEntity(props.id, props.name, props.createdAt));
-  }
-}
+export class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string;
+  message: string;
+}> {}
 
 export class MyEntity {
   private constructor(
@@ -162,10 +144,13 @@ export class MyEntity {
     id: string;
     name: string;
     createdAt: Date;
-  }): Either<ValidationError, MyEntity> {
-    if (props.name.trim().length === 0)
-      return left(new ValidationError("Name is required"));
-    return right(new MyEntity(props.id, props.name, props.createdAt));
+  }): Effect.Effect<MyEntity, ValidationError, never> {
+    if (props.name.trim().length === 0) {
+      return Effect.fail(
+        new ValidationError({ field: "name", message: "Name is required" }),
+      );
+    }
+    return Effect.succeed(new MyEntity(props.id, props.name, props.createdAt));
   }
 }
 ```
@@ -175,7 +160,7 @@ export class MyEntity {
 - **Wrong imports:** Importing Prisma/tRPC/Effect runtime services into domain.
 - **Hidden nondeterminism:** Using `Date.now()`, `Math.random()`, `crypto.randomUUID()` in domain.
 - **Mutation:** Mutating entity state instead of returning new instances.
-- **Exceptions as control flow:** Throwing in domain instead of returning `Result<T,E>`.
+- **Exceptions as control flow:** Throwing in domain instead of returning `Effect<T,E,never>`.
 
 ---
 
@@ -343,63 +328,90 @@ AuthContext is passed explicitly to use cases. No auth in tRPC middleware.
 
 ---
 
-## Use case template (async/await + Result)
+## Use case template (Effect-based)
 
 ```ts
 // packages/use-cases/src/interactors/DoSomething.ts
-import type { Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
+import { Effect, Data } from "effect";
+import { MyEntityRepository } from "../ports/MyEntityRepository";
 
-export class EntityNotFoundError extends Error {
-  readonly _tag = "EntityNotFoundError";
-}
+export class EntityNotFoundError extends Data.TaggedError(
+  "EntityNotFoundError",
+)<{
+  entityId: string;
+}> {}
 
 export class DoSomethingUseCase {
-  constructor(private readonly repo: MyEntityRepository) {}
-
-  async execute(
+  execute(
     input: DoSomethingInput,
-  ): Promise<Result<SomethingResultDTO, EntityNotFoundError>> {
-    const entity = await this.repo.findById(input.entityId);
-    if (!entity) return err(new EntityNotFoundError());
+  ): Effect.Effect<
+    SomethingResultDTO,
+    EntityNotFoundError,
+    MyEntityRepository
+  > {
+    return Effect.gen(function* () {
+      const repo = yield* MyEntityRepository;
 
-    const updated = await this.repo.save(entity);
-    return ok(SomethingResultDTO.fromDomain(updated));
+      const entity = yield* repo.findById(input.entityId);
+      if (!entity) {
+        return yield* Effect.fail(
+          new EntityNotFoundError({ entityId: input.entityId }),
+        );
+      }
+
+      const updated = yield* repo.save(entity);
+      return SomethingResultDTO.fromDomain(updated);
+    });
   }
 }
 ```
 
-### Use case test template
+### Use case test template (Effect with Layer)
 
 ```ts
-import { describe, it, expect, beforeEach } from "bun:test";
-import { createTestContainer } from "@mirai-app/frameworks/di";
-import { asClass } from "awilix";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
+import { DoSomethingUseCase } from "./DoSomething";
+import { MyEntityRepository } from "../ports/MyEntityRepository";
 
-describe("[UNIT] DoSomethingUseCase", () => {
-  let container: any;
-
-  beforeEach(() => {
-    container = createTestContainer();
-    container.register({
-      myEntityRepository: asClass(InMemoryMyEntityRepository).singleton(),
-      doSomethingUseCase: asClass(DoSomethingUseCase).scoped(),
-    });
+// Create mock repository layer
+const createMockRepoLayer = () =>
+  Layer.succeed(MyEntityRepository, {
+    findById: (id: string) => Effect.succeed(null),
+    save: (entity: MyEntity) => Effect.succeed(entity),
   });
 
+describe("[UNIT] DoSomethingUseCase", () => {
   it("returns DTO on success", async () => {
-    const useCase = container.resolve("doSomethingUseCase");
-    const result = await useCase.execute({ entityId: "1" });
+    const useCase = new DoSomethingUseCase();
+    const mockLayer = createMockRepoLayer();
 
-    expect(result.kind).toBe("ok");
-    if (result.kind === "ok") {
-      expect(result.value).toBeDefined();
-    }
+    const program = useCase
+      .execute({ entityId: "1" })
+      .pipe(Effect.provide(mockLayer));
+
+    const result = await Effect.runPromise(program);
+    expect(result).toBeDefined();
+  });
+
+  it("fails with EntityNotFoundError", async () => {
+    const useCase = new DoSomethingUseCase();
+    const failingLayer = Layer.succeed(MyEntityRepository, {
+      findById: () => Effect.succeed(null), // Returns null
+      save: (e: MyEntity) => Effect.succeed(e),
+    });
+
+    const program = useCase
+      .execute({ entityId: "nonexistent" })
+      .pipe(Effect.provide(failingLayer));
+
+    const either = await Effect.runPromise(Effect.either(program));
+    expect(either._tag).toBe("Left");
   });
 });
 ```
 
-### Use case test template (Effect.runPromise)
+### Use case test template (Effect with container)
 
 ```ts
 import { describe, it, expect, beforeEach } from "bun:test";
@@ -481,10 +493,10 @@ describe("[INTEGRATION] PrismaUserRepository", () => {});
 
 ### Layer boundary confusion
 
-- **Domain:** pure business logic (`Result<T,E>` - no exceptions, no async)
-- **Use cases:** orchestration (`async/await` + `Promise<Result<T,E>>`)
-- **Adapters:** framework integration (translate Result to TRPCError)
-- **Frameworks:** configuration + DI wiring
+- **Domain:** pure business logic (`Effect<T,E,never>` - no exceptions, no async, no dependencies)
+- **Use cases:** orchestration (`Effect.gen` + `Context.Tags` for composable workflows)
+- **Adapters:** framework integration (`Effect.tryPromise` for external calls, convert errors at boundaries)
+- **Frameworks:** configuration + DI wiring (Layer composition for Effect, awilix-modular for framework)
 
 ---
 
