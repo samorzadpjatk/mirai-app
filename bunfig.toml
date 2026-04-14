@@ -4,6 +4,5 @@ coverageThreshold = { lines = 0.80, branches = 0.75, functions = 0.80 }
 
 # Exclude apps with their own test runners or specific setup requirements
 pathIgnorePatterns = [
-  "apps/native/**",    # Uses Jest
   "apps/web/**",       # Has own test setup with specific preload requirements
 ]

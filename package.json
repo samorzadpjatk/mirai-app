@@ -53,6 +53,7 @@
   "dependencies": {
     "@pothos/core": "^4.12.0",
     "@pothos/plugin-scope-auth": "^4.1.6",
+    "@tamagui/animations-css": "^1.125.32",
     "@types/pg": "^8.20.0",
     "drizzle-orm": "^0.45.2",
     "effect": "^3.14.0",
