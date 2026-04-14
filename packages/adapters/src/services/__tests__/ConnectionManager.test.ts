@@ -1,10 +1,20 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { Effect } from "effect";
+import { Effect, Layer, Context } from "effect";
 import { ConnectionManager } from "../ConnectionManager";
 import type { RealtimePort } from "@mirai-app/use-cases";
 import { RealtimeError } from "@mirai-app/use-cases/ports/RealtimePort";
+import { runWithTestLayer, createServiceLayer } from "../../test/test-helpers";
 
-// Mock RealtimePort
+// =============================================================================
+// Context Tag for RealtimePort dependency injection
+// =============================================================================
+
+const RealtimePortTag = Context.Tag<RealtimePort>("RealtimePort");
+
+// =============================================================================
+// Mock Factory for RealtimePort
+// =============================================================================
+
 const createMockRealtimePort = (): RealtimePort =>
   ({
     broadcast: mock(() => Effect.void),
@@ -18,6 +28,10 @@ const createMockRealtimePort = (): RealtimePort =>
     ),
     getConnectionState: mock(() => "CONNECTED" as const),
   }) as unknown as RealtimePort;
+
+// =============================================================================
+// Test Setup
+// =============================================================================
 
 describe("[UNIT] ConnectionManager", () => {
   let connectionManager: ConnectionManager;
@@ -55,7 +69,6 @@ describe("[UNIT] ConnectionManager", () => {
     });
 
     it("should handle disconnecting non-existent connection", () => {
-      // Should not throw
       const result = connectionManager.userDisconnected(
         "user-1",
         "non-existent",
@@ -124,11 +137,14 @@ describe("[UNIT] ConnectionManager", () => {
         timestamp: new Date(),
       };
 
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, mockRealtimePort);
+
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, [
           "friend-1",
           "friend-2",
         ]),
+        TestLayer,
       );
 
       expect(result.success).toBe(true);
@@ -156,12 +172,41 @@ describe("[UNIT] ConnectionManager", () => {
       );
 
       // Immediate second update should be throttled
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, mockRealtimePort);
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["friend-1"]),
+        TestLayer,
       );
 
       expect(result.throttled).toBe(true);
       expect(result.broadcastCount).toBe(0);
+    });
+
+    it("should work with Effect.provide pattern", async () => {
+      connectionManager.userConnected("user-1", "conn-1");
+      connectionManager.userConnected("friend-1", "conn-2");
+
+      const location = {
+        userId: "user-1",
+        latitude: 40.0,
+        longitude: -74.0,
+        accuracy: 10,
+        altitude: null,
+        speed: null,
+        timestamp: new Date(),
+      };
+
+      const program = Effect.gen(function* () {
+        const result = yield* connectionManager.broadcastLocation(
+          "user-1",
+          location,
+          ["friend-1"],
+        );
+        return result.success;
+      }).pipe(Effect.provide(Layer.succeed(RealtimePortTag, mockRealtimePort)));
+
+      const success = await Effect.runPromise(program);
+      expect(success).toBe(true);
     });
   });
 
@@ -188,6 +233,75 @@ describe("[UNIT] ConnectionManager", () => {
       connectionManager.clear();
 
       expect(connectionManager.getTotalConnectionCount()).toBe(0);
+    });
+  });
+
+  describe("[UNIT] Layer-based DI patterns", () => {
+    it("should demonstrate Layer.succeed for RealtimePort", async () => {
+      const customMockPort: RealtimePort = {
+        broadcast: () => Effect.void,
+        subscribe: () =>
+          Effect.succeed({
+            id: "custom-sub",
+            channel: "custom",
+            state: "CONNECTED",
+            unsubscribe: () => Effect.void,
+          }),
+        getConnectionState: () => "CONNECTED",
+      } as RealtimePort;
+
+      const manager = new ConnectionManager(customMockPort);
+      manager.userConnected("user-1", "conn-1");
+
+      const layer = Layer.succeed(RealtimePortTag, customMockPort);
+
+      const program = Effect.gen(function* () {
+        const result = yield* manager.broadcastLocation(
+          "user-1",
+          {
+            userId: "user-1",
+            latitude: 0,
+            longitude: 0,
+            accuracy: null,
+            altitude: null,
+            speed: null,
+            timestamp: new Date(),
+          },
+          [],
+        );
+        return result;
+      }).pipe(Effect.provide(layer));
+
+      const broadcastResult = await Effect.runPromise(program);
+      expect(broadcastResult).toBeDefined();
+    });
+
+    it("should demonstrate runWithTestLayer with RealtimePort", async () => {
+      const testPort = createMockRealtimePort();
+      const manager = new ConnectionManager(testPort);
+      manager.userConnected("user-1", "conn-1");
+
+      const TestLayer = createServiceLayer(RealtimePortTag, testPort);
+
+      const result = await runWithTestLayer(
+        manager.broadcastLocation(
+          "user-1",
+          {
+            userId: "user-1",
+            latitude: 51.5,
+            longitude: -0.1,
+            accuracy: 5,
+            altitude: null,
+            speed: null,
+            timestamp: new Date(),
+          },
+          [],
+        ),
+        TestLayer,
+      );
+
+      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
     });
   });
 });

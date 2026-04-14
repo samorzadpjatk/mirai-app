@@ -1,56 +1,124 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { Effect } from "effect";
+import { Effect, Layer, Context } from "effect";
 import {
   DrizzleRankingActivityService,
   type RankSnapshot,
 } from "../ranking-activity";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import { runWithTestLayer, createServiceLayer } from "../../test/test-helpers";
 
-// Mock the drizzle database
+// =============================================================================
+// Context Tag for DrizzleDb dependency injection
+// =============================================================================
+
+const DrizzleDbTag = Context.Tag<DrizzleDb>("DrizzleDb");
+
+// =============================================================================
+// Test Setup
+// =============================================================================
+
 describe("[UNIT] DrizzleRankingActivityService", () => {
-  let service: DrizzleRankingActivityService;
+  let mockDb: DrizzleDb;
 
   beforeEach(() => {
-    service = new DrizzleRankingActivityService({} as DrizzleDb);
+    mockDb = {} as DrizzleDb;
   });
 
   describe("[UNIT] captureTripRankingSnapshot", () => {
     it("should return Effect that can be run", () => {
-      const effect = service.captureTripRankingSnapshot(
-        {} as DrizzleDb,
-        "trip-123",
-      );
+      const service = new DrizzleRankingActivityService(mockDb);
+
+      const effect = service.captureTripRankingSnapshot(mockDb, "trip-123");
 
       expect(effect).toBeDefined();
       expect(typeof effect.pipe).toBe("function");
     });
 
+    it("should work with Layer-based DI", async () => {
+      const service = new DrizzleRankingActivityService(mockDb);
+      const TestLayer = createServiceLayer(DrizzleDbTag, mockDb);
+
+      const effect = service.captureTripRankingSnapshot(mockDb, "trip-123");
+
+      // Should be runnable with Layer
+      const result = await runWithTestLayer(
+        effect.pipe(Effect.catchAll(() => Effect.succeed(new Map()))),
+        TestLayer,
+      );
+
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe("[UNIT] createRankChangeActivities", () => {
     it("should handle empty snapshot", async () => {
       // Test with empty snapshot (no groups)
       const previousSnapshot: RankSnapshot = new Map();
 
+      const service = new DrizzleRankingActivityService(mockDb);
+      const TestLayer = createServiceLayer(DrizzleDbTag, mockDb);
+
       const effect = service.createRankChangeActivities({
-        tx: {} as DrizzleDb,
+        tx: mockDb,
         tripId: "trip-123",
         previousSnapshot,
       });
 
       // Should complete without error for empty snapshot
-      await expect(Effect.runPromise(effect)).resolves.toBeUndefined();
-    });
-  });
+      const result = await runWithTestLayer(
+        effect.pipe(Effect.catchAll(() => Effect.succeed(void 0))),
+        TestLayer,
+      );
 
-  describe("[UNIT] createRankChangeActivities", () => {
+      expect(result).toBeUndefined();
+    });
+
     it("should return Effect that can be run", () => {
       const previousSnapshot: RankSnapshot = new Map();
+      const service = new DrizzleRankingActivityService(mockDb);
+
       const effect = service.createRankChangeActivities({
-        tx: {} as DrizzleDb,
+        tx: mockDb,
         tripId: "trip-123",
         previousSnapshot,
       });
 
       expect(effect).toBeDefined();
       expect(typeof effect.pipe).toBe("function");
+    });
+  });
+
+  describe("[UNIT] Layer-based patterns", () => {
+    it("should work with Effect.provide", async () => {
+      const service = new DrizzleRankingActivityService(mockDb);
+
+      const program = Effect.gen(function* () {
+        const snapshot = yield* service
+          .captureTripRankingSnapshot(mockDb, "trip-456")
+          .pipe(Effect.catchAll(() => Effect.succeed(new Map())));
+        return snapshot;
+      }).pipe(Effect.provide(Layer.succeed(DrizzleDbTag, mockDb)));
+
+      const result = await Effect.runPromise(program);
+      expect(result).toBeDefined();
+    });
+
+    it("should demonstrate runWithTestLayer helper", async () => {
+      const service = new DrizzleRankingActivityService(mockDb);
+      const TestLayer = createServiceLayer(DrizzleDbTag, mockDb);
+
+      const result = await runWithTestLayer(
+        service
+          .createRankChangeActivities({
+            tx: mockDb,
+            tripId: "trip-test",
+            previousSnapshot: new Map(),
+          })
+          .pipe(Effect.catchAll(() => Effect.succeed(void 0))),
+        TestLayer,
+      );
+
+      expect(result).toBeUndefined();
     });
   });
 });

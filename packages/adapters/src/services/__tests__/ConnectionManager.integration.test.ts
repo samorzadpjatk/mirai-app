@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { Effect } from "effect";
+import { Effect, Layer, Context } from "effect";
 import {
   ConnectionManager,
   type BroadcastLocation,
@@ -7,6 +7,19 @@ import {
 import { InMemoryRealtimeAdapter } from "../../gateways/realtime/InMemoryRealtimeAdapter";
 import { isOk } from "@mirai-app/domain";
 import { RealtimeError } from "@mirai-app/use-cases/ports/RealtimePort";
+import { runWithTestLayer, createServiceLayer } from "../../test/test-helpers";
+
+// =============================================================================
+// Context Tag for RealtimePort dependency injection
+// =============================================================================
+
+const RealtimePortTag = Context.Tag<InMemoryRealtimeAdapter>(
+  "InMemoryRealtimeAdapter",
+);
+
+// =============================================================================
+// Integration Test Setup
+// =============================================================================
 
 describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   let realtimePort: InMemoryRealtimeAdapter;
@@ -153,8 +166,11 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         }),
       );
 
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
 
       expect(result.success).toBe(true);
@@ -176,12 +192,15 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // user-2 and user-3 are online, user-99 is not
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, [
           "user-2",
           "user-99",
           "user-3",
         ]),
+        TestLayer,
       );
 
       expect(result.success).toBe(true);
@@ -199,8 +218,11 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-99"]),
+        TestLayer,
       );
 
       expect(result.success).toBe(false); // No online friends to broadcast to
@@ -218,8 +240,11 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, []),
+        TestLayer,
       );
 
       expect(result.success).toBe(true);
@@ -263,12 +288,15 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, [
           "user-2",
           "user-3",
           "user-4",
         ]),
+        TestLayer,
       );
 
       expect(result.broadcastCount).toBe(3);
@@ -307,11 +335,14 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       };
 
       // Only user-2 is in friend list and online, user-3 is not connected
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, [
           "user-2",
           "user-3", // offline, should be skipped
         ]),
+        TestLayer,
       );
 
       // Only user-2 receives because they're the only one in friend list who is online
@@ -350,8 +381,11 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
       expect(messageCount).toBe(1);
 
@@ -359,8 +393,9 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       connectionManager.userDisconnected("user-2", "conn-2");
 
       // Second broadcast - should not receive
-      await Effect.runPromise(
+      await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
       expect(messageCount).toBe(1); // No new messages
     });
@@ -393,14 +428,18 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
       // First broadcast
-      await Effect.runPromise(
+      await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
 
       // Second broadcast should be throttled
-      const result2 = await Effect.runPromise(
+      const result2 = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
       expect(result2.throttled).toBe(true);
 
@@ -409,8 +448,9 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       connectionManager.userConnected("user-1", "conn-3");
 
       // Should not be throttled after reconnect
-      const result3 = await Effect.runPromise(
+      const result3 = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
       expect(result3.throttled).toBe(false);
     });
@@ -442,16 +482,20 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
       // First update should succeed
-      const result1 = await Effect.runPromise(
+      const result1 = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
       expect(result1.throttled).toBe(false);
       expect(result1.success).toBe(true);
 
       // Immediate second update should be throttled
-      const result2 = await Effect.runPromise(
+      const result2 = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
       expect(result2.throttled).toBe(true);
       expect(result2.broadcastCount).toBe(0);
@@ -469,17 +513,21 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
       // First update
-      await Effect.runPromise(
+      await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
 
       // Wait for throttle to expire
       await new Promise((resolve) => setTimeout(resolve, 120));
 
       // Second update should succeed
-      const result2 = await Effect.runPromise(
+      const result2 = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
       expect(result2.throttled).toBe(false);
       expect(result2.broadcastCount).toBe(1);
@@ -496,14 +544,18 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
       // First update
-      await Effect.runPromise(
+      await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
 
       // Throttled update
-      const result = await Effect.runPromise(
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
 
       expect(result.errors).toHaveLength(1);
@@ -533,8 +585,11 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, []),
+        TestLayer,
       );
 
       const updatedConnection = connectionManager.getConnection(
@@ -563,8 +618,11 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, []),
+        TestLayer,
       );
 
       const updatedConn2 = connectionManager.getConnection("user-1", "conn-2");
@@ -685,9 +743,12 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
+      const TestLayer = createServiceLayer(RealtimePortTag, mockRealtimePort);
+
       // Should not throw
-      const result = await Effect.runPromise(
+      const result = await runWithTestLayer(
         manager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
 
       // Result should contain the error
@@ -703,7 +764,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       // Set port to fail for user-2 by closing subscription
       await Effect.runPromise(
         realtimePort.subscribe("location:user-1", {
-          onMessage: (event, payload) => {
+          onMessage: () => {
             // Simulate error for user-2 only
             throw new Error("Simulated error");
           },
@@ -720,11 +781,14 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
-      const result = await Effect.runPromise(
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, [
           "user-2",
           "user-3",
         ]),
+        TestLayer,
       );
 
       // Should complete without throwing
@@ -854,9 +918,12 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
         timestamp: new Date(),
       };
 
+      const TestLayer = createServiceLayer(RealtimePortTag, realtimePort);
+
       // First broadcast
-      await Effect.runPromise(
+      await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
 
       // Clear
@@ -867,10 +934,77 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
       connectionManager.userConnected("user-2", "conn-4");
 
       // Should not be throttled after clear
-      const result = await Effect.runPromise(
+      const result = await runWithTestLayer(
         connectionManager.broadcastLocation("user-1", location, ["user-2"]),
+        TestLayer,
       );
       expect(result.throttled).toBe(false);
+    });
+  });
+
+  // =============================================================================
+  // Layer-based DI Demonstrations
+  // =============================================================================
+
+  describe("[UNIT] Layer-based DI patterns", () => {
+    it("should demonstrate Effect.provide with RealtimePort", async () => {
+      const customPort = new InMemoryRealtimeAdapter();
+      const manager = new ConnectionManager(customPort);
+      manager.userConnected("user-1", "conn-1");
+
+      const program = Effect.gen(function* () {
+        const result = yield* manager.broadcastLocation(
+          "user-1",
+          {
+            userId: "user-1",
+            latitude: 51.5,
+            longitude: -0.1,
+            accuracy: 5,
+            altitude: null,
+            speed: null,
+            timestamp: new Date(),
+          },
+          [],
+        );
+        return result.success;
+      }).pipe(Effect.provide(Layer.succeed(RealtimePortTag, customPort)));
+
+      const success = await Effect.runPromise(program);
+      expect(success).toBe(true);
+    });
+
+    it("should demonstrate runWithTestLayer helper", async () => {
+      const testPort = new InMemoryRealtimeAdapter();
+      const manager = new ConnectionManager(testPort);
+      manager.userConnected("user-1", "conn-1");
+      manager.userConnected("user-2", "conn-2");
+
+      await Effect.runPromise(
+        testPort.subscribe("location:user-1", {
+          onMessage: () => {},
+        }),
+      );
+
+      const TestLayer = createServiceLayer(RealtimePortTag, testPort);
+
+      const result = await runWithTestLayer(
+        manager.broadcastLocation(
+          "user-1",
+          {
+            userId: "user-1",
+            latitude: 40.7128,
+            longitude: -74.006,
+            accuracy: 10,
+            altitude: null,
+            speed: null,
+            timestamp: new Date(),
+          },
+          ["user-2"],
+        ),
+        TestLayer,
+      );
+
+      expect(result.success).toBe(true);
     });
   });
 });

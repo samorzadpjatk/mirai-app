@@ -1,3 +1,0 @@
-# Note: This app uses Jest for testing, not Bun's built-in test runner
-# Tests are run via: bun jest or bun run test
-# See jest.config.cjs for Jest configuration

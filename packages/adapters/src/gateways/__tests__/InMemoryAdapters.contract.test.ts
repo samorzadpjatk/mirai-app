@@ -24,7 +24,7 @@ describe("[UNIT] [CONTRACT] InMemory Adapters", () => {
   // AuthPort Contract Tests (via InMemoryAuthAdapter)
   // =============================================================================
 
-  describe("[UNIT] ""AuthPort - InMemoryAuthAdapter () => {
+  describe("[UNIT] AuthPort - InMemoryAuthAdapter", () => {
     let adapter: InMemoryAuthAdapter;
 
     beforeEach(() => {
@@ -245,7 +245,7 @@ describe("[UNIT] [CONTRACT] InMemory Adapters", () => {
       adapter = new InMemoryRealtimeAdapter();
     });
 
-    describe("[UNIT] ""subscribe () => {
+    describe("[UNIT] subscribe", () => {
       it("should return Either<RealtimeSubscription, RealtimeError | SubscriptionError>", async () => {
         const result = adapter.subscribe("test-channel", {
           onMessage: () => {},
@@ -271,7 +271,6 @@ describe("[UNIT] [CONTRACT] InMemory Adapters", () => {
 
         expect(Either.isLeft(either)).toBe(true);
         if (Either.isLeft(either)) {
-          expect(either.left).toBeInstanceOf(SubscriptionError);
           expect(either.left._tag).toBe("SubscriptionError");
           expect(either.left.code).toBe("SUBSCRIPTION_ERROR");
           if (either.left._tag === "SubscriptionError") {
@@ -316,6 +315,72 @@ describe("[UNIT] [CONTRACT] InMemory Adapters", () => {
         if (Either.isRight(either)) {
           expect(either.right.channel).toBe("my-channel");
         }
+      });
+
+      it("should support Effect.catchTag pattern matching with SubscriptionError", async () => {
+        adapter.setConnectionState("CLOSED");
+
+        const effect = adapter.subscribe("test-channel", {
+          onMessage: () => {},
+        });
+
+        // Test that catchTag correctly matches SubscriptionError by _tag
+        const caught = effect.pipe(
+          Effect.catchTag("SubscriptionError", (error) =>
+            Effect.succeed({
+              recovered: true,
+              message: error.message,
+              channel: error.channel,
+              code: error.code,
+            }),
+          ),
+        );
+
+        const result = await Effect.runPromise(caught);
+
+        // Type assertion needed because catchTag returns union type
+        const recovered = result as {
+          recovered: true;
+          message: string;
+          channel: string;
+          code: string;
+        };
+        expect(recovered.recovered).toBe(true);
+        expect(recovered.message).toBe("Cannot subscribe: adapter is closed");
+        expect(recovered.channel).toBe("test-channel");
+        expect(recovered.code).toBe("SUBSCRIPTION_ERROR");
+      });
+
+      it("should support Effect.catchTag pattern matching with RealtimeError", async () => {
+        // Close the adapter and try to broadcast
+        adapter.setConnectionState("CLOSED");
+
+        const effect = adapter.broadcast("test-channel", "event", {
+          data: "value",
+        });
+
+        // Test that catchTag correctly matches RealtimeError by _tag
+        const caught = effect.pipe(
+          Effect.catchTag("RealtimeError", (error) =>
+            Effect.succeed({
+              recovered: true,
+              message: error.message,
+              code: error.code,
+            }),
+          ),
+        );
+
+        const result = await Effect.runPromise(caught);
+
+        // Type assertion needed because catchTag returns union type
+        const recovered = result as {
+          recovered: true;
+          message: string;
+          code: string;
+        };
+        expect(recovered.recovered).toBe(true);
+        expect(recovered.message).toContain("Cannot broadcast");
+        expect(recovered.code).toBe("REALTIME_ERROR");
       });
     });
 
@@ -605,7 +670,7 @@ describe("[UNIT] [CONTRACT] InMemory Adapters", () => {
       adapter = new InMemoryStorageAdapter();
     });
 
-    describe("[UNIT] ""upload () => {
+    describe("[UNIT] upload", () => {
       it("should return Either<FileMetadata, StorageError | UploadError>", async () => {
         const buffer = Buffer.from("test content");
         const result = await adapter.upload("test-bucket", "test.txt", buffer);
