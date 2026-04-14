@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { validate } from "../utils/entity-validation";
 import { updateEntity } from "../utils/immutable";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 import type { LocationId } from "../value-objects/LocationId";
 
 /**

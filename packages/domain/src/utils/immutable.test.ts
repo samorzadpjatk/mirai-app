@@ -38,7 +38,7 @@ class TestEntity implements DomainEntity {
 }
 
 describe("[UNIT] immutable", () => {
-  describe("timestamps", () => {
+  describe("[UNIT] timestamps", () => {
     it("creates new timestamps when none provided", () => {
       const before = Date.now();
       const result = timestamps();
@@ -96,7 +96,7 @@ describe("[UNIT] immutable", () => {
     });
   });
 
-  describe("timestampsWithNow", () => {
+  describe("[UNIT] timestampsWithNow", () => {
     it("uses provided now for both timestamps", () => {
       const fixedNow = new Date("2024-06-15T12:00:00Z");
       const result = timestampsWithNow(fixedNow);
@@ -117,7 +117,7 @@ describe("[UNIT] immutable", () => {
     });
   });
 
-  describe("withUpdatedAt", () => {
+  describe("[UNIT] withUpdatedAt", () => {
     it("applies updates and refreshes updatedAt", () => {
       const entity: Timestamps & { id: string; name: string } = {
         id: "test-123",
@@ -171,7 +171,7 @@ describe("[UNIT] immutable", () => {
     });
   });
 
-  describe("updateEntity", () => {
+  describe("[UNIT] updateEntity", () => {
     it("calls constructor with correct arguments", () => {
       const entity = TestEntity.create({
         id: "test-123",
@@ -222,7 +222,7 @@ describe("[UNIT] immutable", () => {
     });
   });
 
-  describe("updateEntityWithNow", () => {
+  describe("[UNIT] updateEntityWithNow", () => {
     it("uses provided timestamp for updatedAt", () => {
       const entity = TestEntity.create({
         id: "test-123",

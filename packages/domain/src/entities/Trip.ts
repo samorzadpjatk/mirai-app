@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError, StateTransitionError } from "../errors/effect-errors";
+import { ValidationError, StateTransitionError } from "../errors";
 
 /**
  * Trip status

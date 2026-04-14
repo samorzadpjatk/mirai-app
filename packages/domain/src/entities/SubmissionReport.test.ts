@@ -6,10 +6,10 @@ import {
   groupReportsBySubmission,
 } from "./SubmissionReport";
 import { ReportId } from "../value-objects/ReportId";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] SubmissionReport", () => {
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create with valid data", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -139,7 +139,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("isForSubmission", () => {
+  describe("[UNIT] isForSubmission", () => {
     it("should return true for matching submission", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -154,7 +154,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("isFiledBy", () => {
+  describe("[UNIT] isFiledBy", () => {
     it("should return true for matching reporter", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -169,7 +169,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("hasDetails", () => {
+  describe("[UNIT] hasDetails", () => {
     it("should return true when details exist", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -196,7 +196,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("hasReporterInfo", () => {
+  describe("[UNIT] hasReporterInfo", () => {
     it("should return false when reporter is null", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -210,7 +210,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("getReasonDisplay", () => {
+  describe("[UNIT] getReasonDisplay", () => {
     it("should return display text for reason", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -224,7 +224,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("matchesReason", () => {
+  describe("[UNIT] matchesReason", () => {
     it("should match reason correctly", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -240,7 +240,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("withReporterInfo", () => {
+  describe("[UNIT] withReporterInfo", () => {
     it("should attach reporter info", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -265,7 +265,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("withReporterEmail", () => {
+  describe("[UNIT] withReporterEmail", () => {
     it("should update reporter email", () => {
       const report = Effect.runSync(
         SubmissionReport.create({
@@ -303,7 +303,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("calculateReportStatistics", () => {
+  describe("[UNIT] calculateReportStatistics", () => {
     it("should calculate statistics for reports", () => {
       const reports = [
         Effect.runSync(
@@ -349,7 +349,7 @@ describe("[UNIT] SubmissionReport", () => {
     });
   });
 
-  describe("groupReportsBySubmission", () => {
+  describe("[UNIT] groupReportsBySubmission", () => {
     it("should group reports by submission ID", () => {
       const reports = [
         Effect.runSync(

@@ -6,10 +6,10 @@ import {
   SubmissionType,
   ScoringCategory,
 } from "./Challenge";
-import { ValidationError, StateTransitionError } from "../errors/effect-errors";
+import { ValidationError, StateTransitionError } from "../errors";
 
 describe("[UNIT] Challenge Entity", () => {
-  describe("Challenge.create", () => {
+  describe("[UNIT] Challenge.create", () => {
     it("should create challenge with minimum required fields", async () => {
       const challenge = await Effect.runPromise(
         Challenge.create({
@@ -154,7 +154,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.updateDetails", () => {
+  describe("[UNIT] Challenge.updateDetails", () => {
     it("should update name and description", async () => {
       const challenge = await Effect.runPromise(
         Challenge.create({
@@ -194,7 +194,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.updateStatus", () => {
+  describe("[UNIT] Challenge.updateStatus", () => {
     it("should transition from HIDDEN to VISIBLE", async () => {
       const challenge = await Effect.runPromise(
         Challenge.create({
@@ -268,7 +268,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.updatePoints", () => {
+  describe("[UNIT] Challenge.updatePoints", () => {
     it("should update points", async () => {
       const challenge = await Effect.runPromise(
         Challenge.create({
@@ -312,7 +312,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.updateSchedule", () => {
+  describe("[UNIT] Challenge.updateSchedule", () => {
     it("should update schedule", async () => {
       const startTime = new Date("2026-02-01");
       const endTime = new Date("2026-02-28");
@@ -342,7 +342,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.isActive", () => {
+  describe("[UNIT] Challenge.isActive", () => {
     it("should return true for ACTIVE status", async () => {
       const challenge = await Effect.runPromise(
         Challenge.create({
@@ -372,7 +372,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.isOpenForSubmission", () => {
+  describe("[UNIT] Challenge.isOpenForSubmission", () => {
     it("should return true when ACTIVE and within time window", async () => {
       const now = new Date();
       const startTime = new Date(now.getTime() - 1000); // Started 1 second ago
@@ -408,7 +408,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.requiresLocation", () => {
+  describe("[UNIT] Challenge.requiresLocation", () => {
     it("should return true for IMAGE_LOCATION type", async () => {
       const challenge = await Effect.runPromise(
         Challenge.create({
@@ -449,7 +449,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.requiresQRCode", () => {
+  describe("[UNIT] Challenge.requiresQRCode", () => {
     it("should return true for QR_CODE type", async () => {
       const challenge = await Effect.runPromise(
         Challenge.create({
@@ -477,7 +477,7 @@ describe("[UNIT] Challenge Entity", () => {
     });
   });
 
-  describe("Challenge.hasVotingPhase", () => {
+  describe("[UNIT] Challenge.hasVotingPhase", () => {
     it("should return true for PEER_VOTING category", async () => {
       const challenge = await Effect.runPromise(
         Challenge.create({

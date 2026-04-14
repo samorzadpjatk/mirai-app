@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { validate } from "../utils/entity-validation";
 import { timestamps } from "../utils/immutable";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * CoinTransaction entity - tracks coin balance changes for groups

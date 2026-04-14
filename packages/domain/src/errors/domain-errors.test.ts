@@ -8,10 +8,10 @@ import {
   isValidationError,
   isStateTransitionError,
   isNotFoundError,
-} from "./domain-errors";
+} from "./unified-errors";
 
 describe("[UNIT] domain-errors", () => {
-  describe("DomainError (base class)", () => {
+  describe("[UNIT] DomainError (base class)", () => {
     it("has _tag property", () => {
       const error = new DomainError("test message", "TestTag");
 
@@ -28,7 +28,7 @@ describe("[UNIT] domain-errors", () => {
     });
   });
 
-  describe("ValidationError", () => {
+  describe("[UNIT] ValidationError", () => {
     it("includes field when provided", () => {
       const error = new ValidationError("Name is required", "name");
 
@@ -101,7 +101,7 @@ describe("[UNIT] domain-errors", () => {
     });
   });
 
-  describe("StateTransitionError", () => {
+  describe("[UNIT] StateTransitionError", () => {
     it("stores from and to states", () => {
       const error = new StateTransitionError("DRAFT", "COMPLETED");
 
@@ -119,7 +119,7 @@ describe("[UNIT] domain-errors", () => {
     });
   });
 
-  describe("NotFoundError", () => {
+  describe("[UNIT] NotFoundError", () => {
     it("includes entityType and id", () => {
       const error = new NotFoundError("User", "user-123");
 
@@ -145,8 +145,8 @@ describe("[UNIT] domain-errors", () => {
     });
   });
 
-  describe("Type guards", () => {
-    describe("isDomainError", () => {
+  describe("[UNIT] Type guards", () => {
+    describe("[UNIT] isDomainError", () => {
       it("returns true for DomainError instances", () => {
         const error = new DomainError("test", "TestTag");
 
@@ -186,7 +186,7 @@ describe("[UNIT] domain-errors", () => {
       });
     });
 
-    describe("isValidationError", () => {
+    describe("[UNIT] isValidationError", () => {
       it("returns true for ValidationError", () => {
         const error = new ValidationError("test");
 
@@ -202,7 +202,7 @@ describe("[UNIT] domain-errors", () => {
       });
     });
 
-    describe("isStateTransitionError", () => {
+    describe("[UNIT] isStateTransitionError", () => {
       it("returns true for StateTransitionError", () => {
         const error = new StateTransitionError("A", "B");
 
@@ -218,7 +218,7 @@ describe("[UNIT] domain-errors", () => {
       });
     });
 
-    describe("isNotFoundError", () => {
+    describe("[UNIT] isNotFoundError", () => {
       it("returns true for NotFoundError", () => {
         const error = new NotFoundError("User", "123");
 

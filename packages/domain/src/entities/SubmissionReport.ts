@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 import type { ReportId } from "../value-objects/ReportId";
 import { ReportReason } from "../value-objects/ReportReason";
 

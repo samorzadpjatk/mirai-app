@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * Validation rules for PushSubscription data

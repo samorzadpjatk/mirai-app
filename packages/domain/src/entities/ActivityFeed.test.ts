@@ -9,10 +9,10 @@ import {
 } from "./ActivityFeed";
 import { ActivityReaction } from "./ActivityReaction";
 import { ActivityId } from "../value-objects/ActivityId";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] ActivityFeed Entity", () => {
-  describe("ActivityFeed.create", () => {
+  describe("[UNIT] ActivityFeed.create", () => {
     it("should create activity with valid data", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -206,7 +206,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.pin", () => {
+  describe("[UNIT] ActivityFeed.pin", () => {
     it("should pin an activity", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -221,7 +221,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.unpin", () => {
+  describe("[UNIT] ActivityFeed.unpin", () => {
     it("should unpin an activity", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -236,7 +236,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.hide", () => {
+  describe("[UNIT] ActivityFeed.hide", () => {
     it("should hide an activity", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -253,7 +253,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.unhide", () => {
+  describe("[UNIT] ActivityFeed.unhide", () => {
     it("should unhide an activity", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -274,7 +274,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.updateContent", () => {
+  describe("[UNIT] ActivityFeed.updateContent", () => {
     it("should update title and description", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -334,7 +334,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.isVisible", () => {
+  describe("[UNIT] ActivityFeed.isVisible", () => {
     it("should return true for non-hidden activities", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -360,7 +360,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.isAdminCreated", () => {
+  describe("[UNIT] ActivityFeed.isAdminCreated", () => {
     it("should return true for admin-created activities", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -386,7 +386,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.isUserPost", () => {
+  describe("[UNIT] ActivityFeed.isUserPost", () => {
     it("should return true for user_post type", () => {
       const effect = ActivityFeed.create({
         tripId: "trip-123",
@@ -420,7 +420,7 @@ describe("[UNIT] ActivityFeed Entity", () => {
     });
   });
 
-  describe("ActivityFeed.compareForSort", () => {
+  describe("[UNIT] ActivityFeed.compareForSort", () => {
     it("should sort pinned before unpinned", () => {
       const pinnedEffect = ActivityFeed.create({
         tripId: "trip-123",
@@ -473,8 +473,8 @@ describe("[UNIT] ActivityFeed Entity", () => {
   });
 });
 
-describe("ActivityReaction Entity (in ActivityFeed.test.ts)", () => {
-  describe("ActivityReaction.create", () => {
+describe("[UNIT] ActivityReaction Entity (in ActivityFeed.test.ts)", () => {
+  describe("[UNIT] ActivityReaction.create", () => {
     it("should create reaction with valid data", () => {
       const activityId = ActivityId.generate();
       const effect = ActivityReaction.create({
@@ -556,7 +556,7 @@ describe("ActivityReaction Entity (in ActivityFeed.test.ts)", () => {
     });
   });
 
-  describe("ActivityReaction.getCompositeId", () => {
+  describe("[UNIT] ActivityReaction.getCompositeId", () => {
     it("should generate unique key for reaction", () => {
       const activityId = ActivityId.generate();
       const effect = ActivityReaction.create({
@@ -573,7 +573,7 @@ describe("ActivityReaction Entity (in ActivityFeed.test.ts)", () => {
     });
   });
 
-  describe("ActivityReaction.isOfType", () => {
+  describe("[UNIT] ActivityReaction.isOfType", () => {
     it("should check if reaction is of specific type", () => {
       const activityId = ActivityId.generate();
       const effect = ActivityReaction.create({
@@ -589,7 +589,7 @@ describe("ActivityReaction Entity (in ActivityFeed.test.ts)", () => {
   });
 });
 
-describe("emptyReactionCounts", () => {
+describe("[UNIT] emptyReactionCounts", () => {
   it("should return zero counts for all reaction types", () => {
     const counts = emptyReactionCounts();
     expect(counts.heart).toBe(0);

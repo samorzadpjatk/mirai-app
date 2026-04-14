@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { validate } from "../utils/entity-validation";
 import { timestamps, updateEntity } from "../utils/immutable";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * User roles in the system

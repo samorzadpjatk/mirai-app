@@ -3,7 +3,7 @@ import { Effect, Exit } from "effect";
 import { CoinAmount } from "./CoinAmount";
 
 describe("[UNIT] CoinAmount", () => {
-  describe("CoinAmount.create", () => {
+  describe("[UNIT] CoinAmount.create", () => {
     it("should create with positive integer", () => {
       const effect = CoinAmount.create(100);
       const coinAmount = Effect.runSync(effect);
@@ -41,7 +41,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.zero", () => {
+  describe("[UNIT] CoinAmount.zero", () => {
     it("should create zero amount", () => {
       const zero = CoinAmount.zero();
       expect(zero.toNumber()).toBe(0);
@@ -49,7 +49,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.add", () => {
+  describe("[UNIT] CoinAmount.add", () => {
     it("should add two amounts", () => {
       const a = Effect.runSync(CoinAmount.create(50));
       const b = Effect.runSync(CoinAmount.create(30));
@@ -68,7 +68,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.subtract", () => {
+  describe("[UNIT] CoinAmount.subtract", () => {
     it("should subtract smaller from larger", () => {
       const a = Effect.runSync(CoinAmount.create(50));
       const b = Effect.runSync(CoinAmount.create(30));
@@ -96,7 +96,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.multiply", () => {
+  describe("[UNIT] CoinAmount.multiply", () => {
     it("should multiply by positive integer", () => {
       const a = Effect.runSync(CoinAmount.create(50));
       const result = Effect.runSync(a.multiply(3));
@@ -128,7 +128,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.isGreaterThanOrEqual", () => {
+  describe("[UNIT] CoinAmount.isGreaterThanOrEqual", () => {
     it("should return true when greater", () => {
       const a = Effect.runSync(CoinAmount.create(50));
       const b = Effect.runSync(CoinAmount.create(30));
@@ -151,7 +151,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.isZero", () => {
+  describe("[UNIT] CoinAmount.isZero", () => {
     it("should return true for zero", () => {
       const zero = CoinAmount.zero();
       expect(zero.isZero()).toBe(true);
@@ -163,7 +163,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.compare", () => {
+  describe("[UNIT] CoinAmount.compare", () => {
     it("should return positive when greater", () => {
       const a = Effect.runSync(CoinAmount.create(50));
       const b = Effect.runSync(CoinAmount.create(30));
@@ -186,7 +186,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.toString", () => {
+  describe("[UNIT] CoinAmount.toString", () => {
     it("should format single coin", () => {
       const amount = Effect.runSync(CoinAmount.create(1));
       expect(amount.toString()).toBe("1 coin");
@@ -203,7 +203,7 @@ describe("[UNIT] CoinAmount", () => {
     });
   });
 
-  describe("CoinAmount.unsafeCreate", () => {
+  describe("[UNIT] CoinAmount.unsafeCreate", () => {
     it("should create without validation", () => {
       const amount = CoinAmount.unsafeCreate(-100);
       expect(amount.toNumber()).toBe(-100);

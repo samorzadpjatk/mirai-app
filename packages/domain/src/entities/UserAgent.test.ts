@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { UserAgent, UserAgentPlatform } from "./UserAgent";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] UserAgent Entity", () => {
-  describe("UserAgent.create", () => {
+  describe("[UNIT] UserAgent.create", () => {
     it("should create with valid data", () => {
       const effect = UserAgent.create({
         userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
@@ -77,7 +77,7 @@ describe("[UNIT] UserAgent Entity", () => {
     });
   });
 
-  describe("UserAgent.detectPlatform", () => {
+  describe("[UNIT] UserAgent.detectPlatform", () => {
     it("should detect iOS", () => {
       const platform = UserAgent.detectPlatform(
         "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
@@ -105,7 +105,7 @@ describe("[UNIT] UserAgent Entity", () => {
     });
   });
 
-  describe("UserAgent.createWithDetectedPlatform", () => {
+  describe("[UNIT] UserAgent.createWithDetectedPlatform", () => {
     it("should auto-detect iOS platform", () => {
       const effect = UserAgent.createWithDetectedPlatform({
         userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
@@ -125,7 +125,7 @@ describe("[UNIT] UserAgent Entity", () => {
     });
   });
 
-  describe("UserAgent.platform checks", () => {
+  describe("[UNIT] UserAgent.platform checks", () => {
     it("should identify iOS", () => {
       const effect = UserAgent.create({
         userAgent: "Mozilla/5.0 (iPhone)",
@@ -160,7 +160,7 @@ describe("[UNIT] UserAgent Entity", () => {
     });
   });
 
-  describe("UserAgent.belongsToUser", () => {
+  describe("[UNIT] UserAgent.belongsToUser", () => {
     it("should check if belongs to specific user", () => {
       const effect = UserAgent.create({
         userAgent: "Mozilla/5.0",
@@ -174,7 +174,7 @@ describe("[UNIT] UserAgent Entity", () => {
     });
   });
 
-  describe("UserAgent.isOlderThan", () => {
+  describe("[UNIT] UserAgent.isOlderThan", () => {
     it("should calculate age correctly", () => {
       const timestamp = new Date(Date.now() - 60000); // 1 minute ago
       const effect = UserAgent.create({

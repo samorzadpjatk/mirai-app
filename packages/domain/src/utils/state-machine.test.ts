@@ -17,14 +17,14 @@ describe("[UNIT] state-machine", () => {
     initialState: "A",
   };
 
-  describe("createStateMachine", () => {
+  describe("[UNIT] createStateMachine", () => {
     it("creates frozen state machine object", () => {
       const sm = createStateMachine(testConfig);
 
       expect(Object.isFrozen(sm)).toBe(true);
     });
 
-    describe("canTransition", () => {
+    describe("[UNIT] canTransition", () => {
       it("allows valid transitions", () => {
         const sm = createStateMachine(testConfig);
 
@@ -50,7 +50,7 @@ describe("[UNIT] state-machine", () => {
       });
     });
 
-    describe("isTerminal", () => {
+    describe("[UNIT] isTerminal", () => {
       it("returns true for terminal states", () => {
         const sm = createStateMachine(testConfig);
 
@@ -77,7 +77,7 @@ describe("[UNIT] state-machine", () => {
       });
     });
 
-    describe("getValidTransitions", () => {
+    describe("[UNIT] getValidTransitions", () => {
       it("returns all valid target states", () => {
         const sm = createStateMachine(testConfig);
 
@@ -99,7 +99,7 @@ describe("[UNIT] state-machine", () => {
       });
     });
 
-    describe("getInitialState", () => {
+    describe("[UNIT] getInitialState", () => {
       it("returns configured initial state", () => {
         const sm = createStateMachine(testConfig);
 
@@ -120,7 +120,7 @@ describe("[UNIT] state-machine", () => {
     });
   });
 
-  describe("createSimpleStateMachine", () => {
+  describe("[UNIT] createSimpleStateMachine", () => {
     it("creates state machine with transitions only", () => {
       const sm = createSimpleStateMachine<
         "IDLE" | "RUNNING" | "COMPLETED" | "FAILED"
@@ -157,7 +157,7 @@ describe("[UNIT] state-machine", () => {
     });
   });
 
-  describe("real-world state machines", () => {
+  describe("[UNIT] real-world state machines", () => {
     it("works for Challenge status", () => {
       type ChallengeStatus =
         | "DRAFT"

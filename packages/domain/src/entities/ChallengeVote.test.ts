@@ -8,10 +8,10 @@ import {
 import { ChallengeVoteId } from "../value-objects/ChallengeVoteId";
 import { VotePosition } from "../value-objects/VotePosition";
 import { VoteWeight } from "../value-objects/VoteWeight";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] ChallengeVote Entity", () => {
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create a valid vote with all required fields", async () => {
       const vote = await Effect.runPromise(
         ChallengeVote.create({
@@ -177,7 +177,7 @@ describe("[UNIT] ChallengeVote Entity", () => {
     });
   });
 
-  describe("getWeightedScore", () => {
+  describe("[UNIT] getWeightedScore", () => {
     it("should calculate weighted score correctly", async () => {
       const vote = await Effect.runPromise(
         ChallengeVote.create({
@@ -207,7 +207,7 @@ describe("[UNIT] ChallengeVote Entity", () => {
     });
   });
 
-  describe("isForSubmission", () => {
+  describe("[UNIT] isForSubmission", () => {
     it("should return true for matching submission", async () => {
       const vote = await Effect.runPromise(
         ChallengeVote.create({
@@ -223,7 +223,7 @@ describe("[UNIT] ChallengeVote Entity", () => {
     });
   });
 
-  describe("isCastBy", () => {
+  describe("[UNIT] isCastBy", () => {
     it("should return true for matching voter", async () => {
       const vote = await Effect.runPromise(
         ChallengeVote.create({
@@ -239,7 +239,7 @@ describe("[UNIT] ChallengeVote Entity", () => {
     });
   });
 
-  describe("isForChallenge", () => {
+  describe("[UNIT] isForChallenge", () => {
     it("should return true for matching challenge", async () => {
       const vote = await Effect.runPromise(
         ChallengeVote.create({
@@ -255,7 +255,7 @@ describe("[UNIT] ChallengeVote Entity", () => {
     });
   });
 
-  describe("hasDefaultWeight", () => {
+  describe("[UNIT] hasDefaultWeight", () => {
     it("should return true for default weight", async () => {
       const vote = await Effect.runPromise(
         ChallengeVote.create({
@@ -284,7 +284,7 @@ describe("[UNIT] ChallengeVote Entity", () => {
     });
   });
 
-  describe("getPositionDisplay", () => {
+  describe("[UNIT] getPositionDisplay", () => {
     it("should return correct display strings", async () => {
       const positions = [
         { pos: 1, expected: "1st" },

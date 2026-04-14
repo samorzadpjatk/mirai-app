@@ -5,10 +5,10 @@ import {
   SUBMISSION_STATUSES,
 } from "./ChallengeSubmission";
 import { SubmissionId } from "../value-objects/SubmissionId";
-import { ValidationError, StateTransitionError } from "../errors/effect-errors";
+import { ValidationError, StateTransitionError } from "../errors";
 
 describe("[UNIT] ChallengeSubmission", () => {
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create a submission with minimum required fields", async () => {
       const submission = await Effect.runPromise(
         ChallengeSubmission.create({
@@ -237,7 +237,7 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
   });
 
-  describe("updateContent", () => {
+  describe("[UNIT] updateContent", () => {
     it("should update content when pending", async () => {
       const submission = await Effect.runPromise(
         ChallengeSubmission.create({
@@ -301,7 +301,7 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
   });
 
-  describe("approve", () => {
+  describe("[UNIT] approve", () => {
     it("should approve a pending submission", async () => {
       const submission = await Effect.runPromise(
         ChallengeSubmission.create({
@@ -412,7 +412,7 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
   });
 
-  describe("reject", () => {
+  describe("[UNIT] reject", () => {
     it("should reject a pending submission", async () => {
       const submission = await Effect.runPromise(
         ChallengeSubmission.create({
@@ -501,7 +501,7 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
   });
 
-  describe("autoApprove", () => {
+  describe("[UNIT] autoApprove", () => {
     it("should auto-approve with awarded points", async () => {
       const submission = await Effect.runPromise(
         ChallengeSubmission.create({
@@ -544,7 +544,7 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
   });
 
-  describe("updateVoteStats", () => {
+  describe("[UNIT] updateVoteStats", () => {
     it("should update vote statistics", async () => {
       const submission = await Effect.runPromise(
         ChallengeSubmission.create({
@@ -563,7 +563,7 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
   });
 
-  describe("status checks", () => {
+  describe("[UNIT] status checks", () => {
     it("should correctly check pending status", async () => {
       const pending = await Effect.runPromise(
         ChallengeSubmission.create({
@@ -651,7 +651,7 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
   });
 
-  describe("utility methods", () => {
+  describe("[UNIT] utility methods", () => {
     it("should correctly check if has media", async () => {
       const withImages = await Effect.runPromise(
         ChallengeSubmission.create({
@@ -740,7 +740,7 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
   });
 
-  describe("comparison methods", () => {
+  describe("[UNIT] comparison methods", () => {
     it("should compare submissions for sorting by voteScore", async () => {
       const submission1 = await Effect.runPromise(
         ChallengeSubmission.create({

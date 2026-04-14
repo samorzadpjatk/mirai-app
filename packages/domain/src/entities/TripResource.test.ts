@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { TripResource } from "./TripResource";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] TripResource Entity", () => {
-  describe("TripResource.create", () => {
+  describe("[UNIT] TripResource.create", () => {
     it("should create trip resource with valid data", () => {
       const effect = TripResource.create({
         tripId: "trip-123",
@@ -110,7 +110,7 @@ describe("[UNIT] TripResource Entity", () => {
     });
   });
 
-  describe("TripResource.updateDetails", () => {
+  describe("[UNIT] TripResource.updateDetails", () => {
     it("should update label", () => {
       const resource = Effect.runSync(
         TripResource.create({
@@ -146,7 +146,7 @@ describe("[UNIT] TripResource Entity", () => {
     });
   });
 
-  describe("TripResource.updateSortOrder", () => {
+  describe("[UNIT] TripResource.updateSortOrder", () => {
     it("should update sort order", () => {
       const resource = Effect.runSync(
         TripResource.create({
@@ -179,7 +179,7 @@ describe("[UNIT] TripResource Entity", () => {
     });
   });
 
-  describe("TripResource type checking", () => {
+  describe("[UNIT] TripResource type checking", () => {
     it("should identify link type", () => {
       const entity = Effect.runSync(
         TripResource.create({

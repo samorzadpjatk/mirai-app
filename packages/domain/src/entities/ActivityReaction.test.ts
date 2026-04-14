@@ -2,10 +2,10 @@ import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { ActivityReaction } from "./ActivityReaction";
 import { REACTION_TYPES } from "./ActivityFeed";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] ActivityReaction Entity", () => {
-  describe("ActivityReaction.create", () => {
+  describe("[UNIT] ActivityReaction.create", () => {
     it("should create reaction with valid data", () => {
       const effect = ActivityReaction.create({
         activityId: "activity-123",
@@ -100,7 +100,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
     });
   });
 
-  describe("ActivityReaction type checks", () => {
+  describe("[UNIT] ActivityReaction type checks", () => {
     it("should identify heart reaction", () => {
       const effect = ActivityReaction.create({
         activityId: "activity-123",
@@ -165,7 +165,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
     });
   });
 
-  describe("ActivityReaction.getCompositeId", () => {
+  describe("[UNIT] ActivityReaction.getCompositeId", () => {
     it("should return composite ID", () => {
       const effect = ActivityReaction.create({
         activityId: "activity-123",
@@ -178,7 +178,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
     });
   });
 
-  describe("ActivityReaction.matches", () => {
+  describe("[UNIT] ActivityReaction.matches", () => {
     it("should match correct activity, user, and type", () => {
       const effect = ActivityReaction.create({
         activityId: "activity-123",
@@ -195,7 +195,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
     });
   });
 
-  describe("ActivityReaction.isForActivity / isFromUser", () => {
+  describe("[UNIT] ActivityReaction.isForActivity / isFromUser", () => {
     it("should check if for specific activity", () => {
       const effect = ActivityReaction.create({
         activityId: "activity-123",

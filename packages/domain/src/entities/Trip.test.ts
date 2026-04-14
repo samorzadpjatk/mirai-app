@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { Trip, TripStatus } from "./Trip";
-import { ValidationError, StateTransitionError } from "../errors/effect-errors";
+import { ValidationError, StateTransitionError } from "../errors";
 
 describe("[UNIT] Trip Entity", () => {
-  describe("Trip.create", () => {
+  describe("[UNIT] Trip.create", () => {
     it("should create trip with valid data", () => {
       const startDate = new Date("2026-06-01");
       const endDate = new Date("2026-06-07");
@@ -57,7 +57,7 @@ describe("[UNIT] Trip Entity", () => {
     });
   });
 
-  describe("Trip.start", () => {
+  describe("[UNIT] Trip.start", () => {
     it("should start planning trip", () => {
       const trip = Effect.runSync(
         Trip.create({
@@ -94,7 +94,7 @@ describe("[UNIT] Trip Entity", () => {
     });
   });
 
-  describe("Trip.complete", () => {
+  describe("[UNIT] Trip.complete", () => {
     it("should complete active trip", () => {
       const trip = Effect.runSync(
         Trip.create({
@@ -131,7 +131,7 @@ describe("[UNIT] Trip Entity", () => {
     });
   });
 
-  describe("Trip.cancel", () => {
+  describe("[UNIT] Trip.cancel", () => {
     it("should cancel planning trip", () => {
       const trip = Effect.runSync(
         Trip.create({
@@ -168,7 +168,7 @@ describe("[UNIT] Trip Entity", () => {
     });
   });
 
-  describe("Trip.isTerminal", () => {
+  describe("[UNIT] Trip.isTerminal", () => {
     it("should return true for completed trip", () => {
       const trip = Effect.runSync(
         Trip.create({
@@ -196,7 +196,7 @@ describe("[UNIT] Trip Entity", () => {
     });
   });
 
-  describe("Trip.getDurationInDays", () => {
+  describe("[UNIT] Trip.getDurationInDays", () => {
     it("should return correct duration", () => {
       const trip = Effect.runSync(
         Trip.create({

@@ -4,10 +4,10 @@ import {
   LocationSharingRequest,
   LocationSharingRequestStatus,
 } from "./LocationSharingRequest";
-import { ValidationError, StateTransitionError } from "../errors/effect-errors";
+import { ValidationError, StateTransitionError } from "../errors";
 
 describe("[UNIT] LocationSharingRequest Entity", () => {
-  describe("LocationSharingRequest.create", () => {
+  describe("[UNIT] LocationSharingRequest.create", () => {
     it("should create with valid data", () => {
       const effect = LocationSharingRequest.create({
         senderId: "user-123",
@@ -80,7 +80,7 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
     });
   });
 
-  describe("LocationSharingRequest.accept", () => {
+  describe("[UNIT] LocationSharingRequest.accept", () => {
     it("should accept request", () => {
       const effect = LocationSharingRequest.create({
         senderId: "user-123",
@@ -134,7 +134,7 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
     });
   });
 
-  describe("LocationSharingRequest.reject", () => {
+  describe("[UNIT] LocationSharingRequest.reject", () => {
     it("should reject request", () => {
       const effect = LocationSharingRequest.create({
         senderId: "user-123",
@@ -170,7 +170,7 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
     });
   });
 
-  describe("LocationSharingRequest.involvesUser", () => {
+  describe("[UNIT] LocationSharingRequest.involvesUser", () => {
     it("should check if involves sender", () => {
       const effect = LocationSharingRequest.create({
         senderId: "user-123",
@@ -202,7 +202,7 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
     });
   });
 
-  describe("LocationSharingRequest.isFromUser / isToUser", () => {
+  describe("[UNIT] LocationSharingRequest.isFromUser / isToUser", () => {
     it("should identify sender", () => {
       const effect = LocationSharingRequest.create({
         senderId: "user-123",
@@ -226,7 +226,7 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
     });
   });
 
-  describe("LocationSharingRequest.getOtherParty", () => {
+  describe("[UNIT] LocationSharingRequest.getOtherParty", () => {
     it("should return receiver when given sender", () => {
       const effect = LocationSharingRequest.create({
         senderId: "user-123",
@@ -258,7 +258,7 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
     });
   });
 
-  describe("LocationSharingRequest.getUniqueKey", () => {
+  describe("[UNIT] LocationSharingRequest.getUniqueKey", () => {
     it("should return composite key", () => {
       const effect = LocationSharingRequest.create({
         senderId: "user-123",

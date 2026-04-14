@@ -1,11 +1,11 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { Location, LocationAccuracy, calculateDistance } from "./Location";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 import { LocationId } from "../value-objects/LocationId";
 
 describe("[UNIT] Location Entity", () => {
-  describe("Location.create", () => {
+  describe("[UNIT] Location.create", () => {
     it("should create location with coordinates", () => {
       const location = Effect.runSync(
         Location.create({
@@ -209,7 +209,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.reconstitute", () => {
+  describe("[UNIT] Location.reconstitute", () => {
     it("should reconstitute location from persistence", () => {
       const location = Location.reconstitute({
         id: LocationId.unsafeCreate("loc-123"),
@@ -234,7 +234,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.updateCoordinates", () => {
+  describe("[UNIT] Location.updateCoordinates", () => {
     it("should update coordinates", () => {
       const location = Effect.runSync(
         Location.create({
@@ -302,7 +302,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.startSharing", () => {
+  describe("[UNIT] Location.startSharing", () => {
     it("should start location sharing", () => {
       const location = Effect.runSync(
         Location.create({
@@ -323,7 +323,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.stopSharing", () => {
+  describe("[UNIT] Location.stopSharing", () => {
     it("should stop location sharing", () => {
       const location = Effect.runSync(
         Location.create({
@@ -340,7 +340,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.addSharingUser", () => {
+  describe("[UNIT] Location.addSharingUser", () => {
     it("should add user to sharing list", () => {
       const location = Effect.runSync(
         Location.create({
@@ -405,7 +405,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.removeSharingUser", () => {
+  describe("[UNIT] Location.removeSharingUser", () => {
     it("should remove user from sharing list", () => {
       const location = Effect.runSync(
         Location.create({
@@ -426,7 +426,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.updateSharingUsers", () => {
+  describe("[UNIT] Location.updateSharingUsers", () => {
     it("should update entire sharing list", () => {
       const location = Effect.runSync(
         Location.create({
@@ -469,7 +469,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.isAccurate", () => {
+  describe("[UNIT] Location.isAccurate", () => {
     it("should return true for accurate location", () => {
       const location = Effect.runSync(
         Location.create({
@@ -509,7 +509,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.isMoving", () => {
+  describe("[UNIT] Location.isMoving", () => {
     it("should return true when speed > 0", () => {
       const location = Effect.runSync(
         Location.create({
@@ -549,7 +549,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.getAccuracyLevel", () => {
+  describe("[UNIT] Location.getAccuracyLevel", () => {
     it("should return HIGH for accuracy < 10", () => {
       const location = Effect.runSync(
         Location.create({
@@ -602,7 +602,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.getCoordinates", () => {
+  describe("[UNIT] Location.getCoordinates", () => {
     it("should return coordinates tuple", () => {
       const location = Effect.runSync(
         Location.create({
@@ -628,7 +628,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.distanceTo", () => {
+  describe("[UNIT] Location.distanceTo", () => {
     it("should calculate distance to another location", () => {
       const loc1 = Effect.runSync(
         Location.create({
@@ -671,7 +671,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.isWithinRadius", () => {
+  describe("[UNIT] Location.isWithinRadius", () => {
     it("should return true when within radius", () => {
       const location = Effect.runSync(
         Location.create({
@@ -709,7 +709,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.canBeViewedBy", () => {
+  describe("[UNIT] Location.canBeViewedBy", () => {
     it("should allow owner to view", () => {
       const location = Effect.runSync(
         Location.create({
@@ -772,7 +772,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.isStale", () => {
+  describe("[UNIT] Location.isStale", () => {
     it("should return false for fresh location", () => {
       const location = Effect.runSync(
         Location.create({
@@ -818,7 +818,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.toExpoFormat", () => {
+  describe("[UNIT] Location.toExpoFormat", () => {
     it("should convert to Expo format", () => {
       const timestamp = new Date("2026-01-01T12:00:00");
       const location = Effect.runSync(
@@ -854,7 +854,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("Location.updateInactivityNotification", () => {
+  describe("[UNIT] Location.updateInactivityNotification", () => {
     it("should update inactivity notification timestamp", () => {
       const location = Effect.runSync(
         Location.create({
@@ -869,7 +869,7 @@ describe("[UNIT] Location Entity", () => {
     });
   });
 
-  describe("calculateDistance", () => {
+  describe("[UNIT] calculateDistance", () => {
     it("should calculate distance between two points", () => {
       // NYC to London
       const distance = calculateDistance(40.7128, -74.006, 51.5074, -0.1278);

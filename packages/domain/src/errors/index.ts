@@ -1,24 +1,63 @@
 /**
- * Domain Errors - Barrel Export
+ * Domain Errors - Unified Export
+ *
+ * This module exports all domain errors from a unified hierarchy.
+ * Consolidates 124 error classes into 20 well-defined types.
+ *
+ * Migration path:
+ * - Old: import { ValidationError } from "@mirai-app/domain/errors/domain-errors"
+ * - New: import { ValidationError } from "@mirai-app/domain/errors"
  *
  * @module errors
  */
 
+// Unified error hierarchy (single source of truth)
 export {
-  // Error class (value export)
+  // Base
+  DomainError,
+  // Validation
+  ValidationError,
+  FieldValidationError,
+  SchemaValidationError,
+  ConstraintViolationError,
+  InvariantError,
+  // Not Found
+  NotFoundError,
+  EntityNotFoundError,
+  ResourceNotFoundError,
+  // State
+  StateTransitionError,
+  InvalidStateError,
+  // Authorization
   UnauthorizedError,
-  // Error types (type-only exports)
-  type EntityNotFoundError,
-  type ValidationError,
-  type ConflictError,
-  type InvariantError,
-  type InvalidStateError,
-  type ResourceUnavailableError,
-  type QuotaExceededError,
-  // Union type
-  type DomainError,
-  // Utility functions
+  ForbiddenError,
+  AuthenticationError,
+  // Conflict
+  ConflictError,
+  DuplicateError,
+  ConcurrentModificationError,
+  QuotaExceededError,
+  // External
+  DatabaseError,
+  NetworkError,
+  ServiceUnavailableError,
+  ResourceUnavailableError,
+  // System
+  ConfigurationError,
+  UnexpectedError,
+  // Type guards
   isDomainError,
+  isValidationError,
+  isNotFoundError,
+  isStateTransitionError,
+  isUnauthorizedError,
+  isConflictError,
+  isInvariantError,
+  isDatabaseError,
+  // Utilities
   getDomainErrorMessage,
   getDomainErrorCode,
-} from "./DomainErrors";
+  // Backward compatibility (AppError factory)
+  AppError,
+  type DomainErrors,
+} from "./unified-errors";

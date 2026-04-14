@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { UserId } from "./UserId";
 
 describe("[UNIT] UserId", () => {
-  describe("UserId.create", () => {
+  describe("[UNIT] UserId.create", () => {
     it("should create UserId from valid UUID", () => {
       const validUUID = "550e8400-e29b-41d4-a716-446655440000";
       const userId = UserId.create(validUUID);
@@ -18,7 +18,7 @@ describe("[UNIT] UserId", () => {
     });
   });
 
-  describe("UserId.generate", () => {
+  describe("[UNIT] UserId.generate", () => {
     it("should generate a valid UserId", () => {
       const userId = UserId.generate();
       expect(typeof userId).toBe("string");
@@ -32,7 +32,7 @@ describe("[UNIT] UserId", () => {
     });
   });
 
-  describe("UserId.equals", () => {
+  describe("[UNIT] UserId.equals", () => {
     it("should return true for same ID", () => {
       const id = UserId.generate();
       expect(UserId.equals(id, id)).toBe(true);
@@ -45,7 +45,7 @@ describe("[UNIT] UserId", () => {
     });
   });
 
-  describe("UserId.toString", () => {
+  describe("[UNIT] UserId.toString", () => {
     it("should convert to string", () => {
       const id = UserId.generate();
       expect(UserId.toString(id)).toBe(id);

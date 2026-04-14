@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { CoinTransaction } from "./CoinTransaction";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] CoinTransaction Entity", () => {
-  describe("CoinTransaction.create", () => {
+  describe("[UNIT] CoinTransaction.create", () => {
     it("should create with valid positive amount", () => {
       const transaction = Effect.runSync(
         CoinTransaction.create({
@@ -97,7 +97,7 @@ describe("[UNIT] CoinTransaction Entity", () => {
     });
   });
 
-  describe("CoinTransaction.getFormattedAmount", () => {
+  describe("[UNIT] CoinTransaction.getFormattedAmount", () => {
     it("should format positive amount", () => {
       const transaction = Effect.runSync(
         CoinTransaction.create({
@@ -123,7 +123,7 @@ describe("[UNIT] CoinTransaction Entity", () => {
     });
   });
 
-  describe("CoinTransaction.isForGroup / isProcessedBy", () => {
+  describe("[UNIT] CoinTransaction.isForGroup / isProcessedBy", () => {
     it("should check if for specific group", () => {
       const transaction = Effect.runSync(
         CoinTransaction.create({

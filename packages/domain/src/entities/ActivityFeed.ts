@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { validate } from "../utils/entity-validation";
 import { updateEntity, timestamps, type Writable } from "../utils/immutable";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 import type { ActivityId } from "../value-objects/ActivityId";
 
 /**

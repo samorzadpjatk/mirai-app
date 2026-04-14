@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { User, UserRole } from "./User";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] User Entity", () => {
-  describe("User.create", () => {
+  describe("[UNIT] User.create", () => {
     it("should create user with valid data", () => {
       const effect = User.create({
         authUserId: "auth-123",
@@ -90,7 +90,7 @@ describe("[UNIT] User Entity", () => {
     });
   });
 
-  describe("User.updateName", () => {
+  describe("[UNIT] User.updateName", () => {
     it("should update first and last name", () => {
       const userEffect = User.create({
         authUserId: "auth-123",
@@ -135,7 +135,7 @@ describe("[UNIT] User Entity", () => {
     });
   });
 
-  describe("User.updateRole", () => {
+  describe("[UNIT] User.updateRole", () => {
     it("should update role", () => {
       const userEffect = User.create({
         authUserId: "auth-123",
@@ -152,7 +152,7 @@ describe("[UNIT] User Entity", () => {
     });
   });
 
-  describe("User.setAvatar", () => {
+  describe("[UNIT] User.setAvatar", () => {
     it("should mark user as having avatar", () => {
       const userEffect = User.create({
         authUserId: "auth-123",
@@ -168,7 +168,7 @@ describe("[UNIT] User Entity", () => {
     });
   });
 
-  describe("User.getFullName", () => {
+  describe("[UNIT] User.getFullName", () => {
     it("should return full name with both names", () => {
       const user = Effect.runSync(
         User.create({
@@ -209,7 +209,7 @@ describe("[UNIT] User Entity", () => {
     });
   });
 
-  describe("User.isBanned", () => {
+  describe("[UNIT] User.isBanned", () => {
     it("should return false for non-banned user", () => {
       const user = Effect.runSync(
         User.create({
@@ -224,7 +224,7 @@ describe("[UNIT] User Entity", () => {
     });
   });
 
-  describe("User.hasRole", () => {
+  describe("[UNIT] User.hasRole", () => {
     it("should check if user has specific role", () => {
       const user = Effect.runSync(
         User.create({

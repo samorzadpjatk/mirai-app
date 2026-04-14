@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { validate } from "../utils/entity-validation";
 import { createStateMachine } from "../utils/state-machine";
 import { updateEntity, timestamps } from "../utils/immutable";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * Push delivery record interface - tracks push notification to individual user

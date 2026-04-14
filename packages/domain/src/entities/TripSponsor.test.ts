@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { TripSponsor } from "./TripSponsor";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] TripSponsor Entity", () => {
-  describe("TripSponsor.create", () => {
+  describe("[UNIT] TripSponsor.create", () => {
     it("should create trip sponsor with valid data", () => {
       const sponsor = Effect.runSync(
         TripSponsor.create({
@@ -62,7 +62,7 @@ describe("[UNIT] TripSponsor Entity", () => {
     });
   });
 
-  describe("TripSponsor.getCompositeId", () => {
+  describe("[UNIT] TripSponsor.getCompositeId", () => {
     it("should return composite identifier", () => {
       const sponsor = Effect.runSync(
         TripSponsor.create({
@@ -75,7 +75,7 @@ describe("[UNIT] TripSponsor Entity", () => {
     });
   });
 
-  describe("TripSponsor.matches", () => {
+  describe("[UNIT] TripSponsor.matches", () => {
     it("should match correct trip and sponsor", () => {
       const sponsor = Effect.runSync(
         TripSponsor.create({
@@ -90,7 +90,7 @@ describe("[UNIT] TripSponsor Entity", () => {
     });
   });
 
-  describe("TripSponsor.isForTrip", () => {
+  describe("[UNIT] TripSponsor.isForTrip", () => {
     it("should check if for specific trip", () => {
       const sponsor = Effect.runSync(
         TripSponsor.create({
@@ -104,7 +104,7 @@ describe("[UNIT] TripSponsor Entity", () => {
     });
   });
 
-  describe("TripSponsor.isForSponsor", () => {
+  describe("[UNIT] TripSponsor.isForSponsor", () => {
     it("should check if for specific sponsor", () => {
       const sponsor = Effect.runSync(
         TripSponsor.create({

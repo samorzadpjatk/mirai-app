@@ -5,10 +5,10 @@ import {
   NotificationStatus,
   NotificationPriority,
 } from "./Notification";
-import { ValidationError, StateTransitionError } from "../errors/effect-errors";
+import { ValidationError, StateTransitionError } from "../errors";
 
 describe("[UNIT] Notification Entity", () => {
-  describe("Notification.create", () => {
+  describe("[UNIT] Notification.create", () => {
     it("should create notification with minimum required fields", () => {
       const effect = Notification.create({
         title: "New Challenge Available",
@@ -149,7 +149,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.updateContent", () => {
+  describe("[UNIT] Notification.updateContent", () => {
     it("should update title and body", () => {
       const notification = Effect.runSync(
         Notification.create({
@@ -192,7 +192,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.updateStatus", () => {
+  describe("[UNIT] Notification.updateStatus", () => {
     it("should transition from DRAFT to READY", () => {
       const notification = Effect.runSync(
         Notification.create({
@@ -248,7 +248,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.markAsSent", () => {
+  describe("[UNIT] Notification.markAsSent", () => {
     it("should mark as sent and set sentAt", () => {
       const notification = Effect.runSync(
         Notification.create({
@@ -267,7 +267,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.markAsFailed", () => {
+  describe("[UNIT] Notification.markAsFailed", () => {
     it("should mark as failed with reason", () => {
       const notification = Effect.runSync(
         Notification.create({
@@ -287,7 +287,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.cancel", () => {
+  describe("[UNIT] Notification.cancel", () => {
     it("should cancel scheduled notification", () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1); // Tomorrow
@@ -329,7 +329,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.isReadyToSend", () => {
+  describe("[UNIT] Notification.isReadyToSend", () => {
     it("should return true when READY and no schedule", () => {
       const notification = Effect.runSync(
         Notification.create({
@@ -370,7 +370,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.isScheduled", () => {
+  describe("[UNIT] Notification.isScheduled", () => {
     it("should return true when scheduledFor is set", () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
@@ -400,7 +400,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.isOverdue", () => {
+  describe("[UNIT] Notification.isOverdue", () => {
     it("should return true when scheduled time has passed", () => {
       // Create notification and schedule it with a date that will be "in the past" after creation
       const notification = Effect.runSync(
@@ -434,7 +434,7 @@ describe("[UNIT] Notification Entity", () => {
     });
   });
 
-  describe("Notification.hasUrl", () => {
+  describe("[UNIT] Notification.hasUrl", () => {
     it("should return true when URL is set", () => {
       const notification = Effect.runSync(
         Notification.create({

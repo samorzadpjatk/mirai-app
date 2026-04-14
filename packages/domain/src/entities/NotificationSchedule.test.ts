@@ -4,10 +4,10 @@ import {
   NotificationSchedule,
   NotificationScheduleType,
 } from "./NotificationSchedule";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] NotificationSchedule Entity", () => {
-  describe("NotificationSchedule.create", () => {
+  describe("[UNIT] NotificationSchedule.create", () => {
     it("should create schedule with valid data", async () => {
       const startDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
       startDate.setUTCHours(9, 0, 0, 0);
@@ -185,7 +185,7 @@ describe("[UNIT] NotificationSchedule Entity", () => {
     });
   });
 
-  describe("NotificationSchedule.update", () => {
+  describe("[UNIT] NotificationSchedule.update", () => {
     it("should update schedule name", async () => {
       const startDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
       startDate.setUTCHours(10, 0, 0, 0);
@@ -244,7 +244,7 @@ describe("[UNIT] NotificationSchedule Entity", () => {
     });
   });
 
-  describe("NotificationSchedule.toggleActive", () => {
+  describe("[UNIT] NotificationSchedule.toggleActive", () => {
     it("should toggle active status", async () => {
       const startDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
       startDate.setUTCHours(10, 0, 0, 0);
@@ -272,7 +272,7 @@ describe("[UNIT] NotificationSchedule Entity", () => {
     });
   });
 
-  describe("NotificationSchedule.updateLastRun", () => {
+  describe("[UNIT] NotificationSchedule.updateLastRun", () => {
     it("should update last run timestamp", async () => {
       const startDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
       startDate.setUTCHours(10, 0, 0, 0);
@@ -300,7 +300,7 @@ describe("[UNIT] NotificationSchedule Entity", () => {
     });
   });
 
-  describe("NotificationSchedule.duplicate", () => {
+  describe("[UNIT] NotificationSchedule.duplicate", () => {
     it("should duplicate schedule", async () => {
       const startDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
       startDate.setUTCHours(10, 0, 0, 0);
@@ -333,7 +333,7 @@ describe("[UNIT] NotificationSchedule Entity", () => {
     });
   });
 
-  describe("NotificationSchedule status checks", () => {
+  describe("[UNIT] NotificationSchedule status checks", () => {
     it("should check if currently active", async () => {
       const startDate = new Date();
       startDate.setHours(startDate.getHours() + 2);
@@ -413,7 +413,7 @@ describe("[UNIT] NotificationSchedule Entity", () => {
     });
   });
 
-  describe("NotificationSchedule time functions", () => {
+  describe("[UNIT] NotificationSchedule time functions", () => {
     it("should check if should run at specific time", async () => {
       const startDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
       startDate.setUTCHours(10, 0, 0, 0);
@@ -514,7 +514,7 @@ describe("[UNIT] NotificationSchedule Entity", () => {
     });
   });
 
-  describe("NotificationSchedule.getSummary", () => {
+  describe("[UNIT] NotificationSchedule.getSummary", () => {
     it("should return summary", async () => {
       const startDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
       startDate.setUTCHours(14, 30, 0, 0);

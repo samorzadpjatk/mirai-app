@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { TripInsurance } from "./TripInsurance";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] TripInsurance Entity", () => {
-  describe("TripInsurance.create", () => {
+  describe("[UNIT] TripInsurance.create", () => {
     it("should create trip insurance with valid data", () => {
       const effect = TripInsurance.create({
         tripId: "trip-123",
@@ -141,7 +141,7 @@ describe("[UNIT] TripInsurance Entity", () => {
     });
   });
 
-  describe("TripInsurance.updateDetails", () => {
+  describe("[UNIT] TripInsurance.updateDetails", () => {
     it("should update insurance details", () => {
       const insurance = Effect.runSync(
         TripInsurance.create({
@@ -190,7 +190,7 @@ describe("[UNIT] TripInsurance Entity", () => {
     });
   });
 
-  describe("TripInsurance.updateHospitalInfo", () => {
+  describe("[UNIT] TripInsurance.updateHospitalInfo", () => {
     it("should update hospital information", () => {
       const insurance = Effect.runSync(
         TripInsurance.create({
@@ -242,7 +242,7 @@ describe("[UNIT] TripInsurance Entity", () => {
     });
   });
 
-  describe("TripInsurance.getEmergencyContact", () => {
+  describe("[UNIT] TripInsurance.getEmergencyContact", () => {
     it("should format emergency contact info", () => {
       const entity = Effect.runSync(
         TripInsurance.create({

@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import type { SponsorId } from "../value-objects/SponsorId";
 import { validate } from "../utils/entity-validation";
 import { timestamps, updateEntity } from "../utils/immutable";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * Sponsor entity - represents a sponsor with logo and contact information

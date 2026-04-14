@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { GroupJoinRequest } from "./GroupJoinRequest";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] GroupJoinRequest Entity", () => {
-  describe("GroupJoinRequest.create", () => {
+  describe("[UNIT] GroupJoinRequest.create", () => {
     it("should create join request with valid data", () => {
       const request = Effect.runSync(
         GroupJoinRequest.create({
@@ -79,7 +79,7 @@ describe("[UNIT] GroupJoinRequest Entity", () => {
     });
   });
 
-  describe("GroupJoinRequest.getUniqueKey", () => {
+  describe("[UNIT] GroupJoinRequest.getUniqueKey", () => {
     it("should return unique key for trip+user combination", () => {
       const request = Effect.runSync(
         GroupJoinRequest.create({
@@ -93,7 +93,7 @@ describe("[UNIT] GroupJoinRequest Entity", () => {
     });
   });
 
-  describe("GroupJoinRequest.getCompositeId", () => {
+  describe("[UNIT] GroupJoinRequest.getCompositeId", () => {
     it("should return full composite ID", () => {
       const request = Effect.runSync(
         GroupJoinRequest.create({
@@ -107,7 +107,7 @@ describe("[UNIT] GroupJoinRequest Entity", () => {
     });
   });
 
-  describe("GroupJoinRequest.matches", () => {
+  describe("[UNIT] GroupJoinRequest.matches", () => {
     it("should match correct trip and user", () => {
       const request = Effect.runSync(
         GroupJoinRequest.create({
@@ -123,7 +123,7 @@ describe("[UNIT] GroupJoinRequest Entity", () => {
     });
   });
 
-  describe("GroupJoinRequest.isForTrip", () => {
+  describe("[UNIT] GroupJoinRequest.isForTrip", () => {
     it("should check if for specific trip", () => {
       const request = Effect.runSync(
         GroupJoinRequest.create({
@@ -138,7 +138,7 @@ describe("[UNIT] GroupJoinRequest Entity", () => {
     });
   });
 
-  describe("GroupJoinRequest.isForGroup", () => {
+  describe("[UNIT] GroupJoinRequest.isForGroup", () => {
     it("should check if for specific group", () => {
       const request = Effect.runSync(
         GroupJoinRequest.create({
@@ -153,7 +153,7 @@ describe("[UNIT] GroupJoinRequest Entity", () => {
     });
   });
 
-  describe("GroupJoinRequest.isFromUser", () => {
+  describe("[UNIT] GroupJoinRequest.isFromUser", () => {
     it("should check if from specific user", () => {
       const request = Effect.runSync(
         GroupJoinRequest.create({
@@ -168,7 +168,7 @@ describe("[UNIT] GroupJoinRequest Entity", () => {
     });
   });
 
-  describe("GroupJoinRequest.getAgeMs / isOlderThan", () => {
+  describe("[UNIT] GroupJoinRequest.getAgeMs / isOlderThan", () => {
     it("should calculate age correctly", () => {
       const request = Effect.runSync(
         GroupJoinRequest.create({

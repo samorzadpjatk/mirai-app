@@ -23,14 +23,46 @@ export {
   isValidDateRange,
 } from "./utils/validation";
 
-// Domain error types - LEGACY (preserved for backward compatibility during migration)
-// New code should use the Effect-based errors exported below
+// Unified Domain Error Hierarchy (consolidates 124 error classes into 20 types)
+// All new code should use these error classes
 export {
   DomainError,
-  ValidationError as LegacyValidationError,
-  StateTransitionError as LegacyStateTransitionError,
-  NotFoundError as LegacyNotFoundError,
-} from "./errors/domain-errors";
+  ValidationError,
+  FieldValidationError,
+  SchemaValidationError,
+  ConstraintViolationError,
+  InvariantError,
+  NotFoundError,
+  EntityNotFoundError,
+  ResourceNotFoundError,
+  StateTransitionError,
+  InvalidStateError,
+  UnauthorizedError,
+  ForbiddenError,
+  AuthenticationError,
+  ConflictError,
+  DuplicateError,
+  ConcurrentModificationError,
+  QuotaExceededError,
+  DatabaseError,
+  NetworkError,
+  ServiceUnavailableError,
+  ResourceUnavailableError,
+  ConfigurationError,
+  UnexpectedError,
+  AppError,
+  type DomainErrors,
+  isDomainError,
+  isValidationError,
+  isNotFoundError,
+  isStateTransitionError,
+  isUnauthorizedError,
+  isConflictError,
+  isInvariantError,
+  isDatabaseError,
+  getDomainErrorMessage,
+  getDomainErrorCode,
+} from "./errors/unified-errors";
 
 // NEW: Entity validation framework (created in Phase 1)
 export {
@@ -168,30 +200,6 @@ export {
   type EffectError,
   type EffectRequirements,
 } from "./effect-utils";
-
-// Effect-based domain errors using Data.TaggedError
-// Note: DomainError type is renamed to EffectDomainError to avoid conflict with legacy DomainError class
-export {
-  ValidationError,
-  NotFoundError,
-  StateTransitionError,
-  UnauthorizedError,
-  ConflictError,
-  InvariantError,
-  InvalidStateError,
-  ResourceUnavailableError,
-  QuotaExceededError,
-  type DomainError as EffectDomainError,
-  isDomainError,
-  isValidationError,
-  isNotFoundError,
-  isStateTransitionError,
-  isUnauthorizedError,
-  isConflictError,
-  isInvariantError,
-  getDomainErrorMessage,
-  getDomainErrorCode,
-} from "./errors/effect-errors";
 
 // ============================================================================
 // Result Type (Either/Result pattern for non-Effect code)

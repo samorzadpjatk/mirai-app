@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * VotePosition - Value object representing a vote position (1st, 2nd, 3rd place)

@@ -16,7 +16,7 @@
 import { Effect } from "effect";
 import type { UserId } from "./UserId";
 import { UserRole } from "../enums/UserRole";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * AuthContext represents the authenticated state of a user

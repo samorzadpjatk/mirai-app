@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import type { RewardId } from "../value-objects/RewardId";
 import { CoinAmount } from "../value-objects/CoinAmount";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * Reward Purchase Status

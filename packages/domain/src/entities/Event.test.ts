@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { Event } from "./Event";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] Event Entity", () => {
-  describe("Event.create", () => {
+  describe("[UNIT] Event.create", () => {
     it("should create event with valid data", () => {
       const startTime = new Date("2024-06-01T10:00:00Z");
       const endTime = new Date("2024-06-01T12:00:00Z");
@@ -121,7 +121,7 @@ describe("[UNIT] Event Entity", () => {
     });
   });
 
-  describe("Event.updateDetails", () => {
+  describe("[UNIT] Event.updateDetails", () => {
     it("should update event details", () => {
       const event = Effect.runSync(
         Event.create({
@@ -169,7 +169,7 @@ describe("[UNIT] Event Entity", () => {
     });
   });
 
-  describe("Event.updateTimes", () => {
+  describe("[UNIT] Event.updateTimes", () => {
     it("should update event times", () => {
       const startTime = new Date("2024-06-01T10:00:00Z");
       const endTime = new Date("2024-06-01T12:00:00Z");
@@ -223,7 +223,7 @@ describe("[UNIT] Event Entity", () => {
     });
   });
 
-  describe("Event.addFile / removeFile", () => {
+  describe("[UNIT] Event.addFile / removeFile", () => {
     it("should add file to event", () => {
       const event = Effect.runSync(
         Event.create({
@@ -304,7 +304,7 @@ describe("[UNIT] Event Entity", () => {
     });
   });
 
-  describe("Event.assignToGroup / removeFromGroup", () => {
+  describe("[UNIT] Event.assignToGroup / removeFromGroup", () => {
     it("should assign to group", () => {
       const event = Effect.runSync(
         Event.create({
@@ -362,7 +362,7 @@ describe("[UNIT] Event Entity", () => {
     });
   });
 
-  describe("Event.getDurationMinutes", () => {
+  describe("[UNIT] Event.getDurationMinutes", () => {
     it("should calculate duration correctly", () => {
       const startTime = new Date("2024-06-01T10:00:00Z");
       const endTime = new Date("2024-06-01T12:30:00Z");
@@ -382,7 +382,7 @@ describe("[UNIT] Event Entity", () => {
     });
   });
 
-  describe("Event.getSummary", () => {
+  describe("[UNIT] Event.getSummary", () => {
     it("should return event summary", () => {
       const event = Effect.runSync(
         Event.create({

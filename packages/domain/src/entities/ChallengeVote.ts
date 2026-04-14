@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import type { ChallengeVoteId } from "../value-objects/ChallengeVoteId";
 import { VotePosition } from "../value-objects/VotePosition";
 import { VoteWeight } from "../value-objects/VoteWeight";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * ChallengeVote entity - represents a single vote cast in a challenge

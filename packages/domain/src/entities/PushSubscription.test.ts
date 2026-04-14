@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { PushSubscription } from "./PushSubscription";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] PushSubscription Entity", () => {
-  describe("PushSubscription.create", () => {
+  describe("[UNIT] PushSubscription.create", () => {
     it("should create with valid data", () => {
       const effect = PushSubscription.create({
         userId: "user-123",
@@ -66,7 +66,7 @@ describe("[UNIT] PushSubscription Entity", () => {
     });
   });
 
-  describe("PushSubscription.belongsToUser / hasToken / matches", () => {
+  describe("[UNIT] PushSubscription.belongsToUser / hasToken / matches", () => {
     it("should check if belongs to user", () => {
       const effect = PushSubscription.create({
         userId: "user-123",
@@ -114,7 +114,7 @@ describe("[UNIT] PushSubscription Entity", () => {
     });
   });
 
-  describe("PushSubscription.getCompositeId", () => {
+  describe("[UNIT] PushSubscription.getCompositeId", () => {
     it("should return composite ID", () => {
       const effect = PushSubscription.create({
         userId: "user-123",
@@ -128,7 +128,7 @@ describe("[UNIT] PushSubscription Entity", () => {
     });
   });
 
-  describe("PushSubscription.getMaskedToken", () => {
+  describe("[UNIT] PushSubscription.getMaskedToken", () => {
     it("should mask token for display", () => {
       const effect = PushSubscription.create({
         userId: "user-123",

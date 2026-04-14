@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { UserEvent } from "./UserEvent";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] UserEvent Entity", () => {
-  describe("UserEvent.create", () => {
+  describe("[UNIT] UserEvent.create", () => {
     it("should create user event with valid data", () => {
       const userEvent = Effect.runSync(
         UserEvent.create({
@@ -88,7 +88,7 @@ describe("[UNIT] UserEvent Entity", () => {
     });
   });
 
-  describe("UserEvent.markInterested / removeInterest", () => {
+  describe("[UNIT] UserEvent.markInterested / removeInterest", () => {
     it("should mark as interested", () => {
       const userEvent = Effect.runSync(
         UserEvent.create({
@@ -119,7 +119,7 @@ describe("[UNIT] UserEvent Entity", () => {
     });
   });
 
-  describe("UserEvent.enlist / unenlist", () => {
+  describe("[UNIT] UserEvent.enlist / unenlist", () => {
     it("should enlist in event", () => {
       const userEvent = Effect.runSync(
         UserEvent.create({
@@ -150,7 +150,7 @@ describe("[UNIT] UserEvent Entity", () => {
     });
   });
 
-  describe("UserEvent.updateParticipation", () => {
+  describe("[UNIT] UserEvent.updateParticipation", () => {
     it("should update both flags", () => {
       const userEvent = Effect.runSync(
         UserEvent.create({
@@ -169,7 +169,7 @@ describe("[UNIT] UserEvent Entity", () => {
     });
   });
 
-  describe("UserEvent.getStatus", () => {
+  describe("[UNIT] UserEvent.getStatus", () => {
     it("should return none for no participation", () => {
       const userEvent = Effect.runSync(
         UserEvent.create({
@@ -219,7 +219,7 @@ describe("[UNIT] UserEvent Entity", () => {
     });
   });
 
-  describe("UserEvent.getCompositeId", () => {
+  describe("[UNIT] UserEvent.getCompositeId", () => {
     it("should return composite ID", () => {
       const userEvent = Effect.runSync(
         UserEvent.create({

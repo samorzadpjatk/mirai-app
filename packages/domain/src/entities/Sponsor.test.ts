@@ -2,10 +2,10 @@ import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { Sponsor } from "./Sponsor";
 import { SponsorId } from "../value-objects/SponsorId";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] Sponsor entity", () => {
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create a sponsor with valid data", () => {
       const sponsor = Effect.runSync(
         Sponsor.create({
@@ -224,7 +224,7 @@ describe("[UNIT] Sponsor entity", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update sponsor name", () => {
       const sponsor = Effect.runSync(
         Sponsor.create({
@@ -368,7 +368,7 @@ describe("[UNIT] Sponsor entity", () => {
     });
   });
 
-  describe("deactivate", () => {
+  describe("[UNIT] deactivate", () => {
     it("should deactivate an active sponsor", () => {
       const sponsor = Effect.runSync(
         Sponsor.create({
@@ -385,7 +385,7 @@ describe("[UNIT] Sponsor entity", () => {
     });
   });
 
-  describe("activate", () => {
+  describe("[UNIT] activate", () => {
     it("should activate an inactive sponsor", () => {
       const sponsor = Effect.runSync(
         Sponsor.create({
@@ -402,7 +402,7 @@ describe("[UNIT] Sponsor entity", () => {
     });
   });
 
-  describe("hasLogoAdjustments", () => {
+  describe("[UNIT] hasLogoAdjustments", () => {
     it("should return true when height is set", () => {
       const sponsor = Effect.runSync(
         Sponsor.create({
@@ -455,7 +455,7 @@ describe("[UNIT] Sponsor entity", () => {
     });
   });
 
-  describe("getDisplayName", () => {
+  describe("[UNIT] getDisplayName", () => {
     it("should return name for active sponsor", () => {
       const sponsor = Effect.runSync(
         Sponsor.create({
@@ -483,7 +483,7 @@ describe("[UNIT] Sponsor entity", () => {
     });
   });
 
-  describe("isCurrentlyActive", () => {
+  describe("[UNIT] isCurrentlyActive", () => {
     it("should return true for active sponsor", () => {
       const sponsor = Effect.runSync(
         Sponsor.create({

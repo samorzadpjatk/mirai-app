@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { RewardPurchase, RewardPurchaseStatus } from "./RewardPurchase";
-import { ValidationError, StateTransitionError } from "../errors/effect-errors";
+import { ValidationError, StateTransitionError } from "../errors";
 
 describe("[UNIT] RewardPurchase Entity", () => {
-  describe("RewardPurchase.create", () => {
+  describe("[UNIT] RewardPurchase.create", () => {
     it("should create with valid data", () => {
       const effect = RewardPurchase.create({
         rewardId: "reward-123",
@@ -93,7 +93,7 @@ describe("[UNIT] RewardPurchase Entity", () => {
     });
   });
 
-  describe("RewardPurchase status transitions", () => {
+  describe("[UNIT] RewardPurchase status transitions", () => {
     it("should transition from BOUGHT to ACCEPTED", () => {
       const purchase = Effect.runSync(
         RewardPurchase.create({
@@ -216,7 +216,7 @@ describe("[UNIT] RewardPurchase Entity", () => {
     });
   });
 
-  describe("RewardPurchase status checks", () => {
+  describe("[UNIT] RewardPurchase status checks", () => {
     it("should identify in progress", () => {
       const entity = Effect.runSync(
         RewardPurchase.create({
@@ -252,7 +252,7 @@ describe("[UNIT] RewardPurchase Entity", () => {
     });
   });
 
-  describe("RewardPurchase.getCostPerUnit", () => {
+  describe("[UNIT] RewardPurchase.getCostPerUnit", () => {
     it("should calculate cost per unit correctly", () => {
       const entity = Effect.runSync(
         RewardPurchase.create({

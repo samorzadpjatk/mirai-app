@@ -7,7 +7,7 @@ import {
   canTransitionPurchaseStatus,
 } from "./RewardPurchase";
 import { CoinAmount } from "../value-objects/CoinAmount";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 // Helper to unwrap Effect and return entity (throws on error)
 const unwrapEffect = <T>(
@@ -17,7 +17,7 @@ const unwrapEffect = <T>(
 };
 
 describe("[UNIT] Reward Entity", () => {
-  describe("Reward.create", () => {
+  describe("[UNIT] Reward.create", () => {
     it("should create reward with valid data", () => {
       const effect = Reward.create({
         name: "Test Reward",
@@ -257,7 +257,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.update", () => {
+  describe("[UNIT] Reward.update", () => {
     it("should update name", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -375,7 +375,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.hide / Reward.unhide", () => {
+  describe("[UNIT] Reward.hide / Reward.unhide", () => {
     it("should hide reward", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -411,7 +411,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.decrementQuantity", () => {
+  describe("[UNIT] Reward.decrementQuantity", () => {
     it("should decrease quantity", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -472,7 +472,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.incrementQuantity", () => {
+  describe("[UNIT] Reward.incrementQuantity", () => {
     it("should increase quantity", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -513,7 +513,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.calculateDynamicCoinCost", () => {
+  describe("[UNIT] Reward.calculateDynamicCoinCost", () => {
     it("should calculate cost based on percentage of total points", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -579,7 +579,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.calculateTotalCost", () => {
+  describe("[UNIT] Reward.calculateTotalCost", () => {
     it("should calculate total cost for quantity", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -640,7 +640,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.canAfford", () => {
+  describe("[UNIT] Reward.canAfford", () => {
     it("should return true when group has enough coins", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -696,7 +696,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.isInStock", () => {
+  describe("[UNIT] Reward.isInStock", () => {
     it("should return true when quantity > 0", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -728,7 +728,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.canBePurchased", () => {
+  describe("[UNIT] Reward.canBePurchased", () => {
     it("should return true when in stock and not hidden", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -776,7 +776,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.canPurchaseQuantity", () => {
+  describe("[UNIT] Reward.canPurchaseQuantity", () => {
     it("should return true when quantity is available", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -808,7 +808,7 @@ describe("[UNIT] Reward Entity", () => {
     });
   });
 
-  describe("Reward.getPrimaryImage", () => {
+  describe("[UNIT] Reward.getPrimaryImage", () => {
     it("should return first image", () => {
       const reward = unwrapEffect(
         Reward.create({
@@ -842,7 +842,7 @@ describe("[UNIT] Reward Entity", () => {
   });
 });
 
-describe("canTransitionPurchaseStatus", () => {
+describe("[UNIT] canTransitionPurchaseStatus", () => {
   it("should allow transition from BOUGHT to ACCEPTED", () => {
     expect(
       canTransitionPurchaseStatus(

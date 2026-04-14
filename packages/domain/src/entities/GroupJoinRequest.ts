@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * GroupJoinRequest entity - represents a pending request to join a group

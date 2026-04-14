@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit } from "effect";
 import { validate } from "./entity-validation";
-import { isValidationError } from "../errors/effect-errors";
+import { isValidationError } from "../errors";
 
 describe("[UNIT] entity-validation", () => {
-  describe("validate.string", () => {
+  describe("[UNIT] validate.string", () => {
     it("returns ok for valid string", () => {
       const effect = validate.string("hello", "name", {});
       const value = Effect.runSync(effect);
@@ -114,7 +114,7 @@ describe("[UNIT] entity-validation", () => {
     });
   });
 
-  describe("validate.number", () => {
+  describe("[UNIT] validate.number", () => {
     it("returns ok for valid number", () => {
       const effect = validate.number(42, "count", {});
       const value = Effect.runSync(effect);
@@ -201,7 +201,7 @@ describe("[UNIT] entity-validation", () => {
     });
   });
 
-  describe("validate.id", () => {
+  describe("[UNIT] validate.id", () => {
     it("returns ok for valid ID", () => {
       const effect = validate.id("user-123", "userId");
       const value = Effect.runSync(effect);
@@ -241,7 +241,7 @@ describe("[UNIT] entity-validation", () => {
     });
   });
 
-  describe("validate.array", () => {
+  describe("[UNIT] validate.array", () => {
     it("returns ok for valid array", () => {
       const effect = validate.array([1, 2, 3], "items", {});
       const value = Effect.runSync(effect);
@@ -300,7 +300,7 @@ describe("[UNIT] entity-validation", () => {
     });
   });
 
-  describe("validate.dateRange", () => {
+  describe("[UNIT] validate.dateRange", () => {
     it("returns ok when start is before end", () => {
       const start = new Date("2024-01-01");
       const end = new Date("2024-01-15");

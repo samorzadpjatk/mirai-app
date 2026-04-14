@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 /**
  * VoteWeight - Value object representing the normalized weight of a vote

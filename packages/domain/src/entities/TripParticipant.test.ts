@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { TripParticipant, TripParticipantRole } from "./TripParticipant";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] TripParticipant Entity", () => {
-  describe("TripParticipant.create", () => {
+  describe("[UNIT] TripParticipant.create", () => {
     it("should create participant with valid data", () => {
       const effect = TripParticipant.create({
         userId: "user-123",
@@ -92,7 +92,7 @@ describe("[UNIT] TripParticipant Entity", () => {
     });
   });
 
-  describe("TripParticipant.assignToGroup", () => {
+  describe("[UNIT] TripParticipant.assignToGroup", () => {
     it("should assign to group", () => {
       const participant = Effect.runSync(
         TripParticipant.create({
@@ -123,7 +123,7 @@ describe("[UNIT] TripParticipant Entity", () => {
     });
   });
 
-  describe("TripParticipant.removeFromGroup", () => {
+  describe("[UNIT] TripParticipant.removeFromGroup", () => {
     it("should remove from group", () => {
       const participant = Effect.runSync(
         TripParticipant.create({
@@ -139,7 +139,7 @@ describe("[UNIT] TripParticipant Entity", () => {
     });
   });
 
-  describe("TripParticipant.updateRole", () => {
+  describe("[UNIT] TripParticipant.updateRole", () => {
     it("should update role to leader", () => {
       const participant = Effect.runSync(
         TripParticipant.create({
@@ -168,7 +168,7 @@ describe("[UNIT] TripParticipant Entity", () => {
     });
   });
 
-  describe("TripParticipant.assignWristNumber", () => {
+  describe("[UNIT] TripParticipant.assignWristNumber", () => {
     it("should assign wrist number", () => {
       const participant = Effect.runSync(
         TripParticipant.create({
@@ -197,7 +197,7 @@ describe("[UNIT] TripParticipant Entity", () => {
     });
   });
 
-  describe("TripParticipant.assignHouseNumber", () => {
+  describe("[UNIT] TripParticipant.assignHouseNumber", () => {
     it("should assign house number", () => {
       const participant = Effect.runSync(
         TripParticipant.create({
@@ -211,7 +211,7 @@ describe("[UNIT] TripParticipant Entity", () => {
     });
   });
 
-  describe("TripParticipant.promoteToLeader / demoteToMember", () => {
+  describe("[UNIT] TripParticipant.promoteToLeader / demoteToMember", () => {
     it("should promote member to leader", () => {
       const participant = Effect.runSync(
         TripParticipant.create({

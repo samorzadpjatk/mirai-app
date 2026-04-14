@@ -4,10 +4,10 @@ import {
   NotificationDelivery,
   NotificationDeliveryStatus,
 } from "./NotificationDelivery";
-import { ValidationError } from "../errors/effect-errors";
+import { ValidationError } from "../errors";
 
 describe("[UNIT] NotificationDelivery Entity", () => {
-  describe("NotificationDelivery.create", () => {
+  describe("[UNIT] NotificationDelivery.create", () => {
     it("should create with valid data", () => {
       const effect = NotificationDelivery.create({
         notificationId: "notification-123",
@@ -117,7 +117,7 @@ describe("[UNIT] NotificationDelivery Entity", () => {
     });
   });
 
-  describe("NotificationDelivery.start", () => {
+  describe("[UNIT] NotificationDelivery.start", () => {
     it("should start delivery", () => {
       const delivery = Effect.runSync(
         NotificationDelivery.create({
@@ -133,7 +133,7 @@ describe("[UNIT] NotificationDelivery Entity", () => {
     });
   });
 
-  describe("NotificationDelivery.complete", () => {
+  describe("[UNIT] NotificationDelivery.complete", () => {
     it("should complete delivery", () => {
       const delivery = Effect.runSync(
         NotificationDelivery.create({
@@ -151,7 +151,7 @@ describe("[UNIT] NotificationDelivery Entity", () => {
     });
   });
 
-  describe("NotificationDelivery.markAsFailed", () => {
+  describe("[UNIT] NotificationDelivery.markAsFailed", () => {
     it("should mark as failed", () => {
       const delivery = Effect.runSync(
         NotificationDelivery.create({
@@ -184,7 +184,7 @@ describe("[UNIT] NotificationDelivery Entity", () => {
     });
   });
 
-  describe("NotificationDelivery.updateStats", () => {
+  describe("[UNIT] NotificationDelivery.updateStats", () => {
     it("should update stats", () => {
       const delivery = Effect.runSync(
         NotificationDelivery.create({
@@ -227,7 +227,7 @@ describe("[UNIT] NotificationDelivery Entity", () => {
     });
   });
 
-  describe("NotificationDelivery success/failure rates", () => {
+  describe("[UNIT] NotificationDelivery success/failure rates", () => {
     it("should calculate success rate", () => {
       const delivery = Effect.runSync(
         NotificationDelivery.create({
@@ -257,7 +257,7 @@ describe("[UNIT] NotificationDelivery Entity", () => {
     });
   });
 
-  describe("NotificationDelivery.isForTrip / isForNotification", () => {
+  describe("[UNIT] NotificationDelivery.isForTrip / isForNotification", () => {
     it("should check if for specific trip", () => {
       const delivery = Effect.runSync(
         NotificationDelivery.create({
@@ -282,7 +282,7 @@ describe("[UNIT] NotificationDelivery Entity", () => {
     });
   });
 
-  describe("NotificationDelivery recordPush", () => {
+  describe("[UNIT] NotificationDelivery recordPush", () => {
     it("should record successful push", () => {
       const delivery = Effect.runSync(
         NotificationDelivery.create({

@@ -1,10 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { Effect, Exit, Cause } from "effect";
 import { Group, GroupStatus } from "./Group";
-import { ValidationError, StateTransitionError } from "../errors/effect-errors";
+import { ValidationError, StateTransitionError } from "../errors";
 
 describe("[UNIT] Group Entity", () => {
-  describe("Group.create", () => {
+  describe("[UNIT] Group.create", () => {
     it("should create group with minimum required fields", () => {
       const effect = Group.create({
         tripId: "trip-123",
@@ -162,7 +162,7 @@ describe("[UNIT] Group Entity", () => {
     });
   });
 
-  describe("Group.updateDetails", () => {
+  describe("[UNIT] Group.updateDetails", () => {
     it("should update name and description", () => {
       const group = Effect.runSync(
         Group.create({
@@ -226,7 +226,7 @@ describe("[UNIT] Group Entity", () => {
     });
   });
 
-  describe("Group.changeOrganizer", () => {
+  describe("[UNIT] Group.changeOrganizer", () => {
     it("should change organizer", () => {
       const group = Effect.runSync(
         Group.create({
@@ -264,7 +264,7 @@ describe("[UNIT] Group Entity", () => {
     });
   });
 
-  describe("Group.addCoins", () => {
+  describe("[UNIT] Group.addCoins", () => {
     it("should add coins to balance", () => {
       const group = Effect.runSync(
         Group.create({
@@ -303,7 +303,7 @@ describe("[UNIT] Group Entity", () => {
     });
   });
 
-  describe("Group.spendCoins", () => {
+  describe("[UNIT] Group.spendCoins", () => {
     it("should subtract coins from balance", () => {
       const group = Effect.runSync(
         Group.create({
@@ -342,7 +342,7 @@ describe("[UNIT] Group Entity", () => {
     });
   });
 
-  describe("Group.markAsDeleted", () => {
+  describe("[UNIT] Group.markAsDeleted", () => {
     it("should mark group as deleted", () => {
       const group = Effect.runSync(
         Group.create({
@@ -380,7 +380,7 @@ describe("[UNIT] Group Entity", () => {
     });
   });
 
-  describe("Group.isActive", () => {
+  describe("[UNIT] Group.isActive", () => {
     it("should return true for active group", () => {
       const group = Effect.runSync(
         Group.create({
@@ -409,7 +409,7 @@ describe("[UNIT] Group Entity", () => {
     });
   });
 
-  describe("Group.hasEnoughCoins", () => {
+  describe("[UNIT] Group.hasEnoughCoins", () => {
     it("should return true when balance is sufficient", () => {
       const group = Effect.runSync(
         Group.create({
@@ -440,7 +440,7 @@ describe("[UNIT] Group Entity", () => {
     });
   });
 
-  describe("Group.getBalance", () => {
+  describe("[UNIT] Group.getBalance", () => {
     it("should return current coin balance", () => {
       const group = Effect.runSync(
         Group.create({

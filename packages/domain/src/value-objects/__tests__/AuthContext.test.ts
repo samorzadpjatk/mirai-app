@@ -8,7 +8,7 @@ describe("[UNIT] AuthContext", () => {
   const validUserId = UserId.create("550e8400-e29b-41d4-a716-446655440000");
   const validDate = new Date("2024-01-15T10:00:00Z");
 
-  describe("AuthContext.create", () => {
+  describe("[UNIT] AuthContext.create", () => {
     it("should create AuthContext with valid inputs", async () => {
       const effect = AuthContext.create({
         userId: validUserId,
@@ -156,7 +156,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("AuthContext.isAdmin", () => {
+  describe("[UNIT] AuthContext.isAdmin", () => {
     it("should return true for ADMIN role", async () => {
       const effect = AuthContext.create({
         userId: validUserId,
@@ -191,7 +191,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("AuthContext.isModerator", () => {
+  describe("[UNIT] AuthContext.isModerator", () => {
     it("should return true for ADMIN role", async () => {
       const effect = AuthContext.create({
         userId: validUserId,
@@ -226,7 +226,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("AuthContext.hasRole", () => {
+  describe("[UNIT] AuthContext.hasRole", () => {
     it("should return true when role matches", async () => {
       const effect = AuthContext.create({
         userId: validUserId,
@@ -250,7 +250,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("AuthContext.hasRoleAtLeast", () => {
+  describe("[UNIT] AuthContext.hasRoleAtLeast", () => {
     it("ADMIN should have at least ADMIN level", async () => {
       const effect = AuthContext.create({
         userId: validUserId,
@@ -291,7 +291,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("AuthContext.withRole", () => {
+  describe("[UNIT] AuthContext.withRole", () => {
     it("should create new AuthContext with different role", async () => {
       const effect = AuthContext.create({
         userId: validUserId,
@@ -319,7 +319,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("AuthContext.withSessionId", () => {
+  describe("[UNIT] AuthContext.withSessionId", () => {
     it("should create new AuthContext with different sessionId", async () => {
       const effect = AuthContext.create({
         userId: validUserId,
@@ -361,7 +361,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("AuthContext.toJSON", () => {
+  describe("[UNIT] AuthContext.toJSON", () => {
     it("should serialize to JSON format", async () => {
       const effect = AuthContext.create({
         userId: validUserId,
@@ -391,7 +391,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("AuthContext.equals", () => {
+  describe("[UNIT] AuthContext.equals", () => {
     it("should return true for identical AuthContexts", async () => {
       const effect1 = AuthContext.create({
         userId: validUserId,
@@ -512,7 +512,7 @@ describe("[UNIT] AuthContext", () => {
     });
   });
 
-  describe("immutability", () => {
+  describe("[UNIT] immutability", () => {
     it("should have readonly properties", async () => {
       const effect = AuthContext.create({
         userId: validUserId,

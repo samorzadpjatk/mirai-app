@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { entityHelpers } from "./entity-helpers";
 
 describe("[UNIT] entity-helpers", () => {
-  describe("belongsTo", () => {
+  describe("[UNIT] belongsTo", () => {
     it("returns true when IDs match", () => {
       const result = entityHelpers.belongsTo("trip-123", "trip-123");
 
@@ -28,7 +28,7 @@ describe("[UNIT] entity-helpers", () => {
     });
   });
 
-  describe("matchesComposite", () => {
+  describe("[UNIT] matchesComposite", () => {
     it("returns true when all IDs match", () => {
       const result = entityHelpers.matchesComposite(
         ["user-123", "trip-456"],
@@ -79,7 +79,7 @@ describe("[UNIT] entity-helpers", () => {
     });
   });
 
-  describe("getAgeMs", () => {
+  describe("[UNIT] getAgeMs", () => {
     it("returns positive value for past dates", () => {
       const past = new Date(Date.now() - 1000); // 1 second ago
       const result = entityHelpers.getAgeMs(past);
@@ -112,7 +112,7 @@ describe("[UNIT] entity-helpers", () => {
     });
   });
 
-  describe("isExpired", () => {
+  describe("[UNIT] isExpired", () => {
     it("returns true when age exceeds threshold", () => {
       const old = new Date(Date.now() - 2000); // 2 seconds ago
       const result = entityHelpers.isExpired(old, 1000); // 1 second threshold

@@ -11,10 +11,10 @@ import {
   assertPureEffect,
   type EntityEffect,
 } from "../effect-utils";
-import { ValidationError, NotFoundError } from "../errors/effect-errors";
+import { ValidationError, NotFoundError } from "../errors";
 
 describe("[UNIT] effect-utils", () => {
-  describe("fromPredicate", () => {
+  describe("[UNIT] fromPredicate", () => {
     it("should succeed when predicate returns true", async () => {
       const effect = fromPredicate(
         42,
@@ -46,7 +46,7 @@ describe("[UNIT] effect-utils", () => {
     });
   });
 
-  describe("assertPureEffect", () => {
+  describe("[UNIT] assertPureEffect", () => {
     it("should return the same effect (compile-time check)", async () => {
       const original = Effect.succeed("test");
       const asserted = assertPureEffect(original);
@@ -90,7 +90,7 @@ describe("[UNIT] effect-utils", () => {
     });
   });
 
-  describe("Effect pattern matching", () => {
+  describe("[UNIT] Effect pattern matching", () => {
     it("should support Effect.catchTag for error handling", async () => {
       const error = new NotFoundError({ entityType: "User", id: "123" });
       const effect = Effect.fail(error);
