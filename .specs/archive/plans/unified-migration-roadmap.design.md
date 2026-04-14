@@ -1,6 +1,13 @@
 # Unified Migration Roadmap
 
-This document consolidates five migration plans into a single dependency-based roadmap.
+**Status:** ⚠️ **SUPERSEDED by effect-migration.design.md**  
+**Reason:** This plan uses Promise<Result<T,E>> pattern, which has been superseded by Effect framework adoption  
+**Action:** Refer to effect-migration.design.md for current migration approach  
+**Retention:** Kept for historical context only
+
+---
+
+> **Note:** This document consolidates five migration plans into a single dependency-based roadmap. However, it predates the adoption of Effect framework and uses the legacy Promise<Result<T,E>> pattern. The current migration approach is documented in effect-migration.design.md.
 
 ## Overview
 

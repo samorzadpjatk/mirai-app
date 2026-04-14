@@ -1,19 +1,23 @@
 # Adapters Package Type Error Fix Plan
 
+**Status:** Converted to Task ✅  
+**Task:** `.specs/tasks/todo/fix-adapters-type-errors.task.md`  
+**Note:** Error count reduced from 338 to 63 since plan creation
+
 ## Overview
 
-Fix 338 pre-existing TypeScript errors in the adapters package. These errors accumulated during refactoring and fall outside the scope of the throwing use case work. This plan organizes fixes into six phases based on dependencies and complexity.
+Fix remaining TypeScript errors in the adapters package (currently 63 errors). These errors accumulated during refactoring and fall outside the scope of the throwing use case work. This plan organizes fixes into six phases based on dependencies and complexity.
 
 ## Phase Summary
 
-| Phase | Focus | Errors | Effort |
-|-------|-------|--------|--------|
-| **1** | Missing dependencies and modules | ~38 | 2-3 hours |
-| **2** | Error classes and DI modules | ~15 | 1-2 hours |
-| **3** | Controller DTO alignment | ~20 | 3-4 hours |
-| **4** | Mapper fixes | ~45 | 4-5 hours |
-| **5** | Drizzle repository fixes | ~180 | 8-10 hours |
-| **6** | Test file fixes | ~40 | 3-4 hours |
+| Phase | Focus                            | Errors | Effort     |
+| ----- | -------------------------------- | ------ | ---------- |
+| **1** | Missing dependencies and modules | ~38    | 2-3 hours  |
+| **2** | Error classes and DI modules     | ~15    | 1-2 hours  |
+| **3** | Controller DTO alignment         | ~20    | 3-4 hours  |
+| **4** | Mapper fixes                     | ~45    | 4-5 hours  |
+| **5** | Drizzle repository fixes         | ~180   | 8-10 hours |
+| **6** | Test file fixes                  | ~40    | 3-4 hours  |
 
 **Total estimated effort:** 21-28 hours over 6 phases
 
@@ -76,12 +80,10 @@ Fix 338 pre-existing TypeScript errors in the adapters package. These errors acc
    Applies to: ValidationError, NotFoundError, StateTransitionError, PermissionError, ConcurrencyError
 
 2. **Fix RepositoryModule exports**
-
    - Remove references to non-existent repositories
    - Update module paths for renamed repositories
 
 3. **Fix ControllerModule wiring**
-
    - Ensure proper repository-to-controller connections
    - Fix any broken dependency injection registrations
 
@@ -116,18 +118,15 @@ Fix 338 pre-existing TypeScript errors in the adapters package. These errors acc
    ```
 
 2. **Fix Result type handling in notification.ts and trip.ts**
-
    - Stop assigning Error objects directly to string fields (lines 223, 264, 281)
    - Properly unwrap Result types before accessing properties
    - Fix `kind`, `error`, `value` property access on Notification entity
 
 3. **Fix string | null | undefined vs string | null**
-
    - Use nullish coalescing: `value ?? null`
    - Or update controller DTO types to accept undefined
 
 4. **Fix missing imports**
-
    - Add `UserRole` import to reward.ts
    - Fix RewardPurchaseStatus enum values
 
@@ -164,7 +163,6 @@ Fix 338 pre-existing TypeScript errors in the adapters package. These errors acc
 1. **Align mapper outputs with controller DTOs**
 
    Mappers must produce output that matches controller DTO expectations:
-
    - Add missing fields (like `description` in Group)
    - Remove extra fields (like `coins` where not expected)
    - Fix type mismatches (nullable vs required)
@@ -173,7 +171,7 @@ Fix 338 pre-existing TypeScript errors in the adapters package. These errors acc
 
    ```typescript
    // Challenge vote position conversion
-   position: entity.position as "UPVOTE" | "DOWNVOTE" | "NEUTRAL"
+   position: entity.position as "UPVOTE" | "DOWNVOTE" | "NEUTRAL";
    ```
 
 3. **Fix undefined vs null handling**
@@ -213,7 +211,6 @@ Fix 338 pre-existing TypeScript errors in the adapters package. These errors acc
 ### Fixes Required
 
 1. **Fix BaseDrizzleRepository generic constraints**
-
    - Resolve TS2344: Type constraints not satisfied
    - Fix TS2769: No overload matches for insert operations
    - Fix TS2740: Missing properties on query builders
@@ -226,16 +223,13 @@ Fix 338 pre-existing TypeScript errors in the adapters package. These errors acc
    ```
 
 3. **Fix argument count mismatches**
-
    - Some repository methods pass wrong number of arguments
    - Update calls to match Drizzle API signatures
 
 4. **Add missing override modifiers**
-
    - Repository methods overriding base class need `override` keyword
 
 5. **Fix method signature mismatches**
-
    - ActivityFeedRepository methods don't match port interface
    - Fix return types (Promise<ActivityFeed[]> vs Promise<{ activities, nextCursor, hasMore }>)
 
@@ -269,17 +263,14 @@ Fix 338 pre-existing TypeScript errors in the adapters package. These errors acc
    ```
 
 2. **Fix error property access in contract tests**
-
    - Tests access `sessionId`, `expiredAt`, `bucket`, `path` on union error types
    - Need type narrowing to specific error subtypes
 
 3. **Fix Result type handling**
-
    - Tests incorrectly access `.value` on potentially error results
    - Use proper Result unwrapping with error checking
 
 4. **Fix StoragePort interface mismatch**
-
    - InMemoryStorageAdapter returns wrong type for download()
    - Should return `DownloadResult` not `Buffer | Blob`
 

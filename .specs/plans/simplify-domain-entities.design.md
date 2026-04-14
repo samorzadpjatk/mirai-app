@@ -1,7 +1,9 @@
 # Domain Entity Simplification Design
 
-**Status:** Validated and Ready for Implementation  
+**Status:** Converted to Task ✅  
+**Task:** `.specs/tasks/todo/simplify-domain-entities.task.md`  
 **Created:** 2026-04-11  
+**Converted:** 2026-04-14  
 **Scope:** `packages/domain/src/entities/` (35 entities → ~21 entities)
 
 ---

@@ -1,5 +1,8 @@
 # Use Case Result<T,E> Refactoring Design
 
+**Status:** Converted to Task ✅  
+**Task:** `.specs/tasks/todo/refactor-use-cases-to-result.task.md`
+
 ## Overview
 
 Refactor 13 throwing use cases to return `Result<T,E>` types, resolving ~370 type errors in the adapters package. This aligns the minority pattern (13 throwing use cases) with the established majority pattern (75+ Result-based use cases).
@@ -15,21 +18,21 @@ Refactor 13 throwing use cases to return `Result<T,E>` types, resolving ~370 typ
 
 ### Use Cases (13 files)
 
-| File | Errors | Controller |
-|------|--------|------------|
-| `AddCoins.ts` | Throws | `coin.ts` |
-| `RemoveCoins.ts` | Throws | `coin.ts` |
-| `CreateChallenge.ts` | Throws | `challenge.ts` |
-| `CreateUser.ts` | Throws | `user.ts` |
-| `UpdateUser.ts` | Throws | `user.ts` |
-| `GetUser.ts` | Throws | `user.ts` |
-| `CreateGroup.ts` | Throws | `group.ts` |
-| `UpdateGroup.ts` | Throws | `group.ts` |
-| `GetGroup.ts` | Throws | `group.ts` |
-| `PurchaseReward.ts` | Throws | `reward.ts` |
-| `GetChallenge.ts` | Throws | `challenge.ts` |
-| `SubmitVotes.ts` | Throws | `challenge-vote.ts` |
-| `ForceEndVoting.ts` | Throws | `challenge-vote.ts` |
+| File                 | Errors | Controller          |
+| -------------------- | ------ | ------------------- |
+| `AddCoins.ts`        | Throws | `coin.ts`           |
+| `RemoveCoins.ts`     | Throws | `coin.ts`           |
+| `CreateChallenge.ts` | Throws | `challenge.ts`      |
+| `CreateUser.ts`      | Throws | `user.ts`           |
+| `UpdateUser.ts`      | Throws | `user.ts`           |
+| `GetUser.ts`         | Throws | `user.ts`           |
+| `CreateGroup.ts`     | Throws | `group.ts`          |
+| `UpdateGroup.ts`     | Throws | `group.ts`          |
+| `GetGroup.ts`        | Throws | `group.ts`          |
+| `PurchaseReward.ts`  | Throws | `reward.ts`         |
+| `GetChallenge.ts`    | Throws | `challenge.ts`      |
+| `SubmitVotes.ts`     | Throws | `challenge-vote.ts` |
+| `ForceEndVoting.ts`  | Throws | `challenge-vote.ts` |
 
 ### Controllers (7 files)
 
@@ -67,7 +70,9 @@ import { Result, ok, err } from "@pjapp/domain";
 import { DomainError } from "@pjapp/domain";
 
 export class AddCoinsUseCase {
-  async execute(input: AddCoinsInput): Promise<Result<AddCoinsOutput, DomainError>> {
+  async execute(
+    input: AddCoinsInput,
+  ): Promise<Result<AddCoinsOutput, DomainError>> {
     if (!groupCheck.exists) {
       return err(DomainError.notFound("Group", "Group not found"));
     }
@@ -118,11 +123,11 @@ async addCoins(input) {
 async addCoins(input) {
   const useCase = new AddCoinsUseCase(this.coinRepo);
   const result = await useCase.execute(input);
-  
+
   if (result.kind === "err") {
     return { success: false, error: result.error };
   }
-  
+
   return { success: true, data: result.value };
 }
 ```
@@ -136,23 +141,21 @@ async addCoins(input) {
 
 ## Error Type Mapping
 
-| AppError (old) | DomainError (new) |
-|----------------|-------------------|
-| `AppError.notFound({ entity, message })` | `DomainError.notFound(entity, message)` |
-| `AppError.conflict({ entity, message })` | `DomainError.conflict(entity, message)` |
-| `AppError.validation({ field, message })` | `DomainError.validation(field, message)` |
+| AppError (old)                                | DomainError (new)                            |
+| --------------------------------------------- | -------------------------------------------- |
+| `AppError.notFound({ entity, message })`      | `DomainError.notFound(entity, message)`      |
+| `AppError.conflict({ entity, message })`      | `DomainError.conflict(entity, message)`      |
+| `AppError.validation({ field, message })`     | `DomainError.validation(field, message)`     |
 | `AppError.repository({ operation, message })` | `DomainError.repository(operation, message)` |
-| `AppError.authorization({ message })` | `DomainError.authorization(message)` |
-| `AppError.businessRule({ message })` | `DomainError.businessRule(message)` |
+| `AppError.authorization({ message })`         | `DomainError.authorization(message)`         |
+| `AppError.businessRule({ message })`          | `DomainError.businessRule(message)`          |
 
 ## Type Definitions
 
 ### Result<T,E> (exists in domain package)
 
 ```typescript
-export type Result<T, E> = 
-  | { kind: "ok"; value: T } 
-  | { kind: "err"; error: E };
+export type Result<T, E> = { kind: "ok"; value: T } | { kind: "err"; error: E };
 
 export function ok<T>(value: T): Result<T, never> {
   return { kind: "ok", value };
@@ -166,32 +169,52 @@ export function err<E>(error: E): Result<never, E> {
 ### DomainError (exists in domain package)
 
 ```typescript
-export type DomainError = 
+export type DomainError =
   | { _tag: "NotFoundError"; entity: string; message: string }
   | { _tag: "ConflictError"; entity: string; message: string }
   | { _tag: "ValidationError"; field: string; message: string }
-  | { _tag: "RepositoryError"; operation: string; message: string; cause?: unknown }
+  | {
+      _tag: "RepositoryError";
+      operation: string;
+      message: string;
+      cause?: unknown;
+    }
   | { _tag: "AuthorizationError"; message: string }
   | { _tag: "BusinessRuleError"; message: string };
 
 export const DomainError = {
   notFound: (entity: string, message: string): DomainError => ({
-    _tag: "NotFoundError", entity, message
+    _tag: "NotFoundError",
+    entity,
+    message,
   }),
   conflict: (entity: string, message: string): DomainError => ({
-    _tag: "ConflictError", entity, message
+    _tag: "ConflictError",
+    entity,
+    message,
   }),
   validation: (field: string, message: string): DomainError => ({
-    _tag: "ValidationError", field, message
+    _tag: "ValidationError",
+    field,
+    message,
   }),
-  repository: (operation: string, message: string, cause?: unknown): DomainError => ({
-    _tag: "RepositoryError", operation, message, cause
+  repository: (
+    operation: string,
+    message: string,
+    cause?: unknown,
+  ): DomainError => ({
+    _tag: "RepositoryError",
+    operation,
+    message,
+    cause,
   }),
   authorization: (message: string): DomainError => ({
-    _tag: "AuthorizationError", message
+    _tag: "AuthorizationError",
+    message,
   }),
   businessRule: (message: string): DomainError => ({
-    _tag: "BusinessRuleError", message
+    _tag: "BusinessRuleError",
+    message,
   }),
 };
 ```
@@ -211,6 +234,7 @@ pnpm tsc --noEmit
 ### Unit Test Updates
 
 **Before:**
+
 ```typescript
 // Error case
 await expect(useCase.execute(input)).rejects.toThrow("Group not found");
@@ -221,6 +245,7 @@ expect(output.transaction).toBeDefined();
 ```
 
 **After:**
+
 ```typescript
 // Error case
 const result = await useCase.execute(input);
@@ -243,7 +268,7 @@ const response = await controller.addCoins(invalidInput);
 expect(response.success).toBe(false);
 expect(response.error).toBeDefined();
 
-// Success case  
+// Success case
 const response = await controller.addCoins(validInput);
 expect(response.success).toBe(true);
 expect(response.data).toBeDefined();
@@ -282,6 +307,7 @@ expect(response.data).toBeDefined();
 ## Rollback Plan
 
 Each use case refactor is isolated:
+
 - No cross-dependencies between use cases
 - Git history provides per-file rollback capability
 - Can refactor incrementally (1-2 files at a time)

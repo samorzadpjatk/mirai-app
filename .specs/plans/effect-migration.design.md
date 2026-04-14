@@ -338,6 +338,8 @@ export const CreateUserUseCaseLive = Layer.effect(
 
 ## 5. Adapters & GraphQL Layer (Week 5-6)
 
+> **📦 Detailed Implementation Plan:** For the DI consolidation phase specifically, see `phase5-di-consolidation.design.md` which provides detailed Layer composition patterns, repository wiring, and migration steps for eliminating awilix.
+
 ### Repository with @effect/sql-drizzle
 
 ```typescript
