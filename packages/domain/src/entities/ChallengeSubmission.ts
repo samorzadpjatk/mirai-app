@@ -383,28 +383,27 @@ export class ChallengeSubmission {
       );
     }
 
-    const reasonResult = validate.string(props.reason, "reason", {
-      required: true,
-      maxLength: 1000,
-    });
-    if (reasonResult.kind === "err") return Effect.fail(reasonResult.error);
+    return Effect.gen(this, function* () {
+      const reason = yield* validate.string(props.reason, "reason", {
+        required: true,
+        maxLength: 1000,
+      });
 
-    return Effect.succeed(
-      updateEntity(
+      return updateEntity(
         this,
         {
           status: "REJECTED",
           reviewedById: props.reviewedById,
           reviewedAt: new Date(),
-          rejectionReason: reasonResult.value.trim(),
+          rejectionReason: reason.trim(),
           awardedPoints: 0, // Clear awarded points on rejection
           bonusPoints: 0, // Clear bonus points on rejection
           ranking: null, // Clear ranking on rejection
           reviewedBy: null, // Will be populated by repository
         },
         ChallengeSubmission,
-      ),
-    );
+      );
+    });
   }
 
   /**
