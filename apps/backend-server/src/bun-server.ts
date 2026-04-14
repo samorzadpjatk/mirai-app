@@ -54,6 +54,7 @@ import { schema } from "./graphql/schema";
 import { extractAuthToken, validateAuthToken } from "./websocket/auth-handler";
 import { Effect } from "effect";
 import { AuthPortTag, type AuthPort } from "@mirai-app/use-cases";
+import { createErrorHandler } from "./shared/error-handler";
 
 // =============================================================================
 // Types
@@ -148,41 +149,6 @@ function createAppLayerMiddleware(layer: Layer.Layer<unknown>) {
   return async (c: Context, next: Next) => {
     c.set("appLayer", layer);
     await next();
-  };
-}
-
-/**
- * Error handling middleware
- *
- * Catches errors and converts them to JSON responses.
- */
-function createErrorHandler(config: HonoConfig) {
-  return async (c: Context, next: Next) => {
-    try {
-      await next();
-    } catch (error) {
-      serverLogger.error("[Bun] Error:", { error });
-
-      const status = 500;
-      const message =
-        config.isProduction && error instanceof Error
-          ? "Internal Server Error"
-          : error instanceof Error
-            ? error.message
-            : "Unknown error";
-
-      return c.json(
-        {
-          error: {
-            message,
-            ...(config.isDevelopment && error instanceof Error
-              ? { stack: error.stack }
-              : {}),
-          },
-        },
-        status,
-      );
-    }
   };
 }
 

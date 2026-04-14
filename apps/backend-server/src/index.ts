@@ -54,7 +54,7 @@ export {
   getServer,
   /** Check if server is running */
   isServerRunning,
-} from "./index-hono";
+} from "./server-bootstrap";
 
 // Re-export Effect server types and utilities
 export {
@@ -68,8 +68,6 @@ export {
   ServerStopError,
   /** Create Bun server layer */
   createBunServerLayer,
-  /** Create Hono server layer */
-  createHonoServerLayer,
   /** Create server config layer */
   createServerConfigLayer,
   /** Create complete server layer */
@@ -82,14 +80,14 @@ export {
   gracefulShutdownProgram,
   /** Setup signal handlers */
   setupSignalHandlers,
-  /** Type for HTTP server union */
+  /** Type for HTTP server */
   type HttpServer,
   /** Layer creation options */
   type CreateServerLayerOptions,
 } from "./effect-server";
 
 // Import and start the server with Effect
-import { start } from "./index-hono";
+import { start } from "./server-bootstrap";
 
 // Start the server (Effect runtime will handle the rest)
 void start();
