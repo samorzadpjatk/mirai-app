@@ -1,0 +1,414 @@
+# Effect.runPromise Migration Audit - Evaluation Specification
+# Task: Simplify 2,426 Effect.runPromise calls across the Mirai App monorepo
+# Generated: 2026-04-14
+# Scope: TypeScript/JavaScript code refactoring
+
+---
+evaluation_spec:
+  version: "1.0"
+  task_name: "Effect.runPromise Migration Audit"
+  artifact_type: "code"
+  target_count: 2426
+
+  # ============================================================================
+  # RUBRICS - Detailed scoring criteria
+  # ============================================================================
+  rubrics:
+    completeness:
+      weight: 25
+      max_score: 25
+      description: "All Effect.runPromise calls identified and audited"
+      criteria:
+        - score: 25
+          condition: "100% of runPromise calls audited; clear categorization of each (simplify/keep/convert); no unhandled calls"
+        - score: 20
+          condition: ">=95% of runPromise calls audited; minor gaps in categorization; 1-2 unhandled edge cases"
+        - score: 15
+          condition: ">=85% of runPromise calls audited; inconsistent categorization; 3-5 gaps"
+        - score: 10
+          condition: ">=75% of runPromise calls audited; significant gaps; >5 unhandled"
+        - score: 0
+          condition: "<75% coverage or missing audit documentation"
+
+    simplification_quality:
+      weight: 30
+      max_score: 30
+      description: "Quality of Effect pattern conversions"
+      criteria:
+        - score: 30
+          condition: "All simplifications follow idiomatic Effect patterns (Effect.gen, Effect.map, Effect.flatMap, Effect.zip, Effect.all); no loss of functionality; proper error handling preserved"
+        - score: 25
+          condition: ">=90% conversions are idiomatic; minor non-idiomatic patterns; functionality intact"
+        - score: 20
+          condition: ">=80% conversions idiomatic; some awkward patterns; functionality intact"
+        - score: 15
+          condition: ">=70% conversions idiomatic; noticeable anti-patterns; functionality intact"
+        - score: 5
+          condition: "<70% idiomatic or functionality compromised in places"
+        - score: 0
+          condition: "Significant functionality loss or breaking changes"
+
+    edge_boundary_compliance:
+      weight: 20
+      max_score: 20
+      description: "Proper retention of runPromise at framework boundaries"
+      criteria:
+        - score: 20
+          condition: "runPromise kept ONLY at true edges (routers, controllers, framework entry points); all internal usage eliminated; clear boundary documentation"
+        - score: 17
+          condition: "runPromise kept at edges; 1-2 internal usages with justification; minor boundary confusion"
+        - score: 14
+          condition: "runPromise mostly at edges; 3-5 internal usages retained; some boundary confusion"
+        - score: 10
+          condition: "runPromise retention unclear; >5 internal usages; significant boundary issues"
+        - score: 0
+          condition: "runPromise scattered throughout codebase or incorrectly removed from edges"
+
+    error_handling_preservation:
+      weight: 15
+      max_score: 15
+      description: "Error handling integrity maintained during conversion"
+      criteria:
+        - score: 15
+          condition: "All error types preserved; Effect error channels correctly typed; no swallowed errors; catch/tap patterns properly converted"
+        - score: 12
+          condition: "Error handling preserved; minor typing looseness; no swallowed errors"
+        - score: 10
+          condition: "Error handling mostly preserved; some catch/catchAll patterns not ideal"
+        - score: 7
+          condition: "Error handling compromised in places; potential error swallowing"
+        - score: 0
+          condition: "Breaking error handling changes; errors swallowed or lost"
+
+    code_quality:
+      weight: 10
+      max_score: 10
+      description: "Maintainability and readability of refactored code"
+      criteria:
+        - score: 10
+          condition: "Code more readable post-refactor; clear Effect compositions; no nested runPromise; consistent patterns"
+        - score: 8
+          condition: "Code readability improved; minor inconsistencies; no nesting issues"
+        - score: 6
+          condition: "Readability neutral; some inconsistent patterns"
+        - score: 4
+          condition: "Readability degraded in places; inconsistent patterns"
+        - score: 0
+          condition: "Code significantly less maintainable; complex nesting introduced"
+
+  # ============================================================================
+  # CHECKLISTS - Binary verification items
+  # ============================================================================
+  checklists:
+    pre_migration:
+      description: "Pre-migration audit documentation"
+      required: true
+      items:
+        - id: PRE-01
+          description: "Complete list of all 2,426 runPromise locations documented with file paths and line numbers"
+          required: true
+        - id: PRE-02
+          description: "Categorization of each call: [SIMPLIFY] can use composition, [KEEP] at edge, [CONVERT] to different pattern"
+          required: true
+        - id: PRE-03
+          description: "Pattern analysis showing current usage context (use case, adapter, domain, framework)"
+          required: true
+        - id: PRE-04
+          description: "Risk assessment for each complex conversion documented"
+          required: false
+
+    migration_execution:
+      description: "Migration implementation quality"
+      required: true
+      items:
+        - id: MIG-01
+          description: "Nested runPromise calls eliminated (runPromise inside runPromise is an anti-pattern)"
+          required: true
+        - id: MIG-02
+          description: "Effect.gen used for sequential operations previously wrapped in runPromise"
+          required: true
+        - id: MIG-03
+          description: "Effect.map/flatMap used for transformations instead of awaiting runPromise"
+          required: true
+        - id: MIG-04
+          description: "Effect.all/Effect.zip used for parallel operations previously using Promise.all with runPromise"
+          required: true
+        - id: MIG-05
+          description: "Effect.tap used for side effects instead of awaiting in middle of chains"
+          required: true
+        - id: MIG-06
+          description: "Effect.catchAll/catchTag used for error handling instead of try/catch around runPromise"
+          required: true
+        - id: MIG-07
+          description: "Effect.provide used for dependency injection instead of manual resolution with runPromise"
+          required: true
+
+    boundary_compliance:
+      description: "Framework boundary rules followed"
+      required: true
+      items:
+        - id: BND-01
+          description: "runPromise remains in tRPC routers at the final return point"
+          required: true
+        - id: BND-02
+          description: "runPromise remains in controller entry points before returning to framework"
+          required: true
+        - id: BND-03
+          description: "runPromise remains in CLI command handlers (main entry points)"
+          required: true
+        - id: BND-04
+          description: "runPromise remains in test file assertions (where tests expect Promise)"
+          required: false
+        - id: BND-05
+          description: "NO runPromise in use case interactors (Effect.gen only)"
+          required: true
+        - id: BND-06
+          description: "NO runPromise in domain entities or domain services"
+          required: true
+        - id: BND-07
+          description: "NO runPromise in repository implementations (return Effect, run at adapter level)"
+          required: true
+
+    testing:
+      description: "Testing and validation"
+      required: true
+      items:
+        - id: TST-01
+          description: "All existing tests pass without modification (behavior preservation)"
+          required: true
+        - id: TST-02
+          description: "TypeScript compilation succeeds with no new errors"
+          required: true
+        - id: TST-03
+          description: "Effect type signatures preserved (Effect<T, E, R> structure maintained)"
+          required: true
+        - id: TST-04
+          description: "Edge case tests added for complex conversions if original had subtle timing"
+          required: false
+
+    documentation:
+      description: "Documentation and guidance"
+      required: false
+      items:
+        - id: DOC-01
+          description: "Migration patterns documented with before/after examples"
+          required: false
+        - id: DOC-02
+          description: "Common anti-patterns catalogued with recommended alternatives"
+          required: false
+        - id: DOC-03
+          description: "Boundary rules documented for future developers"
+          required: false
+
+  # ============================================================================
+  # SCORING - Aggregation rules
+  # ============================================================================
+  scoring:
+    method: "weighted_sum"
+    passing_threshold: 80
+    excellent_threshold: 90
+
+    deductions:
+      - condition: "Any breaking change to public API"
+        penalty: 25
+      - condition: "Test suite failures introduced"
+        penalty: 20
+      - condition: "TypeScript compilation errors"
+        penalty: 15
+      - condition: "runPromise nested inside runPromise remaining"
+        penalty: 10
+      - condition: "runPromise in domain layer"
+        penalty: 10
+      - condition: "runPromise in use case layer (non-boundary)"
+        penalty: 5
+
+  # ============================================================================
+  # PATTERN EXAMPLES - Reference for judges
+  # ============================================================================
+  pattern_examples:
+    anti_patterns_to_eliminate:
+      - name: "Nested runPromise"
+        before: |
+          const result = await Effect.runPromise(
+            Effect.flatMap(someEffect, async (x) => {
+              const y = await Effect.runPromise(otherEffect);
+              return transform(x, y);
+            })
+          );
+        after: |
+          const result = await Effect.runPromise(
+            Effect.gen(function* () {
+              const x = yield* someEffect;
+              const y = yield* otherEffect;
+              return transform(x, y);
+            })
+          );
+
+      - name: "Sequential await with runPromise"
+        before: |
+          const user = await Effect.runPromise(getUserEffect);
+          const orders = await Effect.runPromise(getOrdersEffect(user.id));
+          const result = await Effect.runPromise(processOrdersEffect(orders));
+        after: |
+          const result = await Effect.runPromise(
+            Effect.gen(function* () {
+              const user = yield* getUserEffect;
+              const orders = yield* getOrdersEffect(user.id);
+              return yield* processOrdersEffect(orders);
+            })
+          );
+
+      - name: "Promise.all with runPromise"
+        before: |
+          const [a, b] = await Promise.all([
+            Effect.runPromise(effectA),
+            Effect.runPromise(effectB)
+          ]);
+        after: |
+          const [a, b] = await Effect.runPromise(
+            Effect.all([effectA, effectB])
+          );
+
+      - name: "Map with intermediate runPromise"
+        before: |
+          const results = await Promise.all(
+            items.map(async (item) => {
+              const transformed = await Effect.runPromise(transformEffect(item));
+              return await Effect.runPromise(saveEffect(transformed));
+            })
+          );
+        after: |
+          const results = await Effect.runPromise(
+            Effect.all(
+              items.map((item) =>
+                Effect.gen(function* () {
+                  const transformed = yield* transformEffect(item);
+                  return yield* saveEffect(transformed);
+                })
+              )
+            )
+          );
+
+    patterns_to_keep:
+      - name: "Router boundary"
+        location: "apps/*/src/routers/*.ts"
+        example: |
+          .query(async ({ ctx, input }) => {
+            const controller = ctx.container.resolve("userController");
+            return Effect.runPromise(controller.getById(input, ctx.container));
+          })
+        reason: "runPromise at framework boundary is correct"
+
+      - name: "Controller response"
+        location: "adapters/src/controllers/*.ts"
+        example: |
+          async getById(input: GetByIdInput, di: DIContext) {
+            const result = this.useCase.execute(input).pipe(
+              Effect.provide(this.createLayer(di))
+            );
+            return Effect.runPromise(result);
+          }
+        reason: "Controller returns Promise to router; runPromise here is the edge"
+
+      - name: "Test assertions"
+        location: "*.test.ts"
+        example: |
+          const result = await Effect.runPromise(program);
+          expect(result).toBe(expected);
+        reason: "Tests expect Promises; Effect.runPromise is appropriate"
+
+  # ============================================================================
+  # LAYER-SPECIFIC RULES
+  # ============================================================================
+  layer_rules:
+    domain:
+      allowed: []
+      forbidden: ["Effect.runPromise", "Promise", "async/await"]
+      note: "Domain must be pure Effect<T,E,never> with no runtime execution"
+
+    use_cases:
+      allowed: []
+      forbidden: ["Effect.runPromise"]
+      note: "Use cases compose Effects; execution happens at adapter level"
+      exception: "Main entry point functions that export to adapters may have single runPromise"
+
+    adapters:
+      allowed: ["Effect.runPromise"]
+      location: "controllers, framework adapters"
+      note: "runPromise allowed at boundary when returning to framework"
+      forbidden_internally: ["runPromise in gateways, mappers, middleware"]
+
+    frameworks:
+      allowed: ["Effect.runPromise"]
+      location: "routers, CLI entry points, main() functions"
+      note: "Framework layer is the ultimate edge where Effects meet runtime"
+
+  # ============================================================================
+  # EVALUATION WORKFLOW
+  # ============================================================================
+  judge_workflow:
+    phase_1_audit:
+      - "Verify PRE-01 through PRE-03 checklist items (audit documentation exists)"
+      - "Sample 20 random runPromise locations to verify categorization accuracy"
+      - "Check that total count matches target (2,426)"
+
+    phase_2_migration:
+      - "Review migration execution for sampled files"
+      - "Verify MIG-01 through MIG-07 patterns applied correctly"
+      - "Check that functionality is preserved (no logic changes)"
+
+    phase_3_boundaries:
+      - "Verify BND-01 through BND-07 checklist items"
+      - "Inspect domain and use-case layers for runPromise violations"
+      - "Confirm framework boundaries still have runPromise where needed"
+
+    phase_4_validation:
+      - "Run tests: bun test"
+      - "Run typecheck: tsc --noEmit"
+      - "Verify no compilation errors"
+
+    phase_5_scoring:
+      - "Apply rubric scores based on observations"
+      - "Apply deductions for any violations found"
+      - "Calculate final weighted score"
+
+  # ============================================================================
+  # OUTPUT REQUIREMENTS
+  # ============================================================================
+  expected_artifacts:
+    - path: "docs/effect-migration/audit-report.md"
+      description: "Full audit of all 2,426 runPromise locations with categorization"
+    - path: "docs/effect-migration/patterns-catalog.md"
+      description: "Common patterns found and their recommended conversions"
+    - path: "docs/effect-migration/boundary-rules.md"
+      description: "Clear documentation of where runPromise is/isn't allowed"
+    - path: ".specs/tasks/done/effect-migration-audit.yaml"
+      description: "Task completion spec with summary of changes"
+
+  # ============================================================================
+  # SUCCESS CRITERIA
+  # ============================================================================
+  success_criteria:
+    primary:
+      - "All 2,426 runPromise calls audited and categorized"
+      - ">=90% of eligible simplifications completed"
+      - "runPromise eliminated from domain and use-case layers (except true boundaries)"
+      - "All tests passing"
+      - "TypeScript compilation clean"
+
+    secondary:
+      - "Code is more readable and maintainable"
+      - "Effect patterns are idiomatic and consistent"
+      - "Error handling is preserved or improved"
+      - "No nested runPromise remains"
+
+  # ============================================================================
+  # FAILURE CONDITIONS (Auto-fail)
+  # ============================================================================
+  failure_conditions:
+    - "Breaking changes to public API signatures"
+    - "Test suite failures in CI"
+    - "runPromise usage in domain layer remaining"
+    - "Nested runPromise patterns not addressed"
+    - "<75% of runPromise calls audited"
+    - "Behavior changes in converted code (not just refactoring)"
