@@ -104,19 +104,20 @@ Is it pure business logic?
 
 ### Core Patterns
 
-| Pattern           | Syntax                               | Use Case                         |
-| ----------------- | ------------------------------------ | -------------------------------- |
-| Pure domain       | `Effect<T, E, never>`                | Entity validation, value objects |
-| Orchestration     | `Effect.gen(function* () { ... })`   | Use case workflows               |
-| Dependency access | `yield* ContextTag`                  | Repository access in use cases   |
-| Error creation    | `new Data.TaggedError("Name")<{}>()` | Domain/use case errors           |
-| Error raising     | `yield* Effect.fail(error)`          | Short-circuit on error           |
-| Success           | `yield* Effect.succeed(value)`       | Wrap success values              |
-| Parallel ops      | `yield* Effect.all([e1, e2])`        | Concurrent execution             |
-| External calls    | `Effect.tryPromise({ try, catch })`  | Wrap external APIs               |
-| Error recovery    | `Effect.catchTag("Error", handler)`  | Handle specific errors           |
-| Provide deps      | `Effect.provide(Layer)`              | Inject dependencies              |
-| Run Effect        | `Effect.runPromise(effect)`          | Execute at boundaries            |
+| Pattern           | Syntax                               | Use Case                          |
+| ----------------- | ------------------------------------ | --------------------------------- |
+| Pure domain       | `Effect<T, E, never>`                | Entity validation, value objects  |
+| Orchestration     | `Effect.gen(function* () { ... })`   | Use case workflows                |
+| Dependency access | `yield* ContextTag`                  | Repository access in use cases    |
+| Error creation    | `new Data.TaggedError("Name")<{}>()` | Domain/use case errors            |
+| Error raising     | `yield* Effect.fail(error)`          | Short-circuit on error            |
+| Success           | `yield* Effect.succeed(value)`       | Wrap success values               |
+| Parallel ops      | `yield* Effect.all([e1, e2])`        | Concurrent execution              |
+| External calls    | `Effect.tryPromise({ try, catch })`  | Wrap external APIs                |
+| Error recovery    | `Effect.catchTag("Error", handler)`  | Handle specific errors            |
+| Provide deps      | `Effect.provide(Layer)`              | Inject dependencies               |
+| Run Effect        | `Effect.runPromise(effect)`          | Execute at boundaries             |
+| **Logging**       | `yield* EffectLogger.info(msg, ctx)` | Observability in Effect workflows |
 
 ### Layer Composition
 

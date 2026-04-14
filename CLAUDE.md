@@ -69,6 +69,31 @@ findById(id: string): Effect.Effect<User | null, DatabaseError, never> {
 }
 ```
 
+## Logging in Effect
+
+Use `EffectLogger` from `@mirai-app/shared` for all Effect-based logging:
+
+```typescript
+import { EffectLogger } from "@mirai-app/shared";
+
+// In Effect.gen blocks
+const program = Effect.gen(function* () {
+  yield* EffectLogger.info("Operation started", { userId: "123" });
+  // ... logic
+  yield* EffectLogger.error("Failed", error, { operation: "save" });
+});
+
+// With context annotation
+yield *
+  EffectLogger.withContext({ requestId: "abc" })(
+    Effect.gen(function* () {
+      yield* EffectLogger.info("This log includes requestId");
+    }),
+  );
+```
+
+**Note:** Legacy `serverLogger`/`clientLogger` are deprecated for Effect code. See @docs/EFFECT_LOGGER_MIGRATION.md.
+
 ## Error Handling with Data.TaggedError
 
 ```typescript

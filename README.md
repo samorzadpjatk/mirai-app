@@ -53,12 +53,113 @@ It contains:
   - [`@mirai-app/db`](packages/db/) - Prisma database client
   - [`@mirai-app/shared`](packages/shared/) - Shared utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Supabase client configuration
+  - [`@mirai-app/ui`](packages/ui/) - **UI Component Library (Tamagui)**
 
 Run scripts from the project root with `bun run <script>`, or from a specific package with `cd <package> && bun run <script>`:
 
 ```bash
 cd apps/native && bun run dev
 ```
+
+---
+
+## UI Component Library
+
+This project uses **Tamagui** for its unified cross-platform UI component system. The `@mirai-app/ui` package provides components that work identically on both web and native platforms.
+
+### Quick Start with UI Components
+
+```tsx
+// Import components
+import { Button, Card, Input, Text, H1 } from "@mirai-app/ui";
+
+// Use in your component
+function MyScreen() {
+  return (
+    <Card>
+      <H1>Welcome</H1>
+      <Text color="$colorMuted">Sign in to continue</Text>
+      <Input label="Email" placeholder="Enter your email" />
+      <Button variant="primary" onPress={handleSignIn}>
+        Sign In
+      </Button>
+    </Card>
+  );
+}
+```
+
+### Provider Setup
+
+Wrap your app with `TamaguiProvider` at the root:
+
+**Native (apps/native):**
+
+```tsx
+// app/_layout.tsx
+import { TamaguiProvider } from "@mirai-app/ui";
+import { config } from "@mirai-app/ui";
+
+export default function RootLayout() {
+  return (
+    <TamaguiProvider config={config} defaultTheme="light">
+      <Stack />
+    </TamaguiProvider>
+  );
+}
+```
+
+### Available Components
+
+| Component | Description         | Variants                                    |
+| --------- | ------------------- | ------------------------------------------- |
+| `Button`  | Action buttons      | `primary`, `secondary`, `ghost`, `danger`   |
+| `Card`    | Container component | `size`, `elevation`, `bordered`             |
+| `Input`   | Form inputs         | `size`, `variant`, with label/error support |
+| `Select`  | Dropdown selection  | Cross-platform dropdown                     |
+| `Sheet`   | Modal/overlay       | Cross-platform modal replacement            |
+| `Spinner` | Loading indicator   | `size`, `color`                             |
+| `Text`    | Typography          | `H1`-`H6`, `Body`, `Caption`, `LabelText`   |
+
+### Styling with Design Tokens
+
+Use theme tokens for consistent styling:
+
+```tsx
+// Spacing: $1 (4px), $2 (8px), $3 (12px), $4 (16px), $5 (20px), etc.
+<Card p="$4" m="$2">
+
+// Colors: theme-aware, work in light/dark mode
+<Text color="$primary">Primary color</Text>
+<Text color="$colorMuted">Secondary text</Text>
+<Card bg="$surface">Surface background</Card>
+
+// Border radius
+<Card br="$4">Rounded corners (16px)</Card>
+
+// Shorthands: px (paddingX), py (paddingY), bg (backgroundColor), etc.
+<View px="$4" py="$2" bg="$background">
+```
+
+### Documentation
+
+- [UI Package README](packages/ui/README.md) - Complete component documentation
+- [Migration Guide](packages/ui/docs/MIGRATION.md) - Migrating from legacy UI
+- [Storybook](packages/ui/storybook-static) - Interactive component browser
+- [Tamagui Docs](https://tamagui.dev/docs/intro) - Framework documentation
+
+### Storybook
+
+Browse and test components interactively:
+
+```bash
+# Start Storybook dev server
+cd packages/ui && bun run storybook
+
+# Build static Storybook
+cd packages/ui && bun run storybook:build
+```
+
+---
 
 ## Technical Requirements
 
@@ -81,6 +182,9 @@ cd integral-app
 
 ```bash
 bun install
+
+# Build the UI package (required for first setup)
+cd packages/ui && bun run build
 ```
 
 ### 3. Start the development environment
@@ -167,6 +271,62 @@ cd packages/use-cases && bun test
 # Adapters (mixed - can run separately)
 cd packages/adapters && bun run test:unit
 cd packages/adapters && bun run test:integration
+
+# UI components
+cd packages/ui && bun test
 ```
 
 See [TESTING.md](./TESTING.md) for detailed testing documentation.
+
+---
+
+## Component Development
+
+### Adding New Components
+
+1. **Create the component** in `packages/ui/src/components/ComponentName.tsx`
+2. **Add stories** in `packages/ui/src/components/ComponentName.stories.tsx`
+3. **Export from barrel** in `packages/ui/src/components/index.ts`
+4. **Write tests** in `packages/ui/test/components/ComponentName.test.tsx`
+5. **Build and verify**:
+   ```bash
+   cd packages/ui
+   bun run typecheck
+   bun test
+   bun run storybook
+   ```
+
+### Component Guidelines
+
+- Use Tamagui's `styled()` API for component variants
+- Always support both light and dark themes
+- Include accessibility attributes (accessibilityRole, accessibilityLabel)
+- Support all standard Tamagui props (padding, margin, etc.)
+- Add JSDoc comments for props and usage examples
+
+Example:
+
+```tsx
+import { styled, View, Text } from "@mirai-app/ui";
+
+/**
+ * Custom card component with status variants
+ */
+export const StatusCard = styled(Card, {
+  name: "StatusCard",
+
+  variants: {
+    status: {
+      active: { borderColor: "$success" },
+      pending: { borderColor: "$warning" },
+      error: { borderColor: "$danger" },
+    },
+  },
+
+  defaultVariants: {
+    status: "active",
+  },
+});
+```
+
+See [packages/ui/README.md](packages/ui/README.md) for complete component API documentation.
