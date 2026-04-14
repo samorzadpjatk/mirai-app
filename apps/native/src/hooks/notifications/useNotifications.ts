@@ -3,7 +3,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
 import { useQuery, useMutation, useClient } from "urql";
-import { apiLogger } from "@mirai-app/shared";
+import { clientLogger } from "@mirai-app/shared";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;
@@ -98,7 +98,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const openAppSettings = useCallback(() => {
     void Linking.openSettings().catch((error) => {
-      apiLogger.warn("Failed to open app settings", { error });
+      clientLogger.warn("Failed to open app settings", { error });
       Alert.alert("Error", "Could not open device settings");
     });
   }, []);
@@ -109,7 +109,7 @@ export function useNotifications(): UseNotificationsReturn {
         setPermission(data.status);
       })
       .catch((err) => {
-        apiLogger.warn("Failed to get notification permissions", {
+        clientLogger.warn("Failed to get notification permissions", {
           error: err,
         });
       });
@@ -120,7 +120,7 @@ export function useNotifications(): UseNotificationsReturn {
       for (const sub of subscriptionStatus.subscriptions) {
         const result = await unsubscribeMutation({ token: sub.token });
         if (result.error) {
-          console.error("Failed to unsubscribe:", result.error);
+          clientLogger.error("Failed to unsubscribe:", { error: result.error });
         }
       }
       // Invalidate cache after unsubscribing
@@ -152,7 +152,7 @@ export function useNotifications(): UseNotificationsReturn {
         // Invalidate cache after subscribing
         await client.invalidate(GetSubscriptionStatusDocument);
       } else {
-        console.error("Failed to subscribe:", result.error);
+        clientLogger.error("Failed to subscribe:", { error: result.error });
       }
     }
   }, [
@@ -172,7 +172,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const onTogglePress = useCallback(() => {
     void toggleSubscription().catch((err) => {
-      console.error("Error toggling notifications:", err);
+      clientLogger.error("Error toggling notifications:", { error: err });
       Alert.alert("Error", "Failed to update notification settings");
     });
   }, [toggleSubscription]);

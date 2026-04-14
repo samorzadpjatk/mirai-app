@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect } from "react";
-import { apiLogger } from "@mirai-app/shared";
+import { clientLogger } from "@mirai-app/shared";
 import {
   getSelectedTripIdFromStorage,
   setSelectedTripIdInStorage,
@@ -37,7 +37,7 @@ export function useSelectedTrip() {
       }
       setSelectedTripIdState(tripId);
     } catch (error) {
-      apiLogger.warn("Failed to persist selected trip in storage:", { error });
+      clientLogger.warn("Failed to persist selected trip in storage:", { error });
     }
   }, []);
 

@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useQuery, useMutation } from "urql";
-import { apiLogger } from "@mirai-app/shared";
+import { clientLogger } from "@mirai-app/shared";
 import {
   GetMySharingSettingsDocument,
   UpdateLocationSharingDocument,
@@ -61,7 +61,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
           setIsLocationSharingEnabled(localEnabled);
         }
       } catch (error) {
-        apiLogger.warn("Failed to load location settings:", { error });
+        clientLogger.warn("Failed to load location settings:", { error });
       } finally {
         setIsLoading(false);
       }
@@ -75,7 +75,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
         const { status } = await Location.getForegroundPermissionsAsync();
         setPermissionStatus(status as LocationPermissionStatus);
       } catch (error) {
-        apiLogger.warn("Failed to check location permissions:", { error });
+        clientLogger.warn("Failed to check location permissions:", { error });
         setPermissionStatus("denied");
       }
     })();
@@ -96,7 +96,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
 
         return status as LocationPermissionStatus;
       } catch (error) {
-        console.error("Failed to request location permissions:", error);
+        clientLogger.error("Failed to request location permissions:", { error });
         setPermissionStatus("denied");
         Alert.alert(
           "Location Permission Required",
@@ -129,7 +129,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
           await requestLocationPermissions();
         }
       } catch (error) {
-        console.error("Failed to toggle location sharing:", error);
+        clientLogger.error("Failed to toggle location sharing:", { error });
         if (error instanceof Error) {
           Alert.alert(
             "Authentication Error",

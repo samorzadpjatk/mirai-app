@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { apiLogger } from "@mirai-app/shared";
+import { clientLogger } from "@mirai-app/shared";
 import { useFileDownload } from "~/hooks/files/useFileDownload";
 
 let placeholderUriCache: string | null | undefined;
@@ -65,7 +65,7 @@ export function useTripBackgroundImageDownload(
           } catch (placeholderError) {
             placeholderUriCache = null;
             if (!placeholderErrorLogged) {
-              apiLogger.warn("Failed to download placeholder image:", {
+              clientLogger.warn("Failed to download placeholder image:", {
                 error: placeholderError,
               });
               placeholderErrorLogged = true;
@@ -86,7 +86,7 @@ export function useTripBackgroundImageDownload(
         if (!mountedRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
         if (!message.includes("component unmounted")) {
-          console.error("Failed to load trip background image:", error);
+          clientLogger.error("Failed to load trip background image:", { error });
         }
         if (mountedRef.current) setImageUrl(null);
       } finally {

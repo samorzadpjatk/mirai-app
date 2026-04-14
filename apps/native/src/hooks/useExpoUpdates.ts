@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import * as Updates from 'expo-updates';
+import { useState, useEffect, useCallback } from "react";
+import * as Updates from "expo-updates";
+import { clientLogger } from "@mirai-app/shared";
 
 interface UseExpoUpdatesReturn {
   isUpdateAvailable: boolean;
@@ -32,14 +33,14 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
       setError(null);
 
       const update = await Updates.checkForUpdateAsync();
-      
+
       if (update.isAvailable) {
         setIsUpdateAvailable(true);
         setShowUpdatePopup(true);
       }
     } catch (err) {
-      console.error('Error checking for updates:', err);
-      setError('Failed to check for updates');
+      clientLogger.error("Error checking for updates:", { error: err });
+      setError("Failed to check for updates");
     } finally {
       setIsChecking(false);
     }
@@ -56,8 +57,8 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
       // Restart the app to apply the update
       await Updates.reloadAsync();
     } catch (err) {
-      console.error('Error downloading update:', err);
-      setError('Failed to download update');
+      clientLogger.error("Error downloading update:", { error: err });
+      setError("Failed to download update");
       setIsDownloading(false);
     }
   }, []);

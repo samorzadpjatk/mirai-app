@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { clientLogger } from "@mirai-app/shared";
 
 interface UseShareModalArgs {
   initialOpen?: boolean;
@@ -40,7 +41,7 @@ export function useShareModal({
     try {
       await updateSharing?.(newIds);
     } catch (err) {
-      console.error("Failed to update sharing:", err);
+      clientLogger.error("Failed to update sharing:", { error: err });
     }
     reset();
   };

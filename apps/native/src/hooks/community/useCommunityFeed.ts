@@ -10,6 +10,7 @@ import type {
   CommunityFeedActivity,
   ActivityFilter,
 } from "~/components/community/CommunityActivityCard";
+import { clientLogger } from "@mirai-app/shared";
 
 const createGraphQLClient = async () => {
   const graphqlUrl =
@@ -322,7 +323,7 @@ export const useCommunityFeed = ({
         }
       } catch (error) {
         // Revert optimistic update on error - refetch the page
-        console.error("Failed to toggle reaction:", error);
+        clientLogger.error("Failed to toggle reaction:", { error });
         await refetch();
       }
     },

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
-import { apiLogger } from "@mirai-app/shared";
+import { clientLogger } from "@mirai-app/shared";
 import { graphqlClient } from "~/lib/graphql-client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
@@ -162,7 +162,7 @@ export const useFileDownload = () => {
           try {
             stableCachedFile.delete();
           } catch (deleteError) {
-            console.warn("[Download] Failed to clear cached file", {
+            clientLogger.warn("[Download] Failed to clear cached file", {
               storagePath: input.storagePath,
               message:
                 deleteError instanceof Error
@@ -214,7 +214,7 @@ export const useFileDownload = () => {
           try {
             targetFile.delete();
           } catch (deleteError) {
-            apiLogger.warn("[Download] Failed to clear cached file", {
+            clientLogger.warn("[Download] Failed to clear cached file", {
               storagePath: input.storagePath,
               message:
                 deleteError instanceof Error
@@ -235,7 +235,7 @@ export const useFileDownload = () => {
               try {
                 if (targetFile.exists) targetFile.delete();
               } catch (deleteErr) {
-                apiLogger.warn(
+                clientLogger.warn(
                   "[Download] Failed to delete existing target file",
                   { error: deleteErr },
                 );

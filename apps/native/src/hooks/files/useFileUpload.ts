@@ -4,7 +4,7 @@ import { File } from "expo-file-system";
 import { graphqlClient } from "~/lib/graphql-client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
 import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
-import { apiLogger } from "@mirai-app/shared";
+import { clientLogger } from "@mirai-app/shared";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -180,7 +180,7 @@ export const useFileUpload = () => {
                     ? uploadError
                     : new Error("Upload failed");
 
-                console.error("[Upload] Tus upload error", {
+                clientLogger.error("[Upload] Tus upload error", {
                   storagePath: input.storagePath,
                   message: errorObject.message,
                 });
@@ -197,7 +197,7 @@ export const useFileUpload = () => {
                       const refreshedTicket = await createUploadUrl({
                         storagePath: input.storagePath,
                       });
-                      apiLogger.warn(
+                      clientLogger.warn(
                         "[Upload] Retrying with fresh signed URL",
                         {
                           storagePath: input.storagePath,
@@ -261,7 +261,7 @@ export const useFileUpload = () => {
                       urlStorage.removeUpload(previousUpload.urlStorageKey),
                     ),
                   );
-                  apiLogger.warn(
+                  clientLogger.warn(
                     "[Upload] Cleared previous resumable uploads for signed URL",
                     { storagePath: input.storagePath },
                   );
@@ -302,7 +302,7 @@ export const useFileUpload = () => {
         });
       } catch (uploadError) {
         const errorObject = uploadError as Error;
-        console.error("[Upload] Failed to start upload", {
+        clientLogger.error("[Upload] Failed to start upload", {
           storagePath: input.storagePath,
           message: errorObject.message,
         });
