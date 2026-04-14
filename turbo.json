@@ -5,7 +5,8 @@
     "NODE_ENV",
     "DATABASE_URL",
     "SUPABASE_URL",
-    "SUPABASE_ANON_KEY"
+    "SUPABASE_ANON_KEY",
+    "LOG_LEVEL"
   ],
 
   "tasks": {
@@ -14,52 +15,66 @@
       "persistent": true
     },
 
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", ".next/**", ".astro/**"]
+    },
+
     "lint": {
-      "outputs": []
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
     },
 
     "typecheck": {
-      "outputs": []
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
     },
 
     "test": {
-      "outputs": ["coverage/**"]
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "cache": true
     },
 
-    "test:ci": {
-      "outputs": ["coverage/**"]
+    "test:watch": {
+      "cache": false,
+      "persistent": true
     },
 
     "test:coverage": {
-      "outputs": ["coverage/**"]
-    },
-
-    "test:unit": {
-      "outputs": ["coverage/**"]
-    },
-
-    "test:integration": {
-      "outputs": ["coverage/**"]
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "cache": true
     },
 
     "format:check": {
-      "outputs": []
+      "outputs": [],
+      "cache": true
     },
 
     "format:write": {
-      "outputs": []
+      "outputs": [],
+      "cache": true
     },
 
     "depcruise": {
-      "outputs": []
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
     },
 
     "depcruise:check": {
-      "outputs": []
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
     },
 
     "depcruise:graph": {
-      "outputs": ["dependency-graph.*"]
+      "dependsOn": ["^build"],
+      "outputs": ["dependency-graph.*"],
+      "cache": true
     }
   }
 }

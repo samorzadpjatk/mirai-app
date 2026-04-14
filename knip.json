@@ -6,12 +6,7 @@
     "apps/notification-sender/src/index.ts",
     "packages/*/src/index.ts"
   ],
-  "project": [
-    "apps/backend-server/**/*.ts",
-    "apps/web/**/*.{ts,tsx}",
-    "apps/notification-sender/**/*.ts",
-    "packages/**/*.ts"
-  ],
+  "project": ["apps/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}"],
   "ignore": [
     "**/*.test.ts",
     "**/*.test.tsx",
@@ -29,20 +24,7 @@
     "**/babel.config.*",
     "**/jest.config.*",
     "**/jest.setup.*",
-    "apps/seed/**",
-    "apps/native/**",
-    "packages/test-utils/**"
-  ],
-  "project": ["apps/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}"],
-  "ignore": [
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/__mocks__/**",
-    "**/__tests__/**",
-    "**/*.d.ts",
-    "**/dist/**",
-    "**/build/**",
-    "**/coverage/**",
+    "**/commitlint.config.*",
     "apps/seed/**",
     "apps/native/**",
     "packages/test-utils/**"

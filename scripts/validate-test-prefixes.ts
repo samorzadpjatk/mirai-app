@@ -12,6 +12,13 @@
 import { readdir, readFile, stat } from "fs/promises";
 import { join, relative } from "path";
 
+// Simple logger to avoid monorepo dependency
+const serverLogger = {
+  info: (...args: any[]) => console.log(...args),
+  warn: (...args: any[]) => console.warn(...args),
+  error: (...args: any[]) => console.error(...args),
+};
+
 // =============================================================================
 // Configuration
 // =============================================================================
@@ -195,7 +202,7 @@ async function validateAll(projectRoot: string): Promise<ValidationResult> {
       }
     } catch (error) {
       // Directory might not exist
-      console.warn(`Warning: Could not scan ${fullDir}`);
+      serverLogger.warn(`Warning: Could not scan ${fullDir}`);
     }
   }
 
@@ -263,23 +270,26 @@ function formatSuccess(filesChecked: number): string {
 async function main() {
   const projectRoot = process.cwd();
 
-  console.log("🔍 Validating test file prefixes...\n");
-  console.log(`Project root: ${projectRoot}`);
-  console.log(`Scanning directories: ${SCAN_DIRECTORIES.join(", ")}`);
-  console.log(`Valid prefixes: ${VALID_PREFIXES.join(", ")}\n`);
+  serverLogger.info("🔍 Validating test file prefixes...\n");
+  serverLogger.info(`Project root: ${projectRoot}`);
+  serverLogger.info(`Scanning directories: ${SCAN_DIRECTORIES.join(", ")}`);
+  serverLogger.info(`Valid prefixes: ${VALID_PREFIXES.join(", ")}\n`);
 
   const result = await validateAll(projectRoot);
 
   if (result.violations.length > 0) {
+    // eslint-disable-next-line no-console
     console.error(formatViolations(result.violations));
+    // eslint-disable-next-line no-console
     console.error(
       `\n❌ Found ${result.violations.length} violation(s) in ${result.testFilesFound} test files.`,
     );
     process.exit(1);
   } else {
-    console.log(formatSuccess(result.filesChecked));
-    console.log(`📊 Summary: ${result.testFilesFound} test file(s) checked`);
-    process.exit(0);
+    serverLogger.info(formatSuccess(result.filesChecked));
+    serverLogger.info(
+      `📊 Summary: ${result.testFilesFound} test file(s) checked`,
+    );
   }
 }
 
