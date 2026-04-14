@@ -1,5 +1,3 @@
-@import "tailwindcss";
-
 /* Custom dark theme configuration for admin panel - matches native app */
 @theme {
   /* Container sizes - Tailwind v4 defaults */
