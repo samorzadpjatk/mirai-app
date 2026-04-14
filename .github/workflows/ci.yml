@@ -192,10 +192,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run Jest tests for native app
+      - name: Run Bun tests for native app
         working-directory: apps/native
-        run: |
-          ./node_modules/.bin/jest --coverage --coverageReporters=text-summary --silent
+        run: bun test --coverage --silent
 
   # Phase 3: Run integration tests (depends on build job for artifacts)
   test-integration:
