@@ -1,7 +1,7 @@
 import type { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "@mirai-app/use-cases";
-import { Effect } from "effect";
-import { InMemoryRepository } from "./base";
+import { Effect, Data } from "effect";
+import { InMemoryRepository, DatabaseError } from "./base";
 
 /**
  * In-Memory User Repository for Testing
@@ -9,65 +9,63 @@ import { InMemoryRepository } from "./base";
  * Implements UserRepository port with in-memory storage.
  * Useful for unit testing use cases without database dependencies.
  *
- * NOTE: Migrated from Effect.Effect to Promise per AGENTS.md guidelines.
- * All methods now return Promise<T> instead of Effect.Effect<T>.
+ * All methods return Effect.Effect<T, DatabaseError, never> for composable error handling.
  *
  * @example
  * ```typescript
  * const repo = new InMemoryUserRepository();
- * repo.seed([mockUser]);
+ * await Effect.runPromise(repo.seed([mockUser]));
  *
- * const found = await repo.findById("user-123");
+ * const found = await Effect.runPromise(repo.findById("user-123"));
  * expect(found).not.toBeNull();
  *
- * repo.reset(); // Clean up for next test
+ * await Effect.runPromise(repo.reset()); // Clean up for next test
  * ```
  */
 export class InMemoryUserRepository
   extends InMemoryRepository<User>
   implements UserRepository
 {
-  async create(user: User): Promise<User> {
-    return Effect.runPromise(this.createGeneric(user));
+  create(user: User): Effect.Effect<User, DatabaseError, never> {
+    return this.createGeneric(user);
   }
 
-  async findById(id: string): Promise<User | null> {
-    return Effect.runPromise(this.findByIdGeneric(id));
+  findById(id: string): Effect.Effect<User | null, DatabaseError, never> {
+    return this.findByIdGeneric(id);
   }
 
-  async findByAuthUserId(authUserId: string): Promise<User | null> {
-    return this.getAllItems().find((u) => u.authUserId === authUserId) ?? null;
+  findByAuthUserId(
+    authUserId: string,
+  ): Effect.Effect<User | null, DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().find((u) => u.authUserId === authUserId) ?? null,
+    );
   }
 
-  async findByRole(role: UserRole): Promise<User[]> {
-    return this.getAllItems().filter((u) => u.role === role);
+  findByRole(role: UserRole): Effect.Effect<User[], DatabaseError, never> {
+    return Effect.succeed(this.getAllItems().filter((u) => u.role === role));
   }
 
-  async findAll(options?: {
+  findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<User[]> {
-    return Effect.runPromise(this.findAllGeneric(options));
+  }): Effect.Effect<User[], DatabaseError, never> {
+    return this.findAllGeneric(options);
   }
 
-  async update(user: User): Promise<User> {
-    return Effect.runPromise(this.updateGeneric(user));
+  update(user: User): Effect.Effect<User, DatabaseError, never> {
+    return this.updateGeneric(user);
   }
 
-  async delete(id: string): Promise<void> {
-    return Effect.runPromise(this.deleteGeneric(id));
+  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+    return this.deleteGeneric(id);
   }
 
-  async existsByAuthUserId(authUserId: string): Promise<boolean> {
-    return this.getAllItems().some((u) => u.authUserId === authUserId);
-  }
-
-  // Override base methods to provide Promise-based API for testing
-  override async seed(items: User[]): Promise<void> {
-    return Effect.runPromise(super.seed(items));
-  }
-
-  override async reset(): Promise<void> {
-    return Effect.runPromise(super.reset());
+  existsByAuthUserId(
+    authUserId: string,
+  ): Effect.Effect<boolean, DatabaseError, never> {
+    return Effect.succeed(
+      this.getAllItems().some((u) => u.authUserId === authUserId),
+    );
   }
 }

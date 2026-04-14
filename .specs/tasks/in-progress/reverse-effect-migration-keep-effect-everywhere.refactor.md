@@ -305,6 +305,20 @@ export class GetUserUseCase {
 - **Requires:** None (this is the foundation step)
 - **Blocks:** Steps 2, 3, 4, 5, 6, 7
 
+#### Verification
+
+| Aspect        | Value      |
+| ------------- | ---------- |
+| **Level**     | Panel of 2 |
+| **Threshold** | 4.0/5.0    |
+
+**Rubric:**
+
+1. **Type Safety (25%)**: All port methods return `Effect.Effect<T, DatabaseError, never>` with proper type parameters
+2. **Error Handling (25%)**: `DatabaseError` properly defined as `Data.TaggedError` with operation, cause, message fields
+3. **Backward Compatibility (25%)**: Method signatures unchanged except return type; no breaking parameter changes
+4. **Completeness (25%)**: All 3 port files updated (UserRepository, GroupRepository, LocationRepository)
+
 ---
 
 ### Step 2: Update In-Memory Repositories (user.ts - group.ts already uses Effect!)
@@ -342,6 +356,20 @@ export class GetUserUseCase {
 
 - **Requires:** Step 1 (Port interfaces must be Effect-based)
 - **Blocks:** Step 6 (Test updates)
+
+#### Verification
+
+| Aspect        | Value   |
+| ------------- | ------- |
+| **Level**     | Single  |
+| **Threshold** | 4.0/5.0 |
+
+**Rubric:**
+
+1. **Effect Purity (30%)**: No `Effect.runPromise` usage in in-memory repositories
+2. **Type Alignment (30%)**: All methods match port interface signatures exactly
+3. **Error Handling (20%)**: Proper `DatabaseError` creation for all error cases
+4. **Implementation Quality (20%)**: Clean `Effect.gen` or `Effect.succeed`/`Effect.fail` patterns
 
 ---
 
@@ -383,6 +411,20 @@ export class GetUserUseCase {
 - **Requires:** Steps 1, 2 (Ports and in-memory repos must be Effect-based)
 - **Blocks:** Step 6 (GetUser.test.ts updates)
 
+#### Verification
+
+| Aspect        | Value   |
+| ------------- | ------- |
+| **Level**     | Single  |
+| **Threshold** | 4.0/5.0 |
+
+**Rubric:**
+
+1. **Effect.gen Pattern (30%)**: Proper use of `Effect.gen` with `yield*` for composition
+2. **No Async/Await (25%)**: Zero `async` keywords in the file
+3. **Return Type (25%)**: Returns `Effect.Effect<Result<T,E>, never, never>`
+4. **Error Handling (20%)**: Proper error propagation via `Effect.fail` or `Result.err`
+
 ---
 
 ### Step 4: Migrate GetGroup Use Case to Effect
@@ -413,6 +455,20 @@ export class GetUserUseCase {
 - **Requires:** Steps 1, 2
 - **Blocks:** Step 6
 
+#### Verification
+
+| Aspect        | Value   |
+| ------------- | ------- |
+| **Level**     | Single  |
+| **Threshold** | 4.0/5.0 |
+
+**Rubric:**
+
+1. **Effect.gen Pattern (30%)**: Proper use of `Effect.gen` with `yield*` for composition
+2. **No Async/Await (25%)**: Zero `async` keywords in the file
+3. **Return Type (25%)**: Returns `Effect.Effect<Result<T,E>, never, never>`
+4. **Error Handling (20%)**: Proper error propagation via `Effect.fail` or `Result.err`
+
 ---
 
 ### Step 5: Migrate GetLocation Use Case to Effect
@@ -442,6 +498,20 @@ export class GetUserUseCase {
 
 - **Requires:** Steps 1, 2
 - **Blocks:** Step 6
+
+#### Verification
+
+| Aspect        | Value   |
+| ------------- | ------- |
+| **Level**     | Single  |
+| **Threshold** | 4.0/5.0 |
+
+**Rubric:**
+
+1. **Effect.gen Pattern (30%)**: Proper use of `Effect.gen` with `yield*` for composition
+2. **No Async/Await (25%)**: Zero `async` keywords in the file
+3. **Return Type (25%)**: Returns `Effect.Effect<Result<T,E>, never, never>`
+4. **Error Handling (20%)**: Proper error propagation via `Effect.fail` or `Result.err`
 
 ---
 
@@ -488,6 +558,20 @@ export class GetUserUseCase {
 - **Requires:** Steps 3, 4, 5 (Use cases must be migrated first)
 - **Blocks:** Step 7
 
+#### Verification
+
+| Aspect        | Value      |
+| ------------- | ---------- |
+| **Level**     | Panel of 2 |
+| **Threshold** | 4.0/5.0    |
+
+**Rubric:**
+
+1. **Constructor Injection (25%)**: Tests use constructor injection, not `provideService`
+2. **Effect.runPromise (25%)**: Tests use `Effect.runPromise` for assertions
+3. **Mock Repository (25%)**: Mock repositories return `Effect.Effect` values
+4. **Test Coverage (25%)**: Both success and error paths tested
+
 ---
 
 ### Step 7: Verify All Tests Pass
@@ -529,6 +613,36 @@ export class GetUserUseCase {
 
 - **Requires:** Steps 1-6 (All implementation steps)
 - **Blocks:** Task completion
+
+#### Verification
+
+| Aspect        | Value      |
+| ------------- | ---------- |
+| **Level**     | Panel of 2 |
+| **Threshold** | 4.0/5.0    |
+
+**Rubric:**
+
+1. **Unit Tests Pass (30%)**: All `bun test` passes
+2. **TypeScript Compilation (25%)**: No type errors across all packages
+3. **No Regressions (25%)**: No async/await patterns in use-cases layer
+4. **Code Quality (20%)**: No lint errors, consistent patterns
+
+---
+
+## Verification Summary
+
+| Step | Component            | Level      | Threshold | Key Criteria                                       |
+| ---- | -------------------- | ---------- | --------- | -------------------------------------------------- |
+| 1    | Port Interfaces      | Panel of 2 | 4.0/5.0   | Type safety, Error tagging, Backward compatibility |
+| 2    | In-Memory Repos      | Single     | 4.0/5.0   | Effect purity, Type alignment                      |
+| 3    | GetUser Use Case     | Single     | 4.0/5.0   | Effect.gen pattern, No async/await                 |
+| 4    | GetGroup Use Case    | Single     | 4.0/5.0   | Effect.gen pattern, No async/await                 |
+| 5    | GetLocation Use Case | Single     | 4.0/5.0   | Effect.gen pattern, No async/await                 |
+| 6    | Test Updates         | Panel of 2 | 4.0/5.0   | Constructor injection, Effect.runPromise           |
+| 7    | Full Verification    | Panel of 2 | 4.0/5.0   | All tests pass, No regressions                     |
+
+**Scratchpad:** `.specs/scratchpad/verifications-ceeed0e64a28136f.md`
 
 ---
 

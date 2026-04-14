@@ -1,0 +1,31 @@
+{
+  "name": "@mirai-app/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./logger": {
+      "import": "./src/logger.ts",
+      "types": "./src/logger.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "clean": "rm -rf dist node_modules"
+  },
+  "dependencies": {
+    "effect": "^3.14.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.9",
+    "typescript": "^5.9.3"
+  }
+}

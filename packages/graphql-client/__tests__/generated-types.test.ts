@@ -20,7 +20,7 @@ import {
 } from "../src/generated/graphql";
 
 describe("[UNIT] GraphQL Generated Types", () => {
-  describe("User Query Types", () => {
+  describe("[UNIT] User Query Types", () => {
     it("compiles GetUser query type correctly", () => {
       const mockData: GetUserQuery = {
         user: {
@@ -80,7 +80,7 @@ describe("[UNIT] GraphQL Generated Types", () => {
     });
   });
 
-  describe("Trip Query Types", () => {
+  describe("[UNIT] Trip Query Types", () => {
     it("compiles GetTrip query type correctly", () => {
       const mockData: GetTripQuery = {
         trip: {
@@ -167,7 +167,7 @@ describe("[UNIT] GraphQL Generated Types", () => {
     });
   });
 
-  describe("Mutation Types", () => {
+  describe("[UNIT] Mutation Types", () => {
     it("compiles CreateTrip mutation type correctly", () => {
       const mockData: CreateTripMutation = {
         createTrip: {
@@ -254,7 +254,7 @@ describe("[UNIT] GraphQL Generated Types", () => {
     });
   });
 
-  describe("Fragment Types", () => {
+  describe("[UNIT] Fragment Types", () => {
     it("compiles UserFields fragment type correctly", () => {
       const mockUser: UserFieldsFragment = {
         id: "user-1",
@@ -294,7 +294,7 @@ describe("[UNIT] GraphQL Generated Types", () => {
     });
   });
 
-  describe("Enum Types", () => {
+  describe("[UNIT] Enum Types", () => {
     it("exports UserRole enum correctly", () => {
       expect(UserRole.Admin).toBe("ADMIN");
       expect(UserRole.Moderator).toBe("MODERATOR");
