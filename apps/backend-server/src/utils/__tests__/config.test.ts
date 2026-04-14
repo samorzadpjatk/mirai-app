@@ -1,12 +1,10 @@
-import { describe, test, expect, beforeAll } from "bun:test";
+import { describe, test, expect } from "bun:test";
+
+// Set env vars BEFORE any imports (modules read env at load time)
+process.env.HONO_SERVER_PORT = "3001";
+process.env.HONO_SERVER_HOST = "localhost";
 
 describe("[UNIT] config.ts", () => {
-  // Set env vars before any tests run
-  beforeAll(() => {
-    process.env.HONO_SERVER_PORT = "3001";
-    process.env.HONO_SERVER_HOST = "localhost";
-  });
-
   test("exports serverConfig with correct values", async () => {
     const { serverConfig } = await import("../../config");
 

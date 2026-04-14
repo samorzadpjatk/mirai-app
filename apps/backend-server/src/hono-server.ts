@@ -437,4 +437,5 @@ export function createHonoServer(
  * await honoServer.start();
  * ```
  */
-export const honoServer = createHonoServer(honoConfig);
+export const honoServer = (appLayer?: Layer.Layer<unknown>) =>
+  createHonoServer(honoConfig, appLayer);

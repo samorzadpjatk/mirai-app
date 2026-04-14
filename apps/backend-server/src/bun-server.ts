@@ -732,5 +732,7 @@ export function createBunServer(
 
 /**
  * Create and export default server instance
+ * Note: Requires AppLayer to be set via setAppLayer() before use
  */
-export const bunServer = createBunServer(honoConfig);
+export const bunServer = (appLayer?: Layer.Layer<unknown>) =>
+  createBunServer(honoConfig, appLayer);
