@@ -1,3 +1,4 @@
+import { serverLogger } from "@mirai-app/shared";
 import { env } from "./config/env";
 import { getSupabaseClient } from "./config/supabase";
 import { assetsRoot } from "./constants";
@@ -29,7 +30,7 @@ export const ensureBuckets = async () => {
     });
     if (createError)
       throw new Error(`createBucket ${bucket} failed: ${createError.message}`);
-    console.log(`Created bucket ${bucket}`);
+    serverLogger.info(`Created bucket ${bucket}`);
   }
 };
 
@@ -43,7 +44,7 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
     .list("image/placeholder", { search: "trip-background.png" });
 
   if (existingFile && existingFile.length > 0) {
-    console.log("✓ Placeholder image already exists");
+    serverLogger.info("✓ Placeholder image already exists");
     return;
   }
 
@@ -63,13 +64,17 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
       });
 
     if (error) {
-      console.warn(`✗ Failed to upload placeholder image: ${error.message}`);
+      serverLogger.warn(
+        `✗ Failed to upload placeholder image: ${error.message}`,
+      );
     } else {
-      console.log(`✓ Uploaded placeholder image: ${placeholderPath}`);
+      serverLogger.info(`✓ Uploaded placeholder image: ${placeholderPath}`);
     }
   } catch (err) {
-    console.warn(`✗ Placeholder image file not found at ${placeholderAbsPath}`);
-    console.log(
+    serverLogger.warn(
+      `✗ Placeholder image file not found at ${placeholderAbsPath}`,
+    );
+    serverLogger.info(
       `  Note: Add a placeholder image at apps/seed/assets/${seedEnv}/images/placeholder/trip-background.png`,
     );
   }
@@ -105,11 +110,11 @@ export const uploadAssets = async (seedEnv: SeedEnv) => {
         upsert: true,
       });
     if (error) {
-      console.warn(
+      serverLogger.warn(
         `✗ Upload failed ${bucketName}/${objectPath}: ${error.message}`,
       );
     } else {
-      console.log(`✓ Uploaded ${bucketName}/${objectPath}`);
+      serverLogger.info(`✓ Uploaded ${bucketName}/${objectPath}`);
     }
   }
 };

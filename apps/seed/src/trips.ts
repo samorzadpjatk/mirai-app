@@ -1,3 +1,4 @@
+import { serverLogger } from "@mirai-app/shared";
 import { createAuthUserByEmail, ensureGhostAuthUser } from "./auth";
 import { getSupabaseClient } from "./config/supabase";
 import { env } from "./config/env";
@@ -157,20 +158,19 @@ export const seedTrip = async (
           });
 
         if (error) {
-          console.warn(
+          serverLogger.warn(
             `✗ Background upload failed for ${tripConfig.name}: ${error.message}`,
           );
         } else {
           backgroundImagePath = storagePath;
-          console.log(
+          serverLogger.info(
             `✓ Uploaded background for ${tripConfig.name}: ${storagePath}`,
           );
         }
       }
     } catch (err) {
-      console.warn(
-        `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}:` +
-          err,
+      serverLogger.warn(
+        `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}: ${String(err)}`,
       );
     }
   }
@@ -203,7 +203,7 @@ export const seedTrip = async (
         row.role ?? "user",
       );
       if (!authUser) {
-        console.warn(
+        serverLogger.warn(
           `✗ Supabase Auth user not found/created for ${email}, skipping DB user/participant.`,
         );
         continue;
@@ -230,7 +230,7 @@ export const seedTrip = async (
     });
 
     if (!dbUser) {
-      console.warn(`✗ Failed to create/update user for ${email}`);
+      serverLogger.warn(`✗ Failed to create/update user for ${email}`);
       continue;
     }
 
@@ -241,7 +241,7 @@ export const seedTrip = async (
     });
 
     if (participant) {
-      console.log(`✓ Added ${email} to trip ${tripConfig.name}`);
+      serverLogger.info(`✓ Added ${email} to trip ${tripConfig.name}`);
     }
   }
 
@@ -261,11 +261,11 @@ export const seedTrip = async (
         tripId: trip.id,
         userId: ghostUser.id,
       });
-      console.log(`✓ Added ghost user to trip ${tripConfig.name}`);
+      serverLogger.info(`✓ Added ghost user to trip ${tripConfig.name}`);
     }
   }
 
-  console.log(`Trip seeded: ${trip.name} (${users.length} participants)`);
+  serverLogger.info(`Trip seeded: ${trip.name} (${users.length} participants)`);
   return trip;
 };
 
@@ -299,7 +299,7 @@ async function upsertTripViaGraphQL(input: {
     );
 
     if (result.error) {
-      console.warn("GraphQL error (upsertTrip):", result.error);
+      serverLogger.warn("GraphQL error (upsertTrip)", { error: result.error });
       return null;
     }
 
@@ -333,7 +333,7 @@ async function upsertUserViaGraphQL(input: {
     );
 
     if (result.error) {
-      console.warn("GraphQL error (upsertUser):", result.error);
+      serverLogger.warn("GraphQL error (upsertUser)", { error: result.error });
       return null;
     }
 
@@ -369,7 +369,9 @@ async function addTripParticipantViaGraphQL(input: {
           joinedAt: new Date().toISOString(),
         };
       }
-      console.warn("GraphQL error (addTripParticipant):", result.error);
+      serverLogger.warn("GraphQL error (addTripParticipant)", {
+        error: result.error,
+      });
       return null;
     }
 

@@ -32,6 +32,7 @@
  */
 
 import { Effect, Layer, Console, Context } from "effect";
+import { serverLogger } from "@mirai-app/shared";
 import { runSeed } from "./seed";
 
 // =============================================================================
@@ -130,11 +131,14 @@ export async function run(): Promise<void> {
 if (import.meta.main) {
   Effect.runPromise(program)
     .then(() => {
-      console.log("Done");
+      serverLogger.info("Done");
       process.exit(0);
     })
     .catch((error) => {
-      console.error("Seed failed:", error);
+      serverLogger.error(
+        "Seed failed:",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       process.exit(1);
     });
 }

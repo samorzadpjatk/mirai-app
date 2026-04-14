@@ -45,6 +45,7 @@ import {
   type TrackDeliveryFailureMutation,
 } from "@mirai-app/graphql-client/urql";
 import { Effect, Console } from "effect";
+import { serverLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Environment Configuration
@@ -376,7 +377,7 @@ const notificationSenderProgram = Effect.gen(function* () {
       },
     )
     .subscribe((status) => {
-      console.log("Realtime channel status:", status);
+      serverLogger.info("Realtime channel status", { status });
     });
 
   yield* Console.log(

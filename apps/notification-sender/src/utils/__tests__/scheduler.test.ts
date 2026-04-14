@@ -10,7 +10,7 @@ import {
 import { Scheduler, createInactivityScheduler } from "../scheduler";
 
 describe("[UNIT] Scheduler", () => {
-  describe("start()", () => {
+  describe("[UNIT] start()", () => {
     test("runs task immediately via setTimeout", async () => {
       const task = mock(() => Promise.resolve());
       const scheduler = new Scheduler(task, 5);
@@ -56,7 +56,7 @@ describe("[UNIT] Scheduler", () => {
     });
   });
 
-  describe("double-start prevention", () => {
+  describe("[UNIT] double-start prevention", () => {
     test("prevents double-start and logs warning", () => {
       const consoleSpy = spyOn(console, "warn").mockImplementation(() => {});
       const scheduler = new Scheduler(() => Promise.resolve(), 5);
@@ -72,7 +72,7 @@ describe("[UNIT] Scheduler", () => {
     });
   });
 
-  describe("stop()", () => {
+  describe("[UNIT] stop()", () => {
     test("clears interval and updates state", () => {
       const scheduler = new Scheduler(() => Promise.resolve(), 5);
 
@@ -96,7 +96,7 @@ describe("[UNIT] Scheduler", () => {
     });
   });
 
-  describe("stopping inactive scheduler", () => {
+  describe("[UNIT] stopping inactive scheduler", () => {
     test("stopping inactive scheduler throws no error", () => {
       const scheduler = new Scheduler(() => Promise.resolve(), 5);
 
@@ -106,7 +106,7 @@ describe("[UNIT] Scheduler", () => {
     });
   });
 
-  describe("error handling", () => {
+  describe("[UNIT] error handling", () => {
     test("catches and logs task errors", async () => {
       const consoleSpy = spyOn(console, "error").mockImplementation(() => {});
       const error = new Error("Task failed");
@@ -151,7 +151,7 @@ describe("[UNIT] Scheduler", () => {
     });
   });
 
-  describe("isActive()", () => {
+  describe("[UNIT] isActive()", () => {
     test("returns false when not started", () => {
       const scheduler = new Scheduler(() => Promise.resolve(), 5);
       expect(scheduler.isActive()).toBe(false);

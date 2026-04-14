@@ -1,3 +1,4 @@
+import { serverLogger } from "@mirai-app/shared";
 import type { SeedEnv, TripInfoConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile, readFile } from "./utils/fs";
@@ -25,10 +26,10 @@ export const seedTripInfo = async (
   seedEnv: SeedEnv,
   infoConfig: TripInfoConfig,
 ): Promise<void> => {
-  console.log("Seeding trip info...");
+  serverLogger.info("Seeding trip info...");
 
   if (!infoConfig || infoConfig.resources.length === 0) {
-    console.log("No trip info configured, skipping...");
+    serverLogger.info("No trip info configured, skipping...");
     return;
   }
 
@@ -60,7 +61,7 @@ export const seedTripInfo = async (
             bucketName = env.videoBucket;
             objectPath = resourceConfig.storagePath.replace("videos/", "");
           } else {
-            console.warn(
+            serverLogger.warn(
               `✗ Unknown storage path format: ${resourceConfig.storagePath}`,
             );
             bucketName = env.publicBucket;
@@ -75,11 +76,11 @@ export const seedTripInfo = async (
             });
 
           if (uploadError) {
-            console.warn(
+            serverLogger.warn(
               `✗ Failed to upload file ${resourceConfig.storagePath}: ${uploadError.message}`,
             );
           } else {
-            console.log(`✓ Uploaded file: ${resourceConfig.storagePath}`);
+            serverLogger.info(`✓ Uploaded file: ${resourceConfig.storagePath}`);
 
             // Get public URL for public bucket files
             if (bucketName === env.publicBucket) {
@@ -90,9 +91,9 @@ export const seedTripInfo = async (
             }
           }
         } catch (fileError) {
-          console.warn(
+          serverLogger.warn(
             `✗ Failed to process file ${resourceConfig.storagePath}:`,
-            fileError,
+            { error: fileError },
           );
         }
       }
@@ -112,7 +113,7 @@ export const seedTripInfo = async (
       });
 
       if (resource) {
-        console.log(
+        serverLogger.info(
           `✓ Seeded resource: ${resourceConfig.label} (${resourceConfig.type})`,
         );
       }
@@ -138,7 +139,7 @@ export const seedTripInfo = async (
       });
 
       if (insurance) {
-        console.log(`✓ Seeded insurance: ${infoConfig.insurance.label}`);
+        serverLogger.info(`✓ Seeded insurance: ${infoConfig.insurance.label}`);
 
         // Create insurance steps
         for (const stepConfig of infoConfig.insurance.steps) {
@@ -153,15 +154,18 @@ export const seedTripInfo = async (
           });
 
           if (step) {
-            console.log(`✓ Seeded insurance step: ${stepConfig.title}`);
+            serverLogger.info(`✓ Seeded insurance step: ${stepConfig.title}`);
           }
         }
       }
     }
 
-    console.log("✓ Trip info seeding completed");
+    serverLogger.info("✓ Trip info seeding completed");
   } catch (error) {
-    console.error("✗ Failed to seed trip info:", error);
+    serverLogger.error(
+      "✗ Failed to seed trip info:",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     throw error;
   }
 };
@@ -193,7 +197,7 @@ async function clearTripResources(tripId: string) {
       }),
     });
   } catch (error) {
-    console.warn("Failed to clear trip resources:", error);
+    serverLogger.warn("Failed to clear trip resources:", { error });
   }
 }
 
@@ -283,13 +287,16 @@ async function createTripResourceViaGraphQL(input: {
     };
 
     if (result.errors) {
-      console.warn("GraphQL errors:", result.errors);
+      serverLogger.warn("GraphQL errors:", { errors: result.errors });
       return null;
     }
 
     return result.data?.createTripResource ?? null;
   } catch (error) {
-    console.error("Failed to create trip resource:", error);
+    serverLogger.error(
+      "Failed to create trip resource:",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return null;
   }
 }
@@ -317,7 +324,7 @@ async function clearTripInsurance(tripId: string) {
       }),
     });
   } catch (error) {
-    console.warn("Failed to clear trip insurance:", error);
+    serverLogger.warn("Failed to clear trip insurance:", { error });
   }
 }
 
@@ -401,13 +408,16 @@ async function createTripInsuranceViaGraphQL(input: {
     };
 
     if (result.errors) {
-      console.warn("GraphQL errors:", result.errors);
+      serverLogger.warn("GraphQL errors:", { errors: result.errors });
       return null;
     }
 
     return result.data?.createTripInsurance ?? null;
   } catch (error) {
-    console.error("Failed to create trip insurance:", error);
+    serverLogger.error(
+      "Failed to create trip insurance:",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return null;
   }
 }
@@ -485,13 +495,16 @@ async function createInsuranceStepViaGraphQL(input: {
     };
 
     if (result.errors) {
-      console.warn("GraphQL errors:", result.errors);
+      serverLogger.warn("GraphQL errors:", { errors: result.errors });
       return null;
     }
 
     return result.data?.createInsuranceStep ?? null;
   } catch (error) {
-    console.error("Failed to create insurance step:", error);
+    serverLogger.error(
+      "Failed to create insurance step:",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return null;
   }
 }

@@ -1,3 +1,5 @@
+import { serverLogger } from "@mirai-app/shared";
+
 export type SchedulerTask = () => Promise<void>;
 
 /**
@@ -17,12 +19,12 @@ export class Scheduler {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn("Scheduler is already running");
+      serverLogger.warn("Scheduler is already running");
       return;
     }
 
     this.isRunning = true;
-    console.log(
+    serverLogger.info(
       `Scheduler started. Running task every ${this.intervalMinutes} minutes.`,
     );
 
@@ -54,7 +56,7 @@ export class Scheduler {
     }
 
     this.isRunning = false;
-    console.log("Scheduler stopped.");
+    serverLogger.info("Scheduler stopped.");
   }
 
   /**
@@ -69,7 +71,10 @@ export class Scheduler {
       try {
         await this.task();
       } catch (error) {
-        console.error("Scheduler task failed:", error);
+        serverLogger.error(
+          "Scheduler task failed:",
+          error instanceof Error ? error : new Error(String(error)),
+        );
       }
     })();
   }
@@ -83,8 +88,8 @@ export function createInactivityScheduler(
   intervalMinutes = 5,
 ): Scheduler {
   return new Scheduler(async () => {
-    console.log("Running inactivity check...");
+    serverLogger.info("Running inactivity check...");
     const result = await checkFunction();
-    console.log("Inactivity check completed:", result);
+    serverLogger.info("Inactivity check completed", { result });
   }, intervalMinutes);
 }

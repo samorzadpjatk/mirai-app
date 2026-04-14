@@ -1,3 +1,4 @@
+import { serverLogger } from "@mirai-app/shared";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
@@ -51,11 +52,11 @@ export const seedRewards = async (
   }
 
   if (!creatorUserId) {
-    console.warn("No valid database user found to create rewards");
+    serverLogger.warn("No valid database user found to create rewards");
     return;
   }
 
-  console.log(`Using user ${creatorUserId} to create rewards`);
+  serverLogger.info(`Using user ${creatorUserId} to create rewards`);
 
   for (const rewardConfig of rewardConfigs) {
     try {
@@ -77,12 +78,15 @@ export const seedRewards = async (
       });
 
       if (reward) {
-        console.log(`✓ Created reward: ${rewardConfig.name}`);
+        serverLogger.info(`✓ Created reward: ${rewardConfig.name}`);
       } else {
-        console.warn(`✗ Failed to create reward: ${rewardConfig.name}`);
+        serverLogger.warn(`✗ Failed to create reward: ${rewardConfig.name}`);
       }
     } catch (error) {
-      console.error(`✗ Failed to create reward ${rewardConfig.name}:`, error);
+      serverLogger.error(
+        `Error creating reward ${rewardConfig.name}:`,
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 };
@@ -203,13 +207,16 @@ async function createRewardViaGraphQL(input: {
     };
 
     if (result.errors) {
-      console.warn("GraphQL errors:", result.errors);
+      serverLogger.warn("GraphQL errors:", { errors: result.errors });
       return null;
     }
 
     return result.data?.createReward ?? null;
   } catch (error) {
-    console.error("Failed to create reward:", error);
+    serverLogger.error(
+      "Failed to create reward:",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return null;
   }
 }

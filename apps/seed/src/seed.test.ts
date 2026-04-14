@@ -47,7 +47,7 @@ describe("[UNIT] Seed Index - Effect Integration", () => {
     process.env = originalEnv;
   });
 
-  describe("Environment Validation", () => {
+  describe("[UNIT] Environment Validation", () => {
     it("should validate environment successfully when all vars are present", async () => {
       const result = await Effect.runPromise(Effect.either(validateEnv));
       expect(Either.isRight(result)).toBe(true);
@@ -90,7 +90,7 @@ describe("[UNIT] Seed Index - Effect Integration", () => {
     });
   });
 
-  describe("Error Types", () => {
+  describe("[UNIT] Error Types", () => {
     it("should create MissingEnvError with correct properties", () => {
       const error = new MissingEnvError("TEST_VAR");
       expect(error._tag).toBe("MissingEnvError");
@@ -107,7 +107,7 @@ describe("[UNIT] Seed Index - Effect Integration", () => {
     });
   });
 
-  describe("Effect Integration", () => {
+  describe("[INTEGRATION] Effect Integration", () => {
     it("should export Effect-based functions", () => {
       expect(validateEnv).toBeDefined();
       expect(seedDatabase).toBeDefined();
@@ -125,7 +125,7 @@ describe("[UNIT] Seed Index - Effect Integration", () => {
     });
   });
 
-  describe("Console Output", () => {
+  describe("[UNIT] Console Output", () => {
     it("should log validation success", async () => {
       const logs: string[] = [];
       const originalLog = console.log;

@@ -1,3 +1,4 @@
+import { serverLogger } from "@mirai-app/shared";
 import type { SponsorConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
@@ -23,10 +24,10 @@ export const seedSponsors = async (
   seedEnv: string,
   sponsorConfigs: SponsorConfig[],
 ): Promise<void> => {
-  console.log("Seeding sponsors...");
+  serverLogger.info("Seeding sponsors...");
 
   if (sponsorConfigs.length === 0) {
-    console.log("No sponsors configured, skipping...");
+    serverLogger.info("No sponsors configured, skipping...");
     return;
   }
 
@@ -42,7 +43,7 @@ export const seedSponsors = async (
       });
 
       if (sponsor) {
-        console.log(`✓ Created sponsor: ${sponsorConfig.name}`);
+        serverLogger.info(`✓ Created sponsor: ${sponsorConfig.name}`);
 
         // Link sponsor to trip
         const linked = await linkSponsorToTripViaGraphQL({
@@ -51,16 +52,21 @@ export const seedSponsors = async (
         });
 
         if (linked) {
-          console.log(`✓ Associated sponsor ${sponsorConfig.name} with trip`);
+          serverLogger.info(
+            `✓ Associated sponsor ${sponsorConfig.name} with trip`,
+          );
         }
       } else {
-        console.warn(`✗ Failed to create sponsor: ${sponsorConfig.name}`);
+        serverLogger.warn(`✗ Failed to create sponsor: ${sponsorConfig.name}`);
       }
     }
 
-    console.log("✓ Sponsors seeding completed");
+    serverLogger.info("✓ Sponsors seeding completed");
   } catch (error) {
-    console.error("✗ Failed to seed sponsors:", error);
+    serverLogger.error(
+      "✗ Failed to seed sponsors:",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     throw error;
   }
 };
@@ -142,13 +148,16 @@ async function createSponsorViaGraphQL(input: {
         // Try to find existing sponsor
         return await findSponsorByName(input.name);
       }
-      console.warn("GraphQL errors:", result.errors);
+      serverLogger.warn("GraphQL errors:", { errors: result.errors });
       return null;
     }
 
     return result.data?.createSponsor ?? null;
   } catch (error) {
-    console.error("Failed to create sponsor:", error);
+    serverLogger.error(
+      "Failed to create sponsor:",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return null;
   }
 }
@@ -247,7 +256,7 @@ async function linkSponsorToTripViaGraphQL(input: {
       ) {
         return { id: "existing", ...input };
       }
-      console.warn("GraphQL errors:", result.errors);
+      serverLogger.warn("GraphQL errors:", { errors: result.errors });
       return null;
     }
 
