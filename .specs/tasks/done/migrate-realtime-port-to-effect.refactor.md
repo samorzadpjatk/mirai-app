@@ -510,6 +510,33 @@ export class SubscriptionError extends Data.TaggedError("SubscriptionError")<{
 | `code` property not accessible | Medium | Include in Data.TaggedError payload |
 | Constructor signature changes | Low | Keep object argument pattern |
 
+**Verification:**
+
+| Aspect        | Value                                                                                                                 |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Level**     | Panel (2 judges)                                                                                                      |
+| **Threshold** | 4.0/5.0                                                                                                               |
+| **Rationale** | Critical foundation - errors made here cascade to all adapters and tests. High blast radius requires panel consensus. |
+
+**Rubric:**
+
+| Criterion                 | Weight | Description                                                                                                                        |
+| ------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Error Class Definitions   | 0.35   | All 3 error classes (RealtimeError, ConnectionError, SubscriptionError) correctly converted to Data.TaggedError with proper syntax |
+| TaggedError Pattern       | 0.25   | Proper use of `Data.TaggedError("Name")<{}>` pattern with auto-generated `_tag` property                                           |
+| Property Preservation     | 0.20   | All original properties preserved: `message`, `channel` (optional/required per class), `code`                                      |
+| TypeScript Compilation    | 0.15   | `bunx tsc --noEmit` passes with 0 errors related to error class definitions                                                        |
+| Constructor Compatibility | 0.05   | Constructor maintains compatibility with `{ message, ... }` object argument pattern                                                |
+
+**Evaluation Instructions:**
+
+1. Verify all 3 error classes use `Data.TaggedError("ErrorName")<{...}>` syntax
+2. Check that `_tag` property is NOT manually defined (should be auto-generated)
+3. Confirm `code` property is included in the payload type for each error
+4. Verify `ConnectionError` has optional `channel?: string`, `SubscriptionError` has required `channel: string`
+5. Run `bunx tsc --noEmit` and verify no type errors
+6. Test that `new ErrorClass({ message, code, channel? })` still works
+
 ---
 
 ### Phase 3: Adapters (Parallelizable)
@@ -667,6 +694,30 @@ export class SubscriptionError extends Data.TaggedError("SubscriptionError")<{
 |------|--------|------------|
 | Missing error instantiation site | Medium | Grep for all error constructor calls |
 
+**Verification:**
+
+| Aspect        | Value                                                                  |
+| ------------- | ---------------------------------------------------------------------- |
+| **Level**     | Single                                                                 |
+| **Threshold** | 4.0/5.0                                                                |
+| **Rationale** | Medium complexity but isolated mechanical changes parallel to Step 3.1 |
+
+**Rubric:**
+
+| Criterion                   | Weight | Description                                                                                                                                            |
+| --------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Error Instantiation Updates | 0.40   | All 5 error instantiation sites include `code` property: subscribe, catchAllDefect, broadcast, trackPresence, InMemoryRealtimeSubscription.unsubscribe |
+| Required Channel Property   | 0.25   | SubscriptionError always includes required `channel` property in constructor calls                                                                     |
+| TypeScript Compilation      | 0.20   | `bunx tsc --noEmit` passes with 0 errors in InMemoryRealtimeAdapter.ts                                                                                 |
+| Logic Preservation          | 0.15   | No unintended changes to adapter behavior beyond error property addition                                                                               |
+
+**Evaluation Instructions:**
+
+1. Verify all 5 error instantiation sites include `code` property in constructor calls
+2. Check that SubscriptionError always includes required `channel` property
+3. Confirm no other adapter logic was modified
+4. Run TypeScript check: `bunx tsc --noEmit`
+
 ---
 
 ### Phase 4: Verification
@@ -739,6 +790,30 @@ export class SubscriptionError extends Data.TaggedError("SubscriptionError")<{
 | Other tests use `instanceof` | Medium | Global search for `instanceof RealtimeError` etc. |
 | catchTag type inference issues | Low | Add explicit type test |
 
+**Verification:**
+
+| Aspect        | Value                                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Level**     | Single                                                                                                            |
+| **Threshold** | 4.0/5.0                                                                                                           |
+| **Rationale** | Test updates with clear, verifiable acceptance criteria; single judge sufficient for mechanical assertion changes |
+
+**Rubric:**
+
+| Criterion             | Weight | Description                                                                                                                         |
+| --------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Assertion Conversion  | 0.35   | All `instanceof` assertions converted to `_tag` property checking                                                                   |
+| Test File Coverage    | 0.25   | All affected test files updated: InMemoryAdapters.contract.test.ts, ConnectionManager.test.ts, PortImplementations.contract.test.ts |
+| catchTag Verification | 0.25   | New test added demonstrating `Effect.catchTag` works correctly with migrated errors                                                 |
+| Test Pass Rate        | 0.15   | All tests pass after assertion updates                                                                                              |
+
+**Evaluation Instructions:**
+
+1. Search for remaining `instanceof RealtimeError`, `instanceof ConnectionError`, `instanceof SubscriptionError` in tests - should be 0
+2. Verify `_tag` property checks exist: `expect(error._tag).toBe("ErrorName")`
+3. Confirm new catchTag test exists and passes
+4. Run full test suite: `bun test`
+
 ---
 
 #### Step 4.2: Final Verification
@@ -788,6 +863,34 @@ export class SubscriptionError extends Data.TaggedError("SubscriptionError")<{
 |------|--------|------------|
 | Hidden `instanceof` checks | Medium | Search entire codebase |
 | Runtime behavior changes | Low | Compare error object structure |
+
+**Verification:**
+
+| Aspect        | Value                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| **Level**     | None                                                                                             |
+| **Rationale** | This step IS the verification - running full test suite and compilation check (binary pass/fail) |
+
+---
+
+## Verification Summary
+
+| Phase | Step                      | Level     | Judges | Threshold | Key Evaluation Criteria                                                           |
+| ----- | ------------------------- | --------- | ------ | --------- | --------------------------------------------------------------------------------- |
+| 1     | 1.1 Baseline Verification | None      | N/A    | N/A       | Binary pass/fail - no LLM judge needed                                            |
+| 2     | 2.1 Error Definitions     | **Panel** | 2      | 4.0/5.0   | 3 error classes converted, Data.TaggedError pattern correct, properties preserved |
+| 3     | 3.1 Supabase Adapter      | Single    | 1      | 4.0/5.0   | 4 error sites updated with `code` property, TS compiles                           |
+| 3     | 3.2 InMemory Adapter      | Single    | 1      | 4.0/5.0   | 5 error sites updated with `code` property, TS compiles                           |
+| 4     | 4.1 Test Updates          | Single    | 1      | 4.0/5.0   | `instanceof`→`_tag` conversion, catchTag test added, all tests pass               |
+| 4     | 4.2 Final Verification    | None      | N/A    | N/A       | Binary pass/fail - no LLM judge needed                                            |
+
+**Totals:**
+
+- **Steps with Verification:** 4 of 6
+- **Total Evaluations Defined:** 4
+- **Panel Verifications:** 1 (Step 2.1 - Critical Foundation)
+- **Single Verifications:** 3 (Steps 3.1, 3.2, 4.1)
+- **None (Binary):** 2 (Steps 1.1, 4.2)
 
 ---
 

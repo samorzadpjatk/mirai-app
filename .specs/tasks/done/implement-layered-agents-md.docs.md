@@ -1022,9 +1022,9 @@ Transform the 611-line monolithic AGENTS.md into a **hierarchical, discovery-awa
 
 **Subtasks:**
 
-1. [ ] 5.1.1 Verify Phase 4 all validations passed
-2. [ ] 5.1.2 Move AGENTS.md.backup to .specs/archive/
-3. [ ] 5.1.3 Update task status to done
+1. [x] 5.1.1 Verify Phase 4 all validations passed
+2. [x] 5.1.2 Move AGENTS.md.backup to .specs/archive/
+3. [x] 5.1.3 Update task status to done
 
 **Blockers:** Steps 4.1, 4.2, 4.3, 4.4 (all validations passed)
 
@@ -1159,31 +1159,31 @@ Transform the 611-line monolithic AGENTS.md into a **hierarchical, discovery-awa
 
 ### File Structure (AC-001 to AC-009)
 
-- [ ] **AC-001:** Root AGENTS.md exists with quick start + layer decision tree + navigation links
-- [ ] **AC-002:** packages/domain/AGENTS.md exists with domain purity rules, entity template, branded IDs
-- [ ] **AC-003:** packages/use-cases/AGENTS.md exists with Effect.gen patterns, use case template, test templates
-- [ ] **AC-004:** packages/adapters/AGENTS.md exists with DI patterns, controller auth, BasePrismaRepository rules
-- [ ] **AC-005:** packages/frameworks/AGENTS.md exists with Layer composition, awilix-modular modules
-- [ ] **AC-006:** apps/backend-server/AGENTS.md exists with tRPC routers, controller resolution, auth flow
-- [ ] **AC-007:** apps/native/AGENTS.md exists with mobile patterns, Jest testing, navigation
-- [ ] **AC-008:** apps/notification-sender/AGENTS.md exists with background job patterns, Effect scheduling
-- [ ] **AC-009:** apps/web/AGENTS.md exists with frontend patterns, API client usage
+- [x] **AC-001:** Root AGENTS.md exists with quick start + layer decision tree + navigation links
+- [x] **AC-002:** packages/domain/AGENTS.md exists with domain purity rules, entity template, branded IDs
+- [x] **AC-003:** packages/use-cases/AGENTS.md exists with Effect.gen patterns, use case template, test templates
+- [x] **AC-004:** packages/adapters/AGENTS.md exists with DI patterns, controller auth, BasePrismaRepository rules
+- [x] **AC-005:** packages/frameworks/AGENTS.md exists with Layer composition, awilix-modular modules
+- [x] **AC-006:** apps/backend-server/AGENTS.md exists with tRPC routers, controller resolution, auth flow
+- [x] **AC-007:** apps/native/AGENTS.md exists with mobile patterns, Jest testing, navigation
+- [x] **AC-008:** apps/notification-sender/AGENTS.md exists with background job patterns, Effect scheduling
+- [x] **AC-009:** apps/web/AGENTS.md exists with frontend patterns, API client usage
 
 ### Content Quality (AC-010 to AC-012)
 
-- [ ] **AC-010:** Every file ends with Deep Reference section linking to CLAUDE.md
-- [ ] **AC-011:** Combined stack <32 KiB from any directory (validated in Step 4.1)
-- [ ] **AC-012:** 100% of essential guidance preserved (validated in Step 4.3)
+- [x] **AC-010:** Every file ends with Deep Reference section linking to CLAUDE.md
+- [x] **AC-011:** Combined stack <32 KiB from any directory (validated in Step 4.1)
+- [x] **AC-012:** 100% of essential guidance preserved (validated in Step 4.3)
 
 ### Implementation Verification
 
-- [ ] Original AGENTS.md backed up as AGENTS.md.backup (Step 3.1)
-- [ ] No duplicate content between files (Step 4.3)
-- [ ] All cross-references use correct CLAUDE.md section numbers (Step 4.4)
-- [ ] Codex discovery verified from all 9 directories (Step 4.2)
-- [ ] All files <200 lines (Step 4.1)
-- [ ] All files <8 KiB individually (Step 4.1)
-- [ ] Backup archived to .specs/archive/ (Step 5.1)
+- [x] Original AGENTS.md backed up as AGENTS.md.backup (Step 3.1)
+- [x] No duplicate content between files (Step 4.3)
+- [x] All cross-references use correct CLAUDE.md section numbers (Step 4.4)
+- [x] Codex discovery verified from all 9 directories (Step 4.2)
+- [x] All files <200 lines (Step 4.1)
+- [x] All files <8 KiB individually (Step 4.1)
+- [x] Backup archived to .specs/archive/ (Step 5.1)
 
 ---
 
