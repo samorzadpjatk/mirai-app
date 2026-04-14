@@ -4,9 +4,10 @@
  * This module exports all domain errors from a unified hierarchy.
  * Consolidates 124 error classes into 20 well-defined types.
  *
- * Migration path:
- * - Old: import { ValidationError } from "@mirai-app/domain/errors/domain-errors"
- * - New: import { ValidationError } from "@mirai-app/domain/errors"
+ * This is the single source of truth for all domain errors.
+ * Old error files (domain-errors.ts, effect-errors.ts, DomainErrors.ts) have been removed.
+ *
+ * Usage: import { ValidationError } from "@mirai-app/domain/errors"
  *
  * @module errors
  */
