@@ -305,7 +305,7 @@ async function upsertTripViaGraphQL(input: {
 
     return result.data?.upsertTrip ?? null;
   } catch (error) {
-    console.error("Failed to upsert trip:", error);
+    serverLogger.error("Failed to upsert trip:", { error });
     return null;
   }
 }
@@ -339,7 +339,7 @@ async function upsertUserViaGraphQL(input: {
 
     return result.data?.upsertUser ?? null;
   } catch (error) {
-    console.error("Failed to upsert user:", error);
+    serverLogger.error("Failed to upsert user:", { error });
     return null;
   }
 }
@@ -377,7 +377,7 @@ async function addTripParticipantViaGraphQL(input: {
 
     return result.data?.addTripParticipant ?? null;
   } catch (error) {
-    console.error("Failed to add trip participant:", error);
+    serverLogger.error("Failed to add trip participant:", { error });
     return null;
   }
 }

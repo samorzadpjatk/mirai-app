@@ -262,7 +262,7 @@ async function linkSponsorToTripViaGraphQL(input: {
 
     return result.data?.linkSponsorToTrip ?? null;
   } catch (error) {
-    console.error("Failed to link sponsor to trip:", error);
+    serverLogger.error("Failed to link sponsor to trip:", { error });
     return null;
   }
 }
