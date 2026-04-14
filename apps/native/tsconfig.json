@@ -5,7 +5,9 @@
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM"],
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@mirai-app/ui": ["../../packages/ui/src/index.ts"],
+      "@mirai-app/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": ["src/**/*", "**/*.ts", "**/*.tsx"]

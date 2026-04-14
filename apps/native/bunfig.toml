@@ -1,0 +1,9 @@
+[test]
+# Preload the test setup file for Happy DOM environment and TamaguiProvider
+preload = ["./test/setup.ts"]
+
+# Coverage thresholds specific to native app
+coverageThreshold = { lines = 0.70, branches = 0.65, functions = 0.70 }
+
+# Test file patterns - matches both .test.ts and .test.tsx
+testFilePattern = "**/*.test.ts?(x)"
