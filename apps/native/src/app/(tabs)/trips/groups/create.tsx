@@ -12,6 +12,7 @@ import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCr
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { getImageExtension, getImageContentType } from "~/utils/image";
+import { clientLogger } from "@mirai-app/shared";
 
 export default function CreateGroupScreen() {
   const router = useRouter();
@@ -22,10 +23,14 @@ export default function CreateGroupScreen() {
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
-  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(
-    null,
-  );
-  const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
+  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<
+    string | null
+  >(null);
+  const {
+    upload,
+    status: uploadStatus,
+    progress: uploadProgress,
+  } = useFileUpload();
 
   const { createGroup, isCreating } = useCreateGroup(tripId);
   const { isTripPast } = useTripDetails(tripId);
@@ -54,7 +59,7 @@ export default function CreateGroupScreen() {
       Alert.alert("Success", "Group created successfully!");
       router.push(`/trips/groups/${newGroup.id}`);
     } catch (err: unknown) {
-      console.error("Create group error:", err);
+      clientLogger.error("Create group error:", { error: err });
       if (err instanceof Error) {
         Alert.alert("Error", err.message);
       } else {
@@ -117,10 +122,7 @@ export default function CreateGroupScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <GroupFormFields
-          groupName={groupName}
-          onChangeName={setGroupName}
-        />
+        <GroupFormFields groupName={groupName} onChangeName={setGroupName} />
         <GroupImagePicker
           imageUri={groupImagePreviewUri}
           onPickImage={() => void handlePickImage()}

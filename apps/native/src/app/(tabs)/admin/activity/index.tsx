@@ -24,6 +24,7 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { clientLogger } from "@mirai-app/shared";
 import {
   FilterChip,
   FilterChipRow,
@@ -209,7 +210,7 @@ export default function AdminActivityScreen() {
 
   // Show query error if present
   if (queryError) {
-    console.error("Query error:", queryError);
+    clientLogger.error("Query error:", { error: queryError });
   }
 
   if (!tripId) {

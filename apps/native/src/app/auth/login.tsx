@@ -30,6 +30,7 @@ import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { colors } from "~/styles";
 import { useFileDownload } from "~/hooks/files";
+import { clientLogger } from "@mirai-app/shared";
 
 const PRIVACY_POLICY_STORAGE_PATH =
   "files-public/legal/PJApp_Privacy_Policy_PL.pdf";
@@ -265,7 +266,7 @@ export default function LoginScreen() {
     } catch (err) {
       setIsPolicyModalVisible(false);
       Alert.alert("Błąd", "Nie udało się otworzyć polityki prywatności.");
-      console.error("[PrivacyPolicy] download error:", err);
+      clientLogger.error("[PrivacyPolicy] download error:", { error: err });
     } finally {
       setIsPolicyLoading(false);
     }
@@ -524,7 +525,7 @@ export default function LoginScreen() {
             minScale={1}
             maxScale={8}
             onError={(err) => {
-              console.error("[PrivacyPolicy] PDF error:", err);
+              clientLogger.error("[PrivacyPolicy] PDF error:", { error: err });
               Alert.alert("Błąd", "Nie udało się otworzyć PDF.");
             }}
           />

@@ -32,6 +32,7 @@ import {
 } from "@expo-google-fonts/ibm-plex-sans";
 import { useAuth, useAuthLoading } from "@mirai-app/frameworks/auth/client";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
+import { clientLogger } from "@mirai-app/shared";
 import { SupabaseProvider } from "@mirai-app/frameworks/supabase/react";
 import { APIProvider, useTRPCClient } from "@mirai-app/frameworks/graphql";
 import {
@@ -167,7 +168,7 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
         role: user.role,
       };
     } catch (error) {
-      console.error("Failed to fetch user:", error);
+      clientLogger.error("Failed to fetch user:", { error });
       return null;
     }
   };

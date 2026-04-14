@@ -21,6 +21,7 @@ import { useFileDownload } from "~/hooks/files";
 import { useTripResources, useSelectedTrip } from "~/hooks/trips";
 import { useLocalSearchParams } from "expo-router";
 import LoadingScreen from "../../../components/LoadingScreen";
+import { clientLogger } from "@mirai-app/shared";
 
 // Type-safe icon name helper
 const getIconName = (
@@ -64,13 +65,17 @@ export default function TripInfoScreen() {
       if (heroResource?.storagePath) {
         heroImageDownload
           .download({ storagePath: heroResource.storagePath })
-          .catch(console.error);
+          .catch((err) =>
+            clientLogger.error("Failed to download hero image:", { error: err }),
+          );
       }
 
       if (mapBgResource?.storagePath) {
         mapBgImageDownload
           .download({ storagePath: mapBgResource.storagePath })
-          .catch(console.error);
+          .catch((err) =>
+            clientLogger.error("Failed to download map bg image:", { error: err }),
+          );
       }
     }
   }, [getResource, heroImageDownload, isLoading, mapBgImageDownload]);
@@ -101,7 +106,7 @@ export default function TripInfoScreen() {
     const whatsappResource = getResource("WHATSAPP");
     if (whatsappResource?.url) {
       Linking.openURL(whatsappResource.url).catch(() => {
-        console.error("Failed to open WhatsApp");
+        clientLogger.error("Failed to open WhatsApp");
       });
     }
   };
@@ -117,7 +122,7 @@ export default function TripInfoScreen() {
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
       } catch (error) {
-        console.error("Error handling Infopack PDF:", error);
+        clientLogger.error("Error handling Infopack PDF:", { error });
         Alert.alert(
           "Error",
           "Could not open the infopack. Please try again later.",
@@ -150,7 +155,7 @@ export default function TripInfoScreen() {
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
       } catch (error) {
-        console.error("Error handling PDF:", error);
+        clientLogger.error("Error handling PDF:", { error });
         Alert.alert("Error", "Could not open the map. Please try again later.");
       }
     }
@@ -480,7 +485,7 @@ export default function TripInfoScreen() {
                 // PDF loaded successfully
               }}
               onError={(error) => {
-                console.error("PDF Error:", error);
+                clientLogger.error("PDF Error:", { error });
                 Alert.alert("Error", "Could not load PDF");
               }}
               enablePaging={false}

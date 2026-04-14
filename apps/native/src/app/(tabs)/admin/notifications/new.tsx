@@ -22,6 +22,7 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { clientLogger } from "@mirai-app/shared";
 import {
   DateTimePickerModal,
   FilterChip,
@@ -305,7 +306,7 @@ export default function AdminCreateNotificationScreen() {
       Alert.alert("Success", "One-time scheduled notification created.");
       router.back();
     } catch (error) {
-      console.error("Failed to create/send notification", error);
+      clientLogger.error("Failed to create/send notification", { error });
       Alert.alert(
         "Error",
         "Operation failed. Check input values and try again.",
