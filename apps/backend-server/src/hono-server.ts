@@ -157,7 +157,7 @@ function createErrorHandler(config: HonoConfig) {
       await next();
     } catch (error) {
       // Log the error
-      console.error("[Hono] Error:", error);
+      serverLogger.error("[Hono] Error:", { error });
 
       // Prepare error response
       const status = 500;
@@ -348,7 +348,7 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
 
       serverInstance?.on("error", (error: unknown) => {
         const err = error instanceof Error ? error : new Error(String(error));
-        console.error("[Hono] Server error:", err);
+        serverLogger.error("[Hono] Server error:", { error: err });
         reject(err);
       });
     });

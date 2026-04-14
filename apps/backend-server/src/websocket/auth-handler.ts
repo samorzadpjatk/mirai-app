@@ -26,6 +26,7 @@ import type { Context } from "hono";
 import { getCookie } from "hono/cookie";
 import type { AwilixContainer } from "awilix";
 import type { AuthPort, AuthContext } from "@mirai-app/use-cases";
+import { serverLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Types
@@ -195,7 +196,7 @@ export async function validateAuthToken(
       };
     }
   } catch (error) {
-    console.error("[WebSocket Auth] Validation error:", error);
+    serverLogger.error("[WebSocket Auth] Validation error:", { error });
     return {
       success: false,
       error: "Authentication failed",

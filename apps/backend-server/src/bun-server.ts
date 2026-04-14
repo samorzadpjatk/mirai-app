@@ -177,7 +177,7 @@ function createErrorHandler(config: HonoConfig) {
     try {
       await next();
     } catch (error) {
-      console.error("[Bun] Error:", error);
+      serverLogger.error("[Bun] Error:", { error });
 
       const status = 500;
       const message =
@@ -529,7 +529,7 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
                 },
               );
             } catch (error) {
-              console.error("[Bun] WebSocket auth error:", error);
+              serverLogger.error("[Bun] WebSocket auth error:", { error });
               sendMessage(ws, {
                 type: MessageType.Error,
                 payload: { message: "Authentication failed" },
@@ -602,9 +602,9 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
        */
       error(ws: WebSocket, error: Error): void {
         const data = (ws as WebSocket & { data?: WebSocketData }).data;
-        console.error(
+        serverLogger.error(
           `[Bun] WebSocket error ${data?.connectionId ?? "unknown"}:`,
-          error,
+          { error },
         );
       },
     },
