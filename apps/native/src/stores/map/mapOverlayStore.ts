@@ -12,6 +12,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import type { UserLocation } from "~/components/map/UserMap";
 import { usePanelAnimation, useShareModal } from "~/hooks/ui";
 import { useMapSelectedUser } from "~/hooks/map";
+import { clientLogger } from "@mirai-app/shared";
 
 export type MapTheme = "dark" | "light";
 
@@ -183,22 +184,24 @@ export const mapOverlayStore = createStore<MapOverlayStore>()((set, get) => ({
 
   handleRemoveUser: (userId) => {
     const { setIsRemovingUser, sharingUserIds, setSharingUserIds } = get();
-    
+
     try {
       setIsRemovingUser(true);
-      
+
       // Note: removeUser functionality should be called from the hook, not the store
       // This action will be handled at the hook level
-      
+
       // Update sharingUserIds to remove the user
-      const updatedSharingUserIds = sharingUserIds.filter(id => id !== userId);
+      const updatedSharingUserIds = sharingUserIds.filter(
+        (id) => id !== userId,
+      );
       setSharingUserIds(updatedSharingUserIds);
-      
+
       // Update sharingSettings to remove the user from usersToShareWith
       const { sharingSettings } = get();
       if (sharingSettings?.usersToShareWith) {
         const updatedUsersToShareWith = sharingSettings.usersToShareWith.filter(
-          user => user.id !== userId
+          (user) => user.id !== userId,
         );
         set({
           sharingSettings: {
@@ -208,7 +211,7 @@ export const mapOverlayStore = createStore<MapOverlayStore>()((set, get) => ({
         });
       }
     } catch (error) {
-      console.error('Failed to remove user:', error);
+      clientLogger.error("Failed to remove user:", { error });
     } finally {
       setIsRemovingUser(false);
     }
@@ -236,25 +239,23 @@ let externals: MapOverlayExternals = {
   currentCoordinate: null,
 };
 
-export function setMapOverlayExternals(newExternals: Partial<MapOverlayExternals>) {
+export function setMapOverlayExternals(
+  newExternals: Partial<MapOverlayExternals>,
+) {
   externals = { ...externals, ...newExternals };
 }
 
-export function MapOverlayProvider({ 
-  children, 
-  value 
-}: { 
+export function MapOverlayProvider({
+  children,
+  value,
+}: {
   children: React.ReactNode;
   value: MapOverlayExternals;
 }) {
   // Update global externals when provider value changes
   externals = value;
-  
-  return React.createElement(
-    MapOverlayContext.Provider,
-    { value },
-    children
-  );
+
+  return React.createElement(MapOverlayContext.Provider, { value }, children);
 }
 
 function useMapOverlayExternals(): MapOverlayExternals {
@@ -266,21 +267,22 @@ function useMapOverlayExternals(): MapOverlayExternals {
 // Hook that combines store with animations and external data
 export function useMapOverlayStore() {
   const store = useStore(mapOverlayStore);
-  
+
   // Animation values
   const listMaxHeight = 300;
   const panelAnim = usePanelAnimation(false, 240);
   const expandAnim = usePanelAnimation(false, 300);
-  
+
   // External data from context
-  const { session, updateSharing, removeUser, currentCoordinate } = useMapOverlayExternals();
-  
+  const { session, updateSharing, removeUser, currentCoordinate } =
+    useMapOverlayExternals();
+
   // Share modal
-  const shareModal = useShareModal({ 
-    sharingUserIds: store.sharingUserIds, 
-    updateSharing 
+  const shareModal = useShareModal({
+    sharingUserIds: store.sharingUserIds,
+    updateSharing,
   });
-  
+
   // Selected user state
   const selectedUserState = useMapSelectedUser({
     session,
@@ -288,7 +290,7 @@ export function useMapOverlayStore() {
     sharingUserIds: store.sharingUserIds,
     updateSharing,
   });
-  
+
   const {
     selectedUser,
     selectUser,
@@ -297,42 +299,42 @@ export function useMapOverlayStore() {
     mapUserPress,
     canStopSharing,
   } = selectedUserState;
-  
+
   // Update store when selected user changes
   const handleSelectUser = (user: UserLocation) => {
     selectUser(user);
     store.selectUser(user);
   };
-  
+
   const handleMapUserPress = (user: UserLocation) => {
     mapUserPress(user);
     store.handleMapUserPress(user);
   };
-  
+
   const handleStopSharing = async () => {
     await stopSharing();
     deselect();
     store.backToList();
   };
-  
+
   const handleRecenter = () => {
     if (!currentCoordinate) return;
     deselect();
     store.recenter(currentCoordinate);
   };
-  
+
   const handleRemoveUser = async (userId: string) => {
     // Call the external removeUser function first
     await removeUser(userId);
     // Then update the store state
     store.handleRemoveUser(userId);
   };
-  
+
   const handleBackToList = () => {
     deselect();
     store.backToList();
   };
-  
+
   // Effects
   React.useEffect(() => {
     if (!selectedUser) return;
@@ -343,15 +345,15 @@ export function useMapOverlayStore() {
     );
     return () => clearTimeout(id);
   }, [selectedUser, store.followMode, store]);
-  
+
   React.useEffect(() => {
     panelAnim.setOpen(!!selectedUser || store.showUsersList);
   }, [panelAnim, selectedUser, store.showUsersList]);
-  
+
   React.useEffect(() => {
     expandAnim.setOpen(store.isListExpanded);
   }, [expandAnim, store.isListExpanded]);
-  
+
   // Pan gesture
   const listDragStart = useSharedValue(0);
   const panGesture = Gesture.Pan()
@@ -375,7 +377,7 @@ export function useMapOverlayStore() {
         });
       }
     });
-  
+
   // Animated styles
   const panelStyle = useAnimatedStyle(() => {
     return {
@@ -387,7 +389,7 @@ export function useMapOverlayStore() {
       ],
     };
   });
-  
+
   const usersListStyle = useAnimatedStyle(() => {
     const maxHeight = interpolate(
       expandAnim.value.value,
@@ -396,7 +398,7 @@ export function useMapOverlayStore() {
     );
     return { maxHeight };
   });
-  
+
   return {
     ...store,
     selectedUser,

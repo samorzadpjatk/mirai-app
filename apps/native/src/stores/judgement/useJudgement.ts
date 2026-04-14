@@ -8,6 +8,7 @@ import {
 import { useStore } from "zustand";
 import { judgementStore } from "./judgementStores";
 import type { ReviewStatus, Submission } from "./judgementStores";
+import { clientLogger } from "@mirai-app/shared";
 
 // Inline GraphQL document for GetChallenge
 const GetChallengeDocument = `
@@ -148,7 +149,9 @@ export function useJudgement(
       });
 
       if (result.error) {
-        console.error(result.error);
+        clientLogger.error("Failed to review challenge submission:", {
+          error: result.error,
+        });
       } else {
         // Invalidate and refetch submissions
         await client.invalidate("GetChallengeSubmissions", { challengeId });

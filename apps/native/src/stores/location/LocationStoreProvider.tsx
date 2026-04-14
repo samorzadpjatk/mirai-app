@@ -75,7 +75,9 @@ export function LocationStoreProvider({
       const result = await executeUpdateSharing({ input });
       if (result.error) {
         const error = result.error;
-        console.error("Failed to update location sharing settings:", error);
+        clientLogger.error("Failed to update location sharing settings:", {
+          error,
+        });
         if (error?.message?.includes("UNAUTHORIZED")) {
           Alert.alert(
             "Authentication Required",
