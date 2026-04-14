@@ -13,8 +13,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
-    "test:unit": "bun test",
+    "test": "bun run test:bun && bun run test:yoga && bun run test:rest",
+    "test:bun": "bun test src/__tests__/bun-server*.test.ts src/__tests__/hono-server.test.ts",
+    "test:yoga": "bun test src/graphql/__tests__/yoga.integration.test.ts",
+    "test:rest": "bun test --exclude src/graphql/__tests__/yoga.integration.test.ts --exclude src/__tests__/bun-server*.test.ts --exclude src/__tests__/hono-server.test.ts",
+    "test:unit": "bun run test",
     "test:coverage": "bun test --coverage"
   },
   "keywords": [
