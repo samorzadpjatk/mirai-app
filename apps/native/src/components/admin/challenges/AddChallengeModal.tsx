@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTrips } from "~/hooks/trips";
 import { graphqlClient } from "~/lib/graphql-client";
 import { colors, spacing } from "~/styles";
+import { clientLogger } from "@mirai-app/shared";
 import {
   LocationPicker,
   type LocationCoordinate,
@@ -101,7 +102,7 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
       onClose();
       Alert.alert("Success", "Challenge created");
     } catch (error) {
-      console.error("Failed to create challenge:", error);
+      clientLogger.error("Failed to create challenge:", { error });
       Alert.alert("Error", "Failed to create challenge");
     } finally {
       setIsSubmitting(false);

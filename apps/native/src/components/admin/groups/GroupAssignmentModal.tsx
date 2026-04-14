@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, typography } from "~/styles";
+import { clientLogger } from "@mirai-app/shared";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 
 // GraphQL User type from @mirai-app/graphql-client
@@ -79,7 +80,7 @@ export function GroupAssignmentModal({
       setSelectedGroup(null);
       onClose();
     } catch (error) {
-      console.error("Failed to assign to group:", error);
+      clientLogger.error("Failed to assign to group:", { error });
     }
   };
 

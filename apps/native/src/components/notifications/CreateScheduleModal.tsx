@@ -13,6 +13,7 @@ import {
 } from "@mirai-app/graphql-client";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
+import { clientLogger } from "@mirai-app/shared";
 import {
   AppModalShell,
   AppModalFooter,
@@ -112,7 +113,7 @@ export function CreateScheduleModal({
         setCreateHour("9");
         setCreateMinute("0");
       } else {
-        console.error("Error creating schedule:", result.error);
+        clientLogger.error("Error creating schedule:", { error: result.error });
       }
       setIsCreating(false);
     }

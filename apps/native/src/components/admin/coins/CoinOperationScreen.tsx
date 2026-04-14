@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useClient } from "urql";
 import { colors, spacing, borderRadius } from "~/styles";
+import { clientLogger } from "@mirai-app/shared";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
@@ -122,7 +123,7 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
         ],
       );
     } catch (error) {
-      console.error(`Failed to ${operation} coins`, error);
+      clientLogger.error(`Failed to ${operation} coins`, { error });
       Alert.alert("Error", "Operation failed. Try again.");
     } finally {
       setIsAddingCoins(false);

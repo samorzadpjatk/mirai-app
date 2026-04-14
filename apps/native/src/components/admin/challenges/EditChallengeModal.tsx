@@ -10,6 +10,7 @@ import {
 import { useTrips } from "~/hooks/trips";
 import { graphqlClient } from "~/lib/graphql-client";
 import { colors, spacing } from "~/styles";
+import { clientLogger } from "@mirai-app/shared";
 import {
   AppModalShell,
   AppModalFooter,
@@ -82,7 +83,7 @@ export default function EditChallengeModal({
       onClose();
       Alert.alert("Saved", "Challenge updated");
     } catch (error) {
-      console.error("Failed to update challenge:", error);
+      clientLogger.error("Failed to update challenge:", { error });
       Alert.alert("Error", "Failed to update challenge");
     } finally {
       setIsSaving(false);

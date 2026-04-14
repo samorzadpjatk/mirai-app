@@ -8,6 +8,7 @@ import {
 } from "@mirai-app/graphql-client";
 import { formatRelativeTime, formatDate } from "~/utils/format";
 import type { NotificationScheduleItem } from "~/types/notifications";
+import { clientLogger } from "@mirai-app/shared";
 
 interface NotificationScheduleCardProps {
   schedule: NotificationScheduleItem;
@@ -42,7 +43,9 @@ export function NotificationScheduleCard({
                 useGetNotificationSchedulesQuery.document,
               );
             } else {
-              console.error("Error deleting schedule:", result.error);
+              clientLogger.error("Error deleting schedule:", {
+                error: result.error,
+              });
             }
           },
         },
@@ -56,7 +59,7 @@ export function NotificationScheduleCard({
       // Invalidate schedules so list refreshes
       await client.invalidate(useGetNotificationSchedulesQuery.document);
     } else {
-      console.error("Error toggling schedule:", result.error);
+      clientLogger.error("Error toggling schedule:", { error: result.error });
     }
   };
 

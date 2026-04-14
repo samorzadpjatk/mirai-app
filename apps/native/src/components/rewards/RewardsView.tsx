@@ -20,6 +20,7 @@ import { useMyGroup } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import type { RewardListItem } from "./types";
 import { commonStyles } from "~/styles/commonStyles";
+import { clientLogger } from "@mirai-app/shared";
 
 interface Props {
   tripId: string;
@@ -113,7 +114,7 @@ export default function RewardsView({ tripId }: Props) {
         { text: "OK", style: "default" },
       ]);
     } catch (error) {
-      console.error("Failed to refresh rewards:", error);
+      clientLogger.error("Failed to refresh rewards:", { error });
       Alert.alert("Error", "Failed to refresh rewards");
     } finally {
       setRefreshing(false);

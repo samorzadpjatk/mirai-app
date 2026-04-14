@@ -8,12 +8,19 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { MapView, Camera, MarkerView, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
+import {
+  MapView,
+  Camera,
+  MarkerView,
+  RasterSource,
+  RasterLayer,
+} from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { Ionicons } from "@expo/vector-icons";
-import * as Location from 'expo-location';
+import * as Location from "expo-location";
+import { clientLogger } from "@mirai-app/shared";
 
 export interface LocationCoordinate {
   latitude: number;
@@ -26,7 +33,7 @@ interface Props {
   onLocationSelected: (location: LocationCoordinate) => void;
   onClose: () => void;
   /** Current map theme: 'dark' | 'light' */
-  mapTheme?: 'dark' | 'light';
+  mapTheme?: "dark" | "light";
 }
 
 // Map style configuration (same as UserMap)
@@ -44,13 +51,15 @@ interface MapRasterOverlay {
   layerStyle?: object;
 }
 
-const MAP_STYLES: Record<'dark' | 'light', MapStyleConfig> = {
+const MAP_STYLES: Record<"dark" | "light", MapStyleConfig> = {
   dark: {
     style: "https://tiles.openfreemap.org/styles/fiord",
     rasterOverlays: [
       {
         id: "opensnowmap-pistes",
-        tileUrlTemplates: ["https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png"],
+        tileUrlTemplates: [
+          "https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png",
+        ],
         tileSize: 256,
         attribution: "© OpenSnowMap.org",
         layerId: "opensnowmap-overlay",
@@ -68,7 +77,9 @@ const MAP_STYLES: Record<'dark' | 'light', MapStyleConfig> = {
     rasterOverlays: [
       {
         id: "opensnowmap-pistes",
-        tileUrlTemplates: ["https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png"],
+        tileUrlTemplates: [
+          "https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png",
+        ],
         tileSize: 256,
         attribution: "© OpenSnowMap.org",
         layerId: "opensnowmap-overlay",
@@ -83,15 +94,20 @@ export const LocationPicker: React.FC<Props> = ({
   initialLocation,
   onLocationSelected,
   onClose,
-  mapTheme = 'dark',
+  mapTheme = "dark",
 }) => {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraRef>(null);
-  const [selectedLocation, setSelectedLocation] = useState<LocationCoordinate | null>(null);
+  const [selectedLocation, setSelectedLocation] =
+    useState<LocationCoordinate | null>(null);
   // markerCoordinate always holds a valid coordinate so the MarkerView is never unmounted.
   // This avoids the MLRNMapView insertReactSubview crash.
-  const defaultCoord: LocationCoordinate = initialLocation ?? { latitude: 52.23, longitude: 21.01 };
-  const [markerCoordinate, setMarkerCoordinate] = useState<LocationCoordinate>(defaultCoord);
+  const defaultCoord: LocationCoordinate = initialLocation ?? {
+    latitude: 52.23,
+    longitude: 21.01,
+  };
+  const [markerCoordinate, setMarkerCoordinate] =
+    useState<LocationCoordinate>(defaultCoord);
   const [isMapReady, setIsMapReady] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
@@ -121,8 +137,11 @@ export const LocationPicker: React.FC<Props> = ({
   }, [isMapReady, initialLocation]);
 
   const handleMapPress = (feature: GeoJSON.Feature) => {
-    if (feature.geometry.type !== 'Point') return;
-    const [longitude, latitude] = feature.geometry.coordinates as [number, number];
+    if (feature.geometry.type !== "Point") return;
+    const [longitude, latitude] = feature.geometry.coordinates as [
+      number,
+      number,
+    ];
     const loc: LocationCoordinate = { latitude, longitude };
     setMarkerCoordinate(loc);
     setSelectedLocation(loc);
@@ -133,7 +152,7 @@ export const LocationPicker: React.FC<Props> = ({
   };
 
   const handleMapLoadError = () => {
-    console.error('Map failed to load');
+    clientLogger.error("Map failed to load");
     setIsMapReady(true); // Still set to true to hide loading indicator
   };
 
@@ -152,9 +171,9 @@ export const LocationPicker: React.FC<Props> = ({
 
       if (status !== Location.PermissionStatus.GRANTED) {
         Alert.alert(
-          'Permission Denied',
-          'Location permission is required to get your current location.',
-          [{ text: 'OK' }]
+          "Permission Denied",
+          "Location permission is required to get your current location.",
+          [{ text: "OK" }],
         );
         setIsLoadingLocation(false);
         return;
@@ -176,17 +195,20 @@ export const LocationPicker: React.FC<Props> = ({
       // Center camera on current location
       if (cameraRef.current) {
         cameraRef.current?.setCamera?.({
-          centerCoordinate: [currentLocation.longitude, currentLocation.latitude],
+          centerCoordinate: [
+            currentLocation.longitude,
+            currentLocation.latitude,
+          ],
           zoomLevel: 15,
           animationDuration: 1000,
         });
       }
     } catch (error) {
-      console.error('Error getting location:', error);
+      clientLogger.error("Error getting location:", { error });
       Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Please try again.',
-        [{ text: 'OK' }]
+        "Location Error",
+        "Unable to get your current location. Please try again.",
+        [{ text: "OK" }],
       );
     } finally {
       setIsLoadingLocation(false);
@@ -261,16 +283,22 @@ export const LocationPicker: React.FC<Props> = ({
               defaultSettings={
                 initialLocation
                   ? {
-                    centerCoordinate: [initialLocation.longitude, initialLocation.latitude],
-                    zoomLevel: 15,
-                  }
+                      centerCoordinate: [
+                        initialLocation.longitude,
+                        initialLocation.latitude,
+                      ],
+                      zoomLevel: 15,
+                    }
                   : undefined
               }
             />
 
             {/* Selected location marker – always mounted to avoid native crash */}
             <MarkerView
-              coordinate={[markerCoordinate.longitude, markerCoordinate.latitude]}
+              coordinate={[
+                markerCoordinate.longitude,
+                markerCoordinate.latitude,
+              ]}
             >
               <View style={{ opacity: selectedLocation ? 1 : 0 }}>
                 <View style={styles.markerContainer}>
