@@ -20,7 +20,7 @@ import {
   ActivityFeedDrizzleMapper,
   ActivityReactionDrizzleMapper,
 } from "../../mappers/drizzle/activity-feed";
-import { DatabaseError } from "../../errors/adapter-errors";
+import { DatabaseError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleActivityFeedRepository

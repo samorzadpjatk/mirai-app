@@ -14,7 +14,7 @@ import { eq, and, or, desc, gte, lte, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { NotificationDeliveryDrizzleMapper } from "../../mappers/drizzle/notification-delivery";
-import { DatabaseError } from "../../errors/adapter-errors";
+import { DatabaseError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleNotificationDeliveryRepository

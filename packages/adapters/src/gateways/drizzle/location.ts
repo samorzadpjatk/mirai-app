@@ -10,7 +10,7 @@ import { Location, type LocationId } from "@mirai-app/domain";
 import type { LocationRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { LocationDrizzleMapper } from "../../mappers/drizzle/location";
-import { DatabaseError } from "../../errors/adapter-errors";
+import { DatabaseError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleLocationRepository

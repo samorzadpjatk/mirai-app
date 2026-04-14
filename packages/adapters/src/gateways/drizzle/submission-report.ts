@@ -12,7 +12,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { SubmissionReportDrizzleMapper } from "../../mappers/drizzle/submission-report";
-import { DatabaseError } from "../../errors/adapter-errors";
+import { DatabaseError } from "@mirai-app/adapters/errors";
 
 // Include config for reporter info
 const REPORTER_INCLUDE = {

@@ -11,7 +11,7 @@ import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { CoinTransactionDrizzleMapper } from "../../mappers/drizzle/coin-transaction";
-import { DatabaseError } from "../../errors/adapter-errors";
+import { DatabaseError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleCoinTransactionRepository
@@ -92,9 +92,7 @@ export class DrizzleCoinTransactionRepository
   /**
    * Sum added coins (positive amounts) for a trip
    */
-  sumAddedCoins(
-    tripId: string,
-  ): Effect.Effect<number | null, never, never> {
+  sumAddedCoins(tripId: string): Effect.Effect<number | null, never, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db
@@ -120,9 +118,7 @@ export class DrizzleCoinTransactionRepository
   /**
    * Sum removed coins (negative amounts) for a trip
    */
-  sumRemovedCoins(
-    tripId: string,
-  ): Effect.Effect<number | null, never, never> {
+  sumRemovedCoins(tripId: string): Effect.Effect<number | null, never, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db

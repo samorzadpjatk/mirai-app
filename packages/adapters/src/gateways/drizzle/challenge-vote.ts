@@ -6,7 +6,7 @@ import { eq, and, asc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { ChallengeVoteDrizzleMapper } from "../../mappers/drizzle/challenge-vote";
-import { DatabaseError } from "../../errors/adapter-errors";
+import { DatabaseError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleChallengeVoteRepository

@@ -1,7 +1,7 @@
 import { Group, type GroupStatus } from "@mirai-app/domain";
-import type { GroupRepository } from "@mirai-app/use-cases";
+import type { GroupRepository, DatabaseError } from "@mirai-app/use-cases";
 import { Effect } from "effect";
-import { InMemoryRepository, DatabaseError } from "./base";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Group Repository for Testing
@@ -57,15 +57,15 @@ export class InMemoryGroupRepository
     }
   }
 
-  create(group: Group): Effect.Effect<Group, never, never> {
+  create(group: Group): Effect.Effect<Group, DatabaseError, never> {
     return this.createGeneric(group);
   }
 
-  findById(id: string): Effect.Effect<Group | null, never, never> {
+  findById(id: string): Effect.Effect<Group | null, DatabaseError, never> {
     return this.findByIdGeneric(id);
   }
 
-  findByTripId(tripId: string): Effect.Effect<Group[], never, never> {
+  findByTripId(tripId: string): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
@@ -80,7 +80,9 @@ export class InMemoryGroupRepository
     });
   }
 
-  findByStatus(status: GroupStatus): Effect.Effect<Group[], never, never> {
+  findByStatus(
+    status: GroupStatus,
+  ): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
@@ -98,7 +100,7 @@ export class InMemoryGroupRepository
   findByTripIdAndStatus(
     tripId: string,
     status: GroupStatus,
-  ): Effect.Effect<Group[], never, never> {
+  ): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
@@ -115,7 +117,9 @@ export class InMemoryGroupRepository
     });
   }
 
-  findByOrganizerId(organizerId: string): Effect.Effect<Group[], never, never> {
+  findByOrganizerId(
+    organizerId: string,
+  ): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
@@ -130,7 +134,7 @@ export class InMemoryGroupRepository
     });
   }
 
-  findByCode(code: string): Effect.Effect<Group | null, never, never> {
+  findByCode(code: string): Effect.Effect<Group | null, DatabaseError, never> {
     return Effect.succeed(
       this.getAllItems().find((g) => g.code === code) ?? null,
     );
@@ -139,23 +143,23 @@ export class InMemoryGroupRepository
   findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<Group[], never, never> {
+  }): Effect.Effect<Group[], DatabaseError, never> {
     return this.findAllGeneric(options);
   }
 
-  update(group: Group): Effect.Effect<Group, never, never> {
+  update(group: Group): Effect.Effect<Group, DatabaseError, never> {
     return this.updateGeneric(group);
   }
 
-  delete(id: string): Effect.Effect<void, never, never> {
+  delete(id: string): Effect.Effect<void, DatabaseError, never> {
     return this.deleteGeneric(id);
   }
 
-  exists(id: string): Effect.Effect<boolean, never, never> {
+  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
     return this.existsGeneric(id);
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, never, never> {
+  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
     return Effect.succeed(
       this.getAllItems().filter((g) => g.tripId === tripId).length,
     );

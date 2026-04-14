@@ -3,9 +3,9 @@ import {
   type SharingUserInfo,
   type LocationId,
 } from "@mirai-app/domain";
-import type { LocationRepository } from "@mirai-app/use-cases";
+import type { LocationRepository, DatabaseError } from "@mirai-app/use-cases";
 import { Effect } from "effect";
-import { InMemoryRepository, DatabaseError } from "./base";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Location Repository for Testing
@@ -85,15 +85,19 @@ export class InMemoryLocationRepository
     }
   }
 
-  create(location: Location): Effect.Effect<Location, never, never> {
+  create(location: Location): Effect.Effect<Location, DatabaseError, never> {
     return this.createGeneric(location);
   }
 
-  findById(id: LocationId): Effect.Effect<Location | null, never, never> {
+  findById(
+    id: LocationId,
+  ): Effect.Effect<Location | null, DatabaseError, never> {
     return this.findByIdGeneric(id as string);
   }
 
-  findByUserId(userId: string): Effect.Effect<Location | null, never, never> {
+  findByUserId(
+    userId: string,
+  ): Effect.Effect<Location | null, DatabaseError, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const plain = plains.find(
@@ -107,11 +111,13 @@ export class InMemoryLocationRepository
   findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<Location[], never, never> {
+  }): Effect.Effect<Location[], DatabaseError, never> {
     return this.findAllGeneric(options);
   }
 
-  findSharingWithUser(userId: string): Effect.Effect<Location[], never, never> {
+  findSharingWithUser(
+    userId: string,
+  ): Effect.Effect<Location[], DatabaseError, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter((loc) =>
@@ -128,7 +134,9 @@ export class InMemoryLocationRepository
     });
   }
 
-  findByUserIds(userIds: string[]): Effect.Effect<Location[], never, never> {
+  findByUserIds(
+    userIds: string[],
+  ): Effect.Effect<Location[], DatabaseError, never> {
     return Effect.gen(this, function* () {
       const userIdSet = new Set(userIds);
       const plains = this.getAllItems();
@@ -144,18 +152,18 @@ export class InMemoryLocationRepository
     });
   }
 
-  save(location: Location): Effect.Effect<Location, never, never> {
+  save(location: Location): Effect.Effect<Location, DatabaseError, never> {
     if (this.storage.has(location.id as string)) {
       return this.updateGeneric(location);
     }
     return this.createGeneric(location);
   }
 
-  delete(id: LocationId): Effect.Effect<void, never, never> {
+  delete(id: LocationId): Effect.Effect<void, DatabaseError, never> {
     return this.deleteGeneric(id as string);
   }
 
-  deleteByUserId(userId: string): Effect.Effect<void, never, never> {
+  deleteByUserId(userId: string): Effect.Effect<void, DatabaseError, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const plain = plains.find(
@@ -168,7 +176,7 @@ export class InMemoryLocationRepository
     });
   }
 
-  existsForUser(userId: string): Effect.Effect<boolean, never, never> {
+  existsForUser(userId: string): Effect.Effect<boolean, DatabaseError, never> {
     return Effect.succeed(
       this.getAllItems().some(
         (loc) => (loc as Record<string, unknown>).userId === userId,

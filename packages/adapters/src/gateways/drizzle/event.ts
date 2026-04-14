@@ -11,7 +11,7 @@ import { Event } from "@mirai-app/domain";
 import type { EventRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { EventDrizzleMapper } from "../../mappers/drizzle/event";
-import { DatabaseError } from "../../errors/adapter-errors";
+import { DatabaseError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleEventRepository

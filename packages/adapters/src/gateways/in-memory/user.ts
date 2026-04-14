@@ -1,7 +1,7 @@
 import type { User, UserRole } from "@mirai-app/domain";
-import type { UserRepository } from "@mirai-app/use-cases";
-import { Effect, Data } from "effect";
-import { InMemoryRepository, DatabaseError } from "./base";
+import type { UserRepository, DatabaseError } from "@mirai-app/use-cases";
+import { Effect } from "effect";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory User Repository for Testing

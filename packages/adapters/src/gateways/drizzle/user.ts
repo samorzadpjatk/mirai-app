@@ -11,7 +11,7 @@ import type { UserRepository } from "@mirai-app/use-cases";
 import { inArray } from "drizzle-orm";
 import { BaseDrizzleRepository } from "../base/repository";
 import { UserDrizzleMapper } from "../../mappers/drizzle/user";
-import { DatabaseError } from "../../errors/adapter-errors";
+import { DatabaseError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleUserRepository
