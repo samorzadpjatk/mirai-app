@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect } from "effect";
 import {
   GetGroupUseCase,
   getGroupUseCase,
@@ -17,79 +18,90 @@ import {
 import type { GroupRepository } from "../ports/GroupRepository";
 
 /**
- * Simple in-memory mock repository for testing (Promise-based)
+ * Simple in-memory mock repository for testing (Effect-based)
  */
 class MockGroupRepository implements GroupRepository {
   private groups = new Map<string, Group>();
 
-  async create(group: Group): Promise<Group> {
+  create(group: Group): Effect.Effect<Group, never, never> {
     this.groups.set(group.id, group);
-    return group;
+    return Effect.succeed(group);
   }
 
-  async findById(id: string): Promise<Group | null> {
-    return this.groups.get(id) ?? null;
+  findById(id: string): Effect.Effect<Group | null, never, never> {
+    return Effect.succeed(this.groups.get(id) ?? null);
   }
 
-  async findByTripId(tripId: string): Promise<Group[]> {
-    return Array.from(this.groups.values()).filter((g) => g.tripId === tripId);
+  findByTripId(tripId: string): Effect.Effect<Group[], never, never> {
+    return Effect.succeed(
+      Array.from(this.groups.values()).filter((g) => g.tripId === tripId),
+    );
   }
 
-  async findByStatus(status: GroupStatus): Promise<Group[]> {
-    return Array.from(this.groups.values()).filter((g) => g.status === status);
+  findByStatus(status: GroupStatus): Effect.Effect<Group[], never, never> {
+    return Effect.succeed(
+      Array.from(this.groups.values()).filter((g) => g.status === status),
+    );
   }
 
-  async findByTripIdAndStatus(
+  findByTripIdAndStatus(
     tripId: string,
     status: GroupStatus,
-  ): Promise<Group[]> {
-    return Array.from(this.groups.values()).filter(
-      (g) => g.tripId === tripId && g.status === status,
+  ): Effect.Effect<Group[], never, never> {
+    return Effect.succeed(
+      Array.from(this.groups.values()).filter(
+        (g) => g.tripId === tripId && g.status === status,
+      ),
     );
   }
 
-  async findByOrganizerId(organizerId: string): Promise<Group[]> {
-    return Array.from(this.groups.values()).filter(
-      (g) => g.organizerId === organizerId,
+  findByOrganizerId(organizerId: string): Effect.Effect<Group[], never, never> {
+    return Effect.succeed(
+      Array.from(this.groups.values()).filter(
+        (g) => g.organizerId === organizerId,
+      ),
     );
   }
 
-  async findByCode(code: string): Promise<Group | null> {
-    return (
-      Array.from(this.groups.values()).find((g) => g.code === code) ?? null
+  findByCode(code: string): Effect.Effect<Group | null, never, never> {
+    return Effect.succeed(
+      Array.from(this.groups.values()).find((g) => g.code === code) ?? null,
     );
   }
 
-  async findAll(options?: {
+  findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<Group[]> {
+  }): Effect.Effect<Group[], never, never> {
     const groups = Array.from(this.groups.values());
     const offset = options?.offset ?? 0;
     const limit = options?.limit ?? groups.length;
-    return groups.slice(offset, offset + limit);
+    return Effect.succeed(groups.slice(offset, offset + limit));
   }
 
-  async update(group: Group): Promise<Group> {
+  update(group: Group): Effect.Effect<Group, never, never> {
     this.groups.set(group.id, group);
-    return group;
+    return Effect.succeed(group);
   }
 
-  async delete(id: string): Promise<void> {
+  delete(id: string): Effect.Effect<void, never, never> {
     this.groups.delete(id);
+    return Effect.succeed(undefined);
   }
 
-  async exists(id: string): Promise<boolean> {
-    return this.groups.has(id);
+  exists(id: string): Effect.Effect<boolean, never, never> {
+    return Effect.succeed(this.groups.has(id));
   }
 
-  async countByTripId(tripId: string): Promise<number> {
-    return Array.from(this.groups.values()).filter((g) => g.tripId === tripId)
-      .length;
+  countByTripId(tripId: string): Effect.Effect<number, never, never> {
+    return Effect.succeed(
+      Array.from(this.groups.values()).filter((g) => g.tripId === tripId)
+        .length,
+    );
   }
 }
 
-describe("[UNIT] GetGroupUseCase - Async/Await", () => {
+describe("[UNIT] GetGroupUseCase - Effect.gen", () => {
   let repo: MockGroupRepository;
   let useCase: GetGroupUseCase;
 
@@ -110,7 +122,6 @@ describe("[UNIT] GetGroupUseCase - Async/Await", () => {
     }>,
   ): Group => {
     // Domain entities still use Effect internally - unwrap with runSync
-    const { Effect } = require("effect");
     const effect = Group.create({
       id: overrides?.id ?? "group-123",
       tripId: overrides?.tripId ?? "trip-123",
@@ -132,13 +143,13 @@ describe("[UNIT] GetGroupUseCase - Async/Await", () => {
         name: "My Group",
         tripId: "trip-456",
       });
-      await repo.create(mockGroup);
+      Effect.runSync(repo.create(mockGroup));
 
       const input: GetGroupInput = {
         groupId: "group-456",
       };
 
-      const result = await useCase.execute(input);
+      const result = await Effect.runPromise(useCase.execute(input));
 
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
@@ -161,7 +172,7 @@ describe("[UNIT] GetGroupUseCase - Async/Await", () => {
         groupId: "non-existent-id",
       };
 
-      const result = await useCase.execute(input);
+      const result = await Effect.runPromise(useCase.execute(input));
 
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
@@ -170,7 +181,6 @@ describe("[UNIT] GetGroupUseCase - Async/Await", () => {
     });
 
     it("should return deleted group if it exists", async () => {
-      const { Effect } = require("effect");
       const deletedGroup = Effect.runSync(
         Group.create({
           id: "group-deleted",
@@ -184,13 +194,13 @@ describe("[UNIT] GetGroupUseCase - Async/Await", () => {
           status: GroupStatus.DELETED,
         }),
       );
-      await repo.create(deletedGroup);
+      Effect.runSync(repo.create(deletedGroup));
 
       const input: GetGroupInput = {
         groupId: "group-deleted",
       };
 
-      const result = await useCase.execute(input);
+      const result = await Effect.runPromise(useCase.execute(input));
 
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
@@ -205,13 +215,13 @@ describe("[UNIT] GetGroupUseCase - Async/Await", () => {
         name: "Adventure Group",
         coins: 500,
       });
-      await repo.create(mockGroup);
+      Effect.runSync(repo.create(mockGroup));
 
       const input: GetGroupInput = {
         groupId: "group-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await Effect.runPromise(useCase.execute(input));
 
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
@@ -226,13 +236,13 @@ describe("[UNIT] GetGroupUseCase - Async/Await", () => {
         id: "group-legacy",
         name: "Legacy Test Group",
       });
-      await repo.create(mockGroup);
+      Effect.runSync(repo.create(mockGroup));
 
       const input: GetGroupInput = {
         groupId: "group-legacy",
       };
 
-      const result = await getGroupUseCase(input, repo);
+      const result = await Effect.runPromise(getGroupUseCase(input, repo));
 
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {

@@ -1,5 +1,6 @@
 import type { User } from "@mirai-app/domain";
 import { type Result, ok, err } from "@mirai-app/domain";
+import { Effect } from "effect";
 import type { UserRepository } from "../ports/UserRepository";
 
 /**
@@ -40,13 +41,13 @@ export class GetUserNotFoundError extends Error {
  * Retrieves a user by ID.
  * Returns error if user not found.
  *
- * ## Async/Await Pattern (Migrated from Effect)
+ * ## Effect.gen Pattern
  *
- * This use case uses constructor injection and returns Promise<Result<T,E>>:
+ * This use case uses constructor injection and returns Effect.Effect<Result<T,E>, never, never>:
  *
  * ```typescript
  * const useCase = new GetUserUseCase(userRepository);
- * const result = await useCase.execute({ userId: "123" });
+ * const result = await Effect.runPromise(useCase.execute({ userId: "123" }));
  *
  * if (result.kind === "ok") {
  *   console.log(result.value);
@@ -58,16 +59,18 @@ export class GetUserNotFoundError extends Error {
 export class GetUserUseCase {
   constructor(private readonly userRepo: UserRepository) {}
 
-  async execute(
+  execute(
     input: GetUserInput,
-  ): Promise<Result<GetUserOutput, GetUserNotFoundError>> {
-    const user = await this.userRepo.findById(input.userId);
+  ): Effect.Effect<Result<GetUserOutput, GetUserNotFoundError>, never, never> {
+    return Effect.gen(this, function* () {
+      const user = yield* this.userRepo.findById(input.userId);
 
-    if (!user) {
-      return err(new GetUserNotFoundError());
-    }
+      if (!user) {
+        return err(new GetUserNotFoundError());
+      }
 
-    return ok(toOutput(user));
+      return ok(toOutput(user));
+    });
   }
 }
 
@@ -75,10 +78,10 @@ export class GetUserUseCase {
  * Legacy function-based API for backward compatibility during migration
  * @deprecated Use GetUserUseCase class instead
  */
-export async function getUserUseCase(
+export function getUserUseCase(
   input: GetUserInput,
   userRepo: UserRepository,
-): Promise<Result<GetUserOutput, GetUserNotFoundError>> {
+): Effect.Effect<Result<GetUserOutput, GetUserNotFoundError>, never, never> {
   const useCase = new GetUserUseCase(userRepo);
   return useCase.execute(input);
 }

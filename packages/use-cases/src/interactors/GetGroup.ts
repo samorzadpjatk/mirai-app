@@ -1,4 +1,5 @@
 import { Group, type Result, ok, err } from "@mirai-app/domain";
+import { Effect } from "effect";
 import type { GroupRepository } from "../ports/GroupRepository";
 
 /**
@@ -43,13 +44,13 @@ export class GetGroupNotFoundError extends Error {
  * Retrieves a group by ID.
  * Returns error if group not found.
  *
- * ## Async/Await Pattern (Migrated from Effect)
+ * ## Effect.gen Pattern
  *
- * This use case uses constructor injection and returns Promise<Result<T,E>>:
+ * This use case uses constructor injection and returns Effect.Effect<Result<T,E>, never, never>:
  *
  * ```typescript
  * const useCase = new GetGroupUseCase(groupRepository);
- * const result = await useCase.execute({ groupId: "123" });
+ * const result = await Effect.runPromise(useCase.execute({ groupId: "123" }));
  *
  * if (result.kind === "ok") {
  *   console.log(result.value);
@@ -61,16 +62,22 @@ export class GetGroupNotFoundError extends Error {
 export class GetGroupUseCase {
   constructor(private readonly groupRepo: GroupRepository) {}
 
-  async execute(
+  execute(
     input: GetGroupInput,
-  ): Promise<Result<GetGroupOutput, GetGroupNotFoundError>> {
-    const group = await this.groupRepo.findById(input.groupId);
+  ): Effect.Effect<
+    Result<GetGroupOutput, GetGroupNotFoundError>,
+    never,
+    never
+  > {
+    return Effect.gen(this, function* () {
+      const group = yield* this.groupRepo.findById(input.groupId);
 
-    if (!group) {
-      return err(new GetGroupNotFoundError());
-    }
+      if (!group) {
+        return err(new GetGroupNotFoundError());
+      }
 
-    return ok(toOutput(group));
+      return ok(toOutput(group));
+    });
   }
 }
 
@@ -78,10 +85,10 @@ export class GetGroupUseCase {
  * Legacy function-based API for backward compatibility during migration
  * @deprecated Use GetGroupUseCase class instead
  */
-export async function getGroupUseCase(
+export function getGroupUseCase(
   input: GetGroupInput,
   groupRepo: GroupRepository,
-): Promise<Result<GetGroupOutput, GetGroupNotFoundError>> {
+): Effect.Effect<Result<GetGroupOutput, GetGroupNotFoundError>, never, never> {
   const useCase = new GetGroupUseCase(groupRepo);
   return useCase.execute(input);
 }

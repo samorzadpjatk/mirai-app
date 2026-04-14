@@ -1,19 +1,21 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import {
   getUserUseCase,
+  GetUserUseCase,
   type GetUserInput,
   GetUserNotFoundError,
 } from "./GetUser";
 import { User, UserRole } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
-import { UserRepositoryTag } from "../ports/UserRepository";
 import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-describe("[UNIT] getUserUseCase (Effect)", () => {
+describe("[UNIT] GetUserUseCase (Effect.gen)", () => {
   let repo: InMemoryUserRepository;
+  let useCase: GetUserUseCase;
 
   beforeEach(() => {
     repo = new InMemoryUserRepository();
+    useCase = new GetUserUseCase(repo);
   });
 
   const createValidUser = (
@@ -39,21 +41,7 @@ describe("[UNIT] getUserUseCase (Effect)", () => {
   };
 
   const runUseCase = async (input: GetUserInput) => {
-    const program = getUserUseCase(input).pipe(
-      Effect.provideService(UserRepositoryTag, {
-        create: (user: User) => repo.create(user),
-        findById: (id: string) => repo.findById(id),
-        findByAuthUserId: (authUserId: string) =>
-          repo.findByAuthUserId(authUserId),
-        findByRole: (role: UserRole) => repo.findByRole(role),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (user: User) => repo.update(user),
-        delete: (id: string) => repo.delete(id),
-        existsByAuthUserId: (authUserId: string) =>
-          repo.existsByAuthUserId(authUserId),
-      }),
-    );
+    const program = useCase.execute(input);
     return await Effect.runPromise(program);
   };
 
@@ -73,13 +61,16 @@ describe("[UNIT] getUserUseCase (Effect)", () => {
 
       const result = await runUseCase(input);
 
-      expect(result.id).toBe("user-456");
-      expect(result.authUserId).toBe("auth-456");
-      expect(result.firstName).toBe("Jane");
-      expect(result.lastName).toBe("Smith");
-      expect(result.fullName).toBe("Jane Smith");
-      expect(result.role).toBe("USER");
-      expect(result.hasAvatar).toBe(false);
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("user-456");
+        expect(result.value.authUserId).toBe("auth-456");
+        expect(result.value.firstName).toBe("Jane");
+        expect(result.value.lastName).toBe("Smith");
+        expect(result.value.fullName).toBe("Jane Smith");
+        expect(result.value.role).toBe("USER");
+        expect(result.value.hasAvatar).toBe(false);
+      }
     });
 
     it("should fail when user not found", async () => {
@@ -87,26 +78,11 @@ describe("[UNIT] getUserUseCase (Effect)", () => {
         userId: "non-existent-id",
       };
 
-      const program = getUserUseCase(input).pipe(
-        Effect.provideService(UserRepositoryTag, {
-          create: (user: User) => repo.create(user),
-          findById: (id: string) => repo.findById(id),
-          findByAuthUserId: (authUserId: string) =>
-            repo.findByAuthUserId(authUserId),
-          findByRole: (role: UserRole) => repo.findByRole(role),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (user: User) => repo.update(user),
-          delete: (id: string) => repo.delete(id),
-          existsByAuthUserId: (authUserId: string) =>
-            repo.existsByAuthUserId(authUserId),
-        }),
-      );
+      const result = await runUseCase(input);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(GetUserNotFoundError);
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(GetUserNotFoundError);
       }
     });
 
@@ -120,9 +96,12 @@ describe("[UNIT] getUserUseCase (Effect)", () => {
 
       const result = await runUseCase(input);
 
-      expect(result.id).toBe("user-789");
-      expect(result.lastSeenOn).toBeNull();
-      expect(result.createdAt).toBeInstanceOf(Date);
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("user-789");
+        expect(result.value.lastSeenOn).toBeNull();
+        expect(result.value.createdAt).toBeInstanceOf(Date);
+      }
     });
 
     it("should return user with empty full name when both names are empty", async () => {
@@ -142,7 +121,35 @@ describe("[UNIT] getUserUseCase (Effect)", () => {
 
       const result = await runUseCase(input);
 
-      expect(result.fullName).toBe("Unknown");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.fullName).toBe("Unknown");
+      }
+    });
+  });
+
+  describe("[UNIT] legacy getUserUseCase function", () => {
+    it("should work with legacy function API", async () => {
+      const mockUser = createValidUser({
+        id: "user-legacy",
+        authUserId: "auth-legacy",
+        firstName: "Legacy",
+        lastName: "User",
+      });
+      await Effect.runPromise(repo.create(mockUser));
+
+      const input: GetUserInput = {
+        userId: "user-legacy",
+      };
+
+      const program = getUserUseCase(input, repo);
+      const result = await Effect.runPromise(program);
+
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("user-legacy");
+        expect(result.value.firstName).toBe("Legacy");
+      }
     });
   });
 });
