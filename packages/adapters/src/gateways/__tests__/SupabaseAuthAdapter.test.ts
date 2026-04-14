@@ -5,7 +5,8 @@ import {
   InvalidTokenError,
   SessionExpiredError,
 } from "@mirai-app/use-cases/ports/AuthPort";
-import { AuthContext, UserRole, isOk, isErr, UserId } from "@mirai-app/domain";
+import { AuthContext, UserRole, UserId } from "@mirai-app/domain";
+import { Effect, Either } from "effect";
 import type {
   SupabaseClient,
   SupabaseUser,
@@ -118,18 +119,19 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken(token);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
+      expect(Either.isRight(either)).toBe(true);
       expect(mockSupabase.auth.getUser).toHaveBeenCalledTimes(1);
       expect(mockSupabase.auth.getUser).toHaveBeenCalledWith(token);
 
-      if (isOk(result)) {
-        expect(result.value).toBeInstanceOf(AuthContext);
-        expect(UserId.toString(result.value.userId)).toBe(
+      if (Either.isRight(either)) {
+        expect(either.right).toBeInstanceOf(AuthContext);
+        expect(UserId.toString(either.right.userId)).toBe(
           "550e8400-e29b-41d4-a716-446655440001",
         );
-        expect(result.value.role).toBe(UserRole.USER);
+        expect(either.right.role).toBe(UserRole.USER);
       }
     });
 
@@ -148,13 +150,14 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("admin-token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.role).toBe(UserRole.ADMIN);
-        expect(result.value.isAdmin()).toBe(true);
-        expect(result.value.isModerator()).toBe(true);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.role).toBe(UserRole.ADMIN);
+        expect(either.right.isAdmin()).toBe(true);
+        expect(either.right.isModerator()).toBe(true);
       }
     });
 
@@ -173,13 +176,14 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("moderator-token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.role).toBe(UserRole.MODERATOR);
-        expect(result.value.isAdmin()).toBe(false);
-        expect(result.value.isModerator()).toBe(true);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.role).toBe(UserRole.MODERATOR);
+        expect(either.right.isAdmin()).toBe(false);
+        expect(either.right.isModerator()).toBe(true);
       }
     });
 
@@ -199,11 +203,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert - should use app_metadata (ADMIN takes precedence)
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.role).toBe(UserRole.ADMIN);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.role).toBe(UserRole.ADMIN);
       }
     });
 
@@ -223,11 +228,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.role).toBe(UserRole.USER);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.role).toBe(UserRole.USER);
       }
     });
 
@@ -238,13 +244,14 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("Token cannot be empty");
-        expect(result.error.code).toBe("INVALID_TOKEN");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("Token cannot be empty");
+        expect(either.left.code).toBe("INVALID_TOKEN");
       }
     });
 
@@ -255,12 +262,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("   ");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("Token cannot be empty");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("Token cannot be empty");
       }
     });
 
@@ -277,12 +285,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("invalid-token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe(
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe(
           "Unauthorized: Invalid or expired token",
         );
       }
@@ -301,12 +310,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token-for-deleted-user");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("User not found");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("User not found");
       }
     });
 
@@ -320,12 +330,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("valid-but-no-user");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("Token valid but user not found");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("Token valid but user not found");
       }
     });
 
@@ -342,12 +353,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("banned-user-token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(AuthError);
-        expect(result.error.message).toBe(
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(AuthError);
+        expect(either.left.message).toBe(
           "Forbidden: User is banned or access denied",
         );
       }
@@ -366,12 +378,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("expired-token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("JWT token has expired");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("JWT token has expired");
       }
     });
 
@@ -388,12 +401,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("session-missing");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("Session missing or invalid");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("Session missing or invalid");
       }
     });
 
@@ -410,12 +424,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("malformed-jwt");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("Invalid JWT token format");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("Invalid JWT token format");
       }
     });
 
@@ -431,12 +446,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("any-token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(AuthError);
-        expect(result.error.message).toContain("Authentication failed");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(AuthError);
+        expect(either.left.message).toContain("Authentication failed");
       }
     });
 
@@ -452,12 +468,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(AuthError);
-        expect(result.error.message).toContain("Authentication failed");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(AuthError);
+        expect(either.left.message).toContain("Authentication failed");
       }
     });
 
@@ -473,11 +490,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(AuthError);
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(AuthError);
       }
     });
 
@@ -496,12 +514,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
         // Compare timestamps to handle both formats (with/without milliseconds)
-        expect(result.value.authenticatedAt.getTime()).toBe(
+        expect(either.right.authenticatedAt.getTime()).toBe(
           new Date(confirmedAt).getTime(),
         );
       }
@@ -522,15 +541,16 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
       const afterTest = new Date();
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.authenticatedAt.getTime()).toBeGreaterThanOrEqual(
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.authenticatedAt.getTime()).toBeGreaterThanOrEqual(
           beforeTest.getTime(),
         );
-        expect(result.value.authenticatedAt.getTime()).toBeLessThanOrEqual(
+        expect(either.right.authenticatedAt.getTime()).toBeLessThanOrEqual(
           afterTest.getTime(),
         );
       }
@@ -550,11 +570,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert - should normalize to uppercase
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.role).toBe(UserRole.ADMIN);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.role).toBe(UserRole.ADMIN);
       }
     });
   });
@@ -588,19 +609,20 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession("session-123");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
+      expect(Either.isRight(either)).toBe(true);
       expect(mockSupabase.auth.getSession).toHaveBeenCalledTimes(1);
       expect(mockSupabase.auth.getUser).toHaveBeenCalledWith(
         "session-access-token",
       );
 
-      if (isOk(result)) {
-        expect(UserId.toString(result.value.userId)).toBe(
+      if (Either.isRight(either)) {
+        expect(UserId.toString(either.right.userId)).toBe(
           "550e8400-e29b-41d4-a716-446655440010",
         );
-        expect(result.value.sessionId).toBe("session-123");
+        expect(either.right.sessionId).toBe("session-123");
       }
     });
 
@@ -617,13 +639,14 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession("session-456");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("No active session found");
-        expect(result.error.sessionId).toBe("session-456");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("No active session found");
+        expect(either.left.sessionId).toBe("session-456");
       }
     });
 
@@ -652,12 +675,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession("expired-session");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert - should get SessionExpiredError from validateToken path
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.sessionId).toBe("expired-session");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.sessionId).toBe("expired-session");
       }
     });
 
@@ -679,12 +703,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession("session-789");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("Session missing access token");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("Session missing access token");
       }
     });
 
@@ -704,12 +729,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession("invalid-session");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("Session missing or invalid");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("Session missing or invalid");
       }
     });
 
@@ -725,11 +751,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession("session-abc");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
       }
     });
 
@@ -754,11 +781,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession("my-session-id");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.sessionId).toBe("my-session-id");
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.sessionId).toBe("my-session-id");
       }
     });
 
@@ -784,12 +812,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession("session-xyz");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert - should wrap in SessionExpiredError
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toContain("Unauthorized");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toContain("Unauthorized");
       }
     });
   });
@@ -809,11 +838,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       const adapter = new SupabaseAuthAdapter(mockSupabase);
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error._tag).toBe("AuthError");
-        expect(result.error.code).toBe("AUTH_ERROR");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left._tag).toBe("AuthError");
+        expect(either.left.code).toBe("AUTH_ERROR");
       }
     });
 
@@ -829,11 +859,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       const adapter = new SupabaseAuthAdapter(mockSupabase);
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
         // Check that error message contains original error info
-        expect(result.error.message).toContain("Original Supabase error");
+        expect(either.left.message).toContain("Original Supabase error");
       }
     });
   });
@@ -858,12 +889,13 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(AuthError);
-        expect(result.error.message).toContain("missing required ID");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(AuthError);
+        expect(either.left.message).toContain("missing required ID");
       }
     });
 
@@ -881,11 +913,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken("token");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert - should default to USER
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.role).toBe(UserRole.USER);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.role).toBe(UserRole.USER);
       }
     });
 
@@ -919,11 +952,12 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
 
         const adapter = new SupabaseAuthAdapter(mockSupabase);
         const result = await adapter.validateToken("token");
+        const either = await Effect.runPromise(Effect.either(result));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error).toBeInstanceOf(InvalidTokenError);
-          expect(result.error.message).toBe(expectedMessage);
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left).toBeInstanceOf(InvalidTokenError);
+          expect(either.left.message).toBe(expectedMessage);
         }
       }
     });

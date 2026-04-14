@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect, Either } from "effect";
 import { InMemoryAuthAdapter } from "../auth/InMemoryAuthAdapter";
 import { InMemoryRealtimeAdapter } from "../realtime/InMemoryRealtimeAdapter";
 import { InMemoryStorageAdapter } from "../storage/InMemoryStorageAdapter";
@@ -8,7 +9,7 @@ import { SupabaseStorageAdapter } from "../storage/SupabaseStorageAdapter";
 import type { AuthPort } from "@mirai-app/use-cases/ports/AuthPort";
 import type { RealtimePort } from "@mirai-app/use-cases/ports/RealtimePort";
 import type { StoragePort } from "@mirai-app/use-cases/ports/StoragePort";
-import { UserId, UserRole, isOk, isErr } from "@mirai-app/domain";
+import { UserId, UserRole } from "@mirai-app/domain";
 
 /**
  * PortImplementationContractTests
@@ -41,38 +42,39 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         expect(typeof authPort.refreshSession).toBe("function");
       });
 
-      it("should return Result type from validateToken", async () => {
+      it("should return Effect type from validateToken", async () => {
         const userId = UserId.create("550e8400-e29b-41d4-a716-446655440001");
         inMemoryAdapter.createUser({ id: userId, role: UserRole.USER });
         const session = inMemoryAdapter.createSession(userId);
 
-        const result = await inMemoryAdapter.validateToken(session.token);
+        const effect = inMemoryAdapter.validateToken(session.token);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        // Result type compliance
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        // Effect type compliance
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
 
-      it("should return Result type from refreshSession", async () => {
+      it("should return Effect type from refreshSession", async () => {
         const userId = UserId.create("550e8400-e29b-41d4-a716-446655440002");
         inMemoryAdapter.createUser({ id: userId, role: UserRole.USER });
         const session = inMemoryAdapter.createSession(userId);
 
-        const result = await inMemoryAdapter.refreshSession(session.sessionId);
+        const effect = inMemoryAdapter.refreshSession(session.sessionId);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
     });
 
     describe("error handling consistency", () => {
       it("should return InvalidTokenError for invalid token", async () => {
-        const result = await inMemoryAdapter.validateToken("invalid-token");
+        const effect = inMemoryAdapter.validateToken("invalid-token");
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error._tag).toBe("InvalidTokenError");
-          expect(result.error.code).toBe("INVALID_TOKEN");
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("InvalidTokenError");
+          expect(either.left.code).toBe("INVALID_TOKEN");
         }
       });
 
@@ -81,23 +83,25 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         inMemoryAdapter.createUser({ id: userId, role: UserRole.USER });
         const session = inMemoryAdapter.createSession(userId, -1); // Expired
 
-        const result = await inMemoryAdapter.validateToken(session.token);
+        const effect = inMemoryAdapter.validateToken(session.token);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error._tag).toBe("SessionExpiredError");
-          expect(result.error.code).toBe("SESSION_EXPIRED");
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("SessionExpiredError");
+          expect(either.left.code).toBe("SESSION_EXPIRED");
         }
       });
 
       it("should return same error structure for empty token", async () => {
-        const result = await inMemoryAdapter.validateToken("");
+        const effect = inMemoryAdapter.validateToken("");
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error).toHaveProperty("_tag");
-          expect(result.error).toHaveProperty("code");
-          expect(result.error).toHaveProperty("message");
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left).toHaveProperty("_tag");
+          expect(either.left).toHaveProperty("code");
+          expect(either.left).toHaveProperty("message");
         }
       });
     });
@@ -108,16 +112,17 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         inMemoryAdapter.createUser({ id: userId, role: UserRole.USER });
         const session = inMemoryAdapter.createSession(userId);
 
-        const result = await inMemoryAdapter.validateToken(session.token);
+        const effect = inMemoryAdapter.validateToken(session.token);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value).toHaveProperty("userId");
-          expect(result.value).toHaveProperty("role");
-          expect(result.value).toHaveProperty("sessionId");
-          expect(result.value).toHaveProperty("authenticatedAt");
-          expect(result.value).toHaveProperty("isAdmin");
-          expect(result.value).toHaveProperty("isModerator");
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(either.right).toHaveProperty("userId");
+          expect(either.right).toHaveProperty("role");
+          expect(either.right).toHaveProperty("sessionId");
+          expect(either.right).toHaveProperty("authenticatedAt");
+          expect(either.right).toHaveProperty("isAdmin");
+          expect(either.right).toHaveProperty("isModerator");
         }
       });
 
@@ -126,11 +131,12 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         inMemoryAdapter.createUser({ id: userId, role: UserRole.USER });
         const session = inMemoryAdapter.createSession(userId);
 
-        const result = await inMemoryAdapter.validateToken(session.token);
+        const effect = inMemoryAdapter.validateToken(session.token);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(UserId.toString(result.value.userId)).toBe(
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(UserId.toString(either.right.userId)).toBe(
             "550e8400-e29b-41d4-a716-446655440005",
           );
         }
@@ -141,12 +147,13 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         inMemoryAdapter.createUser({ id: userId, role: UserRole.ADMIN });
         const session = inMemoryAdapter.createSession(userId);
 
-        const result = await inMemoryAdapter.validateToken(session.token);
+        const effect = inMemoryAdapter.validateToken(session.token);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value.role).toBe(UserRole.ADMIN);
-          expect(result.value.isAdmin()).toBe(true);
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(either.right.role).toBe(UserRole.ADMIN);
+          expect(either.right.isAdmin()).toBe(true);
         }
       });
     });
@@ -173,33 +180,29 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         expect(typeof realtimePort.getConnectionState).toBe("function");
       });
 
-      it("subscribe should return Result type", () => {
-        const result = inMemoryAdapter.subscribe("test-channel", {
+      it("subscribe should return Effect type", async () => {
+        const effect = inMemoryAdapter.subscribe("test-channel", {
           onMessage: () => {},
         });
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
 
-      it("broadcast should return Promise<Result>", async () => {
-        const result = await inMemoryAdapter.broadcast(
-          "test-channel",
-          "event",
-          {},
-        );
+      it("broadcast should return Effect type", async () => {
+        const effect = inMemoryAdapter.broadcast("test-channel", "event", {});
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
 
-      it("trackPresence should return Promise<Result>", async () => {
-        const result = await inMemoryAdapter.trackPresence("test-channel", {
+      it("trackPresence should return Effect type", async () => {
+        const effect = inMemoryAdapter.trackPresence("test-channel", {
           userId: "user-1",
         });
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
 
       it("getConnectionState should return ConnectionState", () => {
@@ -212,113 +215,123 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
     });
 
     describe("subscription consistency", () => {
-      it("should return RealtimeSubscription on successful subscribe", () => {
-        const result = inMemoryAdapter.subscribe("channel", {
+      it("should return RealtimeSubscription on successful subscribe", async () => {
+        const effect = inMemoryAdapter.subscribe("channel", {
           onMessage: () => {},
         });
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value).toHaveProperty("id");
-          expect(result.value).toHaveProperty("channel");
-          expect(result.value).toHaveProperty("state");
-          expect(result.value).toHaveProperty("unsubscribe");
-          expect(typeof result.value.unsubscribe).toBe("function");
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(either.right).toHaveProperty("id");
+          expect(either.right).toHaveProperty("channel");
+          expect(either.right).toHaveProperty("state");
+          expect(either.right).toHaveProperty("unsubscribe");
+          expect(typeof either.right.unsubscribe).toBe("function");
         }
       });
 
-      it("subscription should have CONNECTED state initially", () => {
-        const result = inMemoryAdapter.subscribe("channel", {
+      it("subscription should have CONNECTED state initially", async () => {
+        const effect = inMemoryAdapter.subscribe("channel", {
           onMessage: () => {},
         });
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value.state).toBe("CONNECTED");
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(either.right.state).toBe("CONNECTED");
         }
       });
 
-      it("should return SubscriptionError when connection is closed", () => {
+      it("should return SubscriptionError when connection is closed", async () => {
         inMemoryAdapter.setConnectionState("CLOSED");
 
-        const result = inMemoryAdapter.subscribe("channel", {
+        const effect = inMemoryAdapter.subscribe("channel", {
           onMessage: () => {},
         });
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error._tag).toBe("SubscriptionError");
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("SubscriptionError");
         }
       });
 
-      it("unsubscribe should return Result type", () => {
-        const subResult = inMemoryAdapter.subscribe("channel", {
+      it("unsubscribe should return Effect type", async () => {
+        const subEffect = inMemoryAdapter.subscribe("channel", {
           onMessage: () => {},
         });
+        const subEither = await Effect.runPromise(Effect.either(subEffect));
 
-        expect(isOk(subResult)).toBe(true);
-        if (isOk(subResult)) {
-          const unsubResult = subResult.value.unsubscribe();
-          expect(unsubResult).toHaveProperty("kind");
+        expect(Either.isRight(subEither)).toBe(true);
+        if (Either.isRight(subEither)) {
+          const unsubEffect = subEither.right.unsubscribe();
+          const unsubEither = await Effect.runPromise(
+            Effect.either(unsubEffect),
+          );
+          expect(
+            Either.isRight(unsubEither) || Either.isLeft(unsubEither),
+          ).toBe(true);
         }
       });
     });
 
     describe("broadcast consistency", () => {
-      it("should return ok for successful broadcast", async () => {
-        const result = await inMemoryAdapter.broadcast("channel", "event", {
+      it("should return success for successful broadcast", async () => {
+        const effect = inMemoryAdapter.broadcast("channel", "event", {
           data: "value",
         });
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value).toBeUndefined();
-        }
+        expect(Either.isRight(either)).toBe(true);
       });
 
       it("should deliver to subscribed handlers", async () => {
         const receivedMessages: unknown[] = [];
 
-        inMemoryAdapter.subscribe("channel", {
+        const subEffect = inMemoryAdapter.subscribe("channel", {
           onMessage: (event, payload) => {
             receivedMessages.push({ event, payload });
           },
         });
+        await Effect.runPromise(subEffect);
 
-        await inMemoryAdapter.broadcast("channel", "test-event", {
-          key: "value",
-        });
+        await Effect.runPromise(
+          inMemoryAdapter.broadcast("channel", "test-event", {
+            key: "value",
+          }),
+        );
 
         expect(receivedMessages).toHaveLength(1);
         expect((receivedMessages[0] as any).event).toBe("test-event");
       });
 
       it("should not fail when broadcasting to empty channel", async () => {
-        const result = await inMemoryAdapter.broadcast(
-          "empty-channel",
-          "event",
-          {},
-        );
+        const effect = inMemoryAdapter.broadcast("empty-channel", "event", {});
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
+        expect(Either.isRight(either)).toBe(true);
       });
     });
 
     describe("presence consistency", () => {
-      it("should return ok for successful presence tracking", async () => {
-        const result = await inMemoryAdapter.trackPresence("channel", {
+      it("should return success for successful presence tracking", async () => {
+        const effect = inMemoryAdapter.trackPresence("channel", {
           userId: "user-1",
           payload: { status: "online" },
         });
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
+        expect(Either.isRight(either)).toBe(true);
       });
 
       it("should store presence data", async () => {
-        await inMemoryAdapter.trackPresence("channel", {
-          userId: "user-1",
-          payload: { status: "online" },
-        });
+        await Effect.runPromise(
+          inMemoryAdapter.trackPresence("channel", {
+            userId: "user-1",
+            payload: { status: "online" },
+          }),
+        );
 
         const presenceData = inMemoryAdapter.getPresenceData("channel");
         expect(presenceData).toBeDefined();
@@ -349,109 +362,106 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         expect(typeof storagePort.createSignedUrl).toBe("function");
       });
 
-      it("upload should return Promise<Result<FileMetadata, ...>>", async () => {
-        const result = await inMemoryAdapter.upload(
+      it("upload should return Effect type", async () => {
+        const effect = inMemoryAdapter.upload(
           "bucket",
           "file.txt",
           Buffer.from("content"),
         );
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
 
-      it("download should return Promise<Result<Buffer | Blob, ...>>", async () => {
-        await inMemoryAdapter.upload(
-          "bucket",
-          "file.txt",
-          Buffer.from("content"),
+      it("download should return Effect type", async () => {
+        await Effect.runPromise(
+          inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("content")),
         );
-        const result = await inMemoryAdapter.download("bucket", "file.txt");
+        const effect = inMemoryAdapter.download("bucket", "file.txt");
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
 
-      it("delete should return Promise<Result<void, ...>>", async () => {
-        await inMemoryAdapter.upload(
-          "bucket",
-          "file.txt",
-          Buffer.from("content"),
+      it("delete should return Effect type", async () => {
+        await Effect.runPromise(
+          inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("content")),
         );
-        const result = await inMemoryAdapter.delete("bucket", ["file.txt"]);
+        const effect = inMemoryAdapter.delete("bucket", ["file.txt"]);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
 
-      it("createSignedUrl should return Promise<Result<SignedUrlInfo, ...>>", async () => {
-        await inMemoryAdapter.upload(
-          "bucket",
-          "file.txt",
-          Buffer.from("content"),
+      it("createSignedUrl should return Effect type", async () => {
+        await Effect.runPromise(
+          inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("content")),
         );
-        const result = await inMemoryAdapter.createSignedUrl(
+        const effect = inMemoryAdapter.createSignedUrl(
           "bucket",
           "file.txt",
           3600,
         );
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(result).toHaveProperty("kind");
-        expect(["ok", "err"]).toContain(result.kind);
+        expect(Either.isRight(either) || Either.isLeft(either)).toBe(true);
       });
     });
 
     describe("upload consistency", () => {
       it("should return FileMetadata on successful upload", async () => {
-        const result = await inMemoryAdapter.upload(
+        const effect = inMemoryAdapter.upload(
           "bucket",
           "file.txt",
           Buffer.from("test content"),
         );
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value).toHaveProperty("path");
-          expect(result.value).toHaveProperty("bucket");
-          expect(result.value).toHaveProperty("size");
-          expect(result.value).toHaveProperty("createdAt");
-          expect(result.value).toHaveProperty("updatedAt");
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(either.right).toHaveProperty("path");
+          expect(either.right).toHaveProperty("bucket");
+          expect(either.right).toHaveProperty("size");
+          expect(either.right).toHaveProperty("createdAt");
+          expect(either.right).toHaveProperty("updatedAt");
         }
       });
 
       it("should return UploadError when file exists and upsert is false", async () => {
-        await inMemoryAdapter.upload(
-          "bucket",
-          "file.txt",
-          Buffer.from("content"),
+        await Effect.runPromise(
+          inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("content")),
         );
 
-        const result = await inMemoryAdapter.upload(
+        const effect = inMemoryAdapter.upload(
           "bucket",
           "file.txt",
           Buffer.from("new content"),
           { upsert: false },
         );
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error._tag).toBe("UploadError");
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("UploadError");
         }
       });
 
       it("should overwrite when upsert is true", async () => {
-        await inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("old"));
+        await Effect.runPromise(
+          inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("old")),
+        );
 
-        const result = await inMemoryAdapter.upload(
+        const effect = inMemoryAdapter.upload(
           "bucket",
           "file.txt",
           Buffer.from("new content"),
           { upsert: true },
         );
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value.size).toBe(11); // "new content"
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(either.right.size).toBe(11); // "new content"
         }
       });
     });
@@ -459,95 +469,90 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
     describe("download consistency", () => {
       it("should return file content on successful download", async () => {
         const content = "test file content";
-        await inMemoryAdapter.upload(
-          "bucket",
-          "file.txt",
-          Buffer.from(content),
+        await Effect.runPromise(
+          inMemoryAdapter.upload("bucket", "file.txt", Buffer.from(content)),
         );
 
-        const result = await inMemoryAdapter.download("bucket", "file.txt");
+        const effect = inMemoryAdapter.download("bucket", "file.txt");
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value.toString()).toBe(content);
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(either.right.data.toString()).toBe(content);
         }
       });
 
       it("should return FileNotFoundError for non-existent file", async () => {
-        const result = await inMemoryAdapter.download(
-          "bucket",
-          "non-existent.txt",
-        );
+        const effect = inMemoryAdapter.download("bucket", "non-existent.txt");
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error._tag).toBe("FileNotFoundError");
-          expect(result.error.code).toBe("FILE_NOT_FOUND");
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("FileNotFoundError");
+          expect(either.left.code).toBe("FILE_NOT_FOUND");
         }
       });
     });
 
     describe("delete consistency", () => {
       it("should remove file on successful delete", async () => {
-        await inMemoryAdapter.upload(
-          "bucket",
-          "file.txt",
-          Buffer.from("content"),
+        await Effect.runPromise(
+          inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("content")),
         );
         expect(inMemoryAdapter.fileExists("bucket", "file.txt")).toBe(true);
 
-        const result = await inMemoryAdapter.delete("bucket", ["file.txt"]);
+        const effect = inMemoryAdapter.delete("bucket", ["file.txt"]);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
+        expect(Either.isRight(either)).toBe(true);
         expect(inMemoryAdapter.fileExists("bucket", "file.txt")).toBe(false);
       });
 
       it("should return FileNotFoundError for non-existent files", async () => {
-        const result = await inMemoryAdapter.delete("bucket", [
-          "non-existent.txt",
-        ]);
+        const effect = inMemoryAdapter.delete("bucket", ["non-existent.txt"]);
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error._tag).toBe("FileNotFoundError");
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("FileNotFoundError");
         }
       });
     });
 
     describe("signed URL consistency", () => {
       it("should return SignedUrlInfo on success", async () => {
-        await inMemoryAdapter.upload(
-          "bucket",
-          "file.txt",
-          Buffer.from("content"),
+        await Effect.runPromise(
+          inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("content")),
         );
 
-        const result = await inMemoryAdapter.createSignedUrl(
+        const effect = inMemoryAdapter.createSignedUrl(
           "bucket",
           "file.txt",
           3600,
         );
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value).toHaveProperty("url");
-          expect(result.value).toHaveProperty("expiresAt");
-          expect(result.value).toHaveProperty("expiresInSeconds");
-          expect(result.value.expiresInSeconds).toBe(3600);
-          expect(result.value.expiresAt).toBeInstanceOf(Date);
+        expect(Either.isRight(either)).toBe(true);
+        if (Either.isRight(either)) {
+          expect(either.right).toHaveProperty("url");
+          expect(either.right).toHaveProperty("expiresAt");
+          expect(either.right).toHaveProperty("expiresInSeconds");
+          expect(either.right.expiresInSeconds).toBe(3600);
+          expect(either.right.expiresAt).toBeInstanceOf(Date);
         }
       });
 
       it("should return FileNotFoundError for non-existent file", async () => {
-        const result = await inMemoryAdapter.createSignedUrl(
+        const effect = inMemoryAdapter.createSignedUrl(
           "bucket",
           "non-existent.txt",
           3600,
         );
+        const either = await Effect.runPromise(Effect.either(effect));
 
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error._tag).toBe("FileNotFoundError");
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("FileNotFoundError");
         }
       });
     });
@@ -568,8 +573,9 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         const session = adapter1.createSession(userId);
 
         // adapter2 should not see adapter1's data
-        const result = await adapter2.validateToken(session.token);
-        expect(isErr(result)).toBe(true);
+        const effect = adapter2.validateToken(session.token);
+        const either = await Effect.runPromise(Effect.either(effect));
+        expect(Either.isLeft(either)).toBe(true);
       });
 
       it("should clear all state on clear()", () => {
@@ -594,20 +600,22 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         const adapter2 = new InMemoryRealtimeAdapter();
 
         let received = false;
-        adapter1.subscribe("channel", {
+        const subEffect = adapter1.subscribe("channel", {
           onMessage: () => {
             received = true;
           },
         });
+        await Effect.runPromise(subEffect);
 
-        await adapter2.broadcast("channel", "event", {});
+        await Effect.runPromise(adapter2.broadcast("channel", "event", {}));
 
         expect(received).toBe(false);
       });
 
-      it("should clear all state on clear()", () => {
+      it("should clear all state on clear()", async () => {
         const adapter = new InMemoryRealtimeAdapter();
-        adapter.subscribe("channel", { onMessage: () => {} });
+        const subEffect = adapter.subscribe("channel", { onMessage: () => {} });
+        await Effect.runPromise(subEffect);
 
         expect(adapter.getSubscribers("channel")).toHaveLength(1);
 
@@ -623,7 +631,9 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
         const adapter1 = new InMemoryStorageAdapter();
         const adapter2 = new InMemoryStorageAdapter();
 
-        await adapter1.upload("bucket", "file.txt", Buffer.from("content"));
+        await Effect.runPromise(
+          adapter1.upload("bucket", "file.txt", Buffer.from("content")),
+        );
 
         expect(adapter1.fileExists("bucket", "file.txt")).toBe(true);
         expect(adapter2.fileExists("bucket", "file.txt")).toBe(false);
@@ -631,7 +641,9 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
 
       it("should clear all state on clear()", async () => {
         const adapter = new InMemoryStorageAdapter();
-        await adapter.upload("bucket", "file.txt", Buffer.from("content"));
+        await Effect.runPromise(
+          adapter.upload("bucket", "file.txt", Buffer.from("content")),
+        );
 
         expect(adapter.fileExists("bucket", "file.txt")).toBe(true);
 
@@ -655,27 +667,31 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       const storageAdapter = new InMemoryStorageAdapter();
 
       // Auth error
-      const authResult = await authAdapter.validateToken("invalid");
-      if (isErr(authResult)) {
-        expect(authResult.error).toHaveProperty("_tag");
+      const authEffect = authAdapter.validateToken("invalid");
+      const authEither = await Effect.runPromise(Effect.either(authEffect));
+      if (Either.isLeft(authEither)) {
+        expect(authEither.left).toHaveProperty("_tag");
       }
 
       // Realtime error
       realtimeAdapter.setConnectionState("CLOSED");
-      const realtimeResult = realtimeAdapter.subscribe("channel", {
+      const realtimeEffect = realtimeAdapter.subscribe("channel", {
         onMessage: () => {},
       });
-      if (isErr(realtimeResult)) {
-        expect(realtimeResult.error).toHaveProperty("_tag");
+      const realtimeEither = await Effect.runPromise(
+        Effect.either(realtimeEffect),
+      );
+      if (Either.isLeft(realtimeEither)) {
+        expect(realtimeEither.left).toHaveProperty("_tag");
       }
 
       // Storage error
-      const storageResult = await storageAdapter.download(
-        "bucket",
-        "missing.txt",
+      const storageEffect = storageAdapter.download("bucket", "missing.txt");
+      const storageEither = await Effect.runPromise(
+        Effect.either(storageEffect),
       );
-      if (isErr(storageResult)) {
-        expect(storageResult.error).toHaveProperty("_tag");
+      if (Either.isLeft(storageEither)) {
+        expect(storageEither.left).toHaveProperty("_tag");
       }
     });
 
@@ -683,17 +699,18 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       const authAdapter = new InMemoryAuthAdapter();
       const storageAdapter = new InMemoryStorageAdapter();
 
-      const authResult = await authAdapter.validateToken("invalid");
-      if (isErr(authResult)) {
-        expect(authResult.error).toHaveProperty("code");
+      const authEffect = authAdapter.validateToken("invalid");
+      const authEither = await Effect.runPromise(Effect.either(authEffect));
+      if (Either.isLeft(authEither)) {
+        expect(authEither.left).toHaveProperty("code");
       }
 
-      const storageResult = await storageAdapter.download(
-        "bucket",
-        "missing.txt",
+      const storageEffect = storageAdapter.download("bucket", "missing.txt");
+      const storageEither = await Effect.runPromise(
+        Effect.either(storageEffect),
       );
-      if (isErr(storageResult)) {
-        expect(storageResult.error).toHaveProperty("code");
+      if (Either.isLeft(storageEither)) {
+        expect(storageEither.left).toHaveProperty("code");
       }
     });
 
@@ -701,29 +718,30 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       const authAdapter = new InMemoryAuthAdapter();
       const storageAdapter = new InMemoryStorageAdapter();
 
-      const authResult = await authAdapter.validateToken("invalid");
-      if (isErr(authResult)) {
-        expect(authResult.error).toHaveProperty("message");
-        expect(typeof authResult.error.message).toBe("string");
+      const authEffect = authAdapter.validateToken("invalid");
+      const authEither = await Effect.runPromise(Effect.either(authEffect));
+      if (Either.isLeft(authEither)) {
+        expect(authEither.left).toHaveProperty("message");
+        expect(typeof authEither.left.message).toBe("string");
       }
 
-      const storageResult = await storageAdapter.download(
-        "bucket",
-        "missing.txt",
+      const storageEffect = storageAdapter.download("bucket", "missing.txt");
+      const storageEither = await Effect.runPromise(
+        Effect.either(storageEffect),
       );
-      if (isErr(storageResult)) {
-        expect(storageResult.error).toHaveProperty("message");
-        expect(typeof storageResult.error.message).toBe("string");
+      if (Either.isLeft(storageEither)) {
+        expect(storageEither.left).toHaveProperty("message");
+        expect(typeof storageEither.left.message).toBe("string");
       }
     });
   });
 
   // =============================================================================
-  // Result Type Consistency
+  // Effect Type Consistency
   // =============================================================================
 
-  describe("Result type consistency across all ports", () => {
-    it("all adapters should use Result<T, E> pattern", async () => {
+  describe("Effect type consistency across all ports", () => {
+    it("all adapters should use Effect<A, E> pattern", async () => {
       const authAdapter = new InMemoryAuthAdapter();
       const realtimeAdapter = new InMemoryRealtimeAdapter();
       const storageAdapter = new InMemoryStorageAdapter();
@@ -733,25 +751,38 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       const session = authAdapter.createSession(userId);
 
       // Auth: validateToken
-      const authResult = await authAdapter.validateToken(session.token);
-      expect(authResult).toHaveProperty("kind");
+      const authEffect = authAdapter.validateToken(session.token);
+      const authEither = await Effect.runPromise(Effect.either(authEffect));
+      expect(Either.isRight(authEither) || Either.isLeft(authEither)).toBe(
+        true,
+      );
 
-      // Realtime: subscribe (synchronous Result)
-      const realtimeResult = realtimeAdapter.subscribe("channel", {
+      // Realtime: subscribe
+      const realtimeEffect = realtimeAdapter.subscribe("channel", {
         onMessage: () => {},
       });
-      expect(realtimeResult).toHaveProperty("kind");
+      const realtimeEither = await Effect.runPromise(
+        Effect.either(realtimeEffect),
+      );
+      expect(
+        Either.isRight(realtimeEither) || Either.isLeft(realtimeEither),
+      ).toBe(true);
 
       // Storage: upload
-      const storageResult = await storageAdapter.upload(
+      const storageEffect = storageAdapter.upload(
         "bucket",
         "file.txt",
         Buffer.from("content"),
       );
-      expect(storageResult).toHaveProperty("kind");
+      const storageEither = await Effect.runPromise(
+        Effect.either(storageEffect),
+      );
+      expect(
+        Either.isRight(storageEither) || Either.isLeft(storageEither),
+      ).toBe(true);
     });
 
-    it("ok results should have value property", async () => {
+    it("right results should have value property", async () => {
       const authAdapter = new InMemoryAuthAdapter();
       const storageAdapter = new InMemoryStorageAdapter();
 
@@ -759,36 +790,41 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       authAdapter.createUser({ id: userId, role: UserRole.USER });
       const session = authAdapter.createSession(userId);
 
-      const authResult = await authAdapter.validateToken(session.token);
-      if (isOk(authResult)) {
-        expect(authResult).toHaveProperty("value");
+      const authEffect = authAdapter.validateToken(session.token);
+      const authEither = await Effect.runPromise(Effect.either(authEffect));
+      if (Either.isRight(authEither)) {
+        expect(authEither.right).toBeDefined();
       }
 
-      const storageResult = await storageAdapter.upload(
+      const storageEffect = storageAdapter.upload(
         "bucket",
         "file.txt",
         Buffer.from("content"),
       );
-      if (isOk(storageResult)) {
-        expect(storageResult).toHaveProperty("value");
+      const storageEither = await Effect.runPromise(
+        Effect.either(storageEffect),
+      );
+      if (Either.isRight(storageEither)) {
+        expect(storageEither.right).toBeDefined();
       }
     });
 
-    it("err results should have error property", async () => {
+    it("left results should have error property", async () => {
       const authAdapter = new InMemoryAuthAdapter();
       const storageAdapter = new InMemoryStorageAdapter();
 
-      const authResult = await authAdapter.validateToken("invalid");
-      if (isErr(authResult)) {
-        expect(authResult).toHaveProperty("error");
+      const authEffect = authAdapter.validateToken("invalid");
+      const authEither = await Effect.runPromise(Effect.either(authEffect));
+      if (Either.isLeft(authEither)) {
+        expect(authEither.left).toBeDefined();
       }
 
-      const storageResult = await storageAdapter.download(
-        "bucket",
-        "missing.txt",
+      const storageEffect = storageAdapter.download("bucket", "missing.txt");
+      const storageEither = await Effect.runPromise(
+        Effect.either(storageEffect),
       );
-      if (isErr(storageResult)) {
-        expect(storageResult).toHaveProperty("error");
+      if (Either.isLeft(storageEither)) {
+        expect(storageEither.left).toBeDefined();
       }
     });
   });

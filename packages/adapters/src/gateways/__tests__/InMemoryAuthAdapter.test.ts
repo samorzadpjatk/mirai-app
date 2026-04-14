@@ -5,7 +5,8 @@ import {
   InvalidTokenError,
   SessionExpiredError,
 } from "@mirai-app/use-cases/ports/AuthPort";
-import { AuthContext, UserRole, isOk, isErr, UserId } from "@mirai-app/domain";
+import { AuthContext, UserRole, UserId } from "@mirai-app/domain";
+import { Effect, Either } from "effect";
 
 describe("[UNIT] InMemoryAuthAdapter", () => {
   let adapter: InMemoryAuthAdapter;
@@ -41,15 +42,16 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken(session.token);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value).toBeInstanceOf(AuthContext);
-        expect(UserId.toString(result.value.userId)).toBe(
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right).toBeInstanceOf(AuthContext);
+        expect(UserId.toString(either.right.userId)).toBe(
           "550e8400-e29b-41d4-a716-446655440001",
         );
-        expect(result.value.role).toBe(UserRole.USER);
+        expect(either.right.role).toBe(UserRole.USER);
       }
     });
 
@@ -61,13 +63,14 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken(session.token);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.role).toBe(UserRole.ADMIN);
-        expect(result.value.isAdmin()).toBe(true);
-        expect(result.value.isModerator()).toBe(true);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.role).toBe(UserRole.ADMIN);
+        expect(either.right.isAdmin()).toBe(true);
+        expect(either.right.isModerator()).toBe(true);
       }
     });
 
@@ -79,52 +82,56 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken(session.token);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.role).toBe(UserRole.MODERATOR);
-        expect(result.value.isAdmin()).toBe(false);
-        expect(result.value.isModerator()).toBe(true);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.role).toBe(UserRole.MODERATOR);
+        expect(either.right.isAdmin()).toBe(false);
+        expect(either.right.isModerator()).toBe(true);
       }
     });
 
     it("should return InvalidTokenError when token is empty", async () => {
       // Act
       const result = await adapter.validateToken("");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("Token cannot be empty");
-        expect(result.error.code).toBe("INVALID_TOKEN");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("Token cannot be empty");
+        expect(either.left.code).toBe("INVALID_TOKEN");
       }
     });
 
     it("should return InvalidTokenError when token is whitespace only", async () => {
       // Act
       const result = await adapter.validateToken("   ");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("Token cannot be empty");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("Token cannot be empty");
       }
     });
 
     it("should return InvalidTokenError for unknown token", async () => {
       // Act
       const result = await adapter.validateToken("unknown-token-123");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("Invalid or unknown token");
-        if (result.error._tag === "InvalidTokenError") {
-          expect(result.error.token).toBe("unknown-token-123");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("Invalid or unknown token");
+        if (either.left._tag === "InvalidTokenError") {
+          expect(either.left.token).toBe("unknown-token-123");
         }
       }
     });
@@ -141,12 +148,13 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken(session.token);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(InvalidTokenError);
-        expect(result.error.message).toBe("User not found");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(InvalidTokenError);
+        expect(either.left.message).toBe("User not found");
       }
     });
 
@@ -160,14 +168,15 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken(session.token);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("Session has expired");
-        if (result.error._tag === "SessionExpiredError") {
-          expect(result.error.sessionId).toBe(session.sessionId);
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("Session has expired");
+        if (either.left._tag === "SessionExpiredError") {
+          expect(either.left.sessionId).toBe(session.sessionId);
         }
       }
     });
@@ -180,11 +189,12 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken(session.token);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.sessionId).toBe(session.sessionId);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.sessionId).toBe(session.sessionId);
       }
     });
 
@@ -198,14 +208,15 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.validateToken(session.token);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.authenticatedAt.getTime()).toBeGreaterThanOrEqual(
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.authenticatedAt.getTime()).toBeGreaterThanOrEqual(
           beforeCreate.getTime(),
         );
-        expect(result.value.authenticatedAt.getTime()).toBeLessThanOrEqual(
+        expect(either.right.authenticatedAt.getTime()).toBeLessThanOrEqual(
           afterCreate.getTime(),
         );
       }
@@ -225,28 +236,30 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession(session.sessionId);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(UserId.toString(result.value.userId)).toBe(
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(UserId.toString(either.right.userId)).toBe(
           "550e8400-e29b-41d4-a716-446655440010",
         );
-        expect(result.value.sessionId).toBe(session.sessionId);
+        expect(either.right.sessionId).toBe(session.sessionId);
       }
     });
 
     it("should return SessionExpiredError when session is missing", async () => {
       // Act
       const result = await adapter.refreshSession("non-existent-session");
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("No active session found");
-        if (result.error._tag === "SessionExpiredError") {
-          expect(result.error.sessionId).toBe("non-existent-session");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("No active session found");
+        if (either.left._tag === "SessionExpiredError") {
+          expect(either.left.sessionId).toBe("non-existent-session");
         }
       }
     });
@@ -259,14 +272,15 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession(session.sessionId);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("Session has expired");
-        if (result.error._tag === "SessionExpiredError") {
-          expect(result.error.sessionId).toBe(session.sessionId);
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("Session has expired");
+        if (either.left._tag === "SessionExpiredError") {
+          expect(either.left.sessionId).toBe(session.sessionId);
         }
       }
     });
@@ -281,12 +295,13 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession(session.sessionId);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(SessionExpiredError);
-        expect(result.error.message).toBe("User not found");
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(SessionExpiredError);
+        expect(either.left.message).toBe("User not found");
       }
     });
 
@@ -298,11 +313,12 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       // Act
       const result = await adapter.refreshSession(session.sessionId);
+      const either = await Effect.runPromise(Effect.either(result));
 
       // Assert
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.sessionId).toBe(session.sessionId);
+      expect(Either.isRight(either)).toBe(true);
+      if (Either.isRight(either)) {
+        expect(either.right.sessionId).toBe(session.sessionId);
       }
     });
   });
@@ -632,10 +648,13 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     it("should use correct error tags for all error types", async () => {
       // InvalidTokenError
       const invalidTokenResult = await adapter.validateToken("unknown");
-      expect(isErr(invalidTokenResult)).toBe(true);
-      if (isErr(invalidTokenResult)) {
-        expect(invalidTokenResult.error._tag).toBe("InvalidTokenError");
-        expect(invalidTokenResult.error.code).toBe("INVALID_TOKEN");
+      const invalidTokenEither = await Effect.runPromise(
+        Effect.either(invalidTokenResult),
+      );
+      expect(Either.isLeft(invalidTokenEither)).toBe(true);
+      if (Either.isLeft(invalidTokenEither)) {
+        expect(invalidTokenEither.left._tag).toBe("InvalidTokenError");
+        expect(invalidTokenEither.left.code).toBe("INVALID_TOKEN");
       }
 
       // SessionExpiredError
@@ -643,10 +662,13 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       adapter.createUser({ id: userId });
       const session = adapter.createSession(userId, -1);
       const expiredResult = await adapter.validateToken(session.token);
-      expect(isErr(expiredResult)).toBe(true);
-      if (isErr(expiredResult)) {
-        expect(expiredResult.error._tag).toBe("SessionExpiredError");
-        expect(expiredResult.error.code).toBe("SESSION_EXPIRED");
+      const expiredEither = await Effect.runPromise(
+        Effect.either(expiredResult),
+      );
+      expect(Either.isLeft(expiredEither)).toBe(true);
+      if (Either.isLeft(expiredEither)) {
+        expect(expiredEither.left._tag).toBe("SessionExpiredError");
+        expect(expiredEither.left.code).toBe("SESSION_EXPIRED");
       }
     });
   });
@@ -673,9 +695,19 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       const modResult = await adapter.validateToken(modSession.token);
       const userResult = await adapter.validateToken(userSession.token);
 
-      expect(isOk(adminResult) && adminResult.value.role).toBe(UserRole.ADMIN);
-      expect(isOk(modResult) && modResult.value.role).toBe(UserRole.MODERATOR);
-      expect(isOk(userResult) && userResult.value.role).toBe(UserRole.USER);
+      const adminEither = await Effect.runPromise(Effect.either(adminResult));
+      const modEither = await Effect.runPromise(Effect.either(modResult));
+      const userEither = await Effect.runPromise(Effect.either(userResult));
+
+      expect(Either.isRight(adminEither) && adminEither.right.role).toBe(
+        UserRole.ADMIN,
+      );
+      expect(Either.isRight(modEither) && modEither.right.role).toBe(
+        UserRole.MODERATOR,
+      );
+      expect(Either.isRight(userEither) && userEither.right.role).toBe(
+        UserRole.USER,
+      );
     });
 
     it("should handle multiple sessions for same user", async () => {
@@ -688,10 +720,13 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       const result1 = await adapter.validateToken(session1.token);
       const result2 = await adapter.validateToken(session2.token);
 
-      expect(isOk(result1)).toBe(true);
-      expect(isOk(result2)).toBe(true);
-      if (isOk(result1) && isOk(result2)) {
-        expect(result1.value.sessionId).not.toBe(result2.value.sessionId);
+      const either1 = await Effect.runPromise(Effect.either(result1));
+      const either2 = await Effect.runPromise(Effect.either(result2));
+
+      expect(Either.isRight(either1)).toBe(true);
+      expect(Either.isRight(either2)).toBe(true);
+      if (Either.isRight(either1) && Either.isRight(either2)) {
+        expect(either1.right.sessionId).not.toBe(either2.right.sessionId);
       }
     });
 
@@ -716,7 +751,8 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       // adapter2 should not see adapter1's state
       expect(adapter2.hasUser(userId)).toBe(false);
       const result = await adapter2.validateToken(session.token);
-      expect(isErr(result)).toBe(true);
+      const either = await Effect.runPromise(Effect.either(result));
+      expect(Either.isLeft(either)).toBe(true);
     });
 
     it("should handle beforeEach cleanup correctly", async () => {
@@ -726,7 +762,8 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       const session = adapter.createSession(userId);
 
       const result = await adapter.validateToken(session.token);
-      expect(isOk(result)).toBe(true);
+      const either = await Effect.runPromise(Effect.either(result));
+      expect(Either.isRight(either)).toBe(true);
     });
   });
 });
