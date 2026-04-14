@@ -14,7 +14,7 @@ src/
 ├── components/   # Reusable UI components
 ├── screens/      # Screen-level components
 ├── navigation/   # Navigation configuration
-└── __tests__/    # Jest test files
+└── test/         # Bun test files
 ```
 
 ### Platform-Specific Files
@@ -27,35 +27,46 @@ src/
 
 ---
 
-## Jest Testing Setup
+## Bun Testing Setup
 
 ### Test Commands
 
 ```bash
-cd apps/native && npm test       # Run all tests
-npm test -- --coverage         # With coverage
-npm test -- --testPathPattern  # Specific file
-npm run test:watch             # Watch mode
+bun test                       # Run all tests
+bun test:unit                  # Run unit tests only
+bun test --coverage            # With coverage
+bun test --watch               # Watch mode
 ```
 
 ### Test File Locations
 
 | Type      | Pattern      | Example                           |
 | --------- | ------------ | --------------------------------- |
-| Unit      | `*.test.ts`  | `utils/helpers.test.ts`           |
-| Component | `*.test.tsx` | `components/Button.test.tsx`      |
-| Screen    | `*.test.tsx` | `__tests__/screens/Home.test.tsx` |
+| Unit      | `*.test.ts`  | `test/smoke.test.ts`              |
+| Component | `*.test.tsx` | `test/components/Button.test.tsx` |
+
+### Test Infrastructure
+
+Tests use **Bun** test runner with **Happy DOM** for browser-like environment:
+
+- **Setup**: `test/setup.ts` - Happy DOM registration and globals
+- **TestWrapper**: `test/TestWrapper.tsx` (re-exports from `@mirai-app/ui/test`)
 
 ### Component Testing
 
 ```tsx
-import { render, fireEvent } from "@testing-library/react-native";
+import { describe, it, expect } from "bun:test";
+import { TestWrapper } from "@mirai-app/ui/test";
+import { Button } from "@mirai-app/ui";
+
 describe("[UNIT] Button", () => {
-  it("handles press", () => {
-    const onPress = jest.fn();
-    render(<Button title="Tap" onPress={onPress} />);
-    fireEvent.press(screen.getByText("Tap"));
-    expect(onPress).toHaveBeenCalled();
+  it("renders with TamaguiProvider", () => {
+    const { container } = render(
+      <TestWrapper>
+        <Button>Click me</Button>
+      </TestWrapper>,
+    );
+    expect(container.firstChild).toBeDefined();
   });
 });
 ```

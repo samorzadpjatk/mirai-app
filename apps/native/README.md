@@ -9,7 +9,7 @@ PJATK Student Government mobile application built with Expo and React Native.
 - **Expo Router 6** - file-based routing
 - **tRPC + Supabase** - backend and authentication
 - **TypeScript** - static typing
-- **Jest** & **React Native Testing Library** - testing
+- **Bun test** & **React Native Testing Library** - testing
 
 ## Requirements
 
