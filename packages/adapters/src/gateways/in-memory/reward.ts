@@ -5,7 +5,12 @@ import type {
   PaginatedResult,
 } from "@mirai-app/use-cases";
 import { DatabaseError } from "@mirai-app/use-cases/ports/RewardRepository";
-import type { Reward, RewardPurchase, RewardId } from "@mirai-app/domain";
+import {
+  Reward,
+  type RewardPurchase,
+  type RewardId,
+  CoinAmount,
+} from "@mirai-app/domain";
 import { Effect } from "effect";
 
 /**
@@ -28,6 +33,39 @@ export class InMemoryRewardRepository implements RewardRepository {
   private rewards = new Map<string, Reward>();
   private purchases = new Map<string, RewardPurchase>();
 
+  /**
+   * Reconstruct a Reward entity from plain object storage.
+   * Uses reconstitute() factory to bypass validation and ensure proper instance.
+   */
+  private reconstruct(
+    plain: unknown,
+  ): Effect.Effect<Reward, DatabaseError, never> {
+    const p = plain as Record<string, unknown>;
+    try {
+      const reward = Reward.reconstitute({
+        id: p.id as RewardId,
+        name: p.name as string,
+        description: p.description as string | null,
+        availableQuantity: p.availableQuantity as number,
+        coinCostPercentage: p.coinCostPercentage as CoinAmount,
+        images: p.images as string[],
+        isHidden: p.isHidden as boolean,
+        tripId: p.tripId as string,
+        createdById: p.createdById as string,
+        createdAt: p.createdAt as Date,
+        updatedAt: p.updatedAt as Date,
+      });
+      return Effect.succeed(reward);
+    } catch (error) {
+      return Effect.fail(
+        new DatabaseError({
+          operation: "reconstruct",
+          message: `Failed to reconstruct Reward: ${error instanceof Error ? error.message : String(error)}`,
+        }),
+      );
+    }
+  }
+
   reset(): void {
     this.rewards.clear();
     this.purchases.clear();
@@ -49,27 +87,38 @@ export class InMemoryRewardRepository implements RewardRepository {
   }
 
   findById(id: RewardId): Effect.Effect<Reward | null, DatabaseError, never> {
-    return Effect.succeed(this.rewards.get(id) ?? null);
+    return Effect.gen(this, function* () {
+      const plain = this.rewards.get(id);
+      if (!plain) return null;
+      return yield* this.reconstruct(plain);
+    });
   }
 
   findByTripId(
     tripId: string,
     options?: { includeHidden?: boolean } & PaginationOptions,
   ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never> {
-    return Effect.succeed(() => {
-      let items = Array.from(this.rewards.values()).filter(
-        (r) => r.tripId === tripId,
+    return Effect.gen(this, function* () {
+      let plains = Array.from(this.rewards.values()).filter(
+        (r) => (r as Record<string, unknown>).tripId === tripId,
       );
 
       if (!options?.includeHidden) {
-        items = items.filter((r) => !r.isHidden);
+        plains = plains.filter((r) => !(r as Record<string, unknown>).isHidden);
       }
 
-      const total = items.length;
+      const total = plains.length;
       const offset = options?.offset ?? 0;
       const limit = options?.limit ?? 30;
 
-      items = items.slice(offset, offset + limit);
+      const sliced = plains.slice(offset, offset + limit);
+
+      // Reconstruct all rewards to ensure proper instances
+      const items: Reward[] = [];
+      for (const plain of sliced) {
+        const reward = yield* this.reconstruct(plain);
+        items.push(reward);
+      }
 
       return {
         items,
@@ -133,9 +182,10 @@ export class InMemoryRewardRepository implements RewardRepository {
         }),
       );
     }
-    return Effect.gen(function* () {
+    return Effect.gen(this, function* () {
       const decremented = reward.decrementQuantity(amount);
       const result = yield* decremented;
+      this.rewards.set(id, result);
       return result;
     });
   }
@@ -153,9 +203,10 @@ export class InMemoryRewardRepository implements RewardRepository {
         }),
       );
     }
-    return Effect.gen(function* () {
+    return Effect.gen(this, function* () {
       const incremented = reward.incrementQuantity(amount);
       const result = yield* incremented;
+      this.rewards.set(id, result);
       return result;
     });
   }

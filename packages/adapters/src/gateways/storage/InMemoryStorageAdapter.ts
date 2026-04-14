@@ -256,14 +256,17 @@ export class InMemoryStorageAdapter implements StoragePort {
 
         // If any files were not found, return error
         if (notFoundPaths.length > 0) {
-          throw new DeleteError({
-            message: `Some files were not found: ${notFoundPaths.join(", ")}`,
+          throw new FileNotFoundError({
+            message: `File not found: ${notFoundPaths.join(", ")}`,
             bucket,
-            paths,
+            path: notFoundPaths[0]!,
           });
         }
       },
       catch: (error) => {
+        if (error instanceof FileNotFoundError) {
+          return error;
+        }
         if (error instanceof DeleteError) {
           return error;
         }

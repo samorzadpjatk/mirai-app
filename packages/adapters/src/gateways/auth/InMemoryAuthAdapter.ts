@@ -183,7 +183,7 @@ export class InMemoryAuthAdapter implements AuthPort {
         session.createdAt,
       );
     }).pipe(
-      Effect.catchAll(
+      Effect.catchAllDefect(
         (
           error: unknown,
         ): Effect.Effect<
@@ -265,7 +265,7 @@ export class InMemoryAuthAdapter implements AuthPort {
         session.createdAt,
       );
     }).pipe(
-      Effect.catchAll(
+      Effect.catchAllDefect(
         (
           error: unknown,
         ): Effect.Effect<never, AuthError | SessionExpiredError, never> => {

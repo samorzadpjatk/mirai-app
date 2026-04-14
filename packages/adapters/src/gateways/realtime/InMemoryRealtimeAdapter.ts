@@ -166,7 +166,7 @@ export class InMemoryRealtimeAdapter implements RealtimePort {
 
       return subscription;
     }).pipe(
-      Effect.catchAll((error) => {
+      Effect.catchAllDefect((error) => {
         if (error instanceof SubscriptionError) {
           return Effect.fail(error);
         }

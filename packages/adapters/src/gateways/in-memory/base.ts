@@ -29,6 +29,17 @@ export class DatabaseError extends Data.TaggedError("DatabaseError")<{
 export abstract class InMemoryRepository<T extends { id: string }> {
   protected storage = new Map<string, T>();
 
+  /**
+   * Reconstruct an entity from plain object storage.
+   * Subclasses should override this to ensure entities are proper class instances
+   * with all methods available. Default returns plain object as-is.
+   */
+  protected reconstruct(
+    plain: unknown,
+  ): Effect.Effect<T, DatabaseError, never> {
+    return Effect.succeed(plain as T);
+  }
+
   reset(): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
       this.storage.clear();
@@ -45,18 +56,42 @@ export abstract class InMemoryRepository<T extends { id: string }> {
     return Array.from(this.storage.values());
   }
 
+  /**
+   * Get all items as reconstructed entities.
+   * Use this when you need proper entity instances with methods.
+   */
+  protected getAllItemsReconstructed(): Effect.Effect<
+    T[],
+    DatabaseError,
+    never
+  > {
+    return Effect.gen(this, function* () {
+      const plains = this.getAllItems();
+      const reconstructed: T[] = [];
+      for (const plain of plains) {
+        const entity = yield* this.reconstruct(plain);
+        reconstructed.push(entity);
+      }
+      return reconstructed;
+    });
+  }
+
   protected findByIdGeneric(
     id: string,
   ): Effect.Effect<T | null, DatabaseError, never> {
-    return Effect.succeed(this.storage.get(id) ?? null);
+    return Effect.gen(this, function* () {
+      const plain = this.storage.get(id);
+      if (!plain) return null;
+      return yield* this.reconstruct(plain);
+    });
   }
 
   protected findAllGeneric(options?: {
     limit?: number;
     offset?: number;
   }): Effect.Effect<T[], DatabaseError, never> {
-    return Effect.sync(() => {
-      let items = this.getAllItems();
+    return Effect.gen(this, function* () {
+      let items = yield* this.getAllItemsReconstructed();
 
       if (options?.offset) {
         items = items.slice(options.offset);
