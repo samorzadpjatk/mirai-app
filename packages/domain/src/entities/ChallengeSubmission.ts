@@ -104,103 +104,93 @@ export class ChallengeSubmission {
     reviewedBy?: ReviewerInfo | null;
     challenge?: ChallengeInfo | null;
   }): Effect.Effect<ChallengeSubmission, ValidationError, never> {
-    // Validate challengeId
-    const challengeIdResult = validate.id(props.challengeId, "challengeId");
-    if (challengeIdResult.kind === "err")
-      return Effect.fail(challengeIdResult.error);
+    return Effect.gen(function* () {
+      // Validate challengeId
+      const challengeId = yield* validate.id(props.challengeId, "challengeId");
 
-    // Validate groupId
-    const groupIdResult = validate.id(props.groupId, "groupId");
-    if (groupIdResult.kind === "err") return Effect.fail(groupIdResult.error);
+      // Validate groupId
+      const groupId = yield* validate.id(props.groupId, "groupId");
 
-    // Validate imageIds
-    const imageIds = props.imageIds ?? [];
-    const imageIdsResult = validate.array(imageIds, "imageIds", {
-      maxItems: 10,
-    });
-    if (imageIdsResult.kind === "err") return Effect.fail(imageIdsResult.error);
-
-    // Validate textContent length
-    if (props.textContent !== null && props.textContent !== undefined) {
-      const textResult = validate.string(props.textContent, "textContent", {
-        maxLength: 10000,
+      // Validate imageIds
+      const imageIds = props.imageIds ?? [];
+      yield* validate.array(imageIds, "imageIds", {
+        maxItems: 10,
       });
-      if (textResult.kind === "err") return Effect.fail(textResult.error);
-    }
 
-    // Validate location coordinates
-    if (props.latitude !== null && props.latitude !== undefined) {
-      const latResult = validate.number(props.latitude, "latitude", {
-        min: -90,
-        max: 90,
-      });
-      if (latResult.kind === "err") return Effect.fail(latResult.error);
-    }
+      // Validate textContent length
+      if (props.textContent !== null && props.textContent !== undefined) {
+        yield* validate.string(props.textContent, "textContent", {
+          maxLength: 10000,
+        });
+      }
 
-    if (props.longitude !== null && props.longitude !== undefined) {
-      const lngResult = validate.number(props.longitude, "longitude", {
-        min: -180,
-        max: 180,
-      });
-      if (lngResult.kind === "err") return Effect.fail(lngResult.error);
-    }
+      // Validate location coordinates
+      if (props.latitude !== null && props.latitude !== undefined) {
+        yield* validate.number(props.latitude, "latitude", {
+          min: -90,
+          max: 90,
+        });
+      }
 
-    // Validate rejection reason length
-    if (props.rejectionReason !== null && props.rejectionReason !== undefined) {
-      const reasonResult = validate.string(
-        props.rejectionReason,
-        "rejectionReason",
-        {
+      if (props.longitude !== null && props.longitude !== undefined) {
+        yield* validate.number(props.longitude, "longitude", {
+          min: -180,
+          max: 180,
+        });
+      }
+
+      // Validate rejection reason length
+      if (
+        props.rejectionReason !== null &&
+        props.rejectionReason !== undefined
+      ) {
+        yield* validate.string(props.rejectionReason, "rejectionReason", {
           maxLength: 1000,
-        },
-      );
-      if (reasonResult.kind === "err") return Effect.fail(reasonResult.error);
-    }
+        });
+      }
 
-    // Validate points are non-negative
-    const awardedPoints = props.awardedPoints ?? 0;
-    if (awardedPoints < 0) {
-      return Effect.fail(
-        new ValidationError({
-          message: "awardedPoints must be at least 0",
-          field: "awardedPoints",
-        }),
-      );
-    }
+      // Validate points are non-negative
+      const awardedPoints = props.awardedPoints ?? 0;
+      if (awardedPoints < 0) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "awardedPoints must be at least 0",
+            field: "awardedPoints",
+          }),
+        );
+      }
 
-    const bonusPoints = props.bonusPoints ?? 0;
-    if (bonusPoints < 0) {
-      return Effect.fail(
-        new ValidationError({
-          message: "bonusPoints must be at least 0",
-          field: "bonusPoints",
-        }),
-      );
-    }
+      const bonusPoints = props.bonusPoints ?? 0;
+      if (bonusPoints < 0) {
+        return yield* Effect.fail(
+          new ValidationError({
+            message: "bonusPoints must be at least 0",
+            field: "bonusPoints",
+          }),
+        );
+      }
 
-    // Validate ranking is between 1 and 3 if provided
-    let ranking: number | null = null;
-    if (props.ranking !== null && props.ranking !== undefined) {
-      const rankingResult = validate.number(props.ranking, "ranking", {
-        min: 1,
-        max: 3,
-        integer: true,
+      // Validate ranking is between 1 and 3 if provided
+      let ranking: number | null = null;
+      if (props.ranking !== null && props.ranking !== undefined) {
+        const rankingResult = yield* validate.number(props.ranking, "ranking", {
+          min: 1,
+          max: 3,
+          integer: true,
+        });
+        ranking = rankingResult;
+      }
+
+      // Generate timestamps
+      const ts = timestamps({
+        createdAt: props.createdAt,
+        updatedAt: props.updatedAt,
       });
-      if (rankingResult.kind === "err") return Effect.fail(rankingResult.error);
-      ranking = rankingResult.value;
-    }
 
-    // Generate timestamps
-    const ts = timestamps({
-      createdAt: props.createdAt,
-      updatedAt: props.updatedAt,
-    });
-
-    return Effect.succeed(
-      new ChallengeSubmission(
+      return new ChallengeSubmission(
         props.id ?? (crypto.randomUUID() as SubmissionId),
-        challengeIdResult.value.trim(),
-        groupIdResult.value.trim(),
+        challengeId.trim(),
+        groupId.trim(),
         imageIds,
         props.videoId ?? null,
         props.textContent ?? null,
@@ -220,8 +210,8 @@ export class ChallengeSubmission {
         props.group ?? null,
         props.reviewedBy ?? null,
         props.challenge ?? null,
-      ),
-    );
+      );
+    });
   }
 
   /**
