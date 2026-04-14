@@ -11,7 +11,7 @@ import { Event } from "@mirai-app/domain";
 import type { EventRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { EventDrizzleMapper } from "../../mappers/drizzle/event";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleEventRepository
@@ -31,10 +31,37 @@ export class DrizzleEventRepository
     });
   }
 
+  // Override base class methods to match interface error types
+  override create(event: Event): Effect.Effect<Event, DatabaseError, never> {
+    return super.create(event);
+  }
+
+  override findById(
+    id: string,
+  ): Effect.Effect<Event | null, DatabaseError, never> {
+    return super.findById(id);
+  }
+
+  override update(
+    event: Event & { id: string },
+  ): Effect.Effect<Event, DatabaseError, never> {
+    return super.update(event);
+  }
+
+  override delete(id: string): Effect.Effect<void, DatabaseError, never> {
+    return super.delete(id);
+  }
+
+  override exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+    return super.exists(id);
+  }
+
   /**
    * Find events by creator ID
    */
-  findByCreatorId(creatorId: string): Effect.Effect<Event[], never, never> {
+  findByCreatorId(
+    creatorId: string,
+  ): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -51,7 +78,7 @@ export class DrizzleEventRepository
           message: "Failed to find events by creator ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -59,7 +86,7 @@ export class DrizzleEventRepository
    */
   findByOrganizerGroupId(
     groupId: string,
-  ): Effect.Effect<Event[], never, never> {
+  ): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -76,13 +103,13 @@ export class DrizzleEventRepository
           message: "Failed to find events by organizer group ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find events by IDs
    */
-  findByIds(ids: string[]): Effect.Effect<Event[], never, never> {
+  findByIds(ids: string[]): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         if (ids.length === 0) return [];
@@ -100,7 +127,7 @@ export class DrizzleEventRepository
           message: "Failed to find events by IDs",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -110,7 +137,7 @@ export class DrizzleEventRepository
     limit?: number;
     offset?: number;
     orderBy?: { column: string; direction: "asc" | "desc" };
-  }): Effect.Effect<Event[], never, never> {
+  }): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const orderColumn = options?.orderBy?.column ?? "startTime";
@@ -152,13 +179,13 @@ export class DrizzleEventRepository
           message: "Failed to find events with pagination",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find upcoming events (startTime > now)
    */
-  findUpcoming(): Effect.Effect<Event[], never, never> {
+  findUpcoming(): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const now = new Date();
@@ -176,13 +203,13 @@ export class DrizzleEventRepository
           message: "Failed to find upcoming events",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find ongoing events (startTime <= now <= endTime)
    */
-  findOngoing(): Effect.Effect<Event[], never, never> {
+  findOngoing(): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const now = new Date();
@@ -202,13 +229,13 @@ export class DrizzleEventRepository
           message: "Failed to find ongoing events",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find past events (endTime < now)
    */
-  findPast(): Effect.Effect<Event[], never, never> {
+  findPast(): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const now = new Date();
@@ -226,7 +253,7 @@ export class DrizzleEventRepository
           message: "Failed to find past events",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -235,7 +262,7 @@ export class DrizzleEventRepository
   findStartingBetween(
     start: Date,
     end: Date,
-  ): Effect.Effect<Event[], never, never> {
+  ): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -257,13 +284,13 @@ export class DrizzleEventRepository
           message: "Failed to find events starting between dates",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Count total events
    */
-  count(): Effect.Effect<number, never, never> {
+  count(): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const result = await this.db
@@ -278,7 +305,7 @@ export class DrizzleEventRepository
           message: "Failed to count events",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -286,7 +313,7 @@ export class DrizzleEventRepository
    */
   countByOrganizerGroupId(
     groupId: string,
-  ): Effect.Effect<number, never, never> {
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const result = await this.db
@@ -302,7 +329,7 @@ export class DrizzleEventRepository
           message: "Failed to count events by organizer group ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -311,7 +338,7 @@ export class DrizzleEventRepository
   markInterested(
     userId: string,
     eventId: string,
-  ): Effect.Effect<void, never, never> {
+  ): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db
@@ -335,7 +362,7 @@ export class DrizzleEventRepository
           message: "Failed to mark user as interested",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -344,7 +371,7 @@ export class DrizzleEventRepository
   markEnlisted(
     userId: string,
     eventId: string,
-  ): Effect.Effect<void, never, never> {
+  ): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db
@@ -368,7 +395,7 @@ export class DrizzleEventRepository
           message: "Failed to mark user as enlisted",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -377,7 +404,7 @@ export class DrizzleEventRepository
   removeInterest(
     userId: string,
     eventId: string,
-  ): Effect.Effect<void, never, never> {
+  ): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db
@@ -393,7 +420,7 @@ export class DrizzleEventRepository
           message: "Failed to remove user interest",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -402,7 +429,7 @@ export class DrizzleEventRepository
   removeEnlistment(
     userId: string,
     eventId: string,
-  ): Effect.Effect<void, never, never> {
+  ): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db
@@ -418,7 +445,7 @@ export class DrizzleEventRepository
           message: "Failed to remove user enlistment",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -427,7 +454,7 @@ export class DrizzleEventRepository
   isInterested(
     userId: string,
     eventId: string,
-  ): Effect.Effect<boolean, never, never> {
+  ): Effect.Effect<boolean, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -446,7 +473,7 @@ export class DrizzleEventRepository
           message: "Failed to check if user is interested",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -455,7 +482,7 @@ export class DrizzleEventRepository
   isEnlisted(
     userId: string,
     eventId: string,
-  ): Effect.Effect<boolean, never, never> {
+  ): Effect.Effect<boolean, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -474,13 +501,15 @@ export class DrizzleEventRepository
           message: "Failed to check if user is enlisted",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Get interested users for an event
    */
-  getInterestedUsers(eventId: string): Effect.Effect<string[], never, never> {
+  getInterestedUsers(
+    eventId: string,
+  ): Effect.Effect<string[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -501,13 +530,15 @@ export class DrizzleEventRepository
           message: "Failed to get interested users",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Get enlisted users for an event
    */
-  getEnlistedUsers(eventId: string): Effect.Effect<string[], never, never> {
+  getEnlistedUsers(
+    eventId: string,
+  ): Effect.Effect<string[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -528,7 +559,7 @@ export class DrizzleEventRepository
           message: "Failed to get enlisted users",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -536,7 +567,7 @@ export class DrizzleEventRepository
    */
   getInterestedEventsForUser(
     userId: string,
-  ): Effect.Effect<Event[], never, never> {
+  ): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -573,7 +604,7 @@ export class DrizzleEventRepository
           message: "Failed to get interested events for user",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -581,7 +612,7 @@ export class DrizzleEventRepository
    */
   getEnlistedEventsForUser(
     userId: string,
-  ): Effect.Effect<Event[], never, never> {
+  ): Effect.Effect<Event[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -615,13 +646,15 @@ export class DrizzleEventRepository
           message: "Failed to get enlisted events for user",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Count interested users for an event
    */
-  countInterested(eventId: string): Effect.Effect<number, never, never> {
+  countInterested(
+    eventId: string,
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const result = await this.db
@@ -642,13 +675,13 @@ export class DrizzleEventRepository
           message: "Failed to count interested users",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Count enlisted users for an event
    */
-  countEnlisted(eventId: string): Effect.Effect<number, never, never> {
+  countEnlisted(eventId: string): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const result = await this.db
@@ -669,6 +702,6 @@ export class DrizzleEventRepository
           message: "Failed to count enlisted users",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 }

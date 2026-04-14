@@ -48,25 +48,34 @@ export class InMemoryNotificationScheduleRepository
     NotificationScheduleExecutionRecord[]
   >();
 
-  override reset(): void {
-    super.reset();
-    this.executionStorage.clear();
+  override reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      super.reset();
+      this.executionStorage.clear();
+    });
   }
 
-  override seed(items: NotificationSchedule[]): void {
-    super.seed(items);
+  override seed(
+    items: NotificationSchedule[],
+  ): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      items.forEach((item) => this.storage.set(item.id, item));
+    });
   }
 
   create(
     schedule: NotificationSchedule,
   ): Effect.Effect<NotificationSchedule, never, never> {
-    return this.createGeneric(schedule);
+    return Effect.sync(() => {
+      this.storage.set(schedule.id, schedule);
+      return schedule;
+    });
   }
 
   findById(
     id: string,
   ): Effect.Effect<NotificationSchedule | null, never, never> {
-    return this.findByIdGeneric(id);
+    return Effect.sync(() => this.storage.get(id) ?? null);
   }
 
   findByTripId(
@@ -112,6 +121,60 @@ export class InMemoryNotificationScheduleRepository
   }
 
   findAll(options?: {
+    filter?: NotificationScheduleFilter;
+    pagination?: PaginationOptions;
+  }): Effect.Effect<NotificationSchedule[], never, never> {
+    return Effect.gen(this, function* () {
+      let items = this.getAllItems();
+
+      if (options?.filter) {
+        const filter = options.filter;
+
+        if (filter.tripId !== undefined && filter.tripId !== null) {
+          items = items.filter((s) => s.tripId === filter.tripId);
+        }
+
+        if (filter.notificationType !== undefined) {
+          items = items.filter(
+            (s) => s.notificationType === filter.notificationType,
+          );
+        }
+
+        if (filter.isActive !== undefined) {
+          items = items.filter((s) => s.isActive === filter.isActive);
+        }
+
+        if (filter.startDateFrom !== undefined) {
+          items = items.filter((s) => s.startDate >= filter.startDateFrom!);
+        }
+
+        if (filter.startDateTo !== undefined) {
+          items = items.filter((s) => s.startDate <= filter.startDateTo!);
+        }
+
+        if (filter.search !== undefined && filter.search.trim() !== "") {
+          const searchLower = filter.search.toLowerCase();
+          items = items.filter((s) =>
+            s.name.toLowerCase().includes(searchLower),
+          );
+        }
+      }
+
+      items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      if (options?.pagination?.offset) {
+        items = items.slice(options.pagination.offset);
+      }
+
+      if (options?.pagination?.limit !== undefined) {
+        items = items.slice(0, options.pagination.limit);
+      }
+
+      return items;
+    });
+  }
+
+  findAllPaginated(options?: {
     filter?: NotificationScheduleFilter;
     pagination?: PaginationOptions;
   }): Effect.Effect<PaginatedResult<NotificationSchedule>, never, never> {
@@ -206,11 +269,20 @@ export class InMemoryNotificationScheduleRepository
   update(
     schedule: NotificationSchedule,
   ): Effect.Effect<NotificationSchedule, never, never> {
-    return this.updateGeneric(schedule);
+    return Effect.sync(() => {
+      this.storage.set(schedule.id, schedule);
+      return schedule;
+    });
   }
 
   delete(id: string): Effect.Effect<void, never, never> {
-    return this.deleteGeneric(id);
+    return Effect.sync(() => {
+      this.storage.delete(id);
+    });
+  }
+
+  exists(id: string): Effect.Effect<boolean, never, never> {
+    return Effect.sync(() => this.storage.has(id));
   }
 
   deleteMany(ids: string[]): Effect.Effect<number, never, never> {
@@ -224,68 +296,71 @@ export class InMemoryNotificationScheduleRepository
     return Effect.succeed(count);
   }
 
-  exists(id: string): Effect.Effect<boolean, never, never> {
-    return this.existsGeneric(id);
-  }
-
   count(
     filter?: NotificationScheduleFilter,
   ): Effect.Effect<number, never, never> {
-    if (!filter) {
-      return this.countGeneric();
-    }
+    return Effect.gen(this, function* () {
+      if (!filter) {
+        const count = yield* this.countGeneric().pipe(Effect.orDie);
+        return count;
+      }
 
-    let items = this.getAllItems();
+      let items = this.getAllItems();
 
-    if (filter.tripId !== undefined && filter.tripId !== null) {
-      items = items.filter((s) => s.tripId === filter.tripId);
-    }
+      if (filter.tripId !== undefined && filter.tripId !== null) {
+        items = items.filter((s) => s.tripId === filter.tripId);
+      }
 
-    if (filter.notificationType !== undefined) {
-      items = items.filter(
-        (s) => s.notificationType === filter.notificationType,
-      );
-    }
+      if (filter.notificationType !== undefined) {
+        items = items.filter(
+          (s) => s.notificationType === filter.notificationType,
+        );
+      }
 
-    if (filter.isActive !== undefined) {
-      items = items.filter((s) => s.isActive === filter.isActive);
-    }
+      if (filter.isActive !== undefined) {
+        items = items.filter((s) => s.isActive === filter.isActive);
+      }
 
-    if (filter.startDateFrom !== undefined) {
-      items = items.filter((s) => s.startDate >= filter.startDateFrom!);
-    }
+      if (filter.startDateFrom !== undefined) {
+        items = items.filter((s) => s.startDate >= filter.startDateFrom!);
+      }
 
-    if (filter.startDateTo !== undefined) {
-      items = items.filter((s) => s.startDate <= filter.startDateTo!);
-    }
+      if (filter.startDateTo !== undefined) {
+        items = items.filter((s) => s.startDate <= filter.startDateTo!);
+      }
 
-    if (filter.search !== undefined && filter.search.trim() !== "") {
-      const searchLower = filter.search.toLowerCase();
-      items = items.filter((s) => s.name.toLowerCase().includes(searchLower));
-    }
+      if (filter.search !== undefined && filter.search.trim() !== "") {
+        const searchLower = filter.search.toLowerCase();
+        items = items.filter((s) => s.name.toLowerCase().includes(searchLower));
+      }
 
-    return Effect.succeed(items.length);
+      return items.length;
+    });
   }
 
   updateLastRun(
     id: string,
     lastRun: Date,
   ): Effect.Effect<NotificationSchedule, never, never> {
-    const schedule = this.storage.get(id);
-    if (!schedule) {
-      throw new Error("Notification schedule not found");
-    }
-    const updated = schedule.updateLastRun(lastRun);
-    return this.updateGeneric(updated);
+    return Effect.gen(this, function* () {
+      const schedule = this.storage.get(id);
+      if (!schedule) {
+        throw new Error("Notification schedule not found");
+      }
+      const updated = schedule.updateLastRun(lastRun);
+      return yield* this.updateGeneric(updated).pipe(Effect.orDie);
+    });
   }
 
   toggleActive(id: string): Effect.Effect<NotificationSchedule, never, never> {
-    const schedule = this.storage.get(id);
-    if (!schedule) {
-      throw new Error("Notification schedule not found");
-    }
-    const toggled = schedule.toggleActive();
-    return this.updateGeneric(toggled);
+    return Effect.gen(this, function* () {
+      const schedule = this.storage.get(id);
+      if (!schedule) {
+        throw new Error("Notification schedule not found");
+      }
+      const toggled = schedule.toggleActive();
+      return yield* this.updateGeneric(toggled).pipe(Effect.orDie);
+    });
   }
 
   bulkToggleActive(

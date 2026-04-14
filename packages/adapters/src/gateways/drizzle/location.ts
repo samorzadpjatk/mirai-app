@@ -10,7 +10,7 @@ import { Location, type LocationId } from "@mirai-app/domain";
 import type { LocationRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { LocationDrizzleMapper } from "../../mappers/drizzle/location";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleLocationRepository
@@ -33,31 +33,9 @@ export class DrizzleLocationRepository
     });
   }
 
-  override create(location: Location): Effect.Effect<Location, never, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const insertData = this.mapper.toDrizzleInsert(location);
-        const [record] = await this.db
-          .insert(this.table)
-          .values(insertData)
-          .returning();
-
-        if (!record) {
-          throw new Error("Failed to create location: no record returned");
-        }
-
-        return this.mapper.toDomain(record);
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "create",
-          message: "Failed to create location",
-          cause: error,
-        }),
-    }).pipe(Effect.orDie);
-  }
-
-  findByUserId(userId: string): Effect.Effect<Location | null, never, never> {
+  findByUserId(
+    userId: string,
+  ): Effect.Effect<Location | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -73,14 +51,18 @@ export class DrizzleLocationRepository
           message: "Failed to find location by user ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
-  findSharingWithUser(userId: string): Effect.Effect<Location[], never, never> {
+  findSharingWithUser(
+    userId: string,
+  ): Effect.Effect<Location[], DatabaseError, never> {
     return Effect.succeed([]);
   }
 
-  findByUserIds(userIds: string[]): Effect.Effect<Location[], never, never> {
+  findByUserIds(
+    userIds: string[],
+  ): Effect.Effect<Location[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         if (userIds.length === 0) return [];
@@ -96,31 +78,23 @@ export class DrizzleLocationRepository
           message: "Failed to find locations by user IDs",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
-  save(location: Location): Effect.Effect<Location, never, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const existing = await this.findByUserId(location.userId);
-        if (existing) {
-          return await this.update({
-            ...location,
-            id: existing.id,
-          } as Location & { id: string });
-        }
-        return await this.create(location);
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "save",
-          message: "Failed to save location",
-          cause: error,
-        }),
-    }).pipe(Effect.orDie);
+  save(location: Location): Effect.Effect<Location, DatabaseError, never> {
+    return Effect.gen(this, function* () {
+      const existing = yield* this.findByUserId(location.userId);
+      if (existing) {
+        return yield* this.update({
+          ...location,
+          id: existing.id,
+        } as Location & { id: string });
+      }
+      return yield* this.create(location);
+    });
   }
 
-  override delete(id: LocationId): Effect.Effect<void, never, never> {
+  override delete(id: string): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db.delete(this.table).where(eq(this.table.id, id));
@@ -131,10 +105,10 @@ export class DrizzleLocationRepository
           message: "Failed to delete location",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
-  deleteByUserId(userId: string): Effect.Effect<void, never, never> {
+  deleteByUserId(userId: string): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db.delete(this.table).where(eq(this.table.userId, userId));
@@ -145,10 +119,10 @@ export class DrizzleLocationRepository
           message: "Failed to delete location by user ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
-  existsForUser(userId: string): Effect.Effect<boolean, never, never> {
+  existsForUser(userId: string): Effect.Effect<boolean, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -164,6 +138,6 @@ export class DrizzleLocationRepository
           message: "Failed to check location existence for user",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 }

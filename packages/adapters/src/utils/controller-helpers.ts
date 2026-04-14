@@ -1,4 +1,3 @@
-import type { Result } from "@mirai-app/domain";
 import {
   NotFoundError,
   BadRequestError,
@@ -74,26 +73,6 @@ export type ControllerResult<T> =
   | { success: false; error: string };
 
 /**
- * Converts a domain Result to a controller result
- *
- * @example
- * const result = await useCase.execute(input);
- * return toControllerResult(result, (value) => transform(value));
- */
-export function toControllerResult<T, E, R = T>(
-  result: Result<T, E>,
-  transform?: (value: T) => R,
-): ControllerResult<R> {
-  if (result.kind === "err") {
-    return { success: false, error: String(result.error) };
-  }
-  return {
-    success: true,
-    data: transform ? transform(result.value) : (result.value as unknown as R),
-  };
-}
-
-/**
  * Creates a controller result directly from data or error
  */
 export function createControllerResult<T>(
@@ -131,6 +110,7 @@ import type {
   GroupCoinsService,
   TripAccessChecker,
   TripRepository,
+  GroupRepository,
 } from "@mirai-app/use-cases";
 import type {
   User,

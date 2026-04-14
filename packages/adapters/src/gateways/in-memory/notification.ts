@@ -1,7 +1,7 @@
 import type { Notification } from "@mirai-app/domain";
 import { NotificationStatus, NotificationPriority } from "@mirai-app/domain";
 import type { NotificationRepository } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/NotificationRepository";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

@@ -1,61 +1,28 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
-  getUserUseCase,
+  GetUserUseCase,
   createUserUseCase,
   updateUserUseCase,
   UserRepositoryTag,
 } from "@mirai-app/use-cases";
 import { UserRole } from "@mirai-app/domain";
+import {
+  validateGetByIdInput,
+  validateGetByAuthIdInput,
+  validateCreateUserInput,
+  validateUpdateUserInput,
+  validateListInput,
+} from "./validators/user-validators";
 
 /**
- * Input validation schemas for user controller
+ * Re-export validators for external use
  */
-const schemas = {
-  getById: z.object({
-    id: z.string().uuid("Invalid user ID format"),
-  }),
-
-  getByAuthId: z.object({
-    authUserId: z.string().min(1, "Auth user ID is required"),
-  }),
-
-  create: z.object({
-    authUserId: z.string().min(1, "Auth user ID is required"),
-    firstName: z
-      .string()
-      .min(2, "First name must be at least 2 characters")
-      .max(100, "First name must be at most 100 characters")
-      .refine((val) => !/\d/.test(val), "First name cannot contain digits"),
-    lastName: z
-      .string()
-      .min(2, "Last name must be at least 2 characters")
-      .max(100, "Last name must be at most 100 characters")
-      .refine((val) => !/\d/.test(val), "Last name cannot contain digits"),
-    role: z.enum(["USER", "MODERATOR", "ADMIN", "SERVICE"]).default("USER"),
-  }),
-
-  update: z.object({
-    userId: z.string().uuid("Invalid user ID format"),
-    firstName: z
-      .string()
-      .min(2, "First name must be at least 2 characters")
-      .max(100, "First name must be at most 100 characters")
-      .refine((val) => !/\d/.test(val), "First name cannot contain digits")
-      .optional(),
-    lastName: z
-      .string()
-      .min(2, "Last name must be at least 2 characters")
-      .max(100, "Last name must be at most 100 characters")
-      .refine((val) => !/\d/.test(val), "Last name cannot contain digits")
-      .optional(),
-    hasAvatar: z.boolean().optional(),
-  }),
-
-  list: z.object({
-    limit: z.number().int().min(1).max(100).default(20),
-    offset: z.number().int().min(0).default(0),
-  }),
+export {
+  validateGetByIdInput,
+  validateGetByAuthIdInput,
+  validateCreateUserInput,
+  validateUpdateUserInput,
+  validateListInput,
 };
 
 /**
@@ -115,7 +82,7 @@ export class UserController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -123,9 +90,9 @@ export class UserController {
       };
     }
 
-    const effect = getUserUseCase({ userId: parsed.data.id });
+    const effect = new GetUserUseCase().execute({ userId: parsed.data.id });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -140,8 +107,7 @@ export class UserController {
             lastSeenOn: Date | null;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -163,7 +129,7 @@ export class UserController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateUserInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -178,7 +144,7 @@ export class UserController {
       role: parsed.data.role as UserRole,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -192,8 +158,7 @@ export class UserController {
             createdAt: Date;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -215,7 +180,7 @@ export class UserController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateUserInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -230,7 +195,7 @@ export class UserController {
       hasAvatar: parsed.data.hasAvatar,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -244,8 +209,7 @@ export class UserController {
             updatedAt: Date;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -267,7 +231,7 @@ export class UserController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.list.safeParse(input);
+    const parsed = validateListInput(input);
     if (!parsed.success) {
       return {
         success: false,

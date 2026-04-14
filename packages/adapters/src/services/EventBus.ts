@@ -213,7 +213,7 @@ export class EventBus {
     event: TEvent,
   ): Effect.Effect<void, never, never> {
     return Effect.gen(this, function* () {
-      const effects: Effect.Effect<void, EventBusError, never>[] = [];
+      const effects: Effect.Effect<void, never, never>[] = [];
 
       // Collect typed handlers
       const handlersForType = this.handlers.get(event.type);
@@ -221,11 +221,12 @@ export class EventBus {
         for (const handler of handlersForType) {
           effects.push(
             handler(event).pipe(
-              Effect.catchAll((error) =>
+              Effect.catchAll((error: EventBusError) =>
                 Effect.sync(() => {
                   serverLogger.error(
-                    `EventBus: Handler error for event ${event.type}:`,
-                    { error },
+                    `EventBus: Handler error for event ${event.type}: ${error.message}`,
+                    undefined,
+                    { operation: error.operation },
                   );
                 }),
               ),
@@ -240,11 +241,12 @@ export class EventBus {
         for (const handler of wildcardHandlers) {
           effects.push(
             handler(event).pipe(
-              Effect.catchAll((error) =>
+              Effect.catchAll((error: EventBusError) =>
                 Effect.sync(() => {
                   serverLogger.error(
-                    `EventBus: Wildcard handler error for event ${event.type}:`,
-                    { error },
+                    `EventBus: Wildcard handler error for event ${event.type}: ${error.message}`,
+                    undefined,
+                    { operation: error.operation },
                   );
                 }),
               ),

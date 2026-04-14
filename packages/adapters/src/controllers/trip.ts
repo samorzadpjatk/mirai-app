@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import { TripRepositoryTag } from "@mirai-app/use-cases";
 import {
@@ -10,74 +9,24 @@ import {
   type UpdateTripInput,
 } from "@mirai-app/use-cases";
 import { TripStatus } from "@mirai-app/domain";
+import {
+  validateGetByIdInput,
+  validateCreateTripInput,
+  validateUpdateTripInput,
+  validateUpdateStatusInput,
+  validateListInput,
+  validateListByStatusInput,
+} from "./validators/trip-validators";
 
-/**
- * Input validation schemas for trip controller
- */
-const schemas = {
-  getById: z.object({
-    id: z.string().uuid("Invalid trip ID format"),
-  }),
-
-  create: z.object({
-    name: z
-      .string()
-      .min(1, "Name is required")
-      .max(200, "Name must be at most 200 characters"),
-    description: z
-      .string()
-      .max(2000, "Description must be at most 2000 characters")
-      .nullable()
-      .optional(),
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
-    backgroundImagePath: z
-      .string()
-      .url("Invalid image URL")
-      .nullable()
-      .optional(),
-    status: z
-      .enum(["PLANNING", "ACTIVE", "COMPLETED", "CANCELLED"])
-      .default("PLANNING"),
-  }),
-
-  update: z.object({
-    tripId: z.string().uuid("Invalid trip ID format"),
-    name: z
-      .string()
-      .min(1, "Name is required")
-      .max(200, "Name must be at most 200 characters")
-      .optional(),
-    description: z
-      .string()
-      .max(2000, "Description must be at most 2000 characters")
-      .nullable()
-      .optional(),
-    startDate: z.coerce.date().optional(),
-    endDate: z.coerce.date().optional(),
-    backgroundImagePath: z
-      .string()
-      .url("Invalid image URL")
-      .nullable()
-      .optional(),
-  }),
-
-  updateStatus: z.object({
-    tripId: z.string().uuid("Invalid trip ID format"),
-    newStatus: z.enum(["PLANNING", "ACTIVE", "COMPLETED", "CANCELLED"]),
-  }),
-
-  list: z.object({
-    limit: z.number().int().min(1).max(100).default(20),
-    offset: z.number().int().min(0).default(0),
-  }),
-
-  listByStatus: z.object({
-    status: z.enum(["PLANNING", "ACTIVE", "COMPLETED", "CANCELLED"]),
-    limit: z.number().int().min(1).max(100).default(20),
-    offset: z.number().int().min(0).default(0),
-  }),
+export {
+  validateGetByIdInput,
+  validateCreateTripInput,
+  validateUpdateTripInput,
+  validateUpdateStatusInput,
+  validateListInput,
+  validateListByStatusInput,
 };
+
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -145,7 +94,7 @@ export class TripController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -157,7 +106,7 @@ export class TripController {
       tripId: parsed.data.id,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -181,8 +130,7 @@ export class TripController {
             summary: string;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -208,7 +156,7 @@ export class TripController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateTripInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -232,7 +180,7 @@ export class TripController {
 
     const effect = createTripUseCase(useCaseInput);
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -250,8 +198,7 @@ export class TripController {
             durationInDays: number;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -273,7 +220,7 @@ export class TripController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateTripInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -292,7 +239,7 @@ export class TripController {
 
     const effect = updateTripUseCase(useCaseInput);
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -306,8 +253,7 @@ export class TripController {
             updatedAt: Date;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -326,7 +272,7 @@ export class TripController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.updateStatus.safeParse(input);
+    const parsed = validateUpdateStatusInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -378,7 +324,7 @@ export class TripController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.list.safeParse(input);
+    const parsed = validateListInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -405,7 +351,7 @@ export class TripController {
         status: trip.status,
         createdAt: trip.createdAt,
       })),
-    )) as Promise<
+    )) as unknown as
       | {
           success: true;
           data: Array<{
@@ -418,8 +364,7 @@ export class TripController {
             createdAt: Date;
           }>;
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -440,7 +385,7 @@ export class TripController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.listByStatus.safeParse(input);
+    const parsed = validateListByStatusInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -523,7 +468,7 @@ export class TripController {
         status: trip.status,
         createdAt: trip.createdAt,
       })),
-    )) as Promise<
+    )) as unknown as
       | {
           success: true;
           data: Array<{
@@ -536,8 +481,7 @@ export class TripController {
             createdAt: Date;
           }>;
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -549,7 +493,7 @@ export class TripController {
     | { success: true; data: { deleted: true; tripId: string } }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,

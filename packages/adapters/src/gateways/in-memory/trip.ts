@@ -27,7 +27,7 @@ export class InMemoryTripRepository
    * Reconstruct a Trip entity from plain object storage.
    * Uses reconstitute() factory to bypass validation and ensure proper instance.
    */
-  protected reconstruct(
+  protected override reconstruct(
     plain: unknown,
   ): Effect.Effect<Trip, DatabaseError, never> {
     const p = plain as Record<string, unknown>;
@@ -56,22 +56,25 @@ export class InMemoryTripRepository
   }
 
   create(trip: Trip): Effect.Effect<Trip, never, never> {
-    return this.createGeneric(trip);
+    return Effect.sync(() => {
+      this.storage.set(trip.id, trip);
+      return trip;
+    });
   }
 
   findById(id: string): Effect.Effect<Trip | null, never, never> {
-    return this.findByIdGeneric(id);
+    return Effect.sync(() => this.storage.get(id) ?? null);
   }
 
   findByStatus(status: TripStatus): Effect.Effect<Trip[], never, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
-        (t) => (t as Record<string, unknown>).status === status,
+        (t) => (t as unknown as Record<string, unknown>).status === status,
       );
       const reconstructed: Trip[] = [];
       for (const plain of filtered) {
-        const entity = yield* this.reconstruct(plain);
+        const entity = yield* this.reconstruct(plain).pipe(Effect.orDie);
         reconstructed.push(entity);
       }
       return reconstructed;
@@ -86,11 +89,17 @@ export class InMemoryTripRepository
     limit?: number;
     offset?: number;
   }): Effect.Effect<Trip[], never, never> {
-    return this.findAllGeneric(options);
+    return Effect.gen(this, function* () {
+      const trips = yield* this.findAllGeneric(options).pipe(Effect.orDie);
+      return trips;
+    });
   }
 
   update(trip: Trip): Effect.Effect<Trip, never, never> {
-    return this.updateGeneric(trip);
+    return Effect.sync(() => {
+      this.storage.set(trip.id, trip);
+      return trip;
+    });
   }
 
   updateStatus(
@@ -121,11 +130,13 @@ export class InMemoryTripRepository
   }
 
   delete(id: string): Effect.Effect<void, never, never> {
-    return this.deleteGeneric(id);
+    return Effect.sync(() => {
+      this.storage.delete(id);
+    });
   }
 
   exists(id: string): Effect.Effect<boolean, never, never> {
-    return this.existsGeneric(id);
+    return Effect.sync(() => this.storage.has(id));
   }
 
   countByStatus(status: TripStatus): Effect.Effect<number, never, never> {

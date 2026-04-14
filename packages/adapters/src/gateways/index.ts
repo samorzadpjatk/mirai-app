@@ -8,7 +8,6 @@
 // =============================================================================
 // Base Repository Classes
 // =============================================================================
-export { BasePrismaRepository } from "./BasePrismaRepository";
 export { BaseDrizzleRepository } from "./base/repository";
 export type {
   DrizzleEntityMapper,

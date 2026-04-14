@@ -1,4 +1,6 @@
-import type { PrismaClient } from "@mirai-app/frameworks/prisma";
+// TODO: Migrate from Prisma to Drizzle
+// import type { PrismaClient } from "@mirai-app/frameworks/prisma";
+import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
   Expo,
   type ExpoPushMessage,
@@ -223,7 +225,10 @@ function formatCurrentTime(date: Date): string {
 }
 
 export class NotificationService {
-  constructor(private prisma: PrismaClient) {}
+  // TODO: Migrate from Prisma to Drizzle
+  // Using unknown for now as this is a legacy Prisma service being migrated
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(private prisma: any) {}
 
   /**
    * Create notifications for common group events
@@ -320,20 +325,33 @@ export class NotificationService {
             }),
           ]);
 
-        const groupById = new Map(
-          rankedGroups.map((group) => [group.id, group]),
+        const groupById = new Map<
+          string,
+          { id: string; name: string; coins: number }
+        >(
+          rankedGroups.map(
+            (group: { id: string; name: string; coins: number }) => [
+              group.id,
+              group,
+            ],
+          ),
         );
-        const groupRankById = new Map(
-          rankedGroups.map((group, index) => [group.id, index + 1]),
+        const groupRankById = new Map<string, number>(
+          rankedGroups.map((group: { id: string }, index: number) => [
+            group.id,
+            index + 1,
+          ]),
         );
         const groupMembersCountById = new Map<string, number>();
-        participants.forEach((participant) => {
-          if (!participant.groupId) return;
-          groupMembersCountById.set(
-            participant.groupId,
-            (groupMembersCountById.get(participant.groupId) ?? 0) + 1,
-          );
-        });
+        participants.forEach(
+          (participant: { groupId?: string | null; userId: string }) => {
+            if (!participant.groupId) return;
+            groupMembersCountById.set(
+              participant.groupId,
+              (groupMembersCountById.get(participant.groupId) ?? 0) + 1,
+            );
+          },
+        );
 
         const formattedDate = formatCurrentDate(now);
         const formattedTime = formatCurrentTime(now);
@@ -342,36 +360,40 @@ export class NotificationService {
 
         const valuesByUser = new Map<string, RankingTemplateValues>();
 
-        participants.forEach((participant) => {
-          const groupId = participant.groupId;
-          if (!groupId) {
+        participants.forEach(
+          (participant: { groupId?: string | null; userId: string }) => {
+            const groupId = participant.groupId;
+            if (!groupId) {
+              valuesByUser.set(participant.userId, {
+                ...FALLBACK_TEMPLATE_VALUES,
+                activeChallengesCount: String(activeChallengesCount),
+                tripName,
+                totalGroupsCount,
+                currentDate: formattedDate,
+                currentTime: formattedTime,
+              });
+              return;
+            }
+
+            const group = groupById.get(groupId);
+            const rankingPosition = groupRankById.get(groupId);
+
             valuesByUser.set(participant.userId, {
-              ...FALLBACK_TEMPLATE_VALUES,
+              groupName: group?.name ?? FALLBACK_TEMPLATE_VALUES.groupName,
+              rankingPosition: rankingPosition
+                ? String(rankingPosition)
+                : FALLBACK_TEMPLATE_VALUES.rankingPosition,
               activeChallengesCount: String(activeChallengesCount),
               tripName,
               totalGroupsCount,
+              groupMembersCount: String(
+                groupMembersCountById.get(groupId) ?? 0,
+              ),
               currentDate: formattedDate,
               currentTime: formattedTime,
             });
-            return;
-          }
-
-          const group = groupById.get(groupId);
-          const rankingPosition = groupRankById.get(groupId);
-
-          valuesByUser.set(participant.userId, {
-            groupName: group?.name ?? FALLBACK_TEMPLATE_VALUES.groupName,
-            rankingPosition: rankingPosition
-              ? String(rankingPosition)
-              : FALLBACK_TEMPLATE_VALUES.rankingPosition,
-            activeChallengesCount: String(activeChallengesCount),
-            tripName,
-            totalGroupsCount,
-            groupMembersCount: String(groupMembersCountById.get(groupId) ?? 0),
-            currentDate: formattedDate,
-            currentTime: formattedTime,
-          });
-        });
+          },
+        );
 
         return valuesByUser;
       },
@@ -402,7 +424,10 @@ export class NotificationService {
         if (!notification)
           return { success: false, sent: 0, failed: 0, total: 0 };
 
-        const existingPushRows = await this.prisma.notificationPush.findMany({
+        const existingPushRows: Array<{
+          targetUserId: string;
+          status: string;
+        }> = await this.prisma.notificationPush.findMany({
           where: { notificationId: notification.id },
           select: {
             targetUserId: true,
@@ -412,11 +437,13 @@ export class NotificationService {
         const hasExplicitAudience = existingPushRows.length > 0;
         const pendingAudienceUserIds = new Set(
           existingPushRows
-            .filter((push) => push.status === "pending")
-            .map((push) => push.targetUserId),
+            .filter((push: { status: string }) => push.status === "pending")
+            .map((push: { targetUserId: string }) => push.targetUserId),
         );
         const explicitAudienceUserIds = new Set(
-          existingPushRows.map((push) => push.targetUserId),
+          existingPushRows.map(
+            (push: { targetUserId: string }) => push.targetUserId,
+          ),
         );
 
         if (hasExplicitAudience && pendingAudienceUserIds.size === 0) {
@@ -428,7 +455,12 @@ export class NotificationService {
           };
         }
 
-        const subs = await this.prisma.pushSubscription.findMany();
+        interface PushSubscription {
+          token: string;
+          userId: string;
+        }
+        const subs: PushSubscription[] =
+          await this.prisma.pushSubscription.findMany();
         if (subs.length === 0) {
           return { success: true, sent: 0, failed: 0, total: 0 };
         }
@@ -437,24 +469,32 @@ export class NotificationService {
 
         let scopedSubs = subs;
         if (hasExplicitAudience) {
-          scopedSubs = subs.filter((sub) =>
+          scopedSubs = subs.filter((sub: PushSubscription) =>
             pendingAudienceUserIds.has(sub.userId),
           );
         } else if (notification.tripId) {
-          const tripParticipants = await this.prisma.tripParticipant.findMany({
-            where: { tripId: notification.tripId },
-            select: { userId: true },
-          });
+          interface TripParticipant {
+            userId: string;
+          }
+          const tripParticipants: TripParticipant[] =
+            await this.prisma.tripParticipant.findMany({
+              where: { tripId: notification.tripId },
+              select: { userId: true },
+            });
           const participantIds = new Set(
-            tripParticipants.map((participant) => participant.userId),
+            tripParticipants.map(
+              (participant: TripParticipant) => participant.userId,
+            ),
           );
-          scopedSubs = subs.filter((sub) => participantIds.has(sub.userId));
+          scopedSubs = subs.filter((sub: PushSubscription) =>
+            participantIds.has(sub.userId),
+          );
 
           if (
             parsedAudience.audienceMode === "group" &&
             parsedAudience.audienceGroupId
           ) {
-            const groupParticipants =
+            const groupParticipants: TripParticipant[] =
               await this.prisma.tripParticipant.findMany({
                 where: {
                   tripId: notification.tripId,
@@ -463,9 +503,11 @@ export class NotificationService {
                 select: { userId: true },
               });
             const groupParticipantIds = new Set(
-              groupParticipants.map((participant) => participant.userId),
+              groupParticipants.map(
+                (participant: TripParticipant) => participant.userId,
+              ),
             );
-            scopedSubs = scopedSubs.filter((sub) =>
+            scopedSubs = scopedSubs.filter((sub: PushSubscription) =>
               groupParticipantIds.has(sub.userId),
             );
           }
@@ -548,10 +590,9 @@ export class NotificationService {
           try {
             const t = await executeWithRetry(
               () => expo.sendPushNotificationsAsync(chunk),
-              (err, retryAttempt) => {
+              (err: unknown, retryAttempt: number) => {
                 serverLogger.error(
-                  `Error sending push notification chunk (attempt ${retryAttempt + 1}):`,
-                  { error: err },
+                  `Error sending push notification chunk (attempt ${retryAttempt + 1}): ${err instanceof Error ? err.message : String(err)}`,
                 );
               },
               undefined,
@@ -576,8 +617,13 @@ export class NotificationService {
           { hasSuccess: boolean; hasFailure: boolean }
         >();
 
+        interface TicketResult {
+          userId: string;
+          statusCode: number;
+        }
+
         tickets
-          .map((t, idx) => {
+          .map((t: ExpoPushTicket, idx: number) => {
             const token = messages[idx]?.to;
             if (!token || typeof token !== "string") return null;
             const userId = userByToken.get(token);
@@ -585,10 +631,8 @@ export class NotificationService {
             const statusCode = t.status === "ok" ? 200 : 500;
             return { userId, statusCode };
           })
-          .filter(
-            (r): r is { userId: string; statusCode: number } => r !== null,
-          )
-          .forEach((r) => {
+          .filter((r): r is TicketResult => r !== null)
+          .forEach((r: TicketResult) => {
             const current = resultByUser.get(r.userId) ?? {
               hasSuccess: false,
               hasFailure: false,
@@ -601,22 +645,30 @@ export class NotificationService {
             resultByUser.set(r.userId, current);
           });
 
+        interface UserStatus {
+          hasSuccess: boolean;
+          hasFailure: boolean;
+        }
+
         const sentUserIds = Array.from(resultByUser.entries())
-          .filter(([, status]) => status.hasSuccess)
-          .map(([userId]) => userId);
+          .filter(([, status]: [string, UserStatus]) => status.hasSuccess)
+          .map(([userId]: [string, UserStatus]) => userId);
         const failedUserIds = Array.from(resultByUser.entries())
-          .filter(([, status]) => !status.hasSuccess && status.hasFailure)
-          .map(([userId]) => userId);
+          .filter(
+            ([, status]: [string, UserStatus]) =>
+              !status.hasSuccess && status.hasFailure,
+          )
+          .map(([userId]: [string, UserStatus]) => userId);
 
         if (hasExplicitAudience) {
-          const attemptedUserIds = new Set(resultByUser.keys());
+          const attemptedUserIds = new Set<string>(resultByUser.keys());
           const unattemptedUserIds = Array.from(explicitAudienceUserIds).filter(
-            (userId) => !attemptedUserIds.has(userId),
+            (userId: string) => !attemptedUserIds.has(userId),
           );
 
           if (sentUserIds.length > 0) {
             await Promise.all(
-              sentUserIds.map((userId) =>
+              sentUserIds.map((userId: string) =>
                 this.prisma.notificationPush.update({
                   where: {
                     targetUserId_notificationId: {
@@ -639,7 +691,7 @@ export class NotificationService {
           );
           if (allFailedUserIds.length > 0) {
             await Promise.all(
-              allFailedUserIds.map((userId) =>
+              allFailedUserIds.map((userId: string) =>
                 this.prisma.notificationPush.update({
                   where: {
                     targetUserId_notificationId: {
@@ -661,17 +713,17 @@ export class NotificationService {
         } else if (sentUserIds.length + failedUserIds.length > 0) {
           await this.prisma.notificationPush.createMany({
             data: [
-              ...sentUserIds.map((targetUserId) => ({
+              ...sentUserIds.map((targetUserId: string) => ({
                 notificationId: notification.id,
                 targetUserId,
-                status: "sent",
+                status: "sent" as const,
                 sentAt: new Date(),
                 failureReason: null,
               })),
-              ...failedUserIds.map((targetUserId) => ({
+              ...failedUserIds.map((targetUserId: string) => ({
                 notificationId: notification.id,
                 targetUserId,
-                status: "failed",
+                status: "failed" as const,
                 sentAt: new Date(),
                 failureReason: "expo",
               })),
@@ -681,7 +733,7 @@ export class NotificationService {
         }
 
         const failedCount = hasExplicitAudience
-          ? Array.from(explicitAudienceUserIds).filter((userId) => {
+          ? Array.from(explicitAudienceUserIds).filter((userId: string) => {
               const status = resultByUser.get(userId);
               if (!status) return true;
               return !status.hasSuccess;
@@ -689,7 +741,7 @@ export class NotificationService {
           : failedUserIds.length;
 
         const sentCount = hasExplicitAudience
-          ? Array.from(explicitAudienceUserIds).filter((userId) => {
+          ? Array.from(explicitAudienceUserIds).filter((userId: string) => {
               const status = resultByUser.get(userId);
               return !!status?.hasSuccess;
             }).length

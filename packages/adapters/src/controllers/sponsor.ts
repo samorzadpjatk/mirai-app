@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   getSponsorUseCase,
@@ -10,74 +9,31 @@ import {
   unlinkSponsorFromTripUseCase,
   SponsorRepositoryTag,
 } from "@mirai-app/use-cases";
+import {
+  validateGetByIdInput,
+  validateGetByTripIdInput,
+  validateCreateSponsorInput,
+  validateUpdateSponsorInput,
+  validateDeleteSponsorInput,
+  validateListInput,
+  validateLinkToTripInput,
+  validateUnlinkFromTripInput,
+} from "./validators/sponsor-validators";
+
+export {
+  validateGetByIdInput,
+  validateGetByTripIdInput,
+  validateCreateSponsorInput,
+  validateUpdateSponsorInput,
+  validateDeleteSponsorInput,
+  validateListInput,
+  validateLinkToTripInput,
+  validateUnlinkFromTripInput,
+};
 
 /**
  * Input validation schemas for sponsor controller
  */
-const schemas = {
-  getById: z.object({
-    id: z.string().cuid("Invalid sponsor ID format"),
-  }),
-
-  getByTripId: z.object({
-    tripId: z.string().cuid("Invalid trip ID format"),
-  }),
-
-  create: z.object({
-    name: z
-      .string()
-      .min(1, "Name is required")
-      .max(200, "Name must be at most 200 characters"),
-    description: z
-      .string()
-      .min(1, "Description is required")
-      .max(2000, "Description must be at most 2000 characters"),
-    logoPath: z.string().min(1, "Logo path is required"),
-    height: z.number().int().min(0).nullable().optional(),
-    offsetX: z.number().int().min(0).nullable().optional(),
-    offsetY: z.number().int().min(0).nullable().optional(),
-    isActive: z.boolean().default(true),
-  }),
-
-  update: z.object({
-    sponsorId: z.string().cuid("Invalid sponsor ID format"),
-    name: z
-      .string()
-      .min(1, "Name is required")
-      .max(200, "Name must be at most 200 characters")
-      .optional(),
-    description: z
-      .string()
-      .min(1, "Description is required")
-      .max(2000, "Description must be at most 2000 characters")
-      .optional(),
-    logoPath: z.string().min(1, "Logo path is required").optional(),
-    height: z.number().int().min(0).nullable().optional(),
-    offsetX: z.number().int().min(0).nullable().optional(),
-    offsetY: z.number().int().min(0).nullable().optional(),
-    isActive: z.boolean().optional(),
-  }),
-
-  delete: z.object({
-    id: z.string().cuid("Invalid sponsor ID format"),
-  }),
-
-  list: z.object({
-    limit: z.number().int().min(1).max(100).default(100),
-    offset: z.number().int().min(0).default(0),
-    activeOnly: z.boolean().default(false),
-  }),
-
-  linkToTrip: z.object({
-    sponsorId: z.string().cuid("Invalid sponsor ID format"),
-    tripId: z.string().cuid("Invalid trip ID format"),
-  }),
-
-  unlinkFromTrip: z.object({
-    sponsorId: z.string().cuid("Invalid sponsor ID format"),
-    tripId: z.string().cuid("Invalid trip ID format"),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -138,7 +94,7 @@ export class SponsorController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -148,7 +104,7 @@ export class SponsorController {
 
     const effect = getSponsorUseCase({ sponsorId: parsed.data.id });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as 
       | {
           success: true;
           data: {
@@ -166,7 +122,6 @@ export class SponsorController {
           };
         }
       | { success: false; error: string }
-    >;
   }
 
   /**
@@ -189,7 +144,7 @@ export class SponsorController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getByTripId.safeParse(input);
+    const parsed = validateGetByTripIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -254,7 +209,7 @@ export class SponsorController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateSponsorInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -272,7 +227,7 @@ export class SponsorController {
       isActive: parsed.data.isActive,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as 
       | {
           success: true;
           data: {
@@ -288,7 +243,6 @@ export class SponsorController {
           };
         }
       | { success: false; error: string }
-    >;
   }
 
   /**
@@ -311,7 +265,7 @@ export class SponsorController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateSponsorInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -330,7 +284,7 @@ export class SponsorController {
       isActive: parsed.data.isActive,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as 
       | {
           success: true;
           data: {
@@ -346,7 +300,6 @@ export class SponsorController {
           };
         }
       | { success: false; error: string }
-    >;
   }
 
   /**
@@ -362,7 +315,7 @@ export class SponsorController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.delete.safeParse(input);
+    const parsed = validateDeleteSponsorInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -372,7 +325,7 @@ export class SponsorController {
 
     const effect = deleteSponsorUseCase({ sponsorId: parsed.data.id });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as 
       | {
           success: true;
           data: {
@@ -381,7 +334,6 @@ export class SponsorController {
           };
         }
       | { success: false; error: string }
-    >;
   }
 
   /**
@@ -407,7 +359,7 @@ export class SponsorController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.list.safeParse(input);
+    const parsed = validateListInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -421,7 +373,7 @@ export class SponsorController {
       activeOnly: parsed.data.activeOnly,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as 
       | {
           success: true;
           data: {
@@ -440,7 +392,6 @@ export class SponsorController {
           };
         }
       | { success: false; error: string }
-    >;
   }
 
   /**
@@ -457,7 +408,7 @@ export class SponsorController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.linkToTrip.safeParse(input);
+    const parsed = validateLinkToTripInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -470,7 +421,7 @@ export class SponsorController {
       tripId: parsed.data.tripId,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as 
       | {
           success: true;
           data: {
@@ -480,7 +431,6 @@ export class SponsorController {
           };
         }
       | { success: false; error: string }
-    >;
   }
 
   /**
@@ -497,7 +447,7 @@ export class SponsorController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.unlinkFromTrip.safeParse(input);
+    const parsed = validateUnlinkFromTripInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -510,7 +460,7 @@ export class SponsorController {
       tripId: parsed.data.tripId,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as 
       | {
           success: true;
           data: {
@@ -520,6 +470,5 @@ export class SponsorController {
           };
         }
       | { success: false; error: string }
-    >;
   }
 }

@@ -4,6 +4,7 @@
 
 import { createStaticModule, type StaticModule } from "awilix-modular";
 import { Lifetime } from "awilix";
+import { Layer } from "effect";
 import { UserController } from "../controllers/user";
 import { TripController } from "../controllers/trip";
 import { ChallengeController } from "../controllers/challenge";
@@ -41,6 +42,24 @@ import type {
   NotificationScheduleRepository,
   AuthPort,
   TelemetryPort,
+} from "@mirai-app/use-cases";
+import {
+  UserRepositoryTag,
+  TripRepositoryTag,
+  ChallengeRepositoryTag,
+  GroupRepositoryTag,
+  LocationRepositoryTag,
+  NotificationRepositoryTag,
+  ChallengeSubmissionRepositoryTag,
+  ChallengeVoteRepositoryTag,
+  ActivityFeedRepositoryTag,
+  SponsorRepositoryTag,
+  SubmissionReportRepositoryTag,
+  RewardRepositoryTag,
+  RewardPurchaseRepositoryTag,
+  CoinTransactionRepositoryTag,
+  NotificationDeliveryRepositoryTag,
+  NotificationScheduleRepositoryTag,
 } from "@mirai-app/use-cases";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import type { TokenExtractor } from "../utils/TokenExtractor";
@@ -121,7 +140,7 @@ export interface ControllerModuleDeps {
 export interface ControllerModuleDef {
   name: "ControllerModule";
   providers: Record<string, object | string | boolean | number>;
-  exports: string[];
+  exports: Record<string, object | string | boolean | number>;
 }
 
 type Cradle = Record<string, unknown>;
@@ -130,60 +149,125 @@ const scoped = (factory: (cradle: Cradle) => unknown) => ({
   lifetime: Lifetime.SCOPED,
 });
 
+// Helper to create a repository layer with proper typing
+function createRepoLayer<T, E>(
+  tag: { of: (service: T) => Layer.Layer<E> },
+  repo: T,
+): Layer.Layer<unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (tag as any).of(repo) as Layer.Layer<unknown>;
+}
+
+// Helper to merge two layers
+function mergeLayers(
+  layer1: Layer.Layer<unknown>,
+  layer2: Layer.Layer<unknown>,
+): Layer.Layer<unknown> {
+  return layer1.pipe(Layer.merge(layer2)) as Layer.Layer<unknown>;
+}
+
 export const ControllerModule: StaticModule<ControllerModuleDef> =
   createStaticModule<ControllerModuleDef>({
     name: "ControllerModule",
     providers: {
       [CONTROLLER_TOKENS.UserController]: scoped(
-        (c) => new UserController(c.userRepository as UserRepository),
+        (c) =>
+          new UserController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              UserRepositoryTag as any,
+              c.userRepository as UserRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
       ),
       [CONTROLLER_TOKENS.TripController]: scoped(
-        (c) => new TripController(c.tripRepository as TripRepository),
+        (c) =>
+          new TripController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              TripRepositoryTag as any,
+              c.tripRepository as TripRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
       ),
       [CONTROLLER_TOKENS.ChallengeController]: scoped(
         (c) =>
-          new ChallengeController(c.challengeRepository as ChallengeRepository),
+          new ChallengeController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              ChallengeRepositoryTag as any,
+              c.challengeRepository as ChallengeRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
       ),
       [CONTROLLER_TOKENS.GroupController]: scoped(
-        (c) => new GroupController(c.groupRepository as GroupRepository),
+        (c) =>
+          new GroupController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              GroupRepositoryTag as any,
+              c.groupRepository as GroupRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
       ),
       [CONTROLLER_TOKENS.LocationController]: scoped(
         (c) =>
-          new LocationController(c.locationRepository as LocationRepository),
+          new LocationController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              LocationRepositoryTag as any,
+              c.locationRepository as LocationRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
       ),
       [CONTROLLER_TOKENS.NotificationController]: scoped(
         (c) =>
           new NotificationController(
-            c.notificationRepository as NotificationRepository,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              NotificationRepositoryTag as any,
+              c.notificationRepository as NotificationRepository,
+            ) as unknown as Layer.Layer<unknown>,
           ),
       ),
       [CONTROLLER_TOKENS.NotificationScheduleController]: scoped(
         (c) =>
           new NotificationScheduleController(
-            c.notificationScheduleRepository as NotificationScheduleRepository,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              NotificationScheduleRepositoryTag as any,
+              c.notificationScheduleRepository as NotificationScheduleRepository,
+            ) as unknown as Layer.Layer<unknown>,
           ),
       ),
       [CONTROLLER_TOKENS.NotificationDeliveryController]: scoped(
         (c) =>
           new NotificationDeliveryController(
-            c.getDeliveriesUseCase,
-            c.getDeliveryByNotificationIdUseCase,
-            c.getDeliveryStatsUseCase,
-            c.getFailedDeliveriesUseCase,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              NotificationDeliveryRepositoryTag as any,
+              c.notificationDeliveryRepository as NotificationDeliveryRepository,
+            ) as unknown as Layer.Layer<unknown>,
           ),
       ),
       [CONTROLLER_TOKENS.ChallengeSubmissionController]: scoped(
         (c) =>
           new ChallengeSubmissionController(
-            c.challengeSubmissionRepository as ChallengeSubmissionRepository,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              ChallengeSubmissionRepositoryTag as any,
+              c.challengeSubmissionRepository as ChallengeSubmissionRepository,
+            ) as unknown as Layer.Layer<unknown>,
           ),
       ),
       [CONTROLLER_TOKENS.ChallengeVoteController]: scoped(
         (c) =>
           new ChallengeVoteController(
-            c.challengeVoteRepository as ChallengeVoteRepository,
-            c.challengeRepository as ChallengeRepository,
-            c.challengeSubmissionRepository as ChallengeSubmissionRepository,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              ChallengeVoteRepositoryTag as any,
+              c.challengeVoteRepository as ChallengeVoteRepository,
+            ) as unknown as Layer.Layer<unknown>,
             c.onChallengeCompleted as (params: {
               challengeId: string;
               tripId: string;
@@ -194,38 +278,68 @@ export const ControllerModule: StaticModule<ControllerModuleDef> =
       [CONTROLLER_TOKENS.ActivityFeedController]: scoped(
         (c) =>
           new ActivityFeedController(
-            c.activityFeedRepository as ActivityFeedRepository,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              ActivityFeedRepositoryTag as any,
+              c.activityFeedRepository as ActivityFeedRepository,
+            ) as unknown as Layer.Layer<unknown>,
           ),
       ),
       [CONTROLLER_TOKENS.RewardController]: scoped(
         (c) =>
           new RewardController(
-            c.rewardRepository as RewardRepository,
-            c.rewardPurchaseRepository as RewardPurchaseRepository,
-            c.tripPointsCalculator,
-            c.groupCoinsService,
-            c.tripAccessChecker,
+            mergeLayers(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              Layer.succeed(
+                RewardRepositoryTag as any,
+                c.rewardRepository as RewardRepository,
+              ) as unknown as Layer.Layer<unknown>,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              Layer.succeed(
+                RewardPurchaseRepositoryTag as any,
+                c.rewardPurchaseRepository as RewardPurchaseRepository,
+              ) as unknown as Layer.Layer<unknown>,
+            ),
           ),
       ),
       [CONTROLLER_TOKENS.CoinController]: scoped(
         (c) =>
           new CoinController(
-            c.coinTransactionRepository as CoinTransactionRepository,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              CoinTransactionRepositoryTag as any,
+              c.coinTransactionRepository as CoinTransactionRepository,
+            ) as unknown as Layer.Layer<unknown>,
           ),
       ),
       [CONTROLLER_TOKENS.CoinTransactionController]: scoped(
         (c) =>
           new CoinTransactionController(
-            c.coinTransactionRepository as CoinTransactionRepository,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              CoinTransactionRepositoryTag as any,
+              c.coinTransactionRepository as CoinTransactionRepository,
+            ) as unknown as Layer.Layer<unknown>,
           ),
       ),
       [CONTROLLER_TOKENS.SponsorController]: scoped(
-        (c) => new SponsorController(c.sponsorRepository as SponsorRepository),
+        (c) =>
+          new SponsorController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              SponsorRepositoryTag as any,
+              c.sponsorRepository as SponsorRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
       ),
       [CONTROLLER_TOKENS.SubmissionReportController]: scoped(
         (c) =>
           new SubmissionReportController(
-            c.submissionReportRepository as SubmissionReportRepository,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              SubmissionReportRepositoryTag as any,
+              c.submissionReportRepository as SubmissionReportRepository,
+            ) as unknown as Layer.Layer<unknown>,
           ),
       ),
       [CONTROLLER_TOKENS.StorageController]: scoped(
@@ -235,10 +349,205 @@ export const ControllerModule: StaticModule<ControllerModuleDef> =
         (c) => new NotificationService(c.db),
       ),
     },
-    exports: [
-      ...Object.values(CONTROLLER_TOKENS),
-      ...Object.values(SERVICE_TOKENS),
-    ],
+    exports: {
+      [CONTROLLER_TOKENS.UserController]: {
+        factory: (cradle: Cradle) =>
+          new UserController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              UserRepositoryTag as any,
+              cradle.userRepository as UserRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.TripController]: {
+        factory: (cradle: Cradle) =>
+          new TripController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              TripRepositoryTag as any,
+              cradle.tripRepository as TripRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.ChallengeController]: {
+        factory: (cradle: Cradle) =>
+          new ChallengeController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              ChallengeRepositoryTag as any,
+              cradle.challengeRepository as ChallengeRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.GroupController]: {
+        factory: (cradle: Cradle) =>
+          new GroupController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              GroupRepositoryTag as any,
+              cradle.groupRepository as GroupRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.LocationController]: {
+        factory: (cradle: Cradle) =>
+          new LocationController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              LocationRepositoryTag as any,
+              cradle.locationRepository as LocationRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.NotificationController]: {
+        factory: (cradle: Cradle) =>
+          new NotificationController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              NotificationRepositoryTag as any,
+              cradle.notificationRepository as NotificationRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.NotificationScheduleController]: {
+        factory: (cradle: Cradle) =>
+          new NotificationScheduleController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              NotificationScheduleRepositoryTag as any,
+              cradle.notificationScheduleRepository as NotificationScheduleRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.NotificationDeliveryController]: {
+        factory: (cradle: Cradle) =>
+          new NotificationDeliveryController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              NotificationDeliveryRepositoryTag as any,
+              cradle.notificationDeliveryRepository as NotificationDeliveryRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.ChallengeSubmissionController]: {
+        factory: (cradle: Cradle) =>
+          new ChallengeSubmissionController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              ChallengeSubmissionRepositoryTag as any,
+              cradle.challengeSubmissionRepository as ChallengeSubmissionRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.ChallengeVoteController]: {
+        factory: (cradle: Cradle) =>
+          new ChallengeVoteController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              ChallengeVoteRepositoryTag as any,
+              cradle.challengeVoteRepository as ChallengeVoteRepository,
+            ) as unknown as Layer.Layer<unknown>,
+            cradle.onChallengeCompleted as (params: {
+              challengeId: string;
+              tripId: string;
+              adminId: string;
+            }) => Promise<void>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.ActivityFeedController]: {
+        factory: (cradle: Cradle) =>
+          new ActivityFeedController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              ActivityFeedRepositoryTag as any,
+              cradle.activityFeedRepository as ActivityFeedRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.RewardController]: {
+        factory: (cradle: Cradle) =>
+          new RewardController(
+            mergeLayers(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              Layer.succeed(
+                RewardRepositoryTag as any,
+                cradle.rewardRepository as RewardRepository,
+              ) as unknown as Layer.Layer<unknown>,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              Layer.succeed(
+                RewardPurchaseRepositoryTag as any,
+                cradle.rewardPurchaseRepository as RewardPurchaseRepository,
+              ) as unknown as Layer.Layer<unknown>,
+            ),
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.CoinController]: {
+        factory: (cradle: Cradle) =>
+          new CoinController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              CoinTransactionRepositoryTag as any,
+              cradle.coinTransactionRepository as CoinTransactionRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.CoinTransactionController]: {
+        factory: (cradle: Cradle) =>
+          new CoinTransactionController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              CoinTransactionRepositoryTag as any,
+              cradle.coinTransactionRepository as CoinTransactionRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.SponsorController]: {
+        factory: (cradle: Cradle) =>
+          new SponsorController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              SponsorRepositoryTag as any,
+              cradle.sponsorRepository as SponsorRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.SubmissionReportController]: {
+        factory: (cradle: Cradle) =>
+          new SubmissionReportController(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Layer.succeed(
+              SubmissionReportRepositoryTag as any,
+              cradle.submissionReportRepository as SubmissionReportRepository,
+            ) as unknown as Layer.Layer<unknown>,
+          ),
+        lifetime: Lifetime.SCOPED,
+      },
+      [CONTROLLER_TOKENS.StorageController]: {
+        factory: (cradle: Cradle) =>
+          new StorageController(cradle.supabase as SupabaseClient),
+        lifetime: Lifetime.SCOPED,
+      },
+      [SERVICE_TOKENS.NotificationService]: {
+        factory: (cradle: Cradle) => new NotificationService(cradle.db),
+        lifetime: Lifetime.SCOPED,
+      },
+    },
   });
 
 export { UserController } from "../controllers/user";

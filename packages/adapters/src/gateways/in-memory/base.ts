@@ -113,20 +113,19 @@ export abstract class InMemoryRepository<T extends { id: string }> {
   }
 
   protected updateGeneric(item: T): Effect.Effect<T, DatabaseError, never> {
-    return Effect.gen(
-      function* () {
-        if (!this.storage.has(item.id)) {
-          return yield* Effect.fail(
-            new DatabaseError({
-              operation: "updateGeneric",
-              message: `Item with id ${item.id} not found`,
-            }),
-          );
-        }
-        this.storage.set(item.id, item);
-        return yield* Effect.succeed(item);
-      }.bind(this),
-    );
+    const self = this;
+    return Effect.gen(function* () {
+      if (!self.storage.has(item.id)) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "updateGeneric",
+            message: `Item with id ${item.id} not found`,
+          }),
+        );
+      }
+      self.storage.set(item.id, item);
+      return yield* Effect.succeed(item);
+    });
   }
 
   protected deleteGeneric(

@@ -1,5 +1,5 @@
 /**
- * DrizzleTelemetryAdapter - TelemetryPort implementation using Drizzle ORM
+ * DrizzleTelemetryAdapter - TelemetryPort implementation using Drizzle ORM (Effect-based)
  *
  * This adapter implements the TelemetryPort interface to persist telemetry
  * events to the database using Drizzle. It stores telemetry data in the
@@ -9,7 +9,7 @@
  * - Uses Effect.Effect for composable error handling (no exceptions for expected errors)
  * - Maps Drizzle errors to domain TelemetryError
  * - Thin wrapper with no business logic (just persistence)
- * - Compatible with awilix-modular dependency injection
+ * - Compatible with awilix-modular dependency injection and Effect Layers
  *
  * @module gateways
  */
@@ -198,7 +198,7 @@ function extractEndpoint(event: TelemetryEvent): string | undefined {
  * Implements TelemetryPort using Drizzle ORM to persist telemetry
  * events to the UserAgent table in the database.
  *
- * Compatible with awilix-modular dependency injection.
+ * Compatible with awilix-modular dependency injection and Effect Layers.
  * Registered in RepositoryModule with singleton lifetime.
  *
  * @example
@@ -208,15 +208,17 @@ function extractEndpoint(event: TelemetryEvent): string | undefined {
  * const effect = telemetry.log(event);
  * const result = await Effect.runPromise(effect);
  *
- * // Manual instantiation (backward-compatible)
- * const telemetry = new DrizzleTelemetryAdapter(db);
- * const effect = telemetry.log(event);
- * const result = await Effect.runPromise(effect);
+ * // With Effect Layers
+ * const program = Effect.gen(function* () {
+ *   const telemetry = yield* TelemetryPortTag;
+ *   yield* telemetry.log(event);
+ * }).pipe(Effect.provide(makeTelemetryServiceLayer(db)));
+ * await Effect.runPromise(program);
  *
  * // Handle errors
  * const result = await Effect.runPromise(Effect.either(telemetry.log(event)));
  * if (Either.isLeft(result)) {
- *   logger.error("Failed to log telemetry", new Error(result.left.message));
+ *   logger.error("Failed to log telemetry", result.left);
  * }
  * ```
  */
@@ -248,7 +250,7 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    * const result = await Effect.runPromise(Effect.either(effect));
    * if (Either.isLeft(result)) {
    *   // Handle error (telemetry is usually non-critical)
-   *   logger.warn("Telemetry logging failed", new Error(result.left.message));
+   *   logger.warn("Telemetry logging failed", result.left);
    * }
    * ```
    */
@@ -292,7 +294,7 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    * const effect = adapter.logBatch(events);
    * const result = await Effect.runPromise(Effect.either(effect));
    * if (Either.isLeft(result)) {
-   *   logger.error("Batch telemetry failed", new Error(result.left.message));
+   *   logger.error("Batch telemetry failed", result.left);
    * }
    * ```
    */

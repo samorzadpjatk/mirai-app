@@ -26,7 +26,7 @@ import {
   RewardDrizzleMapper,
   RewardPurchaseDrizzleMapper,
 } from "../../mappers/drizzle/reward";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleRewardRepository

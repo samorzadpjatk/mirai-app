@@ -139,49 +139,57 @@ export class InMemoryAuthAdapter implements AuthPort {
       );
     }
 
-    return Effect.sync(() => {
+    return Effect.gen(this, function* () {
       // Look up the session by token
       const sessionId = this.tokens.get(token);
       if (!sessionId) {
-        throw new InvalidTokenError({
-          message: "Invalid or unknown token",
-          token,
-        });
+        return yield* Effect.fail(
+          new InvalidTokenError({
+            message: "Invalid or unknown token",
+            token,
+          }),
+        );
       }
 
       // Get the session
       const session = this.sessions.get(sessionId);
       if (!session) {
-        throw new InvalidTokenError({
-          message: "Session not found",
-          token,
-        });
+        return yield* Effect.fail(
+          new InvalidTokenError({
+            message: "Session not found",
+            token,
+          }),
+        );
       }
 
       // Check if session has expired
       if (session.expiresAt.getTime() < Date.now()) {
-        throw new SessionExpiredError({
-          sessionId: session.id,
-          expiredAt: session.expiresAt,
-          message: "Session has expired",
-        });
+        return yield* Effect.fail(
+          new SessionExpiredError({
+            sessionId: session.id,
+            expiredAt: session.expiresAt,
+            message: "Session has expired",
+          }),
+        );
       }
 
       // Get the user
       const user = this.users.get(UserIdFactory.toString(session.userId));
       if (!user) {
-        throw new InvalidTokenError({
-          message: "User not found",
-          token,
-        });
+        return yield* Effect.fail(
+          new InvalidTokenError({
+            message: "User not found",
+            token,
+          }),
+        );
       }
 
-      // Create AuthContext
-      return this.createAuthContextFromUser(
-        user,
-        session.id,
-        session.createdAt,
+      // Create AuthContext using runPromise since it's async
+      const authContext = yield* Effect.promise(() =>
+        this.createAuthContextFromUser(user, session.id, session.createdAt),
       );
+
+      return authContext;
     }).pipe(
       Effect.catchAllDefect(
         (
@@ -228,42 +236,48 @@ export class InMemoryAuthAdapter implements AuthPort {
   refreshSession(
     sessionId: string,
   ): Effect.Effect<AuthContext, AuthError | SessionExpiredError, never> {
-    return Effect.sync(() => {
+    return Effect.gen(this, function* () {
       // Get the session
       const session = this.sessions.get(sessionId);
       if (!session) {
-        throw new SessionExpiredError({
-          sessionId,
-          expiredAt: new Date(),
-          message: "No active session found",
-        });
+        return yield* Effect.fail(
+          new SessionExpiredError({
+            sessionId,
+            expiredAt: new Date(),
+            message: "No active session found",
+          }),
+        );
       }
 
       // Check if session has expired
       if (session.expiresAt.getTime() < Date.now()) {
-        throw new SessionExpiredError({
-          sessionId,
-          expiredAt: session.expiresAt,
-          message: "Session has expired",
-        });
+        return yield* Effect.fail(
+          new SessionExpiredError({
+            sessionId,
+            expiredAt: session.expiresAt,
+            message: "Session has expired",
+          }),
+        );
       }
 
       // Get the user
       const user = this.users.get(UserIdFactory.toString(session.userId));
       if (!user) {
-        throw new SessionExpiredError({
-          sessionId,
-          expiredAt: new Date(),
-          message: "User not found",
-        });
+        return yield* Effect.fail(
+          new SessionExpiredError({
+            sessionId,
+            expiredAt: new Date(),
+            message: "User not found",
+          }),
+        );
       }
 
-      // Create AuthContext
-      return this.createAuthContextFromUser(
-        user,
-        session.id,
-        session.createdAt,
+      // Create AuthContext using runPromise since it's async
+      const authContext = yield* Effect.promise(() =>
+        this.createAuthContextFromUser(user, session.id, session.createdAt),
       );
+
+      return authContext;
     }).pipe(
       Effect.catchAllDefect(
         (
@@ -494,20 +508,21 @@ export class InMemoryAuthAdapter implements AuthPort {
     user: InMemoryUser,
     sessionId: string,
     authenticatedAt: Date,
-  ): AuthContext {
-    const authContextResult = AuthContext.create({
+  ): Promise<AuthContext> {
+    // Create AuthContext using Effect - unwrap with runPromise
+    const program = AuthContext.create({
       userId: user.id,
       role: user.role,
       authenticatedAt,
       sessionId,
-    });
+    }).pipe(
+      Effect.catchTag("ValidationError", (error) => {
+        throw new AuthError({
+          message: `Failed to create AuthContext: ${error.message}`,
+        });
+      }),
+    ) as Effect.Effect<AuthContext, never, never>;
 
-    if (authContextResult.kind === "err") {
-      throw new AuthError({
-        message: `Failed to create AuthContext: ${authContextResult.error.message}`,
-      });
-    }
-
-    return authContextResult.value;
+    return Effect.runPromise(program);
   }
 }

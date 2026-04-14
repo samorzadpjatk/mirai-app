@@ -62,7 +62,8 @@ export class DrizzleNotificationSenderService {
       // Get tripId from schedule
       let tripId: string | null = null;
       let scheduleId: string | null = null;
-      if (scheduleExecution?.[0]?.scheduleId) {
+      const firstExecution = scheduleExecution?.[0];
+      if (firstExecution?.scheduleId) {
         const schedule = yield* Effect.tryPromise({
           try: () =>
             this.db
@@ -71,9 +72,7 @@ export class DrizzleNotificationSenderService {
                 id: notificationSchedules.id,
               })
               .from(notificationSchedules)
-              .where(
-                eq(notificationSchedules.id, scheduleExecution[0].scheduleId),
-              )
+              .where(eq(notificationSchedules.id, firstExecution.scheduleId))
               .limit(1),
           catch: (error) =>
             new NotificationSenderError({
@@ -232,7 +231,8 @@ export class DrizzleNotificationSenderService {
         // Get tripId from schedule
         let tripId: string | null = null;
         let scheduleId: string | null = null;
-        if (scheduleExecution?.[0]?.scheduleId) {
+        const firstExecution = scheduleExecution?.[0];
+        if (firstExecution?.scheduleId) {
           const schedule = yield* Effect.tryPromise({
             try: () =>
               this.db
@@ -241,9 +241,7 @@ export class DrizzleNotificationSenderService {
                   id: notificationSchedules.id,
                 })
                 .from(notificationSchedules)
-                .where(
-                  eq(notificationSchedules.id, scheduleExecution[0].scheduleId),
-                )
+                .where(eq(notificationSchedules.id, firstExecution.scheduleId))
                 .limit(1),
             catch: (error) =>
               new NotificationSenderError({

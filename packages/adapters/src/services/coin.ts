@@ -6,7 +6,7 @@ import {
   users,
 } from "@mirai-app/frameworks/drizzle/schema";
 import { eq, sql } from "drizzle-orm";
-import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
+import type { addCoinsUseCase, removeCoinsUseCase } from "@mirai-app/use-cases";
 import type { DrizzleRankingActivityService } from "./ranking-activity";
 import { ServiceError } from "@mirai-app/adapters/errors";
 
@@ -20,8 +20,8 @@ export class DrizzleCoinService {
   constructor(
     private db: DrizzleDb,
     private coinRepo: DrizzleCoinTransactionRepository,
-    private addCoinsUseCase: AddCoinsUseCase,
-    private removeCoinsUseCase: RemoveCoinsUseCase,
+    private addCoins: typeof addCoinsUseCase,
+    private removeCoins: typeof removeCoinsUseCase,
     private rankingActivityService: DrizzleRankingActivityService,
   ) {}
 
@@ -56,92 +56,132 @@ export class DrizzleCoinService {
     ServiceError,
     never
   > {
-    return Effect.tryPromise({
-      try: async () => {
-        return this.db.transaction(async (tx) => {
-          // Capture ranking snapshot before operation
-          const previousSnapshot =
-            await this.rankingActivityService.captureTripRankingSnapshot(
-              tx,
-              input.tripId,
-            );
+    return Effect.gen(this, function* () {
+      // Capture ranking snapshot before operation
+      const previousSnapshot = yield* this.rankingActivityService
+        .captureTripRankingSnapshot(this.db, input.tripId)
+        .pipe(
+          Effect.catchAll((error) =>
+            Effect.fail(
+              new ServiceError({
+                operation: "addCoinsWithActivity",
+                message: `Failed to capture ranking snapshot: ${error.message}`,
+                cause: error,
+              }),
+            ),
+          ),
+        );
 
-          // Execute coin operation
-          const result = await this.addCoinsUseCase.execute({
-            tripId: input.tripId,
-            groupId: input.groupId,
-            amount: input.amount,
-            reason: input.reason,
-            adminId: input.adminId,
-          });
-
-          if (result.kind === "err") {
-            return { success: false as const, error: result.error };
-          }
-
-          // Update group coins
-          await tx
-            .update(groups)
-            .set({ coins: sql`${groups.coins} + ${input.amount}` })
-            .where(eq(groups.id, input.groupId));
-
-          // Get updated group data
-          const [group] = await tx
-            .select({
-              id: groups.id,
-              name: groups.name,
-              coins: groups.coins,
-            })
-            .from(groups)
-            .where(eq(groups.id, input.groupId))
-            .limit(1);
-
-          // Create rank change activities
-          await this.rankingActivityService.createRankChangeActivities({
-            tx,
-            tripId: input.tripId,
-            previousSnapshot,
-            createdByAdmin: input.adminId,
-          });
-
-          if (!group) {
-            return {
+      // Execute coin operation using Effect
+      const result = yield* this.addCoins({
+        tripId: input.tripId,
+        groupId: input.groupId,
+        amount: input.amount,
+        reason: input.reason,
+        adminId: input.adminId,
+      }).pipe(
+        Effect.provideService(this.coinRepo.serviceTag, this.coinRepo),
+        Effect.matchEffect({
+          onFailure: (error) =>
+            Effect.succeed({
               success: false as const,
-              error: "Group not found after update",
-            };
-          }
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          onSuccess: (output) =>
+            Effect.gen(this, function* () {
+              // Update group coins
+              yield* Effect.tryPromise({
+                try: async () => {
+                  await this.db
+                    .update(groups)
+                    .set({ coins: sql`${groups.coins} + ${input.amount}` })
+                    .where(eq(groups.id, input.groupId));
+                },
+                catch: (error) =>
+                  new ServiceError({
+                    operation: "addCoinsWithActivity",
+                    message: `Failed to update group coins: ${String(error)}`,
+                    cause: error,
+                  }),
+              });
 
-          // Get admin data
-          const [admin] = await tx
-            .select({
-              id: users.id,
-              firstName: users.firstName,
-              lastName: users.lastName,
-            })
-            .from(users)
-            .where(eq(users.id, input.adminId))
-            .limit(1);
+              // Get updated group data
+              const [group] = yield* Effect.tryPromise({
+                try: async () =>
+                  this.db
+                    .select({
+                      id: groups.id,
+                      name: groups.name,
+                      coins: groups.coins,
+                    })
+                    .from(groups)
+                    .where(eq(groups.id, input.groupId))
+                    .limit(1),
+                catch: (error) =>
+                  new ServiceError({
+                    operation: "addCoinsWithActivity",
+                    message: `Failed to fetch group: ${String(error)}`,
+                    cause: error,
+                  }),
+              });
 
-          return {
-            success: true as const,
-            data: {
-              ...result.value.transaction,
-              group,
-              admin: admin ?? {
-                id: input.adminId,
-                firstName: null,
-                lastName: null,
-              },
-            },
-          };
-        });
-      },
-      catch: (error) =>
-        new ServiceError({
-          operation: "addCoinsWithActivity",
-          message: `Failed to add coins: ${String(error)}`,
-          cause: error,
+              if (!group) {
+                return {
+                  success: false as const,
+                  error: "Group not found after update",
+                };
+              }
+
+              // Create rank change activities
+              yield* this.rankingActivityService.createRankChangeActivities({
+                tx: this.db,
+                tripId: input.tripId,
+                previousSnapshot,
+                createdByAdmin: input.adminId,
+              });
+
+              // Get admin data
+              const [admin] = yield* Effect.tryPromise({
+                try: async () =>
+                  this.db
+                    .select({
+                      id: users.id,
+                      firstName: users.firstName,
+                      lastName: users.lastName,
+                    })
+                    .from(users)
+                    .where(eq(users.id, input.adminId))
+                    .limit(1),
+                catch: (error) =>
+                  new ServiceError({
+                    operation: "addCoinsWithActivity",
+                    message: `Failed to fetch admin: ${String(error)}`,
+                    cause: error,
+                  }),
+              });
+
+              return {
+                success: true as const,
+                data: {
+                  id: output.transaction.id,
+                  amount: output.transaction.amount,
+                  reason: output.transaction.reason ?? null,
+                  groupId: output.transaction.groupId,
+                  adminId: output.transaction.adminId,
+                  createdAt: output.transaction.createdAt,
+                  group,
+                  admin: admin ?? {
+                    id: input.adminId,
+                    firstName: null,
+                    lastName: null,
+                  },
+                },
+              };
+            }),
         }),
+      );
+
+      return result;
     });
   }
 
@@ -176,104 +216,145 @@ export class DrizzleCoinService {
     ServiceError,
     never
   > {
-    return Effect.tryPromise({
-      try: async () => {
-        return this.db.transaction(async (tx) => {
-          // Capture ranking snapshot before operation
-          const previousSnapshot =
-            await this.rankingActivityService.captureTripRankingSnapshot(
-              tx,
-              input.tripId,
-            );
+    return Effect.gen(this, function* () {
+      // Capture ranking snapshot before operation
+      const previousSnapshot = yield* this.rankingActivityService
+        .captureTripRankingSnapshot(this.db, input.tripId)
+        .pipe(
+          Effect.catchAll((error) =>
+            Effect.fail(
+              new ServiceError({
+                operation: "removeCoinsWithActivity",
+                message: `Failed to capture ranking snapshot: ${error.message}`,
+                cause: error,
+              }),
+            ),
+          ),
+        );
 
-          // Execute coin operation
-          const result = await this.removeCoinsUseCase.execute({
-            tripId: input.tripId,
-            groupId: input.groupId,
-            amount: input.amount,
-            reason: input.reason,
-            adminId: input.adminId,
-          });
-
-          if (result.kind === "err") {
-            return { success: false as const, error: result.error };
-          }
-
-          // Update group coins
-          await tx
-            .update(groups)
-            .set({ coins: sql`${groups.coins} - ${input.amount}` })
-            .where(eq(groups.id, input.groupId));
-
-          // Get updated group data
-          const [group] = await tx
-            .select({
-              id: groups.id,
-              name: groups.name,
-              coins: groups.coins,
-            })
-            .from(groups)
-            .where(eq(groups.id, input.groupId))
-            .limit(1);
-
-          // Create rank change activities
-          await this.rankingActivityService.createRankChangeActivities({
-            tx,
-            tripId: input.tripId,
-            previousSnapshot,
-            createdByAdmin: input.adminId,
-          });
-
-          if (!group) {
-            return {
+      // Execute coin operation using Effect
+      const result = yield* this.removeCoins({
+        tripId: input.tripId,
+        groupId: input.groupId,
+        amount: input.amount,
+        reason: input.reason,
+        adminId: input.adminId,
+      }).pipe(
+        Effect.provideService(this.coinRepo.serviceTag, this.coinRepo),
+        Effect.matchEffect({
+          onFailure: (error) =>
+            Effect.succeed({
               success: false as const,
-              error: "Group not found after update",
-            };
-          }
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          onSuccess: (output) =>
+            Effect.gen(this, function* () {
+              // Update group coins
+              yield* Effect.tryPromise({
+                try: async () => {
+                  await this.db
+                    .update(groups)
+                    .set({ coins: sql`${groups.coins} - ${input.amount}` })
+                    .where(eq(groups.id, input.groupId));
+                },
+                catch: (error) =>
+                  new ServiceError({
+                    operation: "removeCoinsWithActivity",
+                    message: `Failed to update group coins: ${String(error)}`,
+                    cause: error,
+                  }),
+              });
 
-          // Get admin data
-          const [admin] = await tx
-            .select({
-              id: users.id,
-              firstName: users.firstName,
-              lastName: users.lastName,
-            })
-            .from(users)
-            .where(eq(users.id, input.adminId))
-            .limit(1);
+              // Get updated group data
+              const [group] = yield* Effect.tryPromise({
+                try: async () =>
+                  this.db
+                    .select({
+                      id: groups.id,
+                      name: groups.name,
+                      coins: groups.coins,
+                    })
+                    .from(groups)
+                    .where(eq(groups.id, input.groupId))
+                    .limit(1),
+                catch: (error) =>
+                  new ServiceError({
+                    operation: "removeCoinsWithActivity",
+                    message: `Failed to fetch group: ${String(error)}`,
+                    cause: error,
+                  }),
+              });
 
-          return {
-            success: true as const,
-            data: {
-              ...result.value.transaction,
-              group,
-              admin: admin ?? {
-                id: input.adminId,
-                firstName: null,
-                lastName: null,
-              },
-            },
-          };
-        });
-      },
-      catch: (error) =>
-        new ServiceError({
-          operation: "removeCoinsWithActivity",
-          message: `Failed to remove coins: ${String(error)}`,
-          cause: error,
+              if (!group) {
+                return {
+                  success: false as const,
+                  error: "Group not found after update",
+                };
+              }
+
+              // Create rank change activities
+              yield* this.rankingActivityService.createRankChangeActivities({
+                tx: this.db,
+                tripId: input.tripId,
+                previousSnapshot,
+                createdByAdmin: input.adminId,
+              });
+
+              // Get admin data
+              const [admin] = yield* Effect.tryPromise({
+                try: async () =>
+                  this.db
+                    .select({
+                      id: users.id,
+                      firstName: users.firstName,
+                      lastName: users.lastName,
+                    })
+                    .from(users)
+                    .where(eq(users.id, input.adminId))
+                    .limit(1),
+                catch: (error) =>
+                  new ServiceError({
+                    operation: "removeCoinsWithActivity",
+                    message: `Failed to fetch admin: ${String(error)}`,
+                    cause: error,
+                  }),
+              });
+
+              return {
+                success: true as const,
+                data: {
+                  id: output.transaction.id,
+                  amount: output.transaction.amount,
+                  reason: output.transaction.reason ?? null,
+                  groupId: output.transaction.groupId,
+                  adminId: output.transaction.adminId,
+                  createdAt: output.transaction.createdAt,
+                  group,
+                  admin: admin ?? {
+                    id: input.adminId,
+                    firstName: null,
+                    lastName: null,
+                  },
+                },
+              };
+            }),
         }),
+      );
+
+      return result;
     });
   }
 }
 
 // Type stub for DrizzleCoinTransactionRepository - to be fully implemented
-import type { CoinTransaction } from "@mirai-app/use-cases";
-type DrizzleCoinTransactionRepository = {
-  create(data: {
-    tripId: string;
-    groupId: string;
-    amount: number;
-    reason?: string;
-    adminId: string;
-  }): Promise<CoinTransaction>;
+import type {
+  CoinTransaction,
+  CoinTransactionRepository,
+} from "@mirai-app/use-cases";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DrizzleCoinTransactionRepository = CoinTransactionRepository & {
+  // Additional implementation-specific properties if needed
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 };

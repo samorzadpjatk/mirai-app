@@ -1,8 +1,10 @@
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { eq } from "drizzle-orm";
-import type { PgTable, TableConfig } from "drizzle-orm/pg-core";
+import type { PgTable } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * Generic mapper interface for domain-drizzle conversions
@@ -25,7 +27,7 @@ export interface DrizzleRepositoryConfig<
   TDomain,
   TDrizzle,
   TInsert,
-  TTable extends PgTable<TableConfig>,
+  TTable extends PgTable,
   TInsertPartial = Partial<TInsert>,
 > {
   table: TTable;
@@ -72,7 +74,7 @@ export abstract class BaseDrizzleRepository<
   TDomain,
   TDrizzle,
   TInsert,
-  TTable extends PgTable<TableConfig>,
+  TTable extends PgTable,
   TInsertPartial = Partial<TInsert>,
 > {
   /**
@@ -126,7 +128,7 @@ export abstract class BaseDrizzleRepository<
     return Effect.tryPromise({
       try: async () => {
         const insertData = this.mapper.toDrizzleInsert(entity);
-        const [record] = await this.db
+        const [record] = await (this.db as any)
           .insert(this.table)
           .values(insertData)
           .returning();
@@ -161,10 +163,10 @@ export abstract class BaseDrizzleRepository<
           throw new Error(`Table ${tableName} does not have an 'id' column`);
         }
 
-        const records = await this.db
+        const records = await (this.db as any)
           .select()
           .from(this.table)
-          .where(eq(idColumn as never, id))
+          .where(eq(idColumn as any, id))
           .limit(1);
 
         const record = records[0];
@@ -182,14 +184,12 @@ export abstract class BaseDrizzleRepository<
   /**
    * Find all entities with optional pagination
    */
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-    orderBy?: { column: string; direction: "asc" | "desc" };
-  }): Effect.Effect<TDomain[], DatabaseError, never> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  findAll(options?: any): Effect.Effect<TDomain[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
-        let query = this.db.select().from(this.table);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let query = (this.db as any).select().from(this.table);
 
         // Apply ordering (default to createdAt desc)
         const orderColumn = options?.orderBy?.column ?? "createdAt";
@@ -200,23 +200,22 @@ export abstract class BaseDrizzleRepository<
           orderColumn
         ];
         if (columnRef) {
-          query = query.orderBy(
-            orderDirection === "asc"
-              ? (columnRef as never)
-              : (columnRef as never),
-          );
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          query = query.orderBy(columnRef as any);
         }
 
         // Apply pagination
         if (options?.limit) {
-          query = query.limit(options.limit);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          query = (query as any).limit(options.limit);
         }
         if (options?.offset) {
-          query = query.offset(options.offset);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          query = (query as any).offset(options.offset);
         }
 
         const records = await query;
-        return records.map((record) =>
+        return (records as unknown[]).map((record) =>
           this.mapper.toDomain(record as TDrizzle),
         );
       },
@@ -246,10 +245,10 @@ export abstract class BaseDrizzleRepository<
           throw new Error("Table does not have an 'id' column");
         }
 
-        const [record] = await this.db
+        const [record] = await (this.db as any)
           .update(this.table)
           .set(updateData)
-          .where(eq(idColumn as never, entity.id))
+          .where(eq(idColumn as any, entity.id))
           .returning();
 
         if (!record) {
@@ -283,7 +282,9 @@ export abstract class BaseDrizzleRepository<
           throw new Error("Table does not have an 'id' column");
         }
 
-        await this.db.delete(this.table).where(eq(idColumn as never, id));
+        await (this.db as any)
+          .delete(this.table)
+          .where(eq(idColumn as any, id));
       },
       catch: (error) =>
         new DatabaseError({

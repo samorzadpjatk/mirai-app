@@ -30,13 +30,17 @@ export class InMemoryActivityFeedRepository
 {
   private reactionsStorage = new Map<string, ActivityReaction[]>();
 
-  override reset(): void {
-    super.reset();
-    this.reactionsStorage.clear();
+  override reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      super.reset();
+      this.reactionsStorage.clear();
+    });
   }
 
-  override seed(activities: ActivityFeed[]): void {
-    super.seed(activities);
+  override seed(activities: ActivityFeed[]): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      activities.forEach((item) => this.storage.set(item.id, item));
+    });
   }
 
   seedReactions(activityId: ActivityId, reactions: ActivityReaction[]): void {
@@ -44,7 +48,7 @@ export class InMemoryActivityFeedRepository
   }
 
   findById(id: ActivityId): Effect.Effect<ActivityFeed | null, never, never> {
-    return this.findByIdGeneric(id);
+    return Effect.sync(() => this.storage.get(id) ?? null);
   }
 
   findByTripId(
@@ -150,20 +154,28 @@ export class InMemoryActivityFeedRepository
   }
 
   create(activity: ActivityFeed): Effect.Effect<ActivityFeed, never, never> {
-    return this.createGeneric(activity);
+    return Effect.sync(() => {
+      this.storage.set(activity.id, activity);
+      return activity;
+    });
   }
 
   update(activity: ActivityFeed): Effect.Effect<ActivityFeed, never, never> {
-    return this.updateGeneric(activity);
+    return Effect.sync(() => {
+      this.storage.set(activity.id, activity);
+      return activity;
+    });
   }
 
   delete(id: ActivityId): Effect.Effect<void, never, never> {
-    this.reactionsStorage.delete(id);
-    return this.deleteGeneric(id);
+    return Effect.sync(() => {
+      this.reactionsStorage.delete(id);
+      this.storage.delete(id);
+    });
   }
 
   exists(id: ActivityId): Effect.Effect<boolean, never, never> {
-    return this.existsGeneric(id);
+    return Effect.sync(() => this.storage.has(id));
   }
 
   findReactionsByActivityId(

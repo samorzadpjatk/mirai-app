@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   getGroupUseCase,
@@ -12,71 +11,26 @@ import {
   type DeleteGroupOutput,
 } from "@mirai-app/use-cases";
 import { GroupStatus } from "@mirai-app/domain";
+import {
+  validateGetByIdInput,
+  validateGetByCodeInput,
+  validateGetByTripIdInput,
+  validateCreateGroupInput,
+  validateUpdateGroupInput,
+  validateAddCoinsInput,
+  validateListInput,
+  validateGetByOrganizerInput,
+} from "./validators/group-validators";
 
-/**
- * Input validation schemas for group controller
- */
-const schemas = {
-  getById: z.object({
-    id: z.string().uuid("Invalid group ID format"),
-  }),
-
-  getByCode: z.object({
-    code: z.string().min(1, "Group code is required").max(50),
-  }),
-
-  getByTripId: z.object({
-    tripId: z.string().uuid("Invalid trip ID format"),
-  }),
-
-  create: z.object({
-    tripId: z.string().uuid("Invalid trip ID format"),
-    name: z
-      .string()
-      .min(1, "Name is required")
-      .max(100, "Name must be at most 100 characters"),
-    description: z
-      .string()
-      .max(500, "Description must be at most 500 characters")
-      .nullable()
-      .optional(),
-    image: z.string().url("Invalid image URL").nullable().optional(),
-    organizerId: z.string().uuid("Invalid organizer ID format"),
-    code: z
-      .string()
-      .min(1, "Group code is required")
-      .max(50, "Code must be at most 50 characters"),
-    coins: z.number().int().min(0).default(0),
-  }),
-
-  update: z.object({
-    groupId: z.string().uuid("Invalid group ID format"),
-    name: z
-      .string()
-      .min(1, "Name is required")
-      .max(100, "Name must be at most 100 characters")
-      .optional(),
-    description: z
-      .string()
-      .max(500, "Description must be at most 500 characters")
-      .nullable()
-      .optional(),
-    image: z.string().url("Invalid image URL").nullable().optional(),
-  }),
-
-  addCoins: z.object({
-    groupId: z.string().uuid("Invalid group ID format"),
-    amount: z.number().int().min(1, "Amount must be at least 1"),
-  }),
-
-  list: z.object({
-    limit: z.number().int().min(1).max(100).default(20),
-    offset: z.number().int().min(0).default(0),
-  }),
-
-  getByOrganizer: z.object({
-    organizerId: z.string().min(1, "Organizer ID is required"),
-  }),
+export {
+  validateGetByIdInput,
+  validateGetByCodeInput,
+  validateGetByTripIdInput,
+  validateCreateGroupInput,
+  validateUpdateGroupInput,
+  validateAddCoinsInput,
+  validateListInput,
+  validateGetByOrganizerInput,
 };
 
 /**
@@ -126,7 +80,7 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -134,11 +88,9 @@ export class GroupController {
       };
     }
 
-    const effect = getGroupUseCase({
-      groupId: parsed.data.id,
-    });
+    const effect = getGroupUseCase({ groupId: parsed.data.id });
 
-    const result = await runWithLayer<GetGroupOutput>(effect, this.appLayer);
+    const result = await runWithLayer(effect, this.appLayer);
     return result as
       | { success: true; data: GetGroupOutput }
       | { success: false; error: string };
@@ -167,7 +119,7 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getByCode.safeParse(input);
+    const parsed = validateGetByCodeInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -247,7 +199,7 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getByTripId.safeParse(input);
+    const parsed = validateGetByTripIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -306,7 +258,7 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateGroupInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -348,7 +300,7 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateGroupInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -396,7 +348,7 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.addCoins.safeParse(input);
+    const parsed = validateAddCoinsInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -473,7 +425,7 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.list.safeParse(input);
+    const parsed = validateListInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -547,7 +499,7 @@ export class GroupController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getByOrganizer.safeParse(input);
+    const parsed = validateGetByOrganizerInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -605,7 +557,7 @@ export class GroupController {
     | { success: true; data: { deleted: true } }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,

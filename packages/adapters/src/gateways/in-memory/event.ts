@@ -34,17 +34,22 @@ export class InMemoryEventRepository
     return `${userId}:${eventId}`;
   }
 
-  override reset(): void {
-    super.reset();
-    this.userEventsStorage.clear();
+  override reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      super.reset();
+      this.userEventsStorage.clear();
+    });
   }
 
   create(event: Event): Effect.Effect<Event, never, never> {
-    return this.createGeneric(event);
+    return Effect.sync(() => {
+      this.storage.set(event.id, event);
+      return event;
+    });
   }
 
   findById(id: string): Effect.Effect<Event | null, never, never> {
-    return this.findByIdGeneric(id);
+    return Effect.sync(() => this.storage.get(id) ?? null);
   }
 
   findByCreatorId(creatorId: string): Effect.Effect<Event[], never, never> {
@@ -80,6 +85,7 @@ export class InMemoryEventRepository
         const aVal = (a as unknown as Record<string, unknown>)[column];
         const bVal = (b as unknown as Record<string, unknown>)[column];
         if (aVal === undefined || bVal === undefined) return 0;
+        if (aVal === null || bVal === null) return 0;
         if (aVal < bVal) return direction === "asc" ? -1 : 1;
         if (aVal > bVal) return direction === "asc" ? 1 : -1;
         return 0;
@@ -128,21 +134,26 @@ export class InMemoryEventRepository
   }
 
   update(event: Event): Effect.Effect<Event, never, never> {
-    return this.updateGeneric(event);
+    return Effect.sync(() => {
+      this.storage.set(event.id, event);
+      return event;
+    });
   }
 
   delete(id: string): Effect.Effect<void, never, never> {
-    // Clean up user-event relationships for this event
-    for (const key of this.userEventsStorage.keys()) {
-      if (key.endsWith(`:${id}`)) {
-        this.userEventsStorage.delete(key);
+    return Effect.sync(() => {
+      // Clean up user-event relationships for this event
+      for (const key of this.userEventsStorage.keys()) {
+        if (key.endsWith(`:${id}`)) {
+          this.userEventsStorage.delete(key);
+        }
       }
-    }
-    return this.deleteGeneric(id);
+      this.storage.delete(id);
+    });
   }
 
   exists(id: string): Effect.Effect<boolean, never, never> {
-    return this.existsGeneric(id);
+    return Effect.succeed(this.storage.has(id));
   }
 
   count(): Effect.Effect<number, never, never> {
@@ -247,7 +258,8 @@ export class InMemoryEventRepository
         .filter(
           ([key, value]) => key.endsWith(`:${eventId}`) && value.interestedIn,
         )
-        .map(([key]) => key.split(":")[0]),
+        .map(([key]) => key.split(":")[0])
+        .filter((id): id is string => id !== undefined),
     );
   }
 
@@ -257,7 +269,8 @@ export class InMemoryEventRepository
         .filter(
           ([key, value]) => key.endsWith(`:${eventId}`) && value.enlistedIn,
         )
-        .map(([key]) => key.split(":")[0]),
+        .map(([key]) => key.split(":")[0])
+        .filter((id): id is string => id !== undefined),
     );
   }
 

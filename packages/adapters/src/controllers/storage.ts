@@ -1,8 +1,24 @@
-import { z } from "zod";
 import { Effect } from "effect";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+import {
+  ConfigurationError,
+  ServiceUnavailableError,
+  NotFoundError,
+  type DomainError,
+} from "@mirai-app/domain";
 import { normalizeSupabaseStoragePath } from "../utils/storage";
 import { effectToControllerResult } from "../utils/controller-helpers";
+import {
+  validateCreateUploadUrlInput,
+  validateCreateDownloadUrlInput,
+  validateCreatePublicUrlInput,
+} from "./validators/storage-validators";
+
+export {
+  validateCreateUploadUrlInput,
+  validateCreateDownloadUrlInput,
+  validateCreatePublicUrlInput,
+};
 
 /**
  * Storage path resolution result
@@ -38,30 +54,6 @@ interface DownloadUrlResult {
 interface PublicUrlResult {
   publicUrl: string;
 }
-
-/**
- * Input validation schemas for storage controller
- */
-const schemas = {
-  createUploadUrl: z.object({
-    storagePath: z.string().min(1, "Storage path is required"),
-    upsert: z.boolean().optional(),
-  }),
-
-  createDownloadUrl: z.object({
-    storagePath: z.string().min(1, "Storage path is required"),
-    expiresInSeconds: z
-      .number()
-      .int()
-      .min(60)
-      .max(60 * 60)
-      .optional(),
-  }),
-
-  createPublicUrl: z.object({
-    storagePath: z.string().min(1, "Storage path is required"),
-  }),
-};
 
 /**
  * StorageController
@@ -131,7 +123,7 @@ export class StorageController {
   ): Promise<
     { success: true; data: UploadUrlResult } | { success: false; error: string }
   > {
-    const parsed = schemas.createUploadUrl.safeParse(input);
+    const parsed = validateCreateUploadUrlInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -154,7 +146,10 @@ export class StorageController {
         try: () => {
           const baseUrl = process.env.SUPABASE_URL;
           if (!baseUrl) {
-            throw new Error("Missing SUPABASE_URL");
+            throw new ConfigurationError(
+              "SUPABASE_URL",
+              "SUPABASE_URL environment variable is not set",
+            );
           }
 
           try {
@@ -171,7 +166,13 @@ export class StorageController {
             return `${baseUrl.replace(/\/$/, "")}/storage/v1/upload/resumable/sign`;
           }
         },
-        catch: () => new Error("Missing SUPABASE_URL"),
+        catch: (error) =>
+          error instanceof ConfigurationError
+            ? error
+            : new ConfigurationError(
+                "SUPABASE_URL",
+                "SUPABASE_URL environment variable is not set",
+              ),
       });
 
       const { data, error } = yield* Effect.tryPromise({
@@ -181,12 +182,19 @@ export class StorageController {
             .createSignedUploadUrl(objectInfo.path, {
               upsert: Boolean(parsed.data.upsert),
             }),
-        catch: () => new Error("Unable to create signed upload URL"),
+        catch: (e) =>
+          new ServiceUnavailableError(
+            "storage",
+            `Failed to create signed upload URL: ${e instanceof Error ? e.message : String(e)}`,
+          ),
       });
 
       if (error || !data?.token) {
         return yield* Effect.fail(
-          new Error("Unable to create signed upload URL"),
+          new ServiceUnavailableError(
+            "storage",
+            error?.message || "Unable to create signed upload URL",
+          ),
         );
       }
 
@@ -211,7 +219,7 @@ export class StorageController {
     | { success: true; data: DownloadUrlResult }
     | { success: false; error: string; code?: "NOT_FOUND" }
   > {
-    const parsed = schemas.createDownloadUrl.safeParse(input);
+    const parsed = validateCreateDownloadUrlInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -236,7 +244,11 @@ export class StorageController {
           supabase.storage
             .from(objectInfo.bucket)
             .createSignedUrl(objectInfo.path, expiresIn),
-        catch: (e) => new Error(String(e)),
+        catch: (e) =>
+          new ServiceUnavailableError(
+            "storage",
+            `Failed to create signed URL: ${e instanceof Error ? e.message : String(e)}`,
+          ),
       });
 
       if (error || !data?.signedUrl) {
@@ -249,11 +261,15 @@ export class StorageController {
           message.toLowerCase().includes("does not exist");
 
         return yield* Effect.fail(
-          new Error(
-            looksLikeNotFound
-              ? "Storage object not found"
-              : "Unable to create signed URL",
-          ),
+          looksLikeNotFound
+            ? new NotFoundError({
+                entityType: "StorageObject",
+                id: objectInfo.path,
+              })
+            : new ServiceUnavailableError(
+                "storage",
+                `Failed to create signed URL: ${message}`,
+              ),
         );
       }
 
@@ -281,7 +297,7 @@ export class StorageController {
   ): Promise<
     { success: true; data: PublicUrlResult } | { success: false; error: string }
   > {
-    const parsed = schemas.createPublicUrl.safeParse(input);
+    const parsed = validateCreatePublicUrlInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -311,7 +327,10 @@ export class StorageController {
           const baseUrl =
             process.env.SUPABASE_PUBLIC_URL ?? process.env.SUPABASE_URL;
           if (!baseUrl) {
-            throw new Error("Missing SUPABASE_URL or SUPABASE_PUBLIC_URL");
+            throw new ConfigurationError(
+              "SUPABASE_URL",
+              "SUPABASE_URL or SUPABASE_PUBLIC_URL environment variable is not set",
+            );
           }
 
           try {
@@ -328,7 +347,13 @@ export class StorageController {
             return `${baseUrl.replace(/\/$/, "")}/storage/v1/object/public`;
           }
         },
-        catch: () => new Error("Missing SUPABASE_URL or SUPABASE_PUBLIC_URL"),
+        catch: (error) =>
+          error instanceof ConfigurationError
+            ? error
+            : new ConfigurationError(
+                "SUPABASE_URL",
+                "SUPABASE_URL or SUPABASE_PUBLIC_URL environment variable is not set",
+              ),
       });
 
       return {

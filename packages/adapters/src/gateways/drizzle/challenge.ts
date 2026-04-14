@@ -15,7 +15,7 @@ import {
 import type { ChallengeRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { ChallengeDrizzleMapper } from "../../mappers/drizzle/challenge";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleChallengeRepository

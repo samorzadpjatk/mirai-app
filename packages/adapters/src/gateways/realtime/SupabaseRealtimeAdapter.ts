@@ -56,6 +56,7 @@ function mapSupabaseErrorToRealtimeError(
       return new ConnectionError({
         message: `Connection failed during ${operation}: ${error.message}`,
         channel,
+        code: "CONNECTION_ERROR",
       });
     }
 
@@ -68,18 +69,21 @@ function mapSupabaseErrorToRealtimeError(
       return new SubscriptionError({
         message: `Subscription failed during ${operation}: ${error.message}`,
         channel: channel ?? "unknown",
+        code: "SUBSCRIPTION_ERROR",
       });
     }
 
     // Generic realtime error
     return new RealtimeError({
       message: `${operation} failed: ${error.message}`,
+      code: "REALTIME_ERROR",
     });
   }
 
   // Unknown error type
   return new RealtimeError({
     message: `Unknown ${operation} error occurred`,
+    code: "REALTIME_ERROR",
   });
 }
 
@@ -94,12 +98,16 @@ function mapSupabaseStateToConnectionState(
   supabaseState: (typeof REALTIME_CHANNEL_STATES)[keyof typeof REALTIME_CHANNEL_STATES],
 ): ConnectionState {
   switch (supabaseState) {
-    case "connecting":
-      return "CONNECTING";
-    case "open":
-      return "CONNECTED";
     case "closed":
       return "CLOSED";
+    case "joined":
+      return "CONNECTED";
+    case "joining":
+      return "CONNECTING";
+    case "leaving":
+      return "DISCONNECTED";
+    case "errored":
+      return "DISCONNECTED";
     default:
       return "DISCONNECTED";
   }
@@ -127,9 +135,27 @@ class SupabaseRealtimeSubscription implements RealtimeSubscription {
 
   get state(): ConnectionState {
     // Access the internal state from Supabase channel
-    const supabaseState = this.supabaseChannel
-      .state as (typeof REALTIME_CHANNEL_STATES)[keyof typeof REALTIME_CHANNEL_STATES];
-    return mapSupabaseStateToConnectionState(supabaseState);
+    // The state property may vary based on Supabase client version
+    const rawState = this.supabaseChannel.state as string | undefined;
+    if (!rawState) return "DISCONNECTED";
+
+    // Map string state to ConnectionState
+    switch (rawState) {
+      case "connecting":
+      case "joining":
+        return "CONNECTING";
+      case "open":
+      case "joined":
+        return "CONNECTED";
+      case "closed":
+        return "CLOSED";
+      case "leaving":
+        return "DISCONNECTED";
+      case "errored":
+        return "DISCONNECTED";
+      default:
+        return "DISCONNECTED";
+    }
   }
 
   unsubscribe(): Effect.Effect<void, RealtimeError, never> {
@@ -141,6 +167,7 @@ class SupabaseRealtimeSubscription implements RealtimeSubscription {
       catch: (error) =>
         new RealtimeError({
           message: `Failed to unsubscribe from channel ${this.channel}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          code: "REALTIME_ERROR",
         }),
     });
   }
@@ -193,7 +220,7 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
     config: ChannelConfig,
   ): Effect.Effect<
     RealtimeSubscription,
-    RealtimeError | SubscriptionError,
+    RealtimeError | ConnectionError | SubscriptionError,
     never
   > {
     return Effect.try({
@@ -228,11 +255,12 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
         const subscriptionId = `sub-${this.subscriptionCounter}`;
 
         // Create and return subscription wrapper
-        const subscription = new SupabaseRealtimeSubscription(
-          supabaseChannel,
-          channel,
-          subscriptionId,
-        );
+        const subscription: RealtimeSubscription =
+          new SupabaseRealtimeSubscription(
+            supabaseChannel,
+            channel,
+            subscriptionId,
+          );
 
         return subscription;
       },
@@ -250,7 +278,11 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
     channel: string,
     event: string,
     payload: unknown,
-  ): Effect.Effect<void, RealtimeError, never> {
+  ): Effect.Effect<
+    void,
+    RealtimeError | ConnectionError | SubscriptionError,
+    never
+  > {
     return Effect.tryPromise({
       try: async () => {
         // Get or create the channel
@@ -273,25 +305,34 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
         }
 
         // Send the broadcast message
-        const { error } = await supabaseChannel.send({
+        const response = await supabaseChannel.send({
           type: "broadcast",
           event,
           payload,
         });
 
-        if (error) {
-          throw new RealtimeError({ message: error.message });
+        // Check for error in response - handle both object formats
+        const responseError = (
+          response as { error?: { message: string } } | undefined
+        )?.error;
+        if (responseError) {
+          throw new RealtimeError({
+            message: responseError.message,
+            code: "REALTIME_ERROR",
+          });
         }
 
         return undefined;
       },
       catch: (error) => {
-        if (error instanceof RealtimeError) {
-          return error;
+        // Check for tagged error by _tag property (Data.TaggedError pattern)
+        const taggedError = error as { _tag?: string };
+        if (taggedError._tag === "RealtimeError") {
+          return error as RealtimeError;
         }
         return mapSupabaseErrorToRealtimeError(error, "broadcast", channel);
       },
-    });
+    }).pipe(Effect.map(() => undefined));
   }
 
   /**
@@ -302,7 +343,11 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
   trackPresence(
     channel: string,
     state: PresenceState,
-  ): Effect.Effect<void, RealtimeError, never> {
+  ): Effect.Effect<
+    void,
+    RealtimeError | ConnectionError | SubscriptionError,
+    never
+  > {
     return Effect.tryPromise({
       try: async () => {
         // Get or create the channel
@@ -331,21 +376,30 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
           timestamp: state.timestamp?.toISOString() ?? new Date().toISOString(),
         };
 
-        const { error } = await supabaseChannel.track(presenceData);
+        const response = await supabaseChannel.track(presenceData);
 
-        if (error) {
-          throw new RealtimeError({ message: error.message });
+        // Check for error in response - handle both object formats
+        const responseError = (
+          response as { error?: { message: string } } | undefined
+        )?.error;
+        if (responseError) {
+          throw new RealtimeError({
+            message: responseError.message,
+            code: "REALTIME_ERROR",
+          });
         }
 
         return undefined;
       },
       catch: (error) => {
-        if (error instanceof RealtimeError) {
-          return error;
+        // Check for tagged error by _tag property (Data.TaggedError pattern)
+        const taggedError = error as { _tag?: string };
+        if (taggedError._tag === "RealtimeError") {
+          return error as RealtimeError;
         }
         return mapSupabaseErrorToRealtimeError(error, "trackPresence", channel);
       },
-    });
+    }).pipe(Effect.map(() => undefined));
   }
 
   /**
@@ -361,23 +415,25 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
     }
 
     let hasConnecting = false;
-    let hasReconnecting = false;
+    let hasClosed = false;
 
     for (const [, channel] of this.activeChannels) {
-      const state =
-        channel.state as (typeof REALTIME_CHANNEL_STATES)[keyof typeof REALTIME_CHANNEL_STATES];
+      const rawState = channel.state as string | undefined;
+      const state = mapSupabaseStateToConnectionState(
+        rawState as (typeof REALTIME_CHANNEL_STATES)[keyof typeof REALTIME_CHANNEL_STATES],
+      );
 
-      if (state === "open") {
+      if (state === "CONNECTED") {
         return "CONNECTED";
-      } else if (state === "connecting") {
+      } else if (state === "CONNECTING") {
         hasConnecting = true;
-      } else if (state === "closed") {
-        hasReconnecting = true;
+      } else if (state === "CLOSED") {
+        hasClosed = true;
       }
     }
 
     if (hasConnecting) return "CONNECTING";
-    if (hasReconnecting) return "RECONNECTING";
+    if (hasClosed) return "CLOSED";
     return "DISCONNECTED";
   }
 

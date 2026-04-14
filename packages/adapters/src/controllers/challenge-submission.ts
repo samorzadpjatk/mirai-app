@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   createSubmissionUseCase,
@@ -15,6 +14,24 @@ import {
   type CreateSubmissionOutput,
   type UpdateSubmissionOutput,
 } from "@mirai-app/use-cases";
+import {
+  validateGetByIdInput,
+  validateGetByChallengeAndGroupInput,
+  validateGetByChallengeInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateDeleteInput,
+} from "./validators/challenge-submission-validators";
+
+export {
+  validateGetByIdInput,
+  validateGetByChallengeAndGroupInput,
+  validateGetByChallengeInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateDeleteInput,
+};
+
 import { SubmissionId } from "@mirai-app/domain";
 
 /**
@@ -64,55 +81,6 @@ function convertListOutput(output: ListSubmissionsByChallengeOutput): {
 /**
  * Input validation schemas for challenge submission controller
  */
-const schemas = {
-  getById: z.object({
-    submissionId: z.string().min(1, "Submission ID is required"),
-  }),
-
-  getByChallengeAndGroup: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-    groupId: z.string().min(1, "Group ID is required"),
-  }),
-
-  getByChallenge: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-    orderBy: z.enum(["voteScore", "createdAt"]).optional(),
-    orderDirection: z.enum(["asc", "desc"]).optional(),
-    limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional(),
-  }),
-
-  create: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-    groupId: z.string().min(1, "Group ID is required"),
-    imageIds: z.array(z.string().min(1)).max(10).optional(),
-    videoId: z.string().min(1).optional(),
-    textContent: z.string().max(10000).optional(),
-    latitude: z.number().min(-90).max(90).optional(),
-    longitude: z.number().min(-180).max(180).optional(),
-  }),
-
-  update: z.object({
-    submissionId: z.string().min(1, "Submission ID is required"),
-    // Content update fields
-    imageIds: z.array(z.string().min(1)).max(10).optional(),
-    videoId: z.string().min(1).optional().nullable(),
-    textContent: z.string().max(10000).optional().nullable(),
-    latitude: z.number().min(-90).max(90).optional().nullable(),
-    longitude: z.number().min(-180).max(180).optional().nullable(),
-    // Review fields
-    reviewAction: z.enum(["APPROVE", "REJECT"]).optional(),
-    reviewedById: z.string().optional(),
-    rejectionReason: z.string().max(1000).optional(),
-    awardedPoints: z.number().int().min(0).optional(),
-    bonusPoints: z.number().int().min(0).optional(),
-    ranking: z.number().int().min(1).max(3).optional().nullable(),
-  }),
-
-  delete: z.object({
-    submissionId: z.string().min(1, "Submission ID is required"),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -155,7 +123,7 @@ export class ChallengeSubmissionController {
    * Get a submission by ID
    */
   async getById(input: unknown) {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -178,7 +146,7 @@ export class ChallengeSubmissionController {
    * Get a submission by challenge ID and group ID
    */
   async getByChallengeAndGroup(input: unknown) {
-    const parsed = schemas.getByChallengeAndGroup.safeParse(input);
+    const parsed = validateGetByChallengeAndGroupInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -204,7 +172,7 @@ export class ChallengeSubmissionController {
    * List submissions for a challenge
    */
   async listByChallenge(input: unknown) {
-    const parsed = schemas.getByChallenge.safeParse(input);
+    const parsed = validateGetByChallengeInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -231,7 +199,7 @@ export class ChallengeSubmissionController {
    * Create a new submission
    */
   async create(input: unknown) {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -262,7 +230,7 @@ export class ChallengeSubmissionController {
    * Update a submission (content or review)
    */
   async update(input: unknown) {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -298,7 +266,7 @@ export class ChallengeSubmissionController {
    * Delete a submission
    */
   async delete(input: unknown) {
-    const parsed = schemas.delete.safeParse(input);
+    const parsed = validateDeleteInput(input);
     if (!parsed.success) {
       return {
         success: false,

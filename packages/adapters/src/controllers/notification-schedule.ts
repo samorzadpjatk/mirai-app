@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   getNotificationSchedulesUseCase,
@@ -18,6 +17,36 @@ import {
   type NotificationScheduleOutput,
 } from "@mirai-app/use-cases";
 import {
+  validateGetAllInput,
+  validateGetByIdInput,
+  validateGetUpcomingInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateDeleteInput,
+  validateBulkDeleteInput,
+  validateToggleActiveInput,
+  validateBulkToggleActiveInput,
+  validateDuplicateInput,
+  validateUpdateLastRunInput,
+  validateGetExecutionHistoryInput,
+} from "./validators/notification-schedule-validators";
+
+export {
+  validateGetAllInput,
+  validateGetByIdInput,
+  validateGetUpcomingInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateDeleteInput,
+  validateBulkDeleteInput,
+  validateToggleActiveInput,
+  validateBulkToggleActiveInput,
+  validateDuplicateInput,
+  validateUpdateLastRunInput,
+  validateGetExecutionHistoryInput,
+};
+
+import {
   NotificationScheduleType,
   type NotificationScheduleFilter,
   type PaginationOptions,
@@ -29,97 +58,6 @@ export type { NotificationScheduleOutput };
 /**
  * Input validation schemas for notification schedule controller
  */
-const schemas = {
-  getAll: z.object({
-    pagination: z
-      .object({
-        limit: z.number().int().min(1).max(100).default(20),
-        offset: z.number().int().min(0).default(0),
-      })
-      .optional(),
-    filter: z
-      .object({
-        tripId: z.string().nullable().optional(),
-        notificationType: z.nativeEnum(NotificationScheduleType).optional(),
-        isActive: z.boolean().optional(),
-        startDateFrom: z.coerce.date().optional(),
-        startDateTo: z.coerce.date().optional(),
-        search: z.string().optional(),
-      })
-      .optional(),
-  }),
-
-  getById: z.object({
-    id: z.string().uuid("Invalid schedule ID format"),
-  }),
-
-  getUpcoming: z.object({
-    days: z.number().int().min(1).max(30).optional(),
-  }),
-
-  create: z.object({
-    name: z.string().min(1).max(100),
-    tripId: z.string().uuid().nullable().optional(),
-    notificationType: z.nativeEnum(NotificationScheduleType),
-    notificationTitle: z.string().max(200).nullable().optional(),
-    notificationBody: z.string().max(2000).nullable().optional(),
-    notificationUrl: z.string().url().max(500).nullable().optional(),
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
-    hour: z.number().int().min(0).max(23),
-    minute: z.number().int().min(0).max(59),
-    isActive: z.boolean().optional(),
-    createdById: z.string().uuid(),
-  }),
-
-  update: z.object({
-    id: z.string().uuid("Invalid schedule ID format"),
-    name: z.string().min(1).max(100).optional(),
-    notificationTitle: z.string().max(200).nullable().optional(),
-    notificationBody: z.string().max(2000).nullable().optional(),
-    notificationUrl: z.string().url().max(500).nullable().optional(),
-    startDate: z.coerce.date().optional(),
-    endDate: z.coerce.date().optional(),
-    hour: z.number().int().min(0).max(23).optional(),
-    minute: z.number().int().min(0).max(59).optional(),
-    isActive: z.boolean().optional(),
-  }),
-
-  delete: z.object({
-    id: z.string().uuid("Invalid schedule ID format"),
-  }),
-
-  bulkDelete: z.object({
-    ids: z.array(z.string().uuid()).min(1),
-  }),
-
-  toggleActive: z.object({
-    id: z.string().uuid("Invalid schedule ID format"),
-  }),
-
-  bulkToggleActive: z.object({
-    ids: z.array(z.string().uuid()).min(1),
-    isActive: z.boolean(),
-  }),
-
-  duplicate: z.object({
-    id: z.string().uuid("Invalid schedule ID format"),
-    name: z.string().min(1).max(100).optional(),
-    startDate: z.coerce.date().optional(),
-    endDate: z.coerce.date().optional(),
-    newCreatedById: z.string().uuid(),
-  }),
-
-  updateLastRun: z.object({
-    id: z.string().uuid("Invalid schedule ID format"),
-    lastRun: z.coerce.date(),
-  }),
-
-  getExecutionHistory: z.object({
-    scheduleId: z.string().uuid("Invalid schedule ID format"),
-    limit: z.number().int().min(1).max(100).optional(),
-  }),
-};
 
 /**
  * Controller result type
@@ -179,7 +117,7 @@ export class NotificationScheduleController {
       };
     }>
   > {
-    const parsed = schemas.getAll.safeParse(input);
+    const parsed = validateGetAllInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -226,7 +164,7 @@ export class NotificationScheduleController {
   async getById(
     input: unknown,
   ): Promise<ControllerResult<NotificationScheduleOutput>> {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -261,7 +199,7 @@ export class NotificationScheduleController {
   async getUpcoming(
     input: unknown,
   ): Promise<ControllerResult<NotificationScheduleOutput[]>> {
-    const parsed = schemas.getUpcoming.safeParse(input);
+    const parsed = validateGetUpcomingInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -284,7 +222,7 @@ export class NotificationScheduleController {
   async create(
     input: unknown,
   ): Promise<ControllerResult<NotificationScheduleOutput>> {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -320,7 +258,7 @@ export class NotificationScheduleController {
   async update(
     input: unknown,
   ): Promise<ControllerResult<NotificationScheduleOutput>> {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -357,7 +295,7 @@ export class NotificationScheduleController {
       deletedExecutionCount?: number;
     }>
   > {
-    const parsed = schemas.delete.safeParse(input);
+    const parsed = validateDeleteInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -387,7 +325,7 @@ export class NotificationScheduleController {
       notFoundIds?: string[];
     }>
   > {
-    const parsed = schemas.bulkDelete.safeParse(input);
+    const parsed = validateBulkDeleteInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -413,7 +351,7 @@ export class NotificationScheduleController {
   async toggleActive(
     input: unknown,
   ): Promise<ControllerResult<NotificationScheduleOutput>> {
-    const parsed = schemas.toggleActive.safeParse(input);
+    const parsed = validateToggleActiveInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -437,7 +375,7 @@ export class NotificationScheduleController {
   async bulkToggleActive(
     input: unknown,
   ): Promise<ControllerResult<{ success: boolean; updatedCount: number }>> {
-    const parsed = schemas.bulkToggleActive.safeParse(input);
+    const parsed = validateBulkToggleActiveInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -462,7 +400,7 @@ export class NotificationScheduleController {
   async duplicate(
     input: unknown,
   ): Promise<ControllerResult<{ schedule: NotificationScheduleOutput }>> {
-    const parsed = schemas.duplicate.safeParse(input);
+    const parsed = validateDuplicateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -489,7 +427,7 @@ export class NotificationScheduleController {
   async updateLastRun(
     input: unknown,
   ): Promise<ControllerResult<NotificationScheduleOutput>> {
-    const parsed = schemas.updateLastRun.safeParse(input);
+    const parsed = validateUpdateLastRunInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -525,7 +463,7 @@ export class NotificationScheduleController {
       }>;
     }>
   > {
-    const parsed = schemas.getExecutionHistory.safeParse(input);
+    const parsed = validateGetExecutionHistoryInput(input);
     if (!parsed.success) {
       return {
         success: false,

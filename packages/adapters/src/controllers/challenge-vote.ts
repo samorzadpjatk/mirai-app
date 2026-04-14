@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   getMyVotesUseCase,
@@ -14,6 +13,25 @@ import {
   type SubmissionVoteCount,
   type AdminVotingInfo,
 } from "@mirai-app/use-cases";
+import {
+  validateGetMyVotesInput,
+  validateGetByChallengeInput,
+  validateGetVotingProgressInput,
+  validateGetJudgedStaffProgressInput,
+  validateSubmitVoteInput,
+  validateSubmitVotesInput,
+  validateForceEndVotingInput,
+} from "./validators/challenge-vote-validators";
+
+export {
+  validateGetMyVotesInput,
+  validateGetByChallengeInput,
+  validateGetVotingProgressInput,
+  validateGetJudgedStaffProgressInput,
+  validateSubmitVoteInput,
+  validateSubmitVotesInput,
+  validateForceEndVotingInput,
+};
 
 /**
  * Event payload for challenge completion callback
@@ -27,62 +45,6 @@ interface ChallengeCompletedEvent {
 /**
  * Input validation schemas for challenge vote controller
  */
-const schemas = {
-  getMyVotes: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-    voterId: z.string().min(1, "Voter ID is required"),
-  }),
-
-  getByChallenge: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-  }),
-
-  getVotingProgress: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-  }),
-
-  getJudgedStaffProgress: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-    tripId: z.string().min(1, "Trip ID is required"),
-    adminParticipantIds: z
-      .array(z.string())
-      .min(1, "At least one admin is required"),
-    requiredPositions: z.number().int().min(1).max(3),
-    eligibleSubmissionsCount: z.number().int().min(0),
-  }),
-
-  submitVote: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-    submissionId: z.string().min(1, "Submission ID is required"),
-    voterId: z.string().min(1, "Voter ID is required"),
-    position: z.number().int().min(1).max(3, "Position must be 1, 2, or 3"),
-    points: z.number().int().min(0).optional(),
-    normalizedWeight: z.number().positive().optional(),
-    allowPartial: z.boolean().optional(),
-  }),
-
-  submitVotes: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-    voterId: z.string().min(1, "Voter ID is required"),
-    votes: z
-      .array(
-        z.object({
-          submissionId: z.string().min(1, "Submission ID is required"),
-          position: z.number().int().min(1).max(3),
-          points: z.number().int().min(0).optional(),
-          normalizedWeight: z.number().positive().optional(),
-        }),
-      )
-      .min(1, "At least one vote is required"),
-    requiredPositions: z.number().int().min(1).max(3),
-  }),
-
-  forceEndVoting: z.object({
-    challengeId: z.string().min(1, "Challenge ID is required"),
-    tripId: z.string().min(1, "Trip ID is required"),
-    adminId: z.string().min(1, "Admin ID is required"),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -130,7 +92,7 @@ export class ChallengeVoteController {
    * Get my votes for a challenge
    */
   async getMyVotes(input: unknown) {
-    const parsed = schemas.getMyVotes.safeParse(input);
+    const parsed = validateGetMyVotesInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -149,7 +111,7 @@ export class ChallengeVoteController {
    * Get all votes for a challenge (moderator/admin view)
    */
   async getByChallenge(input: unknown) {
-    const parsed = schemas.getByChallenge.safeParse(input);
+    const parsed = validateGetByChallengeInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -167,7 +129,7 @@ export class ChallengeVoteController {
    * Get voting progress for a challenge
    */
   async getVotingProgress(input: unknown) {
-    const parsed = schemas.getVotingProgress.safeParse(input);
+    const parsed = validateGetVotingProgressInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -185,7 +147,7 @@ export class ChallengeVoteController {
    * Get judged staff voting progress
    */
   async getJudgedStaffProgress(input: unknown) {
-    const parsed = schemas.getJudgedStaffProgress.safeParse(input);
+    const parsed = validateGetJudgedStaffProgressInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -207,7 +169,7 @@ export class ChallengeVoteController {
    * Submit a single vote
    */
   async submitVote(input: unknown) {
-    const parsed = schemas.submitVote.safeParse(input);
+    const parsed = validateSubmitVoteInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -231,7 +193,7 @@ export class ChallengeVoteController {
    * Submit multiple votes (batch)
    */
   async submitVotes(input: unknown) {
-    const parsed = schemas.submitVotes.safeParse(input);
+    const parsed = validateSubmitVotesInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -252,7 +214,7 @@ export class ChallengeVoteController {
    * Force end voting for a judged staff challenge
    */
   async forceEndVoting(input: unknown) {
-    const parsed = schemas.forceEndVoting.safeParse(input);
+    const parsed = validateForceEndVotingInput(input);
     if (!parsed.success) {
       return {
         success: false,

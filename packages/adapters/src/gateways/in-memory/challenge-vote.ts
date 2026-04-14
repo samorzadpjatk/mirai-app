@@ -1,6 +1,6 @@
 import type { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
 import type { ChallengeVoteRepository } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/ChallengeVoteRepository";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
@@ -139,11 +139,15 @@ export class InMemoryChallengeVoteRepository
     });
   }
 
-  override reset(): void {
-    this.storage.clear();
+  override reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      this.storage.clear();
+    });
   }
 
-  override seed(votes: ChallengeVote[]): void {
-    votes.forEach((vote) => this.storage.set(vote.id as string, vote));
+  override seed(votes: ChallengeVote[]): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      votes.forEach((vote) => this.storage.set(vote.id as string, vote));
+    });
   }
 }

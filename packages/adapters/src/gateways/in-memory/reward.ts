@@ -4,14 +4,9 @@ import type {
   PaginationOptions,
   PaginatedResult,
 } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/RewardRepository";
-import {
-  Reward,
-  type RewardPurchase,
-  type RewardId,
-  CoinAmount,
-} from "@mirai-app/domain";
+import { Reward, type RewardPurchase, type RewardId } from "@mirai-app/domain";
 import { Effect } from "effect";
+import { DatabaseError } from "./base";
 
 /**
  * In-Memory Reward Repository for Testing
@@ -33,99 +28,65 @@ export class InMemoryRewardRepository implements RewardRepository {
   private rewards = new Map<string, Reward>();
   private purchases = new Map<string, RewardPurchase>();
 
-  /**
-   * Reconstruct a Reward entity from plain object storage.
-   * Uses reconstitute() factory to bypass validation and ensure proper instance.
-   */
-  private reconstruct(
-    plain: unknown,
-  ): Effect.Effect<Reward, DatabaseError, never> {
-    const p = plain as Record<string, unknown>;
-    try {
-      const reward = Reward.reconstitute({
-        id: p.id as RewardId,
-        name: p.name as string,
-        description: p.description as string | null,
-        availableQuantity: p.availableQuantity as number,
-        coinCostPercentage: p.coinCostPercentage as CoinAmount,
-        images: p.images as string[],
-        isHidden: p.isHidden as boolean,
-        tripId: p.tripId as string,
-        createdById: p.createdById as string,
-        createdAt: p.createdAt as Date,
-        updatedAt: p.updatedAt as Date,
-      });
-      return Effect.succeed(reward);
-    } catch (error) {
-      return Effect.fail(
-        new DatabaseError({
-          operation: "reconstruct",
-          message: `Failed to reconstruct Reward: ${error instanceof Error ? error.message : String(error)}`,
-        }),
-      );
-    }
+  reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      this.rewards.clear();
+      this.purchases.clear();
+    });
   }
 
-  reset(): void {
-    this.rewards.clear();
-    this.purchases.clear();
+  seed(items: Reward[]): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      items.forEach((item) => this.rewards.set(item.id, item));
+    });
   }
 
-  seed(items: Reward[]): void {
-    items.forEach((item) => this.rewards.set(item.id, item));
+  seedPurchases(
+    purchases: RewardPurchase[],
+  ): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      purchases.forEach((p) => this.purchases.set(p.id, p));
+    });
   }
 
-  seedPurchases(purchases: RewardPurchase[]): void {
-    purchases.forEach((p) => this.purchases.set(p.id, p));
-  }
-
-  create(reward: Reward): Effect.Effect<Reward, DatabaseError, never> {
+  create(reward: Reward): Effect.Effect<Reward, never, never> {
     return Effect.sync(() => {
       this.rewards.set(reward.id, reward);
       return reward;
     });
   }
 
-  findById(id: RewardId): Effect.Effect<Reward | null, DatabaseError, never> {
-    return Effect.gen(this, function* () {
-      const plain = this.rewards.get(id);
-      if (!plain) return null;
-      return yield* this.reconstruct(plain);
-    });
+  findById(id: RewardId): Effect.Effect<Reward | null, never, never> {
+    return Effect.sync(() => this.rewards.get(id) ?? null);
   }
 
   findByTripId(
     tripId: string,
     options?: { includeHidden?: boolean } & PaginationOptions,
-  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never> {
-    return Effect.gen(this, function* () {
-      let plains = Array.from(this.rewards.values()).filter(
-        (r) => (r as Record<string, unknown>).tripId === tripId,
+  ): Effect.Effect<PaginatedResult<Reward>, never, never> {
+    return Effect.sync(() => {
+      let items = Array.from(this.rewards.values()).filter(
+        (r) => (r as unknown as Record<string, unknown>).tripId === tripId,
       );
 
       if (!options?.includeHidden) {
-        plains = plains.filter((r) => !(r as Record<string, unknown>).isHidden);
+        items = items.filter(
+          (r) => !(r as unknown as Record<string, unknown>).isHidden,
+        );
       }
 
-      const total = plains.length;
+      const total = items.length;
       const offset = options?.offset ?? 0;
       const limit = options?.limit ?? 30;
 
-      const sliced = plains.slice(offset, offset + limit);
-
-      // Reconstruct all rewards to ensure proper instances
-      const items: Reward[] = [];
-      for (const plain of sliced) {
-        const reward = yield* this.reconstruct(plain);
-        items.push(reward);
-      }
+      const sliced = items.slice(offset, offset + limit);
 
       return {
-        items,
+        items: sliced,
         total,
         limit,
         offset,
-        hasMore: offset + items.length < total,
+        hasMore: offset + sliced.length < total,
       };
     });
   }
@@ -133,36 +94,30 @@ export class InMemoryRewardRepository implements RewardRepository {
   findVisibleByTripId(
     tripId: string,
     options?: PaginationOptions,
-  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never> {
+  ): Effect.Effect<PaginatedResult<Reward>, never, never> {
     return this.findByTripId(tripId, { ...options, includeHidden: false });
   }
 
-  update(reward: Reward): Effect.Effect<Reward, DatabaseError, never> {
-    if (!this.rewards.has(reward.id)) {
-      return Effect.fail(
-        new DatabaseError({
-          operation: "update",
-          message: `Reward with id ${reward.id} not found`,
-        }),
-      );
-    }
-    this.rewards.set(reward.id, reward);
-    return Effect.succeed(reward);
+  update(reward: Reward): Effect.Effect<Reward, never, never> {
+    return Effect.sync(() => {
+      this.rewards.set(reward.id, reward);
+      return reward;
+    });
   }
 
-  delete(id: RewardId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: RewardId): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
       this.rewards.delete(id);
     });
   }
 
-  hasPurchases(id: RewardId): Effect.Effect<boolean, DatabaseError, never> {
+  hasPurchases(id: RewardId): Effect.Effect<boolean, never, never> {
     return Effect.succeed(
       Array.from(this.purchases.values()).some((p) => p.rewardId === id),
     );
   }
 
-  getPurchaseCount(id: RewardId): Effect.Effect<number, DatabaseError, never> {
+  getPurchaseCount(id: RewardId): Effect.Effect<number, never, never> {
     return Effect.succeed(
       Array.from(this.purchases.values()).filter((p) => p.rewardId === id)
         .length,
@@ -172,19 +127,14 @@ export class InMemoryRewardRepository implements RewardRepository {
   decrementQuantity(
     id: RewardId,
     amount: number,
-  ): Effect.Effect<Reward, DatabaseError, never> {
+  ): Effect.Effect<Reward, never, never> {
     const reward = this.rewards.get(id);
     if (!reward) {
-      return Effect.fail(
-        new DatabaseError({
-          operation: "decrementQuantity",
-          message: `Reward with id ${id} not found`,
-        }),
-      );
+      throw new Error(`Reward with id ${id} not found`);
     }
     return Effect.gen(this, function* () {
       const decremented = reward.decrementQuantity(amount);
-      const result = yield* decremented;
+      const result = yield* decremented.pipe(Effect.orDie);
       this.rewards.set(id, result);
       return result;
     });
@@ -193,19 +143,14 @@ export class InMemoryRewardRepository implements RewardRepository {
   incrementQuantity(
     id: RewardId,
     amount: number,
-  ): Effect.Effect<Reward, DatabaseError, never> {
+  ): Effect.Effect<Reward, never, never> {
     const reward = this.rewards.get(id);
     if (!reward) {
-      return Effect.fail(
-        new DatabaseError({
-          operation: "incrementQuantity",
-          message: `Reward with id ${id} not found`,
-        }),
-      );
+      throw new Error(`Reward with id ${id} not found`);
     }
     return Effect.gen(this, function* () {
       const incremented = reward.incrementQuantity(amount);
-      const result = yield* incremented;
+      const result = yield* incremented.pipe(Effect.orDie);
       this.rewards.set(id, result);
       return result;
     });
@@ -220,33 +165,35 @@ export class InMemoryRewardRepository implements RewardRepository {
 export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepository {
   private purchases = new Map<string, RewardPurchase>();
 
-  reset(): void {
-    this.purchases.clear();
+  reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      this.purchases.clear();
+    });
   }
 
-  seed(items: RewardPurchase[]): void {
-    items.forEach((item) => this.purchases.set(item.id, item));
+  seed(items: RewardPurchase[]): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      items.forEach((item) => this.purchases.set(item.id, item));
+    });
   }
 
   create(
     purchase: RewardPurchase,
-  ): Effect.Effect<RewardPurchase, DatabaseError, never> {
+  ): Effect.Effect<RewardPurchase, never, never> {
     return Effect.sync(() => {
       this.purchases.set(purchase.id, purchase);
       return purchase;
     });
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<RewardPurchase | null, DatabaseError, never> {
+  findById(id: string): Effect.Effect<RewardPurchase | null, never, never> {
     return Effect.succeed(this.purchases.get(id) ?? null);
   }
 
   findByRewardId(
     rewardId: RewardId,
     options?: PaginationOptions,
-  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, never, never> {
     let items = Array.from(this.purchases.values()).filter(
       (p) => p.rewardId === rewardId,
     );
@@ -269,7 +216,7 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
   findByGroupId(
     groupId: string,
     options?: PaginationOptions,
-  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, never, never> {
     let items = Array.from(this.purchases.values()).filter(
       (p) => p.groupId === groupId,
     );
@@ -292,7 +239,7 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
   findByTripId(
     tripId: string,
     options?: { groupId?: string } & PaginationOptions,
-  ): Effect.Effect<PaginatedResult<RewardPurchase>, DatabaseError, never> {
+  ): Effect.Effect<PaginatedResult<RewardPurchase>, never, never> {
     let items = Array.from(this.purchases.values());
 
     if (options?.groupId) {
@@ -319,15 +266,10 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
     status: string,
     updatedById: string,
     collectionMethod?: string | null,
-  ): Effect.Effect<RewardPurchase, DatabaseError, never> {
+  ): Effect.Effect<RewardPurchase, never, never> {
     const purchase = this.purchases.get(id);
     if (!purchase) {
-      return Effect.fail(
-        new DatabaseError({
-          operation: "updateStatus",
-          message: `Purchase with id ${id} not found`,
-        }),
-      );
+      throw new Error(`Purchase with id ${id} not found`);
     }
     const updated = new (purchase.constructor as new (
       ...args: unknown[]
@@ -348,9 +290,7 @@ export class InMemoryRewardPurchaseRepository implements RewardPurchaseRepositor
     return Effect.succeed(updated);
   }
 
-  countByRewardId(
-    rewardId: RewardId,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countByRewardId(rewardId: RewardId): Effect.Effect<number, never, never> {
     return Effect.succeed(
       Array.from(this.purchases.values()).filter((p) => p.rewardId === rewardId)
         .length,

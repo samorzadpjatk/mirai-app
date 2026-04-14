@@ -168,6 +168,78 @@ function mapS3ErrorToStorageError(
   });
 }
 
+/**
+ * Helper to narrow error types for upload operation
+ */
+function narrowUploadError(
+  error:
+    | StorageError
+    | FileNotFoundError
+    | UploadError
+    | BucketNotFoundError
+    | DownloadError
+    | DeleteError,
+): StorageError | UploadError | BucketNotFoundError {
+  if (error instanceof UploadError || error instanceof BucketNotFoundError) {
+    return error;
+  }
+  return new StorageError({ message: error.message });
+}
+
+/**
+ * Helper to narrow error types for download operation
+ */
+function narrowDownloadError(
+  error:
+    | StorageError
+    | FileNotFoundError
+    | UploadError
+    | BucketNotFoundError
+    | DownloadError
+    | DeleteError,
+): StorageError | FileNotFoundError | DownloadError {
+  if (error instanceof FileNotFoundError || error instanceof DownloadError) {
+    return error;
+  }
+  return new StorageError({ message: error.message });
+}
+
+/**
+ * Helper to narrow error types for delete operation
+ */
+function narrowDeleteError(
+  error:
+    | StorageError
+    | FileNotFoundError
+    | UploadError
+    | BucketNotFoundError
+    | DownloadError
+    | DeleteError,
+): StorageError | DeleteError | FileNotFoundError {
+  if (error instanceof DeleteError || error instanceof FileNotFoundError) {
+    return error;
+  }
+  return new StorageError({ message: error.message });
+}
+
+/**
+ * Helper to narrow error types for createSignedUrl operation
+ */
+function narrowSignedUrlError(
+  error:
+    | StorageError
+    | FileNotFoundError
+    | UploadError
+    | BucketNotFoundError
+    | DownloadError
+    | DeleteError,
+): StorageError | FileNotFoundError {
+  if (error instanceof FileNotFoundError) {
+    return error;
+  }
+  return new StorageError({ message: error.message });
+}
+
 // =============================================================================
 // Metadata Mapping
 // =============================================================================
@@ -295,7 +367,7 @@ export class S3StorageAdapter implements StoragePort {
         return metadata;
       },
       catch: (error) => mapS3ErrorToStorageError(error, "upload", bucket, path),
-    });
+    }).pipe(Effect.mapError(narrowUploadError));
   }
 
   /**
@@ -380,7 +452,7 @@ export class S3StorageAdapter implements StoragePort {
         }
         return mapS3ErrorToStorageError(e, "download", bucket, path);
       },
-    });
+    }).pipe(Effect.mapError(narrowDownloadError));
   }
 
   /**
@@ -445,7 +517,22 @@ export class S3StorageAdapter implements StoragePort {
         // For delete, use first path if available
         return mapS3ErrorToStorageError(e, "delete", bucket, paths[0]);
       },
-    });
+    }).pipe(
+      Effect.mapError((err) => {
+        if (
+          err instanceof StorageError ||
+          err instanceof DeleteError ||
+          err instanceof FileNotFoundError
+        ) {
+          return err;
+        }
+        // Wrap other errors in StorageError
+        return new StorageError({
+          message:
+            err instanceof Error ? err.message : "Unknown error during delete",
+        });
+      }),
+    );
   }
 
   /**
@@ -486,7 +573,7 @@ export class S3StorageAdapter implements StoragePort {
         }
         return mapS3ErrorToStorageError(e, "createSignedUrl", bucket, path);
       },
-    });
+    }).pipe(Effect.mapError(narrowSignedUrlError));
   }
 
   /**
@@ -524,6 +611,6 @@ export class S3StorageAdapter implements StoragePort {
         }
         return mapS3ErrorToStorageError(e, "fetchFileMetadata", bucket, path);
       },
-    });
+    }).pipe(Effect.mapError(narrowSignedUrlError));
   }
 }

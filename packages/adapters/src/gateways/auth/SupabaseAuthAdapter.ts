@@ -166,40 +166,33 @@ function extractRoleFromSupabaseUser(supabaseUser: SupabaseUser): UserRole {
 function mapSupabaseUserToAuthContext(
   supabaseUser: SupabaseUser,
 ): Effect.Effect<AuthContext, AuthError, never> {
-  return Effect.sync(() => {
-    // Extract user ID from Supabase user (using authUserId from Supabase)
-    const userIdString = supabaseUser.id;
-    if (!userIdString) {
-      throw new AuthError({
+  // Extract user ID from Supabase user (using authUserId from Supabase)
+  const userIdString = supabaseUser.id;
+  if (!userIdString) {
+    return Effect.fail(
+      new AuthError({
         message: "Supabase user missing required ID field",
-      });
-    }
+      }),
+    );
+  }
 
-    // Create branded UserId (safe since Supabase UUIDs are valid)
-    const userId: UserId = UserIdFactory.unsafeCreate(userIdString);
+  // Create branded UserId (safe since Supabase UUIDs are valid)
+  const userId: UserId = UserIdFactory.unsafeCreate(userIdString);
 
-    // Extract role from metadata
-    const role = extractRoleFromSupabaseUser(supabaseUser);
+  // Extract role from metadata
+  const role = extractRoleFromSupabaseUser(supabaseUser);
 
-    // Use email_confirmed_at as authentication timestamp, or now as fallback
-    const authenticatedAt = supabaseUser.email_confirmed_at
-      ? new Date(supabaseUser.email_confirmed_at)
-      : new Date();
+  // Use email_confirmed_at as authentication timestamp, or now as fallback
+  const authenticatedAt = supabaseUser.email_confirmed_at
+    ? new Date(supabaseUser.email_confirmed_at)
+    : new Date();
 
-    // Create AuthContext using factory method - this returns a Result
-    const result = AuthContext.create({
-      userId,
-      role,
-      authenticatedAt,
-      sessionId: undefined, // Supabase doesn't expose session ID in getUser response
-    });
-
-    // Unwrap the Result - if it's an error, throw it to be caught by Effect
-    if (result.kind === "err") {
-      throw result.error;
-    }
-
-    return result.value;
+  // Create AuthContext using Effect
+  return AuthContext.create({
+    userId,
+    role,
+    authenticatedAt,
+    sessionId: undefined, // Supabase doesn't expose session ID in getUser response
   }).pipe(
     Effect.catchAll((error: unknown) => {
       if (error instanceof AuthError) {

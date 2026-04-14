@@ -31,7 +31,7 @@ export class DrizzleGroupRepository
   /**
    * Find groups by trip ID
    */
-  findByTripId(tripId: string): Effect.Effect<Group[], never, never> {
+  findByTripId(tripId: string): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -47,13 +47,15 @@ export class DrizzleGroupRepository
           message: "Failed to find groups by trip ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find groups by status
    */
-  findByStatus(status: GroupStatus): Effect.Effect<Group[], never, never> {
+  findByStatus(
+    status: GroupStatus,
+  ): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const isDeleted = status === GroupStatus.DELETED;
@@ -70,7 +72,7 @@ export class DrizzleGroupRepository
           message: "Failed to find groups by status",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -79,7 +81,7 @@ export class DrizzleGroupRepository
   findByTripIdAndStatus(
     tripId: string,
     status: GroupStatus,
-  ): Effect.Effect<Group[], never, never> {
+  ): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const isDeleted = status === GroupStatus.DELETED;
@@ -101,13 +103,15 @@ export class DrizzleGroupRepository
           message: "Failed to find groups by trip ID and status",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find groups by organizer ID
    */
-  findByOrganizerId(organizerId: string): Effect.Effect<Group[], never, never> {
+  findByOrganizerId(
+    organizerId: string,
+  ): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -123,13 +127,13 @@ export class DrizzleGroupRepository
           message: "Failed to find groups by organizer ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find group by code
    */
-  findByCode(code: string): Effect.Effect<Group | null, never, never> {
+  findByCode(code: string): Effect.Effect<Group | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -147,7 +151,7 @@ export class DrizzleGroupRepository
           message: "Failed to find group by code",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -156,7 +160,7 @@ export class DrizzleGroupRepository
   override findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<Group[], never, never> {
+  }): Effect.Effect<Group[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         let query = this.db.select().from(this.table);
@@ -177,13 +181,13 @@ export class DrizzleGroupRepository
           message: "Failed to find groups with pagination",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Count groups by trip ID
    */
-  countByTripId(tripId: string): Effect.Effect<number, never, never> {
+  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const result = await this.db
@@ -199,6 +203,6 @@ export class DrizzleGroupRepository
           message: "Failed to count groups by trip ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 }

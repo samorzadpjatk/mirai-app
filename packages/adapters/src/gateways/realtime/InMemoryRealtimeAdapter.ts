@@ -59,10 +59,11 @@ class InMemoryRealtimeSubscription implements RealtimeSubscription {
       this._state = "CLOSED";
       this.cleanup();
     }).pipe(
-      Effect.catchAll((error) =>
+      Effect.catchAll((error: unknown) =>
         Effect.fail(
           new RealtimeError({
             message: `Failed to unsubscribe: ${error instanceof Error ? error.message : "Unknown error"}`,
+            code: "REALTIME_ERROR",
           }),
         ),
       ),
@@ -128,13 +129,16 @@ export class InMemoryRealtimeAdapter implements RealtimePort {
     RealtimeError | SubscriptionError,
     never
   > {
-    return Effect.sync(() => {
+    return Effect.gen(this, function* () {
       // Check if we're in a state that allows subscriptions
       if (this.globalState === "CLOSED") {
-        throw new SubscriptionError({
-          message: "Cannot subscribe: adapter is closed",
-          channel,
-        });
+        return yield* Effect.fail(
+          new SubscriptionError({
+            message: "Cannot subscribe: adapter is closed",
+            channel,
+            code: "SUBSCRIPTION_ERROR",
+          }),
+        );
       }
 
       // Generate subscription ID
@@ -166,19 +170,7 @@ export class InMemoryRealtimeAdapter implements RealtimePort {
       config.onConnectionChange?.("CONNECTED");
 
       return subscription;
-    }).pipe(
-      Effect.catchAllDefect((error) => {
-        if (error instanceof SubscriptionError) {
-          return Effect.fail(error);
-        }
-        return Effect.fail(
-          new SubscriptionError({
-            message: `Subscription failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-            channel,
-          }),
-        );
-      }),
-    );
+    });
   }
 
   /**
@@ -191,51 +183,60 @@ export class InMemoryRealtimeAdapter implements RealtimePort {
     event: string,
     payload: unknown,
   ): Effect.Effect<void, RealtimeError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const channelSubscriptions = this.subscriptions.get(channel);
-        const channelConfigs = this.channelConfigs.get(channel);
+    return Effect.gen(this, function* () {
+      // Check if adapter is in a state that allows broadcasts
+      if (this.globalState === "CLOSED") {
+        return yield* Effect.fail(
+          new RealtimeError({
+            message: `Cannot broadcast: adapter is closed`,
+            code: "REALTIME_ERROR",
+          }),
+        );
+      }
 
-        if (!channelSubscriptions || !channelConfigs) {
-          // No subscribers - this is not an error, just a no-op
-          return;
+      const channelSubscriptions = this.subscriptions.get(channel);
+      const channelConfigs = this.channelConfigs.get(channel);
+
+      if (!channelSubscriptions || !channelConfigs) {
+        // No subscribers - this is not an error, just a no-op
+        return;
+      }
+
+      // Deliver to all subscribers
+      for (let i = 0; i < channelSubscriptions.length; i++) {
+        const subscription = channelSubscriptions[i];
+        const config = channelConfigs[i];
+
+        // Skip if subscription or config is undefined (shouldn't happen, but type-safe)
+        if (!subscription || !config) {
+          continue;
         }
 
-        // Deliver to all subscribers
-        for (let i = 0; i < channelSubscriptions.length; i++) {
-          const subscription = channelSubscriptions[i];
-          const config = channelConfigs[i];
+        // Skip closed subscriptions
+        if (subscription.state === "CLOSED") {
+          continue;
+        }
 
-          // Skip closed subscriptions
-          if (subscription.state === "CLOSED") {
+        // Check if event is in the configured events list (if specified)
+        if (config.events && config.events.length > 0) {
+          if (!config.events.includes(event)) {
             continue;
           }
-
-          // Check if event is in the configured events list (if specified)
-          if (config.events && config.events.length > 0) {
-            if (!config.events.includes(event)) {
-              continue;
-            }
-          }
-
-          // Deliver message
-          try {
-            config.onMessage?.(event, payload);
-          } catch (error) {
-            // Log but don't fail - other subscribers should still receive
-            serverLogger.warn(
-              `Message handler error for subscription ${subscription.id}`,
-              {
-                error: error instanceof Error ? error.message : String(error),
-              },
-            );
-          }
         }
-      },
-      catch: (error) =>
-        new RealtimeError({
-          message: `Broadcast failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        }),
+
+        // Deliver message
+        try {
+          config.onMessage?.(event, payload);
+        } catch (error) {
+          // Log but don't fail - other subscribers should still receive
+          serverLogger.warn(
+            `Message handler error for subscription ${subscription.id}`,
+            {
+              error: error instanceof Error ? error.message : String(error),
+            },
+          );
+        }
+      }
     });
   }
 
@@ -263,6 +264,7 @@ export class InMemoryRealtimeAdapter implements RealtimePort {
       catch: (error) =>
         new RealtimeError({
           message: `Presence tracking failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+          code: "REALTIME_ERROR",
         }),
     });
   }

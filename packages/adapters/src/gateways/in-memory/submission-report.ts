@@ -30,11 +30,14 @@ export class InMemorySubmissionReportRepository
   create(
     report: SubmissionReport,
   ): Effect.Effect<SubmissionReport, never, never> {
-    return this.createGeneric(report);
+    return Effect.sync(() => {
+      this.storage.set(report.id, report);
+      return report;
+    });
   }
 
   findById(id: string): Effect.Effect<SubmissionReport | null, never, never> {
-    return this.findByIdGeneric(id);
+    return Effect.sync(() => this.storage.get(id) ?? null);
   }
 
   findBySubmissionId(
@@ -111,10 +114,12 @@ export class InMemorySubmissionReportRepository
   }
 
   delete(id: string): Effect.Effect<void, never, never> {
-    return this.deleteGeneric(id);
+    return Effect.sync(() => {
+      this.storage.delete(id);
+    });
   }
 
   exists(id: string): Effect.Effect<boolean, never, never> {
-    return this.existsGeneric(id);
+    return Effect.sync(() => this.storage.has(id));
   }
 }

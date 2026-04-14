@@ -135,7 +135,6 @@ export {
 export {
   mapErrorToCode,
   type ErrorCode,
-  toControllerResult,
   createControllerResult,
   type ControllerResult,
   // Effect-based handlers (Migration Phase 4.1+)
@@ -261,70 +260,37 @@ export type {
   SponsorId,
   TripSponsorId,
 } from "@mirai-app/domain";
+
+// Repository types from use-cases (port interfaces)
 export type {
   UserRepository,
-  GetUserUseCase,
-  CreateUserUseCase,
-  UpdateUserUseCase,
   ChallengeRepository,
-  GetChallengeUseCase,
-  CreateChallengeUseCase,
-  UpdateChallengeUseCase,
-  UpdateChallengeStatusUseCase,
   NotificationRepository,
-  GetNotificationUseCase,
   TripRepository,
   GroupRepository,
   ActivityFeedRepository,
-  GetActivityFeedUseCase,
-  CreateActivityUseCase,
-  AddReactionUseCase,
-  // Challenge Submission
   ChallengeSubmissionRepository,
-  CreateSubmissionUseCase,
-  GetSubmissionUseCase,
-  GetSubmissionByChallengeAndGroupUseCase,
-  UpdateSubmissionUseCase,
-  DeleteSubmissionUseCase,
-  ListSubmissionsByChallengeUseCase,
-  // Location
   LocationRepository,
-  ListLocationsUseCase,
-  UpdateSharingSettingsUseCase,
-  AddSharingUserUseCase,
-  RemoveSharingUserUseCase,
-  GetSharingSettingsUseCase,
-  // Reward
+  ChallengeVoteRepository,
   RewardRepository,
   RewardPurchaseRepository,
-  SetRewardHiddenUseCase,
-  PurchaseRewardUseCase,
-  UpdatePurchaseStatusUseCase,
-  UpdateMyPurchaseStatusUseCase,
-  GetPurchaseHistoryUseCase,
-  // Challenge Vote
-  ChallengeVoteRepository,
-  GetMyVotesUseCase,
-  GetVotesByChallengeUseCase,
-  GetChallengeVotingProgressUseCase,
-  GetJudgedStaffVotingProgressUseCase,
-  SubmitVoteUseCase,
-  SubmitVotesUseCase,
-  ForceEndVotingUseCase,
-  // Submission Report
   SubmissionReportRepository,
-  CreateReportUseCase,
-  GetReportsUseCase,
-  // Sponsor
   SponsorRepository,
-  ListSponsorsUseCase,
-  LinkSponsorToTripUseCase,
-  UnlinkSponsorFromTripUseCase,
 } from "@mirai-app/use-cases";
 
-// NOTE: The following use cases are now function-based (Effect-based) and should be imported directly:
+// NOTE: Use cases have been migrated to function-based Effect patterns.
+// Import them directly from @mirai-app/use-cases when needed:
+// - getUserUseCase, createUserUseCase, updateUserUseCase
+// - getChallengeUseCase, createChallengeUseCase, updateChallengeUseCase, updateChallengeStatusUseCase
+// - getNotificationUseCase
 // - getActivityFeedUseCase, createActivityUseCase, addReactionUseCase
+// - createSubmissionUseCase, getSubmissionUseCase, getSubmissionByChallengeAndGroupUseCase,
+//   updateSubmissionUseCase, deleteSubmissionUseCase, listSubmissionsByChallengeUseCase
+// - listLocationsUseCase, updateSharingSettingsUseCase, addSharingUserUseCase,
+//   removeSharingUserUseCase, getSharingSettingsUseCase
+// - setRewardHiddenUseCase, purchaseRewardUseCase, updatePurchaseStatusUseCase,
+//   updateMyPurchaseStatusUseCase, getPurchaseHistoryUseCase
+// - getMyVotesUseCase, getVotesByChallengeUseCase, getChallengeVotingProgressUseCase,
+//   getJudgedStaffVotingProgressUseCase, submitVoteUseCase, submitVotesUseCase, forceEndVotingUseCase
 // - createReportUseCase, getReportsUseCase
-// - purchaseRewardUseCase, getPurchaseHistoryUseCase
-// - addCoinsUseCase, removeCoinsUseCase, getCoinTransactionsUseCase, getCoinStatisticsUseCase
-// - getCoinQuickStatsUseCase, getCoinAdditionalInsightsUseCase, getMostActiveAdminStatsUseCase
+// - listSponsorsUseCase, linkSponsorToTripUseCase, unlinkSponsorFromTripUseCase

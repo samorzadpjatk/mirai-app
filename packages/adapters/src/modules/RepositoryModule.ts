@@ -63,6 +63,7 @@
  */
 
 import { createStaticModule, type StaticModule } from "awilix-modular";
+import { Lifetime } from "awilix";
 
 // =============================================================================
 // Drizzle Repository Imports
@@ -251,26 +252,10 @@ export interface RepositoryModuleDeps {
  */
 export interface RepositoryModuleDef {
   name: "RepositoryModule";
-  providers: {
-    [REPOSITORY_TOKENS.UserRepository]: typeof DrizzleUserRepository;
-    [REPOSITORY_TOKENS.TripRepository]: typeof DrizzleTripRepository;
-    [REPOSITORY_TOKENS.ChallengeRepository]: typeof DrizzleChallengeRepository;
-    [REPOSITORY_TOKENS.GroupRepository]: typeof DrizzleGroupRepository;
-    [REPOSITORY_TOKENS.LocationRepository]: typeof DrizzleLocationRepository;
-    [REPOSITORY_TOKENS.NotificationRepository]: typeof DrizzleNotificationRepository;
-    [REPOSITORY_TOKENS.ChallengeSubmissionRepository]: typeof DrizzleChallengeSubmissionRepository;
-    [REPOSITORY_TOKENS.ChallengeVoteRepository]: typeof DrizzleChallengeVoteRepository;
-    [REPOSITORY_TOKENS.ActivityFeedRepository]: typeof DrizzleActivityFeedRepository;
-    [REPOSITORY_TOKENS.SponsorRepository]: typeof DrizzleSponsorRepository;
-    [REPOSITORY_TOKENS.SubmissionReportRepository]: typeof DrizzleSubmissionReportRepository;
-    [REPOSITORY_TOKENS.RewardRepository]: typeof DrizzleRewardRepository;
-    [REPOSITORY_TOKENS.RewardPurchaseRepository]: typeof DrizzleRewardPurchaseRepository;
-    [REPOSITORY_TOKENS.CoinTransactionRepository]: typeof DrizzleCoinTransactionRepository;
-    [REPOSITORY_TOKENS.NotificationDeliveryRepository]: typeof DrizzleNotificationDeliveryRepository;
-    [REPOSITORY_TOKENS.NotificationScheduleRepository]: typeof DrizzleNotificationScheduleRepository;
-    [REPOSITORY_TOKENS.EventRepository]: typeof DrizzleEventRepository;
-  };
-  exports: RepositoryToken[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  providers: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  exports: Record<string, any>;
 }
 
 // =============================================================================
@@ -304,73 +289,270 @@ export const RepositoryModule: StaticModule<RepositoryModuleDef> =
     name: "RepositoryModule",
 
     providers: {
-      // Core domain repositories - all Drizzle
-      [REPOSITORY_TOKENS.UserRepository]: DrizzleUserRepository,
-      [REPOSITORY_TOKENS.TripRepository]: DrizzleTripRepository,
-      [REPOSITORY_TOKENS.ChallengeRepository]: DrizzleChallengeRepository,
-      [REPOSITORY_TOKENS.GroupRepository]: DrizzleGroupRepository,
-      [REPOSITORY_TOKENS.LocationRepository]: DrizzleLocationRepository,
+      // Core domain repositories - all Drizzle (using factory functions)
+      [REPOSITORY_TOKENS.UserRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleUserRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.TripRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleTripRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.ChallengeRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleChallengeRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.GroupRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleGroupRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.LocationRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleLocationRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Notification & messaging repositories
-      [REPOSITORY_TOKENS.NotificationRepository]: DrizzleNotificationRepository,
-      [REPOSITORY_TOKENS.NotificationDeliveryRepository]:
-        DrizzleNotificationDeliveryRepository,
-      [REPOSITORY_TOKENS.NotificationScheduleRepository]:
-        DrizzleNotificationScheduleRepository,
+      [REPOSITORY_TOKENS.NotificationRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleNotificationRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.NotificationDeliveryRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleNotificationDeliveryRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.NotificationScheduleRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleNotificationScheduleRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Challenge & submission repositories
-      [REPOSITORY_TOKENS.ChallengeSubmissionRepository]:
-        DrizzleChallengeSubmissionRepository,
-      [REPOSITORY_TOKENS.ChallengeVoteRepository]:
-        DrizzleChallengeVoteRepository,
-      [REPOSITORY_TOKENS.ActivityFeedRepository]: DrizzleActivityFeedRepository,
+      [REPOSITORY_TOKENS.ChallengeSubmissionRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleChallengeSubmissionRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.ChallengeVoteRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleChallengeVoteRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.ActivityFeedRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleActivityFeedRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Reward & gamification repositories
-      [REPOSITORY_TOKENS.RewardRepository]: DrizzleRewardRepository,
-      [REPOSITORY_TOKENS.RewardPurchaseRepository]:
-        DrizzleRewardPurchaseRepository,
-      [REPOSITORY_TOKENS.CoinTransactionRepository]:
-        DrizzleCoinTransactionRepository,
+      [REPOSITORY_TOKENS.RewardRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleRewardRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.RewardPurchaseRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleRewardPurchaseRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.CoinTransactionRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleCoinTransactionRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Support & moderation repositories
-      [REPOSITORY_TOKENS.SponsorRepository]: DrizzleSponsorRepository,
-      [REPOSITORY_TOKENS.SubmissionReportRepository]:
-        DrizzleSubmissionReportRepository,
+      [REPOSITORY_TOKENS.SponsorRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleSponsorRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.SubmissionReportRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleSubmissionReportRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Event repository
-      [REPOSITORY_TOKENS.EventRepository]: DrizzleEventRepository,
+      [REPOSITORY_TOKENS.EventRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleEventRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
     },
 
-    exports: [
-      // Core domain
-      REPOSITORY_TOKENS.UserRepository,
-      REPOSITORY_TOKENS.TripRepository,
-      REPOSITORY_TOKENS.ChallengeRepository,
-      REPOSITORY_TOKENS.GroupRepository,
-      REPOSITORY_TOKENS.LocationRepository,
+    exports: {
+      // Core domain - re-export providers config
+      [REPOSITORY_TOKENS.UserRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleUserRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.TripRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleTripRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.ChallengeRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleChallengeRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.GroupRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleGroupRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.LocationRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleLocationRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Notification & messaging
-      REPOSITORY_TOKENS.NotificationRepository,
-      REPOSITORY_TOKENS.NotificationDeliveryRepository,
-      REPOSITORY_TOKENS.NotificationScheduleRepository,
+      [REPOSITORY_TOKENS.NotificationRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleNotificationRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.NotificationDeliveryRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleNotificationDeliveryRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.NotificationScheduleRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleNotificationScheduleRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Challenge & submission
-      REPOSITORY_TOKENS.ChallengeSubmissionRepository,
-      REPOSITORY_TOKENS.ChallengeVoteRepository,
-      REPOSITORY_TOKENS.ActivityFeedRepository,
+      [REPOSITORY_TOKENS.ChallengeSubmissionRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleChallengeSubmissionRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.ChallengeVoteRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleChallengeVoteRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.ActivityFeedRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleActivityFeedRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Reward & gamification
-      REPOSITORY_TOKENS.RewardRepository,
-      REPOSITORY_TOKENS.RewardPurchaseRepository,
-      REPOSITORY_TOKENS.CoinTransactionRepository,
+      [REPOSITORY_TOKENS.RewardRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleRewardRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.RewardPurchaseRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleRewardPurchaseRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.CoinTransactionRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleCoinTransactionRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Support & moderation
-      REPOSITORY_TOKENS.SponsorRepository,
-      REPOSITORY_TOKENS.SubmissionReportRepository,
+      [REPOSITORY_TOKENS.SponsorRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleSponsorRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+      [REPOSITORY_TOKENS.SubmissionReportRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleSubmissionReportRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Event
-      REPOSITORY_TOKENS.EventRepository,
-    ],
+      [REPOSITORY_TOKENS.EventRepository]: {
+        factory: (cradle: Record<string, unknown>) =>
+          new DrizzleEventRepository(
+            cradle.drizzle as unknown as import("@mirai-app/frameworks/drizzle").DrizzleDb,
+          ),
+        lifetime: Lifetime.SINGLETON,
+      },
+    },
   });
 
 // =============================================================================

@@ -5,7 +5,7 @@ import type {
   SubmissionType,
 } from "@mirai-app/domain";
 import type { ChallengeRepository } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/ChallengeRepository";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

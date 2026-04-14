@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   getNotificationUseCase,
@@ -6,12 +5,13 @@ import {
   updateNotificationUseCase,
   deleteNotificationUseCase,
   scheduleNotificationUseCase,
+  NotificationRepositoryTag,
   type CreateNotificationInput,
   type UpdateNotificationInput,
   type DeleteNotificationInput,
   type ScheduleNotificationInput,
   NotificationCreationError,
-  NotificationRepositoryError,
+  CreateNotificationRepositoryError,
   UpdateNotificationNotFoundError,
   NotificationUpdateError,
   UpdateNotificationValidationError,
@@ -24,80 +24,35 @@ import {
   ScheduleNotificationValidationError,
   ScheduleNotificationStateError,
 } from "@mirai-app/use-cases";
+import {
+  validateGetByIdInput,
+  validateGetByTripIdInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateUpdateStatusInput,
+  validateListInput,
+  validateListByStatusInput,
+  validateListByPriorityInput,
+  validateScheduleInput,
+} from "./validators/notification-validators";
+
+export {
+  validateGetByIdInput,
+  validateGetByTripIdInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateUpdateStatusInput,
+  validateListInput,
+  validateListByStatusInput,
+  validateListByPriorityInput,
+  validateScheduleInput,
+};
+
 import { NotificationStatus, NotificationPriority } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for notification controller
  */
-const schemas = {
-  getById: z.object({
-    id: z.string().uuid("Invalid notification ID format"),
-  }),
-
-  getByTripId: z.object({
-    tripId: z.string().uuid("Invalid trip ID format"),
-  }),
-
-  create: z.object({
-    title: z
-      .string()
-      .min(1, "Title is required")
-      .max(200, "Title must be at most 200 characters"),
-    body: z
-      .string()
-      .min(1, "Body is required")
-      .max(2000, "Body must be at most 2000 characters"),
-    url: z.string().url("Invalid URL").nullable().optional(),
-    tripId: z.string().uuid("Invalid trip ID format").nullable().optional(),
-    createdById: z.string().uuid("Invalid user ID format"),
-    priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).default("NORMAL"),
-    scheduledFor: z.coerce.date().nullable().optional(),
-  }),
-
-  update: z.object({
-    notificationId: z.string().uuid("Invalid notification ID format"),
-    title: z
-      .string()
-      .min(1, "Title is required")
-      .max(200, "Title must be at most 200 characters")
-      .optional(),
-    body: z
-      .string()
-      .min(1, "Body is required")
-      .max(2000, "Body must be at most 2000 characters")
-      .optional(),
-    url: z.string().url("Invalid URL").nullable().optional(),
-    priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).optional(),
-    scheduledFor: z.coerce.date().nullable().optional(),
-  }),
-
-  updateStatus: z.object({
-    notificationId: z.string().uuid("Invalid notification ID format"),
-    newStatus: z.enum(["DRAFT", "READY", "SENT", "FAILED", "CANCELLED"]),
-  }),
-
-  list: z.object({
-    limit: z.number().int().min(1).max(100).default(20),
-    offset: z.number().int().min(0).default(0),
-  }),
-
-  listByStatus: z.object({
-    status: z.enum(["DRAFT", "READY", "SENT", "FAILED", "CANCELLED"]),
-    limit: z.number().int().min(1).max(100).default(20),
-    offset: z.number().int().min(0).default(0),
-  }),
-
-  listByPriority: z.object({
-    priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]),
-    limit: z.number().int().min(1).max(100).default(20),
-    offset: z.number().int().min(0).default(0),
-  }),
-
-  schedule: z.object({
-    notificationId: z.string().uuid("Invalid notification ID format"),
-    scheduledFor: z.coerce.date(),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -140,7 +95,7 @@ export class NotificationController {
    * Get a notification by ID
    */
   async getById(input: unknown) {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -174,7 +129,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getByTripId.safeParse(input);
+    const parsed = validateGetByTripIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -182,25 +137,38 @@ export class NotificationController {
       };
     }
 
-    const effect = 
-      .findByTripId(parsed.data.tripId)
-      .pipe(
-        Effect.map((notifications) =>
-          notifications.map((notification) => ({
-            id: notification.id,
-            title: notification.title,
-            body: notification.body,
-            status: notification.status,
-            priority: notification.priority,
-            tripId: notification.tripId,
-            createdById: notification.createdById,
-            createdAt: notification.createdAt,
-            isSent: notification.isSent(),
-          })),
-        ),
-      );
+    const effect = Effect.gen(function* () {
+      const repo = yield* NotificationRepositoryTag;
+      const notifications = yield* repo.findByTripId(parsed.data.tripId);
+      return notifications.map((notification) => ({
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        status: notification.status,
+        priority: notification.priority,
+        tripId: notification.tripId,
+        createdById: notification.createdById,
+        createdAt: notification.createdAt,
+        isSent: notification.isSent(),
+      }));
+    });
 
-    return await runWithLayer(effect, this.appLayer);
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            title: string;
+            body: string;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            createdById: string;
+            createdAt: Date;
+            isSent: boolean;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -225,7 +193,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -243,18 +211,50 @@ export class NotificationController {
       scheduledFor: parsed.data.scheduledFor,
     });
 
-    return await runWithLayer(effect, (result) => ({
-      id: result.id,
-      title: result.title,
-      body: result.body,
-      url: result.url,
-      status: result.status,
-      priority: result.priority,
-      tripId: result.tripId,
-      createdById: result.createdById,
-      createdAt: result.createdAt,
-      isScheduled: result.scheduledFor !== null,
-    }));
+    const result = await runWithLayer(
+      effect,
+      this.appLayer,
+      (result: {
+        id: string;
+        title: string;
+        body: string;
+        url: string | null;
+        status: string;
+        priority: string;
+        tripId: string | null;
+        createdById: string;
+        createdAt: Date;
+        scheduledFor: Date | null;
+      }) => ({
+        id: result.id,
+        title: result.title,
+        body: result.body,
+        url: result.url,
+        status: result.status,
+        priority: result.priority,
+        tripId: result.tripId,
+        createdById: result.createdById,
+        createdAt: result.createdAt,
+        isScheduled: result.scheduledFor !== null,
+      }),
+    );
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            title: string;
+            body: string;
+            url: string | null;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            createdById: string;
+            createdAt: Date;
+            isScheduled: boolean;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -277,7 +277,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -293,16 +293,43 @@ export class NotificationController {
       priority: parsed.data.priority as NotificationPriority,
     });
 
-    return await runWithLayer(effect, (result) => ({
-      id: result.id,
-      title: result.title,
-      body: result.body,
-      url: result.url,
-      status: result.status,
-      priority: result.priority,
-      tripId: result.tripId,
-      updatedAt: result.updatedAt,
-    }));
+    return (await runWithLayer(
+      effect,
+      this.appLayer,
+      (result: {
+        id: string;
+        title: string;
+        body: string;
+        url: string | null;
+        status: string;
+        priority: string;
+        tripId: string | null;
+        updatedAt: Date;
+      }) => ({
+        id: result.id,
+        title: result.title,
+        body: result.body,
+        url: result.url,
+        status: result.status,
+        priority: result.priority,
+        tripId: result.tripId,
+        updatedAt: result.updatedAt,
+      }),
+    )) as unknown as
+      | {
+          success: true;
+          data: {
+            id: string;
+            title: string;
+            body: string;
+            url: string | null;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            updatedAt: Date;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -322,7 +349,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.updateStatus.safeParse(input);
+    const parsed = validateUpdateStatusInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -335,13 +362,33 @@ export class NotificationController {
       status: parsed.data.newStatus as NotificationStatus,
     });
 
-    return await runWithLayer(effect, (result) => ({
-      id: result.id,
-      title: result.title,
-      previousStatus: result.status, // The use case returns the updated entity
-      newStatus: result.status,
-      updatedAt: result.updatedAt,
-    }));
+    return (await runWithLayer(
+      effect,
+      this.appLayer,
+      (result: {
+        id: string;
+        title: string;
+        status: string;
+        updatedAt: Date;
+      }) => ({
+        id: result.id,
+        title: result.title,
+        previousStatus: result.status, // The use case returns the updated entity
+        newStatus: result.status,
+        updatedAt: result.updatedAt,
+      }),
+    )) as unknown as
+      | {
+          success: true;
+          data: {
+            id: string;
+            title: string;
+            previousStatus: string;
+            newStatus: string;
+            updatedAt: Date;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -367,7 +414,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.schedule.safeParse(input);
+    const parsed = validateScheduleInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -380,7 +427,24 @@ export class NotificationController {
       scheduledFor: parsed.data.scheduledFor,
     });
 
-    return await runWithLayer(effect, this.appLayer);
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: {
+            id: string;
+            title: string;
+            body: string;
+            url: string | null;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            scheduledFor: Date;
+            sentAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -403,7 +467,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.list.safeParse(input);
+    const parsed = validateListInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -411,28 +475,41 @@ export class NotificationController {
       };
     }
 
-    const effect = 
-      .findAll({
+    const effect = Effect.gen(function* () {
+      const repo = yield* NotificationRepositoryTag;
+      const notifications = yield* repo.findAll({
         limit: parsed.data.limit,
         offset: parsed.data.offset,
-      })
-      .pipe(
-        Effect.map((notifications) =>
-          notifications.map((notification) => ({
-            id: notification.id,
-            title: notification.title,
-            body: notification.body,
-            status: notification.status,
-            priority: notification.priority,
-            tripId: notification.tripId,
-            createdById: notification.createdById,
-            createdAt: notification.createdAt,
-            isSent: notification.isSent(),
-          })),
-        ),
-      );
+      });
+      return notifications.map((notification) => ({
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        status: notification.status,
+        priority: notification.priority,
+        tripId: notification.tripId,
+        createdById: notification.createdById,
+        createdAt: notification.createdAt,
+        isSent: notification.isSent(),
+      }));
+    });
 
-    return await runWithLayer(effect, this.appLayer);
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            title: string;
+            body: string;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            createdById: string;
+            createdAt: Date;
+            isSent: boolean;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -455,7 +532,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.listByStatus.safeParse(input);
+    const parsed = validateListByStatusInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -463,29 +540,44 @@ export class NotificationController {
       };
     }
 
-    const effect = 
-      .findByStatus(parsed.data.status as NotificationStatus)
-      .pipe(
-        Effect.map((notifications) => {
-          const paginated = notifications.slice(
-            parsed.data.offset,
-            parsed.data.offset + parsed.data.limit,
-          );
-          return paginated.map((notification) => ({
-            id: notification.id,
-            title: notification.title,
-            body: notification.body,
-            status: notification.status,
-            priority: notification.priority,
-            tripId: notification.tripId,
-            createdById: notification.createdById,
-            createdAt: notification.createdAt,
-            isSent: notification.isSent(),
-          }));
-        }),
+    const effect = Effect.gen(function* () {
+      const repo = yield* NotificationRepositoryTag;
+      const notifications = yield* repo.findByStatus(
+        parsed.data.status as NotificationStatus,
       );
+      const paginated = notifications.slice(
+        parsed.data.offset,
+        parsed.data.offset + parsed.data.limit,
+      );
+      return paginated.map((notification) => ({
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        status: notification.status,
+        priority: notification.priority,
+        tripId: notification.tripId,
+        createdById: notification.createdById,
+        createdAt: notification.createdAt,
+        isSent: notification.isSent(),
+      }));
+    });
 
-    return await runWithLayer(effect, this.appLayer);
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            title: string;
+            body: string;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            createdById: string;
+            createdAt: Date;
+            isSent: boolean;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -508,7 +600,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.listByPriority.safeParse(input);
+    const parsed = validateListByPriorityInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -516,29 +608,44 @@ export class NotificationController {
       };
     }
 
-    const effect = 
-      .findByPriority(parsed.data.priority as NotificationPriority)
-      .pipe(
-        Effect.map((notifications) => {
-          const paginated = notifications.slice(
-            parsed.data.offset,
-            parsed.data.offset + parsed.data.limit,
-          );
-          return paginated.map((notification) => ({
-            id: notification.id,
-            title: notification.title,
-            body: notification.body,
-            status: notification.status,
-            priority: notification.priority,
-            tripId: notification.tripId,
-            createdById: notification.createdById,
-            createdAt: notification.createdAt,
-            isSent: notification.isSent(),
-          }));
-        }),
+    const effect = Effect.gen(function* () {
+      const repo = yield* NotificationRepositoryTag;
+      const notifications = yield* repo.findByPriority(
+        parsed.data.priority as NotificationPriority,
       );
+      const paginated = notifications.slice(
+        parsed.data.offset,
+        parsed.data.offset + parsed.data.limit,
+      );
+      return paginated.map((notification) => ({
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        status: notification.status,
+        priority: notification.priority,
+        tripId: notification.tripId,
+        createdById: notification.createdById,
+        createdAt: notification.createdAt,
+        isSent: notification.isSent(),
+      }));
+    });
 
-    return await runWithLayer(effect, this.appLayer);
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            title: string;
+            body: string;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            createdById: string;
+            createdAt: Date;
+            isSent: boolean;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -561,23 +668,38 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const effect = .findReadyToSend().pipe(
-      Effect.map((notifications) =>
-        notifications.map((notification) => ({
-          id: notification.id,
-          title: notification.title,
-          body: notification.body,
-          status: notification.status,
-          priority: notification.priority,
-          tripId: notification.tripId,
-          createdById: notification.createdById,
-          createdAt: notification.createdAt,
-          isScheduled: notification.isScheduled(),
-        })),
-      ),
-    );
+    const effect = Effect.gen(function* () {
+      const repo = yield* NotificationRepositoryTag;
+      const notifications = yield* repo.findReadyToSend();
+      return notifications.map((notification) => ({
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        status: notification.status,
+        priority: notification.priority,
+        tripId: notification.tripId,
+        createdById: notification.createdById,
+        createdAt: notification.createdAt,
+        isScheduled: notification.isScheduled(),
+      }));
+    });
 
-    return await runWithLayer(effect, this.appLayer);
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            title: string;
+            body: string;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            createdById: string;
+            createdAt: Date;
+            isScheduled: boolean;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -599,22 +721,36 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const effect = .findOverdue().pipe(
-      Effect.map((notifications) =>
-        notifications.map((notification) => ({
-          id: notification.id,
-          title: notification.title,
-          body: notification.body,
-          status: notification.status,
-          priority: notification.priority,
-          tripId: notification.tripId,
-          scheduledFor: notification.scheduledFor,
-          createdAt: notification.createdAt,
-        })),
-      ),
-    );
+    const effect = Effect.gen(function* () {
+      const repo = yield* NotificationRepositoryTag;
+      const notifications = yield* repo.findOverdue();
+      return notifications.map((notification) => ({
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        status: notification.status,
+        priority: notification.priority,
+        tripId: notification.tripId,
+        scheduledFor: notification.scheduledFor,
+        createdAt: notification.createdAt,
+      }));
+    });
 
-    return await runWithLayer(effect, this.appLayer);
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            title: string;
+            body: string;
+            status: string;
+            priority: string;
+            tripId: string | null;
+            scheduledFor: Date | null;
+            createdAt: Date;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -627,7 +763,7 @@ export class NotificationController {
     | { success: true; data: { deleted: true; id: string } }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -639,9 +775,18 @@ export class NotificationController {
       notificationId: parsed.data.id,
     });
 
-    return await runWithLayer(effect, (result) => ({
-      deleted: result.success,
-      id: result.deletedNotificationId,
-    }));
+    return (await runWithLayer(
+      effect,
+      this.appLayer,
+      (result: { success: boolean; deletedNotificationId: string }) => ({
+        deleted: result.success,
+        id: result.deletedNotificationId,
+      }),
+    )) as unknown as
+      | {
+          success: true;
+          data: { deleted: true; id: string };
+        }
+      | { success: false; error: string };
   }
 }

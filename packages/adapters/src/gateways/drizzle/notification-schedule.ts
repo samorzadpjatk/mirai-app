@@ -16,7 +16,7 @@ import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { NotificationScheduleDrizzleMapper } from "../../mappers/drizzle/notification-schedule";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleNotificationScheduleRepository
@@ -40,12 +40,39 @@ export class DrizzleNotificationScheduleRepository
     });
   }
 
+  // Override base class methods to match interface error types
+  override create(
+    entity: NotificationSchedule,
+  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+    return super.create(entity);
+  }
+
+  override findById(
+    id: string,
+  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never> {
+    return super.findById(id);
+  }
+
+  override update(
+    entity: NotificationSchedule & { id: string },
+  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+    return super.update(entity);
+  }
+
+  override delete(id: string): Effect.Effect<void, DatabaseError, never> {
+    return super.delete(id);
+  }
+
+  override exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+    return super.exists(id);
+  }
+
   /**
    * Find schedules by trip ID
    */
   findByTripId(
     tripId: string,
-  ): Effect.Effect<NotificationSchedule[], never, never> {
+  ): Effect.Effect<NotificationSchedule[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -62,7 +89,7 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to find notification schedules by trip ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -70,7 +97,7 @@ export class DrizzleNotificationScheduleRepository
    */
   findByName(
     name: string,
-  ): Effect.Effect<NotificationSchedule | null, never, never> {
+  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -87,7 +114,7 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to find notification schedule by name",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -96,7 +123,7 @@ export class DrizzleNotificationScheduleRepository
   findByTripIdAndName(
     tripId: string,
     name: string,
-  ): Effect.Effect<NotificationSchedule | null, never, never> {
+  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -118,7 +145,7 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to find notification schedule by trip ID and name",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -126,7 +153,7 @@ export class DrizzleNotificationScheduleRepository
    */
   findByType(
     type: NotificationScheduleType,
-  ): Effect.Effect<NotificationSchedule[], never, never> {
+  ): Effect.Effect<NotificationSchedule[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -143,16 +170,21 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to find notification schedules by type",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find all schedules with pagination and filters
+   * Note: Renamed from findAll to avoid collision with BaseDrizzleRepository.findAll
    */
-  override findAll(options?: {
+  findAllPaginated(options?: {
     filter?: NotificationScheduleFilter;
     pagination?: PaginationOptions;
-  }): Effect.Effect<PaginatedResult<NotificationSchedule>, never, never> {
+  }): Effect.Effect<
+    PaginatedResult<NotificationSchedule>,
+    DatabaseError,
+    never
+  > {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(options?.filter);
@@ -193,13 +225,15 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to find all notification schedules",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find active schedules
    */
-  findActive(now?: Date): Effect.Effect<NotificationSchedule[], never, never> {
+  findActive(
+    now?: Date,
+  ): Effect.Effect<NotificationSchedule[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const currentTime = now ?? new Date();
@@ -223,7 +257,7 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to find active notification schedules",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -232,7 +266,7 @@ export class DrizzleNotificationScheduleRepository
   findUpcoming(
     days?: number,
     now?: Date,
-  ): Effect.Effect<NotificationSchedule[], never, never> {
+  ): Effect.Effect<NotificationSchedule[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const currentTime = now ?? new Date();
@@ -260,13 +294,13 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to find upcoming notification schedules",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Delete multiple schedules
    */
-  deleteMany(ids: string[]): Effect.Effect<number, never, never> {
+  deleteMany(ids: string[]): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         if (ids.length === 0) return 0;
@@ -288,7 +322,7 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to delete multiple notification schedules",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -296,7 +330,7 @@ export class DrizzleNotificationScheduleRepository
    */
   count(
     filter?: NotificationScheduleFilter,
-  ): Effect.Effect<number, never, never> {
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(filter);
@@ -315,7 +349,7 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to count notification schedules",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -324,7 +358,7 @@ export class DrizzleNotificationScheduleRepository
   updateLastRun(
     id: string,
     lastRun: Date,
-  ): Effect.Effect<NotificationSchedule, never, never> {
+  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -347,13 +381,15 @@ export class DrizzleNotificationScheduleRepository
           message: `Failed to update last run time for schedule ${id}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Toggle schedule active state
    */
-  toggleActive(id: string): Effect.Effect<NotificationSchedule, never, never> {
+  toggleActive(
+    id: string,
+  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [current] = await this.db
@@ -384,7 +420,7 @@ export class DrizzleNotificationScheduleRepository
           message: `Failed to toggle active state for schedule ${id}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -393,7 +429,7 @@ export class DrizzleNotificationScheduleRepository
   bulkToggleActive(
     ids: string[],
     isActive: boolean,
-  ): Effect.Effect<number, never, never> {
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         if (ids.length === 0) return 0;
@@ -416,7 +452,7 @@ export class DrizzleNotificationScheduleRepository
           message: "Failed to bulk toggle active state",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -436,7 +472,7 @@ export class DrizzleNotificationScheduleRepository
         createdAt: Date;
       } | null;
     }>,
-    never,
+    DatabaseError,
     never
   > {
     return Effect.tryPromise({
@@ -478,13 +514,15 @@ export class DrizzleNotificationScheduleRepository
           message: `Failed to get execution history for schedule ${scheduleId}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Count executions for a schedule
    */
-  countExecutions(scheduleId: string): Effect.Effect<number, never, never> {
+  countExecutions(
+    scheduleId: string,
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db
@@ -501,7 +539,7 @@ export class DrizzleNotificationScheduleRepository
           message: `Failed to count executions for schedule ${scheduleId}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**

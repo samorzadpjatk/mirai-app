@@ -250,14 +250,22 @@ export class LocationStreamingService {
         timestamp: event.occurredAt,
       };
 
-      // Broadcast to online friends
-      const result = yield* this.connectionManager.broadcastLocation(
-        event.userId,
-        location,
-        onlineFriendIds,
-      );
+      // Broadcast to online friends - map ConnectionManagerError to LocationStreamingError
+      const result = yield* this.connectionManager
+        .broadcastLocation(event.userId, location, onlineFriendIds)
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new LocationStreamingError({
+                operation: "broadcastLocation",
+                message: error.message,
+                cause: error,
+              }),
+          ),
+        );
 
       // Throttling and errors are handled by ConnectionManager
+      void result;
     });
   }
 
@@ -317,12 +325,19 @@ export class LocationStreamingService {
         timestamp: new Date(),
       };
 
-      // Broadcast
-      return yield* this.connectionManager.broadcastLocation(
-        userId,
-        location,
-        friendIds,
-      );
+      // Broadcast - map ConnectionManagerError to LocationStreamingError
+      return yield* this.connectionManager
+        .broadcastLocation(userId, location, friendIds)
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new LocationStreamingError({
+                operation: "broadcast",
+                message: error.message,
+                cause: error,
+              }),
+          ),
+        );
     });
   }
 

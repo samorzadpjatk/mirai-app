@@ -262,7 +262,7 @@ export interface AnalyticsModuleDeps {
 export interface AnalyticsModuleDef {
   name: "AnalyticsModule";
   providers: Record<string, any>;
-  exports: string[];
+  exports: Record<string, any>;
 }
 
 // =============================================================================
@@ -335,10 +335,13 @@ export const AnalyticsModule: StaticModule<AnalyticsModuleDef> =
       },
     },
 
-    exports: [
+    exports: {
       // Analytics storage port for file operations
-      PORT_TOKENS.AnalyticsStoragePort,
-    ],
+      [PORT_TOKENS.AnalyticsStoragePort]: {
+        factory: createAnalyticsStoragePort,
+        lifetime: Lifetime.SINGLETON,
+      },
+    },
   });
 
 // =============================================================================

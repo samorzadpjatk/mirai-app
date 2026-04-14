@@ -28,7 +28,6 @@ export {
 // =============================================================================
 // Pub/Sub Services (GraphQL Subscriptions Migration)
 // =============================================================================
-export { EventEmitterPubSub } from "./EventEmitterPubSub";
 export {
   EventBus,
   globalEventBus,
@@ -40,7 +39,6 @@ export {
   type ConnectionInfo,
   type BroadcastLocation,
 } from "./ConnectionManager";
-export { LocationStreamingService } from "./LocationStreamingService";
 export {
   NotificationDeliveryService,
   NotificationDeliveryError,

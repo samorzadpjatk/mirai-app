@@ -129,7 +129,6 @@ import {
   AuthorizeModeratorUseCase,
   authorizeModeratorUseCase,
   logTelemetryUseCase,
-  TelemetryPortTag,
 } from "@mirai-app/use-cases/interactors";
 import { Effect } from "effect";
 
@@ -456,7 +455,7 @@ export interface UseCaseModuleDeps {
 export interface UseCaseModuleDef {
   name: "UseCaseModule";
   providers: Record<string, any>;
-  exports: string[];
+  exports: Record<string, any>;
 }
 
 // =============================================================================
@@ -649,23 +648,53 @@ export const UseCaseModule: StaticModule<UseCaseModuleDef> =
       },
     },
 
-    exports: [
+    exports: {
       // Ports
-      PORT_TOKENS.AuthPort,
-      PORT_TOKENS.RealtimePort,
-      PORT_TOKENS.StoragePort,
-      PORT_TOKENS.TelemetryPort,
-      PORT_TOKENS.PubSubService,
+      [PORT_TOKENS.AuthPort]: {
+        factory: createAuthPort,
+        lifetime: Lifetime.SCOPED,
+      },
+      [PORT_TOKENS.RealtimePort]: {
+        factory: createRealtimePort,
+        lifetime: Lifetime.SCOPED,
+      },
+      [PORT_TOKENS.StoragePort]: {
+        factory: createStoragePort,
+        lifetime: Lifetime.SCOPED,
+      },
+      [PORT_TOKENS.TelemetryPort]: {
+        factory: createDrizzleTelemetryAdapter,
+        lifetime: Lifetime.SCOPED,
+      },
+      [PORT_TOKENS.PubSubService]: {
+        factory: createPubSubService,
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Utilities
-      UTILITY_TOKENS.TokenExtractor,
+      [UTILITY_TOKENS.TokenExtractor]: {
+        factory: () => TokenExtractor,
+        lifetime: Lifetime.SINGLETON,
+      },
 
       // Use cases
-      AUTH_USE_CASE_TOKENS.AuthenticateUserUseCase,
-      AUTH_USE_CASE_TOKENS.AuthorizeAdminUseCase,
-      AUTH_USE_CASE_TOKENS.AuthorizeModeratorUseCase,
-      AUTH_USE_CASE_TOKENS.LogTelemetryUseCase,
-    ],
+      [AUTH_USE_CASE_TOKENS.AuthenticateUserUseCase]: {
+        factory: createAuthenticateUserUseCase,
+        lifetime: Lifetime.SCOPED,
+      },
+      [AUTH_USE_CASE_TOKENS.AuthorizeAdminUseCase]: {
+        factory: createAuthorizeAdminUseCase,
+        lifetime: Lifetime.SINGLETON,
+      },
+      [AUTH_USE_CASE_TOKENS.AuthorizeModeratorUseCase]: {
+        factory: createAuthorizeModeratorUseCase,
+        lifetime: Lifetime.SINGLETON,
+      },
+      [AUTH_USE_CASE_TOKENS.LogTelemetryUseCase]: {
+        factory: () => logTelemetryUseCase,
+        lifetime: Lifetime.SINGLETON,
+      },
+    },
   });
 
 // =============================================================================

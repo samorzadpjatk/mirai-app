@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   getCoinStatisticsUseCase,
@@ -8,43 +7,27 @@ import {
   getCoinAdditionalInsightsUseCase,
   type GetCoinAdditionalInsightsOutput,
 } from "@mirai-app/use-cases";
+import {
+  validateGetStatisticsInput,
+  validateGetMostActiveAdminStatsInput,
+  validateGetAllInput,
+  validateGetQuickStatsInput,
+  validateGetAdditionalInsightsInput,
+  validateGetCoinTransactionsInput,
+} from "./validators/coin-transaction-validators";
+
+export {
+  validateGetStatisticsInput,
+  validateGetMostActiveAdminStatsInput,
+  validateGetAllInput,
+  validateGetQuickStatsInput,
+  validateGetAdditionalInsightsInput,
+  validateGetCoinTransactionsInput,
+};
 
 /**
  * Input validation schemas for coin transaction controller
  */
-const schemas = {
-  getStatistics: z.object({
-    tripId: z.string().uuid(),
-  }),
-
-  getMostActiveAdminStats: z.object({
-    tripId: z.string().uuid(),
-  }),
-
-  getAll: z.object({
-    tripId: z.string().uuid(),
-    pagination: z
-      .object({
-        limit: z.number().int().min(1).max(100).default(50),
-        offset: z.number().int().min(0).default(0),
-      })
-      .optional(),
-  }),
-
-  getQuickStats: z.object({
-    tripId: z.string().uuid(),
-  }),
-
-  getAdditionalInsights: z.object({
-    tripId: z.string().uuid(),
-  }),
-
-  getCoinTransactions: z.object({
-    tripId: z.string().uuid(),
-    groupId: z.string().uuid().optional(),
-    limit: z.number().min(1).max(100).default(50),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -82,10 +65,6 @@ async function runWithLayer<T>(
 export class CoinTransactionController {
   constructor(private appLayer: Layer.Layer<unknown>) {}
 
-  get schemas() {
-    return schemas;
-  }
-
   /**
    * Get coin statistics for a trip
    */
@@ -106,7 +85,8 @@ export class CoinTransactionController {
       tripId: input.tripId,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    const result = await runWithLayer(effect, this.appLayer);
+    return result as
       | {
           success: true;
           data: {
@@ -117,8 +97,7 @@ export class CoinTransactionController {
             time: Date;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -139,7 +118,8 @@ export class CoinTransactionController {
       tripId: input.tripId,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    const result = await runWithLayer(effect, this.appLayer);
+    return result as
       | {
           success: true;
           data: {
@@ -148,8 +128,7 @@ export class CoinTransactionController {
             transactionCount: number;
           } | null;
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -259,7 +238,8 @@ export class CoinTransactionController {
       tripId: input.tripId,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    const result = await runWithLayer(effect, this.appLayer);
+    return result as
       | {
           success: true;
           data: {
@@ -271,8 +251,7 @@ export class CoinTransactionController {
             time: Date;
           } | null;
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -300,33 +279,7 @@ export class CoinTransactionController {
     }
 
     const resultData = result.data as GetCoinAdditionalInsightsOutput;
-    const normalizedData: GetCoinAdditionalInsightsOutput = {
-      mostActiveAdmin: resultData.mostActiveAdmin,
-      recentTransactions: resultData.recentTransactions.map((t) => ({
-        id: t.id,
-        groupId: t.groupId,
-        adminId: t.adminId,
-        amount: t.amount,
-        reason: t.reason ?? null,
-        createdAt: t.createdAt,
-        group: t.group
-          ? {
-              id: t.group.id,
-              name: t.group.name,
-              coins: t.group.coins,
-            }
-          : null,
-        admin: t.admin
-          ? {
-              id: t.admin.id,
-              firstName: t.admin.firstName ?? null,
-              lastName: t.admin.lastName ?? null,
-            }
-          : null,
-      })),
-    };
-
-    return { success: true, data: normalizedData };
+    return { success: true, data: resultData };
   }
 
   /**

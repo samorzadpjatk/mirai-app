@@ -1,8 +1,7 @@
 import type { Sponsor } from "@mirai-app/domain";
 import type { SponsorRepository } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/SponsorRepository";
 import { Effect } from "effect";
-import { InMemoryRepository } from "./base";
+import { InMemoryRepository, DatabaseError } from "./base";
 
 /**
  * In-Memory Sponsor Repository for Testing
@@ -34,33 +33,47 @@ export class InMemorySponsorRepository
 {
   private tripLinks = new Map<string, Set<string>>();
 
-  override reset(): void {
-    super.reset();
-    this.tripLinks.clear();
+  override reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      super.reset();
+      this.tripLinks.clear();
+    });
   }
 
-  create(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never> {
-    return this.createGeneric(sponsor);
+  create(sponsor: Sponsor): Effect.Effect<Sponsor, never, never> {
+    return Effect.sync(() => {
+      this.storage.set(sponsor.id, sponsor);
+      return sponsor;
+    });
   }
 
-  findById(id: string): Effect.Effect<Sponsor | null, DatabaseError, never> {
-    return this.findByIdGeneric(id);
+  findById(id: string): Effect.Effect<Sponsor | null, never, never> {
+    return Effect.sync(() => this.storage.get(id) ?? null);
   }
 
   findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<Sponsor[], DatabaseError, never> {
-    return this.findAllGeneric(options);
+  }): Effect.Effect<Sponsor[], never, never> {
+    return Effect.sync(() => {
+      let items = Array.from(this.storage.values());
+      if (options?.offset) {
+        items = items.slice(options.offset);
+      }
+      if (options?.limit !== undefined) {
+        items = items.slice(0, options.limit);
+      }
+      return items;
+    });
   }
 
-  findActive(): Effect.Effect<Sponsor[], DatabaseError, never> {
+  findActive(): Effect.Effect<Sponsor[], never, never> {
     return Effect.succeed(
       this.getAllItems().filter((sponsor) => sponsor.isActive),
     );
   }
 
-  findByTripId(tripId: string): Effect.Effect<Sponsor[], DatabaseError, never> {
+  findByTripId(tripId: string): Effect.Effect<Sponsor[], never, never> {
     const linkedSponsorIds: string[] = [];
 
     for (const [sponsorId, tripIds] of Array.from(this.tripLinks.entries())) {
@@ -80,24 +93,28 @@ export class InMemorySponsorRepository
     return Effect.succeed(sponsors);
   }
 
-  update(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never> {
-    return this.updateGeneric(sponsor);
+  update(sponsor: Sponsor): Effect.Effect<Sponsor, never, never> {
+    return Effect.sync(() => {
+      this.storage.set(sponsor.id, sponsor);
+      return sponsor;
+    });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
       this.tripLinks.delete(id);
-    }).pipe(Effect.flatMap(() => this.deleteGeneric(id)));
+      this.storage.delete(id);
+    });
   }
 
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
-    return this.existsGeneric(id);
+  exists(id: string): Effect.Effect<boolean, never, never> {
+    return Effect.sync(() => this.storage.has(id));
   }
 
   isLinkedToTrip(
     sponsorId: string,
     tripId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  ): Effect.Effect<boolean, never, never> {
     const tripIds = this.tripLinks.get(sponsorId);
     return Effect.succeed(tripIds?.has(tripId) ?? false);
   }
@@ -105,7 +122,7 @@ export class InMemorySponsorRepository
   linkToTrip(
     sponsorId: string,
     tripId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  ): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
       if (!this.tripLinks.has(sponsorId)) {
         this.tripLinks.set(sponsorId, new Set<string>());
@@ -117,7 +134,7 @@ export class InMemorySponsorRepository
   unlinkFromTrip(
     sponsorId: string,
     tripId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  ): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
       const tripIds = this.tripLinks.get(sponsorId);
       if (tripIds) {

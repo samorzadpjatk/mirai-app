@@ -4,7 +4,7 @@ import type {
   SubmissionStatus,
 } from "@mirai-app/domain";
 import type { ChallengeSubmissionRepository } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/ChallengeSubmissionRepository";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
@@ -169,11 +169,17 @@ export class InMemoryChallengeSubmissionRepository
     );
   }
 
-  override reset(): void {
-    super.reset();
+  override reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      super.reset();
+    });
   }
 
-  override seed(items: ChallengeSubmission[]): void {
-    super.seed(items);
+  override seed(
+    items: ChallengeSubmission[],
+  ): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      items.forEach((item) => this.storage.set(item.id, item));
+    });
   }
 }

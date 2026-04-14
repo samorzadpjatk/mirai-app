@@ -40,7 +40,7 @@ export class DrizzleCoinTransactionRepository
    */
   count(
     filters?: Partial<CoinTransactionFilters>,
-  ): Effect.Effect<number, never, never> {
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(filters);
@@ -59,7 +59,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to count transactions",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -67,7 +67,7 @@ export class DrizzleCoinTransactionRepository
    */
   sumAmount(
     filters?: Partial<CoinTransactionFilters>,
-  ): Effect.Effect<number | null, never, never> {
+  ): Effect.Effect<number | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(filters);
@@ -86,13 +86,15 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to sum transaction amounts",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Sum added coins (positive amounts) for a trip
    */
-  sumAddedCoins(tripId: string): Effect.Effect<number | null, never, never> {
+  sumAddedCoins(
+    tripId: string,
+  ): Effect.Effect<number | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db
@@ -112,13 +114,15 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to sum added coins",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Sum removed coins (negative amounts) for a trip
    */
-  sumRemovedCoins(tripId: string): Effect.Effect<number | null, never, never> {
+  sumRemovedCoins(
+    tripId: string,
+  ): Effect.Effect<number | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db
@@ -138,7 +142,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to sum removed coins",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -146,7 +150,7 @@ export class DrizzleCoinTransactionRepository
    */
   getMostActiveAdmin(
     tripId: string,
-  ): Effect.Effect<MostActiveAdminStat[], never, never> {
+  ): Effect.Effect<MostActiveAdminStat[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const results = await this.db
@@ -174,7 +178,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to get most active admin stats",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -183,7 +187,7 @@ export class DrizzleCoinTransactionRepository
   findMany(
     filters: Partial<CoinTransactionFilters>,
     pagination: PaginationOptions,
-  ): Effect.Effect<CoinTransaction[], never, never> {
+  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(filters);
@@ -226,7 +230,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to find transactions with filters",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -235,7 +239,7 @@ export class DrizzleCoinTransactionRepository
   findRecent(
     filters: Partial<CoinTransactionFilters>,
     limit: number,
-  ): Effect.Effect<CoinTransaction[], never, never> {
+  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(filters);
@@ -277,7 +281,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to find recent transactions",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -287,7 +291,7 @@ export class DrizzleCoinTransactionRepository
     tripId: string,
   ): Effect.Effect<
     Array<{ groupId: string; _sum: { amount: number | null } }>,
-    never,
+    DatabaseError,
     never
   > {
     return Effect.tryPromise({
@@ -314,7 +318,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to get total coins by group",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -325,7 +329,7 @@ export class DrizzleCoinTransactionRepository
     limit: number,
   ): Effect.Effect<
     Array<{ adminId: string; _count: { id: number } }>,
-    never,
+    DatabaseError,
     never
   > {
     return Effect.tryPromise({
@@ -353,7 +357,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to group transactions by admin",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -368,7 +372,7 @@ export class DrizzleCoinTransactionRepository
           reason?: string;
           adminId: string;
         },
-  ): Effect.Effect<CoinTransaction, never, never> {
+  ): Effect.Effect<CoinTransaction, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const input = data as {
@@ -403,7 +407,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to create coin transaction",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -412,7 +416,7 @@ export class DrizzleCoinTransactionRepository
   incrementGroupCoins(
     groupId: string,
     amount: number,
-  ): Effect.Effect<void, never, never> {
+  ): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db
@@ -426,7 +430,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to increment group coins",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -437,7 +441,7 @@ export class DrizzleCoinTransactionRepository
     amount: number,
   ): Effect.Effect<
     { success: boolean; currentBalance?: number },
-    never,
+    DatabaseError,
     never
   > {
     return Effect.tryPromise({
@@ -467,13 +471,13 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to decrement group coins",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Get group coins
    */
-  getGroupCoins(groupId: string): Effect.Effect<number, never, never> {
+  getGroupCoins(groupId: string): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [group] = await this.db
@@ -490,7 +494,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to get group coins",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -506,7 +510,7 @@ export class DrizzleCoinTransactionRepository
       isDeleted?: boolean;
       coins?: number;
     },
-    never,
+    DatabaseError,
     never
   > {
     return Effect.tryPromise({
@@ -538,7 +542,7 @@ export class DrizzleCoinTransactionRepository
           message: "Failed to verify group in trip",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**

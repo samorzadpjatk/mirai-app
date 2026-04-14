@@ -3,7 +3,7 @@ import type {
   NotificationDelivered,
   NotificationDeliveryFailed,
 } from "@mirai-app/domain";
-import type { EventBus, EventHandler } from "./EventBus";
+import { EventBus, EventBusError, type EventHandler } from "./EventBus";
 import type { Expo, ExpoPushMessage, ExpoPushTicket } from "expo-server-sdk";
 import { Effect, Data } from "effect";
 import { serverLogger } from "@mirai-app/shared";
@@ -154,10 +154,23 @@ export class NotificationDeliveryService {
       }
 
       // Subscribe to NotificationCreated events
+      // Note: eventBus.subscribe expects EventBusError, but we return NotificationDeliveryError
+      // We use subscribe (not subscribeLegacy) but need to wrap the handler
       const subscription = this.eventBus.subscribe(
         "NotificationCreated",
         (event) =>
-          this.handleNotificationCreatedEffect(event as NotificationCreated),
+          this.handleNotificationCreatedEffect(
+            event as NotificationCreated,
+          ).pipe(
+            Effect.mapError(
+              (error) =>
+                new EventBusError({
+                  operation: error.operation,
+                  message: error.message,
+                  cause: error.cause,
+                }),
+            ),
+          ),
       );
 
       this.unsubscribe = subscription.unsubscribe;
@@ -289,6 +302,21 @@ export class NotificationDeliveryService {
               const ticket = tickets[index];
               const deviceToken = message.to as string;
 
+              // Skip if ticket is undefined
+              if (!ticket) {
+                chunkResults.push({
+                  success: false,
+                  error: "No ticket returned",
+                  deviceToken,
+                });
+                this.publishFailedEvent(
+                  event,
+                  deviceToken,
+                  "No ticket returned",
+                );
+                return;
+              }
+
               if (ticket.status === "ok") {
                 chunkResults.push({
                   success: true,
@@ -299,18 +327,16 @@ export class NotificationDeliveryService {
                 // Publish delivery event
                 this.publishDeliveredEvent(event, deviceToken);
               } else {
+                // ticket is ExpoPushErrorTicket (ExpoPushErrorReceipt)
+                const errorMessage = ticket.message || "Unknown error";
                 chunkResults.push({
                   success: false,
-                  error: ticket.details?.error || "Unknown error",
+                  error: errorMessage,
                   deviceToken,
                 });
 
                 // Publish failure event
-                this.publishFailedEvent(
-                  event,
-                  deviceToken,
-                  ticket.details?.error || "Unknown error",
-                );
+                this.publishFailedEvent(event, deviceToken, errorMessage);
               }
             });
 
@@ -342,6 +368,11 @@ export class NotificationDeliveryService {
       for (let i = 0; i < results.length; i++) {
         const result = results[i];
         const subscription = subscriptions[i];
+
+        // Skip if result or subscription is undefined
+        if (!result || !subscription) {
+          continue;
+        }
 
         if (!result.success) {
           // Check if token is invalid
@@ -376,6 +407,11 @@ export class NotificationDeliveryService {
       const result = results[i];
       const subscription = subscriptions[i];
 
+      // Skip if result or subscription is undefined
+      if (!result || !subscription) {
+        continue;
+      }
+
       if (!result.success) {
         // Check if token is invalid
         if (
@@ -393,16 +429,16 @@ export class NotificationDeliveryService {
    */
   private mapPriorityToExpo(
     priority: "LOW" | "NORMAL" | "HIGH" | "URGENT",
-  ): "default" | "high" | "max" {
+  ): "default" | "normal" | "high" {
     switch (priority) {
       case "LOW":
         return "default";
       case "NORMAL":
-        return "default";
+        return "normal";
       case "HIGH":
         return "high";
       case "URGENT":
-        return "max";
+        return "high"; // URGENT maps to high since "max" is not valid
       default:
         return "default";
     }

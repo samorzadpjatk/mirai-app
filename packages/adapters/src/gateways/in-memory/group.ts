@@ -1,7 +1,7 @@
 import { Group, type GroupStatus } from "@mirai-app/domain";
-import type { GroupRepository, DatabaseError } from "@mirai-app/use-cases";
+import type { GroupRepository } from "@mirai-app/use-cases";
 import { Effect } from "effect";
-import { InMemoryRepository } from "./base";
+import { InMemoryRepository, DatabaseError } from "./base";
 
 /**
  * In-Memory Group Repository for Testing
@@ -27,7 +27,7 @@ export class InMemoryGroupRepository
    * Reconstruct a Group entity from plain object storage.
    * Uses reconstitute() factory to bypass validation and ensure proper instance.
    */
-  protected reconstruct(
+  protected override reconstruct(
     plain: unknown,
   ): Effect.Effect<Group, DatabaseError, never> {
     const p = plain as Record<string, unknown>;
@@ -57,40 +57,41 @@ export class InMemoryGroupRepository
     }
   }
 
-  create(group: Group): Effect.Effect<Group, DatabaseError, never> {
-    return this.createGeneric(group);
+  create(group: Group): Effect.Effect<Group, never, never> {
+    return Effect.sync(() => {
+      this.storage.set(group.id, group);
+      return group;
+    });
   }
 
-  findById(id: string): Effect.Effect<Group | null, DatabaseError, never> {
-    return this.findByIdGeneric(id);
+  findById(id: string): Effect.Effect<Group | null, never, never> {
+    return Effect.sync(() => this.storage.get(id) ?? null);
   }
 
-  findByTripId(tripId: string): Effect.Effect<Group[], DatabaseError, never> {
+  findByTripId(tripId: string): Effect.Effect<Group[], never, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
-        (g) => (g as Record<string, unknown>).tripId === tripId,
+        (g) => (g as unknown as Record<string, unknown>).tripId === tripId,
       );
       const reconstructed: Group[] = [];
       for (const plain of filtered) {
-        const entity = yield* this.reconstruct(plain);
+        const entity = yield* this.reconstruct(plain).pipe(Effect.orDie);
         reconstructed.push(entity);
       }
       return reconstructed;
     });
   }
 
-  findByStatus(
-    status: GroupStatus,
-  ): Effect.Effect<Group[], DatabaseError, never> {
+  findByStatus(status: GroupStatus): Effect.Effect<Group[], never, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
-        (g) => (g as Record<string, unknown>).status === status,
+        (g) => (g as unknown as Record<string, unknown>).status === status,
       );
       const reconstructed: Group[] = [];
       for (const plain of filtered) {
-        const entity = yield* this.reconstruct(plain);
+        const entity = yield* this.reconstruct(plain).pipe(Effect.orDie);
         reconstructed.push(entity);
       }
       return reconstructed;
@@ -100,68 +101,79 @@ export class InMemoryGroupRepository
   findByTripIdAndStatus(
     tripId: string,
     status: GroupStatus,
-  ): Effect.Effect<Group[], DatabaseError, never> {
+  ): Effect.Effect<Group[], never, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
         (g) =>
-          (g as Record<string, unknown>).tripId === tripId &&
-          (g as Record<string, unknown>).status === status,
+          (g as unknown as Record<string, unknown>).tripId === tripId &&
+          (g as unknown as Record<string, unknown>).status === status,
       );
       const reconstructed: Group[] = [];
       for (const plain of filtered) {
-        const entity = yield* this.reconstruct(plain);
+        const entity = yield* this.reconstruct(plain).pipe(Effect.orDie);
         reconstructed.push(entity);
       }
       return reconstructed;
     });
   }
 
-  findByOrganizerId(
-    organizerId: string,
-  ): Effect.Effect<Group[], DatabaseError, never> {
+  findByOrganizerId(organizerId: string): Effect.Effect<Group[], never, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter(
-        (g) => (g as Record<string, unknown>).organizerId === organizerId,
+        (g) =>
+          (g as unknown as Record<string, unknown>).organizerId === organizerId,
       );
       const reconstructed: Group[] = [];
       for (const plain of filtered) {
-        const entity = yield* this.reconstruct(plain);
+        const entity = yield* this.reconstruct(plain).pipe(Effect.orDie);
         reconstructed.push(entity);
       }
       return reconstructed;
     });
   }
 
-  findByCode(code: string): Effect.Effect<Group | null, DatabaseError, never> {
+  findByCode(code: string): Effect.Effect<Group | null, never, never> {
     return Effect.succeed(
-      this.getAllItems().find((g) => g.code === code) ?? null,
+      this.getAllItems().find(
+        (g) => (g as unknown as Record<string, unknown>).code === code,
+      ) ?? null,
     );
   }
 
   findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<Group[], DatabaseError, never> {
-    return this.findAllGeneric(options);
+  }): Effect.Effect<Group[], never, never> {
+    return Effect.gen(this, function* () {
+      const groups = yield* this.findAllGeneric(options).pipe(Effect.orDie);
+      return groups;
+    });
   }
 
-  update(group: Group): Effect.Effect<Group, DatabaseError, never> {
-    return this.updateGeneric(group);
+  update(group: Group): Effect.Effect<Group, never, never> {
+    return Effect.sync(() => {
+      this.storage.set(group.id, group);
+      return group;
+    });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
-    return this.deleteGeneric(id);
+  delete(id: string): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      this.storage.delete(id);
+    });
   }
 
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
-    return this.existsGeneric(id);
+  exists(id: string): Effect.Effect<boolean, never, never> {
+    return Effect.sync(() => this.storage.has(id));
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string): Effect.Effect<number, never, never> {
     return Effect.succeed(
-      this.getAllItems().filter((g) => g.tripId === tripId).length,
+      this.getAllItems().filter(
+        (g) => (g as unknown as Record<string, unknown>).tripId === tripId,
+      ).length,
     );
   }
 }

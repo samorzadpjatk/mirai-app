@@ -3,9 +3,9 @@ import {
   type SharingUserInfo,
   type LocationId,
 } from "@mirai-app/domain";
-import type { LocationRepository, DatabaseError } from "@mirai-app/use-cases";
+import type { LocationRepository } from "@mirai-app/use-cases";
 import { Effect } from "effect";
-import { InMemoryRepository } from "./base";
+import { InMemoryRepository, DatabaseError } from "./base";
 
 /**
  * In-Memory Location Repository for Testing
@@ -50,7 +50,7 @@ export class InMemoryLocationRepository
    * Uses reconstitute() factory to bypass validation and ensure proper instance.
    * Extracts data properties, not methods (arrow functions get stored as properties).
    */
-  protected reconstruct(
+  protected override reconstruct(
     plain: unknown,
   ): Effect.Effect<Location, DatabaseError, never> {
     const p = plain as Record<string, unknown>;
@@ -85,101 +85,106 @@ export class InMemoryLocationRepository
     }
   }
 
-  create(location: Location): Effect.Effect<Location, DatabaseError, never> {
-    return this.createGeneric(location);
+  create(location: Location): Effect.Effect<Location, never, never> {
+    return Effect.sync(() => {
+      this.storage.set(location.id as string, location);
+      return location;
+    });
   }
 
-  findById(
-    id: LocationId,
-  ): Effect.Effect<Location | null, DatabaseError, never> {
-    return this.findByIdGeneric(id as string);
+  findById(id: LocationId): Effect.Effect<Location | null, never, never> {
+    return Effect.sync(() => this.storage.get(id as string) ?? null);
   }
 
-  findByUserId(
-    userId: string,
-  ): Effect.Effect<Location | null, DatabaseError, never> {
+  findByUserId(userId: string): Effect.Effect<Location | null, never, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const plain = plains.find(
-        (loc) => (loc as Record<string, unknown>).userId === userId,
+        (loc) => (loc as unknown as Record<string, unknown>).userId === userId,
       );
       if (!plain) return null;
-      return yield* this.reconstruct(plain);
+      return yield* this.reconstruct(plain).pipe(Effect.orDie);
     });
   }
 
   findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<Location[], DatabaseError, never> {
-    return this.findAllGeneric(options);
+  }): Effect.Effect<Location[], never, never> {
+    return Effect.gen(this, function* () {
+      const locations = yield* this.findAllGeneric(options).pipe(Effect.orDie);
+      return locations;
+    });
   }
 
-  findSharingWithUser(
-    userId: string,
-  ): Effect.Effect<Location[], DatabaseError, never> {
+  findSharingWithUser(userId: string): Effect.Effect<Location[], never, never> {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
       const filtered = plains.filter((loc) =>
-        (loc as Record<string, unknown>).usersToShareWith?.some(
-          (user: SharingUserInfo) => user.id === userId,
-        ),
+        (
+          (loc as unknown as Record<string, unknown>).usersToShareWith as
+            | SharingUserInfo[]
+            | undefined
+        )?.some((user: SharingUserInfo) => user.id === userId),
       );
       const reconstructed: Location[] = [];
       for (const plain of filtered) {
-        const entity = yield* this.reconstruct(plain);
+        const entity = yield* this.reconstruct(plain).pipe(Effect.orDie);
         reconstructed.push(entity);
       }
       return reconstructed;
     });
   }
 
-  findByUserIds(
-    userIds: string[],
-  ): Effect.Effect<Location[], DatabaseError, never> {
+  findByUserIds(userIds: string[]): Effect.Effect<Location[], never, never> {
     return Effect.gen(this, function* () {
       const userIdSet = new Set(userIds);
       const plains = this.getAllItems();
       const filtered = plains.filter((loc) =>
-        userIdSet.has((loc as Record<string, unknown>).userId as string),
+        userIdSet.has(
+          (loc as unknown as Record<string, unknown>).userId as string,
+        ),
       );
       const reconstructed: Location[] = [];
       for (const plain of filtered) {
-        const entity = yield* this.reconstruct(plain);
+        const entity = yield* this.reconstruct(plain).pipe(Effect.orDie);
         reconstructed.push(entity);
       }
       return reconstructed;
     });
   }
 
-  save(location: Location): Effect.Effect<Location, DatabaseError, never> {
-    if (this.storage.has(location.id as string)) {
-      return this.updateGeneric(location);
-    }
-    return this.createGeneric(location);
-  }
-
-  delete(id: LocationId): Effect.Effect<void, DatabaseError, never> {
-    return this.deleteGeneric(id as string);
-  }
-
-  deleteByUserId(userId: string): Effect.Effect<void, DatabaseError, never> {
-    return Effect.gen(this, function* () {
-      const plains = this.getAllItems();
-      const plain = plains.find(
-        (loc) => (loc as Record<string, unknown>).userId === userId,
-      );
-      if (plain) {
-        this.storage.delete((plain as Record<string, unknown>).id as string);
-      }
-      return undefined;
+  save(location: Location): Effect.Effect<Location, never, never> {
+    return Effect.sync(() => {
+      this.storage.set(location.id as string, location);
+      return location;
     });
   }
 
-  existsForUser(userId: string): Effect.Effect<boolean, DatabaseError, never> {
+  delete(id: LocationId): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      this.storage.delete(id as string);
+    });
+  }
+
+  deleteByUserId(userId: string): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      const plains = this.getAllItems();
+      const plain = plains.find(
+        (loc) => (loc as unknown as Record<string, unknown>).userId === userId,
+      );
+      if (plain) {
+        this.storage.delete(
+          (plain as unknown as Record<string, unknown>).id as string,
+        );
+      }
+    });
+  }
+
+  existsForUser(userId: string): Effect.Effect<boolean, never, never> {
     return Effect.succeed(
       this.getAllItems().some(
-        (loc) => (loc as Record<string, unknown>).userId === userId,
+        (loc) => (loc as unknown as Record<string, unknown>).userId === userId,
       ),
     );
   }

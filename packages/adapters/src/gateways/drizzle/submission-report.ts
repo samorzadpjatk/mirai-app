@@ -12,7 +12,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { SubmissionReportDrizzleMapper } from "../../mappers/drizzle/submission-report";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 // Include config for reporter info
 const REPORTER_INCLUDE = {
@@ -47,12 +47,33 @@ export class DrizzleSubmissionReportRepository
     });
   }
 
+  // Override base class methods to match interface error types
+  override create(
+    entity: SubmissionReport,
+  ): Effect.Effect<SubmissionReport, DatabaseError, never> {
+    return super.create(entity);
+  }
+
+  override update(
+    entity: SubmissionReport & { id: string },
+  ): Effect.Effect<SubmissionReport, DatabaseError, never> {
+    return super.update(entity);
+  }
+
+  override delete(id: string): Effect.Effect<void, DatabaseError, never> {
+    return super.delete(id);
+  }
+
+  override exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+    return super.exists(id);
+  }
+
   /**
    * Find reports by submission ID
    */
   findBySubmissionId(
     submissionId: string,
-  ): Effect.Effect<SubmissionReport[], never, never> {
+  ): Effect.Effect<SubmissionReport[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -100,7 +121,7 @@ export class DrizzleSubmissionReportRepository
           message: `Failed to find submission reports by submission ID ${submissionId}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -108,7 +129,7 @@ export class DrizzleSubmissionReportRepository
    */
   findByReporterId(
     reporterId: string,
-  ): Effect.Effect<SubmissionReport[], never, never> {
+  ): Effect.Effect<SubmissionReport[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -156,7 +177,7 @@ export class DrizzleSubmissionReportRepository
           message: `Failed to find submission reports by reporter ID ${reporterId}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -164,7 +185,7 @@ export class DrizzleSubmissionReportRepository
    */
   findByReason(
     reason: string,
-  ): Effect.Effect<SubmissionReport[], never, never> {
+  ): Effect.Effect<SubmissionReport[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -212,7 +233,7 @@ export class DrizzleSubmissionReportRepository
           message: `Failed to find submission reports by reason ${reason}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -220,7 +241,7 @@ export class DrizzleSubmissionReportRepository
    */
   override findById(
     id: string,
-  ): Effect.Effect<SubmissionReport | null, never, never> {
+  ): Effect.Effect<SubmissionReport | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -268,7 +289,7 @@ export class DrizzleSubmissionReportRepository
           message: `Failed to find submission report by ID ${id}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -277,7 +298,7 @@ export class DrizzleSubmissionReportRepository
   override findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<SubmissionReport[], never, never> {
+  }): Effect.Effect<SubmissionReport[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const buildQuery = () => {
@@ -338,7 +359,7 @@ export class DrizzleSubmissionReportRepository
           message: "Failed to find all submission reports",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -346,7 +367,7 @@ export class DrizzleSubmissionReportRepository
    */
   countBySubmissionId(
     submissionId: string,
-  ): Effect.Effect<number, never, never> {
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db
@@ -363,7 +384,7 @@ export class DrizzleSubmissionReportRepository
           message: `Failed to count submission reports for submission ${submissionId}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -372,7 +393,7 @@ export class DrizzleSubmissionReportRepository
   existsBySubmissionAndReporter(
     submissionId: string,
     reporterId: string,
-  ): Effect.Effect<boolean, never, never> {
+  ): Effect.Effect<boolean, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db
@@ -394,6 +415,6 @@ export class DrizzleSubmissionReportRepository
           message: "Failed to check if submission report exists",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 }

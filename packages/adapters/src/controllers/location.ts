@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   listLocationsUseCase,
@@ -6,103 +5,38 @@ import {
   addSharingUserUseCase,
   removeSharingUserUseCase,
   getSharingSettingsUseCase,
-  getLocationUseCase,
   createLocationUseCase,
   updateLocationUseCase,
+  getLocationUseCase,
   LocationRepositoryTag,
 } from "@mirai-app/use-cases";
+import {
+  validateGetByUserIdInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateListInput,
+  validateUpdateSharingSettingsInput,
+  validateAddSharingUserInput,
+  validateRemoveSharingUserInput,
+  validateGetSharingSettingsInput,
+  validateDeleteByUserIdInput,
+} from "./validators/location-validators";
+
+export {
+  validateGetByUserIdInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateListInput,
+  validateUpdateSharingSettingsInput,
+  validateAddSharingUserInput,
+  validateRemoveSharingUserInput,
+  validateGetSharingSettingsInput,
+  validateDeleteByUserIdInput,
+};
 
 /**
  * Input validation schemas for location controller
  */
-const schemas = {
-  getByUserId: z.object({
-    userId: z.string().min(1, "User ID is required"),
-  }),
-
-  create: z.object({
-    userId: z.string().min(1, "User ID is required"),
-    latitude: z.number().min(-90).max(90).optional().nullable(),
-    longitude: z.number().min(-180).max(180).optional().nullable(),
-    accuracy: z.number().nonnegative().optional().nullable(),
-    altitude: z.number().optional().nullable(),
-    altitudeAccuracy: z.number().nonnegative().optional().nullable(),
-    heading: z.number().min(0).max(360).optional().nullable(),
-    speed: z.number().nonnegative().optional().nullable(),
-    isSharingLocation: z.boolean().optional(),
-  }),
-
-  update: z.object({
-    userId: z.string().min(1, "User ID is required"),
-    latitude: z.number().min(-90).max(90).optional().nullable(),
-    longitude: z.number().min(-180).max(180).optional().nullable(),
-    accuracy: z.number().nonnegative().optional().nullable(),
-    altitude: z.number().optional().nullable(),
-    altitudeAccuracy: z.number().nonnegative().optional().nullable(),
-    heading: z.number().min(0).max(360).optional().nullable(),
-    speed: z.number().nonnegative().optional().nullable(),
-    isSharingLocation: z.boolean().optional(),
-  }),
-
-  list: z
-    .object({
-      viewerUserId: z.string().min(1, "Viewer user ID is required"),
-      targetUserIds: z.array(z.string()).optional(),
-      radiusKm: z.number().positive().max(1000).optional(),
-      centerLatitude: z.number().min(-90).max(90).optional(),
-      centerLongitude: z.number().min(-180).max(180).optional(),
-    })
-    .refine(
-      (data) => {
-        // If radiusKm is provided, both center coordinates are required
-        if (data.radiusKm !== undefined) {
-          return (
-            data.centerLatitude !== undefined &&
-            data.centerLongitude !== undefined
-          );
-        }
-        return true;
-      },
-      {
-        message:
-          "centerLatitude and centerLongitude are required when radiusKm is provided",
-      },
-    ),
-
-  updateSharingSettings: z.object({
-    userId: z.string().min(1, "User ID is required"),
-    isSharingLocation: z.boolean(),
-    usersToShareWith: z
-      .array(
-        z.object({
-          id: z.string(),
-          firstName: z.string().nullable(),
-          lastName: z.string().nullable(),
-        }),
-      )
-      .optional(),
-  }),
-
-  addSharingUser: z.object({
-    ownerUserId: z.string().min(1, "Owner user ID is required"),
-    userToAddId: z.string().min(1, "User to add ID is required"),
-    userFirstName: z.string().nullable(),
-    userLastName: z.string().nullable(),
-  }),
-
-  removeSharingUser: z.object({
-    ownerUserId: z.string().min(1, "Owner user ID is required"),
-    userToRemoveId: z.string().min(1, "User to remove ID is required"),
-  }),
-
-  getSharingSettings: z.object({
-    userId: z.string().min(1, "User ID is required"),
-  }),
-
-  deleteByUserId: z.object({
-    userId: z.string().min(1, "User ID is required"),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -168,7 +102,7 @@ export class LocationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getByUserId.safeParse(input);
+    const parsed = validateGetByUserIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -176,7 +110,9 @@ export class LocationController {
       };
     }
 
-    const effect = getLocationUseCase({ userId: parsed.data.userId });
+    const effect = Effect.gen(function* () {
+      return yield* getLocationUseCase({ userId: parsed.data.userId });
+    });
 
     const result = await runWithLayer(effect, this.appLayer);
 
@@ -228,7 +164,7 @@ export class LocationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -298,7 +234,7 @@ export class LocationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -370,7 +306,7 @@ export class LocationController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.list.safeParse(input);
+    const parsed = validateListInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -386,7 +322,8 @@ export class LocationController {
       centerLongitude: parsed.data.centerLongitude,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    const result = await runWithLayer(effect, this.appLayer);
+    return result as
       | {
           success: true;
           data: {
@@ -406,15 +343,14 @@ export class LocationController {
             total: number;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
    * Update sharing settings
    */
   async updateSharingSettings(input: unknown) {
-    const parsed = schemas.updateSharingSettings.safeParse(input);
+    const parsed = validateUpdateSharingSettingsInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -451,7 +387,7 @@ export class LocationController {
    * Add a user to sharing list
    */
   async addSharingUser(input: unknown) {
-    const parsed = schemas.addSharingUser.safeParse(input);
+    const parsed = validateAddSharingUserInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -473,7 +409,7 @@ export class LocationController {
    * Remove a user from sharing list
    */
   async removeSharingUser(input: unknown) {
-    const parsed = schemas.removeSharingUser.safeParse(input);
+    const parsed = validateRemoveSharingUserInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -493,7 +429,7 @@ export class LocationController {
    * Get sharing settings
    */
   async getSharingSettings(input: unknown) {
-    const parsed = schemas.getSharingSettings.safeParse(input);
+    const parsed = validateGetSharingSettingsInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -517,7 +453,7 @@ export class LocationController {
     | { success: true; data: { deleted: true } }
     | { success: false; error: string }
   > {
-    const parsed = schemas.deleteByUserId.safeParse(input);
+    const parsed = validateDeleteByUserIdInput(input);
     if (!parsed.success) {
       return {
         success: false,

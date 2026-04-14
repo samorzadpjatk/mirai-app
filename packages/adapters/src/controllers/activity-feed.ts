@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   getActivityFeedUseCase,
@@ -10,137 +9,48 @@ import {
   unhideActivityUseCase,
   deleteActivityUseCase,
   ActivityFeedRepositoryTag,
+  type GetActivityByIdOutput,
+  type UpdateActivityOutput,
+  type HideActivityOutput,
+  type UnhideActivityOutput,
 } from "@mirai-app/use-cases";
+import {
+  validateGetByTripInput,
+  validateGetByIdInput,
+  validateCreateCustomInput,
+  validateCreateUserPostInput,
+  validateCreateSubmissionInput,
+  validateCreateChallengeEventInput,
+  validateCreateRankChangeInput,
+  validateUpdateInput,
+  validateSetPinnedInput,
+  validateHideInput,
+  validateUnhideInput,
+  validateAddReactionInput,
+  validateDeleteInput,
+} from "./validators/activity-feed-validators";
+
+export {
+  validateGetByTripInput,
+  validateGetByIdInput,
+  validateCreateCustomInput,
+  validateCreateUserPostInput,
+  validateCreateSubmissionInput,
+  validateCreateChallengeEventInput,
+  validateCreateRankChangeInput,
+  validateUpdateInput,
+  validateSetPinnedInput,
+  validateHideInput,
+  validateUnhideInput,
+  validateAddReactionInput,
+  validateDeleteInput,
+};
+
 import type { ActivityId, ReactionType } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for activity feed controller
  */
-const schemas = {
-  getByTrip: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    pageSize: z.number().int().min(1).max(100).optional(),
-    cursor: z
-      .object({
-        id: z.string(),
-        createdAt: z.coerce.date(),
-        isPinned: z.boolean(),
-      })
-      .optional(),
-  }),
-
-  getById: z.object({
-    id: z.string().min(1, "Activity ID is required"),
-  }),
-
-  createCustom: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    title: z.string().trim().min(1, "Title is required"),
-    description: z.string().trim().optional(),
-    imageUrl: z.string().optional(),
-    isPinned: z.boolean().optional(),
-    createdByAdmin: z.string().optional(),
-  }),
-
-  createUserPost: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    title: z.string().trim().min(1, "Title is required"),
-    description: z.string().trim().optional(),
-    imageUrl: z.string().optional(),
-    userPost: z.object({
-      authorId: z.string(),
-      authorUserId: z.string(),
-      authorFirstName: z.string(),
-      authorLastName: z.string(),
-      authorHasAvatar: z.boolean(),
-      groupId: z.string().nullable(),
-      groupName: z.string().nullable(),
-      additionalImages: z.array(z.string()),
-    }),
-  }),
-
-  createSubmission: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    title: z.string().trim().min(1, "Title is required"),
-    description: z.string().trim().optional(),
-    imageUrl: z.string().optional(),
-    isPinned: z.boolean().optional(),
-    createdByAdmin: z.string().optional(),
-    submissionActivity: z.object({
-      submissionId: z.string(),
-      challengeId: z.string(),
-      groupId: z.string(),
-      hasVideo: z.boolean().optional(),
-      isWinner: z.boolean().nullable().optional(),
-      ranking: z.number().int().nullable().optional(),
-      pointsAwarded: z.number().int().nullable().optional(),
-    }),
-  }),
-
-  createChallengeEvent: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    title: z.string().trim().min(1, "Title is required"),
-    description: z.string().trim().optional(),
-    imageUrl: z.string().optional(),
-    isPinned: z.boolean().optional(),
-    createdByAdmin: z.string().optional(),
-    challengeActivity: z.object({
-      challengeId: z.string(),
-      eventType: z.enum(["challenge_started", "voting_started", "completed"]),
-      endTime: z.coerce.date().nullable().optional(),
-      submissionType: z.string().nullable().optional(),
-      basePoints: z.number().int().nullable().optional(),
-      submissionCount: z.number().int().nullable().optional(),
-    }),
-  }),
-
-  createRankChange: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    title: z.string().trim().min(1, "Title is required"),
-    description: z.string().trim().optional(),
-    imageUrl: z.string().optional(),
-    isPinned: z.boolean().optional(),
-    createdByAdmin: z.string().optional(),
-    rankChangeActivity: z.object({
-      groupId: z.string(),
-      newRank: z.number().int().min(1),
-      totalCoins: z.number().int().min(0),
-      coinsGained: z.number().int(),
-    }),
-  }),
-
-  update: z.object({
-    activityId: z.string().min(1, "Activity ID is required"),
-    title: z.string().trim().min(1).optional(),
-    description: z.string().trim().nullable().optional(),
-    isPinned: z.boolean().optional(),
-  }),
-
-  setPinned: z.object({
-    activityId: z.string().min(1, "Activity ID is required"),
-    isPinned: z.boolean(),
-  }),
-
-  hide: z.object({
-    activityId: z.string().min(1, "Activity ID is required"),
-    hiddenByAdmin: z.string().min(1, "Admin ID is required"),
-    reason: z.string().trim().optional(),
-  }),
-
-  unhide: z.object({
-    activityId: z.string().min(1, "Activity ID is required"),
-  }),
-
-  addReaction: z.object({
-    activityId: z.string().min(1, "Activity ID is required"),
-    userId: z.string().min(1, "User ID is required"),
-    reactionType: z.enum(["heart", "fire", "clap", "star"]),
-  }),
-
-  delete: z.object({
-    activityId: z.string().min(1, "Activity ID is required"),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -183,7 +93,7 @@ export class ActivityFeedController {
    * Get activities for a trip
    */
   async getByTrip(input: unknown) {
-    const parsed = schemas.getByTrip.safeParse(input);
+    const parsed = validateGetByTripInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -209,7 +119,7 @@ export class ActivityFeedController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -221,14 +131,16 @@ export class ActivityFeedController {
       activityId: parsed.data.id as ActivityId,
     });
 
-    return await runWithLayer(effect, this.appLayer);
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
+      | { success: true; data: GetActivityByIdOutput }
+      | { success: false; error: string };
   }
 
   /**
    * Create a custom activity (admin created)
    */
   async createCustom(input: unknown) {
-    const parsed = schemas.createCustom.safeParse(input);
+    const parsed = validateCreateCustomInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -252,7 +164,7 @@ export class ActivityFeedController {
    * Create a user post activity
    */
   async createUserPost(input: unknown) {
-    const parsed = schemas.createUserPost.safeParse(input);
+    const parsed = validateCreateUserPostInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -275,7 +187,7 @@ export class ActivityFeedController {
    * Create a submission activity
    */
   async createSubmission(input: unknown) {
-    const parsed = schemas.createSubmission.safeParse(input);
+    const parsed = validateCreateSubmissionInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -307,7 +219,7 @@ export class ActivityFeedController {
    * Create a challenge event activity
    */
   async createChallengeEvent(input: unknown) {
-    const parsed = schemas.createChallengeEvent.safeParse(input);
+    const parsed = validateCreateChallengeEventInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -332,7 +244,7 @@ export class ActivityFeedController {
    * Create a rank change activity
    */
   async createRankChange(input: unknown) {
-    const parsed = schemas.createRankChange.safeParse(input);
+    const parsed = validateCreateRankChangeInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -363,7 +275,7 @@ export class ActivityFeedController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -386,7 +298,9 @@ export class ActivityFeedController {
       }
     }
 
-    return result;
+    return result as
+      | { success: true; data: UpdateActivityOutput }
+      | { success: false; error: string };
   }
 
   /**
@@ -399,7 +313,7 @@ export class ActivityFeedController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.setPinned.safeParse(input);
+    const parsed = validateSetPinnedInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -421,7 +335,9 @@ export class ActivityFeedController {
       }
     }
 
-    return result;
+    return result as
+      | { success: true; data: UpdateActivityOutput }
+      | { success: false; error: string };
   }
 
   /**
@@ -434,7 +350,7 @@ export class ActivityFeedController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.hide.safeParse(input);
+    const parsed = validateHideInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -457,7 +373,9 @@ export class ActivityFeedController {
       }
     }
 
-    return result;
+    return result as
+      | { success: true; data: HideActivityOutput }
+      | { success: false; error: string };
   }
 
   /**
@@ -470,7 +388,7 @@ export class ActivityFeedController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.unhide.safeParse(input);
+    const parsed = validateUnhideInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -491,14 +409,16 @@ export class ActivityFeedController {
       }
     }
 
-    return result;
+    return result as
+      | { success: true; data: UnhideActivityOutput }
+      | { success: false; error: string };
   }
 
   /**
    * Toggle a reaction on an activity
    */
   async toggleReaction(input: unknown) {
-    const parsed = schemas.addReaction.safeParse(input);
+    const parsed = validateAddReactionInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -523,7 +443,7 @@ export class ActivityFeedController {
     | { success: true; data: { success: boolean } }
     | { success: false; error: string }
   > {
-    const parsed = schemas.delete.safeParse(input);
+    const parsed = validateDeleteInput(input);
     if (!parsed.success) {
       return {
         success: false,

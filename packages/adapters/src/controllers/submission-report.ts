@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import type { SubmissionReport } from "@mirai-app/domain";
 import {
@@ -8,25 +7,19 @@ import {
   type CreateReportInput,
   type GetReportsInput,
 } from "@mirai-app/use-cases";
+import {
+  validateCreateReportInput,
+  validateGetBySubmissionInput,
+} from "./validators/submission-report-validators";
+
+export {
+  validateCreateReportInput,
+  validateGetBySubmissionInput,
+};
 
 /**
  * Input validation schemas for submission report controller
  */
-const schemas = {
-  create: z.object({
-    tripId: z.string().uuid("Invalid trip ID format"),
-    submissionId: z.string().min(1, "Submission ID is required"),
-    reason: z.string().min(1, "Reason is required").max(100),
-    details: z
-      .string()
-      .max(2000, "Details must be at most 2000 characters")
-      .optional(),
-  }),
-
-  getBySubmission: z.object({
-    submissionId: z.string().min(1, "Submission ID is required"),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -86,7 +79,7 @@ export class SubmissionReportController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateReportInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -101,7 +94,7 @@ export class SubmissionReportController {
       details: parsed.data.details,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -114,8 +107,7 @@ export class SubmissionReportController {
             createdAt: Date;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 
   /**
@@ -149,7 +141,7 @@ export class SubmissionReportController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getBySubmission.safeParse(input);
+    const parsed = validateGetBySubmissionInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -161,7 +153,7 @@ export class SubmissionReportController {
       submissionId: parsed.data.submissionId,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as Promise<
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -187,7 +179,6 @@ export class SubmissionReportController {
             totalCount: number;
           };
         }
-      | { success: false; error: string }
-    >;
+      | { success: false; error: string };
   }
 }

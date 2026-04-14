@@ -45,7 +45,7 @@ export class DrizzleNotificationDeliveryRepository
   findMany(
     filters: Partial<DeliveryFilters>,
     pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDelivery[], never, never> {
+  ): Effect.Effect<NotificationDelivery[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(filters);
@@ -103,7 +103,7 @@ export class DrizzleNotificationDeliveryRepository
           message: "Failed to find notification deliveries",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -111,7 +111,7 @@ export class DrizzleNotificationDeliveryRepository
    */
   count(
     filters?: Partial<DeliveryFilters>,
-  ): Effect.Effect<number, never, never> {
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(filters);
@@ -130,7 +130,7 @@ export class DrizzleNotificationDeliveryRepository
           message: "Failed to count notification deliveries",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -138,7 +138,7 @@ export class DrizzleNotificationDeliveryRepository
    */
   findByNotificationId(
     notificationId: string,
-  ): Effect.Effect<NotificationDelivery | null, never, never> {
+  ): Effect.Effect<NotificationDelivery | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db
@@ -180,7 +180,7 @@ export class DrizzleNotificationDeliveryRepository
           message: "Failed to find notification delivery by notification ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -188,7 +188,7 @@ export class DrizzleNotificationDeliveryRepository
    */
   getStats(
     filters?: Partial<DeliveryFilters>,
-  ): Effect.Effect<DeliveryStats, never, never> {
+  ): Effect.Effect<DeliveryStats, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const whereClause = this.buildWhereClause(filters);
@@ -253,7 +253,7 @@ export class DrizzleNotificationDeliveryRepository
           message: "Failed to get delivery statistics",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -262,7 +262,7 @@ export class DrizzleNotificationDeliveryRepository
   findFailed(
     tripId: string,
     pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDelivery[], never, never> {
+  ): Effect.Effect<NotificationDelivery[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const results = await this.db
@@ -313,13 +313,13 @@ export class DrizzleNotificationDeliveryRepository
           message: "Failed to find failed deliveries",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Count failed deliveries
    */
-  countFailed(tripId: string): Effect.Effect<number, never, never> {
+  countFailed(tripId: string): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [result] = await this.db
@@ -344,7 +344,7 @@ export class DrizzleNotificationDeliveryRepository
           message: "Failed to count failed deliveries",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**

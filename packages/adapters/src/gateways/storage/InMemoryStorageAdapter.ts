@@ -230,7 +230,11 @@ export class InMemoryStorageAdapter implements StoragePort {
   delete(
     bucket: string,
     paths: string[],
-  ): Effect.Effect<void, StorageError | DeleteError, never> {
+  ): Effect.Effect<
+    void,
+    StorageError | DeleteError | FileNotFoundError,
+    never
+  > {
     return Effect.try({
       try: () => {
         const notFoundPaths: string[] = [];

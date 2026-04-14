@@ -10,7 +10,7 @@ import { Trip, type TripStatus } from "@mirai-app/domain";
 import type { TripRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { TripDrizzleMapper } from "../../mappers/drizzle/trip";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleTripRepository
@@ -28,10 +28,37 @@ export class DrizzleTripRepository
     });
   }
 
+  // Override base class methods to match interface error types
+  override create(entity: Trip): Effect.Effect<Trip, DatabaseError, never> {
+    return super.create(entity);
+  }
+
+  override findById(
+    id: string,
+  ): Effect.Effect<Trip | null, DatabaseError, never> {
+    return super.findById(id);
+  }
+
+  override update(
+    entity: Trip & { id: string },
+  ): Effect.Effect<Trip, DatabaseError, never> {
+    return super.update(entity);
+  }
+
+  override delete(id: string): Effect.Effect<void, DatabaseError, never> {
+    return super.delete(id);
+  }
+
+  override exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+    return super.exists(id);
+  }
+
   /**
    * Find trips by status
    */
-  findByStatus(status: TripStatus): Effect.Effect<Trip[], never, never> {
+  findByStatus(
+    status: TripStatus,
+  ): Effect.Effect<Trip[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -47,13 +74,13 @@ export class DrizzleTripRepository
           message: "Failed to find trips by status",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find active trips (trips where current time is between start and end dates)
    */
-  findActive(): Effect.Effect<Trip[], never, never> {
+  findActive(): Effect.Effect<Trip[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const now = new Date();
@@ -76,7 +103,7 @@ export class DrizzleTripRepository
           message: "Failed to find active trips",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -85,7 +112,7 @@ export class DrizzleTripRepository
   override findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<Trip[], never, never> {
+  }): Effect.Effect<Trip[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         let query = this.db.select().from(this.table);
@@ -106,7 +133,7 @@ export class DrizzleTripRepository
           message: "Failed to find trips with pagination",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -115,7 +142,7 @@ export class DrizzleTripRepository
   updateStatus(
     id: string,
     status: TripStatus,
-  ): Effect.Effect<Trip, never, never> {
+  ): Effect.Effect<Trip, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -136,13 +163,15 @@ export class DrizzleTripRepository
           message: `Failed to update trip status for id ${id}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Count trips by status
    */
-  countByStatus(status: TripStatus): Effect.Effect<number, never, never> {
+  countByStatus(
+    status: TripStatus,
+  ): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const result = await this.db
@@ -158,6 +187,6 @@ export class DrizzleTripRepository
           message: "Failed to count trips by status",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 }

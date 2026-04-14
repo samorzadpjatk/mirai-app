@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import {
-  PubSubService,
-  PubSubError,
+  type PubSubService,
+  type PubSubError,
   type SubscriptionHandle,
 } from "@mirai-app/use-cases/ports/PubSubService";
 import { Effect, Data, Queue, Option } from "effect";
@@ -240,20 +240,10 @@ export class EventEmitterPubSub implements PubSubService {
   publishEffect<T>(
     channel: string,
     payload: T,
-  ): Effect.Effect<void, EventEmitterPubSubError, never> {
+  ): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
       this.emitter.emit(channel, payload);
-    }).pipe(
-      Effect.catchAll((error) =>
-        Effect.fail(
-          new EventEmitterPubSubError({
-            operation: "publish",
-            message: `Failed to publish to channel ${channel}: ${error instanceof Error ? error.message : String(error)}`,
-            cause: error,
-          }),
-        ),
-      ),
-    );
+    });
   }
 
   /**
@@ -312,13 +302,13 @@ export class EventEmitterPubSub implements PubSubService {
   /**
    * Clean up a subscription
    */
-  private cleanupSubscription(
+  private cleanupSubscription<T>(
     channel: string,
-    eventHandler: (...args: unknown[]) => void,
+    eventHandler: (payload: T) => void,
     _subscriptionId: string,
   ): void {
     // Remove from EventEmitter
-    this.emitter.off(channel, eventHandler);
+    this.emitter.off(channel, eventHandler as (...args: unknown[]) => void);
 
     // Remove from tracking
     const channelSubs = this.activeSubscriptions.get(channel);
@@ -327,6 +317,7 @@ export class EventEmitterPubSub implements PubSubService {
       for (const cleanup of channelSubs) {
         // We can't directly compare functions, but we can remove by reference
         // This is a simplification - in production we'd track by ID
+        void cleanup;
       }
       channelSubs.delete(() => {
         this.cleanupSubscription(channel, eventHandler, _subscriptionId);

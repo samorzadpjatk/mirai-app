@@ -20,7 +20,7 @@ import {
   ActivityFeedDrizzleMapper,
   ActivityReactionDrizzleMapper,
 } from "../../mappers/drizzle/activity-feed";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleActivityFeedRepository
@@ -43,6 +43,35 @@ export class DrizzleActivityFeedRepository
     });
   }
 
+  // Override base class methods to match interface error types
+  override create(
+    entity: ActivityFeed,
+  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
+    return super.create(entity);
+  }
+
+  override findById(
+    id: ActivityId,
+  ): Effect.Effect<ActivityFeed | null, DatabaseError, never> {
+    return super.findById(id);
+  }
+
+  override update(
+    entity: ActivityFeed & { id: string },
+  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
+    return super.update(entity);
+  }
+
+  override delete(id: ActivityId): Effect.Effect<void, DatabaseError, never> {
+    return super.delete(id);
+  }
+
+  override exists(
+    id: ActivityId,
+  ): Effect.Effect<boolean, DatabaseError, never> {
+    return super.exists(id);
+  }
+
   findByTripId(
     tripId: string,
     options?: {
@@ -56,7 +85,7 @@ export class DrizzleActivityFeedRepository
       nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
       hasMore: boolean;
     },
-    never,
+    DatabaseError,
     never
   > {
     return Effect.tryPromise({
@@ -111,7 +140,7 @@ export class DrizzleActivityFeedRepository
           message: "Failed to find activities by trip ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   findByTripIdPaged(
@@ -130,7 +159,7 @@ export class DrizzleActivityFeedRepository
       totalPages: number;
       hasMore: boolean;
     },
-    never,
+    DatabaseError,
     never
   > {
     return Effect.tryPromise({
@@ -175,12 +204,12 @@ export class DrizzleActivityFeedRepository
           message: "Failed to find activities by trip ID with pagination",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   findReactionsByActivityId(
     activityId: ActivityId,
-  ): Effect.Effect<ActivityReaction[], never, never> {
+  ): Effect.Effect<ActivityReaction[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -197,13 +226,13 @@ export class DrizzleActivityFeedRepository
           message: "Failed to find reactions by activity ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   findUserReactions(
     activityId: ActivityId,
     userId: string,
-  ): Effect.Effect<ActivityReaction[], never, never> {
+  ): Effect.Effect<ActivityReaction[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -225,7 +254,7 @@ export class DrizzleActivityFeedRepository
           message: "Failed to find user reactions",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   getReactionCounts(activityId: ActivityId): Effect.Effect<
@@ -233,7 +262,7 @@ export class DrizzleActivityFeedRepository
       total: number;
       counts: { heart: number; fire: number; clap: number; star: number };
     },
-    never,
+    DatabaseError,
     never
   > {
     return Effect.tryPromise({
@@ -272,13 +301,13 @@ export class DrizzleActivityFeedRepository
           message: "Failed to get reaction counts",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   findByTripIdAndType(
     tripId: string,
     activityType: string,
-  ): Effect.Effect<ActivityFeed[], never, never> {
+  ): Effect.Effect<ActivityFeed[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -299,12 +328,12 @@ export class DrizzleActivityFeedRepository
           message: "Failed to find activities by trip ID and type",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   findPinnedByTripId(
     tripId: string,
-  ): Effect.Effect<ActivityFeed[], never, never> {
+  ): Effect.Effect<ActivityFeed[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -322,12 +351,12 @@ export class DrizzleActivityFeedRepository
           message: "Failed to find pinned activities by trip ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   findVisibleByTripId(
     tripId: string,
-  ): Effect.Effect<ActivityFeed[], never, never> {
+  ): Effect.Effect<ActivityFeed[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -345,7 +374,7 @@ export class DrizzleActivityFeedRepository
           message: "Failed to find visible activities by trip ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   findByUserIds(
@@ -356,7 +385,7 @@ export class DrizzleActivityFeedRepository
 
   addReaction(
     reaction: ActivityReaction,
-  ): Effect.Effect<ActivityReaction, never, never> {
+  ): Effect.Effect<ActivityReaction, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const insertData =
@@ -372,14 +401,14 @@ export class DrizzleActivityFeedRepository
           message: "Failed to add reaction",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   removeReaction(
     activityId: string,
     userId: string,
     reactionType: string,
-  ): Effect.Effect<void, never, never> {
+  ): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db
@@ -398,12 +427,12 @@ export class DrizzleActivityFeedRepository
           message: "Failed to remove reaction",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   getReactions(
     activityId: string,
-  ): Effect.Effect<ActivityReaction[], never, never> {
+  ): Effect.Effect<ActivityReaction[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -420,10 +449,10 @@ export class DrizzleActivityFeedRepository
           message: "Failed to get reactions",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
-  pinActivity(id: string): Effect.Effect<ActivityFeed, never, never> {
+  pinActivity(id: string): Effect.Effect<ActivityFeed, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -440,10 +469,10 @@ export class DrizzleActivityFeedRepository
           message: `Failed to pin activity with id ${id}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
-  unpinActivity(id: string): Effect.Effect<ActivityFeed, never, never> {
+  unpinActivity(id: string): Effect.Effect<ActivityFeed, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -460,14 +489,14 @@ export class DrizzleActivityFeedRepository
           message: `Failed to unpin activity with id ${id}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   hideActivity(
     id: string,
     hiddenByAdmin: string,
     reason?: string,
-  ): Effect.Effect<ActivityFeed, never, never> {
+  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -490,10 +519,12 @@ export class DrizzleActivityFeedRepository
           message: `Failed to hide activity with id ${id}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
-  unhideActivity(id: string): Effect.Effect<ActivityFeed, never, never> {
+  unhideActivity(
+    id: string,
+  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [record] = await this.db
@@ -516,10 +547,10 @@ export class DrizzleActivityFeedRepository
           message: `Failed to unhide activity with id ${id}`,
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, never, never> {
+  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const result = await this.db
@@ -534,6 +565,6 @@ export class DrizzleActivityFeedRepository
           message: "Failed to count activities by trip ID",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 }

@@ -1,29 +1,15 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   addCoinsUseCase,
   removeCoinsUseCase,
   CoinTransactionRepositoryTag,
 } from "@mirai-app/use-cases";
+import {
+  validateAddCoinsInput,
+  validateRemoveCoinsInput,
+} from "./validators/coin-validators";
 
-/**
- * Input validation schemas for coin controller
- */
-const schemas = {
-  addCoins: z.object({
-    tripId: z.string().uuid(),
-    groupId: z.string().uuid(),
-    amount: z.number().min(1, "Amount must be at least 1"),
-    reason: z.string().optional(),
-  }),
-
-  removeCoins: z.object({
-    tripId: z.string().uuid(),
-    groupId: z.string().uuid(),
-    amount: z.number().min(1, "Amount must be at least 1"),
-    reason: z.string().optional(),
-  }),
-};
+export { validateAddCoinsInput, validateRemoveCoinsInput };
 
 /**
  * Output type for coin operations
@@ -79,10 +65,6 @@ async function runWithLayer<T>(
  */
 export class CoinController {
   constructor(private appLayer: Layer.Layer<unknown>) {}
-
-  get schemas() {
-    return schemas;
-  }
 
   /**
    * Add coins to a group

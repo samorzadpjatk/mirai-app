@@ -14,7 +14,7 @@ import {
 import type { NotificationRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { NotificationDrizzleMapper } from "../../mappers/drizzle/notification";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleNotificationRepository

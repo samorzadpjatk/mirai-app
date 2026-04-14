@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { Effect, type Layer } from "effect";
 import {
   getRewardUseCase,
@@ -11,98 +10,56 @@ import {
   updatePurchaseStatusUseCase,
   updateMyPurchaseStatusUseCase,
   getPurchaseHistoryUseCase,
+  type GetRewardOutput,
+  type ListRewardsOutput,
+  type CreateRewardOutput,
+  type UpdateRewardOutput,
+  type SetRewardHiddenOutput,
+  type DeleteRewardOutput,
+  type PurchaseRewardOutput,
+  type UpdatePurchaseStatusOutput,
+  type UpdateMyPurchaseStatusOutput,
+  type GetPurchaseHistoryOutput,
 } from "@mirai-app/use-cases";
+import {
+  validateGetByIdInput,
+  validateGetByTripInput,
+  validateGetByTripAdminInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateSetHiddenInput,
+  validateDeleteInput,
+  validatePurchaseInput,
+  validateUpdatePurchaseStatusInput,
+  validateUpdateMyPurchaseStatusInput,
+  validateGetPurchaseHistoryInput,
+} from "./validators/reward-validators";
+
+export {
+  validateGetByIdInput,
+  validateGetByTripInput,
+  validateGetByTripAdminInput,
+  validateCreateInput,
+  validateUpdateInput,
+  validateSetHiddenInput,
+  validateDeleteInput,
+  validatePurchaseInput,
+  validateUpdatePurchaseStatusInput,
+  validateUpdateMyPurchaseStatusInput,
+  validateGetPurchaseHistoryInput,
+};
+
 import {
   RewardRepositoryTag,
   TripPointsCalculatorTag,
 } from "@mirai-app/use-cases";
+
 import type { RewardId } from "@mirai-app/domain";
 import { UserRole, RewardPurchaseStatus } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for reward controller
  */
-const schemas = {
-  getById: z.object({
-    id: z.string().min(1, "Reward ID is required"),
-  }),
-
-  getByTrip: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    groupCoins: z.number().optional(),
-  }),
-
-  getByTripAdmin: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    pagination: z
-      .object({
-        limit: z.number().int().min(1).max(100).default(30),
-        offset: z.number().int().min(0).default(0),
-      })
-      .optional(),
-  }),
-
-  create: z.object({
-    name: z.string().min(1, "Name is required").max(200),
-    description: z.string().min(1, "Description is required").max(2000),
-    availableQuantity: z.number().int().min(0).max(1_000_000),
-    coinCostPercentage: z.number().int().min(1).max(100),
-    images: z.array(z.string().min(1).max(2000)).max(10).optional(),
-    isHidden: z.boolean().optional(),
-    tripId: z.string().min(1, "Trip ID is required"),
-    createdById: z.string().min(1, "Creator ID is required"),
-    creatorRole: z.nativeEnum(UserRole),
-  }),
-
-  update: z.object({
-    rewardId: z.string().min(1, "Reward ID is required"),
-    name: z.string().min(1).max(200).optional(),
-    description: z.string().min(1).max(2000).optional(),
-    availableQuantity: z.number().int().min(0).max(1_000_000).optional(),
-    images: z.array(z.string().min(1).max(2000)).max(10).optional(),
-    coinCostPercentage: z.number().int().min(1).max(100).optional(),
-  }),
-
-  setHidden: z.object({
-    rewardId: z.string().min(1, "Reward ID is required"),
-    isHidden: z.boolean(),
-  }),
-
-  delete: z.object({
-    rewardId: z.string().min(1, "Reward ID is required"),
-  }),
-
-  purchase: z.object({
-    rewardId: z.string().min(1, "Reward ID is required"),
-    quantity: z.number().int().min(1),
-    userId: z.string().min(1, "User ID is required"),
-  }),
-
-  updatePurchaseStatus: z.object({
-    purchaseId: z.string().min(1, "Purchase ID is required"),
-    status: z.nativeEnum(RewardPurchaseStatus),
-    updatedById: z.string().min(1, "Updater ID is required"),
-    collectionMethod: z.string().min(1).max(500).optional(),
-  }),
-
-  updateMyPurchaseStatus: z.object({
-    purchaseId: z.string().min(1, "Purchase ID is required"),
-    status: z.nativeEnum(RewardPurchaseStatus),
-    userId: z.string().min(1, "User ID is required"),
-  }),
-
-  getPurchaseHistory: z.object({
-    tripId: z.string().min(1, "Trip ID is required"),
-    userId: z.string().min(1, "User ID is required"),
-    isStaff: z.boolean().optional(),
-    pagination: z
-      .object({
-        limit: z.number().int().min(1).max(100).default(30),
-        offset: z.number().int().min(0).default(0),
-      })
-      .optional(),
-  }),
-};
 
 /**
  * Helper to run an Effect with the provided Layer and convert to controller result
@@ -149,7 +106,7 @@ export class RewardController {
   ): Promise<
     { success: true; data: GetRewardOutput } | { success: false; error: string }
   > {
-    const parsed = schemas.getById.safeParse(input);
+    const parsed = validateGetByIdInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -161,7 +118,12 @@ export class RewardController {
       rewardId: parsed.data.id as RewardId,
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: GetRewardOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -173,7 +135,7 @@ export class RewardController {
     | { success: true; data: ListRewardsOutput }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getByTrip.safeParse(input);
+    const parsed = validateGetByTripInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -186,7 +148,12 @@ export class RewardController {
       groupCoins: parsed.data.groupCoins,
     }).pipe();
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: ListRewardsOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -198,7 +165,7 @@ export class RewardController {
     | { success: true; data: ListRewardsOutput }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getByTripAdmin.safeParse(input);
+    const parsed = validateGetByTripAdminInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -212,7 +179,12 @@ export class RewardController {
       pagination: parsed.data.pagination,
     }).pipe();
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: ListRewardsOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -224,7 +196,7 @@ export class RewardController {
     | { success: true; data: CreateRewardOutput }
     | { success: false; error: string }
   > {
-    const parsed = schemas.create.safeParse(input);
+    const parsed = validateCreateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -244,7 +216,12 @@ export class RewardController {
       creatorRole: parsed.data.creatorRole,
     }).pipe();
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: CreateRewardOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -256,7 +233,7 @@ export class RewardController {
     | { success: true; data: UpdateRewardOutput }
     | { success: false; error: string }
   > {
-    const parsed = schemas.update.safeParse(input);
+    const parsed = validateUpdateInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -273,7 +250,12 @@ export class RewardController {
       coinCostPercentage: parsed.data.coinCostPercentage,
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: UpdateRewardOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -286,7 +268,7 @@ export class RewardController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.setHidden.safeParse(input);
+    const parsed = validateSetHiddenInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -299,7 +281,12 @@ export class RewardController {
       isHidden: parsed.data.isHidden,
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: SetRewardHiddenOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -311,7 +298,7 @@ export class RewardController {
     | { success: true; data: DeleteRewardOutput }
     | { success: false; error: string }
   > {
-    const parsed = schemas.delete.safeParse(input);
+    const parsed = validateDeleteInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -323,7 +310,12 @@ export class RewardController {
       rewardId: parsed.data.rewardId as RewardId,
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: DeleteRewardOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -336,7 +328,7 @@ export class RewardController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.purchase.safeParse(input);
+    const parsed = validatePurchaseInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -350,7 +342,12 @@ export class RewardController {
       userId: parsed.data.userId,
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: PurchaseRewardOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -363,7 +360,7 @@ export class RewardController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.updatePurchaseStatus.safeParse(input);
+    const parsed = validateUpdatePurchaseStatusInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -378,7 +375,12 @@ export class RewardController {
       collectionMethod: parsed.data.collectionMethod,
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: UpdatePurchaseStatusOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -391,7 +393,7 @@ export class RewardController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.updateMyPurchaseStatus.safeParse(input);
+    const parsed = validateUpdateMyPurchaseStatusInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -405,7 +407,12 @@ export class RewardController {
       updatedById: parsed.data.userId,
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: UpdateMyPurchaseStatusOutput;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -425,7 +432,12 @@ export class RewardController {
       return { totalPoints };
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: { totalPoints: number };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -438,7 +450,7 @@ export class RewardController {
       }
     | { success: false; error: string }
   > {
-    const parsed = schemas.getPurchaseHistory.safeParse(input);
+    const parsed = validateGetPurchaseHistoryInput(input);
     if (!parsed.success) {
       return {
         success: false,
@@ -453,6 +465,11 @@ export class RewardController {
       pagination: parsed.data.pagination,
     });
 
-    return await runWithLayer(program, this.appLayer);
+    return (await runWithLayer(program, this.appLayer)) as unknown as
+      | {
+          success: true;
+          data: GetPurchaseHistoryOutput;
+        }
+      | { success: false; error: string };
   }
 }

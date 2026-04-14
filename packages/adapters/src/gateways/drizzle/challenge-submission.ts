@@ -10,7 +10,7 @@ import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { ChallengeSubmissionDrizzleMapper } from "../../mappers/drizzle/challenge-submission";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleChallengeSubmissionRepository

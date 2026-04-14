@@ -115,6 +115,78 @@ function mapSupabaseErrorToStorageError(
   });
 }
 
+/**
+ * Helper to narrow error types for upload operation
+ */
+function narrowUploadError(
+  error:
+    | StorageError
+    | FileNotFoundError
+    | UploadError
+    | BucketNotFoundError
+    | DownloadError
+    | DeleteError,
+): StorageError | UploadError | BucketNotFoundError {
+  if (error instanceof UploadError || error instanceof BucketNotFoundError) {
+    return error;
+  }
+  return new StorageError({ message: error.message });
+}
+
+/**
+ * Helper to narrow error types for download operation
+ */
+function narrowDownloadError(
+  error:
+    | StorageError
+    | FileNotFoundError
+    | UploadError
+    | BucketNotFoundError
+    | DownloadError
+    | DeleteError,
+): StorageError | FileNotFoundError | DownloadError {
+  if (error instanceof FileNotFoundError || error instanceof DownloadError) {
+    return error;
+  }
+  return new StorageError({ message: error.message });
+}
+
+/**
+ * Helper to narrow error types for delete operation
+ */
+function narrowDeleteError(
+  error:
+    | StorageError
+    | FileNotFoundError
+    | UploadError
+    | BucketNotFoundError
+    | DownloadError
+    | DeleteError,
+): StorageError | DeleteError {
+  if (error instanceof DeleteError) {
+    return error;
+  }
+  return new StorageError({ message: error.message });
+}
+
+/**
+ * Helper to narrow error types for createSignedUrl operation
+ */
+function narrowSignedUrlError(
+  error:
+    | StorageError
+    | FileNotFoundError
+    | UploadError
+    | BucketNotFoundError
+    | DownloadError
+    | DeleteError,
+): StorageError | FileNotFoundError {
+  if (error instanceof FileNotFoundError) {
+    return error;
+  }
+  return new StorageError({ message: error.message });
+}
+
 // =============================================================================
 // Metadata Mapping
 // =============================================================================
@@ -248,6 +320,7 @@ export class SupabaseStorageAdapter implements StoragePort {
           ? e
           : mapSupabaseErrorToStorageError(e, "upload", bucket, path),
     }).pipe(
+      Effect.mapError(narrowUploadError),
       Effect.andThen(({ bucket, path, file, options }) =>
         // Fetch metadata after upload - if it fails, return basic metadata
         Effect.matchEffect(this.fetchFileMetadata(bucket, path), {
@@ -308,6 +381,7 @@ export class SupabaseStorageAdapter implements StoragePort {
           ? e
           : mapSupabaseErrorToStorageError(e, "download", bucket, path),
     }).pipe(
+      Effect.mapError(narrowDownloadError),
       Effect.andThen(({ bucket, path, data }) =>
         // Fetch metadata for the downloaded file
         Effect.matchEffect(this.fetchFileMetadata(bucket, path), {
@@ -346,35 +420,19 @@ export class SupabaseStorageAdapter implements StoragePort {
   ): Effect.Effect<void, StorageError | DeleteError, never> {
     return Effect.tryPromise({
       try: async () => {
-        const { data, error } = await this.supabase.storage
+        const { error } = await this.supabase.storage
           .from(bucket)
           .remove(paths);
 
         if (error) {
           throw mapSupabaseErrorToStorageError(error, "delete", bucket);
         }
-
-        // Check if any files were not found
-        if (data && Array.isArray(data)) {
-          const notFoundFiles = data.filter(
-            (item: { error?: { message?: string } }) =>
-              item.error?.message?.toLowerCase().includes("not found"),
-          );
-
-          if (notFoundFiles.length > 0) {
-            throw new DeleteError({
-              message: `Some files were not found: ${notFoundFiles.length} files`,
-              bucket,
-              paths,
-            });
-          }
-        }
       },
       catch: (e) =>
         e instanceof StorageError || e instanceof DeleteError
           ? e
           : mapSupabaseErrorToStorageError(e, "delete", bucket),
-    });
+    }).pipe(Effect.mapError(narrowDeleteError));
   }
 
   /**
@@ -423,7 +481,7 @@ export class SupabaseStorageAdapter implements StoragePort {
         e instanceof StorageError || e instanceof FileNotFoundError
           ? e
           : mapSupabaseErrorToStorageError(e, "createSignedUrl", bucket, path),
-    });
+    }).pipe(Effect.mapError(narrowSignedUrlError));
   }
 
   /**
@@ -466,14 +524,14 @@ export class SupabaseStorageAdapter implements StoragePort {
           });
         }
 
-        const fileData = data[0];
+        const fileData = data[0]!;
         const metadata = mapSupabaseFileToMetadata(bucket, path, {
-          id: fileData.id,
-          name: fileData.name,
+          id: fileData.id ?? undefined,
+          name: fileData.name ?? undefined,
           size: fileData.metadata?.size,
           content_type: fileData.metadata?.mimetype,
-          created_at: fileData.created_at,
-          updated_at: fileData.updated_at,
+          created_at: fileData.created_at ?? undefined,
+          updated_at: fileData.updated_at ?? undefined,
           metadata: { etag: fileData.metadata?.eTag },
         });
 
@@ -485,6 +543,6 @@ export class SupabaseStorageAdapter implements StoragePort {
           : new StorageError({
               message: `Failed to fetch metadata: ${e instanceof Error ? e.message : "Unknown error"}`,
             }),
-    });
+    }).pipe(Effect.mapError(narrowSignedUrlError));
   }
 }

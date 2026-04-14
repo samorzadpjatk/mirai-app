@@ -11,7 +11,7 @@ import type { UserRepository } from "@mirai-app/use-cases";
 import { inArray } from "drizzle-orm";
 import { BaseDrizzleRepository } from "../base/repository";
 import { UserDrizzleMapper } from "../../mappers/drizzle/user";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
 /**
  * DrizzleUserRepository
@@ -43,7 +43,7 @@ export class DrizzleUserRepository
    */
   findByAuthUserId(
     authUserId: string,
-  ): Effect.Effect<User | null, never, never> {
+  ): Effect.Effect<User | null, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -61,13 +61,13 @@ export class DrizzleUserRepository
           message: "Failed to find user by authUserId",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find users by their IDs
    */
-  findByIds(ids: string[]): Effect.Effect<User[], never, never> {
+  findByIds(ids: string[]): Effect.Effect<User[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         if (ids.length === 0) return [];
@@ -85,13 +85,13 @@ export class DrizzleUserRepository
           message: "Failed to find users by IDs",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Find users by their role
    */
-  findByRole(role: UserRole): Effect.Effect<User[], never, never> {
+  findByRole(role: UserRole): Effect.Effect<User[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -107,13 +107,15 @@ export class DrizzleUserRepository
           message: "Failed to find users by role",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Check if a user exists by authUserId
    */
-  existsByAuthUserId(authUserId: string): Effect.Effect<boolean, never, never> {
+  existsByAuthUserId(
+    authUserId: string,
+  ): Effect.Effect<boolean, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const records = await this.db
@@ -130,7 +132,7 @@ export class DrizzleUserRepository
           message: "Failed to check user existence",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
@@ -139,7 +141,7 @@ export class DrizzleUserRepository
   updateLastSeen(
     id: string,
     lastSeenOn: Date,
-  ): Effect.Effect<void, never, never> {
+  ): Effect.Effect<void, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         await this.db
@@ -153,30 +155,22 @@ export class DrizzleUserRepository
           message: "Failed to update last seen timestamp",
           cause: error,
         }),
-    }).pipe(Effect.orDie);
+    });
   }
 
   /**
    * Search users by name (firstName or lastName)
    */
-  searchByName(query: string): Effect.Effect<User[], never, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const allRecords = await this.findAll();
+  searchByName(query: string): Effect.Effect<User[], DatabaseError, never> {
+    return Effect.gen(this, function* () {
+      const allRecords = yield* this.findAll();
 
-        const lowerQuery = query.toLowerCase();
-        return allRecords.filter(
-          (user) =>
-            user.firstName.toLowerCase().includes(lowerQuery) ||
-            user.lastName.toLowerCase().includes(lowerQuery),
-        );
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "searchByName",
-          message: "Failed to search users by name",
-          cause: error,
-        }),
-    }).pipe(Effect.orDie);
+      const lowerQuery = query.toLowerCase();
+      return allRecords.filter(
+        (user) =>
+          user.firstName.toLowerCase().includes(lowerQuery) ||
+          user.lastName.toLowerCase().includes(lowerQuery),
+      );
+    });
   }
 }
