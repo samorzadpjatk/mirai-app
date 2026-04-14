@@ -57,6 +57,8 @@ describe("[INTEGRATION] Bun Server", () => {
     if (server?.isRunning()) {
       await server.stop();
     }
+    // Add delay to allow port cleanup between test files
+    await new Promise((r) => setTimeout(r, 200));
   });
 
   describe("[UNIT] Server Lifecycle", () => {

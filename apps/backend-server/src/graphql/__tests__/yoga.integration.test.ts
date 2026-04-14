@@ -5,6 +5,9 @@
  * Verifies that the GraphQL endpoint responds correctly, handles auth,
  * and returns expected data.
  *
+ * NOTE: This test uses dynamic imports for @hono/node-server to prevent
+ * global Request/Response pollution that affects other Bun-native tests.
+ *
  * @module yoga-integration-tests
  */
 
@@ -17,7 +20,7 @@ import {
   beforeEach,
 } from "bun:test";
 import { Hono } from "hono";
-import { serve, type ServerType } from "@hono/node-server";
+import type { ServerType } from "@hono/node-server";
 import { createYogaHandler } from "../../graphql/yoga-handler";
 import { honoConfig } from "../../config/hono-config";
 import { createTestLayer } from "@mirai-app/frameworks/di";
@@ -67,8 +70,27 @@ let testContext: TestContext;
 let adminToken: string;
 let userToken: string;
 
+// Store original globals to restore after test
+let originalRequest: typeof Request;
+let originalResponse: typeof Response;
+let originalAbortSignal: typeof AbortSignal;
+
+// Track if we need to restore globals
+let shouldRestoreGlobals = false;
+
 describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
   beforeAll(async () => {
+    // Save original globals BEFORE importing @hono/node-server
+    // This prevents global pollution affecting other tests
+    originalRequest = globalThis.Request;
+    originalResponse = globalThis.Response;
+    originalAbortSignal = globalThis.AbortSignal;
+
+    // Dynamically import @hono/node-server to minimize global pollution window
+    // @hono/node-server modifies global Request/Response which breaks Bun-native tests
+    const nodeServer = await import("@hono/node-server");
+    const serve = nodeServer.serve;
+
     // Create InMemory adapters
     const authAdapter = new InMemoryAuthAdapter();
     const userRepo = new InMemoryUserRepository();
@@ -80,8 +102,8 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
       userRepository: userRepo,
     });
 
-    // Create admin user in repository
-    const adminResult = User.create({
+    // Create admin user in repository (User.create returns Effect now)
+    const adminEffect = User.create({
       id: TEST_USERS.admin.id,
       authUserId: TEST_USERS.admin.authUserId,
       firstName: TEST_USERS.admin.firstName,
@@ -90,12 +112,13 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
       hasAvatar: TEST_USERS.admin.hasAvatar,
       createdAt: new Date("2024-01-01"),
     });
-    if (adminResult.kind === "ok") {
-      await Effect.runPromise(userRepo.save(adminResult.value));
+    const adminEither = await Effect.runPromise(Effect.either(adminEffect));
+    if (adminEither._tag === "Right") {
+      await Effect.runPromise(userRepo.create(adminEither.right));
     }
 
     // Create regular user in repository
-    const userResult = User.create({
+    const userEffect = User.create({
       id: TEST_USERS.regular.id,
       authUserId: TEST_USERS.regular.authUserId,
       firstName: TEST_USERS.regular.firstName,
@@ -104,8 +127,9 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
       hasAvatar: TEST_USERS.regular.hasAvatar,
       createdAt: new Date("2024-01-03"),
     });
-    if (userResult.kind === "ok") {
-      await Effect.runPromise(userRepo.save(userResult.value));
+    const userEither = await Effect.runPromise(Effect.either(userEffect));
+    if (userEither._tag === "Right") {
+      await Effect.runPromise(userRepo.create(userEither.right));
     }
 
     // Create auth users in InMemoryAuthAdapter
@@ -199,9 +223,10 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
     };
 
     // Create custom server with custom context factory
+    // Use port 0 for dynamic port allocation to avoid conflicts
     const testConfig = {
       ...honoConfig,
-      port: 4001,
+      port: 0,
       enableGraphiQL: true,
       enableLogging: false,
     };
@@ -238,9 +263,10 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
       return c.json({ status: "healthy", timestamp: new Date().toISOString() });
     });
 
-    // Create server
+    // Create server with dynamic port allocation
     let serverInstance: ServerType | null = null;
     let isRunning = false;
+    let actualPort: number = 0;
 
     const start = async () => {
       if (isRunning) return;
@@ -253,6 +279,13 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
       return new Promise<void>((resolve, reject) => {
         serverInstance?.on("listening", () => {
           isRunning = true;
+          // Get the actual port assigned when using port 0
+          const address = serverInstance?.address();
+          if (address && typeof address === "object") {
+            actualPort = address.port;
+          } else {
+            actualPort = testConfig.port || 4000;
+          }
           resolve();
         });
         serverInstance?.on("error", reject);
@@ -283,15 +316,36 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
         start,
         stop,
         isRunning: () => isRunning,
-        getPort: () => testConfig.port,
+        getPort: () => actualPort,
       } as any,
-      baseUrl: `http://localhost:${testConfig.port}`,
+      baseUrl: `http://localhost:${actualPort}`,
     };
   });
 
   afterAll(async () => {
     if (testContext?.server) {
       await testContext.server.stop();
+    }
+    // Add delay to allow port cleanup between test files
+    await new Promise((r) => setTimeout(r, 200));
+
+    // Restore original globals to prevent pollution of other tests
+    // @hono/node-server modifies these, so we must restore them
+    try {
+      if (originalRequest && globalThis.Request !== originalRequest) {
+        globalThis.Request = originalRequest;
+      }
+      if (originalResponse && globalThis.Response !== originalResponse) {
+        globalThis.Response = originalResponse;
+      }
+      if (
+        originalAbortSignal &&
+        globalThis.AbortSignal !== originalAbortSignal
+      ) {
+        globalThis.AbortSignal = originalAbortSignal;
+      }
+    } catch {
+      // Ignore errors during cleanup - some globals may be read-only
     }
   });
 
