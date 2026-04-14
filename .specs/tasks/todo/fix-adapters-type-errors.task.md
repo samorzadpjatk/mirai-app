@@ -4,26 +4,27 @@ type: task
 status: ready
 priority: medium
 created: "2026-04-14"
+updated: "2026-04-14"
 source_plan: ".specs/plans/adapters-type-errors.design.md"
 ---
 
 ## Initial Request
 
-Convert the "Adapters Package Type Error Fix" design into an implementation task. Fix the remaining TypeScript errors in the adapters package (currently 63 errors, down from 338).
+Fix the remaining TypeScript errors in the adapters package (currently 63 errors, down from 338). These errors accumulated during the Effect framework migration and need systematic cleanup.
 
 ## Description
 
 ### Why This is Needed
 
-The adapters package accumulated TypeScript errors during refactoring:
+The adapters package accumulated TypeScript errors during the Effect framework migration:
 
 - Missing dependency declarations
-- Incorrect error class modifiers
-- Controller DTO misalignments
+- Incorrect error class modifiers (missing `override`)
+- Controller DTO misalignments with Effect-based use case outputs
 - Mapper type mismatches
-- Repository type issues
+- Repository type issues with Effect patterns
 
-These errors indicate type safety gaps that could lead to runtime bugs. While the count has decreased from 338 to 63, remaining errors need systematic cleanup.
+These errors indicate type safety gaps that need resolution to complete the Effect migration.
 
 ### What This Accomplishes
 
@@ -32,21 +33,23 @@ These errors indicate type safety gaps that could lead to runtime bugs. While th
 **Key deliverables:**
 
 1. **All TS2307 module errors resolved** (missing imports/exports)
-2. **Error class modifiers fixed** (override keywords)
-3. **Controller DTOs aligned** with use case outputs
+2. **Error class modifiers fixed** (`override` keywords for `Data.TaggedError`)
+3. **Controller DTOs aligned** with Effect-based use case outputs (`Effect.Effect<T, E, R>`)
 4. **Mapper types corrected** (entity ↔ persistence)
-5. **Repository types fixed** (Drizzle integration)
+5. **Repository types fixed** (Effect patterns with `Effect.tryPromise`)
+6. **Effect error handling aligned** (`Effect.catchTag` patterns in controllers)
 
 ### Scope Boundaries
 
 **IN Scope:**
 
-- Fix remaining 63 TypeScript errors in `packages/adapters/`
+- Fix remaining TypeScript errors in `packages/adapters/`
 - Resolve missing dependency issues
-- Fix error class declarations
-- Align controller DTOs with use cases
+- Fix error class declarations with proper `override` modifiers
+- Align controller DTOs with Effect-based use case outputs
 - Fix mapper type signatures
-- Update repository type annotations
+- Update repository type annotations for Effect patterns
+- Ensure controllers properly unwrap Effect results with `Effect.runPromise` and `Effect.catchTag`
 
 **OUT of Scope:**
 
@@ -61,18 +64,19 @@ These errors indicate type safety gaps that could lead to runtime bugs. While th
 
 - [ ] `bunx tsc --noEmit` in adapters package shows 0 errors
 - [ ] All `TS2307` module resolution errors resolved
-- [ ] All error class `override` modifiers added
-- [ ] Controller DTOs match use case output types
+- [ ] All error class `override` modifiers added for `Data.TaggedError` classes
+- [ ] Controller DTOs match Effect-based use case output types (`Effect.Effect<T, E, R>`)
 - [ ] Mapper functions have correct type signatures
-- [ ] Repository methods align with port interfaces
+- [ ] Repository methods align with Effect-based port interfaces
 - [ ] All imports from `@mirai-app/*` packages resolve correctly
+- [ ] Controllers properly handle Effect errors with `Effect.catchTag` pattern
 
 ### Quality Criteria
 
 - [ ] All adapter tests pass
 - [ ] No new TypeScript errors introduced
 - [ ] Type safety maintained (no `any` types added)
-- [ ] No runtime behavior changes
+- [ ] Effect error handling patterns consistent across all controllers
 - [ ] Dependency cruiser validation passes
 
 ## Architecture Overview
@@ -82,45 +86,71 @@ These errors indicate type safety gaps that could lead to runtime bugs. While th
 **63 TypeScript errors in adapters package:**
 
 - Missing dependency errors (TS2307)
-- Error class modifier issues
-- Controller DTO misalignments
+- Error class modifier issues (missing `override` on `_tag`)
+- Controller DTO misalignments (expecting old patterns, receiving Effect types)
 - Mapper type mismatches
-- Repository type issues
+- Repository type issues (Effect patterns not fully aligned)
 
 ### Target State
 
 **Zero TypeScript errors:**
 
 - All modules resolve correctly
-- All error classes properly declared
-- All DTOs aligned with use cases
+- All error classes properly declared with `Data.TaggedError` and `override`
+- All DTOs aligned with Effect-based use cases
 - All mappers type-safe
-- All repositories match ports
+- All repositories match Effect-based ports
+- Controllers consistently use `Effect.runPromise` with `Effect.catchTag`
 
 ### Migration Strategy
 
-1. **Phase 1: Missing Dependencies** (~15 errors remaining)
-   - Fix `@supabase/supabase-js` imports
-   - Update gateway exports
-   - Fix mapper exports
-   - Ensure domain/use-cases exports
+**Phase 1: Missing Dependencies** (~15 errors remaining)
 
-2. **Phase 2: Error Classes** (~5 errors)
-   - Add `override` modifier to all error class `_tag` declarations
-   - Fix base class compatibility
+- Fix `@supabase/supabase-js` imports
+- Update gateway exports
+- Fix mapper exports
+- Ensure domain/use-cases exports
 
-3. **Phase 3: Controller DTOs** (~10 errors)
-   - Align controller input/output types with use cases
-   - Fix type imports
+**Phase 2: Error Classes** (~5 errors)
 
-4. **Phase 4: Mapper Fixes** (~20 errors)
-   - Fix entity-to-persistence mapping types
-   - Fix persistence-to-entity mapping types
-   - Update mapper function signatures
+- Add `override` modifier to all `Data.TaggedError` class `_tag` declarations:
+  ```typescript
+  readonly override _tag = "ValidationError";
+  ```
 
-5. **Phase 5: Repository Fixes** (~13 errors)
-   - Fix Drizzle repository method signatures
-   - Align with port interfaces
+**Phase 3: Controller DTOs** (~10 errors)
+
+- Align controller input/output types with Effect-based use cases
+- Update controllers to handle `Effect.Effect<T, E, R>` outputs
+- Fix type imports from use-cases
+
+**Phase 4: Effect Error Handling in Controllers**
+
+- Ensure all controllers use `Effect.runPromise` with error catching:
+  ```typescript
+  const result = await Effect.runPromise(
+    program.pipe(
+      Effect.catchTag("NotFoundError", (error) => {
+        throw new HTTPError(404, error.message);
+      }),
+      Effect.catchTag("ValidationError", (error) => {
+        throw new HTTPError(400, error.message);
+      }),
+    ),
+  );
+  ```
+
+**Phase 5: Mapper Fixes** (~20 errors)
+
+- Fix entity-to-persistence mapping types
+- Fix persistence-to-entity mapping types
+- Update mapper function signatures
+
+**Phase 6: Repository Fixes** (~13 errors)
+
+- Fix repository method signatures to match Effect-based ports
+- Ensure proper use of `Effect.tryPromise` for external calls
+- Add `override` modifiers where needed
 
 ## Implementation Notes
 
@@ -163,36 +193,46 @@ import { Something } from "@mirai-app/domain";
 export { Something } from "./entities/Something";
 ```
 
-**Fixing Error Class Modifiers:**
+**Fixing Error Class Modifiers (Data.TaggedError):**
 
 ```typescript
 // BEFORE:
-class ValidationError extends DomainError {
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string;
+  message: string;
+}> {
   readonly _tag = "ValidationError"; // Error: missing override
 }
 
 // AFTER:
-class ValidationError extends DomainError {
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string;
+  message: string;
+}> {
   override readonly _tag = "ValidationError";
 }
 ```
 
-**Fixing Controller DTOs:**
+**Fixing Controller DTOs for Effect:**
 
 ```typescript
-// BEFORE:
+// BEFORE (expecting direct value):
 async create(input: CreateUserInput): Promise<User> {
   const result = await useCase.execute(input);
-  // Type mismatch: result is Result<User, Error>, not User
+  // Type mismatch: result is Effect<User, Error>, not User
 }
 
-// AFTER:
+// AFTER (handling Effect):
 async create(input: CreateUserInput): Promise<User> {
-  const result = await useCase.execute(input);
-  if (result.kind === "err") {
-    throw new HTTPError(result.error);
-  }
-  return result.value; // Now correctly returns User
+  const program = useCase.execute(input);
+  const result = await Effect.runPromise(
+    program.pipe(
+      Effect.catchTag("NotFoundError", (error) => {
+        throw new HTTPError(404, error.message);
+      })
+    )
+  );
+  return result;
 }
 ```
 
@@ -208,7 +248,7 @@ async create(input: CreateUserInput): Promise<User> {
 
 - `services/notification-service.ts`
 
-### Controllers
+### Controllers (Effect error handling)
 
 - `controllers/coin.ts`
 - `controllers/user.ts`
@@ -222,11 +262,11 @@ async create(input: CreateUserInput): Promise<User> {
 - `mappers/index.ts` (exports)
 - Individual mapper files
 
-### Errors
+### Errors (Data.TaggedError)
 
 - `errors/adapter-errors.ts`
 
-### Modules
+### Modules (Effect DI)
 
 - `modules/ControllerModule.ts`
 - `modules/RepositoryModule.ts`
@@ -234,33 +274,36 @@ async create(input: CreateUserInput): Promise<User> {
 
 ## Estimated Effort
 
-| Phase           | Errors | Duration       | Complexity |
-| --------------- | ------ | -------------- | ---------- |
-| Dependencies    | ~15    | 1-2 hours      | Low        |
-| Error classes   | ~5     | 30 min         | Low        |
-| Controller DTOs | ~10    | 1-2 hours      | Medium     |
-| Mappers         | ~20    | 2-3 hours      | Medium     |
-| Repositories    | ~13    | 1-2 hours      | Medium     |
-| Verification    | -      | 1 hour         | Low        |
-| **Total**       | **63** | **7-11 hours** |            |
+| Phase                    | Errors | Duration       | Complexity |
+| ------------------------ | ------ | -------------- | ---------- |
+| Dependencies             | ~15    | 1-2 hours      | Low        |
+| Error classes (override) | ~5     | 30 min         | Low        |
+| Controller DTOs (Effect) | ~10    | 1-2 hours      | Medium     |
+| Effect error handling    | ~15    | 1-2 hours      | Medium     |
+| Mappers                  | ~20    | 2-3 hours      | Medium     |
+| Repositories (Effect)    | ~13    | 1-2 hours      | Medium     |
+| Verification             | -      | 1 hour         | Low        |
+| **Total**                | **63** | **8-12 hours** |            |
 
 ## Dependencies
 
 - ✅ Domain layer exports (verify all needed types exported)
-- ✅ Use-cases layer exports (verify ports and DTOs)
-- ⬜ Use case Result refactor (may eliminate some errors)
+- ✅ Use-cases layer exports (verify ports and DTOs use Effect)
+- ⬜ Use case Effect refactor (may eliminate some errors)
+- ✅ Effect framework established (`Effect.runPromise`, `Effect.catchTag`)
 
 ## Success Metrics
 
-| Metric                   | Before | Target |
-| ------------------------ | ------ | ------ |
-| TypeScript errors        | 63     | 0      |
-| Module resolution errors | ~15    | 0      |
-| Error class errors       | ~5     | 0      |
-| Controller DTO errors    | ~10    | 0      |
-| Mapper errors            | ~20    | 0      |
-| Repository errors        | ~13    | 0      |
-| Test pass rate           | TBD    | 100%   |
+| Metric                            | Before  | Target |
+| --------------------------------- | ------- | ------ |
+| TypeScript errors                 | 63      | 0      |
+| Module resolution errors          | ~15     | 0      |
+| Error class modifier errors       | ~5      | 0      |
+| Controller DTO errors             | ~10     | 0      |
+| Mapper errors                     | ~20     | 0      |
+| Repository errors                 | ~13     | 0      |
+| Test pass rate                    | TBD     | 100%   |
+| Controllers using Effect.catchTag | Partial | 100%   |
 
 ## Verification Steps
 
@@ -292,4 +335,4 @@ async create(input: CreateUserInput): Promise<User> {
 
 **Next Step:** Use `/sdd:implement` or execute phases sequentially.
 
-**Note:** This task may become easier after completing the "Refactor 13 Throwing Use Cases" task, as that will align controller expectations with actual use case return types.
+**Note:** This task aligns with the Effect migration on `new_tech_stack` branch. Ensure coordination to avoid conflicts.

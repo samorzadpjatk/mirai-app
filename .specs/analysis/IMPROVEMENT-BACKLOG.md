@@ -23,14 +23,27 @@
 
 ## Medium Effort (1-4 hours, High Impact)
 
-### M1: Standardize Test Mock Factories
+### M1: Standardize Test Mock Factories ✅ COMPLETE
 
 **Location:** Various `__tests__/` directories  
 **Observation:** Tests create mock entities with repetitive boilerplate  
-**Example:** `UserId.create("550e8400-e29b-41d4-a716-446655440000")` appears 81+ times  
-**Solution:** Create `test-utils/mock-factories.ts` with pre-built test entities  
-**Effort:** 2-3 hours  
-**Status:** 📋 Identified
+**Example:** `UserId.create("550e8400-e29b-41d4-a716-446655440000")` appears 67+ times  
+**Solution:** Created `packages/domain/src/utils/mock-factories.ts` with pre-built test entities  
+**Delivered:**
+
+- `Mocks.user()` - Pre-built user with ID, email, name
+- `Mocks.admin()` - Admin with role
+- `Mocks.moderator()` - Moderator with role
+- `Mocks.users(n)` - Multiple users with sequential IDs
+- `Mocks.trip()` - Pre-built trip
+- `Mocks.group()` - Pre-built group
+- `Mocks.challenge()` - Pre-built challenge
+- `Mocks.userId(), Mocks.adminId(), etc.` - Quick ID shortcuts
+
+**Usage:** `import { Mocks } from "@mirai-app/domain"`
+**Tests:** 7 passing tests for factory functions
+**Effort:** 15 min  
+**Status:** ✅ **COMPLETE - PDCA Cycle 9**
 
 ### M2: Archive Obsolete Branches ✅ COMPLETE
 
@@ -157,6 +170,43 @@
 | 6     | Improvement backlog          | Living document         | 2026-04-14 |
 | 7     | Test UUID consolidation      | 24 named constants      | 2026-04-14 |
 | 8     | Branch cleanup               | 7 → 3 branches          | 2026-04-14 |
+| 9     | Mock factories               | 8 factory functions     | 2026-04-14 |
+
+---
+
+## Effect-Aligned Tasks Ready for Implementation 🚀
+
+Three major tasks have been updated to align with the **Effect framework** architecture:
+
+### Task 1: Simplify Domain Entities
+
+**File:** `.specs/tasks/todo/simplify-domain-entities.task.md`  
+**Status:** ✅ Updated for Effect  
+**Key Changes:**
+
+- Validation framework uses `Effect.Effect<T, ValidationError, never>`
+- Entity factories return Effect instead of Result
+- Error handling uses `Data.TaggedError` with `Effect.fail/Effect.succeed`
+
+### Task 2: Refactor Use Cases to Effect<T,E,R>
+
+**File:** `.specs/tasks/todo/refactor-use-cases-to-result.task.md`  
+**Status:** ✅ Updated for Effect  
+**Key Changes:**
+
+- Return type: `Effect.Effect<Output, Error, Dependencies>`
+- Pattern: `Effect.gen` with `yield* Effect.fail()`
+- Controllers use `Effect.runPromise` with `Effect.catchTag`
+
+### Task 3: Fix Adapters Type Errors
+
+**File:** `.specs/tasks/todo/fix-adapters-type-errors.task.md`  
+**Status:** ✅ Updated for Effect  
+**Key Changes:**
+
+- Error classes need `override` modifier for `_tag`
+- Controllers align with Effect-based use case outputs
+- Effect error handling patterns in all controllers
 
 ---
 

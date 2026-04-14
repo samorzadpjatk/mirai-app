@@ -395,10 +395,40 @@ Phase 3 (After above):
 | 6     | Improvement backlog | Living doc     | 10 min |
 | 7     | Test UUIDs          | 24 constants   | 15 min |
 | 8     | Branch cleanup      | 7 → 3 branches | 5 min  |
+| 9     | Mock factories      | 8 functions    | 15 min |
 
-**Total:** 105 minutes, ~3,000+ lines of waste eliminated, 3 tasks ready, clean repository
+**Total:** 120 minutes, ~3,000+ lines of waste eliminated, mock utilities, 3 tasks ready, clean repository
 
-**Status:** ✅ All 8 PDCA cycles complete
+**Status:** ✅ All 9 PDCA cycles complete
+
+---
+
+## Cycle 9: Standardize Test Mock Factories
+
+### Plan
+
+**Problem:** 67+ repetitive `UserId.create(...)` calls in tests  
+**Hypothesis:** Factory functions can reduce to ~10 named mocks
+
+### Do
+
+- Created `mock-factories.ts` with 8 factory functions:
+  - `Mocks.user()`, `Mocks.admin()`, `Mocks.moderator()`
+  - `Mocks.users(n)`, `Mocks.trip()`, `Mocks.group()`, `Mocks.challenge()`
+  - `Mocks.userId()`, `Mocks.adminId()`, etc.
+- Exported from `@mirai-app/domain`
+- Created 7 passing tests for factories
+
+### Check
+
+| Metric            | Before | After        |
+| ----------------- | ------ | ------------ |
+| Factory functions | 0      | 8            |
+| Tests passing     | 815    | 822 (+7 new) |
+
+### Act
+
+**Result:** Mock factories ready to replace 67+ repetitive calls
 
 ---
 
@@ -426,3 +456,47 @@ Phase 3 (After above):
 ### Act
 
 **Result:** Clean branch structure with only active work preserved
+
+---
+
+## Summary: 9 PDCA Cycles Complete
+
+| Cycle | Target                      | Result         | Time   |
+| ----- | --------------------------- | -------------- | ------ |
+| 1     | ID value object duplication | 78% reduction  | 45 min |
+| 2     | Spike tests                 | 71% reduction  | 10 min |
+| 3     | Plans inventory             | 67% reduction  | 5 min  |
+| 4     | Migration plans             | Unified        | 10 min |
+| 5     | Documentation               | Complete       | 5 min  |
+| 6     | Backlog                     | Living doc     | 10 min |
+| 7     | Test UUIDs                  | 24 constants   | 15 min |
+| 8     | Branch cleanup              | 7 → 3 branches | 5 min  |
+| 9     | Mock factories              | 8 functions    | 15 min |
+
+**Total:** 120 minutes (2 hours), ~3,000+ lines of waste eliminated
+
+---
+
+## 🚀 Effect-Aligned Tasks Ready
+
+Three major implementation tasks have been **updated to align with the Effect framework**:
+
+1. **Simplify Domain Entities** (`Effect.Effect<T, E, never>`)
+2. **Refactor Use Cases** (`Effect.Effect<T, E, R>` with `Effect.gen`)
+3. **Fix Adapters Type Errors** (`Effect.catchTag`, `override` modifiers)
+
+All tasks now reflect the `new_tech_stack` branch Effect architecture.
+
+**Execute with:**
+
+```bash
+/sdd:implement .specs/tasks/todo/simplify-domain-entities.task.md
+/sdd:implement .specs/tasks/todo/refactor-use-cases-to-result.task.md
+/sdd:implement .specs/tasks/todo/fix-adapters-type-errors.task.md
+```
+
+---
+
+**Status:** ✅ All 9 PDCA cycles complete  
+**Result:** Major waste eliminated, Effect-aligned tasks ready, clean repository  
+**Next Step:** Execute implementation tasks! 🚀

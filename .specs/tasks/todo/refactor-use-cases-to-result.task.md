@@ -1,37 +1,37 @@
 ---
-title: "Refactor 13 Throwing Use Cases to Result<T,E>"
+title: "Refactor 13 Throwing Use Cases to Effect<T,E,R>"
 type: task
 status: ready
 priority: high
 created: "2026-04-14"
-source_plan: ".specs/plans/use-case-result-refactor.design.md"
+updated: "2026-04-14"
 ---
 
 ## Initial Request
 
-Convert the "Use Case Result<T,E> Refactoring" design into an implementation task. Refactor 13 throwing use cases to return `Result<T,E>` types, resolving type errors in the adapters package.
+Refactor 13 throwing use cases to use `Effect<T,E,R>` pattern, aligning with the Effect framework migration. This resolves type errors and standardizes error handling across the use-cases layer.
 
 ## Description
 
 ### Why This is Needed
 
-Currently 13 use cases throw exceptions while 75+ use cases return `Result<T,E>`. This creates:
+Currently 13 use cases throw exceptions while the majority use Effect-based patterns. This creates:
 
-- Type mismatches between controllers expecting `Result<T,E>` and use cases throwing
-- Inconsistent error handling patterns across the codebase
-- Controllers must handle both exception catching AND result checking
+- Type mismatches between controllers and use cases
+- Inconsistent error handling (exceptions vs Effect failures)
 - Violates Clean Architecture principles (exceptions leak across boundaries)
+- Blocks full adoption of Effect framework benefits
 
 ### What This Accomplishes
 
-**Target outcome:** Uniform error handling across all 88+ use cases
+**Target outcome:** All use cases use unified `Effect<T,E,R>` pattern
 
 **Key deliverables:**
 
-1. **13 use cases refactored** from throwing to Result-based
-2. **7 controllers updated** to use consistent result handling pattern
+1. **13 use cases refactored** from throwing to Effect-based
+2. **7 controllers updated** to use Effect error handling
 3. **~370 type errors eliminated** in adapters package
-4. **Single error handling pattern** (`result.kind === "err"`)
+4. **Unified pattern** (`Effect.fail()` + `Effect.succeed()`)
 
 ### Scope Boundaries
 
@@ -39,12 +39,12 @@ Currently 13 use cases throw exceptions while 75+ use cases return `Result<T,E>`
 
 - Refactor 13 throwing use cases in `packages/use-cases/src/interactors/`
 - Update 7 controllers in `packages/adapters/src/controllers/`
-- Convert exceptions to DomainError returns
-- Ensure all use cases follow same Result pattern
+- Convert exceptions to `Effect.fail()` with `Data.TaggedError`
+- Ensure all use cases follow Effect pattern
 
 **OUT of Scope:**
 
-- Changes to domain layer entities
+- Changes to domain layer entities (already Effect-based)
 - Changes to adapter gateways/repositories
 - Database schema changes
 - API contract changes (external)
@@ -53,22 +53,21 @@ Currently 13 use cases throw exceptions while 75+ use cases return `Result<T,E>`
 
 ### Functional Criteria
 
-- [ ] `AddCoins.ts` returns `Result<AddCoinsOutput, DomainError>`
-- [ ] `RemoveCoins.ts` returns `Result<RemoveCoinsOutput, DomainError>`
-- [ ] `CreateChallenge.ts` returns `Result<Challenge, DomainError>`
-- [ ] `CreateUser.ts` returns `Result<User, DomainError>`
-- [ ] `UpdateUser.ts` returns `Result<User, DomainError>`
-- [ ] `GetUser.ts` returns `Result<User | null, DomainError>`
-- [ ] `CreateGroup.ts` returns `Result<Group, DomainError>`
-- [ ] `UpdateGroup.ts` returns `Result<Group, DomainError>`
-- [ ] `GetGroup.ts` returns `Result<Group | null, DomainError>`
-- [ ] `PurchaseReward.ts` returns `Result<RewardPurchase, DomainError>`
-- [ ] `GetChallenge.ts` returns `Result<Challenge | null, DomainError>`
-- [ ] `SubmitVotes.ts` returns `Result<VoteSubmission, DomainError>`
-- [ ] `ForceEndVoting.ts` returns `Result<Challenge, DomainError>`
-- [ ] All 7 controllers use `result.kind === "err"` pattern uniformly
-- [ ] All controllers import `{ Result, ok, err }` from domain
-- [ ] No use case throws exceptions (all return Results)
+- [ ] `AddCoins.ts` returns `Effect.Effect<AddCoinsOutput, DomainError, Dependencies>`
+- [ ] `RemoveCoins.ts` returns `Effect.Effect<RemoveCoinsOutput, DomainError, Dependencies>`
+- [ ] `CreateChallenge.ts` returns `Effect.Effect<Challenge, DomainError, Dependencies>`
+- [ ] `CreateUser.ts` returns `Effect.Effect<User, DomainError, Dependencies>`
+- [ ] `UpdateUser.ts` returns `Effect.Effect<User, DomainError, Dependencies>`
+- [ ] `GetUser.ts` returns `Effect.Effect<User | null, DomainError, Dependencies>`
+- [ ] `CreateGroup.ts` returns `Effect.Effect<Group, DomainError, Dependencies>`
+- [ ] `UpdateGroup.ts` returns `Effect.Effect<Group, DomainError, Dependencies>`
+- [ ] `GetGroup.ts` returns `Effect.Effect<Group | null, DomainError, Dependencies>`
+- [ ] `PurchaseReward.ts` returns `Effect.Effect<RewardPurchase, DomainError, Dependencies>`
+- [ ] `GetChallenge.ts` returns `Effect.Effect<Challenge | null, DomainError, Dependencies>`
+- [ ] `SubmitVotes.ts` returns `Effect.Effect<VoteSubmission, DomainError, Dependencies>`
+- [ ] `ForceEndVoting.ts` returns `Effect.Effect<Challenge, DomainError, Dependencies>`
+- [ ] All controllers use `Effect.runPromise` with error handling
+- [ ] No use case throws exceptions (all use `Effect.fail()`)
 
 ### Quality Criteria
 
@@ -76,7 +75,7 @@ Currently 13 use cases throw exceptions while 75+ use cases return `Result<T,E>`
 - [ ] All controller tests pass
 - [ ] No regression in type errors (adapters package)
 - [ ] Error messages remain user-friendly
-- [ ] No breaking changes to use case interfaces (except return type)
+- [ ] Proper use of `Data.TaggedError` for error types
 
 ## Architecture Overview
 
@@ -95,55 +94,67 @@ export class AddCoinsUseCase {
 }
 ```
 
-**Controllers handle exceptions:**
-
-```typescript
-// Some controllers catch exceptions
-// Others expect Result and do result.kind check
-// Inconsistent patterns create type errors
-```
-
 ### Target State
 
-**Result-based use cases (all 88+ files):**
+**Effect-based use cases (all files):**
 
 ```typescript
 export class AddCoinsUseCase {
-  async execute(
+  execute(
     input: AddCoinsInput,
-  ): Promise<Result<AddCoinsOutput, DomainError>> {
-    if (!groupCheck.exists) {
-      return err(DomainError.notFound("Group", "Group not found"));
-    }
-    return ok({ transaction });
+  ): Effect.Effect<
+    AddCoinsOutput,
+    DomainError,
+    CoinRepository | GroupRepository
+  > {
+    return Effect.gen(function* () {
+      const groupRepo = yield* GroupRepository;
+      const coinRepo = yield* CoinRepository;
+
+      const group = yield* groupRepo.findById(input.groupId);
+      if (!group) {
+        return yield* Effect.fail(
+          new NotFoundError({ entity: "Group", id: input.groupId }),
+        );
+      }
+
+      const transaction = yield* coinRepo.addCoins(input);
+      return transaction;
+    });
   }
 }
 ```
 
-**Controllers use single pattern:**
+**Controller pattern:**
 
 ```typescript
-const result = await useCase.execute(input);
-if (result.kind === "err") {
-  // Handle error
-  return errorResponse(result.error);
-}
-// Use result.value
-return successResponse(result.value);
+// In controller:
+const program = useCase.execute(input);
+
+const result = await Effect.runPromise(
+  program.pipe(
+    Effect.catchTag("NotFoundError", (error) => {
+      throw new HTTPError(404, error.message);
+    }),
+    Effect.catchTag("ValidationError", (error) => {
+      throw new HTTPError(400, error.message);
+    }),
+  ),
+);
 ```
 
 ### Migration Strategy
 
 1. **Phase 1: Update use cases** (can be parallel per use case)
-   - Convert each throwing use case to Result-based
-   - Replace `throw` with `return err()`
-   - Wrap success with `ok()`
-   - Update return type annotations
+   - Convert each throwing use case to Effect-based
+   - Replace `throw` with `yield* Effect.fail()`
+   - Wrap success with `Effect.succeed()` or implicit return
+   - Update return type to `Effect.Effect<T, E, R>`
 
 2. **Phase 2: Update controllers** (sequential - depends on Phase 1)
-   - Remove try/catch blocks where only use case errors caught
-   - Use `result.kind === "err"` pattern uniformly
-   - Import `Result` types from domain
+   - Remove try/catch blocks
+   - Use `Effect.runPromise` with `Effect.catchTag`
+   - Handle errors at system boundaries
 
 3. **Phase 3: Verify** (after both phases)
    - Run full test suite
@@ -151,15 +162,6 @@ return successResponse(result.value);
    - Verify type consistency
 
 ## Implementation Notes
-
-### From Source Plan
-
-See `.specs/plans/use-case-result-refactor.design.md` for:
-
-- Per-use-case transformation examples
-- Controller update patterns
-- Error mapping specifications
-- Test update guidance
 
 ### Key Patterns
 
@@ -171,15 +173,25 @@ async execute(input: AddCoinsInput): Promise<AddCoinsOutput> {
   if (!valid) {
     throw AppError.notFound({ entity: "X", message: "Y" });
   }
-  return output;
+  const result = await this.repo.save(data);
+  return result;
 }
 
-// AFTER (Result-based):
-async execute(input: AddCoinsInput): Promise<Result<AddCoinsOutput, DomainError>> {
-  if (!valid) {
-    return err(DomainError.notFound("X", "Y"));
-  }
-  return ok(output);
+// AFTER (Effect-based):
+execute(input: AddCoinsInput): Effect.Effect<
+  AddCoinsOutput,
+  DomainError,
+  Repository
+> {
+  return Effect.gen(function* () {
+    if (!valid) {
+      return yield* Effect.fail(
+        new NotFoundError({ entity: "X", id: input.id })
+      );
+    }
+    const result = yield* repo.save(data);
+    return result;
+  });
 }
 ```
 
@@ -194,22 +206,36 @@ try {
   return errorResponse(error);
 }
 
-// AFTER (Result pattern):
-const result = await useCase.execute(input);
-if (result.kind === "err") {
-  return errorResponse(result.error);
-}
-return success(result.value);
+// AFTER (Effect error handling):
+const program = useCase.execute(input);
+const result = await Effect.runPromise(
+  program.pipe(
+    Effect.catchTag("NotFoundError", (error) => {
+      throw new HTTPError(404, error.message);
+    }),
+    Effect.catchTag("ValidationError", (error) => {
+      throw new HTTPError(400, error.message);
+    }),
+  ),
+);
+return success(result);
 ```
 
-### Error Mapping
+### Error Types
 
-| Old Exception             | New DomainError                          |
-| ------------------------- | ---------------------------------------- |
-| `AppError.notFound()`     | `DomainError.notFound(entity, message)`  |
-| `AppError.validation()`   | `DomainError.validation(field, message)` |
-| `AppError.conflict()`     | `DomainError.conflict(message)`          |
-| `AppError.unauthorized()` | `DomainError.unauthorized(message)`      |
+Use existing `Data.TaggedError` pattern:
+
+```typescript
+export class NotFoundError extends Data.TaggedError("NotFoundError")<{
+  entity: string;
+  id: string;
+}> {}
+
+export class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string;
+  message: string;
+}> {}
+```
 
 ## Files to Modify
 
@@ -256,28 +282,23 @@ packages/adapters/src/controllers/
 
 ## Dependencies
 
-- ✅ Unified error hierarchy (already created)
-- ✅ Domain errors exported from `@mirai-app/domain`
-- ⬜ Should complete after domain simplification (optional)
+- ✅ Domain layer already using Effect
+- ✅ Error types defined with `Data.TaggedError`
+- ✅ `Effect.runPromise` pattern established in controllers
+- ⬜ Repository ports need to be Effect-based
 
 ## Success Metrics
 
 | Metric                    | Before | Target |
 | ------------------------- | ------ | ------ |
 | Throwing use cases        | 13     | 0      |
-| Result-based use cases    | 75+    | 88+    |
+| Effect-based use cases    | 75+    | 88+    |
 | Controller error patterns | 2+     | 1      |
 | Adapters type errors      | ~370   | 0      |
 | Test pass rate            | 100%   | 100%   |
 
-## Risk Assessment
-
-| Risk                        | Likelihood | Impact | Mitigation                          |
-| --------------------------- | ---------- | ------ | ----------------------------------- |
-| Breaking controller changes | Medium     | High   | Update all 7 controllers in same PR |
-| Test failures               | Low        | Medium | Tests should remain compatible      |
-| Error message changes       | Low        | Low    | Keep same error messages            |
-
 ---
 
-**Next Step:** Use `/sdd:implement` to execute this task.
+**Next Step:** Use `/sdd:implement` to execute this task with sub-agent orchestration.
+
+**Note:** This task aligns with the Effect framework migration on `new_tech_stack` branch. Coordinate with that work to avoid conflicts.
