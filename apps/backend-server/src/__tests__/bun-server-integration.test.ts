@@ -8,28 +8,31 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { Layer } from "effect";
 import {
   createBunServer,
   type BunServer,
   getActiveWebSocketCount,
 } from "../bun-server";
 import { honoConfig } from "../config/hono-config";
+import { createTestLayer } from "@mirai-app/frameworks/di";
 
 // =============================================================================
 // Test Configuration - Use a single server instance for all tests
 // to avoid port conflicts
 // =============================================================================
 
-const TEST_PORT = 9998;
 const TEST_HOST = "127.0.0.1";
 
-const testConfig = {
-  ...honoConfig,
-  port: TEST_PORT,
-  host: TEST_HOST,
-  enableLogging: false,
-  enableGraphiQL: false,
-};
+function getTestConfig() {
+  return {
+    ...honoConfig,
+    port: 0, // Use port 0 for dynamic port allocation
+    host: TEST_HOST,
+    enableLogging: false,
+    enableGraphiQL: false,
+  };
+}
 
 // =============================================================================
 // Tests
@@ -37,10 +40,15 @@ const testConfig = {
 
 describe("[INTEGRATION] Bun Server", () => {
   let server: BunServer;
+  let currentPort: number;
+  let testLayer: Layer.Layer<unknown>;
 
   beforeAll(async () => {
-    server = createBunServer(testConfig);
+    const config = getTestConfig();
+    testLayer = createTestLayer();
+    server = createBunServer(config, testLayer);
     await server.start();
+    currentPort = server.getPort();
     // Give server time to fully start
     await new Promise((r) => setTimeout(r, 100));
   });
@@ -64,7 +72,7 @@ describe("[INTEGRATION] Bun Server", () => {
 
   describe("[UNIT] HTTP Endpoints", () => {
     it("GET / returns API info", async () => {
-      const response = await fetch(`http://${TEST_HOST}:${TEST_PORT}/`);
+      const response = await fetch(`http://${TEST_HOST}:${currentPort}/`);
       expect(response.status).toBe(200);
 
       const data = await response.json();
@@ -74,7 +82,7 @@ describe("[INTEGRATION] Bun Server", () => {
     });
 
     it("GET /health returns healthy status", async () => {
-      const response = await fetch(`http://${TEST_HOST}:${TEST_PORT}/health`);
+      const response = await fetch(`http://${TEST_HOST}:${currentPort}/health`);
       expect(response.status).toBe(200);
 
       const data = await response.json();
@@ -85,7 +93,7 @@ describe("[INTEGRATION] Bun Server", () => {
 
     it("GET /graphql/health returns schema status", async () => {
       const response = await fetch(
-        `http://${TEST_HOST}:${TEST_PORT}/graphql/health`,
+        `http://${TEST_HOST}:${currentPort}/graphql/health`,
       );
       expect(response.status).toBe(200);
 
@@ -99,13 +107,16 @@ describe("[INTEGRATION] Bun Server", () => {
         query: "{ __schema { queryType { name } } }",
       };
 
-      const response = await fetch(`http://${TEST_HOST}:${TEST_PORT}/graphql`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `http://${TEST_HOST}:${currentPort}/graphql`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(query),
         },
-        body: JSON.stringify(query),
-      });
+      );
 
       expect(response.status).toBe(200);
       const data = await response.json();
@@ -117,13 +128,16 @@ describe("[INTEGRATION] Bun Server", () => {
         query: "{ __typename }",
       };
 
-      const response = await fetch(`http://${TEST_HOST}:${TEST_PORT}/graphql`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `http://${TEST_HOST}:${currentPort}/graphql`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(query),
         },
-        body: JSON.stringify(query),
-      });
+      );
 
       expect(response.status).toBe(200);
       const data = await response.json();
@@ -134,13 +148,13 @@ describe("[INTEGRATION] Bun Server", () => {
   describe("[UNIT] WebSocket Support", () => {
     it("GET /graphql/ws returns 426 without upgrade header", async () => {
       const response = await fetch(
-        `http://${TEST_HOST}:${TEST_PORT}/graphql/ws`,
+        `http://${TEST_HOST}:${currentPort}/graphql/ws`,
       );
       expect(response.status).toBe(426);
     });
 
     it("WebSocket connection can be established", async () => {
-      const ws = new WebSocket(`ws://${TEST_HOST}:${TEST_PORT}/graphql/ws`);
+      const ws = new WebSocket(`ws://${TEST_HOST}:${currentPort}/graphql/ws`);
 
       const connected = await new Promise<boolean>((resolve) => {
         ws.onopen = () => resolve(true);
@@ -153,7 +167,7 @@ describe("[INTEGRATION] Bun Server", () => {
     });
 
     it("WebSocket responds with error without auth", async () => {
-      const ws = new WebSocket(`ws://${TEST_HOST}:${TEST_PORT}/graphql/ws`);
+      const ws = new WebSocket(`ws://${TEST_HOST}:${currentPort}/graphql/ws`);
 
       await new Promise<void>((resolve, reject) => {
         ws.onopen = () => resolve();
@@ -180,7 +194,7 @@ describe("[INTEGRATION] Bun Server", () => {
 
     it("WebSocket tracks connection state", async () => {
       // Connection is established
-      const ws = new WebSocket(`ws://${TEST_HOST}:${TEST_PORT}/graphql/ws`);
+      const ws = new WebSocket(`ws://${TEST_HOST}:${currentPort}/graphql/ws`);
 
       const connected = await new Promise<boolean>((resolve, reject) => {
         ws.onopen = () => resolve(true);
@@ -197,13 +211,16 @@ describe("[INTEGRATION] Bun Server", () => {
 
   describe("[UNIT] Error Handling", () => {
     it("handles malformed GraphQL requests", async () => {
-      const response = await fetch(`http://${TEST_HOST}:${TEST_PORT}/graphql`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `http://${TEST_HOST}:${currentPort}/graphql`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: "{ invalid json",
         },
-        body: "{ invalid json",
-      });
+      );
 
       // Bun returns 400 for invalid JSON (correct behavior)
       expect(response.status).toBe(400);

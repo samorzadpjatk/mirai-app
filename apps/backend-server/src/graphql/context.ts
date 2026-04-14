@@ -199,6 +199,16 @@ export function createSimpleContextFactory(): (
       );
     }
 
+    // Get container from Hono context (if available - for test compatibility)
+    const container = honoContext.get("container") as
+      | import("@mirai-app/frameworks/di").AwilixContainer
+      | undefined;
+
+    // Get authContext from Hono context (if pre-resolved by middleware - for test compatibility)
+    const authContext = honoContext.get("authContext") as
+      | AuthContext
+      | undefined;
+
     // Create Effect runtime for this request
     const runtime = createGraphQLRuntime();
 
@@ -206,6 +216,8 @@ export function createSimpleContextFactory(): (
       appLayer,
       request: honoContext.req.raw,
       runtime,
+      ...(container ? { container } : {}),
+      ...(authContext ? { authContext } : {}),
     };
   };
 }

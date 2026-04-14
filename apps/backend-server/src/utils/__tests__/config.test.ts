@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test";
 
 // Set env vars BEFORE any imports (modules read env at load time)
+process.env.NODE_ENV = "development";
 process.env.HONO_SERVER_PORT = "3001";
 process.env.HONO_SERVER_HOST = "localhost";
 
