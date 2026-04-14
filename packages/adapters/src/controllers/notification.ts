@@ -1,13 +1,11 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { NotificationRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getNotificationUseCase,
   createNotificationUseCase,
   updateNotificationUseCase,
   deleteNotificationUseCase,
   scheduleNotificationUseCase,
-  NotificationRepositoryTag,
   type CreateNotificationInput,
   type UpdateNotificationInput,
   type DeleteNotificationInput,
@@ -27,10 +25,6 @@ import {
   ScheduleNotificationStateError,
 } from "@mirai-app/use-cases";
 import { NotificationStatus, NotificationPriority } from "@mirai-app/domain";
-import {
-  toEffectNotificationRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for notification controller
@@ -106,16 +100,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * NotificationController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
  *
- * Updated to use Effect-based use cases.
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class NotificationController {
-  constructor(private notificationRepository: NotificationRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a notification by ID
@@ -129,13 +148,10 @@ export class NotificationController {
       };
     }
 
-    const effectRepo = toEffectNotificationRepository(
-      this.notificationRepository,
-    );
     const effect = getNotificationUseCase({
       notificationId: parsed.data.id,
-    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -166,7 +182,7 @@ export class NotificationController {
       };
     }
 
-    const effect = this.notificationRepository
+    const effect = 
       .findByTripId(parsed.data.tripId)
       .pipe(
         Effect.map((notifications) =>
@@ -184,7 +200,7 @@ export class NotificationController {
         ),
       );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -217,9 +233,6 @@ export class NotificationController {
       };
     }
 
-    const effectRepo = toEffectNotificationRepository(
-      this.notificationRepository,
-    );
     const effect = createNotificationUseCase({
       title: parsed.data.title,
       body: parsed.data.body,
@@ -228,9 +241,9 @@ export class NotificationController {
       tripId: parsed.data.tripId,
       priority: parsed.data.priority as NotificationPriority,
       scheduledFor: parsed.data.scheduledFor,
-    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect, (result) => ({
+    return await runWithLayer(effect, (result) => ({
       id: result.id,
       title: result.title,
       body: result.body,
@@ -272,18 +285,15 @@ export class NotificationController {
       };
     }
 
-    const effectRepo = toEffectNotificationRepository(
-      this.notificationRepository,
-    );
     const effect = updateNotificationUseCase({
       notificationId: parsed.data.notificationId,
       title: parsed.data.title,
       body: parsed.data.body,
       url: parsed.data.url,
       priority: parsed.data.priority as NotificationPriority,
-    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect, (result) => ({
+    return await runWithLayer(effect, (result) => ({
       id: result.id,
       title: result.title,
       body: result.body,
@@ -320,15 +330,12 @@ export class NotificationController {
       };
     }
 
-    const effectRepo = toEffectNotificationRepository(
-      this.notificationRepository,
-    );
     const effect = updateNotificationUseCase({
       notificationId: parsed.data.notificationId,
       status: parsed.data.newStatus as NotificationStatus,
-    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect, (result) => ({
+    return await runWithLayer(effect, (result) => ({
       id: result.id,
       title: result.title,
       previousStatus: result.status, // The use case returns the updated entity
@@ -368,15 +375,12 @@ export class NotificationController {
       };
     }
 
-    const effectRepo = toEffectNotificationRepository(
-      this.notificationRepository,
-    );
     const effect = scheduleNotificationUseCase({
       notificationId: parsed.data.notificationId,
       scheduledFor: parsed.data.scheduledFor,
-    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -407,7 +411,7 @@ export class NotificationController {
       };
     }
 
-    const effect = this.notificationRepository
+    const effect = 
       .findAll({
         limit: parsed.data.limit,
         offset: parsed.data.offset,
@@ -428,7 +432,7 @@ export class NotificationController {
         ),
       );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -459,7 +463,7 @@ export class NotificationController {
       };
     }
 
-    const effect = this.notificationRepository
+    const effect = 
       .findByStatus(parsed.data.status as NotificationStatus)
       .pipe(
         Effect.map((notifications) => {
@@ -481,7 +485,7 @@ export class NotificationController {
         }),
       );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -512,7 +516,7 @@ export class NotificationController {
       };
     }
 
-    const effect = this.notificationRepository
+    const effect = 
       .findByPriority(parsed.data.priority as NotificationPriority)
       .pipe(
         Effect.map((notifications) => {
@@ -534,7 +538,7 @@ export class NotificationController {
         }),
       );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -557,7 +561,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const effect = this.notificationRepository.findReadyToSend().pipe(
+    const effect = .findReadyToSend().pipe(
       Effect.map((notifications) =>
         notifications.map((notification) => ({
           id: notification.id,
@@ -573,7 +577,7 @@ export class NotificationController {
       ),
     );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -595,7 +599,7 @@ export class NotificationController {
       }
     | { success: false; error: string }
   > {
-    const effect = this.notificationRepository.findOverdue().pipe(
+    const effect = .findOverdue().pipe(
       Effect.map((notifications) =>
         notifications.map((notification) => ({
           id: notification.id,
@@ -610,7 +614,7 @@ export class NotificationController {
       ),
     );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -631,14 +635,11 @@ export class NotificationController {
       };
     }
 
-    const effectRepo = toEffectNotificationRepository(
-      this.notificationRepository,
-    );
     const effect = deleteNotificationUseCase({
       notificationId: parsed.data.id,
-    }).pipe(Effect.provideService(NotificationRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect, (result) => ({
+    return await runWithLayer(effect, (result) => ({
       deleted: result.success,
       id: result.deletedNotificationId,
     }));

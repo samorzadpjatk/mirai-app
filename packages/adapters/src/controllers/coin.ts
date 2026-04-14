@@ -1,12 +1,10 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { CoinTransactionRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   addCoinsUseCase,
   removeCoinsUseCase,
   CoinTransactionRepositoryTag,
 } from "@mirai-app/use-cases";
-import { effectToControllerResult } from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for coin controller
@@ -47,13 +45,40 @@ type CoinResult =
   | { success: false; error: string };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * CoinController
  *
  * Handles coin operations (add/remove) with proper validation.
  * Delegates to use cases for business logic.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class CoinController {
-  constructor(private coinRepository: CoinTransactionRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   get schemas() {
     return schemas;
@@ -75,25 +100,34 @@ export class CoinController {
       amount: input.amount,
       reason: input.reason,
       adminId: input.adminId,
-    }).pipe(
-      Effect.provideService(CoinTransactionRepositoryTag, this.coinRepository),
-    );
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     if (result.success === false) {
-      return result;
+      return result as CoinResult;
     }
+
+    const data = result.data as {
+      transaction: {
+        id: string;
+        amount: number;
+        reason: string | null;
+        groupId: string;
+        adminId: string;
+        createdAt: Date;
+      };
+    };
 
     return {
       success: true,
       data: {
-        id: result.data.transaction.id,
-        amount: result.data.transaction.amount,
-        reason: result.data.transaction.reason ?? null,
-        groupId: result.data.transaction.groupId,
-        adminId: result.data.transaction.adminId,
-        createdAt: result.data.transaction.createdAt,
+        id: data.transaction.id,
+        amount: data.transaction.amount,
+        reason: data.transaction.reason ?? null,
+        groupId: data.transaction.groupId,
+        adminId: data.transaction.adminId,
+        createdAt: data.transaction.createdAt,
       },
     };
   }
@@ -114,25 +148,34 @@ export class CoinController {
       amount: input.amount,
       reason: input.reason,
       adminId: input.adminId,
-    }).pipe(
-      Effect.provideService(CoinTransactionRepositoryTag, this.coinRepository),
-    );
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     if (result.success === false) {
-      return result;
+      return result as CoinResult;
     }
+
+    const data = result.data as {
+      transaction: {
+        id: string;
+        amount: number;
+        reason: string | null;
+        groupId: string;
+        adminId: string;
+        createdAt: Date;
+      };
+    };
 
     return {
       success: true,
       data: {
-        id: result.data.transaction.id,
-        amount: result.data.transaction.amount,
-        reason: result.data.transaction.reason ?? null,
-        groupId: result.data.transaction.groupId,
-        adminId: result.data.transaction.adminId,
-        createdAt: result.data.transaction.createdAt,
+        id: data.transaction.id,
+        amount: data.transaction.amount,
+        reason: data.transaction.reason ?? null,
+        groupId: data.transaction.groupId,
+        adminId: data.transaction.adminId,
+        createdAt: data.transaction.createdAt,
       },
     };
   }

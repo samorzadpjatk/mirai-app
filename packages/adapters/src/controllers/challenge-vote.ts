@@ -1,10 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type {
-  ChallengeVoteRepository,
-  ChallengeRepository,
-  ChallengeSubmissionRepository,
-} from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getMyVotesUseCase,
   getVotesByChallengeUseCase,
@@ -14,19 +9,11 @@ import {
   submitVotesUseCase,
   forceEndVotingUseCase,
   ChallengeVoteRepositoryTag,
-  ChallengeRepositoryTag,
-  ChallengeSubmissionRepositoryTag,
   type VoteDTO,
   type ChallengeVoteDTO,
   type SubmissionVoteCount,
   type AdminVotingInfo,
 } from "@mirai-app/use-cases";
-import {
-  toEffectChallengeVoteRepository,
-  toEffectChallengeRepository,
-  toEffectChallengeSubmissionRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Event payload for challenge completion callback
@@ -98,17 +85,42 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * ChallengeVoteController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class ChallengeVoteController {
   constructor(
-    private voteRepository: ChallengeVoteRepository,
-    private challengeRepository: ChallengeRepository,
-    private submissionRepository: ChallengeSubmissionRepository,
+    private appLayer: Layer.Layer<unknown>,
     private onChallengeCompleted: (
       params: ChallengeCompletedEvent,
     ) => Promise<void>,
@@ -126,12 +138,11 @@ export class ChallengeVoteController {
       };
     }
 
-    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
     const effect = getMyVotesUseCase({
       challengeId: parsed.data.challengeId,
       voterId: parsed.data.voterId,
-    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -146,11 +157,10 @@ export class ChallengeVoteController {
       };
     }
 
-    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
     const effect = getVotesByChallengeUseCase({
       challengeId: parsed.data.challengeId,
-    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -165,11 +175,10 @@ export class ChallengeVoteController {
       };
     }
 
-    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
     const effect = getChallengeVotingProgressUseCase({
       challengeId: parsed.data.challengeId,
-    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -184,15 +193,14 @@ export class ChallengeVoteController {
       };
     }
 
-    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
     const effect = getJudgedStaffVotingProgressUseCase({
       challengeId: parsed.data.challengeId,
       tripId: parsed.data.tripId,
       adminParticipantIds: parsed.data.adminParticipantIds,
       requiredPositions: parsed.data.requiredPositions,
       eligibleSubmissionsCount: parsed.data.eligibleSubmissionsCount,
-    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -207,7 +215,6 @@ export class ChallengeVoteController {
       };
     }
 
-    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
     const effect = submitVoteUseCase({
       challengeId: parsed.data.challengeId,
       submissionId: parsed.data.submissionId,
@@ -216,8 +223,8 @@ export class ChallengeVoteController {
       points: parsed.data.points,
       normalizedWeight: parsed.data.normalizedWeight,
       allowPartial: parsed.data.allowPartial,
-    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -232,14 +239,13 @@ export class ChallengeVoteController {
       };
     }
 
-    const effectRepo = toEffectChallengeVoteRepository(this.voteRepository);
     const effect = submitVotesUseCase({
       challengeId: parsed.data.challengeId,
       voterId: parsed.data.voterId,
       votes: parsed.data.votes,
       requiredPositions: parsed.data.requiredPositions,
-    }).pipe(Effect.provideService(ChallengeVoteRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -254,12 +260,6 @@ export class ChallengeVoteController {
       };
     }
 
-    const voteRepo = toEffectChallengeVoteRepository(this.voteRepository);
-    const challengeRepo = toEffectChallengeRepository(this.challengeRepository);
-    const submissionRepo = toEffectChallengeSubmissionRepository(
-      this.submissionRepository,
-    );
-
     const effect = forceEndVotingUseCase(
       {
         challengeId: parsed.data.challengeId,
@@ -269,11 +269,7 @@ export class ChallengeVoteController {
       {
         onChallengeCompleted: this.onChallengeCompleted,
       },
-    ).pipe(
-      Effect.provideService(ChallengeVoteRepositoryTag, voteRepo),
-      Effect.provideService(ChallengeRepositoryTag, challengeRepo),
-      Effect.provideService(ChallengeSubmissionRepositoryTag, submissionRepo),
     );
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 }

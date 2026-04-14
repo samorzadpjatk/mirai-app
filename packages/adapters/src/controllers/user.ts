@@ -1,20 +1,12 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { UserRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getUserUseCase,
   createUserUseCase,
   updateUserUseCase,
-  type GetUserInput,
-  type CreateUserInput,
-  type UpdateUserInput,
   UserRepositoryTag,
 } from "@mirai-app/use-cases";
 import { UserRole } from "@mirai-app/domain";
-import {
-  toEffectUserRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for user controller
@@ -67,16 +59,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * UserController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
  *
- * Updated to use Effect-based use cases (Step 4.2).
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class UserController {
-  constructor(private userRepository: UserRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a user by ID
@@ -106,12 +123,25 @@ export class UserController {
       };
     }
 
-    const effectRepo = toEffectUserRepository(this.userRepository);
-    const effect = getUserUseCase({ userId: parsed.data.id }).pipe(
-      Effect.provideService(UserRepositoryTag, effectRepo),
-    );
+    const effect = getUserUseCase({ userId: parsed.data.id });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            authUserId: string;
+            firstName: string;
+            lastName: string;
+            fullName: string;
+            role: string;
+            hasAvatar: boolean;
+            createdAt: Date;
+            lastSeenOn: Date | null;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -141,15 +171,29 @@ export class UserController {
       };
     }
 
-    const effectRepo = toEffectUserRepository(this.userRepository);
     const effect = createUserUseCase({
       authUserId: parsed.data.authUserId,
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
       role: parsed.data.role as UserRole,
-    }).pipe(Effect.provideService(UserRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            authUserId: string;
+            firstName: string;
+            lastName: string;
+            fullName: string;
+            role: string;
+            hasAvatar: boolean;
+            createdAt: Date;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -179,15 +223,29 @@ export class UserController {
       };
     }
 
-    const effectRepo = toEffectUserRepository(this.userRepository);
     const effect = updateUserUseCase({
       userId: parsed.data.userId,
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
       hasAvatar: parsed.data.hasAvatar,
-    }).pipe(Effect.provideService(UserRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            authUserId: string;
+            firstName: string;
+            lastName: string;
+            fullName: string;
+            role: string;
+            hasAvatar: boolean;
+            updatedAt: Date;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -217,16 +275,16 @@ export class UserController {
       };
     }
 
-    const users = await Effect.runPromise(
-      this.userRepository.findAll({
+    const effect = Effect.gen(function* () {
+      const repo = yield* UserRepositoryTag;
+      return yield* repo.findAll({
         limit: parsed.data.limit,
         offset: parsed.data.offset,
-      }),
-    );
+      });
+    });
 
-    return {
-      success: true,
-      data: users.map((user) => ({
+    const result = await runWithLayer(effect, this.appLayer, (users) =>
+      users.map((user) => ({
         id: user.id,
         authUserId: user.authUserId,
         firstName: user.firstName,
@@ -236,6 +294,22 @@ export class UserController {
         hasAvatar: user.hasAvatar,
         createdAt: user.createdAt,
       })),
-    };
+    );
+
+    return result as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            authUserId: string;
+            firstName: string;
+            lastName: string;
+            fullName: string;
+            role: string;
+            hasAvatar: boolean;
+            createdAt: Date;
+          }>;
+        }
+      | { success: false; error: string };
   }
 }

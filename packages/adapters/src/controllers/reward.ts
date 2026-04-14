@@ -1,22 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type {
-  RewardRepository,
-  RewardPurchaseRepository,
-  TripPointsCalculator,
-  GroupCoinsService,
-  TripAccessChecker,
-  GetRewardOutput,
-  ListRewardsOutput,
-  CreateRewardOutput,
-  UpdateRewardOutput,
-  SetRewardHiddenOutput,
-  DeleteRewardOutput,
-  PurchaseRewardOutput,
-  UpdatePurchaseStatusOutput,
-  UpdateMyPurchaseStatusOutput,
-  GetPurchaseHistoryOutput,
-} from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getRewardUseCase,
   createRewardUseCase,
@@ -31,19 +14,8 @@ import {
 } from "@mirai-app/use-cases";
 import {
   RewardRepositoryTag,
-  RewardPurchaseRepositoryTag,
-  TripAccessCheckerTag,
   TripPointsCalculatorTag,
-  GroupCoinsServiceTag,
 } from "@mirai-app/use-cases";
-import {
-  toEffectRewardRepository,
-  toEffectRewardPurchaseRepository,
-  toEffectTripPointsCalculator,
-  toEffectGroupCoinsService,
-  toEffectTripAccessChecker,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 import type { RewardId } from "@mirai-app/domain";
 import { UserRole, RewardPurchaseStatus } from "@mirai-app/domain";
 
@@ -133,20 +105,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * RewardController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class RewardController {
-  constructor(
-    private rewardRepository: RewardRepository,
-    private purchaseRepository: RewardPurchaseRepository,
-    private pointsCalculator: TripPointsCalculator,
-    private coinsService: GroupCoinsService,
-    private accessChecker: TripAccessChecker,
-  ) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a reward by ID
@@ -166,9 +159,9 @@ export class RewardController {
 
     const program = getRewardUseCase({
       rewardId: parsed.data.id as RewardId,
-    }).pipe(Effect.provideService(RewardRepositoryTag, this.rewardRepository));
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -191,12 +184,9 @@ export class RewardController {
     const program = listRewardsUseCase({
       tripId: parsed.data.tripId,
       groupCoins: parsed.data.groupCoins,
-    }).pipe(
-      Effect.provideService(RewardRepositoryTag, this.rewardRepository),
-      Effect.provideService(TripPointsCalculatorTag, this.pointsCalculator),
-    );
+    }).pipe();
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -220,12 +210,9 @@ export class RewardController {
       tripId: parsed.data.tripId,
       includeHidden: true,
       pagination: parsed.data.pagination,
-    }).pipe(
-      Effect.provideService(RewardRepositoryTag, this.rewardRepository),
-      Effect.provideService(TripPointsCalculatorTag, this.pointsCalculator),
-    );
+    }).pipe();
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -255,12 +242,9 @@ export class RewardController {
       tripId: parsed.data.tripId,
       createdById: parsed.data.createdById,
       creatorRole: parsed.data.creatorRole,
-    }).pipe(
-      Effect.provideService(RewardRepositoryTag, this.rewardRepository),
-      Effect.provideService(TripAccessCheckerTag, this.accessChecker),
-    );
+    }).pipe();
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -287,9 +271,9 @@ export class RewardController {
       availableQuantity: parsed.data.availableQuantity,
       images: parsed.data.images,
       coinCostPercentage: parsed.data.coinCostPercentage,
-    }).pipe(Effect.provideService(RewardRepositoryTag, this.rewardRepository));
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -310,13 +294,12 @@ export class RewardController {
       };
     }
 
-    const effectRepo = toEffectRewardRepository(this.rewardRepository);
     const program = setRewardHiddenUseCase({
       rewardId: parsed.data.rewardId as RewardId,
       isHidden: parsed.data.isHidden,
-    }).pipe(Effect.provideService(RewardRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -338,9 +321,9 @@ export class RewardController {
 
     const program = deleteRewardUseCase({
       rewardId: parsed.data.rewardId as RewardId,
-    }).pipe(Effect.provideService(RewardRepositoryTag, this.rewardRepository));
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -361,29 +344,13 @@ export class RewardController {
       };
     }
 
-    const effectRewardRepo = toEffectRewardRepository(this.rewardRepository);
-    const effectPurchaseRepo = toEffectRewardPurchaseRepository(
-      this.purchaseRepository,
-    );
-    const effectPointsCalc = toEffectTripPointsCalculator(
-      this.pointsCalculator,
-    );
-    const effectCoinsService = toEffectGroupCoinsService(this.coinsService);
-    const effectAccessChecker = toEffectTripAccessChecker(this.accessChecker);
-
     const program = purchaseRewardUseCase({
       rewardId: parsed.data.rewardId as RewardId,
       quantity: parsed.data.quantity,
       userId: parsed.data.userId,
-    }).pipe(
-      Effect.provideService(RewardRepositoryTag, effectRewardRepo),
-      Effect.provideService(RewardPurchaseRepositoryTag, effectPurchaseRepo),
-      Effect.provideService(TripPointsCalculatorTag, effectPointsCalc),
-      Effect.provideService(GroupCoinsServiceTag, effectCoinsService),
-      Effect.provideService(TripAccessCheckerTag, effectAccessChecker),
-    );
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -409,17 +376,9 @@ export class RewardController {
       newStatus: parsed.data.status,
       updatedById: parsed.data.updatedById,
       collectionMethod: parsed.data.collectionMethod,
-    }).pipe(
-      Effect.provideService(RewardRepositoryTag, this.rewardRepository),
-      Effect.provideService(
-        RewardPurchaseRepositoryTag,
-        this.purchaseRepository,
-      ),
-      Effect.provideService(GroupCoinsServiceTag, this.coinsService),
-      Effect.provideService(TripAccessCheckerTag, this.accessChecker),
-    );
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -444,17 +403,9 @@ export class RewardController {
       purchaseId: parsed.data.purchaseId,
       newStatus: parsed.data.status,
       updatedById: parsed.data.userId,
-    }).pipe(
-      Effect.provideService(RewardRepositoryTag, this.rewardRepository),
-      Effect.provideService(
-        RewardPurchaseRepositoryTag,
-        this.purchaseRepository,
-      ),
-      Effect.provideService(GroupCoinsServiceTag, this.coinsService),
-      Effect.provideService(TripAccessCheckerTag, this.accessChecker),
-    );
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -466,11 +417,15 @@ export class RewardController {
     | { success: true; data: { totalPoints: number } }
     | { success: false; error: string }
   > {
-    const program = this.pointsCalculator
-      .calculateTotalAvailablePoints(input.tripId)
-      .pipe(Effect.map((totalPoints) => ({ totalPoints })));
+    const program = Effect.gen(function* () {
+      const calculator = yield* TripPointsCalculatorTag;
+      const totalPoints = yield* calculator.calculateTotalAvailablePoints(
+        input.tripId,
+      );
+      return { totalPoints };
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 
   /**
@@ -496,14 +451,8 @@ export class RewardController {
       userId: parsed.data.userId,
       isStaff: parsed.data.isStaff,
       pagination: parsed.data.pagination,
-    }).pipe(
-      Effect.provideService(
-        RewardPurchaseRepositoryTag,
-        this.purchaseRepository,
-      ),
-      Effect.provideService(TripAccessCheckerTag, this.accessChecker),
-    );
+    });
 
-    return await effectToControllerResult(program);
+    return await runWithLayer(program, this.appLayer);
   }
 }

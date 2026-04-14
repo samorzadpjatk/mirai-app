@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { ChallengeRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getChallengeUseCase,
   createChallengeUseCase,
@@ -9,17 +8,12 @@ import {
   type CreateChallengeInput,
   type UpdateChallengeInput,
   type UpdateChallengeStatusInput,
-  ChallengeRepositoryTag,
 } from "@mirai-app/use-cases";
 import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
 } from "@mirai-app/domain";
-import {
-  toEffectChallengeRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for challenge controller
@@ -160,16 +154,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * ChallengeController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
  *
- * Updated to use Effect-based use cases (Step 4.2).
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class ChallengeController {
-  constructor(private challengeRepository: ChallengeRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a challenge by ID
@@ -212,12 +231,9 @@ export class ChallengeController {
       };
     }
 
-    const effectRepo = toEffectChallengeRepository(this.challengeRepository);
-    const effect = getChallengeUseCase({ challengeId: parsed.data.id }).pipe(
-      Effect.provideService(ChallengeRepositoryTag, effectRepo),
-    );
+    const effect = getChallengeUseCase({ challengeId: parsed.data.id });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -248,7 +264,7 @@ export class ChallengeController {
       };
     }
 
-    const effect = this.challengeRepository
+    const effect = 
       .findByTripId(parsed.data.tripId)
       .pipe(
         Effect.map((challenges) =>
@@ -266,7 +282,7 @@ export class ChallengeController {
         ),
       );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -297,7 +313,6 @@ export class ChallengeController {
       };
     }
 
-    const effectRepo = toEffectChallengeRepository(this.challengeRepository);
     const effect = createChallengeUseCase({
       tripId: parsed.data.tripId,
       name: parsed.data.name,
@@ -319,9 +334,9 @@ export class ChallengeController {
       targetLongitude: parsed.data.targetLongitude,
       expectedValue: parsed.data.expectedValue,
       autoApprove: parsed.data.autoApprove,
-    }).pipe(Effect.provideService(ChallengeRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -351,7 +366,6 @@ export class ChallengeController {
       };
     }
 
-    const effectRepo = toEffectChallengeRepository(this.challengeRepository);
     const effect = updateChallengeUseCase({
       challengeId: parsed.data.challengeId,
       name: parsed.data.name,
@@ -369,9 +383,9 @@ export class ChallengeController {
       targetLongitude: parsed.data.targetLongitude,
       expectedValue: parsed.data.expectedValue,
       autoApprove: parsed.data.autoApprove,
-    }).pipe(Effect.provideService(ChallengeRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -399,13 +413,12 @@ export class ChallengeController {
       };
     }
 
-    const effectRepo = toEffectChallengeRepository(this.challengeRepository);
     const effect = updateChallengeStatusUseCase({
       challengeId: parsed.data.challengeId,
       newStatus: parsed.data.newStatus as ChallengeStatus,
-    }).pipe(Effect.provideService(ChallengeRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -436,7 +449,7 @@ export class ChallengeController {
       };
     }
 
-    const effect = this.challengeRepository
+    const effect = 
       .findAll({
         limit: parsed.data.limit,
         offset: parsed.data.offset,
@@ -457,7 +470,7 @@ export class ChallengeController {
         ),
       );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -488,7 +501,7 @@ export class ChallengeController {
       };
     }
 
-    const effect = this.challengeRepository
+    const effect = 
       .findByStatus(parsed.data.status as ChallengeStatus)
       .pipe(
         Effect.map((challenges) => {
@@ -510,7 +523,7 @@ export class ChallengeController {
         }),
       );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -533,7 +546,7 @@ export class ChallengeController {
       }
     | { success: false; error: string }
   > {
-    const effect = this.challengeRepository.findActive().pipe(
+    const effect = .findActive().pipe(
       Effect.map((challenges) =>
         challenges.map((challenge) => ({
           id: challenge.id,
@@ -549,7 +562,7 @@ export class ChallengeController {
       ),
     );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -572,7 +585,7 @@ export class ChallengeController {
       }
     | { success: false; error: string }
   > {
-    const effect = this.challengeRepository.findOpenForSubmission().pipe(
+    const effect = .findOpenForSubmission().pipe(
       Effect.map((challenges) =>
         challenges.map((challenge) => ({
           id: challenge.id,
@@ -588,6 +601,6 @@ export class ChallengeController {
       ),
     );
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 }

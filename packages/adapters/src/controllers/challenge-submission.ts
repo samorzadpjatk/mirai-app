@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { ChallengeSubmissionRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   createSubmissionUseCase,
   getSubmissionUseCase,
@@ -8,7 +7,6 @@ import {
   updateSubmissionUseCase,
   deleteSubmissionUseCase,
   listSubmissionsByChallengeUseCase,
-  ChallengeSubmissionRepositoryTag,
   type CreateSubmissionInput,
   type UpdateSubmissionInput,
   type GetSubmissionOutput,
@@ -18,10 +16,6 @@ import {
   type UpdateSubmissionOutput,
 } from "@mirai-app/use-cases";
 import { SubmissionId } from "@mirai-app/domain";
-import {
-  toEffectChallengeSubmissionRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Helper type to convert branded SubmissionId to string in DTOs
@@ -121,14 +115,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * ChallengeSubmissionController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class ChallengeSubmissionController {
-  constructor(private submissionRepository: ChallengeSubmissionRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a submission by ID
@@ -142,17 +163,15 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const effectRepo = toEffectChallengeSubmissionRepository(
-      this.submissionRepository,
-    );
     const effect = getSubmissionUseCase({
       submissionId: SubmissionId.unsafeCreate(parsed.data.submissionId),
-    }).pipe(
-      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
-    );
-    const result = await effectToControllerResult(effect);
+    });
+    const result = await runWithLayer(effect, this.appLayer);
     if (!result.success) return result;
-    return { success: true, data: convertDtoWithSubmissionId(result.data) };
+    return {
+      success: true,
+      data: convertDtoWithSubmissionId(result.data as GetSubmissionOutput),
+    };
   }
 
   /**
@@ -167,19 +186,16 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const effectRepo = toEffectChallengeSubmissionRepository(
-      this.submissionRepository,
-    );
     const effect = getSubmissionByChallengeAndGroupUseCase({
       challengeId: parsed.data.challengeId,
       groupId: parsed.data.groupId,
-    }).pipe(
-      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
-    );
-    const result = await effectToControllerResult(effect);
+    });
+    const result = await runWithLayer(effect, this.appLayer);
     if (!result.success) return result;
     const apiData = result.data
-      ? convertDtoWithSubmissionId(result.data)
+      ? convertDtoWithSubmissionId(
+          result.data as GetSubmissionByChallengeAndGroupOutput,
+        )
       : null;
     return { success: true, data: apiData };
   }
@@ -196,21 +212,19 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const effectRepo = toEffectChallengeSubmissionRepository(
-      this.submissionRepository,
-    );
     const effect = listSubmissionsByChallengeUseCase({
       challengeId: parsed.data.challengeId,
       orderBy: parsed.data.orderBy,
       orderDirection: parsed.data.orderDirection,
       limit: parsed.data.limit,
       offset: parsed.data.offset,
-    }).pipe(
-      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
-    );
-    const result = await effectToControllerResult(effect);
+    });
+    const result = await runWithLayer(effect, this.appLayer);
     if (!result.success) return result;
-    return { success: true, data: convertListOutput(result.data) };
+    return {
+      success: true,
+      data: convertListOutput(result.data as ListSubmissionsByChallengeOutput),
+    };
   }
 
   /**
@@ -225,10 +239,6 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const effectRepo = toEffectChallengeSubmissionRepository(
-      this.submissionRepository,
-    );
-
     const createInput: CreateSubmissionInput = {
       challengeId: parsed.data.challengeId,
       groupId: parsed.data.groupId,
@@ -239,12 +249,13 @@ export class ChallengeSubmissionController {
       longitude: parsed.data.longitude,
     };
 
-    const effect = createSubmissionUseCase(createInput).pipe(
-      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
-    );
-    const result = await effectToControllerResult(effect);
+    const effect = createSubmissionUseCase(createInput);
+    const result = await runWithLayer(effect, this.appLayer);
     if (!result.success) return result;
-    return { success: true, data: convertDtoWithSubmissionId(result.data) };
+    return {
+      success: true,
+      data: convertDtoWithSubmissionId(result.data as CreateSubmissionOutput),
+    };
   }
 
   /**
@@ -258,10 +269,6 @@ export class ChallengeSubmissionController {
         error: "Invalid input: " + parsed.error.message,
       };
     }
-
-    const effectRepo = toEffectChallengeSubmissionRepository(
-      this.submissionRepository,
-    );
 
     const updateInput: UpdateSubmissionInput = {
       submissionId: SubmissionId.unsafeCreate(parsed.data.submissionId),
@@ -278,12 +285,13 @@ export class ChallengeSubmissionController {
       ranking: parsed.data.ranking ?? undefined,
     };
 
-    const effect = updateSubmissionUseCase(updateInput).pipe(
-      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
-    );
-    const result = await effectToControllerResult(effect);
+    const effect = updateSubmissionUseCase(updateInput);
+    const result = await runWithLayer(effect, this.appLayer);
     if (!result.success) return result;
-    return { success: true, data: convertDtoWithSubmissionId(result.data) };
+    return {
+      success: true,
+      data: convertDtoWithSubmissionId(result.data as UpdateSubmissionOutput),
+    };
   }
 
   /**
@@ -298,14 +306,9 @@ export class ChallengeSubmissionController {
       };
     }
 
-    const effectRepo = toEffectChallengeSubmissionRepository(
-      this.submissionRepository,
-    );
     const effect = deleteSubmissionUseCase({
       submissionId: SubmissionId.unsafeCreate(parsed.data.submissionId),
-    }).pipe(
-      Effect.provideService(ChallengeSubmissionRepositoryTag, effectRepo),
-    );
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 }

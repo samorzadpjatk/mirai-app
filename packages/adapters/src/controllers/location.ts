@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { LocationRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   listLocationsUseCase,
   updateSharingSettingsUseCase,
@@ -12,7 +11,6 @@ import {
   updateLocationUseCase,
   LocationRepositoryTag,
 } from "@mirai-app/use-cases";
-import { effectToControllerResult } from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for location controller
@@ -107,14 +105,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * LocationController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class LocationController {
-  constructor(private locationRepository: LocationRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a location by user ID
@@ -151,11 +176,33 @@ export class LocationController {
       };
     }
 
-    const effect = getLocationUseCase({ userId: parsed.data.userId }).pipe(
-      Effect.provideService(LocationRepositoryTag, this.locationRepository),
-    );
+    const effect = getLocationUseCase({ userId: parsed.data.userId });
 
-    return await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
+
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            userId: string;
+            latitude: number | null;
+            longitude: number | null;
+            accuracy: number | null;
+            altitude: number | null;
+            altitudeAccuracy: number | null;
+            heading: number | null;
+            speed: number | null;
+            isSharingLocation: boolean;
+            timestamp: Date;
+            usersToShareWith: Array<{
+              id: string;
+              firstName: string | null;
+              lastName: string | null;
+            }>;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -199,11 +246,29 @@ export class LocationController {
       heading: parsed.data.heading,
       speed: parsed.data.speed,
       isSharingLocation: parsed.data.isSharingLocation,
-    }).pipe(
-      Effect.provideService(LocationRepositoryTag, this.locationRepository),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
+
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            userId: string;
+            latitude: number | null;
+            longitude: number | null;
+            accuracy: number | null;
+            isSharingLocation: boolean;
+            timestamp: Date;
+            usersToShareWith: Array<{
+              id: string;
+              firstName: string | null;
+              lastName: string | null;
+            }>;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -251,11 +316,33 @@ export class LocationController {
       heading: parsed.data.heading,
       speed: parsed.data.speed,
       isSharingLocation: parsed.data.isSharingLocation,
-    }).pipe(
-      Effect.provideService(LocationRepositoryTag, this.locationRepository),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
+
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            userId: string;
+            latitude: number | null;
+            longitude: number | null;
+            accuracy: number | null;
+            altitude: number | null;
+            altitudeAccuracy: number | null;
+            heading: number | null;
+            speed: number | null;
+            isSharingLocation: boolean;
+            timestamp: Date;
+            usersToShareWith: Array<{
+              id: string;
+              firstName: string | null;
+              lastName: string | null;
+            }>;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -297,11 +384,30 @@ export class LocationController {
       radiusKm: parsed.data.radiusKm,
       centerLatitude: parsed.data.centerLatitude,
       centerLongitude: parsed.data.centerLongitude,
-    }).pipe(
-      Effect.provideService(LocationRepositoryTag, this.locationRepository),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            locations: Array<{
+              id: string;
+              userId: string;
+              latitude: number | null;
+              longitude: number | null;
+              accuracy: number | null;
+              altitude: number | null;
+              heading: number | null;
+              speed: number | null;
+              isSharingLocation: boolean;
+              timestamp: Date;
+              distanceKm?: number;
+            }>;
+            total: number;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -336,11 +442,9 @@ export class LocationController {
       userId: parsed.data.userId,
       isSharingLocation: parsed.data.isSharingLocation,
       usersToShareWith,
-    }).pipe(
-      Effect.provideService(LocationRepositoryTag, this.locationRepository),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -360,11 +464,9 @@ export class LocationController {
       userToAddId: parsed.data.userToAddId,
       userFirstName: parsed.data.userFirstName,
       userLastName: parsed.data.userLastName,
-    }).pipe(
-      Effect.provideService(LocationRepositoryTag, this.locationRepository),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -382,11 +484,9 @@ export class LocationController {
     const effect = removeSharingUserUseCase({
       ownerUserId: parsed.data.ownerUserId,
       userToRemoveId: parsed.data.userToRemoveId,
-    }).pipe(
-      Effect.provideService(LocationRepositoryTag, this.locationRepository),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -403,11 +503,9 @@ export class LocationController {
 
     const effect = getSharingSettingsUseCase({
       userId: parsed.data.userId,
-    }).pipe(
-      Effect.provideService(LocationRepositoryTag, this.locationRepository),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -427,9 +525,21 @@ export class LocationController {
       };
     }
 
-    const effect = this.locationRepository.deleteByUserId(parsed.data.userId);
-    await Effect.runPromise(effect);
+    const effect = Effect.gen(function* () {
+      const repo = yield* LocationRepositoryTag;
+      yield* repo.deleteByUserId(parsed.data.userId);
+      return { deleted: true as const };
+    });
 
-    return { success: true, data: { deleted: true } };
+    const result = await runWithLayer(effect, this.appLayer);
+
+    if (!result.success) {
+      return result as { success: false; error: string };
+    }
+
+    return {
+      success: true,
+      data: { deleted: (result.data as { deleted: true }).deleted },
+    };
   }
 }

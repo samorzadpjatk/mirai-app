@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { ActivityFeedRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getActivityFeedUseCase,
   createActivityUseCase,
@@ -11,19 +10,8 @@ import {
   unhideActivityUseCase,
   deleteActivityUseCase,
   ActivityFeedRepositoryTag,
-  type CreateActivityInput,
-  type AddReactionInput,
-  type GetActivityByIdOutput,
-  type UpdateActivityOutput,
-  type HideActivityOutput,
-  type UnhideActivityOutput,
-  type DeleteActivityOutput,
 } from "@mirai-app/use-cases";
 import type { ActivityId, ReactionType } from "@mirai-app/domain";
-import {
-  toEffectActivityFeedRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for activity feed controller
@@ -155,14 +143,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * ActivityFeedController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class ActivityFeedController {
-  constructor(private activityFeedRepository: ActivityFeedRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get activities for a trip
@@ -176,15 +191,12 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = getActivityFeedUseCase({
       tripId: parsed.data.tripId,
       pageSize: parsed.data.pageSize,
       cursor: parsed.data.cursor,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -205,14 +217,11 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = getActivityByIdUseCase({
       activityId: parsed.data.id as ActivityId,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -227,9 +236,6 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "custom",
@@ -238,8 +244,8 @@ export class ActivityFeedController {
       imageUrl: parsed.data.imageUrl ?? null,
       isPinned: parsed.data.isPinned ?? false,
       createdByAdmin: parsed.data.createdByAdmin ?? null,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -254,9 +260,6 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "user_post",
@@ -264,8 +267,8 @@ export class ActivityFeedController {
       description: parsed.data.description ?? null,
       imageUrl: parsed.data.imageUrl ?? null,
       userPost: parsed.data.userPost,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -280,9 +283,6 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "submission",
@@ -299,8 +299,8 @@ export class ActivityFeedController {
         pointsAwarded: parsed.data.submissionActivity.pointsAwarded ?? null,
         currentGroupRank: null,
       },
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -315,9 +315,6 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "challenge_event",
@@ -327,8 +324,8 @@ export class ActivityFeedController {
       isPinned: parsed.data.isPinned ?? false,
       createdByAdmin: parsed.data.createdByAdmin ?? null,
       challengeActivity: parsed.data.challengeActivity,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -343,9 +340,6 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = createActivityUseCase({
       tripId: parsed.data.tripId,
       activityType: "rank_change",
@@ -355,8 +349,8 @@ export class ActivityFeedController {
       isPinned: parsed.data.isPinned ?? false,
       createdByAdmin: parsed.data.createdByAdmin ?? null,
       rankChangeActivity: parsed.data.rankChangeActivity,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -377,16 +371,13 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = updateActivityUseCase({
       activityId: parsed.data.activityId as ActivityId,
       title: parsed.data.title,
       description: parsed.data.description,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     // Map specific errors for backward compatibility
     if (!result.success) {
@@ -416,15 +407,12 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = updateActivityUseCase({
       activityId: parsed.data.activityId as ActivityId,
       isPinned: parsed.data.isPinned,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     // Map specific errors for backward compatibility
     if (!result.success) {
@@ -454,16 +442,13 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = hideActivityUseCase({
       activityId: parsed.data.activityId as ActivityId,
       hiddenByAdmin: parsed.data.hiddenByAdmin,
       reason: parsed.data.reason ?? null,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     // Map specific errors for backward compatibility
     if (!result.success) {
@@ -493,14 +478,11 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = unhideActivityUseCase({
       activityId: parsed.data.activityId as ActivityId,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     // Map specific errors for backward compatibility
     if (!result.success) {
@@ -524,15 +506,12 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = addReactionUseCase({
       activityId: parsed.data.activityId as ActivityId,
       userId: parsed.data.userId,
       reactionType: parsed.data.reactionType,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
-    return await effectToControllerResult(effect);
+    });
+    return await runWithLayer(effect, this.appLayer);
   }
 
   /**
@@ -552,14 +531,11 @@ export class ActivityFeedController {
       };
     }
 
-    const effectRepo = toEffectActivityFeedRepository(
-      this.activityFeedRepository,
-    );
     const effect = deleteActivityUseCase({
       activityId: parsed.data.activityId as ActivityId,
-    }).pipe(Effect.provideService(ActivityFeedRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     // Map specific errors for backward compatibility
     if (!result.success) {

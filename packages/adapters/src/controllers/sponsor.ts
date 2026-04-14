@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { SponsorRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getSponsorUseCase,
   createSponsorUseCase,
@@ -10,64 +9,7 @@ import {
   linkSponsorToTripUseCase,
   unlinkSponsorFromTripUseCase,
   SponsorRepositoryTag,
-  type CreateSponsorInput,
-  type UpdateSponsorInput,
-  type ListSponsorsInput,
-  type LinkSponsorToTripInput,
-  type UnlinkSponsorFromTripInput,
 } from "@mirai-app/use-cases";
-import { effectToControllerResult } from "../utils/controller-helpers";
-
-/**
- * Converts a SponsorRepository to an Effect-based service for use with SponsorRepositoryTag.
- * Since SponsorRepository already returns Effect types, we just pass it through.
- */
-function toEffectSponsorRepository(repo: SponsorRepository): {
-  create: (
-    sponsor: Parameters<SponsorRepository["create"]>[0],
-  ) => ReturnType<SponsorRepository["create"]>;
-  findById: (id: string) => ReturnType<SponsorRepository["findById"]>;
-  findAll: (
-    options?: Parameters<SponsorRepository["findAll"]>[0],
-  ) => ReturnType<SponsorRepository["findAll"]>;
-  findActive: () => ReturnType<SponsorRepository["findActive"]>;
-  findByTripId: (
-    tripId: string,
-  ) => ReturnType<SponsorRepository["findByTripId"]>;
-  update: (
-    sponsor: Parameters<SponsorRepository["update"]>[0],
-  ) => ReturnType<SponsorRepository["update"]>;
-  delete: (id: string) => ReturnType<SponsorRepository["delete"]>;
-  exists: (id: string) => ReturnType<SponsorRepository["exists"]>;
-  isLinkedToTrip: (
-    sponsorId: string,
-    tripId: string,
-  ) => ReturnType<SponsorRepository["isLinkedToTrip"]>;
-  linkToTrip: (
-    sponsorId: string,
-    tripId: string,
-  ) => ReturnType<SponsorRepository["linkToTrip"]>;
-  unlinkFromTrip: (
-    sponsorId: string,
-    tripId: string,
-  ) => ReturnType<SponsorRepository["unlinkFromTrip"]>;
-} {
-  return {
-    create: (sponsor) => repo.create(sponsor),
-    findById: (id) => repo.findById(id),
-    findAll: (options) => repo.findAll(options),
-    findActive: () => repo.findActive(),
-    findByTripId: (tripId) => repo.findByTripId(tripId),
-    update: (sponsor) => repo.update(sponsor),
-    delete: (id) => repo.delete(id),
-    exists: (id) => repo.exists(id),
-    isLinkedToTrip: (sponsorId, tripId) =>
-      repo.isLinkedToTrip(sponsorId, tripId),
-    linkToTrip: (sponsorId, tripId) => repo.linkToTrip(sponsorId, tripId),
-    unlinkFromTrip: (sponsorId, tripId) =>
-      repo.unlinkFromTrip(sponsorId, tripId),
-  };
-}
 
 /**
  * Input validation schemas for sponsor controller
@@ -138,14 +80,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * SponsorController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class SponsorController {
-  constructor(private sponsorRepository: SponsorRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a sponsor by ID
@@ -177,12 +146,27 @@ export class SponsorController {
       };
     }
 
-    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
-    const effect = getSponsorUseCase({ sponsorId: parsed.data.id }).pipe(
-      Effect.provideService(SponsorRepositoryTag, effectRepo),
-    );
+    const effect = getSponsorUseCase({ sponsorId: parsed.data.id });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            name: string;
+            description: string;
+            logoPath: string;
+            height: number | null;
+            offsetX: number | null;
+            offsetY: number | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            hasLogoAdjustments: boolean;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -213,13 +197,13 @@ export class SponsorController {
       };
     }
 
-    const sponsors = await Effect.runPromise(
-      this.sponsorRepository.findByTripId(parsed.data.tripId),
-    );
+    const effect = Effect.gen(function* () {
+      const repo = yield* SponsorRepositoryTag;
+      return yield* repo.findByTripId(parsed.data.tripId);
+    });
 
-    return {
-      success: true,
-      data: sponsors.map((sponsor) => ({
+    const result = await runWithLayer(effect, this.appLayer, (sponsors) =>
+      sponsors.map((sponsor) => ({
         id: sponsor.id,
         name: sponsor.name,
         description: sponsor.description,
@@ -230,7 +214,24 @@ export class SponsorController {
         isActive: sponsor.isActive,
         createdAt: sponsor.createdAt,
       })),
-    };
+    );
+
+    return result as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            name: string;
+            description: string;
+            logoPath: string;
+            height: number | null;
+            offsetX: number | null;
+            offsetY: number | null;
+            isActive: boolean;
+            createdAt: Date;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -261,7 +262,6 @@ export class SponsorController {
       };
     }
 
-    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
     const effect = createSponsorUseCase({
       name: parsed.data.name,
       description: parsed.data.description,
@@ -270,9 +270,25 @@ export class SponsorController {
       offsetX: parsed.data.offsetX,
       offsetY: parsed.data.offsetY,
       isActive: parsed.data.isActive,
-    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            name: string;
+            description: string;
+            logoPath: string;
+            height: number | null;
+            offsetX: number | null;
+            offsetY: number | null;
+            isActive: boolean;
+            createdAt: Date;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -303,7 +319,6 @@ export class SponsorController {
       };
     }
 
-    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
     const effect = updateSponsorUseCase({
       sponsorId: parsed.data.sponsorId,
       name: parsed.data.name,
@@ -313,9 +328,25 @@ export class SponsorController {
       offsetX: parsed.data.offsetX,
       offsetY: parsed.data.offsetY,
       isActive: parsed.data.isActive,
-    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            name: string;
+            description: string;
+            logoPath: string;
+            height: number | null;
+            offsetX: number | null;
+            offsetY: number | null;
+            isActive: boolean;
+            updatedAt: Date;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -339,12 +370,18 @@ export class SponsorController {
       };
     }
 
-    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
-    const effect = deleteSponsorUseCase({ sponsorId: parsed.data.id }).pipe(
-      Effect.provideService(SponsorRepositoryTag, effectRepo),
-    );
+    const effect = deleteSponsorUseCase({ sponsorId: parsed.data.id });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            deleted: boolean;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -378,14 +415,32 @@ export class SponsorController {
       };
     }
 
-    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
     const effect = listSponsorsUseCase({
       limit: parsed.data.limit,
       offset: parsed.data.offset,
       activeOnly: parsed.data.activeOnly,
-    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            sponsors: Array<{
+              id: string;
+              name: string;
+              description: string;
+              logoPath: string;
+              height: number | null;
+              offsetX: number | null;
+              offsetY: number | null;
+              isActive: boolean;
+              createdAt: Date;
+            }>;
+            total: number;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -410,13 +465,22 @@ export class SponsorController {
       };
     }
 
-    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
     const effect = linkSponsorToTripUseCase({
       sponsorId: parsed.data.sponsorId,
       tripId: parsed.data.tripId,
-    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            sponsorId: string;
+            tripId: string;
+            linked: boolean;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -441,12 +505,21 @@ export class SponsorController {
       };
     }
 
-    const effectRepo = toEffectSponsorRepository(this.sponsorRepository);
     const effect = unlinkSponsorFromTripUseCase({
       sponsorId: parsed.data.sponsorId,
       tripId: parsed.data.tripId,
-    }).pipe(Effect.provideService(SponsorRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            sponsorId: string;
+            tripId: string;
+            unlinked: boolean;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 }

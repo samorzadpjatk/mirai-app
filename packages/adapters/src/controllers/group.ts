@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { GroupRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getGroupUseCase,
   createGroupUseCase,
@@ -11,19 +10,8 @@ import {
   type CreateGroupOutput,
   type UpdateGroupOutput,
   type DeleteGroupOutput,
-  GetGroupNotFoundError,
-  GroupCodeAlreadyExistsError,
-  GroupCreationError,
-  UpdateGroupNotFoundError,
-  UpdateGroupDeletedError,
-  UpdateGroupValidationError,
-  DeleteGroupNotFoundError,
 } from "@mirai-app/use-cases";
 import { GroupStatus } from "@mirai-app/domain";
-import {
-  toEffectGroupRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for group controller
@@ -92,14 +80,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * GroupController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class GroupController {
-  constructor(private groupRepository: GroupRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a group by ID
@@ -119,12 +134,14 @@ export class GroupController {
       };
     }
 
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
     const effect = getGroupUseCase({
       groupId: parsed.data.id,
-    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    const result = await runWithLayer<GetGroupOutput>(effect, this.appLayer);
+    return result as
+      | { success: true; data: GetGroupOutput }
+      | { success: false; error: string };
   }
 
   /**
@@ -158,12 +175,12 @@ export class GroupController {
       };
     }
 
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
+      return yield* repo.findByCode(parsed.data.code);
+    });
 
-    // Use repository directly for findByCode (simple read operation)
-    const effect = effectRepo.findByCode(parsed.data.code);
-
-    const result = await effectToControllerResult(effect, (group) => {
+    const result = await runWithLayer(effect, this.appLayer, (group) => {
       if (!group) {
         return null;
       }
@@ -238,12 +255,12 @@ export class GroupController {
       };
     }
 
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
+      return yield* repo.findByTripId(parsed.data.tripId);
+    });
 
-    // Use repository directly for findByTripId (simple read operation)
-    const effect = effectRepo.findByTripId(parsed.data.tripId);
-
-    return await effectToControllerResult(effect, (groups) =>
+    const result = await runWithLayer(effect, this.appLayer, (groups) =>
       groups.map((group) => ({
         id: group.id,
         tripId: group.tripId,
@@ -258,6 +275,25 @@ export class GroupController {
         isActive: group.isActive(),
       })),
     );
+
+    return result as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            tripId: string;
+            name: string;
+            description: string | null;
+            image: string | null;
+            organizerId: string;
+            code: string;
+            coins: number;
+            status: string;
+            createdAt: Date;
+            isActive: boolean;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -278,7 +314,6 @@ export class GroupController {
       };
     }
 
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
     const effect = createGroupUseCase({
       tripId: parsed.data.tripId,
       name: parsed.data.name,
@@ -287,9 +322,9 @@ export class GroupController {
       organizerId: parsed.data.organizerId,
       code: parsed.data.code,
       coins: parsed.data.coins,
-    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer<CreateGroupOutput>(effect, this.appLayer);
 
     // Map specific errors for backward compatibility
     if (!result.success) {
@@ -298,7 +333,9 @@ export class GroupController {
       }
     }
 
-    return result;
+    return result as
+      | { success: true; data: CreateGroupOutput }
+      | { success: false; error: string };
   }
 
   /**
@@ -319,15 +356,14 @@ export class GroupController {
       };
     }
 
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
     const effect = updateGroupUseCase({
       groupId: parsed.data.groupId,
       name: parsed.data.name,
       description: parsed.data.description,
       image: parsed.data.image,
-    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer<UpdateGroupOutput>(effect, this.appLayer);
 
     // Map specific errors for backward compatibility
     if (!result.success) {
@@ -339,7 +375,9 @@ export class GroupController {
       }
     }
 
-    return result;
+    return result as
+      | { success: true; data: UpdateGroupOutput }
+      | { success: false; error: string };
   }
 
   /**
@@ -366,60 +404,51 @@ export class GroupController {
       };
     }
 
-    // First get the group to capture previous coins state
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
 
-    const getEffect = getGroupUseCase({
-      groupId: parsed.data.groupId,
-    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+      // First get the group to validate and capture previous state
+      const group = yield* repo.findById(parsed.data.groupId);
 
-    const groupResult = await effectToControllerResult(getEffect);
-    if (!groupResult.success) {
-      return { success: false, error: "Group not found" };
-    }
+      if (!group) {
+        return yield* Effect.fail(new Error("Group not found"));
+      }
 
-    const previousCoins = groupResult.data.coins;
+      if (!group.isActive()) {
+        return yield* Effect.fail(
+          new Error("Cannot add coins to a deleted group"),
+        );
+      }
 
-    // Then update the group with new coins amount
-    const updateEffect = updateGroupUseCase({
-      groupId: parsed.data.groupId,
-    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+      const previousCoins = group.coins;
 
-    // Use repository directly to update coins (business logic should be in domain)
-    const group = await Effect.runPromise(
-      effectRepo.findById(parsed.data.groupId),
-    );
-
-    if (!group) {
-      return { success: false, error: "Group not found" };
-    }
-
-    if (!group.isActive()) {
-      return { success: false, error: "Cannot add coins to a deleted group" };
-    }
-
-    try {
-      const updatedGroup = await Effect.runPromise(
-        group.addCoins(parsed.data.amount),
-      );
-      const saved = await Effect.runPromise(effectRepo.update(updatedGroup));
+      // Execute add coins and update
+      const updatedGroup = yield* group.addCoins(parsed.data.amount);
+      const saved = yield* repo.update(updatedGroup);
 
       return {
-        success: true,
-        data: {
-          id: saved.id,
-          name: saved.name,
-          previousCoins,
-          newCoins: saved.coins,
-          updatedAt: saved.updatedAt,
-        },
+        id: saved.id,
+        name: saved.name,
+        previousCoins,
+        newCoins: saved.coins,
+        updatedAt: saved.updatedAt,
       };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    });
+
+    const result = await runWithLayer(effect, this.appLayer);
+
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            name: string;
+            previousCoins: number;
+            newCoins: number;
+            updatedAt: Date;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -452,15 +481,15 @@ export class GroupController {
       };
     }
 
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
-
-    // Use repository directly for findAll (simple read operation)
-    const effect = effectRepo.findAll({
-      limit: parsed.data.limit,
-      offset: parsed.data.offset,
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
+      return yield* repo.findAll({
+        limit: parsed.data.limit,
+        offset: parsed.data.offset,
+      });
     });
 
-    return await effectToControllerResult(effect, (groups) =>
+    const result = await runWithLayer(effect, this.appLayer, (groups) =>
       groups.map((group) => ({
         id: group.id,
         tripId: group.tripId,
@@ -475,6 +504,25 @@ export class GroupController {
         isActive: group.isActive(),
       })),
     );
+
+    return result as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            tripId: string;
+            name: string;
+            description: string | null;
+            image: string | null;
+            organizerId: string;
+            code: string;
+            coins: number;
+            status: string;
+            createdAt: Date;
+            isActive: boolean;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -507,12 +555,12 @@ export class GroupController {
       };
     }
 
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
+      return yield* repo.findByOrganizerId(parsed.data.organizerId);
+    });
 
-    // Use repository directly for findByOrganizerId (simple read operation)
-    const effect = effectRepo.findByOrganizerId(parsed.data.organizerId);
-
-    return await effectToControllerResult(effect, (groups) =>
+    const result = await runWithLayer(effect, this.appLayer, (groups) =>
       groups.map((group) => ({
         id: group.id,
         tripId: group.tripId,
@@ -527,6 +575,25 @@ export class GroupController {
         isActive: group.isActive(),
       })),
     );
+
+    return result as
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            tripId: string;
+            name: string;
+            description: string | null;
+            image: string | null;
+            organizerId: string;
+            code: string;
+            coins: number;
+            status: string;
+            createdAt: Date;
+            isActive: boolean;
+          }>;
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -546,30 +613,37 @@ export class GroupController {
       };
     }
 
-    const effectRepo = toEffectGroupRepository(this.groupRepository);
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
 
-    // First check if group exists and is active
-    const group = await Effect.runPromise(effectRepo.findById(parsed.data.id));
+      // Check if group exists
+      const group = yield* repo.findById(parsed.data.id);
 
-    if (!group) {
-      return { success: false, error: "Group not found" };
-    }
+      if (!group) {
+        return yield* Effect.fail(new Error("Group not found"));
+      }
 
-    if (!group.isActive()) {
-      return { success: false, error: "Group is already deleted" };
-    }
+      if (!group.isActive()) {
+        return yield* Effect.fail(new Error("Group is already deleted"));
+      }
 
-    // Use deleteGroupUseCase for the actual deletion
-    const effect = deleteGroupUseCase({
-      groupId: parsed.data.id,
-    }).pipe(Effect.provideService(GroupRepositoryTag, effectRepo));
+      // Use deleteGroupUseCase for the actual deletion
+      const output = yield* deleteGroupUseCase({
+        groupId: parsed.data.id,
+      });
 
-    const result = await effectToControllerResult(effect);
+      return { deleted: output.success };
+    });
+
+    const result = await runWithLayer(effect, this.appLayer);
 
     if (!result.success) {
-      return result;
+      return result as { success: false; error: string };
     }
 
-    return { success: true, data: { deleted: true } };
+    return {
+      success: true,
+      data: { deleted: (result.data as { deleted: boolean }).deleted as true },
+    };
   }
 }

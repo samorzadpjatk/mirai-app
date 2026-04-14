@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { NotificationScheduleRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getNotificationSchedulesUseCase,
   getNotificationScheduleByIdUseCase,
@@ -130,14 +129,41 @@ type ControllerResult<T> =
   | { success: false; error: string };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * NotificationScheduleController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class NotificationScheduleController {
-  constructor(private repository: NotificationScheduleRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get all notification schedules with filtering and pagination
@@ -181,16 +207,17 @@ export class NotificationScheduleController {
     const program = getNotificationSchedulesUseCase({
       filter,
       pagination,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(program, this.appLayer)) as ControllerResult<{
+      schedules: NotificationScheduleOutput[];
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    }>;
   }
 
   /**
@@ -209,32 +236,23 @@ export class NotificationScheduleController {
 
     const program = getNotificationScheduleByIdUseCase({
       id: parsed.data.id,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(
+      program,
+      this.appLayer,
+    )) as ControllerResult<NotificationScheduleOutput>;
   }
 
   /**
    * Get active notification schedules
    */
   async getActive(): Promise<ControllerResult<NotificationScheduleOutput[]>> {
-    const program = getActiveNotificationSchedulesUseCase().pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    const program = getActiveNotificationSchedulesUseCase();
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(program, this.appLayer)) as ControllerResult<
+      NotificationScheduleOutput[]
+    >;
   }
 
   /**
@@ -253,16 +271,11 @@ export class NotificationScheduleController {
 
     const program = getUpcomingNotificationSchedulesUseCase({
       days: parsed.data.days,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(program, this.appLayer)) as ControllerResult<
+      NotificationScheduleOutput[]
+    >;
   }
 
   /**
@@ -293,16 +306,12 @@ export class NotificationScheduleController {
       minute: parsed.data.minute,
       isActive: parsed.data.isActive,
       createdById: parsed.data.createdById,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(
+      program,
+      this.appLayer,
+    )) as ControllerResult<NotificationScheduleOutput>;
   }
 
   /**
@@ -330,16 +339,12 @@ export class NotificationScheduleController {
       hour: parsed.data.hour,
       minute: parsed.data.minute,
       isActive: parsed.data.isActive,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(
+      program,
+      this.appLayer,
+    )) as ControllerResult<NotificationScheduleOutput>;
   }
 
   /**
@@ -362,16 +367,13 @@ export class NotificationScheduleController {
 
     const program = deleteNotificationScheduleUseCase({
       id: parsed.data.id,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(program, this.appLayer)) as ControllerResult<{
+      success: boolean;
+      message: string;
+      deletedExecutionCount?: number;
+    }>;
   }
 
   /**
@@ -395,16 +397,14 @@ export class NotificationScheduleController {
 
     const program = bulkDeleteNotificationSchedulesUseCase({
       ids: parsed.data.ids,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(program, this.appLayer)) as ControllerResult<{
+      success: boolean;
+      deletedCount: number;
+      requestedCount: number;
+      notFoundIds?: string[];
+    }>;
   }
 
   /**
@@ -423,16 +423,12 @@ export class NotificationScheduleController {
 
     const program = toggleNotificationScheduleActiveUseCase({
       id: parsed.data.id,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(
+      program,
+      this.appLayer,
+    )) as ControllerResult<NotificationScheduleOutput>;
   }
 
   /**
@@ -452,16 +448,12 @@ export class NotificationScheduleController {
     const program = bulkToggleNotificationScheduleActiveUseCase({
       ids: parsed.data.ids,
       isActive: parsed.data.isActive,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(program, this.appLayer)) as ControllerResult<{
+      success: boolean;
+      updatedCount: number;
+    }>;
   }
 
   /**
@@ -484,16 +476,11 @@ export class NotificationScheduleController {
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
       newCreatedById: parsed.data.newCreatedById,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(program, this.appLayer)) as ControllerResult<{
+      schedule: NotificationScheduleOutput;
+    }>;
   }
 
   /**
@@ -513,16 +500,12 @@ export class NotificationScheduleController {
     const program = updateNotificationScheduleLastRunUseCase({
       id: parsed.data.id,
       lastRun: parsed.data.lastRun,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(
+      program,
+      this.appLayer,
+    )) as ControllerResult<NotificationScheduleOutput>;
   }
 
   /**
@@ -553,15 +536,19 @@ export class NotificationScheduleController {
     const program = getNotificationScheduleExecutionHistoryUseCase({
       scheduleId: parsed.data.scheduleId,
       limit: parsed.data.limit,
-    }).pipe(
-      Effect.provideService(NotificationScheduleRepositoryTag, this.repository),
-    );
+    });
 
-    try {
-      const output = await Effect.runPromise(program);
-      return { success: true, data: output };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
+    return (await runWithLayer(program, this.appLayer)) as ControllerResult<{
+      executions: Array<{
+        id: string;
+        executedAt: Date;
+        notification: {
+          id: string;
+          title: string;
+          body: string;
+          createdAt: Date;
+        } | null;
+      }>;
+    }>;
   }
 }

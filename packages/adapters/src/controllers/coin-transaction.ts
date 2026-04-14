@@ -1,19 +1,13 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { CoinTransactionRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import {
   getCoinStatisticsUseCase,
   getMostActiveAdminStatsUseCase,
   getCoinTransactionsUseCase,
   getCoinQuickStatsUseCase,
   getCoinAdditionalInsightsUseCase,
-  CoinTransactionRepositoryTag,
   type GetCoinAdditionalInsightsOutput,
 } from "@mirai-app/use-cases";
-import {
-  toEffectCoinTransactionRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for coin transaction controller
@@ -53,13 +47,40 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * CoinTransactionController
  *
  * Handles coin transaction queries and statistics.
  * Delegates to use cases for business logic.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class CoinTransactionController {
-  constructor(private coinRepository: CoinTransactionRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   get schemas() {
     return schemas;
@@ -81,12 +102,23 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
     const effect = getCoinStatisticsUseCase({
       tripId: input.tripId,
-    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            transactionCount: number;
+            addedCoins: number;
+            removedCoins: number;
+            netBalance: number;
+            time: Date;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -103,12 +135,21 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
     const effect = getMostActiveAdminStatsUseCase({
       tripId: input.tripId,
-    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            adminId: string;
+            totalAmount: number;
+            transactionCount: number;
+          } | null;
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -143,22 +184,42 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
     const effect = getCoinTransactionsUseCase({
       tripId: input.tripId,
       pagination: input.pagination,
-    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     if (!result.success) {
-      return result;
+      return result as { success: false; error: string };
     }
+
+    const data = result.data as {
+      transactions: Array<{
+        id: string;
+        amount: number;
+        reason: string | null;
+        createdAt: Date;
+        group: { id: string; name: string } | null;
+        admin: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+        } | null;
+      }>;
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    };
 
     return {
       success: true,
       data: {
-        transactions: result.data.transactions.map((t) => ({
+        transactions: data.transactions.map((t) => ({
           id: t.id,
           amount: t.amount,
           reason: t.reason ?? null,
@@ -172,7 +233,7 @@ export class CoinTransactionController {
               }
             : null,
         })),
-        pagination: result.data.pagination,
+        pagination: data.pagination,
       },
     };
   }
@@ -194,12 +255,24 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
     const effect = getCoinQuickStatsUseCase({
       tripId: input.tripId,
-    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            totalCoins: number;
+            totalGroups: number;
+            averageCoinsPerGroup: number;
+            richestGroupId?: string;
+            richestGroupName?: string;
+            time: Date;
+          } | null;
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -212,24 +285,24 @@ export class CoinTransactionController {
       }
     | { success: false; error: string }
   > {
-    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
     const effect = getCoinAdditionalInsightsUseCase({
       tripId: input.tripId,
-    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     if (!result.success) {
-      return result;
+      return result as { success: false; error: string };
     }
 
     if (!result.data) {
       return { success: true, data: null };
     }
 
+    const resultData = result.data as GetCoinAdditionalInsightsOutput;
     const normalizedData: GetCoinAdditionalInsightsOutput = {
-      mostActiveAdmin: result.data.mostActiveAdmin,
-      recentTransactions: result.data.recentTransactions.map((t) => ({
+      mostActiveAdmin: resultData.mostActiveAdmin,
+      recentTransactions: resultData.recentTransactions.map((t) => ({
         id: t.id,
         groupId: t.groupId,
         adminId: t.adminId,
@@ -289,22 +362,36 @@ export class CoinTransactionController {
       };
     }
 
-    const effectRepo = toEffectCoinTransactionRepository(this.coinRepository);
     const effect = getCoinTransactionsUseCase({
       tripId: input.tripId,
       groupId: input.groupId,
       pagination: { limit: input.limit, offset: 0 },
-    }).pipe(Effect.provideService(CoinTransactionRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     if (!result.success) {
-      return result;
+      return result as { success: false; error: string };
     }
+
+    const data = result.data as {
+      transactions: Array<{
+        id: string;
+        amount: number;
+        reason: string | null;
+        createdAt: Date;
+        group: { id: string; name: string; coins: number } | null;
+        admin: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+        } | null;
+      }>;
+    };
 
     return {
       success: true,
-      data: result.data.transactions.map((t) => ({
+      data: data.transactions.map((t) => ({
         id: t.id,
         amount: t.amount,
         reason: t.reason ?? null,

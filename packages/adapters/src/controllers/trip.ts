@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { TripRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import { TripRepositoryTag } from "@mirai-app/use-cases";
 import {
   createTripUseCase,
@@ -11,10 +10,6 @@ import {
   type UpdateTripInput,
 } from "@mirai-app/use-cases";
 import { TripStatus } from "@mirai-app/domain";
-import {
-  toEffectTripRepository,
-  effectToControllerResult,
-} from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for trip controller
@@ -85,14 +80,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * TripController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class TripController {
-  constructor(private tripRepository: TripRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Get a trip by ID
@@ -131,12 +153,36 @@ export class TripController {
       };
     }
 
-    const effectRepo = toEffectTripRepository(this.tripRepository);
     const effect = getTripByIdUseCase({
       tripId: parsed.data.id,
-    }).pipe(Effect.provideService(TripRepositoryTag, effectRepo));
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            name: string;
+            description: string | null;
+            startDate: Date;
+            endDate: Date;
+            backgroundImagePath: string | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            isPlanning: boolean;
+            isCompleted: boolean;
+            isCancelled: boolean;
+            isOngoing: boolean;
+            hasStarted: boolean;
+            hasEnded: boolean;
+            durationInDays: number;
+            summary: string;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -175,7 +221,6 @@ export class TripController {
       return { success: false, error: "End date must be after start date" };
     }
 
-    const effectRepo = toEffectTripRepository(this.tripRepository);
     const useCaseInput: CreateTripInput = {
       name: parsed.data.name,
       description: parsed.data.description ?? null,
@@ -185,11 +230,28 @@ export class TripController {
       status: parsed.data.status as TripStatus,
     };
 
-    const effect = createTripUseCase(useCaseInput).pipe(
-      Effect.provideService(TripRepositoryTag, effectRepo),
-    );
+    const effect = createTripUseCase(useCaseInput);
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            name: string;
+            description: string | null;
+            startDate: Date;
+            endDate: Date;
+            backgroundImagePath: string | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            isPlanning: boolean;
+            durationInDays: number;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -219,7 +281,6 @@ export class TripController {
       };
     }
 
-    const effectRepo = toEffectTripRepository(this.tripRepository);
     const useCaseInput: UpdateTripInput = {
       tripId: parsed.data.tripId,
       name: parsed.data.name,
@@ -229,11 +290,24 @@ export class TripController {
       backgroundImagePath: parsed.data.backgroundImagePath,
     };
 
-    const effect = updateTripUseCase(useCaseInput).pipe(
-      Effect.provideService(TripRepositoryTag, effectRepo),
-    );
+    const effect = updateTripUseCase(useCaseInput);
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            name: string;
+            description: string | null;
+            startDate: Date;
+            endDate: Date;
+            backgroundImagePath: string | null;
+            status: string;
+            updatedAt: Date;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -260,33 +334,30 @@ export class TripController {
       };
     }
 
-    const effectRepo = toEffectTripRepository(this.tripRepository);
-
-    // First get the trip to ensure it exists
-    const tripEffect = getTripByIdUseCase({
-      tripId: parsed.data.tripId,
-    }).pipe(Effect.provideService(TripRepositoryTag, effectRepo));
-
-    const tripResult = await Effect.runPromise(Effect.either(tripEffect));
-
-    if (tripResult._tag === "Left") {
-      return { success: false, error: tripResult.left.message };
-    }
-
-    // Update the trip status using updateTripUseCase
+    // Update the trip status using updateTripUseCase (handles not-found case)
     const updateEffect = updateTripUseCase({
       tripId: parsed.data.tripId,
       status: parsed.data.newStatus as TripStatus,
-    }).pipe(Effect.provideService(TripRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(updateEffect, (data) => ({
+    const result = await runWithLayer(updateEffect, this.appLayer, (data) => ({
       id: data.id,
       name: data.name,
       status: data.status,
       updatedAt: data.updatedAt,
     }));
 
-    return result;
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            name: string;
+            status: string;
+            updatedAt: Date;
+          };
+        }
+      | { success: false; error: string };
   }
 
   /**
@@ -315,15 +386,16 @@ export class TripController {
       };
     }
 
-    const effectRepo = toEffectTripRepository(this.tripRepository);
-
     // Use repository directly for list operations
-    const effect = effectRepo.findAll({
-      limit: parsed.data.limit,
-      offset: parsed.data.offset,
+    const effect = Effect.gen(function* () {
+      const repo = yield* TripRepositoryTag;
+      return yield* repo.findAll({
+        limit: parsed.data.limit,
+        offset: parsed.data.offset,
+      });
     });
 
-    return await effectToControllerResult(effect, (trips) =>
+    return (await runWithLayer(effect, this.appLayer, (trips) =>
       trips.map((trip) => ({
         id: trip.id,
         name: trip.name,
@@ -333,7 +405,21 @@ export class TripController {
         status: trip.status,
         createdAt: trip.createdAt,
       })),
-    );
+    )) as Promise<
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            name: string;
+            description: string | null;
+            startDate: Date;
+            endDate: Date;
+            status: string;
+            createdAt: Date;
+          }>;
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -362,19 +448,29 @@ export class TripController {
       };
     }
 
-    const effectRepo = toEffectTripRepository(this.tripRepository);
-
     // Use repository directly for list by status
-    const effect = effectRepo.findByStatus(parsed.data.status as TripStatus);
+    const effect = Effect.gen(function* () {
+      const repo = yield* TripRepositoryTag;
+      return yield* repo.findByStatus(parsed.data.status as TripStatus);
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     if (!result.success) {
-      return result;
+      return result as { success: false; error: string };
     }
 
     // Apply pagination manually
-    const paginated = result.data.slice(
+    const trips = result.data as Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      startDate: Date;
+      endDate: Date;
+      status: string;
+      createdAt: Date;
+    }>;
+    const paginated = trips.slice(
       parsed.data.offset,
       parsed.data.offset + parsed.data.limit,
     );
@@ -411,12 +507,13 @@ export class TripController {
       }
     | { success: false; error: string }
   > {
-    const effectRepo = toEffectTripRepository(this.tripRepository);
-
     // Use repository directly for findActive
-    const effect = effectRepo.findActive();
+    const effect = Effect.gen(function* () {
+      const repo = yield* TripRepositoryTag;
+      return yield* repo.findActive();
+    });
 
-    return await effectToControllerResult(effect, (trips) =>
+    return (await runWithLayer(effect, this.appLayer, (trips) =>
       trips.map((trip) => ({
         id: trip.id,
         name: trip.name,
@@ -426,7 +523,21 @@ export class TripController {
         status: trip.status,
         createdAt: trip.createdAt,
       })),
-    );
+    )) as Promise<
+      | {
+          success: true;
+          data: Array<{
+            id: string;
+            name: string;
+            description: string | null;
+            startDate: Date;
+            endDate: Date;
+            status: string;
+            createdAt: Date;
+          }>;
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -446,22 +557,23 @@ export class TripController {
       };
     }
 
-    const effectRepo = toEffectTripRepository(this.tripRepository);
     const effect = deleteTripUseCase({
       tripId: parsed.data.id,
-    }).pipe(Effect.provideService(TripRepositoryTag, effectRepo));
+    });
 
-    const result = await effectToControllerResult(effect);
+    const result = await runWithLayer(effect, this.appLayer);
 
     if (!result.success) {
-      return result;
+      return result as { success: false; error: string };
     }
+
+    const data = result.data as { deletedTripId: string };
 
     return {
       success: true,
       data: {
         deleted: true as const,
-        tripId: result.data.deletedTripId,
+        tripId: data.deletedTripId,
       },
     };
   }

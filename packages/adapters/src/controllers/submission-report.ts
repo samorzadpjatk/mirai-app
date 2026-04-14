@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Effect } from "effect";
-import type { SubmissionReportRepository } from "@mirai-app/use-cases";
+import { Effect, type Layer } from "effect";
 import type { SubmissionReport } from "@mirai-app/domain";
 import {
   createReportUseCase,
@@ -9,7 +8,6 @@ import {
   type CreateReportInput,
   type GetReportsInput,
 } from "@mirai-app/use-cases";
-import { effectToControllerResult } from "../utils/controller-helpers";
 
 /**
  * Input validation schemas for submission report controller
@@ -31,14 +29,41 @@ const schemas = {
 };
 
 /**
+ * Helper to run an Effect with the provided Layer and convert to controller result
+ */
+async function runWithLayer<T>(
+  effect: Effect.Effect<T, unknown, unknown>,
+  layer: Layer.Layer<unknown>,
+  transform?: (value: T) => unknown,
+): Promise<
+  { success: true; data: unknown } | { success: false; error: string }
+> {
+  const provided = effect.pipe(Effect.provide(layer));
+  const result = await Effect.runPromise(Effect.either(provided));
+
+  if (result._tag === "Left") {
+    const error = result.left;
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+
+  return {
+    success: true,
+    data: transform ? transform(result.right) : result.right,
+  };
+}
+
+/**
  * SubmissionReportController
  *
  * Thin controller that delegates to use cases.
  * No business logic here - just input validation, use case orchestration,
  * and error handling.
+ *
+ * Updated for Step 4: Now uses Effect Layers instead of direct repository injection.
  */
 export class SubmissionReportController {
-  constructor(private reportRepository: SubmissionReportRepository) {}
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
   /**
    * Create a new report
@@ -74,14 +99,23 @@ export class SubmissionReportController {
       reporterId,
       reason: parsed.data.reason,
       details: parsed.data.details,
-    }).pipe(
-      Effect.provideService(
-        SubmissionReportRepositoryTag,
-        this.reportRepository,
-      ),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            id: string;
+            submissionId: string;
+            reporterId: string;
+            reason: string;
+            reasonDisplay: string;
+            details: string | null;
+            createdAt: Date;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 
   /**
@@ -125,13 +159,35 @@ export class SubmissionReportController {
 
     const effect = getReportsUseCase({
       submissionId: parsed.data.submissionId,
-    }).pipe(
-      Effect.provideService(
-        SubmissionReportRepositoryTag,
-        this.reportRepository,
-      ),
-    );
+    });
 
-    return await effectToControllerResult(effect);
+    return (await runWithLayer(effect, this.appLayer)) as Promise<
+      | {
+          success: true;
+          data: {
+            reports: Array<{
+              id: string;
+              submissionId: string;
+              reporterId: string;
+              reason: string;
+              reasonDisplay: string;
+              details: string | null;
+              createdAt: Date;
+              reporter: {
+                id: string;
+                user: {
+                  id: string;
+                  firstName: string;
+                  lastName: string;
+                  email: string | null;
+                  hasAvatar: boolean;
+                };
+              };
+            }>;
+            totalCount: number;
+          };
+        }
+      | { success: false; error: string }
+    >;
   }
 }
