@@ -22,6 +22,7 @@
     "test:coverage": "bun test --test-name-pattern='^\\[UNIT\\]' --coverage",
     "test:ci": "bun run test:unit -- --coverage && bun run test:integration -- --coverage",
     "test:db": "turbo run test",
+    "test:validate-prefixes": "bun run scripts/validate-test-prefixes.ts",
     "depcruise": "bunx dependency-cruiser --validate .dependency-cruiser.mjs .",
     "depcruise:check": "bunx dependency-cruiser --validate .dependency-cruiser.mjs . --output-type err-long",
     "depcruise:graph": "bunx dependency-cruiser --validate .dependency-cruiser.mjs . --output-type dot --output-to dependency-graph.dot && dot -T svg dependency-graph.dot -o dependency-graph.svg"

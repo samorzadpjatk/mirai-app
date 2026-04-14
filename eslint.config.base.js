@@ -22,6 +22,8 @@ export default tseslint.config(
         { checksVoidReturn: { attributes: false } },
       ],
       "space-infix-ops": ["error", { int32Hint: false }],
+      // Prevent console.log in production code (allow in tests and scripts)
+      "no-console": ["warn", { allow: ["error"] }],
     },
   },
   {
