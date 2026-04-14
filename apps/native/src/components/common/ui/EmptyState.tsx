@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, type ViewStyle } from "react-native";
+import type { ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, typography } from "~/styles";
+import { YStack, Text } from "@mirai-app/ui";
 
 // Ionicons icon names type
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -11,7 +11,7 @@ interface EmptyStateProps {
   icon?: IoniconName;
   /** Icon size (default: 48) */
   iconSize?: number;
-  /** Icon color (default: colors.textSecondary) */
+  /** Icon color (default: $textSecondary) */
   iconColor?: string;
   /** Title text */
   title: string;
@@ -26,46 +26,38 @@ interface EmptyStateProps {
 export function EmptyState({
   icon,
   iconSize = 48,
-  iconColor = colors.textSecondary,
+  iconColor = "#9ca3af",
   title,
   subtitle,
   style,
   iconOpacity = 0.5,
 }: EmptyStateProps) {
   return (
-    <View style={[styles.emptyState, style]}>
+    <YStack alignItems="center" paddingVertical="$10" style={style}>
       {icon && (
-        <View style={[styles.emptyIcon, { opacity: iconOpacity }]}>
+        <YStack marginBottom="$lg" opacity={iconOpacity}>
           <Ionicons name={icon} size={iconSize} color={iconColor} />
-        </View>
+        </YStack>
       )}
-      <Text style={styles.emptyStateTitle}>{title}</Text>
+      <Text
+        fontSize="$xl"
+        fontWeight="700"
+        color="$white"
+        marginBottom="$sm"
+        textAlign="center"
+      >
+        {title}
+      </Text>
       {subtitle && (
-        <Text style={styles.emptyStateText}>{subtitle}</Text>
+        <Text
+          fontSize="$base"
+          color="$textMuted"
+          textAlign="center"
+          lineHeight={22}
+        >
+          {subtitle}
+        </Text>
       )}
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: spacing.xxl * 2,
-  },
-  emptyIcon: {
-    marginBottom: spacing.lg,
-  },
-  emptyStateTitle: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-});

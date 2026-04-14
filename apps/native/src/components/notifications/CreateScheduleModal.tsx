@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useMutation, useClient } from "urql";
 import {
   useCreateNotificationScheduleMutation,
   useGetNotificationSchedulesQuery,
 } from "@mirai-app/graphql-client";
 import { useTrips } from "~/hooks/trips";
-import { colors, spacing } from "~/styles";
+import { XStack, YStack, Text } from "@mirai-app/ui";
 import { clientLogger } from "@mirai-app/shared";
 import {
   AppModalShell,
@@ -131,8 +125,8 @@ export function CreateScheduleModal({
       onClose={onClose}
       variant="pageSheet"
     >
-      <ScrollView style={{ padding: spacing.lg }}>
-        <Text style={{ color: colors.textSecondary, marginBottom: spacing.lg }}>
+      <ScrollView style={{ padding: 24 }}>
+        <Text color="#9ca3af" marginBottom={24}>
           Schedule a notification to be sent at specific times
         </Text>
 
@@ -145,7 +139,7 @@ export function CreateScheduleModal({
         </FormField>
 
         <FormField label="Notification Type">
-          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+          <XStack gap={8}>
             <SegmentedOption
               label="Custom Message"
               selected={createType === "custom"}
@@ -156,7 +150,7 @@ export function CreateScheduleModal({
               selected={createType === "ranking"}
               onPress={() => handleSelectType("ranking")}
             />
-          </View>
+          </XStack>
         </FormField>
 
         {createType === "custom" && (
@@ -182,17 +176,9 @@ export function CreateScheduleModal({
         {createType === "ranking" && (
           <FormField label="Trip" required>
             {trips.length === 0 ? (
-              <Text style={{ color: colors.textSecondary }}>
-                (No trips available)
-              </Text>
+              <Text color="#9ca3af">(No trips available)</Text>
             ) : (
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: spacing.sm,
-                  flexWrap: "wrap",
-                }}
-              >
+              <XStack gap={8} flexWrap="wrap">
                 {trips.map((trip) => (
                   <SegmentedOption
                     key={trip.id}
@@ -207,13 +193,13 @@ export function CreateScheduleModal({
                   <TouchableOpacity
                     style={{
                       flexBasis: "45%",
-                      borderRadius: spacing.sm,
+                      borderRadius: 8,
                       borderWidth: 1,
-                      borderColor: colors.primary,
-                      paddingVertical: spacing.sm,
+                      borderColor: "#00ced1",
+                      paddingVertical: 8,
                       alignItems: "center",
                       justifyContent: "center",
-                      backgroundColor: colors.primaryOpacity10,
+                      backgroundColor: "rgba(0, 206, 209, 0.1)",
                     }}
                     onPress={() => {
                       void fetchNextPage();
@@ -221,26 +207,20 @@ export function CreateScheduleModal({
                     disabled={isFetchingNextPage}
                   >
                     {isFetchingNextPage ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
+                      <ActivityIndicator size="small" color="#00ced1" />
                     ) : (
-                      <Text
-                        style={{
-                          color: colors.primary,
-                          fontSize: 14,
-                          fontWeight: "600",
-                        }}
-                      >
+                      <Text color="#00ced1" fontSize={14} fontWeight="600">
                         Load more trips
                       </Text>
                     )}
                   </TouchableOpacity>
                 )}
-              </View>
+              </XStack>
             )}
           </FormField>
         )}
 
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <XStack gap={16}>
           <FormField label="Start Date" required style={{ flex: 1 }}>
             <ThemedTextInput
               placeholder="YYYY-MM-DD"
@@ -255,9 +235,9 @@ export function CreateScheduleModal({
               onChangeText={setCreateEndDate}
             />
           </FormField>
-        </View>
+        </XStack>
 
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <XStack gap={16}>
           <FormField label="Hour (0-23)" required style={{ flex: 1 }}>
             <ThemedTextInput
               placeholder="9"
@@ -274,7 +254,7 @@ export function CreateScheduleModal({
               onChangeText={setCreateMinute}
             />
           </FormField>
-        </View>
+        </XStack>
       </ScrollView>
       <AppModalFooter
         primaryLabel={isCreating ? "Creating..." : "Create Schedule"}

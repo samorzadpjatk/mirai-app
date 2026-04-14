@@ -1,6 +1,5 @@
-import { View, Text, StyleSheet } from "react-native";
+import { XStack, YStack, Text, Card } from "@mirai-app/ui";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
 import type { NotificationItem } from "~/types/notifications";
 
 interface NotificationCardProps {
@@ -13,73 +12,49 @@ export function NotificationCard({
   timeLabel,
 }: NotificationCardProps) {
   return (
-    <View style={styles.notificationCard}>
-      <View style={styles.notificationIcon}>
-        <Ionicons name="notifications" size={20} color={colors.primary} />
-      </View>
-      <View style={styles.notificationContent}>
-        <Text style={styles.notificationTitle}>{notification.title}</Text>
-        <Text style={styles.notificationBody}>{notification.body}</Text>
-        <View style={styles.notificationFooter}>
+    <Card
+      flexDirection="row"
+      backgroundColor="rgba(23, 24, 28, 0.8)"
+      borderRadius="$6"
+      padding="$4"
+      borderWidth={1}
+      borderColor="rgba(255, 255, 255, 0.05)"
+      gap="$3"
+    >
+      <YStack
+        width={40}
+        height={40}
+        borderRadius="$3"
+        backgroundColor="rgba(0, 206, 209, 0.1)"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Ionicons name="notifications" size={20} color="#00ced1" />
+      </YStack>
+      <YStack flex={1}>
+        <Text fontSize="$4" fontWeight="bold" color="white" marginBottom="$1">
+          {notification.title}
+        </Text>
+        <Text fontSize="$3" color="#9ca3af" marginBottom="$2" lineHeight={20}>
+          {notification.body}
+        </Text>
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          flexWrap="wrap"
+          gap="$1"
+        >
           {notification.createdBy && (
-            <Text style={styles.notificationAuthor}>
+            <Text fontSize="$2" color="#00ced1">
               From: {notification.createdBy.firstName}{" "}
               {notification.createdBy.lastName}
             </Text>
           )}
-          <Text style={styles.notificationTime}>{timeLabel}</Text>
-        </View>
-      </View>
-    </View>
+          <Text fontSize="$2" color="#9ca3af">
+            {timeLabel}
+          </Text>
+        </XStack>
+      </YStack>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  notificationCard: {
-    flexDirection: "row",
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    gap: spacing.md,
-  },
-  notificationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  notificationBody: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-    lineHeight: 20,
-  },
-  notificationFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  notificationAuthor: {
-    fontSize: typography.xs,
-    color: colors.primary,
-  },
-  notificationTime: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
-  },
-});

@@ -2,16 +2,8 @@ import React, { useState } from "react";
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import {
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { Modal, Platform } from "react-native";
+import { YStack, XStack, Text, Button } from "@mirai-app/ui";
 
 export type DateTimePickerModalMode = "date" | "time" | "datetime";
 
@@ -48,7 +40,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   );
 };
 
-type DateTimePickerModalContentProps = Omit<DateTimePickerModalProps, "visible">;
+type DateTimePickerModalContentProps = Omit<
+  DateTimePickerModalProps,
+  "visible"
+>;
 
 const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
   value,
@@ -84,16 +79,22 @@ const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
   }
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
-      <Pressable style={styles.overlay} onPress={onCancel}>
-        <Pressable
-          style={styles.card}
-          onPress={(event) => event.stopPropagation()}
+    <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
+      <Button
+        onPress={onCancel}
+        fullscreen
+        position="absolute"
+        backgroundColor="rgba(0,0,0,0.4)"
+        justifyContent="center"
+        alignItems="center"
+        padding="$lg"
+      >
+        <YStack
+          backgroundColor="rgba(27, 40, 40, 0.95)"
+          borderRadius="$lg"
+          padding="$lg"
+          width="100%"
+          maxWidth={360}
         >
           <DateTimePicker
             value={draft}
@@ -105,62 +106,42 @@ const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
               }
             }}
           />
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.actionButton} onPress={onCancel}>
-              <Text style={styles.actionText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.actionButtonPrimary]}
-              onPress={() => onConfirm(draft)}
+          <XStack gap="$sm" marginTop="$md">
+            <Button
+              onPress={onCancel}
+              flex={1}
+              padding="$sm"
+              borderRadius="$md"
+              alignItems="center"
+              backgroundColor="rgba(23, 24, 28, 0.9)"
+              borderWidth={1}
+              borderColor="#395556"
             >
-              <Text style={[styles.actionText, styles.actionTextPrimary]}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
+              <Text fontSize="$base" color="rgba(156, 163, 175, 0.9)">
+                Cancel
+              </Text>
+            </Button>
+            <Button
+              onPress={() => onConfirm(draft)}
+              flex={1}
+              padding="$sm"
+              borderRadius="$md"
+              alignItems="center"
+              backgroundColor="rgba(0, 206, 209, 0.9)"
+              borderWidth={1}
+              borderColor="#00ced1"
+            >
+              <Text
+                fontSize="$base"
+                color="rgba(23, 24, 28, 0.9)"
+                fontWeight="600"
+              >
+                Done
+              </Text>
+            </Button>
+          </XStack>
+        </YStack>
+      </Button>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity40,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    width: "100%",
-    maxWidth: 360,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  actionButton: {
-    flex: 1,
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  actionButtonPrimary: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  actionText: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-  actionTextPrimary: {
-    color: colors.backgroundDark,
-    fontWeight: typography.semibold,
-  },
-});

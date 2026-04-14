@@ -1,4 +1,6 @@
 import { AuthStoreProvider } from "@mirai-app/frameworks/auth/client";
+import { TamaguiProvider } from "@mirai-app/ui";
+import { config } from "@mirai-app/ui/tamagui.config";
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import { View } from "react-native";
@@ -164,7 +166,7 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
           user.firstName && user.lastName
             ? `${user.firstName} ${user.lastName}`
             : user.firstName || user.lastName || null,
-        emailVerified: null, // TODO: Add email verification logic when available
+        emailVerified: null, // NOTE: Email verification not yet implemented in backend
         role: user.role,
       };
     } catch (error) {
@@ -203,15 +205,17 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <SupabaseProvider client={supabaseClient}>
-          <APIProvider httpUrl={GRAPHQL_HTTP_URL} wsUrl={GRAPHQL_WS_URL}>
-            <AuthStoreProviderWrapper>
-              <LocationStoreProvider>
-                <App />
-              </LocationStoreProvider>
-            </AuthStoreProviderWrapper>
-          </APIProvider>
-        </SupabaseProvider>
+        <TamaguiProvider config={config} defaultTheme="dark">
+          <SupabaseProvider client={supabaseClient}>
+            <APIProvider httpUrl={GRAPHQL_HTTP_URL} wsUrl={GRAPHQL_WS_URL}>
+              <AuthStoreProviderWrapper>
+                <LocationStoreProvider>
+                  <App />
+                </LocationStoreProvider>
+              </AuthStoreProviderWrapper>
+            </APIProvider>
+          </SupabaseProvider>
+        </TamaguiProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

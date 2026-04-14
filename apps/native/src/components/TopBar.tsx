@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { XStack, YStack, Text } from "@mirai-app/ui";
+import { Image } from "expo-image";
+import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 interface TopBarProps {
@@ -11,50 +13,83 @@ interface TopBarProps {
   onSignPress: () => void;
 }
 
-export default function TopBar({ user, isAuthenticated, onHomePress, onSignPress }: TopBarProps) {
+export default function TopBar({
+  user,
+  isAuthenticated,
+  onHomePress,
+  onSignPress,
+}: TopBarProps) {
   const getInitials = (name?: string | null) => {
     if (!name) return "";
-    return name.split(" ").map(n => n[0]).join("");
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("");
   };
 
   return (
-    <View className="flex-row justify-between items-center gap-2 w-full px-3 py-2">
-      <TouchableOpacity
-        onPress={onHomePress}
-        className="w-10 h-10 rounded-full bg-surface-dark items-center justify-center"
-      >
-        <Ionicons name="home" size={20} color="#00ced1" />
+    <XStack
+      flexDirection="row"
+      justifyContent="space-between"
+      alignItems="center"
+      gap={8}
+      width="100%"
+      paddingHorizontal={12}
+      paddingVertical={8}
+    >
+      <TouchableOpacity onPress={onHomePress}>
+        <XStack
+          width={40}
+          height={40}
+          borderRadius={9999}
+          backgroundColor="#272935"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Ionicons name="home" size={20} color="#00ced1" />
+        </XStack>
       </TouchableOpacity>
 
-      <View className="flex-row items-center gap-2">
+      <XStack alignItems="center" gap={8}>
         {isAuthenticated && user && (
-          <View className="flex-row items-center justify-center gap-2">
+          <XStack alignItems="center" justifyContent="center" gap={8}>
             {user.image ? (
               <Image
                 source={{ uri: user.image }}
-                className="w-8 h-8 rounded-full"
+                style={{ width: 32, height: 32, borderRadius: 16 }}
               />
             ) : (
-              <View className="w-8 h-8 rounded-full bg-blue-500 items-center justify-center">
-                <Text className="text-white text-sm font-semibold">
+              <YStack
+                width={32}
+                height={32}
+                borderRadius={9999}
+                backgroundColor="#3b82f6"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text color="white" fontSize={12} fontWeight="600">
                   {getInitials(user.name)}
                 </Text>
-              </View>
+              </YStack>
             )}
-            <Text className="text-white text-base font-bold">
+            <Text color="white" fontSize={16} fontWeight="700">
               {user.name}
             </Text>
-          </View>
+          </XStack>
         )}
-        <TouchableOpacity
-          onPress={onSignPress}
-          className="px-4 py-2 bg-surface-dark rounded-lg"
-        >
-          <Text className="text-white font-medium">
-            {isAuthenticated ? "Sign Out" : "Sign In"}
-          </Text>
+        <TouchableOpacity onPress={onSignPress}>
+          <XStack
+            paddingHorizontal={16}
+            paddingVertical={8}
+            backgroundColor="#272935"
+            borderRadius={8}
+          >
+            <Text color="white" fontWeight="500">
+              {isAuthenticated ? "Sign Out" : "Sign In"}
+            </Text>
+          </XStack>
         </TouchableOpacity>
-      </View>
-    </View>
+      </XStack>
+    </XStack>
   );
 }

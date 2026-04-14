@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { colors, spacing } from "~/styles";
+import type { StyleProp, ViewStyle } from "react-native";
+import { XStack } from "@mirai-app/ui";
 import { PrimaryLoadingButton } from "../buttons/PrimaryLoadingButton";
 
 interface AppModalFooterProps {
@@ -27,17 +27,31 @@ export function AppModalFooter({
   variant = "centered",
 }: AppModalFooterProps) {
   return (
-    <View style={[styles.footer, variant === "right" && styles.footerRight, style]}>
+    <XStack
+      justifyContent={variant === "right" ? "flex-end" : "space-between"}
+      alignItems="center"
+      paddingHorizontal="$lg"
+      paddingVertical="$lg"
+      borderTopWidth={1}
+      borderTopColor="rgba(255,255,255,0.05)"
+      gap="$md"
+      style={style}
+    >
       {children}
-      <View style={styles.actions}>
+      <XStack gap="$md" flex={1}>
         {secondaryLabel && onSecondary && (
           <PrimaryLoadingButton
             label={secondaryLabel}
             isLoading={false}
             onPress={onSecondary}
             disabled={isPrimaryLoading}
-            style={styles.secondaryButton}
-            textStyle={styles.secondaryButtonText}
+            style={{
+              flex: 1,
+              backgroundColor: "transparent",
+              borderWidth: 1,
+              borderColor: "#395556",
+            }}
+            textStyle={{ color: "#9ca3af" }}
           />
         )}
         <PrimaryLoadingButton
@@ -45,42 +59,9 @@ export function AppModalFooter({
           isLoading={isPrimaryLoading}
           onPress={onPrimary}
           disabled={isPrimaryDisabled || isPrimaryLoading}
-          style={styles.primaryButton}
+          style={{ flex: 1 }}
         />
-      </View>
-    </View>
+      </XStack>
+    </XStack>
   );
 }
-
-const styles = StyleSheet.create({
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderWhite5,
-    gap: spacing.md,
-  },
-  footerRight: {
-    justifyContent: "flex-end",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.md,
-    flex: 1,
-  },
-  primaryButton: {
-    flex: 1,
-  },
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  secondaryButtonText: {
-    color: colors.textSecondary,
-  },
-});

@@ -1,5 +1,5 @@
-import { Image, StyleSheet, Text, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { Image } from "react-native";
+import { styled, Text, YStack, Card } from "@mirai-app/ui";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 
 interface TripHeroCardProps {
@@ -20,6 +20,79 @@ const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
   return "Past Trip";
 };
 
+const HeroCard = styled(Card, {
+  name: "HeroCard",
+  position: "relative",
+  height: 192,
+  marginTop: "$sm",
+  marginBottom: "$lg",
+  marginHorizontal: "$lg",
+  borderRadius: "$md",
+  overflow: "hidden",
+  backgroundColor: "$primaryOpacity20",
+  padding: 0,
+});
+
+const HeroGradient = styled(YStack, {
+  name: "HeroGradient",
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: "rgba(23, 24, 28, 0.6)",
+  zIndex: 10,
+});
+
+const HeroImage = styled(Image, {
+  name: "HeroImage",
+  width: "100%",
+  height: "100%",
+});
+
+const HeroContent = styled(YStack, {
+  name: "HeroContent",
+  position: "absolute",
+  bottom: "$lg",
+  left: "$lg",
+  zIndex: 20,
+});
+
+const HeroBadge = styled(YStack, {
+  name: "HeroBadge",
+  backgroundColor: "$primaryOpacity20",
+  paddingHorizontal: "$md",
+  paddingVertical: "$xs",
+  borderRadius: "$full",
+  borderWidth: 1,
+  borderColor: "$primaryOpacity30",
+  alignSelf: "flex-start",
+  marginBottom: "$sm",
+});
+
+const HeroBadgeText = styled(Text, {
+  name: "HeroBadgeText",
+  fontSize: "$xs",
+  fontWeight: "$bold",
+  color: "$primary",
+  textTransform: "uppercase",
+  letterSpacing: 2,
+});
+
+const HeroTitle = styled(Text, {
+  name: "HeroTitle",
+  fontSize: 34,
+  fontWeight: "$bold",
+  color: "$white",
+});
+
+const HeroSubtitle = styled(Text, {
+  name: "HeroSubtitle",
+  fontSize: "$base",
+  fontWeight: "$medium",
+  color: "$primaryOpacity80",
+});
+
 export function TripHeroCard({
   name,
   description,
@@ -28,99 +101,36 @@ export function TripHeroCard({
   imageUrl,
   backgroundImagePath,
 }: TripHeroCardProps) {
-  const { imageUrl: backgroundImageUrl } = useTripBackgroundImageDownload(backgroundImagePath);
+  const { imageUrl: backgroundImageUrl } =
+    useTripBackgroundImageDownload(backgroundImagePath);
   const finalImageUrl = imageUrl ?? backgroundImageUrl ?? undefined;
 
   // Don't render the image if no URL is available
   if (!finalImageUrl) {
     return (
-      <View style={styles.heroCard}>
-        <View style={styles.heroContent}>
-          <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>
-              {getTripStatus(startDate, endDate)}
-            </Text>
-          </View>
-          <Text style={styles.heroTitle}>{name}</Text>
-          {description ? (
-            <Text style={styles.heroSubtitle}>{description}</Text>
-          ) : null}
-        </View>
-      </View>
+      <HeroCard>
+        <HeroContent>
+          <HeroBadge>
+            <HeroBadgeText>{getTripStatus(startDate, endDate)}</HeroBadgeText>
+          </HeroBadge>
+          <HeroTitle>{name}</HeroTitle>
+          {description ? <HeroSubtitle>{description}</HeroSubtitle> : null}
+        </HeroContent>
+      </HeroCard>
     );
   }
 
   return (
-    <View style={styles.heroCard}>
-      <View style={styles.heroGradient} />
-      <Image source={{ uri: finalImageUrl }} style={styles.heroImage} />
-      <View style={styles.heroContent}>
-        <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>
-            {getTripStatus(startDate, endDate)}
-          </Text>
-        </View>
-        <Text style={styles.heroTitle}>{name}</Text>
-        {description ? (
-          <Text style={styles.heroSubtitle}>{description}</Text>
-        ) : null}
-      </View>
-    </View>
+    <HeroCard>
+      <HeroGradient />
+      <HeroImage source={{ uri: finalImageUrl }} />
+      <HeroContent>
+        <HeroBadge>
+          <HeroBadgeText>{getTripStatus(startDate, endDate)}</HeroBadgeText>
+        </HeroBadge>
+        <HeroTitle>{name}</HeroTitle>
+        {description ? <HeroSubtitle>{description}</HeroSubtitle> : null}
+      </HeroContent>
+    </HeroCard>
   );
 }
-
-const styles = StyleSheet.create({
-  heroCard: {
-    position: "relative",
-    height: 192,
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    marginHorizontal: spacing.lg,
-    borderRadius: borderRadius.md,
-    overflow: "hidden",
-    backgroundColor: colors.primaryOpacity20,
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  heroGradient: {
-    position: "absolute",
-    inset: 0,
-    backgroundColor: "rgba(23, 24, 28, 0.6)",
-    zIndex: 10,
-  },
-  heroContent: {
-    position: "absolute",
-    bottom: spacing.lg,
-    left: spacing.lg,
-    zIndex: 20,
-  },
-  heroBadge: {
-    backgroundColor: colors.primaryOpacity20,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    alignSelf: "flex-start",
-    marginBottom: spacing.sm,
-  },
-  heroBadgeText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  heroTitle: {
-    fontSize: typography.xxxl + 6,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  heroSubtitle: {
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-    color: colors.primaryOpacity80,
-  },
-});

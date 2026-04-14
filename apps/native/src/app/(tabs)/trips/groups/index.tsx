@@ -13,7 +13,6 @@ import {
   useGetGroupsByTripQuery,
   useGetCurrentUserQuery,
 } from "@mirai-app/graphql-client";
-import { graphqlClient } from "~/lib/graphql-client";
 import { useMemo } from "react";
 import { colors, spacing } from "../../../../styles";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
@@ -43,9 +42,9 @@ export default function GroupsListScreen() {
   } = useGroups(tripId);
 
   // GraphQL query for current user with group
-  const { data: currentUserData, isLoading: isLoadingCurrentUserGroup } =
-    useGetCurrentUserQuery(graphqlClient, {}, { enabled: !!tripId });
-  const currentUserWithGroup = currentUserData?.currentUser;
+  const [{ data: currentUserData, fetching: isLoadingCurrentUserGroup }] =
+    useGetCurrentUserQuery({ pause: !tripId });
+  const currentUserWithGroup = currentUserData?.me;
 
   const groupsLoading = isLoading;
 

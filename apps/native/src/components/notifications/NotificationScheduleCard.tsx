@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useClient } from "urql";
 import {
@@ -6,6 +6,7 @@ import {
   useToggleNotificationScheduleActiveMutation,
   useGetNotificationSchedulesQuery,
 } from "@mirai-app/graphql-client";
+import { Card, XStack, YStack, Text, Button } from "@mirai-app/ui";
 import { formatRelativeTime, formatDate } from "~/utils/format";
 import type { NotificationScheduleItem } from "~/types/notifications";
 import { clientLogger } from "@mirai-app/shared";
@@ -64,136 +65,120 @@ export function NotificationScheduleCard({
   };
 
   return (
-    <View style={styles.scheduleCard}>
-      <View style={styles.scheduleHeader}>
-        <View style={styles.scheduleInfo}>
-          <Text style={styles.scheduleName}>{schedule.name}</Text>
-          <Text style={styles.scheduleCreator}>
+    <Card
+      backgroundColor="#23262b"
+      borderRadius={12}
+      padding={16}
+      borderWidth={1}
+      borderColor="#374151"
+      gap={12}
+    >
+      <XStack justifyContent="space-between" alignItems="flex-start">
+        <YStack flex={1}>
+          <Text fontSize={18} fontWeight="bold" color="#ffffff">
+            {schedule.name}
+          </Text>
+          <Text fontSize={12} color="#6b7280" marginTop={4}>
             Created by{" "}
             {schedule.createdBy
               ? `${schedule.createdBy.firstName ?? ""} ${schedule.createdBy.lastName ?? ""}`.trim()
               : "Unknown"}{" "}
             • {formatRelativeTime(schedule.createdAt)}
           </Text>
-        </View>
-        <View style={styles.scheduleActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleToggle}>
+        </YStack>
+        <XStack gap={8}>
+          <Button
+            onPress={handleToggle}
+            chromeless
+            width={36}
+            height={36}
+            borderRadius={8}
+            backgroundColor="#374151"
+            alignItems="center"
+            justifyContent="center"
+            padding={0}
+          >
             <Ionicons
               name={schedule.isActive ? "notifications" : "notifications-off"}
               size={16}
               color="#9ca3af"
             />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-            <Ionicons name="trash" size={16} color="#9ca3af" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.tagRow}>
-        <View style={[styles.tag, schedule.isActive && styles.tagActive]}>
-          <Text
-            style={[styles.tagText, schedule.isActive && styles.tagTextActive]}
+          </Button>
+          <Button
+            onPress={handleDelete}
+            chromeless
+            width={36}
+            height={36}
+            borderRadius={8}
+            backgroundColor="#374151"
+            alignItems="center"
+            justifyContent="center"
+            padding={0}
           >
+            <Ionicons name="trash" size={16} color="#9ca3af" />
+          </Button>
+        </XStack>
+      </XStack>
+
+      <XStack flexWrap="wrap" gap={8}>
+        <YStack
+          backgroundColor={
+            schedule.isActive ? "rgba(0, 206, 209, 0.2)" : "#374151"
+          }
+          paddingHorizontal={8}
+          paddingVertical={4}
+          borderRadius={6}
+        >
+          <Text fontSize={12} color={schedule.isActive ? "#00ced1" : "#9ca3af"}>
             {schedule.isActive ? "Active" : "Inactive"}
           </Text>
-        </View>
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>{schedule.notificationType}</Text>
-        </View>
+        </YStack>
+        <YStack
+          backgroundColor="#374151"
+          paddingHorizontal={8}
+          paddingVertical={4}
+          borderRadius={6}
+        >
+          <Text fontSize={12} color="#9ca3af">
+            {schedule.notificationType}
+          </Text>
+        </YStack>
         {schedule?.trip?.name && (
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>{schedule.trip.name}</Text>
-          </View>
+          <YStack
+            backgroundColor="#374151"
+            paddingHorizontal={8}
+            paddingVertical={4}
+            borderRadius={6}
+          >
+            <Text fontSize={12} color="#9ca3af">
+              {schedule.trip.name}
+            </Text>
+          </YStack>
         )}
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>
+        <YStack
+          backgroundColor="#374151"
+          paddingHorizontal={8}
+          paddingVertical={4}
+          borderRadius={6}
+        >
+          <Text fontSize={12} color="#9ca3af">
             {String(schedule.hour).padStart(2, "0")}:
             {String(schedule.minute).padStart(2, "0")}
           </Text>
-        </View>
-      </View>
+        </YStack>
+      </XStack>
 
-      <View style={styles.scheduleDetails}>
-        <Text style={styles.detailText}>
+      <YStack gap={4}>
+        <Text fontSize={13} color="#9ca3af">
           Period: {formatDate(schedule.startDate)} -{" "}
           {formatDate(schedule.endDate)}
         </Text>
         {schedule.lastRun && (
-          <Text style={styles.detailText}>
+          <Text fontSize={13} color="#9ca3af">
             Last run: {formatRelativeTime(schedule.lastRun)}
           </Text>
         )}
-      </View>
-    </View>
+      </YStack>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  scheduleCard: {
-    backgroundColor: "#23262b",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#374151",
-    gap: 12,
-  },
-  scheduleHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  scheduleInfo: {
-    flex: 1,
-  },
-  scheduleName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ffffff",
-  },
-  scheduleCreator: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-  scheduleActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: "#374151",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tag: {
-    backgroundColor: "#374151",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  tagActive: {
-    backgroundColor: "rgba(0, 206, 209, 0.2)",
-  },
-  tagText: {
-    fontSize: 12,
-    color: "#9ca3af",
-  },
-  tagTextActive: {
-    color: "#00ced1",
-  },
-  scheduleDetails: {
-    gap: 4,
-  },
-  detailText: {
-    fontSize: 13,
-    color: "#9ca3af",
-  },
-});

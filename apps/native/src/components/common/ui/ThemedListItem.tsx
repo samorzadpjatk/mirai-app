@@ -1,13 +1,6 @@
 import { type ReactNode } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import type { StyleProp, ViewStyle } from "react-native";
+import { Button, Text, XStack, YStack } from "@mirai-app/ui";
 import { UserAvatar } from "~/components/map/ui/UserAvatar";
 
 interface ThemedListItemProps {
@@ -39,87 +32,57 @@ export function ThemedListItem({
   const isPressable = typeof onPress === "function";
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.item,
-        bordered && styles.itemBordered,
-        selected && styles.itemSelected,
-        isPressable && pressed && !disabled && styles.itemPressed,
-        style,
-      ]}
+    <Button
+      chromeless
+      flexDirection="row"
+      justifyContent="space-between"
+      alignItems="center"
+      paddingVertical="$sm"
+      paddingHorizontal="$md"
+      borderRadius="$md"
+      backgroundColor="$primaryOpacity10"
+      marginBottom="$sm"
+      borderWidth={1}
+      borderColor={
+        selected ? "$primary" : bordered ? "$borderDark" : "transparent"
+      }
+      opacity={isPressable ? (disabled ? 1 : 0.8) : 1}
+      pressStyle={{ opacity: 0.8 }}
       onPress={onPress}
       disabled={!isPressable || disabled}
+      style={style}
     >
-      <View style={styles.content}>
+      <XStack alignItems="center" gap="$md" flex={1}>
         {leftAvatar && (
-          <View style={styles.avatarWrapper}>
+          <YStack
+            width={52}
+            height={52}
+            borderRadius={26}
+            borderWidth={2}
+            borderColor="rgba(0, 206, 209, 0.3)"
+            overflow="hidden"
+            backgroundColor="$backgroundDark"
+            padding={2}
+          >
             <UserAvatar
               imageUrl={leftAvatar.imageUrl ?? null}
               name={leftAvatar.name}
               size={48}
             />
-          </View>
+          </YStack>
         )}
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-        </View>
+        <YStack flex={1}>
+          <Text fontSize="$base" fontWeight="600" color="$white">
+            {title}
+          </Text>
+          {subtitle && (
+            <Text fontSize="$sm" color="$textSecondary" marginTop={2}>
+              {subtitle}
+            </Text>
+          )}
+        </YStack>
         {rightElement}
-      </View>
-    </Pressable>
+      </XStack>
+    </Button>
   );
 }
-
-const styles = StyleSheet.create({
-  item: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryOpacity10,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  itemBordered: {
-    borderColor: colors.borderDark,
-  },
-  itemSelected: {
-    backgroundColor: colors.primaryOpacity10,
-    borderColor: colors.primary,
-  },
-  itemPressed: {
-    opacity: 0.8,
-  },
-  content: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    flex: 1,
-  },
-  avatarWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
-    borderColor: colors.primaryOpacity30,
-    overflow: "hidden",
-    backgroundColor: colors.backgroundDark,
-    padding: 2,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-    color: colors.white,
-  },
-  subtitle: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-});

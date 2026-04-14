@@ -1,5 +1,4 @@
-import { Image, StyleSheet, Text, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { Card, Text, YStack, Image } from "@mirai-app/ui";
 
 interface ChallengeDescriptionCardProps {
   description?: string | null;
@@ -11,41 +10,25 @@ export function ChallengeDescriptionCard({
   imageUrl,
 }: ChallengeDescriptionCardProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.description}>
+    <Card
+      marginBottom="$5"
+      borderWidth={1}
+      borderColor="rgba(255, 255, 255, 0.05)"
+    >
+      <Text variant="body" color="muted" lineHeight={24} marginBottom="$4">
         {description ??
           "Complete this challenge to earn points for your group!"}
       </Text>
       {imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
-          style={styles.image}
+          width="100%"
+          aspectRatio={16 / 9}
+          borderRadius="$lg"
+          marginTop="$3"
           resizeMode="cover"
         />
       ) : null}
-    </View>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  description: {
-    fontSize: typography.base,
-    lineHeight: typography.base * 1.5,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
-  },
-  image: {
-    width: "100%",
-    aspectRatio: 16 / 9,
-    borderRadius: borderRadius.lg,
-    marginTop: spacing.md,
-  },
-});

@@ -1,6 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { borderRadius, colors, spacing, typography } from '~/styles';
+import { TouchableOpacity } from "react-native";
+import { Card, Text, XStack, YStack, Image } from "@mirai-app/ui";
+import { Ionicons } from "@expo/vector-icons";
 
 interface CapturedImageCardProps {
   imageUri: string;
@@ -8,90 +8,95 @@ interface CapturedImageCardProps {
   onDone: () => void;
 }
 
-export function CapturedImageCard({ imageUri, onRetake, onDone }: CapturedImageCardProps) {
+export function CapturedImageCard({
+  imageUri,
+  onRetake,
+  onDone,
+}: CapturedImageCardProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Submission sent - pending review</Text>
+    <Card
+      marginBottom="$5"
+      borderWidth={1}
+      borderColor="rgba(0, 206, 209, 0.3)"
+    >
+      <Text
+        fontSize={12}
+        fontWeight="$bold"
+        color="primary"
+        textTransform="uppercase"
+        letterSpacing={2}
+        marginBottom="$4"
+        textAlign="center"
+      >
+        Submission sent - pending review
+      </Text>
 
-      <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
+      <Image
+        source={{ uri: imageUri }}
+        width="100%"
+        aspectRatio={4 / 3}
+        borderRadius="$lg"
+        marginBottom="$4"
+        resizeMode="contain"
+      />
 
-      <View style={styles.actionsRow}>
-        <TouchableOpacity onPress={onRetake} style={styles.retakeButton}>
-          <Ionicons name="refresh" size={20} color="#ef4444" />
-          <Text style={styles.retakeText}>Retake</Text>
+      <XStack gap="$3">
+        <TouchableOpacity
+          onPress={onRetake}
+          style={{ flex: 1 }}
+          activeOpacity={0.8}
+        >
+          <YStack
+            backgroundColor="rgba(239, 68, 68, 0.1)"
+            borderRadius="$md"
+            padding="$3"
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="center"
+            gap="$2"
+            borderWidth={1}
+            borderColor="rgba(239, 68, 68, 0.3)"
+          >
+            <Ionicons name="refresh" size={20} color="#ef4444" />
+            <Text
+              fontSize={13}
+              fontWeight="$bold"
+              color="#ef4444"
+              textTransform="uppercase"
+              letterSpacing={0.5}
+            >
+              Retake
+            </Text>
+          </YStack>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={onDone} style={styles.doneButton}>
-          <Ionicons name="checkmark-circle" size={20} color={colors.backgroundDark} />
-          <Text style={styles.doneText}>Done</Text>
+        <TouchableOpacity
+          onPress={onDone}
+          style={{ flex: 1 }}
+          activeOpacity={0.8}
+        >
+          <YStack
+            backgroundColor="#00ced1"
+            borderRadius="$md"
+            padding="$3"
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="center"
+            gap="$2"
+          >
+            <Ionicons name="checkmark-circle" size={20} color="#17181c" />
+            <Text
+              fontSize={13}
+              fontWeight="$bold"
+              color="#17181c"
+              textTransform="uppercase"
+              letterSpacing={0.5}
+            >
+              Done
+            </Text>
+          </YStack>
         </TouchableOpacity>
-      </View>
-    </View>
+      </XStack>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 206, 209, 0.3)',
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
-  },
-  image: {
-    width: '100%',
-    aspectRatio: 4 / 3,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.lg,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  retakeButton: {
-    flex: 1,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  retakeText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: '#ef4444',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  doneButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  doneText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-});

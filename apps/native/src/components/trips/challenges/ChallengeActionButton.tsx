@@ -1,6 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Button, XStack } from "@mirai-app/ui";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ChallengeActionButtonProps {
   isLoading: boolean;
@@ -20,53 +19,25 @@ export function ChallengeActionButton({
   const buttonLabel =
     label ?? (isLoading ? "Loading..." : "Take Challenge Photo");
   const isDisabled = isLoading || disabled;
-  const iconColor = isDisabled ? colors.textMuted : colors.backgroundDark;
-  const textColor = isDisabled ? colors.textMuted : colors.backgroundDark;
+
   return (
-    <TouchableOpacity
-      onPress={onPress}
+    <Button
+      variant="primary"
+      size="lg"
+      fullWidth
       disabled={isDisabled}
-      style={[
-        styles.button,
-        isLoading && styles.buttonLoading,
-        disabled && styles.buttonDisabled,
-      ]}
+      isLoading={isLoading}
+      onPress={onPress}
+      leftIcon={
+        <Ionicons
+          name={iconName}
+          size={24}
+          color={isDisabled ? "#475569" : "#17181c"}
+        />
+      }
+      marginBottom="$3"
     >
-      <Ionicons name={iconName} size={24} color={iconColor} />
-      <Text style={[styles.buttonText, { color: textColor }]}>{buttonLabel}</Text>
-    </TouchableOpacity>
+      {buttonLabel}
+    </Button>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    opacity: 1,
-  },
-  buttonLoading: {
-    opacity: 0.7,
-  },
-  buttonDisabled: {
-    backgroundColor: colors.surfaceDark,
-    shadowOpacity: 0,
-    opacity: 0.75,
-  },
-  buttonText: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-});

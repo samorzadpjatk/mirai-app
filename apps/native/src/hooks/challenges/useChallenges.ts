@@ -9,8 +9,8 @@ import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
 const PAGE_SIZE = 30;
 
-// TODO: This hook requires GetChallengesByTrip query in GraphQL schema
-// For now, we use trip data which contains challenges
+// NOTE: Challenges are fetched via trip data (trip.challenges)
+// A dedicated GetChallengesByTrip query could improve performance in the future
 export function useChallenges(tripId?: string | null) {
   const [{ data: tripData, fetching: tripLoading }] = useQuery({
     query: GetTripDocument,
@@ -22,8 +22,8 @@ export function useChallenges(tripId?: string | null) {
     query: GetCurrentUserDocument,
   });
 
-  // TODO: Implement infinite query for challenges when GraphQL schema supports it
-  // For now, we use challenges from trip data
+  // NOTE: Pagination not yet implemented - all challenges loaded from trip data
+  // Consider implementing cursor-based pagination when challenge count grows
   const trip = tripData?.trip;
   const challengesData = useMemo(
     () => (trip?.challenges as unknown as DBChallenge[]) ?? [],

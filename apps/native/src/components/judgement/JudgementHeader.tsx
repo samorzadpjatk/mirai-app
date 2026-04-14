@@ -1,6 +1,6 @@
-import { View, Text } from 'react-native';
-import { useJudgement } from '~/stores/judgement';
-import { viewStyles, textStyles } from '~/styles/judgement';
+import { XStack, YStack } from "tamagui";
+import { useJudgement } from "~/stores/judgement";
+import { Text, colorTokens } from "@mirai-app/ui";
 
 interface JudgementHeaderProps {
   tripId: string;
@@ -8,17 +8,31 @@ interface JudgementHeaderProps {
 }
 
 const JudgementHeader = ({ tripId, challengeId }: JudgementHeaderProps) => {
-  const { challengeName, pendingCount, stats } = useJudgement(tripId, challengeId);
+  const { challengeName, pendingCount, stats } = useJudgement(
+    tripId,
+    challengeId,
+  );
 
   return (
-    <View style={viewStyles.header}>
-      <View style={viewStyles.headerText}>
-        <Text style={textStyles.headerTitle}>{challengeName}</Text>
-        <Text style={textStyles.headerSubtitle}>
-          {pendingCount} pending • {stats.approved} approved • {stats.rejected} rejected
+    <XStack
+      alignItems="center"
+      justifyContent="space-between"
+      paddingHorizontal="$lg"
+      paddingVertical="$md"
+      backgroundColor={colorTokens.backgroundDark}
+      borderBottomWidth={1}
+      borderBottomColor={colorTokens.borderWhite5}
+    >
+      <YStack flex={1}>
+        <Text variant="h4" color="default">
+          {challengeName}
         </Text>
-      </View>
-    </View>
+        <Text variant="caption" color="muted" marginTop="$xs">
+          {pendingCount} pending • {stats.approved} approved • {stats.rejected}{" "}
+          rejected
+        </Text>
+      </YStack>
+    </XStack>
   );
 };
 

@@ -1,37 +1,44 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { styled, Text, YStack, Card } from "@mirai-app/ui";
 
 interface TripNotFoundStateProps {
   onGoBack: () => void;
 }
 
+const Container = styled(YStack, {
+  name: "TripNotFoundContainer",
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "$xxl",
+});
+
+const ErrorText = styled(Text, {
+  name: "ErrorText",
+  fontSize: "$xl",
+  fontWeight: "$bold",
+  color: "$white",
+  marginBottom: "$md",
+});
+
+const ErrorLink = styled(Text, {
+  name: "ErrorLink",
+  fontSize: "$base",
+  color: "$primary",
+  fontWeight: "$bold",
+});
+
 export function TripNotFoundState({ onGoBack }: TripNotFoundStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.errorText}>Trip not found</Text>
-      <TouchableOpacity onPress={onGoBack}>
-        <Text style={styles.errorLink}>Go back</Text>
-      </TouchableOpacity>
-    </View>
+    <Container>
+      <ErrorText>Trip not found</ErrorText>
+      <Card
+        onPress={onGoBack}
+        backgroundColor="transparent"
+        borderWidth={0}
+        padding={0}
+      >
+        <ErrorLink>Go back</ErrorLink>
+      </Card>
+    </Container>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.xxl,
-  },
-  errorText: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.md,
-  },
-  errorLink: {
-    fontSize: typography.base,
-    color: colors.primary,
-    fontWeight: typography.bold,
-  },
-});

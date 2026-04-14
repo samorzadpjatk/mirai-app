@@ -1,16 +1,8 @@
 import { useEffect } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, TouchableOpacity } from "react-native";
+import { Card, Text, XStack, YStack, Image } from "@mirai-app/ui";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ExistingSubmission {
   id: string;
@@ -98,64 +90,101 @@ export function ExistingSubmissionCard({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Submission sent</Text>
-        <View
-          style={[
-            styles.statusPill,
-            { borderColor: getStatusColor(submission.status) },
-          ]}
+    <Card
+      borderWidth={1}
+      borderColor="rgba(0, 206, 209, 0.3)"
+      marginBottom="$4"
+      gap="$2"
+    >
+      <XStack alignItems="center" justifyContent="space-between" gap="$2">
+        <Text variant="body" fontWeight="$bold" color="white">
+          Submission sent
+        </Text>
+        <YStack
+          borderWidth={1}
+          borderRadius="$md"
+          paddingHorizontal="$2"
+          paddingVertical="$1"
+          borderColor={getStatusColor(submission.status)}
         >
           <Text
-            style={[
-              styles.statusText,
-              { color: getStatusColor(submission.status) },
-            ]}
+            fontSize={10}
+            fontWeight="$bold"
+            textTransform="uppercase"
+            letterSpacing={0.5}
+            color={getStatusColor(submission.status)}
           >
             {getStatusLabel(submission.status)}
           </Text>
-        </View>
-      </View>
+        </YStack>
+      </XStack>
 
-      <Text style={styles.meta}>Submitted: {formatDateTime(submission.createdAt)}</Text>
+      <Text fontSize={13} color="muted">
+        Submitted: {formatDateTime(submission.createdAt)}
+      </Text>
 
       {hasImage && (
-        <View style={styles.imageWrapper}>
+        <YStack
+          width="100%"
+          aspectRatio={4 / 3}
+          borderRadius="$lg"
+          overflow="hidden"
+          backgroundColor="#272935"
+        >
           {imageStatus === "loading" ? (
-            <View style={styles.imageLoading}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
+            <YStack
+              flex={1}
+              alignItems="center"
+              justifyContent="center"
+              gap="$1"
+            >
+              <ActivityIndicator size="small" color="#00ced1" />
+            </YStack>
           ) : file?.uri ? (
             <Image
               source={{ uri: file.uri }}
-              style={styles.image}
+              width="100%"
+              height="100%"
               resizeMode="contain"
             />
           ) : localPreviewUri ? (
             <Image
               source={{ uri: localPreviewUri }}
-              style={styles.image}
+              width="100%"
+              height="100%"
               resizeMode="contain"
             />
           ) : (
-            <View style={styles.imageLoading}>
-              <Ionicons name="image-outline" size={24} color={colors.textSecondary} />
-              <Text style={styles.imageFallback}>Image unavailable</Text>
-            </View>
+            <YStack
+              flex={1}
+              alignItems="center"
+              justifyContent="center"
+              gap="$1"
+            >
+              <Ionicons name="image-outline" size={24} color="#9ca3af" />
+              <Text fontSize={10} color="muted">
+                Image unavailable
+              </Text>
+            </YStack>
           )}
-        </View>
+        </YStack>
       )}
 
       {!hasImage && (
-        <View style={styles.noImageRow}>
-          <Ionicons name="information-circle-outline" size={18} color={colors.textSecondary} />
-          <Text style={styles.noImageText}>Submission has no image asset.</Text>
-        </View>
+        <XStack alignItems="center" gap="$1">
+          <Ionicons
+            name="information-circle-outline"
+            size={18}
+            color="#9ca3af"
+          />
+          <Text fontSize={10} color="muted">
+            Submission has no image asset.
+          </Text>
+        </XStack>
       )}
 
       {submission.status === "REJECTED" && submission.rejectionReason && (
-        <Text style={styles.rejectionText}>
+        <Text fontSize={13} color="#fca5a5">
           Rejection reason: {submission.rejectionReason}
         </Text>
       )}
@@ -164,117 +193,32 @@ export function ExistingSubmissionCard({
         <TouchableOpacity
           onPress={handleWithdrawPress}
           disabled={isWithdrawing}
-          style={[styles.withdrawButton, isWithdrawing && styles.withdrawButtonDisabled]}
         >
-          <Ionicons name="trash-outline" size={18} color="#ef4444" />
-          <Text style={styles.withdrawButtonText}>
-            {isWithdrawing ? "Withdrawing..." : "Withdraw submission"}
-          </Text>
+          <XStack
+            marginTop="$2"
+            borderWidth={1}
+            borderColor="rgba(239, 68, 68, 0.4)"
+            borderRadius="$lg"
+            paddingVertical="$2"
+            paddingHorizontal="$3"
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="center"
+            gap="$1"
+            backgroundColor="rgba(239, 68, 68, 0.12)"
+            opacity={isWithdrawing ? 0.6 : 1}
+          >
+            <Ionicons name="trash-outline" size={18} color="#ef4444" />
+            <Text fontSize={13} fontWeight="$bold" color="#ef4444">
+              {isWithdrawing ? "Withdrawing..." : "Withdraw submission"}
+            </Text>
+          </XStack>
         </TouchableOpacity>
       ) : (
-        <Text style={styles.lockedText}>
+        <Text fontSize={10} color="muted" marginTop="$2">
           Approved submissions cannot be withdrawn.
         </Text>
       )}
-    </View>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.textPrimary,
-  },
-  statusPill: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  statusText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  meta: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  imageWrapper: {
-    width: "100%",
-    aspectRatio: 4 / 3,
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-    backgroundColor: colors.surfaceDark,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  imageLoading: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  imageFallback: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-  noImageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  noImageText: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-  rejectionText: {
-    color: "#fca5a5",
-    fontSize: typography.sm,
-  },
-  withdrawButton: {
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.4)",
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
-  },
-  withdrawButtonDisabled: {
-    opacity: 0.6,
-  },
-  withdrawButtonText: {
-    color: "#ef4444",
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  lockedText: {
-    marginTop: spacing.sm,
-    color: colors.textMuted,
-    fontSize: typography.xs,
-  },
-});

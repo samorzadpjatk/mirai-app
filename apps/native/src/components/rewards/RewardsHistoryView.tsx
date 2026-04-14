@@ -1,7 +1,5 @@
 import React from "react";
 import {
-  View,
-  Text,
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
@@ -10,20 +8,39 @@ import {
 } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { commonStyles } from "~/styles/commonStyles";
-import { useRewardPurchaseHistory, useUpdateMyRewardPurchaseStatus } from "~/hooks/rewards";
+import {
+  useRewardPurchaseHistory,
+  useUpdateMyRewardPurchaseStatus,
+} from "~/hooks/rewards";
+import { YStack, XStack, Text, Button, Card } from "@mirai-app/ui";
 
 interface Props {
   tripId: string;
 }
 
-type PurchaseStatus = "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
+type PurchaseStatus =
+  | "BOUGHT"
+  | "ACCEPTED"
+  | "IN_DELIVERY"
+  | "CANCELLED"
+  | "DELIVERED";
 
-const statusMeta: Record<PurchaseStatus, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
+const statusMeta: Record<
+  PurchaseStatus,
+  { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
   BOUGHT: { label: "Bought", color: "#fbbf24", icon: "receipt-outline" },
-  ACCEPTED: { label: "Accepted", color: "#22c55e", icon: "checkmark-circle-outline" },
+  ACCEPTED: {
+    label: "Accepted",
+    color: "#22c55e",
+    icon: "checkmark-circle-outline",
+  },
   IN_DELIVERY: { label: "In delivery", color: "#38bdf8", icon: "car-outline" },
-  CANCELLED: { label: "Cancelled", color: "#ef4444", icon: "close-circle-outline" },
+  CANCELLED: {
+    label: "Cancelled",
+    color: "#ef4444",
+    icon: "close-circle-outline",
+  },
   DELIVERED: { label: "Delivered", color: "#10b981", icon: "cube-outline" },
 };
 
@@ -58,28 +75,42 @@ export default function RewardsHistoryView({ tripId }: Props) {
 
   if (isLoading) {
     return (
-      <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
+      <YStack
+        flex={1}
+        backgroundColor="#17181c"
+        justifyContent="center"
+        alignItems="center"
+      >
         <ActivityIndicator size="large" color="#00ced1" />
-        <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Loading claim history...</Text>
-      </View>
+        <Text color="#9ca3af" marginTop="$4">
+          Loading claim history...
+        </Text>
+      </YStack>
     );
   }
 
   if (error) {
     return (
-      <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }]}>
+      <YStack
+        flex={1}
+        backgroundColor="#17181c"
+        justifyContent="center"
+        alignItems="center"
+        paddingHorizontal="$6"
+      >
         <Ionicons name="warning-outline" size={46} color="#ef4444" />
-        <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}>
-          Failed to load claim history
+        <Text color="#9ca3af" marginTop="$3" textAlign="center">
+          No reward claims yet
         </Text>
-      </View>
+      </YStack>
     );
   }
 
   return (
-    <View style={commonStyles.container}>
+    <YStack flex={1} backgroundColor="#17181c">
       <ScrollView
-        style={{ flex: 1, padding: 16 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16 }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         refreshControl={
@@ -93,18 +124,23 @@ export default function RewardsHistoryView({ tripId }: Props) {
         }
       >
         {purchases.length === 0 ? (
-          <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
+          <YStack
+            justifyContent="center"
+            alignItems="center"
+            paddingVertical="$9"
+          >
             <Ionicons name="time-outline" size={46} color="#6b7280" />
-            <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}>
+            <Text color="#9ca3af" marginTop="$3" textAlign="center">
               No reward claims yet
             </Text>
-          </View>
+          </YStack>
         ) : (
-          <View style={{ gap: 12 }}>
+          <YStack gap="$3">
             {purchases.map((purchase) => {
               const status = (purchase.status ?? "BOUGHT") as PurchaseStatus;
               const statusInfo = statusMeta[status] ?? statusMeta.BOUGHT;
-              const purchaserName = `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
+              const purchaserName =
+                `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
               const isUpdating = updateMyPurchaseStatus.isPending;
 
               const handlePickup = async () => {
@@ -133,12 +169,16 @@ export default function RewardsHistoryView({ tripId }: Props) {
                       text: "Yes, cancel",
                       style: "destructive",
                       onPress: () => {
-                        updateMyPurchaseStatus.mutateAsync({
-                          purchaseId: purchase.id,
-                          status: "CANCELLED",
-                        })
+                        updateMyPurchaseStatus
+                          .mutateAsync({
+                            purchaseId: purchase.id,
+                            status: "CANCELLED",
+                          })
                           .then(() => {
-                            Alert.alert("Saved", "Claim cancelled and coins refunded.");
+                            Alert.alert(
+                              "Saved",
+                              "Claim cancelled and coins refunded.",
+                            );
                           })
                           .catch((mutationError) => {
                             const message =
@@ -154,82 +194,102 @@ export default function RewardsHistoryView({ tripId }: Props) {
               };
 
               return (
-                <View
+                <Card
                   key={purchase.id}
-                  style={{
-                    backgroundColor: "#0f2323",
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: "#273a3a",
-                    padding: 14,
-                    gap: 10,
-                  }}
+                  backgroundColor="#0f2323"
+                  borderRadius="$3"
+                  borderWidth={1}
+                  borderColor="#273a3a"
+                  padding={14}
+                  gap={10}
                 >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[commonStyles.h4, { marginBottom: 4 }]}>
+                  <XStack
+                    justifyContent="space-between"
+                    alignItems="flex-start"
+                    gap="$2"
+                  >
+                    <YStack flex={1}>
+                      <Text
+                        fontSize="$4"
+                        fontWeight="bold"
+                        color="white"
+                        marginBottom="$1"
+                      >
                         {purchase.reward?.name}
                       </Text>
-                      <Text style={[commonStyles.textSecondary]}>
+                      <Text fontSize="$3" color="#9ca3af">
                         {purchase.quantity} x {purchase.reward?.coinCost} coins
                       </Text>
-                    </View>
-                    <View
+                    </YStack>
+                    <XStack
+                      alignItems="center"
+                      gap="$1"
+                      borderWidth={1}
+                      borderRadius={999}
+                      paddingHorizontal="$2"
+                      paddingVertical="$1"
                       style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        borderWidth: 1,
                         borderColor: statusInfo.color,
-                        borderRadius: 999,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
                         backgroundColor: `${statusInfo.color}20`,
                       }}
                     >
-                      <Ionicons name={statusInfo.icon} size={12} color={statusInfo.color} />
-                      <Text style={[commonStyles.label, { color: statusInfo.color, letterSpacing: 0.6 }]}>
+                      <Ionicons
+                        name={statusInfo.icon}
+                        size={12}
+                        color={statusInfo.color}
+                      />
+                      <Text
+                        fontSize={10}
+                        fontWeight="bold"
+                        style={{ color: statusInfo.color }}
+                        letterSpacing={0.6}
+                        textTransform="uppercase"
+                      >
                         {statusInfo.label}
                       </Text>
-                    </View>
-                  </View>
+                    </XStack>
+                  </XStack>
 
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={[commonStyles.textSecondary, { color: "#fbbf24" }]}>
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="$3" color="#fbbf24">
                       Total: {purchase.totalCost} coins
                     </Text>
-                    <Text style={[commonStyles.textSecondary]}>
+                    <Text fontSize="$3" color="#9ca3af">
                       {new Date(purchase.purchasedAt).toLocaleDateString()}
                     </Text>
-                  </View>
+                  </XStack>
 
-                  <Text style={[commonStyles.textSecondary]}>
+                  <Text fontSize="$3" color="#9ca3af">
                     Group: {purchase.group?.name ?? "Unknown"}
                   </Text>
                   {purchaserName ? (
-                    <Text style={[commonStyles.textSecondary]}>
+                    <Text fontSize="$3" color="#9ca3af">
                       Claimed by: {purchaserName}
                     </Text>
                   ) : null}
                   {purchase.collectionMethod ? (
-                    <View
-                      style={{
-                        borderWidth: 1,
-                        borderColor: "#38bdf8",
-                        borderRadius: 10,
-                        backgroundColor: "rgba(56, 189, 248, 0.14)",
-                        paddingHorizontal: 10,
-                        paddingVertical: 8,
-                        gap: 4,
-                      }}
+                    <Card
+                      borderWidth={1}
+                      borderColor="#38bdf8"
+                      borderRadius="$3"
+                      backgroundColor="rgba(56, 189, 248, 0.14)"
+                      paddingHorizontal={10}
+                      paddingVertical="$2"
+                      gap="$1"
                     >
-                      <Text style={[commonStyles.label, { color: "#38bdf8", letterSpacing: 0.7 }]}>
+                      <Text
+                        fontSize={10}
+                        fontWeight="bold"
+                        color="#38bdf8"
+                        letterSpacing={0.7}
+                        textTransform="uppercase"
+                      >
                         Pickup details
                       </Text>
-                      <Text style={[commonStyles.textSecondary, { color: "#dbeafe" }]}>
+                      <Text fontSize="$3" color="#dbeafe">
                         {purchase.collectionMethod}
                       </Text>
-                    </View>
+                    </Card>
                   ) : null}
 
                   {status === "ACCEPTED" ? (
@@ -250,8 +310,18 @@ export default function RewardsHistoryView({ tripId }: Props) {
                         opacity: isUpdating ? 0.6 : 1,
                       }}
                     >
-                      <Ionicons name="hand-left-outline" size={14} color="#38bdf8" />
-                      <Text style={[commonStyles.label, { color: "#38bdf8", letterSpacing: 0.7 }]}>
+                      <Ionicons
+                        name="hand-left-outline"
+                        size={14}
+                        color="#38bdf8"
+                      />
+                      <Text
+                        fontSize={10}
+                        fontWeight="bold"
+                        color="#38bdf8"
+                        letterSpacing={0.7}
+                        textTransform="uppercase"
+                      >
                         I want to pick up
                       </Text>
                     </TouchableOpacity>
@@ -275,25 +345,41 @@ export default function RewardsHistoryView({ tripId }: Props) {
                         opacity: isUpdating ? 0.6 : 1,
                       }}
                     >
-                      <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                      <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.7 }]}>
+                      <Ionicons
+                        name="close-circle-outline"
+                        size={14}
+                        color="#ef4444"
+                      />
+                      <Text
+                        fontSize={10}
+                        fontWeight="bold"
+                        color="#ef4444"
+                        letterSpacing={0.7}
+                        textTransform="uppercase"
+                      >
                         Cancel claim
                       </Text>
                     </TouchableOpacity>
                   ) : null}
-                </View>
+                </Card>
               );
             })}
 
             {isFetchingNextPage ? (
-              <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+              <YStack
+                justifyContent="center"
+                alignItems="center"
+                paddingVertical="$3"
+              >
                 <ActivityIndicator size="small" color="#00ced1" />
-                <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more claim history...</Text>
-              </View>
+                <Text color="#9ca3af" marginTop="$2">
+                  Loading more claim history...
+                </Text>
+              </YStack>
             ) : null}
-          </View>
+          </YStack>
         )}
       </ScrollView>
-    </View>
+    </YStack>
   );
 }

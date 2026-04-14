@@ -1,32 +1,34 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { styled, Text, YStack } from "@mirai-app/ui";
 
 interface TripsHeaderProps {
   title: string;
   subtitle: string;
 }
 
+const Header = styled(YStack, {
+  name: "TripsHeader",
+  marginBottom: "$md",
+});
+
+const Title = styled(Text, {
+  name: "TripsTitle",
+  fontSize: "$xxxl",
+  fontWeight: "$bold",
+  color: "$white",
+  marginBottom: "$sm",
+});
+
+const Subtitle = styled(Text, {
+  name: "TripsSubtitle",
+  fontSize: "$base",
+  color: "$textSecondary",
+});
+
 export function TripsHeader({ title, subtitle }: TripsHeaderProps) {
   return (
-    <View style={styles.header}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-    </View>
+    <Header>
+      <Title>{title}</Title>
+      <Subtitle>{subtitle}</Subtitle>
+    </Header>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    marginBottom: spacing.md,
-  },
-  title: {
-    fontSize: typography.xxxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-});

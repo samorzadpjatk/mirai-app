@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
 import { Image } from "expo-image";
+import { YStack, Text } from "@mirai-app/ui";
 
 interface UserAvatarProps {
   /**
@@ -71,12 +71,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const [hasImageError, setHasImageError] = useState(false);
   const hasImage = imageUrl && imageUrl.trim().length > 0;
 
-
   if (hasImage && !hasImageError) {
     return (
       <Image
         source={{ uri: imageUrl }}
-        style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
         contentFit="cover"
         onError={() => setHasImageError(true)}
       />
@@ -89,34 +88,22 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const fontSize = size * 0.4; // 40% of size
 
   return (
-    <View
-      style={[
-        styles.initialsContainer,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: bgColor,
-        },
-      ]}
+    <YStack
+      width={size}
+      height={size}
+      borderRadius={size / 2}
+      alignItems="center"
+      justifyContent="center"
+      style={{ backgroundColor: bgColor }}
     >
-      <Text style={[styles.initialsText, { fontSize }]}>{initials}</Text>
-    </View>
+      <Text
+        fontSize={fontSize}
+        color="#FFFFFF"
+        fontWeight={700}
+        textAlign="center"
+      >
+        {initials}
+      </Text>
+    </YStack>
   );
 };
-
-const styles = StyleSheet.create({
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  initialsContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  initialsText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    textAlign: "center",
-  },
-});

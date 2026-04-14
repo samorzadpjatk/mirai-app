@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
+import { YStack } from "@mirai-app/ui";
 import { MapActionButtons } from "~/components/map/MapActionButtons";
 import { ManageSharingModal } from "~/components/map/modals/ManageSharingModal";
 import { SelectedUserCard } from "~/components/map/ui/SelectedUserCard";
@@ -17,7 +18,7 @@ export function MapScreenOverlay() {
 
   return (
     <>
-      {canViewOthersLocations &&
+      {canViewOthersLocations && (
         <GestureDetector gesture={panGesture}>
           <Animated.View
             pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
@@ -30,7 +31,7 @@ export function MapScreenOverlay() {
             ) : null}
           </Animated.View>
         </GestureDetector>
-      }
+      )}
       <MapActionButtons />
       <ShareLocationModal />
       <ManageSharingModal />

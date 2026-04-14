@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { Card, Text, XStack, YStack } from "@mirai-app/ui";
 
 interface GroupInfoCardProps {
   groupName: string;
@@ -41,143 +40,86 @@ export function GroupInfoCard({
       : "Brakuje do wyższej pozycji";
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topRow}>
-        <View style={styles.header}>
-          <Text style={styles.label}>Your Group</Text>
-          <Text style={styles.name} numberOfLines={1}>
+    <Card
+      marginBottom="$3"
+      paddingHorizontal="$4"
+      paddingVertical="$2"
+      borderWidth={1}
+      borderColor="rgba(255, 255, 255, 0.05)"
+    >
+      <XStack alignItems="center" justifyContent="space-between" gap="$2">
+        <YStack flex={1}>
+          <Text
+            fontSize={9}
+            fontWeight="$bold"
+            color="muted"
+            textTransform="uppercase"
+            letterSpacing={1.4}
+            marginBottom={2}
+          >
+            Your Group
+          </Text>
+          <Text
+            fontSize={16}
+            fontWeight="$bold"
+            color="white"
+            letterSpacing={-0.2}
+            numberOfLines={1}
+          >
             {groupName}
           </Text>
-        </View>
-        <View style={styles.positionBadge}>
-          <Text style={styles.positionBadgeText}>
+        </YStack>
+        <YStack
+          borderRadius="$full"
+          paddingHorizontal="$2"
+          paddingVertical={4}
+          borderWidth={1}
+          borderColor="rgba(0, 206, 209, 0.38)"
+          backgroundColor="rgba(0, 206, 209, 0.14)"
+        >
+          <Text color="primary" fontSize={11} fontWeight="$bold">
             #{position ?? "-"} / {totalGroups ?? 0}
           </Text>
-        </View>
-      </View>
+        </YStack>
+      </XStack>
 
-      <View style={styles.pointsRow}>
+      <XStack marginTop="$1" alignItems="baseline" gap="$1">
         <Text
-          style={[
-            styles.pointsValue,
-            isLeading ? styles.leadingValue : styles.behindValue,
-          ]}
+          fontSize={16}
+          fontWeight="$bold"
+          color={isLeading ? "#10b981" : "#ef4444"}
         >
           {deltaPoints} pts
         </Text>
-        <Text style={styles.pointsMeta}>{pointsContext}</Text>
-      </View>
+        <Text flex={1} fontSize={12} fontWeight="$medium" color="muted">
+          {pointsContext}
+        </Text>
+      </XStack>
 
-      <View style={styles.progressRow}>
-        <Text style={styles.progressLabel}>Challenges done</Text>
-        <View style={styles.progressValueRow}>
-          <Text style={styles.progressValue}>
+      <XStack marginTop="$1" alignItems="center" justifyContent="space-between">
+        <Text
+          fontSize={11}
+          fontWeight="$bold"
+          color="muted"
+          textTransform="uppercase"
+          letterSpacing={1}
+        >
+          Challenges done
+        </Text>
+        <XStack alignItems="baseline" gap={4}>
+          <Text fontSize={16} fontWeight="$bold" color="primary">
             {completedChallengesCount ?? 0}
           </Text>
-          <Text style={styles.progressValueSuffix}>
+          <Text
+            fontSize={11}
+            fontWeight="$bold"
+            color="rgba(0, 206, 209, 0.7)"
+            textTransform="uppercase"
+          >
             / {totalChallengesCount ?? 0}
           </Text>
-        </View>
-      </View>
-    </View>
+        </XStack>
+      </XStack>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  header: {
-    flex: 1,
-  },
-  label: {
-    fontSize: 9,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.4,
-    marginBottom: 2,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.2,
-  },
-  positionBadge: {
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.38)",
-    backgroundColor: "rgba(0, 206, 209, 0.14)",
-  },
-  positionBadgeText: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: typography.bold,
-  },
-  pointsRow: {
-    marginTop: spacing.xs,
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: spacing.xs,
-  },
-  pointsValue: {
-    fontSize: 16,
-    fontWeight: typography.bold,
-  },
-  pointsMeta: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: typography.medium,
-    color: colors.textMuted,
-  },
-  progressRow: {
-    marginTop: spacing.xs,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  progressLabel: {
-    fontSize: 11,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  progressValueRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 4,
-  },
-  progressValue: {
-    fontSize: 16,
-    fontWeight: typography.bold,
-    color: colors.primary,
-  },
-  leadingValue: {
-    color: "#10b981",
-  },
-  behindValue: {
-    color: "#ef4444",
-  },
-  progressValueSuffix: {
-    fontSize: 11,
-    fontWeight: typography.bold,
-    color: "rgba(0, 206, 209, 0.7)",
-    textTransform: "uppercase",
-  },
-});

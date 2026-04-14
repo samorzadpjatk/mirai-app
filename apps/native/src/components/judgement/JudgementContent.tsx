@@ -1,11 +1,11 @@
-import { View, ActivityIndicator } from 'react-native';
-import { colors } from '~/styles';
-import { useJudgement } from '~/stores/judgement';
-import { viewStyles } from '~/styles/judgement';
-import { JudgementHeader } from '~/components/judgement/JudgementHeader';
-import { CardStack } from '~/components/judgement/CardStack';
-import { useEffect } from 'react';
-import { judgementStore } from '~/stores/judgement/judgementStores';
+import { ActivityIndicator } from "react-native";
+import { YStack } from "tamagui";
+import { useJudgement } from "~/stores/judgement";
+import { JudgementHeader } from "~/components/judgement/JudgementHeader";
+import { CardStack } from "~/components/judgement/CardStack";
+import { useEffect } from "react";
+import { judgementStore } from "~/stores/judgement/judgementStores";
+import { colorTokens } from "@mirai-app/ui";
 
 interface JudgementContentProps {
   tripId: string;
@@ -23,9 +23,14 @@ const JudgementContent = ({ tripId, challengeId }: JudgementContentProps) => {
 
   if (isLoading) {
     return (
-      <View style={[viewStyles.container, viewStyles.centered]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <YStack
+        flex={1}
+        backgroundColor={colorTokens.backgroundDark}
+        alignItems="center"
+        justifyContent="center"
+      >
+        <ActivityIndicator size="large" color={colorTokens.primary} />
+      </YStack>
     );
   }
 

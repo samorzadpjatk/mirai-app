@@ -1,11 +1,6 @@
 import { type ReactNode } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
-import { colors, spacing, borderRadius } from "~/styles";
+import type { StyleProp, ViewStyle } from "react-native";
+import { Card } from "@mirai-app/ui";
 
 interface ThemedCardProps {
   children: ReactNode;
@@ -29,42 +24,25 @@ export function ThemedCard({
   const isPressable = typeof onPress === "function";
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        bordered && styles.cardBordered,
-        selected && styles.cardSelected,
-        variant === "interactive" && styles.cardInteractive,
-        isPressable && pressed && !disabled && styles.cardPressed,
-        style,
-      ]}
-      onPress={onPress}
+    <Card
+      backgroundColor={
+        selected || variant === "interactive"
+          ? "$primaryOpacity10"
+          : "$cardDark"
+      }
+      borderRadius="$md"
+      borderWidth={1}
+      borderColor={
+        selected ? "$primary" : bordered ? "$borderDark" : "transparent"
+      }
+      padding="$md"
       disabled={!isPressable || disabled}
+      onPress={onPress}
+      opacity={isPressable ? (disabled ? 1 : 0.8) : 1}
+      pressStyle={{ opacity: 0.8 }}
+      style={style}
     >
       {children}
-    </Pressable>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
-    padding: spacing.md,
-  },
-  cardBordered: {
-    borderColor: colors.borderDark,
-  },
-  cardSelected: {
-    backgroundColor: colors.primaryOpacity10,
-    borderColor: colors.primary,
-  },
-  cardInteractive: {
-    backgroundColor: colors.primaryOpacity10,
-  },
-  cardPressed: {
-    opacity: 0.8,
-  },
-});

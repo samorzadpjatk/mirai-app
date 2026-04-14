@@ -1,5 +1,5 @@
-import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import type { StyleProp, ViewStyle } from "react-native";
+import { Button, Text } from "@mirai-app/ui";
 
 interface SegmentedOptionProps {
   label: string;
@@ -17,57 +17,28 @@ export function SegmentedOption({
   disabled = false,
 }: SegmentedOptionProps) {
   return (
-    <Pressable
-      style={[
-        styles.option,
-        selected && styles.optionSelected,
-        disabled && styles.optionDisabled,
-        style,
-      ]}
+    <Button
       onPress={onPress}
       disabled={disabled}
+      chromeless
+      flex={1}
+      backgroundColor={selected ? "rgba(0, 206, 209, 0.1)" : "$backgroundDark"}
+      borderRadius="$md"
+      borderWidth={1}
+      borderColor={selected ? "$primary" : "$borderDark"}
+      paddingVertical="$sm"
+      paddingHorizontal="$md"
+      alignItems="center"
+      opacity={disabled ? 0.5 : 1}
+      style={style}
     >
       <Text
-        style={[
-          styles.optionText,
-          selected && styles.optionTextSelected,
-          disabled && styles.optionTextDisabled,
-        ]}
+        fontSize="$sm"
+        color={selected ? "$primary" : "$textSecondary"}
+        fontWeight={selected ? "600" : "500"}
       >
         {label}
       </Text>
-    </Pressable>
+    </Button>
   );
 }
-
-const styles = StyleSheet.create({
-  option: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    alignItems: "center",
-  },
-  optionSelected: {
-    backgroundColor: colors.primaryOpacity10,
-    borderColor: colors.primary,
-  },
-  optionDisabled: {
-    opacity: 0.5,
-  },
-  optionText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-  optionTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.semibold,
-  },
-  optionTextDisabled: {
-    color: colors.textTertiary,
-  },
-});

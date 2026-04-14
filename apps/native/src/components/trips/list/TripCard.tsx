@@ -1,13 +1,7 @@
-import {
-  ImageBackground,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ImageBackground } from "react-native";
 import { Image } from "expo-image";
+import { styled, Text, YStack, Card } from "@mirai-app/ui";
 import miraiLogo from "../../../../assets/mirai_logo.png";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { TripListItem } from "./types";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 
@@ -38,6 +32,110 @@ const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
   return "Past";
 };
 
+const StyledCard = styled(Card, {
+  name: "TripCard",
+  borderWidth: 1,
+  borderColor: "$primaryOpacity10",
+  overflow: "hidden",
+  padding: 0,
+});
+
+const StyledCardNoImage = styled(Card, {
+  name: "TripCardNoImage",
+  borderWidth: 1,
+  borderColor: "$primaryOpacity10",
+  backgroundColor: "$cardDark",
+  padding: 0,
+});
+
+const TripContent = styled(YStack, {
+  name: "TripContent",
+  padding: "$xl",
+});
+
+const BadgeRow = styled(YStack, {
+  name: "BadgeRow",
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: "$md",
+});
+
+const TripBadge = styled(YStack, {
+  name: "TripBadge",
+  backgroundColor: "$primaryOpacity20",
+  paddingHorizontal: "$md",
+  paddingVertical: "$xs",
+  borderRadius: "$full",
+  borderWidth: 1,
+  borderColor: "$primaryOpacity30",
+  alignSelf: "flex-start",
+});
+
+const TripBadgeText = styled(Text, {
+  name: "TripBadgeText",
+  fontSize: "$xs",
+  fontWeight: "$bold",
+  color: "$primary",
+  textTransform: "uppercase",
+  letterSpacing: 2,
+});
+
+const TripTitle = styled(Text, {
+  name: "TripTitle",
+  fontSize: "$xxl",
+  fontWeight: "$bold",
+  color: "$white",
+  marginBottom: "$xs",
+});
+
+const TripSubtitle = styled(Text, {
+  name: "TripSubtitle",
+  fontSize: "$base",
+  color: "$primaryOpacity80",
+  marginBottom: "$sm",
+});
+
+const TripDate = styled(Text, {
+  name: "TripDate",
+  fontSize: "$sm",
+  color: "$textTertiary",
+  marginBottom: "$xs",
+});
+
+const TripGroups = styled(Text, {
+  name: "TripGroups",
+  fontSize: "$sm",
+  color: "$textSecondary",
+  fontWeight: "$medium",
+});
+
+const TripLogoBadge = styled(YStack, {
+  name: "TripLogoBadge",
+  position: "absolute",
+  top: "$md",
+  left: "$md",
+  width: 36,
+  height: 36,
+  borderRadius: "$full",
+  backgroundColor: "rgba(0,0,0,0.28)",
+  borderWidth: 1,
+  borderColor: "rgba(255,255,255,0.2)",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 2,
+});
+
+const TripOverlay = styled(YStack, {
+  name: "TripOverlay",
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: "rgba(23, 24, 28, 0.7)",
+});
+
 export function TripCard({ trip, onPress }: TripCardProps) {
   const status = getTripStatus(trip.startDate, trip.endDate);
   const { imageUrl } = useTripBackgroundImageDownload(trip.backgroundImagePath);
@@ -46,175 +144,71 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   // Don't render the image background if no URL is available
   if (!imageUrl) {
     return (
-      <TouchableOpacity
-        style={[
-          styles.tripCard, 
-          styles.tripCardNoImage,
-          isPast && styles.pastTripCard
-        ]}
+      <StyledCardNoImage
         onPress={onPress}
-        activeOpacity={0.7}
+        pressStyle={{ opacity: 0.7 }}
+        style={isPast ? { opacity: 0.6 } : undefined}
       >
-        <View style={styles.tripContent}>
-          <View style={styles.badgeRow}>
-            <View style={styles.tripBadge}>
-              <Text style={styles.tripBadgeText}>{status}</Text>
-            </View>
-          </View>
-          <Text style={styles.tripTitle}>{trip.name}</Text>
+        <TripContent>
+          <BadgeRow>
+            <TripBadge>
+              <TripBadgeText>{status}</TripBadgeText>
+            </TripBadge>
+          </BadgeRow>
+          <TripTitle>{trip.name}</TripTitle>
           {trip.description ? (
-            <Text style={styles.tripSubtitle}>{trip.description}</Text>
+            <TripSubtitle>{trip.description}</TripSubtitle>
           ) : null}
-          <Text style={styles.tripDate}>
-            {formatDateRange(trip.startDate, trip.endDate)}
-          </Text>
+          <TripDate>{formatDateRange(trip.startDate, trip.endDate)}</TripDate>
           {trip.groups && trip.groups.length > 0 && (
-            <Text style={styles.tripGroups}>
+            <TripGroups>
               {trip.groups.length}{" "}
               {trip.groups.length === 1 ? "group" : "groups"}
-            </Text>
+            </TripGroups>
           )}
-        </View>
-      </TouchableOpacity>
+        </TripContent>
+      </StyledCardNoImage>
     );
   }
 
   return (
-    <TouchableOpacity
-      style={[
-        styles.tripCard,
-        isPast && styles.pastTripCard
-      ]}
+    <StyledCard
       onPress={onPress}
-      activeOpacity={0.7}
+      pressStyle={{ opacity: 0.7 }}
+      style={isPast ? { opacity: 0.6 } : undefined}
     >
       <ImageBackground
         source={{ uri: imageUrl }}
-        style={styles.tripImageBackground}
-        imageStyle={styles.tripImage}
+        style={{ width: "100%", minHeight: 180 }}
+        imageStyle={{ borderRadius: 12 }}
       >
-        <View style={styles.tripOverlay} />
-        <View style={styles.tripLogoBadge}>
+        <TripOverlay />
+        <TripLogoBadge>
           <Image
             source={miraiLogo}
-            style={styles.tripLogo}
+            style={{ width: 28, height: 28 }}
             contentFit="contain"
           />
-        </View>
-        <View style={styles.tripContent}>
-          <View style={styles.badgeRow}>
-            <View style={styles.tripBadge}>
-              <Text style={styles.tripBadgeText}>{status}</Text>
-            </View>
-          </View>
-          <Text style={styles.tripTitle}>{trip.name}</Text>
+        </TripLogoBadge>
+        <TripContent>
+          <BadgeRow>
+            <TripBadge>
+              <TripBadgeText>{status}</TripBadgeText>
+            </TripBadge>
+          </BadgeRow>
+          <TripTitle>{trip.name}</TripTitle>
           {trip.description ? (
-            <Text style={styles.tripSubtitle}>{trip.description}</Text>
+            <TripSubtitle>{trip.description}</TripSubtitle>
           ) : null}
-          <Text style={styles.tripDate}>
-            {formatDateRange(trip.startDate, trip.endDate)}
-          </Text>
+          <TripDate>{formatDateRange(trip.startDate, trip.endDate)}</TripDate>
           {trip.groups && trip.groups.length > 0 && (
-            <Text style={styles.tripGroups}>
+            <TripGroups>
               {trip.groups.length}{" "}
               {trip.groups.length === 1 ? "group" : "groups"}
-            </Text>
+            </TripGroups>
           )}
-        </View>
+        </TripContent>
       </ImageBackground>
-    </TouchableOpacity>
+    </StyledCard>
   );
 }
-
-const styles = StyleSheet.create({
-  tripCard: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    overflow: "hidden",
-  },
-  pastTripCard: {
-    opacity: 0.6,
-  },
-  tripCardNoImage: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    backgroundColor: colors.cardDark,
-  },
-  tripImageBackground: {
-    width: "100%",
-    minHeight: 180,
-  },
-  tripImage: {
-    borderRadius: borderRadius.md,
-  },
-  tripOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(23, 24, 28, 0.7)",
-  },
-  tripLogoBadge: {
-    position: "absolute",
-    top: spacing.md,
-    left: spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.full,
-    backgroundColor: "rgba(0,0,0,0.28)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  tripLogo: {
-    width: 28,
-    height: 28,
-  },
-  tripContent: {
-    padding: spacing.xl,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.md,
-  },
-  tripBadge: {
-    backgroundColor: colors.primaryOpacity20,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    alignSelf: "flex-start",
-  },
-  tripBadgeText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  tripTitle: {
-    fontSize: typography.xxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  tripSubtitle: {
-    fontSize: typography.base,
-    color: colors.primaryOpacity80,
-    marginBottom: spacing.sm,
-  },
-  tripDate: {
-    fontSize: typography.sm,
-    color: colors.textTertiary,
-    marginBottom: spacing.xs,
-  },
-  tripGroups: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-});

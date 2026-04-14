@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { YStack, Text } from "@mirai-app/ui";
 
 interface AppInfoFooterProps {
   versionLabel: string;
@@ -11,21 +10,13 @@ export function AppInfoFooter({
   copyrightLabel,
 }: AppInfoFooterProps) {
   return (
-    <View style={styles.appInfo}>
-      <Text style={styles.appInfoText}>{versionLabel}</Text>
-      <Text style={styles.appInfoText}>{copyrightLabel}</Text>
-    </View>
+    <YStack alignItems="center" paddingVertical="$5" gap="$1">
+      <Text variant="caption" color="muted">
+        {versionLabel}
+      </Text>
+      <Text variant="caption" color="muted">
+        {copyrightLabel}
+      </Text>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  appInfo: {
-    alignItems: "center",
-    paddingVertical: spacing.xl,
-    gap: spacing.xs,
-  },
-  appInfoText: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
-  },
-});

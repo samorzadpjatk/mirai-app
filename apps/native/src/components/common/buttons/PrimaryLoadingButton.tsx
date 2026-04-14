@@ -1,13 +1,6 @@
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from "react-native";
-import { borderRadius, colors, shadows, spacing, typography } from "~/styles";
+import { ActivityIndicator } from "react-native";
+import { Button, Text, XStack } from "@mirai-app/ui";
+import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 
 interface PrimaryLoadingButtonProps {
   label: string;
@@ -16,7 +9,6 @@ interface PrimaryLoadingButtonProps {
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
-  activeOpacity?: number;
 }
 
 export function PrimaryLoadingButton({
@@ -26,37 +18,35 @@ export function PrimaryLoadingButton({
   disabled = false,
   style,
   textStyle,
-  activeOpacity = 0.9,
 }: PrimaryLoadingButtonProps) {
   const isDisabled = isLoading || disabled;
 
   return (
-    <TouchableOpacity
-      style={[styles.button, shadows.primaryGlow, style]}
+    <Button
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={activeOpacity}
+      backgroundColor="$primary"
+      paddingVertical="$lg"
+      borderRadius="$xl"
+      alignItems="center"
+      justifyContent="center"
+      pressStyle={{ scale: 0.98 }}
+      style={style}
     >
-      {isLoading ? (
-        <ActivityIndicator size="small" color={colors.backgroundDark} />
-      ) : (
-        <Text style={[styles.buttonText, textStyle]}>{label}</Text>
-      )}
-    </TouchableOpacity>
+      <XStack alignItems="center" justifyContent="center">
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#17181c" />
+        ) : (
+          <Text
+            fontSize="$base"
+            fontWeight="700"
+            color="$backgroundDark"
+            style={textStyle}
+          >
+            {label}
+          </Text>
+        )}
+      </XStack>
+    </Button>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-  },
-});

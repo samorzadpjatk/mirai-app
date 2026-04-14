@@ -11,3 +11,7 @@ export { DateTimePickerModal } from "./DateTimePickerModal";
 export { EmptyState } from "./EmptyState";
 export { FullScreenModal } from "./FullScreenModal";
 export { TripPickerModal } from "../TripPickerModal";
+export { PrimaryLoadingButton } from "../buttons/PrimaryLoadingButton";
+export { PrimaryAddButton } from "../buttons/PrimaryAddButton";
+export { FloatingActionButton } from "../FloatingActionButton";
+export { QrScannerModal } from "../QrScannerModal";

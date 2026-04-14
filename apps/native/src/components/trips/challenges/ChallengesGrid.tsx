@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
-import { spacing, typography, colors } from "~/styles";
+import { Card, Text, YStack, XStack } from "@mirai-app/ui";
+import { TouchableOpacity } from "react-native";
 import type { ChallengeListItem } from "./types";
 import { ChallengesGridItem } from "./ChallengesGridItem";
 
@@ -14,54 +14,33 @@ export function ChallengesGrid({
 }: ChallengesGridProps) {
   if (challenges.length === 0) {
     return (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyTitle}>No challenges available yet</Text>
-        <Text style={styles.emptySubtitle}>
+      <YStack padding="$8" alignItems="center">
+        <Text variant="h5" color="muted" textAlign="center">
+          No challenges available yet
+        </Text>
+        <Text variant="caption" color="muted" textAlign="center" marginTop="$2">
           Check back later for new challenges!
         </Text>
-      </View>
+      </YStack>
     );
   }
 
   return (
-    <View style={styles.grid}>
+    <XStack
+      flexDirection="row"
+      flexWrap="wrap"
+      justifyContent="space-between"
+      gap="$3"
+      marginBottom={40}
+    >
       {challenges.map((challenge) => (
-        <View key={challenge.id} style={styles.gridCell}>
+        <YStack key={challenge.id} width="48%">
           <ChallengesGridItem
             challenge={challenge}
             onPress={onSelectChallenge}
           />
-        </View>
+        </YStack>
       ))}
-    </View>
+    </XStack>
   );
 }
-
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: spacing.md,
-    marginBottom: 40,
-  },
-  gridCell: {
-    width: "48%",
-  },
-  emptyState: {
-    padding: spacing.xxl,
-    alignItems: "center",
-  },
-  emptyTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: spacing.sm,
-  },
-});

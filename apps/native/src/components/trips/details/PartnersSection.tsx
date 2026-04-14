@@ -1,6 +1,6 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image } from "react-native";
 import { useRouter } from "expo-router";
-import { colors, spacing, typography } from "~/styles";
+import { styled, Text, YStack, XStack, Card } from "@mirai-app/ui";
 import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
 
 function PartnerLogo({ sponsor }: { sponsor: Partner }) {
@@ -9,18 +9,15 @@ function PartnerLogo({ sponsor }: { sponsor: Partner }) {
   return (
     <Image
       source={imageUrl ? { uri: imageUrl } : undefined}
-      style={[
-        styles.logo,
-        sponsor.height ? { height: sponsor.height } : undefined,
-        sponsor.offsetX || sponsor.offsetY
-          ? {
-              transform: [
-                { translateX: sponsor.offsetX ?? 0 },
-                { translateY: sponsor.offsetY ?? 0 },
-              ],
-            }
-          : undefined,
-      ]}
+      style={{
+        width: "100%",
+        height: sponsor.height ?? 28,
+        resizeMode: "contain",
+        transform: [
+          { translateX: sponsor.offsetX ?? 0 },
+          { translateY: sponsor.offsetY ?? 0 },
+        ],
+      }}
     />
   );
 }
@@ -39,6 +36,43 @@ interface PartnersSectionProps {
   sponsors?: Partner[];
 }
 
+const Container = styled(YStack, {
+  name: "PartnersContainer",
+  alignItems: "center",
+  gap: "$sm",
+  marginTop: "$md",
+  marginBottom: "$xxxl",
+  paddingHorizontal: "$lg",
+});
+
+const Label = styled(Text, {
+  name: "PartnersLabel",
+  fontSize: 11,
+  fontWeight: "$semibold",
+  color: "$textMuted",
+  textTransform: "uppercase",
+  letterSpacing: 3,
+});
+
+const Row = styled(XStack, {
+  name: "PartnersRow",
+  alignItems: "center",
+  gap: "$sm",
+  width: "100%",
+});
+
+const Slot = styled(Card, {
+  name: "PartnerSlot",
+  flex: 1,
+  height: 28,
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "visible",
+  backgroundColor: "transparent",
+  borderWidth: 0,
+  padding: 0,
+});
+
 export function PartnersSection({ sponsors }: PartnersSectionProps) {
   const router = useRouter();
 
@@ -47,57 +81,21 @@ export function PartnersSection({ sponsors }: PartnersSectionProps) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Partners</Text>
-      <View style={styles.row}>
+    <Container>
+      <Label>Partners</Label>
+      <Row>
         {sponsors.map((sponsor) => (
-          <TouchableOpacity
+          <Slot
             key={sponsor.id}
-            style={styles.slot}
-            activeOpacity={0.6}
             onPress={() =>
               router.push(`/trips/partners/${sponsor.id}` as const)
             }
+            pressStyle={{ opacity: 0.6 }}
           >
             <PartnerLogo sponsor={sponsor} />
-          </TouchableOpacity>
+          </Slot>
         ))}
-      </View>
-    </View>
+      </Row>
+    </Container>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    marginBottom: spacing.xxxl,
-    paddingHorizontal: spacing.lg,
-  },
-  label: {
-    fontSize: typography.xs - 1,
-    fontWeight: typography.semibold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 3,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    width: "100%",
-  },
-  slot: {
-    flex: 1,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "visible",
-  },
-  logo: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
-  },
-});

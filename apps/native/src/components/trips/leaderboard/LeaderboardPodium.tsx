@@ -1,6 +1,6 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { styled, Text, YStack, XStack, Card } from "@mirai-app/ui";
 import type { RankedGroup } from "./types";
 
 const MEDAL_COLORS = {
@@ -15,15 +15,142 @@ interface PodiumPlaceProps {
   onPressGroup?: (group: RankedGroup) => void;
 }
 
+const PodiumColumn = styled(YStack, {
+  name: "PodiumColumn",
+  flex: 1,
+  alignItems: "center",
+});
+
+const AvatarContainer = styled(YStack, {
+  name: "AvatarContainer",
+  position: "relative",
+  marginBottom: "$md",
+});
+
+const CrownIcon = styled(YStack, {
+  name: "CrownIcon",
+  position: "absolute",
+  top: -24,
+  left: "50%",
+  transform: [{ translateX: -15 }],
+});
+
+const RankBadge = styled(YStack, {
+  name: "RankBadge",
+  position: "absolute",
+  bottom: -4,
+  right: -4,
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderRadius: "$full",
+});
+
+const RankBadgeText = styled(Text, {
+  name: "RankBadgeText",
+  fontSize: 10,
+  fontWeight: "$bold",
+  color: "$backgroundDark",
+});
+
+const PodiumBase = styled(YStack, {
+  name: "Podium",
+  width: "100%",
+  backgroundColor: "rgba(28, 31, 33, 0.5)",
+  borderTopLeftRadius: "$xl",
+  borderTopRightRadius: "$xl",
+  borderTopWidth: 1,
+  borderLeftWidth: 1,
+  borderRightWidth: 1,
+  paddingTop: "$lg",
+  alignItems: "center",
+});
+
+const PodiumName = styled(Text, {
+  name: "PodiumName",
+  fontWeight: "$bold",
+  color: "$white",
+  textAlign: "center",
+  paddingHorizontal: "$sm",
+});
+
+const PodiumNameLarge = styled(PodiumName, {
+  name: "PodiumNameLarge",
+  fontSize: "$sm",
+});
+
+const PodiumNameSmall = styled(PodiumName, {
+  name: "PodiumNameSmall",
+  fontSize: "$xs",
+});
+
+const PodiumScore = styled(Text, {
+  name: "PodiumScore",
+  fontWeight: "$bold",
+  color: "$primary",
+  marginTop: "$xs",
+});
+
+const PodiumScoreLarge = styled(PodiumScore, {
+  name: "PodiumScoreLarge",
+  fontSize: "$lg",
+});
+
+const PodiumScoreSmall = styled(PodiumScore, {
+  name: "PodiumScoreSmall",
+  fontSize: "$sm",
+});
+
+const Container = styled(YStack, {
+  name: "PodiumContainer",
+  paddingHorizontal: "$lg",
+  paddingTop: "$xl",
+  paddingBottom: "$xl",
+  position: "relative",
+});
+
+const PodiumRow = styled(XStack, {
+  name: "PodiumRow",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  gap: "$md",
+  height: 280,
+});
+
+const FirstPlaceOffset = styled(YStack, {
+  name: "FirstPlaceOffset",
+  transform: [{ translateY: -16 }],
+});
+
+const EmptyAvatar = styled(YStack, {
+  name: "EmptyAvatar",
+  width: 64,
+  height: 64,
+  borderRadius: 32,
+  backgroundColor: "rgba(255, 255, 255, 0.05)",
+  marginBottom: "$md",
+});
+
+const EmptyPodium = styled(YStack, {
+  name: "EmptyPodium",
+  width: "100%",
+  height: 96,
+  backgroundColor: "rgba(255, 255, 255, 0.02)",
+  borderTopLeftRadius: "$xl",
+  borderTopRightRadius: "$xl",
+});
+
+const EmptyPodiumTall = styled(EmptyPodium, {
+  name: "EmptyPodiumTall",
+  height: 176,
+});
+
 function PodiumPlace({ group, position, onPressGroup }: PodiumPlaceProps) {
   if (!group) {
     return (
-      <View style={styles.podiumColumn}>
-        <View style={styles.emptyAvatar} />
-        <View
-          style={[styles.emptyPodium, position === 1 && styles.emptyPodiumTall]}
-        />
-      </View>
+      <PodiumColumn>
+        <EmptyAvatar />
+        {position === 1 ? <EmptyPodiumTall /> : <EmptyPodium />}
+      </PodiumColumn>
     );
   }
 
@@ -39,84 +166,83 @@ function PodiumPlace({ group, position, onPressGroup }: PodiumPlaceProps) {
     position === 1 ? "rgba(255, 204, 0, 0.3)" : "rgba(255, 255, 255, 0.1)";
 
   return (
-    <TouchableOpacity
-      style={styles.podiumColumn}
-      activeOpacity={0.85}
+    <Card
       onPress={() => onPressGroup?.(group)}
+      pressStyle={{ opacity: 0.85 }}
+      backgroundColor="transparent"
+      borderWidth={0}
+      padding={0}
     >
-      <View style={styles.avatarContainer}>
-        <View
-          style={[
-            styles.avatar,
-            {
-              width: avatarSize,
-              height: avatarSize,
-              borderRadius: avatarSize / 2,
-              borderColor: medalColor,
-            },
-            position === 1 && styles.avatarGlow,
-          ]}
-        >
-          {group.image ? (
-            <Image
-              source={{ uri: group.image }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <Text style={[styles.avatarText, { color: medalColor }]}>
-              {group.name.charAt(0)}
-            </Text>
+      <PodiumColumn>
+        <AvatarContainer>
+          <YStack
+            width={avatarSize}
+            height={avatarSize}
+            borderRadius={avatarSize / 2}
+            borderWidth={2}
+            borderColor={medalColor}
+            backgroundColor="$cardDark"
+            alignItems="center"
+            justifyContent="center"
+            overflow="hidden"
+            {...(position === 1 && {
+              shadowColor: MEDAL_COLORS.gold,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+            })}
+          >
+            {group.image ? (
+              <Image
+                source={{ uri: group.image }}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text fontSize={24} fontWeight="$bold" color={medalColor}>
+                {group.name.charAt(0)}
+              </Text>
+            )}
+          </YStack>
+
+          {position === 1 && (
+            <CrownIcon>
+              <Ionicons name="ribbon" size={30} color={MEDAL_COLORS.gold} />
+            </CrownIcon>
           )}
-        </View>
 
-        {position === 1 && (
-          <View style={styles.crownIcon}>
-            <Ionicons name="ribbon" size={30} color={MEDAL_COLORS.gold} />
-          </View>
-        )}
+          <RankBadge backgroundColor={medalColor}>
+            <RankBadgeText>
+              {position === 1 ? "1ST" : position === 2 ? "2ND" : "3RD"}
+            </RankBadgeText>
+          </RankBadge>
+        </AvatarContainer>
 
-        <View style={[styles.rankBadge, { backgroundColor: medalColor }]}>
-          <Text style={styles.rankBadgeText}>
-            {position === 1 ? "1ST" : position === 2 ? "2ND" : "3RD"}
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={[
-          styles.podium,
-          {
-            height: podiumHeight,
-            borderColor,
-          },
-        ]}
-      >
-        <Ionicons
-          name="trophy"
-          size={position === 1 ? 32 : 24}
-          color={medalColor}
-          style={styles.medalIcon}
-        />
-        <Text
-          style={[
-            styles.podiumName,
-            position === 1 ? styles.podiumNameLarge : styles.podiumNameSmall,
-          ]}
-          numberOfLines={1}
-        >
-          {group.name}
-        </Text>
-        <Text
-          style={[
-            styles.podiumScore,
-            position === 1 ? styles.podiumScoreLarge : styles.podiumScoreSmall,
-          ]}
-        >
-          {group.coins.toLocaleString()} pts
-        </Text>
-      </View>
-    </TouchableOpacity>
+        <PodiumBase height={podiumHeight} borderColor={borderColor}>
+          <YStack marginBottom="$xs">
+            <Ionicons
+              name="trophy"
+              size={position === 1 ? 32 : 24}
+              color={medalColor}
+            />
+          </YStack>
+          {position === 1 ? (
+            <PodiumNameLarge numberOfLines={1}>{group.name}</PodiumNameLarge>
+          ) : (
+            <PodiumNameSmall numberOfLines={1}>{group.name}</PodiumNameSmall>
+          )}
+          {position === 1 ? (
+            <PodiumScoreLarge>
+              {group.coins.toLocaleString()} pts
+            </PodiumScoreLarge>
+          ) : (
+            <PodiumScoreSmall>
+              {group.coins.toLocaleString()} pts
+            </PodiumScoreSmall>
+          )}
+        </PodiumBase>
+      </PodiumColumn>
+    </Card>
   );
 }
 
@@ -130,147 +256,26 @@ export function LeaderboardPodium({
   onPressGroup,
 }: LeaderboardPodiumProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.podiumRow}>
+    <Container paddingTop={96}>
+      <PodiumRow>
         <PodiumPlace
           group={topThree[1]}
           position={2}
           onPressGroup={onPressGroup}
         />
-        <View style={styles.firstPlaceOffset}>
+        <FirstPlaceOffset>
           <PodiumPlace
             group={topThree[0]}
             position={1}
             onPressGroup={onPressGroup}
           />
-        </View>
+        </FirstPlaceOffset>
         <PodiumPlace
           group={topThree[2]}
           position={3}
           onPressGroup={onPressGroup}
         />
-      </View>
-    </View>
+      </PodiumRow>
+    </Container>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl * 3,
-    paddingBottom: spacing.xl,
-    position: "relative",
-  },
-  podiumRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: spacing.md,
-    height: 280,
-  },
-  firstPlaceOffset: {
-    transform: [{ translateY: -16 }],
-  },
-  podiumColumn: {
-    flex: 1,
-    alignItems: "center",
-  },
-  emptyAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    marginBottom: spacing.md,
-  },
-  emptyPodium: {
-    width: "100%",
-    height: 96,
-    backgroundColor: "rgba(255, 255, 255, 0.02)",
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-  },
-  emptyPodiumTall: {
-    height: 176,
-  },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: spacing.md,
-  },
-  avatar: {
-    borderWidth: 2,
-    backgroundColor: colors.cardDark,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarGlow: {
-    shadowColor: MEDAL_COLORS.gold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: typography.bold,
-  },
-  crownIcon: {
-    position: "absolute",
-    top: -24,
-    left: "50%",
-    transform: [{ translateX: -15 }],
-  },
-  rankBadge: {
-    position: "absolute",
-    bottom: -4,
-    right: -4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-  },
-  rankBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-  },
-  podium: {
-    width: "100%",
-    backgroundColor: "rgba(28, 31, 33, 0.5)",
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    paddingTop: spacing.lg,
-    alignItems: "center",
-  },
-  medalIcon: {
-    marginBottom: spacing.xs,
-  },
-  podiumName: {
-    fontWeight: typography.bold,
-    color: colors.white,
-    textAlign: "center",
-    paddingHorizontal: spacing.sm,
-  },
-  podiumNameLarge: {
-    fontSize: typography.sm,
-  },
-  podiumNameSmall: {
-    fontSize: typography.xs,
-  },
-  podiumScore: {
-    fontWeight: typography.bold,
-    color: colors.primary,
-    marginTop: spacing.xs,
-  },
-  podiumScoreLarge: {
-    fontSize: typography.lg,
-  },
-  podiumScoreSmall: {
-    fontSize: typography.sm,
-  },
-});

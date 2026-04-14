@@ -5,8 +5,8 @@ import {
   GetCurrentUserDocument,
 } from "@mirai-app/graphql-client";
 
-// TODO: This needs a proper GetChallengeById query in GraphQL schema
-// For now, we're using a workaround via trip data or challenge submission data
+// NOTE: Challenge data retrieved via submission lookup (workaround)
+// A direct GetChallengeById query would simplify this in the future
 export function useChallengeDetails(
   challengeId?: string | null,
   tripId?: string | null,

@@ -1,7 +1,6 @@
 import React from "react";
 import type { StyleProp, ViewStyle } from "react-native";
-import { ScrollView, StyleSheet } from "react-native";
-import { spacing } from "~/styles";
+import { ScrollView } from "react-native";
 
 export interface FilterChipRowProps {
   children: React.ReactNode;
@@ -22,8 +21,12 @@ export const FilterChipRow: React.FC<FilterChipRowProps> = ({
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={[
-        styles.row,
-        horizontalSpacing !== undefined && { gap: horizontalSpacing },
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: horizontalSpacing ?? 8,
+          paddingRight: 16,
+        },
         style,
       ]}
     >
@@ -31,12 +34,3 @@ export const FilterChipRow: React.FC<FilterChipRowProps> = ({
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingRight: spacing.md,
-  },
-});

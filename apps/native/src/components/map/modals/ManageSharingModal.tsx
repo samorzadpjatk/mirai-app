@@ -1,14 +1,8 @@
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  ActivityIndicator,
-} from "react-native";
+import { Pressable } from "react-native";
 import { MapModalShell } from "~/components/map/modals/MapModalShell";
 import { MapModalUserItem } from "~/components/map/modals/MapModalUserItem";
 import { useMapOverlayStore } from "~/stores/map";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { YStack, Text, Spinner } from "@mirai-app/ui";
 
 export function ManageSharingModal() {
   const {
@@ -27,16 +21,17 @@ export function ManageSharingModal() {
       onClose={() => setShowManageModal(false)}
       maxHeight="70%"
     >
-      <View style={styles.modalUsersList}>
+      <YStack padding="$md" paddingTop="$sm">
         {users.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
+          <YStack paddingVertical="$xl" alignItems="center">
+            <Text fontSize="$sm" color="$textSecondary" textAlign="center">
               You're not sharing your location with anyone
             </Text>
-          </View>
+          </YStack>
         ) : (
           users.map((user) => {
-            const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+            const fullName =
+              `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
 
             return (
               <MapModalUserItem
@@ -47,51 +42,36 @@ export function ManageSharingModal() {
                 bordered
                 rightElement={
                   <Pressable
-                    style={styles.removeButton}
                     onPress={() => handleRemoveUser(user.id)}
                     disabled={isRemovingUser}
                   >
-                    {isRemovingUser ? (
-                      <ActivityIndicator size="small" color={colors.danger} />
-                    ) : (
-                      <Text style={styles.removeButtonText}>Remove</Text>
-                    )}
+                    <YStack
+                      paddingHorizontal="$md"
+                      paddingVertical="$sm"
+                      borderRadius="$sm"
+                      backgroundColor="rgba(127, 29, 29, 0.3)"
+                      borderWidth={1}
+                      borderColor="rgba(239, 68, 68, 0.5)"
+                    >
+                      {isRemovingUser ? (
+                        <Spinner size="small" color="rgba(239, 68, 68, 0.5)" />
+                      ) : (
+                        <Text
+                          fontSize="$sm"
+                          fontWeight={600}
+                          color="rgba(239, 68, 68, 0.5)"
+                        >
+                          Remove
+                        </Text>
+                      )}
+                    </YStack>
                   </Pressable>
                 }
               />
             );
           })
         )}
-      </View>
+      </YStack>
     </MapModalShell>
   );
 }
-
-const styles = StyleSheet.create({
-  modalUsersList: {
-    padding: spacing.md,
-    paddingTop: spacing.sm,
-  },
-  removeButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.red900Opacity30,
-    borderWidth: 1,
-    borderColor: colors.danger,
-  },
-  removeButtonText: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.danger,
-  },
-  emptyState: {
-    paddingVertical: spacing.xl,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
-});

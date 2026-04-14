@@ -1,14 +1,7 @@
-import { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  Animated,
-} from 'react-native';
-import { colors, spacing, typography } from '~/styles';
-import {
-  AppModalShell,
-  AppModalFooter,
-} from '~/components/common/ui';
+import { useEffect, useState } from "react";
+import { Animated } from "react-native";
+import { YStack, XStack, Text, Card, Button } from "@mirai-app/ui";
+import { AppModalShell, AppModalFooter } from "~/components/common/ui";
 
 interface UpdatePopupProps {
   visible: boolean;
@@ -70,70 +63,66 @@ export function UpdatePopup({
         style={{
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
-          padding: spacing.lg,
-          alignItems: 'center',
+          padding: 20,
+          alignItems: "center",
         }}
       >
-        <View style={{ marginBottom: spacing.md }}>
-          <View style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            backgroundColor: colors.cardDark,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-            <Text style={{ fontSize: 24 }}>🔄</Text>
-          </View>
-        </View>
+        <YStack marginBottom="$3">
+          <YStack
+            width={60}
+            height={60}
+            borderRadius={30}
+            backgroundColor="rgba(23, 24, 28, 0.8)"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Text fontSize={24}>🔄</Text>
+          </YStack>
+        </YStack>
 
-        <Text style={{
-          fontSize: typography.lg,
-          fontWeight: typography.semibold,
-          color: colors.white,
-          textAlign: 'center',
-          marginBottom: spacing.sm,
-        }}>Update Available</Text>
-        <Text style={{
-          fontSize: typography.sm,
-          color: colors.textSecondary,
-          textAlign: 'center',
-          lineHeight: 20,
-          marginBottom: spacing.lg,
-        }}>
+        <Text
+          fontSize="$5"
+          fontWeight="600"
+          color="white"
+          textAlign="center"
+          marginBottom="$2"
+        >
+          Update Available
+        </Text>
+        <Text
+          fontSize="$3"
+          color="#9ca3af"
+          textAlign="center"
+          lineHeight={20}
+          marginBottom="$5"
+        >
           A new version of MIRAI is available with improvements and bug fixes.
         </Text>
 
         {isDownloading && (
-          <View style={{ width: '100%', marginBottom: spacing.lg }}>
-            <View style={{
-              height: 4,
-              backgroundColor: colors.cardDark,
-              borderRadius: 2,
-              overflow: 'hidden',
-              marginBottom: spacing.sm,
-            }}>
-              <View
-                style={{
-                  height: '100%',
-                  backgroundColor: colors.primary,
-                  borderRadius: 2,
-                  width: `${downloadProgress * 100}%`,
-                }}
+          <YStack width="100%" marginBottom="$5">
+            <YStack
+              height={4}
+              backgroundColor="rgba(23, 24, 28, 0.8)"
+              borderRadius={2}
+              overflow="hidden"
+              marginBottom="$2"
+            >
+              <YStack
+                height="100%"
+                backgroundColor="#00ced1"
+                borderRadius={2}
+                width={`${downloadProgress * 100}%`}
               />
-            </View>
-            <Text style={{
-              fontSize: typography.xs,
-              color: colors.textSecondary,
-              textAlign: 'center',
-            }}>
+            </YStack>
+            <Text fontSize="$2" color="#9ca3af" textAlign="center">
               Downloading... {Math.round(downloadProgress * 100)}%
             </Text>
-          </View>
+          </YStack>
         )}
       </Animated.View>
       <AppModalFooter
-        primaryLabel={isDownloading ? 'Updating...' : 'Update Now'}
+        primaryLabel={isDownloading ? "Updating..." : "Update Now"}
         onPrimary={onUpdate}
         isPrimaryLoading={isDownloading}
         isPrimaryDisabled={isDownloading}

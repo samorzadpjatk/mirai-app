@@ -1,17 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery, useClient } from "urql";
 import { useGetActivitiesByTripQuery } from "@mirai-app/graphql-client";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { styled, Text, YStack, XStack, Card, Spinner } from "@mirai-app/ui";
 
 interface TripNewsSectionProps {
   tripId: string;
@@ -52,6 +46,159 @@ const formatAdminName = (item: AdminNewsItem) => {
   const full = `${firstName ?? ""} ${lastName ?? ""}`.trim();
   return full.length > 0 ? full : "Admin";
 };
+
+const NewsSection = styled(YStack, {
+  name: "NewsSection",
+  marginTop: "$xxl",
+  marginBottom: "$xxl",
+});
+
+const NewsSectionHeader = styled(XStack, {
+  name: "NewsSectionHeader",
+  justifyContent: "space-between",
+  alignItems: "center",
+  paddingHorizontal: "$lg",
+  marginBottom: "$md",
+});
+
+const SectionTitle = styled(Text, {
+  name: "SectionTitle",
+  fontSize: "$xs",
+  fontWeight: "$bold",
+  color: "$slate400",
+  textTransform: "uppercase",
+  letterSpacing: 2,
+});
+
+const ViewAllButton = styled(Card, {
+  name: "ViewAllButton",
+  paddingHorizontal: "$sm",
+  paddingVertical: 4,
+  backgroundColor: "transparent",
+  borderWidth: 0,
+});
+
+const ViewAllButtonText = styled(Text, {
+  name: "ViewAllButtonText",
+  color: "$primary",
+  fontSize: "$xs",
+  fontWeight: "$bold",
+  textTransform: "uppercase",
+  letterSpacing: 1.2,
+});
+
+const NewsList = styled(YStack, {
+  name: "NewsList",
+  paddingHorizontal: "$lg",
+  gap: "$md",
+});
+
+const LoadingState = styled(XStack, {
+  name: "LoadingState",
+  alignItems: "center",
+  gap: "$sm",
+  backgroundColor: "$cardDarkOpacity40",
+  borderWidth: 1,
+  borderColor: "$primaryOpacity10",
+  padding: "$lg",
+  borderRadius: "$md",
+});
+
+const LoadingText = styled(Text, {
+  name: "LoadingText",
+  color: "$textSecondary",
+  fontSize: "$sm",
+});
+
+const EmptyState = styled(XStack, {
+  name: "EmptyState",
+  alignItems: "center",
+  gap: "$sm",
+  backgroundColor: "$cardDarkOpacity40",
+  borderWidth: 1,
+  borderColor: "$primaryOpacity10",
+  padding: "$lg",
+  borderRadius: "$md",
+});
+
+const EmptyText = styled(Text, {
+  name: "EmptyText",
+  color: "$textSecondary",
+  fontSize: "$sm",
+});
+
+const NewsItem = styled(Card, {
+  name: "NewsItem",
+  backgroundColor: "$cardDarkOpacity40",
+  borderWidth: 1,
+  borderColor: "$primaryOpacity10",
+  padding: "$lg",
+  borderRadius: "$md",
+  flexDirection: "row",
+  gap: "$lg",
+});
+
+const NewsIcon = styled(YStack, {
+  name: "NewsIcon",
+  width: 36,
+  height: 36,
+  borderRadius: 18,
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "$primaryOpacity20",
+});
+
+const NewsContent = styled(YStack, {
+  name: "NewsContent",
+  flex: 1,
+});
+
+const NewsHeader = styled(XStack, {
+  name: "NewsHeader",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: "$xs",
+  gap: "$sm",
+});
+
+const NewsTitle = styled(Text, {
+  name: "NewsTitle",
+  fontSize: "$sm",
+  fontWeight: "$bold",
+  color: "$white",
+  flex: 1,
+});
+
+const NewsTime = styled(Text, {
+  name: "NewsTime",
+  fontSize: "$xs",
+  fontWeight: "$medium",
+  color: "$slate500",
+});
+
+const NewsDescription = styled(Text, {
+  name: "NewsDescription",
+  fontSize: "$xs",
+  color: "$textTertiary",
+  lineHeight: 20,
+});
+
+const NewsAuthor = styled(Text, {
+  name: "NewsAuthor",
+  marginTop: "$sm",
+  fontSize: "$xs",
+  color: "$textSecondary",
+});
+
+const NewsImage = styled(Image, {
+  name: "NewsImage",
+  width: "100%",
+  height: 120,
+  borderRadius: "$sm",
+  borderWidth: 1,
+  borderColor: "$borderWhite10",
+  marginTop: "$sm",
+});
 
 export function TripNewsSection({ tripId }: TripNewsSectionProps) {
   const router = useRouter();
@@ -97,47 +244,43 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
   }, [newsData?.activities]);
 
   return (
-    <View style={styles.newsSection}>
-      <View style={styles.newsSectionHeader}>
-        <Text style={styles.sectionTitle}>Latest News</Text>
-        <TouchableOpacity
-          style={styles.viewAllButton}
+    <NewsSection>
+      <NewsSectionHeader>
+        <SectionTitle>Latest News</SectionTitle>
+        <ViewAllButton
           onPress={() =>
             router.push({
               pathname: "/(tabs)/community",
               params: { filter: "news" },
             })
           }
-          activeOpacity={0.85}
         >
-          <Text style={styles.viewAllButtonText}>View all</Text>
-        </TouchableOpacity>
-      </View>
+          <ViewAllButtonText>View all</ViewAllButtonText>
+        </ViewAllButton>
+      </NewsSectionHeader>
 
-      <View style={styles.newsList}>
+      <NewsList>
         {fetching ? (
-          <View style={styles.loadingState}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading admin news...</Text>
-          </View>
+          <LoadingState>
+            <Spinner size="small" color="primary" />
+            <LoadingText>Loading admin news...</LoadingText>
+          </LoadingState>
         ) : null}
 
         {!fetching && customNews.length === 0 ? (
-          <View style={styles.emptyState}>
+          <EmptyState>
             <Ionicons
               name="megaphone-outline"
               size={18}
-              color={colors.textSecondary}
+              color="rgba(255, 255, 255, 0.4)"
             />
-            <Text style={styles.emptyText}>No news yet.</Text>
-          </View>
+            <EmptyText>No news yet.</EmptyText>
+          </EmptyState>
         ) : null}
 
         {customNews.map((item) => (
-          <TouchableOpacity
+          <NewsItem
             key={item.id}
-            style={styles.newsItem}
-            activeOpacity={0.9}
             onPress={() =>
               router.push({
                 pathname: "/(tabs)/community",
@@ -147,158 +290,31 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
                 },
               })
             }
+            pressStyle={{ opacity: 0.9 }}
           >
-            <View style={styles.newsIcon}>
-              <Ionicons name="megaphone" size={18} color={colors.primary} />
-            </View>
+            <NewsIcon>
+              <Ionicons name="megaphone" size={18} color="#00CED1" />
+            </NewsIcon>
 
-            <View style={styles.newsContent}>
-              <View style={styles.newsHeader}>
-                <Text style={styles.newsTitle}>{item.title}</Text>
-                <Text style={styles.newsTime}>
-                  {formatRelativeTime(item.createdAt)}
-                </Text>
-              </View>
+            <NewsContent>
+              <NewsHeader>
+                <NewsTitle>{item.title}</NewsTitle>
+                <NewsTime>{formatRelativeTime(item.createdAt)}</NewsTime>
+              </NewsHeader>
 
               {item.description ? (
-                <Text style={styles.newsDescription}>{item.description}</Text>
+                <NewsDescription>{item.description}</NewsDescription>
               ) : null}
 
               {item.imageUrl ? (
-                <Image
-                  source={{ uri: item.imageUrl }}
-                  style={styles.newsImage}
-                  contentFit="cover"
-                />
+                <NewsImage source={{ uri: item.imageUrl }} contentFit="cover" />
               ) : null}
 
-              <Text style={styles.newsAuthor}>
-                Added by {formatAdminName(item)}
-              </Text>
-            </View>
-          </TouchableOpacity>
+              <NewsAuthor>Added by {formatAdminName(item)}</NewsAuthor>
+            </NewsContent>
+          </NewsItem>
         ))}
-      </View>
-    </View>
+      </NewsList>
+    </NewsSection>
   );
 }
-
-const styles = StyleSheet.create({
-  newsSection: {
-    marginTop: spacing.xxl,
-    marginBottom: spacing.xxl,
-  },
-  newsSectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.slate400,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  viewAllButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  viewAllButtonText: {
-    color: colors.primary,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  newsList: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  loadingState: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.cardDarkOpacity40,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  emptyState: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.cardDarkOpacity40,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-  },
-  emptyText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  newsItem: {
-    backgroundColor: colors.cardDarkOpacity40,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    flexDirection: "row",
-    gap: spacing.lg,
-  },
-  newsIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primaryOpacity20,
-  },
-  newsContent: {
-    flex: 1,
-  },
-  newsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.xs,
-    gap: spacing.sm,
-  },
-  newsTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-    flex: 1,
-  },
-  newsTime: {
-    fontSize: typography.xs,
-    fontWeight: typography.medium,
-    color: colors.slate500,
-  },
-  newsDescription: {
-    fontSize: typography.xs,
-    color: colors.textTertiary,
-    lineHeight: typography.xs * typography.relaxed,
-  },
-  newsAuthor: {
-    marginTop: spacing.sm,
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-  },
-  newsImage: {
-    width: "100%",
-    height: 120,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    marginTop: spacing.sm,
-  },
-});

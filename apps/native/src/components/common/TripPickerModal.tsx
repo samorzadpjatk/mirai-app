@@ -1,15 +1,7 @@
 import React, { useCallback } from "react";
-import {
-  ActivityIndicator,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Modal, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, typography, borderRadius } from "../../styles";
+import { YStack, XStack, Text, Button } from "@mirai-app/ui";
 import type { TripListItem } from "~/components/trips/list/types";
 
 interface TripPickerModalProps {
@@ -54,115 +46,99 @@ export function TripPickerModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.modalBackdrop}>
-        <View style={styles.modalCard}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select trip</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+      <YStack
+        flex={1}
+        backgroundColor="$blackOpacity40"
+        justifyContent="center"
+        paddingHorizontal="$lg"
+      >
+        <YStack
+          backgroundColor="$cardDark"
+          borderRadius="$lg"
+          borderWidth={1}
+          borderColor="$borderDark"
+          maxHeight="70%"
+        >
+          <XStack
+            alignItems="center"
+            justifyContent="space-between"
+            paddingHorizontal="$lg"
+            paddingTop="$lg"
+            paddingBottom="$md"
+          >
+            <Text fontSize="$lg" fontWeight="700" color="$white">
+              Select trip
+            </Text>
+            <Button onPress={onClose} chromeless padding="$sm">
+              <Ionicons name="close" size={18} color="#9ca3af" />
+            </Button>
+          </XStack>
 
           <ScrollView
-            contentContainerStyle={styles.modalList}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: 16,
+              gap: 12,
+            }}
             onScroll={onLoadMore}
             scrollEventThrottle={16}
           >
             {trips.map((trip) => (
-              <TouchableOpacity
+              <Button
                 key={trip.id}
-                style={styles.modalItem}
                 onPress={() => handleSelectTrip(trip.id)}
+                chromeless
+                paddingVertical="$md"
+                paddingHorizontal="$md"
               >
-                <Text style={styles.modalItemText}>{trip.name}</Text>
-                {selectedTripId === trip.id ? (
-                  <Ionicons
-                    name="checkmark"
-                    size={18}
-                    color={colors.primary}
-                  />
-                ) : null}
-              </TouchableOpacity>
+                <XStack
+                  alignItems="center"
+                  justifyContent="space-between"
+                  width="100%"
+                  borderBottomWidth={1}
+                  borderBottomColor="rgba(255,255,255,0.05)"
+                >
+                  <Text
+                    color="$white"
+                    fontSize="$base"
+                    flex={1}
+                    paddingRight="$sm"
+                  >
+                    {trip.name}
+                  </Text>
+                  {selectedTripId === trip.id ? (
+                    <Ionicons name="checkmark" size={18} color="#00ced1" />
+                  ) : null}
+                </XStack>
+              </Button>
             ))}
 
             {trips.length === 0 && !isLoading ? (
-              <Text style={styles.modalEmpty}>No trips available</Text>
+              <Text
+                color="$textSecondary"
+                textAlign="center"
+                paddingVertical="$lg"
+              >
+                No trips available
+              </Text>
             ) : null}
 
             {isFetchingMore ? (
-              <View style={styles.modalFooterLoader}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={styles.modalFooterLoaderText}>Loading more trips...</Text>
-              </View>
+              <XStack
+                alignItems="center"
+                justifyContent="center"
+                gap="$sm"
+                paddingVertical="$sm"
+              >
+                <ActivityIndicator size="small" color="#00ced1" />
+                <Text color="$textSecondary" fontSize="$sm">
+                  Loading more trips...
+                </Text>
+              </XStack>
             ) : null}
           </ScrollView>
-        </View>
-      </View>
+        </YStack>
+      </YStack>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity40,
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    maxHeight: "70%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  modalTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  modalList: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    gap: spacing.md,
-  },
-  modalItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderWhite5,
-  },
-  modalItemText: {
-    color: colors.white,
-    fontSize: typography.base,
-    flex: 1,
-    paddingRight: spacing.sm,
-  },
-  modalEmpty: {
-    color: colors.textSecondary,
-    textAlign: "center",
-    paddingVertical: spacing.lg,
-  },
-  modalFooterLoader: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  modalFooterLoaderText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-});

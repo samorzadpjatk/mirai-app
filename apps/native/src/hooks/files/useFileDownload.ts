@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
 import { clientLogger } from "@mirai-app/shared";
-import { graphqlClient } from "~/lib/graphql-client";
+import { getUrqlClient } from "~/lib/urql-client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 
@@ -177,19 +177,33 @@ export const useFileDownload = () => {
         if (input.publicUrl) {
           signedUrl = input.publicUrl;
         } else {
-          const response = await graphqlClient.request<{
-            createDownloadUrl: {
-              storagePath: string;
-              signedUrl: string;
-              expiresAt: string;
-            };
-          }>(CreateDownloadUrlDocument, {
-            input: {
-              storagePath: input.storagePath,
-              expiresInSeconds: input.expiresInSeconds,
-            },
-          });
-          signedUrl = response.createDownloadUrl.signedUrl;
+          const urqlClient = getUrqlClient();
+          const response = await urqlClient
+            .mutation<
+              {
+                createDownloadUrl: {
+                  storagePath: string;
+                  signedUrl: string;
+                  expiresAt: string;
+                };
+              },
+              {
+                input: {
+                  storagePath: string;
+                  expiresInSeconds?: number;
+                };
+              }
+            >(CreateDownloadUrlDocument, {
+              input: {
+                storagePath: input.storagePath,
+                expiresInSeconds: input.expiresInSeconds,
+              },
+            })
+            .toPromise();
+          if (response.error || !response.data) {
+            throw response.error || new Error("Failed to get download URL");
+          }
+          signedUrl = response.data.createDownloadUrl.signedUrl;
         }
 
         const cachedFileName = await buildCacheFileName(

@@ -1,13 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { Button, Text, XStack } from "@mirai-app/ui";
+import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 
 interface PrimaryAddButtonProps {
   onPress: () => void;
@@ -15,7 +8,6 @@ interface PrimaryAddButtonProps {
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
-  activeOpacity?: number;
 }
 
 export function PrimaryAddButton({
@@ -24,45 +16,44 @@ export function PrimaryAddButton({
   disabled = false,
   style,
   textStyle,
-  activeOpacity = 0.9,
 }: PrimaryAddButtonProps) {
   return (
-    <TouchableOpacity
+    <Button
       onPress={onPress}
       disabled={disabled}
-      style={[styles.button, disabled && styles.buttonDisabled, style]}
-      activeOpacity={activeOpacity}
+      backgroundColor="$primary"
+      borderRadius="$lg"
+      paddingVertical="$md"
+      paddingHorizontal="$lg"
+      minWidth={120}
+      opacity={disabled ? 0.6 : 1}
+      pressStyle={{ scale: 0.98 }}
+      style={style}
     >
-      <Ionicons name="add-circle" size={24} color={colors.backgroundDark} />
-      <Text style={[styles.buttonText, textStyle]}>{label}</Text>
-    </TouchableOpacity>
+      <XStack
+        alignItems="center"
+        justifyContent="center"
+        gap="$md"
+        style={{
+          shadowColor: "#00ced1",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          elevation: 8,
+        }}
+      >
+        <Ionicons name="add-circle" size={24} color="#17181c" />
+        <Text
+          fontSize={14}
+          fontWeight="700"
+          color="$backgroundDark"
+          letterSpacing={0.5}
+          textTransform="uppercase"
+          style={textStyle}
+        >
+          {label}
+        </Text>
+      </XStack>
+    </Button>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    minWidth: 120,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    fontSize: 14,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-});

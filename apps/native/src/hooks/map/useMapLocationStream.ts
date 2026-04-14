@@ -3,7 +3,7 @@ import { useClient } from "urql";
 import * as Crypto from "expo-crypto";
 import { clientLogger } from "@mirai-app/shared";
 import { useLocationContext } from "~/stores/location";
-import { graphqlClient } from "~/lib/graphql-client";
+import { getUrqlClient } from "~/lib/urql-client";
 
 // GraphQL document for friends locations (inline until generated)
 const FriendsLocationsDocument = `
@@ -81,9 +81,11 @@ function createGraphQLSubscription<T>(
   const connect = async () => {
     try {
       // Get auth token for WebSocket connection
-      const token = await graphqlClient.requestConfig
-        .headers?.()
-        .then((h) => h?.Authorization?.replace("Bearer ", ""))
+      const urqlClient = getUrqlClient();
+      const token = await urqlClient
+        .query<{ authToken: string }>(`query { authToken }`, {})
+        .toPromise()
+        .then((r) => r.data?.authToken)
         .catch(() => null);
 
       const url = new URL(wsUrl);
@@ -183,12 +185,20 @@ export function useMapLocationStream(enabled: boolean) {
     // Poll for friends locations since subscription might not be available
     const pollLocations = async () => {
       try {
-        const result = await graphqlClient.request(FriendsLocationsDocument, {
-          connectionId,
-          radiusKm: undefined,
-          latitude: undefined,
-          longitude: undefined,
-        });
+        const urqlClient = getUrqlClient();
+        const response = await urqlClient
+          .query<{
+            friendsLocations: { edges: Array<{ node: FriendLocation }> };
+          }>(FriendsLocationsDocument, {
+            connectionId,
+            radiusKm: undefined,
+            latitude: undefined,
+            longitude: undefined,
+          })
+          .toPromise();
+        if (response.error) throw response.error;
+        const result = response.data;
+        if (!result) return;
 
         // Process friends locations
         const locations =
@@ -207,13 +217,16 @@ export function useMapLocationStream(enabled: boolean) {
             },
           }));
 
-          if (location.user) {
+          if (
+            location.user?.firstName != null ||
+            location.user?.lastName != null
+          ) {
             setUsersData((prev) => ({
               ...prev,
               [userId]: {
-                name: `${location.user.firstName ?? ""} ${location.user.lastName ?? ""}`.trim(),
-                image: location.user.hasAvatar
-                  ? `avatar-${location.user.id}`
+                name: `${location.user?.firstName ?? ""} ${location.user?.lastName ?? ""}`.trim(),
+                image: location.user?.hasAvatar
+                  ? `avatar-${location.user?.id}`
                   : undefined,
               },
             }));

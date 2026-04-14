@@ -1,15 +1,7 @@
 import { type ReactNode } from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type DimensionValue,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { Modal } from "react-native";
+import type { DimensionValue, StyleProp, ViewStyle } from "react-native";
+import { YStack, XStack, Text, Button } from "@mirai-app/ui";
 
 interface AppModalShellProps {
   visible: boolean;
@@ -43,113 +35,80 @@ export function AppModalShell({
       onRequestClose={onClose}
     >
       {isPageSheet ? (
-        <View style={styles.pageSheetContainer}>
-          <View style={[styles.pageSheetContent, maxWidth ? { maxWidth } : undefined]}>
-            <View style={styles.pageSheetHeader}>
-              <Text style={styles.pageSheetTitle}>{title}</Text>
-              <Pressable onPress={onClose}>
-                <Text style={styles.pageSheetClose}>✕</Text>
-              </Pressable>
-            </View>
-            <View style={[styles.pageSheetBody, { maxHeight }, contentStyle]}>
+        <YStack flex={1} backgroundColor="$backgroundDark">
+          <YStack flex={1} maxWidth={maxWidth}>
+            <XStack
+              justifyContent="space-between"
+              alignItems="center"
+              padding="$lg"
+              borderBottomWidth={1}
+              borderBottomColor="$borderDark"
+            >
+              <Text
+                fontSize="$lg"
+                fontWeight="700"
+                color="$white"
+                letterSpacing={-0.3}
+              >
+                {title}
+              </Text>
+              <Button onPress={onClose} chromeless padding="$xs">
+                <Text fontSize={24} color="$textSecondary" fontWeight="600">
+                  ✕
+                </Text>
+              </Button>
+            </XStack>
+            <YStack flex={1} maxHeight={maxHeight} style={contentStyle}>
               {children}
-            </View>
-          </View>
-        </View>
+            </YStack>
+          </YStack>
+        </YStack>
       ) : (
-        <Pressable style={styles.modalOverlay} onPress={onClose}>
-          <Pressable
-            style={[styles.modalContent, { maxHeight }, maxWidth ? { maxWidth } : undefined]}
-            onPress={(event) => event.stopPropagation()}
+        <Button
+          onPress={onClose}
+          fullscreen
+          position="absolute"
+          backgroundColor="rgba(0,0,0,0.4)"
+          justifyContent="center"
+          alignItems="center"
+          paddingHorizontal="$lg"
+        >
+          <YStack
+            backgroundColor="$cardDark"
+            borderRadius="$lg"
+            borderWidth={1}
+            borderColor="$borderDark"
+            width="85%"
+            maxHeight="80%"
+            maxWidth={maxWidth}
           >
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{title}</Text>
-              <Pressable onPress={onClose}>
-                <Text style={styles.modalClose}>✕</Text>
-              </Pressable>
-            </View>
-            <View style={[styles.modalBody, contentStyle]}>
+            <XStack
+              justifyContent="space-between"
+              alignItems="center"
+              padding="$lg"
+              borderBottomWidth={1}
+              borderBottomColor="rgba(255,255,255,0.05)"
+            >
+              <Text
+                fontSize="$lg"
+                fontWeight="700"
+                color="$white"
+                letterSpacing={-0.3}
+              >
+                {title}
+              </Text>
+              <Button onPress={onClose} chromeless padding="$xs">
+                <Text fontSize={24} color="$textSecondary" fontWeight="600">
+                  ✕
+                </Text>
+              </Button>
+            </XStack>
+            <YStack padding="$lg" style={contentStyle}>
               {children}
-            </View>
-          </Pressable>
-        </Pressable>
+            </YStack>
+          </YStack>
+        </Button>
       )}
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  // Card modal (overlay) styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity40,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-  },
-  modalContent: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    width: "85%",
-    maxHeight: "80%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderWhite5,
-  },
-  modalTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.3,
-  },
-  modalClose: {
-    fontSize: 24,
-    color: colors.textSecondary,
-    fontWeight: "600",
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  modalBody: {
-    padding: spacing.lg,
-  },
-
-  // Page sheet modal styles
-  pageSheetContainer: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  pageSheetContent: {
-    flex: 1,
-  },
-  pageSheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDark,
-  },
-  pageSheetTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.3,
-  },
-  pageSheetClose: {
-    fontSize: 24,
-    color: colors.textSecondary,
-    fontWeight: "600",
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  pageSheetBody: {
-    flex: 1,
-  },
-});

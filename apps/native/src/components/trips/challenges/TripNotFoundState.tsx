@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, typography } from "~/styles";
+import { YStack, Text } from "@mirai-app/ui";
 
 interface TripNotFoundStateProps {
   message?: string;
@@ -9,21 +8,15 @@ export function TripNotFoundState({
   message = "Trip not found",
 }: TripNotFoundStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>{message}</Text>
-    </View>
+    <YStack
+      flex={1}
+      backgroundColor="#17181c"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Text variant="h5" color="muted">
+        {message}
+      </Text>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  text: {
-    color: colors.textMuted,
-    fontSize: typography.lg,
-  },
-});

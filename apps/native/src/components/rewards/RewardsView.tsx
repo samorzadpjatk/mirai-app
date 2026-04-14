@@ -1,7 +1,5 @@
 import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -19,8 +17,8 @@ import { useRewards, usePurchaseReward } from "~/hooks/rewards";
 import { useMyGroup } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import type { RewardListItem } from "./types";
-import { commonStyles } from "~/styles/commonStyles";
 import { clientLogger } from "@mirai-app/shared";
+import { YStack, XStack, Text, Button, Card } from "@mirai-app/ui";
 
 interface Props {
   tripId: string;
@@ -189,101 +187,80 @@ export default function RewardsView({ tripId }: Props) {
 
   if (isLoading) {
     return (
-      <View
-        style={[
-          commonStyles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
+      <YStack
+        flex={1}
+        backgroundColor="#17181c"
+        justifyContent="center"
+        alignItems="center"
       >
         <ActivityIndicator size="large" color="#00ced1" />
-        <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>
+        <Text color="white" marginTop="$4">
           Loading rewards...
         </Text>
-      </View>
+      </YStack>
     );
   }
 
   if (error) {
     return (
-      <View
-        style={[
-          commonStyles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
+      <YStack
+        flex={1}
+        backgroundColor="#17181c"
+        justifyContent="center"
+        alignItems="center"
+        paddingHorizontal="$6"
       >
         <Ionicons name="alert-circle" size={48} color="#ef4444" />
-        <Text
-          style={[
-            commonStyles.textSecondary,
-            { marginTop: 16, textAlign: "center" },
-          ]}
-        >
+        <Text color="#9ca3af" marginTop="$4" textAlign="center">
           Failed to load rewards
         </Text>
-      </View>
+      </YStack>
     );
   }
 
   if (!safeRewards || safeRewards.length === 0) {
     return (
-      <View
-        style={[
-          commonStyles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
+      <YStack
+        flex={1}
+        backgroundColor="#17181c"
+        justifyContent="center"
+        alignItems="center"
       >
         <Ionicons name="gift" size={48} color="#6b7280" />
-        <Text
-          style={[
-            commonStyles.textSecondary,
-            { marginTop: 16, textAlign: "center" },
-          ]}
-        >
+        <Text color="#9ca3af" marginTop="$4" textAlign="center">
           No rewards available for this trip
         </Text>
-      </View>
+      </YStack>
     );
   }
 
   return (
-    <View style={commonStyles.container}>
+    <YStack flex={1} backgroundColor="#17181c">
       {/* Header with group coins */}
-      <View
-        style={{
-          padding: 16,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 8,
-          }}
+      <YStack padding="$4">
+        <XStack
+          alignItems="center"
+          justifyContent="space-between"
+          marginBottom="$2"
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={[commonStyles.h3]}>Rewards</Text>
+          <XStack alignItems="center" gap="$2">
+            <Text fontSize="$6" fontWeight="bold" color="white">
+              Rewards
+            </Text>
             {refreshing && <ActivityIndicator size="small" color="#00ced1" />}
             {lastRefreshTime && !refreshing && (
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-              >
+              <XStack alignItems="center" gap="$1">
                 <Ionicons name="refresh" size={14} color="#10b981" />
-                <Text
-                  style={[
-                    commonStyles.textSecondary,
-                    { color: "#10b981", fontSize: 11 },
-                  ]}
-                >
+                <Text fontSize={11} color="#10b981">
                   Updated{" "}
                   {lastRefreshTime.toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
                 </Text>
-              </View>
+              </XStack>
             )}
-          </View>
+          </XStack>
           <TouchableOpacity
             onPress={() =>
               router.push({
@@ -291,44 +268,39 @@ export default function RewardsView({ tripId }: Props) {
                 params: { tripId },
               })
             }
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              borderWidth: 1,
-              borderColor: "#273a3a",
-              borderRadius: 999,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-            }}
           >
-            <Ionicons name="time-outline" size={14} color="#9ca3af" />
-            <Text style={[commonStyles.textSecondary, { fontSize: 12 }]}>
-              History
-            </Text>
+            <XStack
+              alignItems="center"
+              gap="$2"
+              borderWidth={1}
+              borderColor="#273a3a"
+              borderRadius={999}
+              paddingHorizontal="$3"
+              paddingVertical={6}
+            >
+              <Ionicons name="time-outline" size={14} color="#9ca3af" />
+              <Text fontSize={12} color="#9ca3af">
+                History
+              </Text>
+            </XStack>
           </TouchableOpacity>
-        </View>
+        </XStack>
 
         {currentUserGroup && (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <XStack alignItems="center" gap="$2">
             <Ionicons name="people" size={16} color="#00ced1" />
-            <Text style={[commonStyles.textPrimary, { color: "#00ced1" }]}>
-              {currentUserGroup.name}
-            </Text>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            >
+            <Text color="#00ced1">{currentUserGroup.name}</Text>
+            <XStack alignItems="center" gap="$1">
               <Ionicons name="cash" size={16} color="#fbbf24" />
-              <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
-                {groupCoins} coins
-              </Text>
-            </View>
-          </View>
+              <Text color="#fbbf24">{groupCoins} coins</Text>
+            </XStack>
+          </XStack>
         )}
-      </View>
+      </YStack>
 
       <ScrollView
-        style={{ flex: 1, padding: 16 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -338,33 +310,27 @@ export default function RewardsView({ tripId }: Props) {
           />
         }
       >
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            rowGap: 16,
-          }}
-        >
+        <XStack flexWrap="wrap" justifyContent="space-between" rowGap={16}>
           {safeRewards.map((reward) => {
             const rewardImages = getRewardImages(reward);
             const rewardPrimaryImage = rewardImages[0] ?? null;
 
             return (
-              <View
+              <YStack
                 key={reward.id}
+                width="48%"
+                backgroundColor="#0f2323"
+                borderWidth={2}
+                borderColor={
+                  justRefreshed && !reward.isOutOfStock
+                    ? "#10b981"
+                    : reward.isOutOfStock
+                      ? "#ef4444"
+                      : "#273a3a"
+                }
+                borderRadius={12}
+                padding={16}
                 style={{
-                  width: "48%",
-                  backgroundColor: "#0f2323",
-                  borderWidth: 2,
-                  borderColor:
-                    justRefreshed && !reward.isOutOfStock
-                      ? "#10b981"
-                      : reward.isOutOfStock
-                        ? "#ef4444"
-                        : "#273a3a",
-                  borderRadius: 12,
-                  padding: 16,
                   shadowColor: justRefreshed ? "#10b981" : "transparent",
                   shadowOffset: justRefreshed
                     ? { width: 0, height: 0 }
@@ -390,111 +356,74 @@ export default function RewardsView({ tripId }: Props) {
                       resizeMode="cover"
                     />
                   ) : (
-                    <View
-                      style={{
-                        width: "100%",
-                        aspectRatio: 1,
-                        borderRadius: 8,
-                        marginBottom: 12,
-                        borderWidth: 1,
-                        borderColor: "#273a3a",
-                        backgroundColor: "#0b1a1a",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                    <YStack
+                      width="100%"
+                      aspectRatio={1}
+                      borderRadius={8}
+                      marginBottom={12}
+                      borderWidth={1}
+                      borderColor="#273a3a"
+                      backgroundColor="#0b1a1a"
+                      alignItems="center"
+                      justifyContent="center"
                     >
                       <Ionicons name="gift-outline" size={36} color="#6b7280" />
-                    </View>
+                    </YStack>
                   )}
 
                   {/* Reward Info */}
-                  <View style={{ marginBottom: 12 }}>
-                    <Text style={[commonStyles.h4, { marginBottom: 4 }]}>
+                  <YStack marginBottom={12}>
+                    <Text
+                      fontSize="$4"
+                      fontWeight="bold"
+                      color="white"
+                      marginBottom="$1"
+                    >
                       {reward.name}
                     </Text>
                     <Text
                       numberOfLines={3}
                       ellipsizeMode="tail"
-                      style={[
-                        commonStyles.textSecondary,
-                        { color: "#9ca3af", marginBottom: 6 },
-                      ]}
+                      fontSize="$3"
+                      color="#9ca3af"
+                      marginBottom={6}
                     >
                       {reward.description}
                     </Text>
-                    <Text
-                      style={[
-                        commonStyles.textSecondary,
-                        { color: "#00ced1", fontSize: 11, marginBottom: 8 },
-                      ]}
-                    >
+                    <Text fontSize={11} color="#00ced1" marginBottom="$2">
                       Tap to read full description
                     </Text>
 
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
+                    <XStack justifyContent="space-between" alignItems="center">
+                      <XStack alignItems="center" gap="$1">
                         <Ionicons name="cash" size={16} color="#fbbf24" />
-                        <View style={{ alignItems: "flex-start" }}>
-                          <Text
-                            style={[
-                              commonStyles.textPrimary,
-                              {
-                                color: "#fbbf24",
-                                fontSize: 12,
-                                lineHeight: 14,
-                              },
-                            ]}
-                          >
+                        <YStack alignItems="flex-start">
+                          <Text fontSize={12} color="#fbbf24" lineHeight={14}>
                             {reward.coinCost} coins
                           </Text>
                           {reward.originalCoinCost && (
-                            <Text
-                              style={[
-                                commonStyles.textSecondary,
-                                {
-                                  color: "#9ca3af",
-                                  fontSize: 10,
-                                  lineHeight: 12,
-                                },
-                              ]}
-                            >
+                            <Text fontSize={10} color="#9ca3af" lineHeight={12}>
                               {reward.originalCoinCost}% of total points
                             </Text>
                           )}
-                        </View>
-                      </View>
+                        </YStack>
+                      </XStack>
 
                       <Text
-                        style={[
-                          commonStyles.textPrimary,
-                          {
-                            color: reward.isOutOfStock ? "#ef4444" : "#10b981",
-                            fontWeight: "600",
-                          },
-                        ]}
+                        fontWeight="600"
+                        color={reward.isOutOfStock ? "#ef4444" : "#10b981"}
                       >
                         {reward.isOutOfStock
                           ? "Sold out"
                           : `${reward.availableQuantity ?? 0} pcs.`}
                       </Text>
-                    </View>
-                  </View>
+                    </XStack>
+                  </YStack>
                 </TouchableOpacity>
 
                 {/* Purchase Button */}
-                <TouchableOpacity
+                <Button
+                  
                   onPress={() => openPurchaseModal(reward)}
                   disabled={
                     !reward.canAfford ||
@@ -502,42 +431,37 @@ export default function RewardsView({ tripId }: Props) {
                     reward.isOutOfStock ||
                     isTripPast
                   }
-                  style={[
-                    commonStyles.button,
-                    {
-                      backgroundColor:
-                        reward.canAfford &&
-                        reward.isEligibleToBuy &&
-                        !reward.isOutOfStock &&
-                        !isTripPast
-                          ? "#00ced1"
-                          : "#374151",
-                      opacity:
-                        reward.canAfford &&
-                        reward.isEligibleToBuy &&
-                        !reward.isOutOfStock &&
-                        !isTripPast
-                          ? 1
-                          : 0.5,
-                    },
-                  ]}
+                  backgroundColor={
+                    reward.canAfford &&
+                    reward.isEligibleToBuy &&
+                    !reward.isOutOfStock &&
+                    !isTripPast
+                      ? "#00ced1"
+                      : "#374151"
+                  }
+                  opacity={
+                    reward.canAfford &&
+                    reward.isEligibleToBuy &&
+                    !reward.isOutOfStock &&
+                    !isTripPast
+                      ? 1
+                      : 0.5
+                  }
                 >
-                  <Text style={commonStyles.buttonText}>
-                    {isTripPast
-                      ? "Trip ended"
-                      : reward.isOutOfStock
-                        ? "Sold out"
-                        : !reward.isEligibleToBuy
-                          ? "Only group leader"
-                          : !reward.canAfford
-                            ? "Not enough coins"
-                            : "Claim reward"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                  {isTripPast
+                    ? "Trip ended"
+                    : reward.isOutOfStock
+                      ? "Sold out"
+                      : !reward.isEligibleToBuy
+                        ? "Only group leader"
+                        : !reward.canAfford
+                          ? "Not enough coins"
+                          : "Claim reward"}
+                </Button>
+              </YStack>
             );
           })}
-        </View>
+        </XStack>
       </ScrollView>
 
       {/* Purchase Modal */}
@@ -547,92 +471,64 @@ export default function RewardsView({ tripId }: Props) {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowPurchaseModal(false)}
       >
-        <View style={commonStyles.container}>
-          <View
-            style={{
-              padding: 24,
-              borderBottomWidth: 1,
-              borderBottomColor: "#273a3a",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
+        <YStack flex={1} backgroundColor="#17181c">
+          <XStack
+            padding="$6"
+            borderBottomWidth={1}
+            borderBottomColor="#273a3a"
+            justifyContent="space-between"
+            alignItems="center"
           >
-            <Text style={[commonStyles.h3]}>Claim reward</Text>
+            <Text fontSize="$6" fontWeight="bold" color="white">
+              Claim reward
+            </Text>
             <TouchableOpacity onPress={() => setShowPurchaseModal(false)}>
               <Ionicons name="close" size={24} color="#9ca3af" />
             </TouchableOpacity>
-          </View>
+          </XStack>
 
-          <ScrollView style={{ padding: 24 }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: 24 }}
+          >
             {selectedReward && (
               <>
-                <View style={{ marginBottom: 20 }}>
-                  <Text style={[commonStyles.h4, { marginBottom: 8 }]}>
+                <YStack marginBottom="$5">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="bold"
+                    color="white"
+                    marginBottom="$2"
+                  >
                     {selectedReward.name}
                   </Text>
-                  <Text
-                    style={[
-                      commonStyles.textSecondary,
-                      { color: "#9ca3af", marginBottom: 16 },
-                    ]}
-                  >
+                  <Text fontSize="$3" color="#9ca3af" marginBottom="$4">
                     {selectedReward.description}
                   </Text>
 
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <XStack alignItems="center" gap="$1">
                       <Ionicons name="cash" size={16} color="#fbbf24" />
-                      <View style={{ alignItems: "flex-start" }}>
-                        <Text
-                          style={[
-                            commonStyles.textPrimary,
-                            { color: "#fbbf24", fontSize: 14, lineHeight: 16 },
-                          ]}
-                        >
+                      <YStack alignItems="flex-start">
+                        <Text fontSize="$4" color="#fbbf24" lineHeight={16}>
                           {selectedReward.coinCost} coins / item
                         </Text>
                         {selectedReward.originalCoinCost && (
-                          <Text
-                            style={[
-                              commonStyles.textSecondary,
-                              {
-                                color: "#9ca3af",
-                                fontSize: 11,
-                                lineHeight: 13,
-                              },
-                            ]}
-                          >
+                          <Text fontSize={11} color="#9ca3af" lineHeight={13}>
                             {selectedReward.originalCoinCost}% of total points
                           </Text>
                         )}
-                      </View>
-                    </View>
+                      </YStack>
+                    </XStack>
 
-                    <Text
-                      style={[commonStyles.textPrimary, { color: "#10b981" }]}
-                    >
+                    <Text color="#10b981">
                       Available: {selectedReward.availableQuantity} pcs.
                     </Text>
-                  </View>
-                </View>
+                  </XStack>
+                </YStack>
 
-                <View style={{ marginBottom: 20 }}>
-                  <Text
-                    style={[commonStyles.textSecondary, { marginBottom: 8 }]}
-                  >
+                <YStack marginBottom="$5">
+                  <Text fontSize="$3" color="#9ca3af" marginBottom="$2">
                     Quantity
                   </Text>
                   <TextInput
@@ -650,40 +546,36 @@ export default function RewardsView({ tripId }: Props) {
                     onChangeText={setQuantity}
                     keyboardType="numeric"
                   />
-                </View>
+                </YStack>
 
-                <View
-                  style={{
-                    backgroundColor: "#1f2937",
-                    padding: 16,
-                    borderRadius: 12,
-                    marginBottom: 24,
-                  }}
+                <Card
+                  backgroundColor="#1f2937"
+                  padding="$4"
+                  borderRadius="$3"
+                  marginBottom="$6"
                 >
-                  <Text
-                    style={[commonStyles.textSecondary, { marginBottom: 8 }]}
-                  >
+                  <Text fontSize="$3" color="#9ca3af" marginBottom="$2">
                     Total cost:
                   </Text>
-                  <Text style={[commonStyles.h4, { color: "#fbbf24" }]}>
+                  <Text fontSize="$6" fontWeight="bold" color="#fbbf24">
                     {selectedReward.coinCost * (parseInt(quantity, 10) || 1)}{" "}
                     coins
                   </Text>
-                </View>
+                </Card>
 
-                <TouchableOpacity
+                <Button
+                  
                   onPress={handlePurchase}
                   disabled={purchaseReward.isPending}
-                  style={[commonStyles.button, { marginBottom: 24 }]}
+                  
+                  marginBottom="$6"
                 >
-                  <Text style={commonStyles.buttonText}>
-                    {purchaseReward.isPending ? "Claiming..." : "Confirm claim"}
-                  </Text>
-                </TouchableOpacity>
+                  {purchaseReward.isPending ? "Claiming..." : "Confirm claim"}
+                </Button>
               </>
             )}
           </ScrollView>
-        </View>
+        </YStack>
       </Modal>
 
       {/* Reward Details Modal */}
@@ -693,33 +585,33 @@ export default function RewardsView({ tripId }: Props) {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowRewardDetailsModal(false)}
       >
-        <View style={commonStyles.container}>
-          <View
-            style={{
-              padding: 24,
-              borderBottomWidth: 1,
-              borderBottomColor: "#273a3a",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
+        <YStack flex={1} backgroundColor="#17181c">
+          <XStack
+            padding="$6"
+            borderBottomWidth={1}
+            borderBottomColor="#273a3a"
+            justifyContent="space-between"
+            alignItems="center"
           >
-            <Text style={[commonStyles.h3]}>Reward details</Text>
+            <Text fontSize="$6" fontWeight="bold" color="white">
+              Reward details
+            </Text>
             <TouchableOpacity onPress={() => setShowRewardDetailsModal(false)}>
               <Ionicons name="close" size={24} color="#9ca3af" />
             </TouchableOpacity>
-          </View>
+          </XStack>
 
-          <ScrollView style={{ padding: 24 }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: 24 }}
+          >
             {previewReward ? (
               <>
                 {previewImages.length > 0 ? (
-                  <View
-                    style={{
-                      width: previewCarouselWidth,
-                      alignSelf: "center",
-                      marginBottom: 16,
-                    }}
+                  <YStack
+                    width={previewCarouselWidth}
+                    alignSelf="center"
+                    marginBottom="$4"
                   >
                     <ScrollView
                       horizontal
@@ -748,106 +640,85 @@ export default function RewardsView({ tripId }: Props) {
                       ))}
                     </ScrollView>
                     {previewImages.length > 1 ? (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "center",
-                          gap: 6,
-                          marginTop: 10,
-                        }}
+                      <XStack
+                        justifyContent="center"
+                        gap={6}
+                        marginTop={10}
                       >
                         {previewImages.map((_, index) => (
-                          <View
+                          <YStack
                             key={`dot-${index}`}
-                            style={{
-                              width: 7,
-                              height: 7,
-                              borderRadius: 999,
-                              backgroundColor:
-                                index === previewImageIndex
-                                  ? "#00ced1"
-                                  : "#4b5563",
-                            }}
+                            width={7}
+                            height={7}
+                            borderRadius={999}
+                            backgroundColor={
+                              index === previewImageIndex
+                                ? "#00ced1"
+                                : "#4b5563"
+                            }
                           />
                         ))}
-                      </View>
+                      </XStack>
                     ) : null}
-                  </View>
+                  </YStack>
                 ) : null}
 
-                <Text style={[commonStyles.h3, { marginBottom: 8 }]}>
+                <Text
+                  fontSize="$6"
+                  fontWeight="bold"
+                  color="white"
+                  marginBottom="$2"
+                >
                   {previewReward.name}
                 </Text>
                 <Text
-                  style={[
-                    commonStyles.textPrimary,
-                    { color: "#e5e7eb", lineHeight: 22, marginBottom: 20 },
-                  ]}
+                  fontSize="$4"
+                  color="#d1d5db"
+                  lineHeight={22}
+                  marginBottom="$5"
                 >
                   {previewReward.description}
                 </Text>
 
-                <View
-                  style={{
-                    backgroundColor: "#1f2937",
-                    padding: 16,
-                    borderRadius: 12,
-                    marginBottom: 20,
-                    gap: 8,
-                  }}
+                <Card
+                  backgroundColor="#1f2937"
+                  padding="$4"
+                  borderRadius="$3"
+                  marginBottom="$5"
+                  gap="$2"
                 >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={commonStyles.textSecondary}>Price</Text>
-                    <View style={{ alignItems: "flex-end" }}>
-                      <Text
-                        style={[commonStyles.textPrimary, { color: "#fbbf24" }]}
-                      >
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="$3" color="#9ca3af">
+                      Price
+                    </Text>
+                    <YStack alignItems="flex-end">
+                      <Text fontSize="$4" color="#fbbf24">
                         {previewReward.coinCost} coins
                       </Text>
                       {previewReward.originalCoinCost && (
-                        <Text
-                          style={[
-                            commonStyles.textSecondary,
-                            { color: "#9ca3af", fontSize: 11 },
-                          ]}
-                        >
+                        <Text fontSize={11} color="#9ca3af">
                           {previewReward.originalCoinCost}% of total points
                         </Text>
                       )}
-                    </View>
-                  </View>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={commonStyles.textSecondary}>Availability</Text>
+                    </YStack>
+                  </XStack>
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="$3" color="#9ca3af">
+                      Availability
+                    </Text>
                     <Text
-                      style={[
-                        commonStyles.textPrimary,
-                        {
-                          color: previewReward.isOutOfStock
-                            ? "#ef4444"
-                            : "#10b981",
-                        },
-                      ]}
+                      fontSize="$4"
+                      color={previewReward.isOutOfStock ? "#ef4444" : "#10b981"}
                     >
                       {previewReward.isOutOfStock
                         ? "Sold out"
                         : `${previewReward.availableQuantity ?? 0} pcs.`}
                     </Text>
-                  </View>
-                </View>
+                  </XStack>
+                </Card>
 
-                <TouchableOpacity
+                <Button
+                  
                   onPress={() => {
                     setShowRewardDetailsModal(false);
                     openPurchaseModal(previewReward);
@@ -858,44 +729,39 @@ export default function RewardsView({ tripId }: Props) {
                     previewReward.isOutOfStock ||
                     isTripPast
                   }
-                  style={[
-                    commonStyles.button,
-                    {
-                      backgroundColor:
-                        previewReward.canAfford &&
-                        previewReward.isEligibleToBuy &&
-                        !previewReward.isOutOfStock &&
-                        !isTripPast
-                          ? "#00ced1"
-                          : "#374151",
-                      opacity:
-                        previewReward.canAfford &&
-                        previewReward.isEligibleToBuy &&
-                        !previewReward.isOutOfStock &&
-                        !isTripPast
-                          ? 1
-                          : 0.5,
-                      marginBottom: 24,
-                    },
-                  ]}
+                  backgroundColor={
+                    previewReward.canAfford &&
+                    previewReward.isEligibleToBuy &&
+                    !previewReward.isOutOfStock &&
+                    !isTripPast
+                      ? "#00ced1"
+                      : "#374151"
+                  }
+                  opacity={
+                    previewReward.canAfford &&
+                    previewReward.isEligibleToBuy &&
+                    !previewReward.isOutOfStock &&
+                    !isTripPast
+                      ? 1
+                      : 0.5
+                  }
+                  marginBottom="$6"
                 >
-                  <Text style={commonStyles.buttonText}>
-                    {isTripPast
-                      ? "Trip ended"
-                      : previewReward.isOutOfStock
-                        ? "Sold out"
-                        : !previewReward.isEligibleToBuy
-                          ? "Only group leader"
-                          : !previewReward.canAfford
-                            ? "Not enough coins"
-                            : "Claim reward"}
-                  </Text>
-                </TouchableOpacity>
+                  {isTripPast
+                    ? "Trip ended"
+                    : previewReward.isOutOfStock
+                      ? "Sold out"
+                      : !previewReward.isEligibleToBuy
+                        ? "Only group leader"
+                        : !previewReward.canAfford
+                          ? "Not enough coins"
+                          : "Claim reward"}
+                </Button>
               </>
             ) : null}
           </ScrollView>
-        </View>
+        </YStack>
       </Modal>
-    </View>
+    </YStack>
   );
 }

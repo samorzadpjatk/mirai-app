@@ -1,8 +1,7 @@
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import type { TextStyle, ViewStyle } from "react-native";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { Button, Text, XStack, YStack } from "@mirai-app/ui";
 
 export type FilterChipIcon = keyof typeof Ionicons.glyphMap;
 
@@ -38,133 +37,76 @@ export const FilterChip: React.FC<FilterChipProps> = ({
   const hasCount = typeof count === "number";
 
   return (
-    <TouchableOpacity
+    <Button
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}
       onPress={onPress}
-      activeOpacity={0.85}
-      style={[
-        styles.chip,
-        selected && styles.chipSelected,
-        disabled && styles.chipDisabled,
-        style,
-      ]}
+      chromeless
+      minHeight={34}
+      paddingHorizontal="$md"
+      paddingVertical="$xs"
+      borderRadius="$full"
+      borderWidth={1}
+      borderColor={selected ? "$primary" : "$borderWhite10"}
+      backgroundColor={
+        selected ? "$primaryOpacity20" : "$backgroundDarkOpacity50"
+      }
+      opacity={disabled ? 0.6 : 1}
+      style={style}
     >
-      <View style={styles.leftContent}>
+      <XStack alignItems="center" gap="$xs" flexShrink={1}>
         {icon ? (
           <Ionicons
             name={icon}
             size={14}
-            color={selected ? colors.primary : colors.textSecondary}
+            color={selected ? "#00ced1" : "#9ca3af"}
           />
         ) : null}
         {secondaryIcon ? (
           <Ionicons
             name={secondaryIcon}
             size={14}
-            color={selected ? colors.primary : colors.textSecondary}
+            color={selected ? "#00ced1" : "#9ca3af"}
           />
         ) : null}
         <Text
-          style={[
-            styles.label,
-            selected && styles.labelSelected,
-            disabled && styles.labelDisabled,
-            textStyle,
-          ]}
+          color={selected ? "$primary" : "$textSecondary"}
+          fontSize="$sm"
+          fontWeight="600"
+          textTransform="none"
+          letterSpacing={0.4}
+          style={textStyle}
         >
           {label}
         </Text>
-      </View>
+      </XStack>
 
       {hasCount ? (
-        <View
-          style={[
-            styles.countPill,
-            selected && styles.countPillSelected,
-            countPillStyle,
-          ]}
+        <YStack
+          minWidth={24}
+          paddingHorizontal="$xs"
+          paddingVertical={2}
+          borderRadius="$full"
+          borderWidth={1}
+          borderColor={selected ? "$primary" : "$borderWhite10"}
+          backgroundColor={
+            selected ? "$primaryOpacity20" : "$backgroundDarkOpacity80"
+          }
+          alignItems="center"
+          justifyContent="center"
+          style={countPillStyle}
         >
           <Text
-            style={[
-              styles.countText,
-              selected && styles.countTextSelected,
-              disabled && styles.countTextDisabled,
-              countTextStyle,
-            ]}
+            color={selected ? "$primary" : "$white"}
+            fontWeight="700"
+            fontSize="$xs"
+            style={countTextStyle}
           >
             {count}
           </Text>
-        </View>
+        </YStack>
       ) : null}
-    </TouchableOpacity>
+    </Button>
   );
 };
-
-const styles = StyleSheet.create({
-  chip: {
-    minHeight: 34,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: colors.backgroundDarkOpacity50,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  chipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  chipDisabled: {
-    opacity: 0.6,
-  },
-  leftContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    flexShrink: 1,
-  },
-  label: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    textTransform: "none",
-    letterSpacing: 0.4,
-  },
-  labelSelected: {
-    color: colors.primary,
-  },
-  labelDisabled: {
-    color: colors.textTertiary,
-  },
-  countPill: {
-    minWidth: 24,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: colors.backgroundDarkOpacity80,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  countPillSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  countText: {
-    color: colors.white,
-    fontWeight: typography.bold,
-    fontSize: typography.xs,
-  },
-  countTextSelected: {
-    color: colors.primary,
-  },
-  countTextDisabled: {
-    color: colors.textTertiary,
-  },
-});

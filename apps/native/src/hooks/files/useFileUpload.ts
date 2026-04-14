@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import { File } from "expo-file-system";
-import { graphqlClient } from "~/lib/graphql-client";
+import { getUrqlClient } from "~/lib/urql-client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
 import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
 import { clientLogger } from "@mirai-app/shared";
@@ -91,16 +91,25 @@ export const useFileUpload = () => {
 
   const createUploadUrl = useCallback(
     async (input: { storagePath: string; upsert?: boolean }) => {
-      const result = await graphqlClient.request<{
-        createUploadUrl: {
-          bucket: string;
-          objectPath: string;
-          storagePath: string;
-          resumableUrl: string;
-          token: string;
-        };
-      }>(CreateUploadUrlDocument, { input });
-      return result.createUploadUrl;
+      const urqlClient = getUrqlClient();
+      const result = await urqlClient
+        .mutation<
+          {
+            createUploadUrl: {
+              bucket: string;
+              objectPath: string;
+              storagePath: string;
+              resumableUrl: string;
+              token: string;
+            };
+          },
+          { input: { storagePath: string; upsert?: boolean } }
+        >(CreateUploadUrlDocument, { input })
+        .toPromise();
+      if (result.error || !result.data) {
+        throw result.error || new Error("Failed to create upload URL");
+      }
+      return result.data.createUploadUrl;
     },
     [],
   );

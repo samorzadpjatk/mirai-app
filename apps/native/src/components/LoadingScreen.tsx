@@ -1,8 +1,6 @@
-import { View, Text, ActivityIndicator } from "react-native";
-import { StyleSheet } from "react-native";
+import { YStack, Text, Spinner } from "@mirai-app/ui";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography } from "../styles";
 
 interface LoadingScreenProps {
   message?: string;
@@ -15,40 +13,35 @@ export default function LoadingScreen({
   return (
     <>
       <StatusBar style="auto" />
-      <View style={styles.container}>
-        <View
-          style={[styles.mainContent, { paddingTop: insets.top + spacing.lg }]}
+      <YStack
+        flex={1}
+        backgroundColor="#17181c"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <YStack
+          flex={1}
+          alignSelf="stretch"
+          padding={16}
+          paddingBottom={120}
+          gap={16}
+          alignItems="center"
+          justifyContent="center"
+          paddingTop={insets.top + 16}
         >
-          <ActivityIndicator size="large" color="#00ced1" />
-          <Text style={styles.message}>{message}</Text>
-        </View>
-      </View>
+          <Spinner size="large" color="#00ced1" />
+          <Text
+            marginTop={12}
+            color="white"
+            fontSize={16}
+            fontWeight="500"
+            lineHeight={24}
+            textAlign="center"
+          >
+            {message}
+          </Text>
+        </YStack>
+      </YStack>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mainContent: {
-    flex: 1,
-    alignSelf: "stretch",
-    padding: spacing.lg,
-    paddingBottom: 120,
-    gap: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  message: {
-    marginTop: spacing.md,
-    color: "#ffffff",
-    fontSize: typography.lg,
-    fontWeight: typography.medium,
-    lineHeight: typography.lg * typography.normalLine,
-    textAlign: "center",
-  },
-});

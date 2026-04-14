@@ -1,33 +1,35 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { styled, Text, YStack } from "@mirai-app/ui";
 
 interface TripsEmptyStateProps {
   title: string;
   subtitle: string;
 }
 
+const EmptyStateContainer = styled(YStack, {
+  name: "EmptyStateContainer",
+  alignItems: "center",
+  paddingVertical: "$xxxl",
+});
+
+const EmptyStateTitle = styled(Text, {
+  name: "EmptyStateTitle",
+  fontSize: "$xl",
+  fontWeight: "$bold",
+  color: "$white",
+  marginBottom: "$sm",
+});
+
+const EmptyStateSubtitle = styled(Text, {
+  name: "EmptyStateSubtitle",
+  fontSize: "$base",
+  color: "$textSecondary",
+});
+
 export function TripsEmptyState({ title, subtitle }: TripsEmptyStateProps) {
   return (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyStateText}>{title}</Text>
-      <Text style={styles.emptyStateSubtext}>{subtitle}</Text>
-    </View>
+    <EmptyStateContainer>
+      <EmptyStateTitle>{title}</EmptyStateTitle>
+      <EmptyStateSubtitle>{subtitle}</EmptyStateSubtitle>
+    </EmptyStateContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: spacing.xxxl * 2,
-  },
-  emptyStateText: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-  },
-  emptyStateSubtext: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-});

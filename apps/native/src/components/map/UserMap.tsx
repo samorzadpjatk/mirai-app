@@ -1,8 +1,17 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { UserAvatar } from "./ui/UserAvatar";
-import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
+import {
+  MapView,
+  Camera,
+  UserLocation as MapLibreUserLocation,
+  PointAnnotation,
+  VectorSource,
+  RasterSource,
+  RasterLayer,
+} from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
+import { YStack } from "@mirai-app/ui";
 import { useLocationContext } from "~/stores/location";
 
 export interface UserLocation {
@@ -59,7 +68,7 @@ export interface UserMapProps {
   /**
    * Current map theme: 'dark' | 'light'.
    */
-  mapTheme?: 'dark' | 'light';
+  mapTheme?: "dark" | "light";
   /**
    * Called when user toggles the map theme.
    */
@@ -94,13 +103,15 @@ interface MapStyleConfig {
   rasterOverlays?: MapRasterOverlay[];
 }
 
-const MAP_STYLES: Record<'dark' | 'light', MapStyleConfig> = {
+const MAP_STYLES: Record<"dark" | "light", MapStyleConfig> = {
   dark: {
     style: "https://tiles.openfreemap.org/styles/fiord",
     rasterOverlays: [
       {
         id: "opensnowmap-pistes",
-        tileUrlTemplates: ["https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png"],
+        tileUrlTemplates: [
+          "https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png",
+        ],
         tileSize: 256,
         attribution: "© OpenSnowMap.org",
         layerId: "opensnowmap-overlay",
@@ -118,7 +129,9 @@ const MAP_STYLES: Record<'dark' | 'light', MapStyleConfig> = {
     rasterOverlays: [
       {
         id: "opensnowmap-pistes",
-        tileUrlTemplates: ["https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png"],
+        tileUrlTemplates: [
+          "https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png",
+        ],
         tileSize: 256,
         attribution: "© OpenSnowMap.org",
         layerId: "opensnowmap-overlay",
@@ -163,7 +176,7 @@ export const UserMap: React.FC<UserMapProps> = ({
   mapStyleURL,
   onLocationUpdate,
   focusedCoordinate,
-  mapTheme = 'dark',
+  mapTheme = "dark",
   currentUserId,
   currentUserName,
   currentUserAvatarUrl,
@@ -171,10 +184,7 @@ export const UserMap: React.FC<UserMapProps> = ({
   // All hooks must be called before any early returns
   const cameraRef = useRef<CameraRef>(null);
   const hasCenteredRef = useRef(false);
-  const { 
-    canShareOwnLocation, 
-    canViewOthersLocations,
-  } = useLocationContext();
+  const { canShareOwnLocation, canViewOthersLocations } = useLocationContext();
 
   // Keep a periodic `now` in state to avoid calling Date.now() during render
   // Initialize `now` lazily and update on interval; avoids calling Date.now() synchronously inside effect
@@ -185,19 +195,30 @@ export const UserMap: React.FC<UserMapProps> = ({
   }, []);
 
   // Track current user's location directly from MapLibreUserLocation
-  const [currentUserLocation, setCurrentUserLocation] = useState<[number, number] | null>(null);
+  const [currentUserLocation, setCurrentUserLocation] = useState<
+    [number, number] | null
+  >(null);
 
   const filteredUsers = useMemo(() => {
     // If location sharing is disabled, show no other users
     if (!canViewOthersLocations) {
       return [];
     }
-    
+
     // Start with other users (exclude current user)
-    let displayUsers = users.filter((user) => user.id !== currentUserId && getActivityOpacity(user.lastActiveAt, now) > 0);
-    
+    let displayUsers = users.filter(
+      (user) =>
+        user.id !== currentUserId &&
+        getActivityOpacity(user.lastActiveAt, now) > 0,
+    );
+
     // Add current user if location is available and enabled
-    if (currentUserId && currentUserLocation && currentUserName && canShareOwnLocation) {
+    if (
+      currentUserId &&
+      currentUserLocation &&
+      currentUserName &&
+      canShareOwnLocation
+    ) {
       const currentUser: UserLocation = {
         id: currentUserId,
         name: currentUserName,
@@ -207,9 +228,18 @@ export const UserMap: React.FC<UserMapProps> = ({
       };
       displayUsers = [currentUser, ...displayUsers];
     }
-    
+
     return displayUsers;
-  }, [users, now, currentUserId, currentUserLocation, currentUserName, currentUserAvatarUrl, canViewOthersLocations, canShareOwnLocation]);
+  }, [
+    users,
+    now,
+    currentUserId,
+    currentUserLocation,
+    currentUserName,
+    currentUserAvatarUrl,
+    canViewOthersLocations,
+    canShareOwnLocation,
+  ]);
 
   useEffect(() => {
     if (!focusedCoordinate) return;
@@ -217,7 +247,12 @@ export const UserMap: React.FC<UserMapProps> = ({
       centerCoordinate: focusedCoordinate,
       zoomLevel: initialZoomLevel,
       animationDuration: 1200,
-      padding: { paddingBottom: 220, paddingTop: 40, paddingLeft: 40, paddingRight: 40 },
+      padding: {
+        paddingBottom: 220,
+        paddingTop: 40,
+        paddingLeft: 40,
+        paddingRight: 40,
+      },
     });
   }, [focusedCoordinate, initialZoomLevel]);
 
@@ -246,14 +281,16 @@ export const UserMap: React.FC<UserMapProps> = ({
     onLocationUpdate?.({ longitude, latitude });
   };
 
-  const selectedMapConfig = mapStyleURL ? { style: mapStyleURL } : MAP_STYLES[mapTheme];
+  const selectedMapConfig = mapStyleURL
+    ? { style: mapStyleURL }
+    : MAP_STYLES[mapTheme];
   const currentMapStyle = selectedMapConfig.style;
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1}>
       <MapView
         mapStyle={currentMapStyle}
-        style={styles.map}
+        style={{ flex: 1 }}
         logoEnabled={false}
         compassEnabled
         rotateEnabled
@@ -266,7 +303,10 @@ export const UserMap: React.FC<UserMapProps> = ({
           ref={cameraRef}
           defaultSettings={
             filteredUsers[0]
-              ? { centerCoordinate: filteredUsers[0].coordinate, zoomLevel: initialZoomLevel }
+              ? {
+                  centerCoordinate: filteredUsers[0].coordinate,
+                  zoomLevel: initialZoomLevel,
+                }
               : undefined
           }
         />
@@ -295,7 +335,9 @@ export const UserMap: React.FC<UserMapProps> = ({
           </RasterSource>
         ))}
 
-        {vectorSourceUrl && VectorSource ? <VectorSource url={vectorSourceUrl} id="map" /> : null}
+        {vectorSourceUrl && VectorSource ? (
+          <VectorSource url={vectorSourceUrl} id="map" />
+        ) : null}
 
         {filteredUsers.map((user) => (
           <PointAnnotation
@@ -318,20 +360,12 @@ export const UserMap: React.FC<UserMapProps> = ({
       </MapView>
 
       {/* Overlay container for UI elements */}
-      <View style={styles.overlayContainer}>
-        {overlay}
-      </View>
-    </View>
+      <View style={styles.overlayContainer}>{overlay}</View>
+    </YStack>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
   overlayContainer: {
     position: "absolute",
     top: 0,
@@ -364,4 +398,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#0F172A",
   },
 });
-

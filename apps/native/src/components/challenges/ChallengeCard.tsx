@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity, Image, type ViewStyle, type TextStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import { type Challenge, ChallengeStatus } from '../../types/challenges';
+import { Card, Text, XStack, YStack, Image } from "@mirai-app/ui";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { type Challenge, ChallengeStatus } from "../../types/challenges";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -11,32 +11,6 @@ interface ChallengeCardProps {
 export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
   const isLocked = challenge.status === ChallengeStatus.LOCKED;
   const isActive = challenge.status === ChallengeStatus.SELECTED;
-  
-  const getCardStyle = (): ViewStyle => {
-    const baseStyle: ViewStyle = {
-      backgroundColor: colors.cardDark,
-      borderRadius: borderRadius.md,
-      padding: spacing.lg,
-      borderWidth: 1,
-      borderColor: 'transparent',
-    };
-
-    if (isActive) {
-      baseStyle.borderColor = colors.primary;
-      baseStyle.shadowColor = colors.primary;
-      baseStyle.shadowOffset = { width: 0, height: 0 };
-      baseStyle.shadowOpacity = 0.2;
-      baseStyle.shadowRadius = 15;
-    } else if (isLocked) {
-      baseStyle.opacity = 0.6;
-    }
-
-    if (challenge.size === 'tall') {
-      baseStyle.minHeight = 280;
-    }
-
-    return baseStyle;
-  };
 
   const getStatusText = () => {
     switch (challenge.status) {
@@ -52,218 +26,268 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
     }
   };
 
-
-  const getPointsBadgeStyle = (): TextStyle => {
-    const baseStyle: TextStyle = {
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: borderRadius.sm,
-      fontSize: typography.xs,
-      fontWeight: typography.bold,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-    };
-
-    if (isActive) {
-      return {
-        ...baseStyle,
-        backgroundColor: colors.primary,
-        color: colors.backgroundDark,
-      };
-    } else if (isLocked) {
-      return {
-        ...baseStyle,
-        backgroundColor: colors.gray500 + '20',
-        color: colors.textSecondary,
-      };
-    } else {
-      return {
-        ...baseStyle,
-        backgroundColor: colors.primaryOpacity20,
-        color: colors.primary,
-        borderWidth: 1,
-        borderColor: colors.primaryOpacity30,
-      };
-    }
-  };
-
   return (
     <TouchableOpacity
-      style={getCardStyle()}
       onPress={() => !isLocked && onPress?.(challenge)}
       disabled={isLocked}
+      activeOpacity={0.8}
     >
-      {/* Layout for wide tiles */}
-      {challenge.size === 'wide' && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          {/* Icon */}
-          <View 
-            style={{
-              width: 56, 
-              height: 56, 
-              borderRadius: borderRadius.md, 
-              backgroundColor: `${challenge.iconColor}1a`,
-              alignItems: 'center', 
-              justifyContent: 'center'
-            }}
-          >
-            <Ionicons name={challenge.icon} size={30} color={challenge.iconColor} />
-          </View>
+      <Card
+        bordered
+        elevation={isActive ? "lg" : "sm"}
+        opacity={isLocked ? 0.6 : 1}
+        borderWidth={isActive ? 2 : 1}
+        borderColor={isActive ? "$primary" : "$borderWhite5"}
+        minHeight={challenge.size === "tall" ? 280 : undefined}
+        padding="0"
+      >
+        {/* Layout for wide tiles */}
+        {challenge.size === "wide" && (
+          <XStack alignItems="center" gap="$4" padding="$4">
+            {/* Icon */}
+            <YStack
+              width={56}
+              height={56}
+              borderRadius="$md"
+              backgroundColor={`${challenge.iconColor}1a`}
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Ionicons
+                name={challenge.icon}
+                size={30}
+                color={challenge.iconColor}
+              />
+            </YStack>
 
-          {/* Content */}
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xs }}>
-              <Text style={{ fontSize: typography.lg, fontWeight: typography.bold, color: colors.white }}>
-                {challenge.title}
-              </Text>
-              {isLocked ? (
-                <Ionicons name="lock-closed" size={16} color={colors.textSecondary} />
-              ) : (
-                <Text style={getPointsBadgeStyle()}>
-                  +{challenge.points}
+            {/* Content */}
+            <YStack flex={1}>
+              <XStack
+                alignItems="center"
+                justifyContent="space-between"
+                marginBottom="$1"
+              >
+                <Text variant="h5" color="white" numberOfLines={1}>
+                  {challenge.title}
+                </Text>
+                {isLocked ? (
+                  <Ionicons name="lock-closed" size={16} color="#475569" />
+                ) : (
+                  <PointsBadge isActive={isActive} points={challenge.points} />
+                )}
+              </XStack>
+              {challenge.description && (
+                <Text variant="caption" color="muted">
+                  {challenge.description}
                 </Text>
               )}
-            </View>
-            {challenge.description && (
-              <Text style={{ fontSize: typography.sm, color: colors.textSecondary }}>
-                {challenge.description}
+            </YStack>
+          </XStack>
+        )}
+
+        {/* Layout for normal tiles */}
+        {challenge.size === "normal" && (
+          <YStack justifyContent="space-between" height="100%" padding="$4">
+            {/* Header */}
+            <XStack justifyContent="space-between" alignItems="flex-start">
+              <YStack
+                width={40}
+                height={40}
+                borderRadius="$sm"
+                backgroundColor={`${challenge.iconColor}1a`}
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Ionicons
+                  name={challenge.icon}
+                  size={24}
+                  color={challenge.iconColor}
+                />
+              </YStack>
+              {isLocked ? (
+                <Ionicons name="lock-closed" size={16} color="#475569" />
+              ) : (
+                <PointsBadge isActive={isActive} points={challenge.points} />
+              )}
+            </XStack>
+
+            {/* Content */}
+            <YStack flex={1} justifyContent="flex-end">
+              <Text
+                variant="body"
+                color="white"
+                fontWeight="$bold"
+                lineHeight={20}
+              >
+                {challenge.title}
               </Text>
-            )}
-          </View>
-        </View>
-      )}
-
-      {/* Layout for normal tiles */}
-      {challenge.size === 'normal' && (
-        <View style={{ flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
-          {/* Header */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View 
-              style={{
-                width: 40, 
-                height: 40, 
-                borderRadius: borderRadius.sm, 
-                backgroundColor: `${challenge.iconColor}1a`,
-                alignItems: 'center', 
-                justifyContent: 'center'
-              }}
-            >
-              <Ionicons name={challenge.icon} size={24} color={challenge.iconColor} />
-            </View>
-            {isLocked ? (
-              <Ionicons name="lock-closed" size={16} color={colors.textSecondary} />
-            ) : (
-              <Text style={getPointsBadgeStyle()}>
-                +{challenge.points}
+              <Text
+                variant="caption"
+                color={isActive ? "primary" : "muted"}
+                textTransform="uppercase"
+                fontWeight="$bold"
+                letterSpacing={2}
+                marginTop="$1"
+              >
+                {getStatusText()}
               </Text>
-            )}
-          </View>
+            </YStack>
+          </YStack>
+        )}
 
-          {/* Content */}
-          <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-            <Text style={{ fontSize: typography.base, fontWeight: typography.bold, color: colors.white, lineHeight: 20 }}>
-              {challenge.title}
-            </Text>
-            <Text style={{ 
-              fontSize: typography.xs, 
-              textTransform: 'uppercase', 
-              fontWeight: typography.bold, 
-              letterSpacing: 2, 
-              marginTop: spacing.xs,
-              color: isActive ? colors.primary : colors.textSecondary
-            }}>
-              {getStatusText()}
-            </Text>
-          </View>
-        </View>
-      )}
+        {/* Layout for tall tiles */}
+        {challenge.size === "tall" && (
+          <YStack flex={1} justifyContent="space-between" padding="$4">
+            {/* Header */}
+            <XStack justifyContent="space-between" alignItems="flex-start">
+              <YStack
+                width={40}
+                height={40}
+                borderRadius="$sm"
+                backgroundColor={`${challenge.iconColor}1a`}
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Ionicons
+                  name={challenge.icon}
+                  size={24}
+                  color={challenge.iconColor}
+                />
+              </YStack>
+              {isLocked ? (
+                <Ionicons name="lock-closed" size={16} color="#475569" />
+              ) : (
+                <PointsBadge isActive={isActive} points={challenge.points} />
+              )}
+            </XStack>
 
-      {/* Layout for tall tiles */}
-      {challenge.size === 'tall' && (
-        <View style={{ flex: 1, justifyContent: 'space-between' }}>
-          {/* Header */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View 
-              style={{
-                width: 40, 
-                height: 40, 
-                borderRadius: borderRadius.sm, 
-                backgroundColor: `${challenge.iconColor}1a`,
-                alignItems: 'center', 
-                justifyContent: 'center'
-              }}
-            >
-              <Ionicons name={challenge.icon} size={24} color={challenge.iconColor} />
-            </View>
-            {isLocked ? (
-              <Ionicons name="lock-closed" size={16} color={colors.textSecondary} />
-            ) : (
-              <Text style={getPointsBadgeStyle()}>
-                +{challenge.points}
+            {/* Content */}
+            <YStack marginTop="$4">
+              <Text
+                variant="h5"
+                color="white"
+                fontWeight="$bold"
+                lineHeight={22}
+                marginBottom="$2"
+              >
+                {challenge.title}
               </Text>
-            )}
-          </View>
+              {challenge.description && (
+                <Text variant="caption" color="muted">
+                  {challenge.description}
+                </Text>
+              )}
+            </YStack>
 
-          {/* Content */}
-          <View style={{ marginTop: spacing.md }}>
-            <Text style={{ fontSize: typography.lg, fontWeight: typography.bold, color: colors.white, lineHeight: 22, marginBottom: spacing.sm }}>
-              {challenge.title}
-            </Text>
-            {challenge.description && (
-              <Text style={{ fontSize: typography.xs, color: colors.textSecondary }}>
-                {challenge.description}
-              </Text>
-            )}
-          </View>
-
-          {/* Participants (if any) */}
-          {challenge.participantAvatars && challenge.participantAvatars.length > 0 && (
-            <View style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.borderWhite5 }}>
-              <View style={{ flexDirection: 'row', marginLeft: -4 }}>
-                {challenge.participantAvatars.slice(0, 2).map((avatar, index) => (
-                  <View
-                    key={index}
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                      borderWidth: 2,
-                      borderColor: colors.cardDark,
-                      backgroundColor: colors.textSecondary,
-                      overflow: 'hidden',
-                      marginLeft: -4
-                    }}
-                  >
-                    <Image
-                      source={{ uri: avatar }}
-                      style={{ width: '100%', height: '100%' }}
-                      resizeMode="cover"
-                    />
-                  </View>
-                ))}
-                {challenge.additionalParticipants && challenge.additionalParticipants > 0 && (
-                  <View style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
-                    borderWidth: 2,
-                    borderColor: colors.cardDark,
-                    backgroundColor: colors.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: -4
-                  }}>
-                    <Text style={{ fontSize: typography.xs, fontWeight: typography.bold, color: colors.backgroundDark }}>
-                      +{challenge.additionalParticipants}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
-
-        </View>
-      )}
+            {/* Participants (if any) */}
+            {challenge.participantAvatars &&
+              challenge.participantAvatars.length > 0 && (
+                <YStack
+                  marginTop="$4"
+                  paddingTop="$4"
+                  borderTopWidth={1}
+                  borderTopColor="#ffffff0d"
+                >
+                  <XStack marginLeft={-4}>
+                    {challenge.participantAvatars
+                      .slice(0, 2)
+                      .map((avatar, index) => (
+                        <YStack
+                          key={index}
+                          width={24}
+                          height={24}
+                          borderRadius={12}
+                          borderWidth={2}
+                          borderColor="#1b2828"
+                          backgroundColor="#475569"
+                          overflow="hidden"
+                          marginLeft={-4}
+                        >
+                          <Image
+                            source={{ uri: avatar }}
+                            width={24}
+                            height={24}
+                            resizeMode="cover"
+                          />
+                        </YStack>
+                      ))}
+                    {challenge.additionalParticipants &&
+                      challenge.additionalParticipants > 0 && (
+                        <YStack
+                          width={24}
+                          height={24}
+                          borderRadius={12}
+                          borderWidth={2}
+                          borderColor="#1b2828"
+                          backgroundColor="#00ced1"
+                          alignItems="center"
+                          justifyContent="center"
+                          marginLeft={-4}
+                        >
+                          <Text
+                            fontSize={10}
+                            fontWeight="$bold"
+                            color="#17181c"
+                          >
+                            +{challenge.additionalParticipants}
+                          </Text>
+                        </YStack>
+                      )}
+                  </XStack>
+                </YStack>
+              )}
+          </YStack>
+        )}
+      </Card>
     </TouchableOpacity>
+  );
+}
+
+interface PointsBadgeProps {
+  isActive: boolean;
+  points: number;
+}
+
+function PointsBadge({ isActive, points }: PointsBadgeProps) {
+  if (isActive) {
+    return (
+      <YStack
+        paddingHorizontal="$2"
+        paddingVertical="$1"
+        borderRadius="$sm"
+        backgroundColor="#00ced1"
+      >
+        <Text
+          fontSize={10}
+          fontWeight="$bold"
+          textTransform="uppercase"
+          letterSpacing={1}
+          color="#17181c"
+        >
+          +{points}
+        </Text>
+      </YStack>
+    );
+  }
+
+  return (
+    <YStack
+      paddingHorizontal="$2"
+      paddingVertical="$1"
+      borderRadius="$sm"
+      backgroundColor="#00ced133"
+      borderWidth={1}
+      borderColor="#00ced14d"
+    >
+      <Text
+        fontSize={10}
+        fontWeight="$bold"
+        textTransform="uppercase"
+        letterSpacing={1}
+        color="#00ced1"
+      >
+        +{points}
+      </Text>
+    </YStack>
   );
 }

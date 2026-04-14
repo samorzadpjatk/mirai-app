@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { styled, Text, YStack, XStack } from "@mirai-app/ui";
 import type { RankedGroup } from "./types";
 import { LeaderboardListItem } from "./LeaderboardListItem";
 
@@ -8,18 +7,82 @@ interface LeaderboardRankingsSectionProps {
   onPressGroup?: (group: RankedGroup) => void;
 }
 
+const Container = styled(YStack, {
+  name: "RankingsContainer",
+  backgroundColor: "rgba(28, 31, 33, 0.3)",
+  borderTopLeftRadius: "$xl",
+  borderTopRightRadius: "$xl",
+  marginTop: -"$lg",
+  borderTopWidth: 1,
+  borderColor: "rgba(255, 255, 255, 0.05)",
+  paddingHorizontal: "$lg",
+  paddingTop: "$xl",
+  paddingBottom: "$xl",
+});
+
+const Header = styled(XStack, {
+  name: "RankingsHeader",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: "$lg",
+  paddingHorizontal: "$sm",
+});
+
+const Title = styled(Text, {
+  name: "RankingsTitle",
+  fontSize: "$lg",
+  fontWeight: "$bold",
+  color: "$white",
+});
+
+const Subtitle = styled(Text, {
+  name: "RankingsSubtitle",
+  fontSize: "$xs",
+  fontWeight: "$medium",
+  color: "rgba(255, 255, 255, 0.4)",
+  textTransform: "uppercase",
+  letterSpacing: 2,
+});
+
+const List = styled(YStack, {
+  name: "RankingsList",
+  gap: "$md",
+});
+
+const EmptyState = styled(YStack, {
+  name: "RankingsEmptyState",
+  padding: "$xl",
+  alignItems: "center",
+});
+
+const EmptyTitle = styled(Text, {
+  name: "RankingsEmptyTitle",
+  fontSize: "$lg",
+  fontWeight: "$bold",
+  color: "$textMuted",
+  textAlign: "center",
+});
+
+const EmptySubtitle = styled(Text, {
+  name: "RankingsEmptySubtitle",
+  fontSize: "$sm",
+  color: "$textMuted",
+  textAlign: "center",
+  marginTop: "$sm",
+});
+
 export function LeaderboardRankingsSection({
   groups,
   onPressGroup,
 }: LeaderboardRankingsSectionProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Full Rankings</Text>
-        <Text style={styles.subtitle}>Global Standings</Text>
-      </View>
+    <Container>
+      <Header>
+        <Title>Full Rankings</Title>
+        <Subtitle>Global Standings</Subtitle>
+      </Header>
 
-      <View style={styles.list}>
+      <List>
         {groups.map((group) => (
           <LeaderboardListItem
             key={group.id}
@@ -27,68 +90,16 @@ export function LeaderboardRankingsSection({
             onPress={onPressGroup}
           />
         ))}
-      </View>
+      </List>
 
       {groups.length === 0 && (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>No groups yet</Text>
-          <Text style={styles.emptySubtitle}>
+        <EmptyState>
+          <EmptyTitle>No groups yet</EmptyTitle>
+          <EmptySubtitle>
             Groups will appear here as they join the trip
-          </Text>
-        </View>
+          </EmptySubtitle>
+        </EmptyState>
       )}
-    </View>
+    </Container>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "rgba(28, 31, 33, 0.3)",
-    borderTopLeftRadius: borderRadius.xl * 2.5,
-    borderTopRightRadius: borderRadius.xl * 2.5,
-    marginTop: -spacing.lg,
-    borderTopWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.sm,
-  },
-  title: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  subtitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.medium,
-    color: "rgba(255, 255, 255, 0.4)",
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  list: {
-    gap: spacing.md,
-  },
-  emptyState: {
-    padding: spacing.xl * 2,
-    alignItems: "center",
-  },
-  emptyTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: spacing.sm,
-  },
-});

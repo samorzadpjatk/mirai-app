@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '~/styles';
-import { viewStyles, textStyles } from '~/styles/judgement';
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { XStack, YStack } from "tamagui";
+import { Text, colorTokens } from "@mirai-app/ui";
 
 const ActionBar = ({
   disabled,
@@ -13,28 +13,60 @@ const ActionBar = ({
   onApprove: () => void;
 }) => {
   return (
-    <View style={viewStyles.actions}>
-      <TouchableOpacity
-        style={[viewStyles.actionButton, viewStyles.rejectButton]}
-        disabled={disabled}
-        onPress={onReject}
-      >
-        <Ionicons name="close" size={28} color={colors.white} />
+    <XStack
+      alignItems="center"
+      justifyContent="center"
+      gap="$xl"
+      paddingVertical="$lg"
+      paddingHorizontal="$lg"
+    >
+      <TouchableOpacity onPress={onReject} disabled={disabled}>
+        <YStack
+          width={64}
+          height={64}
+          borderRadius={32}
+          alignItems="center"
+          justifyContent="center"
+          backgroundColor={colorTokens.dangerOpacity15}
+          borderWidth={2}
+          borderColor={colorTokens.danger}
+          opacity={disabled ? 0.5 : 1}
+        >
+          <Ionicons name="close" size={28} color={colorTokens.white} />
+        </YStack>
       </TouchableOpacity>
 
-      <View style={viewStyles.actionHint}>
-        <Ionicons name="swap-horizontal" size={16} color={colors.textSecondary} />
-        <Text style={textStyles.actionHintText}>Swipe to decide</Text>
-      </View>
+      <XStack alignItems="center" gap="$xs" opacity={0.7}>
+        <Ionicons
+          name="swap-horizontal"
+          size={16}
+          color={colorTokens.textSecondary}
+        />
+        <Text variant="bodySmall" color="muted">
+          Swipe to decide
+        </Text>
+      </XStack>
 
-      <TouchableOpacity
-        style={[viewStyles.actionButton, viewStyles.approveButton]}
-        disabled={disabled}
-        onPress={onApprove}
-      >
-        <Ionicons name="checkmark" size={28} color={colors.backgroundDark} />
+      <TouchableOpacity onPress={onApprove} disabled={disabled}>
+        <YStack
+          width={64}
+          height={64}
+          borderRadius={32}
+          alignItems="center"
+          justifyContent="center"
+          backgroundColor={colorTokens.successOpacity12}
+          borderWidth={2}
+          borderColor={colorTokens.success}
+          opacity={disabled ? 0.5 : 1}
+        >
+          <Ionicons
+            name="checkmark"
+            size={28}
+            color={colorTokens.backgroundDark}
+          />
+        </YStack>
       </TouchableOpacity>
-    </View>
+    </XStack>
   );
 };
 

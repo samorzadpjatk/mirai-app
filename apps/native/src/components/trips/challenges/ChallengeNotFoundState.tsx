@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { TouchableOpacity } from "react-native";
+import { Card, Text, YStack } from "@mirai-app/ui";
 
 interface ChallengeNotFoundStateProps {
   onGoBack: () => void;
@@ -9,35 +9,17 @@ export function ChallengeNotFoundState({
   onGoBack,
 }: ChallengeNotFoundStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Challenge not found</Text>
-      <TouchableOpacity onPress={onGoBack} style={styles.button}>
-        <Text style={styles.buttonText}>Go Back</Text>
+    <YStack flex={1} justifyContent="center" alignItems="center" padding="$5">
+      <Text variant="h4" color="white" marginBottom="$3">
+        Challenge not found
+      </Text>
+      <TouchableOpacity onPress={onGoBack} activeOpacity={0.8}>
+        <Card backgroundColor="primary" padding="$3" borderRadius="$md">
+          <Text fontWeight="$bold" color="#17181c">
+            Go Back
+          </Text>
+        </Card>
       </TouchableOpacity>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-  },
-  title: {
-    color: colors.white,
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    marginBottom: spacing.md,
-  },
-  button: {
-    padding: spacing.md,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-  },
-  buttonText: {
-    color: colors.backgroundDark,
-    fontWeight: typography.bold,
-  },
-});

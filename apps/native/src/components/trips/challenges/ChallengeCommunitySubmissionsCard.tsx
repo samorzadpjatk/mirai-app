@@ -2,19 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Modal,
-  StyleSheet,
-  Text,
   TouchableOpacity,
-  View,
   useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from "react-native";
-import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+import { Card, Text, XStack, YStack, Image } from "@mirai-app/ui";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface CommunitySubmission {
   id: string;
@@ -175,29 +172,55 @@ export function ChallengeCommunitySubmissionsCard({
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Groups submissions</Text>
-        <Text style={styles.subtitle}>
+    <Card
+      marginBottom="$4"
+      borderWidth={1}
+      borderColor="rgba(255,255,255,0.08)"
+      padding="0"
+      overflow="hidden"
+    >
+      <YStack paddingHorizontal="$4" paddingTop="$3" paddingBottom="$2">
+        <Text variant="body" fontWeight="$bold" color="white">
+          Groups submissions
+        </Text>
+        <Text variant="caption" color="muted" marginTop={2}>
           {hasAnySubmissions
             ? `${imageSubmissions.length} photos uploaded`
             : "No photos yet. Your group can be first."}
         </Text>
-      </View>
+      </YStack>
 
       {!hasAnySubmissions ? (
-        <View style={styles.emptyGallery}>
-          <Ionicons name="images-outline" size={20} color={colors.textMuted} />
-          <Text style={styles.emptyGalleryText}>
+        <XStack
+          marginHorizontal="$4"
+          marginBottom="$3"
+          borderWidth={1}
+          borderColor="rgba(255,255,255,0.12)"
+          borderStyle="dashed"
+          borderRadius="$lg"
+          padding="$3"
+          alignItems="center"
+          gap="$2"
+        >
+          <Ionicons name="images-outline" size={20} color="#475569" />
+          <Text variant="caption" color="muted" flex={1}>
             No photos yet. Submit first and set the pace.
           </Text>
-        </View>
+        </XStack>
       ) : (
-        <View style={styles.content}>
+        <YStack paddingHorizontal="$4" paddingBottom="$3" gap="$3">
           {showPodium && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Top 3</Text>
-              <View style={styles.podiumRow}>
+            <YStack gap="$2">
+              <Text
+                fontSize={10}
+                color="muted"
+                textTransform="uppercase"
+                letterSpacing={1.1}
+                fontWeight="$bold"
+              >
+                Top 3
+              </Text>
+              <XStack gap="$2">
                 {[1, 2, 3].map((rank) => {
                   const submission = podiumByRank.get(rank);
                   if (!submission) {
@@ -216,16 +239,22 @@ export function ChallengeCommunitySubmissionsCard({
                     />
                   );
                 })}
-              </View>
-            </View>
+              </XStack>
+            </YStack>
           )}
 
           {previewRegularSubmissions.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
+            <YStack gap="$2">
+              <Text
+                fontSize={10}
+                color="muted"
+                textTransform="uppercase"
+                letterSpacing={1.1}
+                fontWeight="$bold"
+              >
                 {showPodium ? "More photos" : "Gallery"}
               </Text>
-              <View style={styles.previewGrid}>
+              <XStack flexDirection="row" flexWrap="wrap" gap="$2">
                 {previewRegularSubmissions.map((submission) => (
                   <SubmissionTile
                     key={`preview-${submission.id}`}
@@ -234,22 +263,33 @@ export function ChallengeCommunitySubmissionsCard({
                     onPress={() => openGalleryAt(submission.id)}
                   />
                 ))}
-              </View>
-            </View>
+              </XStack>
+            </YStack>
           )}
 
-          <TouchableOpacity
-            style={styles.showAllButton}
-            onPress={() => openGalleryAt()}
-          >
-            <Text style={styles.showAllText}>View all ({imageSubmissions.length})</Text>
-            <Ionicons
-              name="arrow-forward-circle-outline"
-              size={16}
-              color={colors.primary}
-            />
+          <TouchableOpacity onPress={() => openGalleryAt()} activeOpacity={0.8}>
+            <XStack
+              borderWidth={1}
+              borderColor="rgba(0,206,209,0.4)"
+              borderRadius="$lg"
+              paddingVertical="$2"
+              paddingHorizontal="$3"
+              alignItems="center"
+              justifyContent="center"
+              gap="$1"
+              backgroundColor="rgba(0,206,209,0.12)"
+            >
+              <Text fontSize={13} fontWeight="$bold" color="primary">
+                View all ({imageSubmissions.length})
+              </Text>
+              <Ionicons
+                name="arrow-forward-circle-outline"
+                size={16}
+                color="#00ced1"
+              />
+            </XStack>
           </TouchableOpacity>
-        </View>
+        </YStack>
       )}
 
       <Modal
@@ -258,31 +298,47 @@ export function ChallengeCommunitySubmissionsCard({
         onRequestClose={closeGallery}
         presentationStyle="fullScreen"
       >
-        <View style={styles.fullscreen}>
-          <View
-            style={[
-              styles.fullscreenHeader,
-              { paddingTop: insets.top + spacing.sm },
-            ]}
+        <YStack flex={1} backgroundColor="#17181c">
+          <XStack
+            paddingHorizontal="$4"
+            paddingTop={insets.top + 8}
+            paddingBottom="$3"
+            alignItems="center"
+            justifyContent="space-between"
+            borderBottomWidth={1}
+            borderBottomColor="rgba(255,255,255,0.08)"
           >
-            <Text style={styles.fullscreenTitle}>Groups submissions</Text>
-            <View style={styles.fullscreenHeaderRight}>
-              <Text style={styles.fullscreenCounter}>
+            <Text variant="h5" color="white" fontWeight="$bold">
+              Groups submissions
+            </Text>
+            <XStack alignItems="center" gap="$2">
+              <Text fontSize={13} fontWeight="$bold" color="muted">
                 {gallerySubmissions.length > 0
                   ? `${activeGalleryIndex + 1}/${gallerySubmissions.length}`
                   : "0/0"}
               </Text>
-              <TouchableOpacity style={styles.fullscreenClose} onPress={closeGallery}>
-                <Ionicons name="close" size={20} color={colors.white} />
+              <TouchableOpacity onPress={closeGallery} activeOpacity={0.8}>
+                <YStack
+                  width={34}
+                  height={34}
+                  borderRadius={17}
+                  borderWidth={1}
+                  borderColor="rgba(255,255,255,0.16)"
+                  backgroundColor="rgba(255,255,255,0.04)"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Ionicons name="close" size={20} color="white" />
+                </YStack>
               </TouchableOpacity>
-            </View>
-          </View>
+            </XStack>
+          </XStack>
 
           <FlatList
             ref={galleryListRef}
             data={gallerySubmissions}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -295,7 +351,10 @@ export function ChallengeCommunitySubmissionsCard({
             onScrollToIndexFailed={(info) => {
               const fallbackIndex = Math.max(
                 0,
-                Math.min(info.index, Math.max(gallerySubmissions.length - 1, 0)),
+                Math.min(
+                  info.index,
+                  Math.max(gallerySubmissions.length - 1, 0),
+                ),
               );
               setTimeout(() => {
                 galleryListRef.current?.scrollToIndex({
@@ -313,20 +372,41 @@ export function ChallengeCommunitySubmissionsCard({
               />
             )}
           />
-        </View>
+        </YStack>
       </Modal>
-    </View>
+    </Card>
   );
 }
 
 function PodiumPlaceholder({ rank }: { rank: number }) {
   return (
-    <View style={styles.podiumPlaceholder}>
-      <View style={styles.podiumPlaceholderImage}>
-        <Ionicons name="trophy-outline" size={14} color={colors.textMuted} />
-      </View>
-      <Text style={styles.podiumPlaceholderText}>#{rank}</Text>
-    </View>
+    <YStack
+      flex={1}
+      borderWidth={1}
+      borderColor="rgba(255,255,255,0.18)"
+      borderRadius="$md"
+      backgroundColor="#272935"
+      padding={6}
+      gap={6}
+      alignItems="center"
+    >
+      <YStack
+        width="100%"
+        aspectRatio={1}
+        borderRadius="$sm"
+        overflow="hidden"
+        borderWidth={1}
+        borderColor="rgba(255,255,255,0.1)"
+        alignItems="center"
+        justifyContent="center"
+        backgroundColor="#1b2828"
+      >
+        <Ionicons name="trophy-outline" size={14} color="#475569" />
+      </YStack>
+      <Text fontSize={11} fontWeight="$bold" color="muted">
+        #{rank}
+      </Text>
+    </YStack>
   );
 }
 
@@ -361,38 +441,57 @@ function SubmissionTile({
   const placeStyle = rank ? placeStyleMap[rank] : undefined;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={onPress}
-      style={[
-        styles.tile,
-        mode === "podium" ? styles.podiumTile : styles.previewTile,
-        placeStyle ? { borderColor: placeStyle.borderColor } : undefined,
-      ]}
-    >
-      <View style={styles.tileImageWrap}>
-        {status === "loading" ? (
-          <View style={styles.tileFallback}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        ) : file?.uri ? (
-          <Image
-            source={{ uri: file.uri }}
-            style={styles.tileImage}
-            resizeMode="contain"
-          />
-        ) : (
-          <View style={styles.tileFallback}>
-            <Ionicons name="image-outline" size={16} color={colors.textMuted} />
-          </View>
-        )}
-      </View>
+    <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+      <YStack
+        borderWidth={1}
+        borderRadius="$md"
+        backgroundColor="#272935"
+        overflow="hidden"
+        borderColor={placeStyle?.borderColor ?? "rgba(255,255,255,0.16)"}
+        flex={mode === "podium" ? 1 : undefined}
+        width={mode === "preview" ? "31.5%" : undefined}
+        padding={mode === "podium" ? 6 : 4}
+        gap={mode === "podium" ? 6 : 0}
+      >
+        <YStack
+          width="100%"
+          aspectRatio={1}
+          borderRadius="$sm"
+          overflow="hidden"
+          borderWidth={1}
+          borderColor="rgba(255,255,255,0.1)"
+          backgroundColor="#1b2828"
+        >
+          {status === "loading" ? (
+            <YStack flex={1} alignItems="center" justifyContent="center">
+              <ActivityIndicator size="small" color="#00ced1" />
+            </YStack>
+          ) : file?.uri ? (
+            <Image
+              source={{ uri: file.uri }}
+              width="100%"
+              height="100%"
+              resizeMode="contain"
+            />
+          ) : (
+            <YStack flex={1} alignItems="center" justifyContent="center">
+              <Ionicons name="image-outline" size={16} color="#475569" />
+            </YStack>
+          )}
+        </YStack>
 
-      {mode === "podium" && (
-        <Text style={styles.podiumTileLabel} numberOfLines={1}>
-          {placeStyle?.label ?? submission.group.name}
-        </Text>
-      )}
+        {mode === "podium" && (
+          <Text
+            textAlign="center"
+            color="muted"
+            fontSize={11}
+            fontWeight="$bold"
+            numberOfLines={1}
+          >
+            {placeStyle?.label ?? submission.group.name}
+          </Text>
+        )}
+      </YStack>
     </TouchableOpacity>
   );
 }
@@ -430,275 +529,59 @@ function FullscreenSubmissionSlide({
   }, [abort, download, imagePath, reset]);
 
   return (
-    <View
-      style={[
-        styles.fullscreenSlide,
-        { width, minHeight: height - (topInset + 92) },
-      ]}
+    <YStack
+      width={width}
+      minHeight={height - (topInset + 92)}
+      paddingHorizontal="$3"
+      paddingVertical="$3"
+      justifyContent="center"
     >
-      <View style={styles.fullscreenImageWrap}>
+      <YStack
+        flex={1}
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor="rgba(255,255,255,0.14)"
+        overflow="hidden"
+        backgroundColor="#090a0d"
+        minHeight={300}
+      >
         {status === "loading" ? (
-          <View style={styles.fullscreenFallback}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+          <YStack flex={1} alignItems="center" justifyContent="center">
+            <ActivityIndicator size="large" color="#00ced1" />
+          </YStack>
         ) : file?.uri ? (
           <Image
             source={{ uri: file.uri }}
-            style={styles.fullscreenImage}
+            width="100%"
+            height="100%"
             resizeMode="contain"
           />
         ) : (
-          <View style={styles.fullscreenFallback}>
-            <Ionicons name="image-outline" size={28} color={colors.textMuted} />
-          </View>
+          <YStack flex={1} alignItems="center" justifyContent="center">
+            <Ionicons name="image-outline" size={28} color="#475569" />
+          </YStack>
         )}
-      </View>
+      </YStack>
 
-      <View style={styles.fullscreenMeta}>
-        <Text style={styles.fullscreenGroupName} numberOfLines={1}>
+      <YStack marginTop="$2" gap={2} paddingHorizontal="$1">
+        <Text fontSize={14} fontWeight="$bold" color="white" numberOfLines={1}>
           {submission.group.name}
         </Text>
         {placeStyle ? (
           <Text
-            style={[styles.fullscreenRankLabel, { color: placeStyle.borderColor }]}
+            fontSize={10}
+            fontWeight="$bold"
+            textTransform="uppercase"
+            letterSpacing={0.6}
+            color={placeStyle.borderColor}
           >
             {placeStyle.label}
           </Text>
         ) : null}
-        <Text style={styles.fullscreenDate}>{formatDateTime(submission.createdAt)}</Text>
-      </View>
-    </View>
+        <Text fontSize={10} color="muted">
+          {formatDateTime(submission.createdAt)}
+        </Text>
+      </YStack>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    marginBottom: spacing.lg,
-    overflow: "hidden",
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    color: colors.textPrimary,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-    marginTop: 2,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.md,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-    fontWeight: typography.bold,
-  },
-  podiumRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  previewGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  tile: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceDark,
-    overflow: "hidden",
-  },
-  podiumTile: {
-    flex: 1,
-    padding: 6,
-    gap: 6,
-  },
-  previewTile: {
-    width: "31.5%",
-    padding: 4,
-  },
-  tileImageWrap: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: borderRadius.sm,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: colors.cardDark,
-  },
-  tileImage: {
-    width: "100%",
-    height: "100%",
-  },
-  tileFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  podiumTileLabel: {
-    textAlign: "center",
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: typography.bold,
-  },
-  podiumPlaceholder: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceDark,
-    padding: 6,
-    gap: 6,
-    alignItems: "center",
-  },
-  podiumPlaceholderImage: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: borderRadius.sm,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.cardDark,
-  },
-  podiumPlaceholderText: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: typography.bold,
-  },
-  emptyGallery: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    borderStyle: "dashed",
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  emptyGalleryText: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-    flex: 1,
-  },
-  showAllButton: {
-    borderWidth: 1,
-    borderColor: "rgba(0,206,209,0.4)",
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    backgroundColor: "rgba(0,206,209,0.12)",
-  },
-  showAllText: {
-    color: colors.primary,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  fullscreen: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  fullscreenHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  fullscreenTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-  },
-  fullscreenHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  fullscreenCounter: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  fullscreenClose: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    backgroundColor: "rgba(255,255,255,0.04)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fullscreenSlide: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    justifyContent: "center",
-  },
-  fullscreenImageWrap: {
-    flex: 1,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-    overflow: "hidden",
-    backgroundColor: "#090a0d",
-    minHeight: 300,
-  },
-  fullscreenImage: {
-    width: "100%",
-    height: "100%",
-  },
-  fullscreenFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fullscreenMeta: {
-    marginTop: spacing.sm,
-    gap: 2,
-    paddingHorizontal: spacing.xs,
-  },
-  fullscreenGroupName: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  fullscreenRankLabel: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  fullscreenDate: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-});

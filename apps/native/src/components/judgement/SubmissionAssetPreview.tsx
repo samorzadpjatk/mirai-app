@@ -1,6 +1,4 @@
 import {
-  View,
-  Text,
   ActivityIndicator,
   Modal,
   Pressable,
@@ -10,10 +8,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { colors } from "~/styles";
+import { YStack, XStack, View } from "tamagui";
 import { type Submission } from "~/stores/judgement";
 import { useFileDownload } from "~/hooks/files";
-import { viewStyles, textStyles } from "~/styles/judgement";
+import { Text, colorTokens } from "@mirai-app/ui";
 
 const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const { width, height } = useWindowDimensions();
@@ -125,34 +123,73 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   if (hasImage) {
     return (
       <>
-        <View style={viewStyles.mediaWrapper}>
+        <YStack
+          flex={1}
+          borderRadius="$md"
+          overflow="hidden"
+          backgroundColor={colorTokens.backgroundDarkAlt}
+        >
           {imageStatus === "loading" ? (
-            <View style={viewStyles.mediaLoading}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
+            <YStack
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              alignItems="center"
+              justifyContent="center"
+              backgroundColor={colorTokens.backgroundDarkAlt}
+            >
+              <ActivityIndicator size="small" color={colorTokens.primary} />
+            </YStack>
           ) : imageFile?.uri ? (
             <Pressable onPress={openFullscreenImage}>
               <Image
                 source={{ uri: imageFile.uri }}
-                style={viewStyles.mediaImage}
+                style={{ width: "100%", height: "100%" }}
                 contentFit="cover"
               />
             </Pressable>
           ) : (
-            <View style={viewStyles.mediaLoading}>
-              <Ionicons name="image" size={36} color={colors.textSecondary} />
-              <Text style={textStyles.videoLabel}>Image unavailable</Text>
-            </View>
+            <YStack
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              alignItems="center"
+              justifyContent="center"
+              backgroundColor={colorTokens.backgroundDarkAlt}
+            >
+              <Ionicons
+                name="image"
+                size={36}
+                color={colorTokens.textSecondary}
+              />
+              <Text variant="bodySmall" color="muted">
+                Image unavailable
+              </Text>
+            </YStack>
           )}
           {submission.imageIds.length > 1 && (
-            <View style={viewStyles.mediaBadge}>
-              <Ionicons name="images" size={14} color={colors.white} />
-              <Text style={textStyles.mediaBadgeText}>
+            <XStack
+              position="absolute"
+              top="$sm"
+              right="$sm"
+              backgroundColor={colorTokens.blackOpacity40}
+              paddingHorizontal="$sm"
+              paddingVertical="$xs"
+              borderRadius="$sm"
+              alignItems="center"
+              gap="$xs"
+            >
+              <Ionicons name="images" size={14} color={colorTokens.white} />
+              <Text variant="caption" color="inverse" fontWeight="medium">
                 {submission.imageIds.length}
               </Text>
-            </View>
+            </XStack>
           )}
-        </View>
+        </YStack>
 
         <Modal
           visible={isFullscreenImageVisible}
@@ -160,26 +197,45 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
           presentationStyle="fullScreen"
           onRequestClose={closeFullscreenImage}
         >
-          <View style={viewStyles.fullscreenImageContainer}>
+          <YStack
+            flex={1}
+            backgroundColor={colorTokens.blackOpacity40}
+            alignItems="center"
+            justifyContent="center"
+          >
             <Pressable
-              style={viewStyles.fullscreenImageClose}
+              style={{
+                position: "absolute",
+                top: 48,
+                right: 24,
+                padding: 8,
+                backgroundColor: colorTokens.blackOpacity40,
+                borderRadius: 9999,
+                zIndex: 10,
+              }}
               onPress={closeFullscreenImage}
             >
-              <Ionicons name="close" size={24} color={colors.white} />
+              <Ionicons name="close" size={24} color={colorTokens.white} />
             </Pressable>
             {imageFile?.uri ? (
               <Image
                 source={{ uri: imageFile.uri }}
-                style={viewStyles.fullscreenImage}
+                style={{ width: "100%", height: "80%" }}
                 contentFit="contain"
               />
             ) : (
-              <View style={viewStyles.mediaLoading}>
-                <Ionicons name="image" size={36} color={colors.textSecondary} />
-                <Text style={textStyles.videoLabel}>Image unavailable</Text>
-              </View>
+              <YStack alignItems="center" justifyContent="center">
+                <Ionicons
+                  name="image"
+                  size={36}
+                  color={colorTokens.textSecondary}
+                />
+                <Text variant="bodySmall" color="muted">
+                  Image unavailable
+                </Text>
+              </YStack>
             )}
-          </View>
+          </YStack>
         </Modal>
       </>
     );
@@ -187,24 +243,32 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
 
   if (hasVideo) {
     return (
-      <View
+      <YStack
         ref={videoContainerRef}
-        style={[viewStyles.mediaWrapper, viewStyles.videoPlaceholder]}
+        flex={1}
+        borderRadius="$md"
+        overflow="hidden"
+        backgroundColor={colorTokens.backgroundDarkAlt}
+        alignItems="center"
+        justifyContent="center"
         onLayout={checkVideoVisibility}
       >
         {videoFile?.uri ? (
-          <VideoView player={videoPlayer} style={viewStyles.mediaImage} />
+          <VideoView
+            player={videoPlayer}
+            style={{ width: "100%", height: "100%" }}
+          />
         ) : videoStatus === "loading" ? (
-          <ActivityIndicator size="small" color={colors.white} />
+          <ActivityIndicator size="small" color={colorTokens.white} />
         ) : (
-          <Ionicons name="play-circle" size={48} color={colors.white} />
+          <Ionicons name="play-circle" size={48} color={colorTokens.white} />
         )}
         {!videoFile?.uri && (
-          <Text style={textStyles.videoLabel}>
+          <Text variant="bodySmall" color="muted">
             {videoStatus === "loading" ? "Loading video" : "Video submission"}
           </Text>
         )}
-      </View>
+      </YStack>
     );
   }
 

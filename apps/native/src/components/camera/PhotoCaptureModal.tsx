@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView } from "expo-camera";
 import { Directory, File, Paths } from "expo-file-system";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
-import {
-  AppModalShell,
-} from "~/components/common/ui";
+import { YStack, XStack, Text, Button } from "@mirai-app/ui";
+import { AppModalShell } from "~/components/common/ui";
 
 interface CapturedPhoto {
   uri: string;
@@ -92,7 +84,9 @@ export function PhotoCaptureModal({
     undefined,
   );
   const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
-  const [capturedPhoto, setCapturedPhoto] = useState<CapturedPhoto | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<CapturedPhoto | null>(
+    null,
+  );
   const lensPresetOptions = useMemo(
     () => buildLensPresetOptions(availableLenses),
     [availableLenses],
@@ -161,11 +155,7 @@ export function PhotoCaptureModal({
     } finally {
       setIsCapturingPhoto(false);
     }
-  }, [
-    isCapturingPhoto,
-    persistCapturedPhoto,
-    quality,
-  ]);
+  }, [isCapturingPhoto, persistCapturedPhoto, quality]);
 
   const handleUsePhoto = useCallback(() => {
     if (!capturedPhoto || isUsingPhoto) return;
@@ -186,9 +176,8 @@ export function PhotoCaptureModal({
       onClose={onClose}
       variant="pageSheet"
     >
-      <View style={{ flex: 1 }}>
-
-        <View style={{ flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
+      <YStack flex={1}>
+        <YStack flex={1} paddingHorizontal="$4" paddingTop="$4">
           {capturedPhoto ? (
             <Image
               source={{ uri: capturedPhoto.uri }}
@@ -212,16 +201,22 @@ export function PhotoCaptureModal({
                 const selectableLenses = options.map((option) => option.lens);
                 setAvailableLenses(lenses);
                 setSelectedLens((current) => {
-                  if (current && selectableLenses.includes(current)) return current;
+                  if (current && selectableLenses.includes(current))
+                    return current;
                   return selectableLenses[0];
                 });
               }}
             />
           )}
-        </View>
+        </YStack>
 
         {!capturedPhoto && lensPresetOptions.length > 1 ? (
-          <View style={{ flexDirection: "row", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, flexWrap: "wrap" }}>
+          <XStack
+            gap="$2"
+            paddingHorizontal="$4"
+            paddingTop="$3"
+            flexWrap="wrap"
+          >
             {lensPresetOptions.map((option) => {
               const lens = option.lens;
               const isSelected = selectedLens === lens;
@@ -246,44 +241,33 @@ export function PhotoCaptureModal({
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </XStack>
         ) : null}
 
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: spacing.md,
-            paddingTop: spacing.md,
-            paddingHorizontal: spacing.lg,
-            paddingBottom: Math.max(insets.bottom + spacing.md, spacing.xl),
-          }}
+        <XStack
+          alignItems="center"
+          justifyContent="center"
+          gap="$3"
+          paddingTop="$3"
+          paddingHorizontal="$4"
+          paddingBottom={Math.max(insets.bottom + 12, 24)}
         >
           {capturedPhoto ? (
             <>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.actionMuted]}
+              <Button
+                variant="outlined"
                 onPress={() => setCapturedPhoto(null)}
                 disabled={isUsingPhoto}
               >
-                <Text style={styles.actionMutedText}>Retake</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.actionPrimary]}
-                onPress={handleUsePhoto}
-                disabled={isUsingPhoto}
-              >
-                {isUsingPhoto ? (
-                  <ActivityIndicator size="small" color={colors.white} />
-                ) : (
-                  <Text style={styles.actionPrimaryText}>Use Photo</Text>
-                )}
-              </TouchableOpacity>
+                Retake
+              </Button>
+              <Button onPress={handleUsePhoto} disabled={isUsingPhoto}>
+                Use Photo
+              </Button>
             </>
           ) : (
-            <View style={styles.captureControlsRow}>
-              <View style={styles.captureSideSpacer} />
+            <XStack alignItems="center" gap="$3">
+              <YStack width={44} height={44} />
               <TouchableOpacity
                 style={[
                   styles.captureButton,
@@ -294,9 +278,9 @@ export function PhotoCaptureModal({
                 activeOpacity={0.85}
               >
                 {isCapturingPhoto ? (
-                  <ActivityIndicator size="small" color={colors.white} />
+                  <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Ionicons name="camera" size={22} color={colors.white} />
+                  <Ionicons name="camera" size={22} color="white" />
                 )}
               </TouchableOpacity>
               <TouchableOpacity
@@ -307,13 +291,13 @@ export function PhotoCaptureModal({
                 <Ionicons
                   name="camera-reverse-outline"
                   size={20}
-                  color={colors.white}
+                  color="white"
                 />
               </TouchableOpacity>
-            </View>
+            </XStack>
           )}
-        </View>
-      </View>
+        </XStack>
+      </YStack>
     </AppModalShell>
   );
 }
@@ -321,59 +305,29 @@ export function PhotoCaptureModal({
 const styles = StyleSheet.create({
   preview: {
     flex: 1,
-    borderRadius: borderRadius.xl,
+    borderRadius: 24,
     overflow: "hidden",
   },
   lensChip: {
     borderRadius: 999,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
     backgroundColor: "rgba(255,255,255,0.05)",
   },
   lensChipSelected: {
-    borderColor: colors.primary,
+    borderColor: "#00ced1",
     backgroundColor: "rgba(255,193,7,0.2)",
   },
   lensChipText: {
-    color: colors.white,
-    fontSize: typography.xs,
-    fontWeight: typography.medium,
+    color: "white",
+    fontSize: 12,
+    fontWeight: "500",
   },
   lensChipTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.bold,
-  },
-  actionButton: {
-    height: 48,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.xl,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 140,
-  },
-  actionMuted: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-  actionMutedText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  actionPrimary: {
-    backgroundColor: colors.primary,
-  },
-  actionPrimaryText: {
-    color: colors.backgroundDark,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
+    color: "#00ced1",
+    fontWeight: "bold",
   },
   captureButton: {
     width: 72,
@@ -381,21 +335,12 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
+    backgroundColor: "#00ced1",
     borderWidth: 3,
     borderColor: "rgba(255,255,255,0.24)",
   },
   captureButtonDisabled: {
     opacity: 0.75,
-  },
-  captureControlsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  captureSideSpacer: {
-    width: 44,
-    height: 44,
   },
   captureSideButton: {
     width: 44,

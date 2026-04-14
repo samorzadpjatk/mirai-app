@@ -1,15 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Pressable,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-  Text,
-  ActivityIndicator,
-} from "react-native";
+import { TouchableOpacity } from "react-native";
 import { useLocationContext } from "~/stores/location";
 import { useMapOverlayStore } from "~/stores/map";
-import { colors, spacing, typography } from "~/styles";
+import { XStack, YStack, Text, Spinner } from "@mirai-app/ui";
 
 export function MapActionButtons() {
   const {
@@ -31,185 +24,155 @@ export function MapActionButtons() {
 
   return (
     <>
-      <View style={styles.leftButtonsGroup}>
+      <YStack position="absolute" left={16} top={16} width={170} gap={10}>
         <TouchableOpacity
-          style={[
-            styles.backgroundToggle,
-            isBackgroundDisplayedOn && styles.backgroundToggleActive,
-            isBackgroundControlDisabled && styles.backgroundToggleDisabled,
-          ]}
           onPress={() => {
             void toggleBackgroundLocationUpdates();
           }}
           disabled={isBackgroundControlDisabled}
         >
-          {isUpdatingBackgroundLocation ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <>
-              <Text
-                style={[
-                  styles.backgroundToggleLabel,
-                  isBackgroundControlDisabled && styles.backgroundTextDisabled,
-                ]}
-              >
-                Background
-              </Text>
-              <Text
-                style={[
-                  styles.backgroundToggleStatus,
-                  isBackgroundControlDisabled && styles.backgroundTextDisabled,
-                ]}
-              >
-                {backgroundStatusLabel}
-              </Text>
-              <Ionicons
-                name={isBackgroundDisplayedOn ? "navigate" : "navigate-outline"}
-                size={18}
-                color={
-                  isBackgroundControlDisabled
-                    ? colors.textMuted
-                    : isBackgroundDisplayedOn
-                      ? colors.primary
-                      : colors.white
-                }
-              />
-            </>
-          )}
+          <XStack
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="space-between"
+            backgroundColor="rgba(15, 23, 42, 0.95)"
+            borderColor={
+              isBackgroundDisplayedOn
+                ? "rgba(0, 206, 209, 0.35)"
+                : "rgba(255,255,255,0.1)"
+            }
+            borderWidth={1}
+            borderRadius={16}
+            paddingHorizontal="$md"
+            paddingVertical="$sm"
+            gap="$xs"
+            opacity={isBackgroundControlDisabled ? 0.55 : 1}
+          >
+            {isUpdatingBackgroundLocation ? (
+              <Spinner size="small" color="$primary" />
+            ) : (
+              <>
+                <Text
+                  fontSize="$sm"
+                  color={isBackgroundControlDisabled ? "$textMuted" : "$white"}
+                  fontWeight={500}
+                >
+                  Background
+                </Text>
+                <Text
+                  fontSize="$xs"
+                  color={
+                    isBackgroundControlDisabled ? "$textMuted" : "$textMuted"
+                  }
+                  marginLeft="auto"
+                  marginRight="$sm"
+                  textTransform="uppercase"
+                  letterSpacing={1}
+                >
+                  {backgroundStatusLabel}
+                </Text>
+                <Ionicons
+                  name={
+                    isBackgroundDisplayedOn ? "navigate" : "navigate-outline"
+                  }
+                  size={18}
+                  color={
+                    isBackgroundControlDisabled
+                      ? "#475569"
+                      : isBackgroundDisplayedOn
+                        ? "#00ced1"
+                        : "#ffffff"
+                  }
+                />
+              </>
+            )}
+          </XStack>
         </TouchableOpacity>
-      </View>
+      </YStack>
 
-      <View style={styles.rightButtonsGroup}>
+      <YStack
+        position="absolute"
+        right={16}
+        top={16}
+        gap={12}
+        alignItems="flex-end"
+      >
         <TouchableOpacity
-          style={[
-            styles.locationToggle,
-            isLocationSharingEnabled && styles.locationToggleActive,
-          ]}
           onPress={() => {
             void toggleLocationSharing();
           }}
           disabled={isLoading || isUpdatingSharing}
         >
-          {isUpdatingSharing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <>
-              <Text style={styles.locationToggleText}>
-                {isLocationSharingEnabled ? "On" : "Off"}
-              </Text>
-              <Ionicons
-                name={isLocationSharingEnabled ? "location" : "locate"}
-                size={20}
-                color={isLocationSharingEnabled ? colors.primary : colors.white}
-              />
-            </>
-          )}
+          <XStack
+            flexDirection="row"
+            alignItems="center"
+            backgroundColor="rgba(15, 23, 42, 0.9)"
+            paddingVertical="$sm"
+            paddingHorizontal="$md"
+            borderRadius={20}
+            borderWidth={1}
+            borderColor={
+              isLocationSharingEnabled
+                ? "rgba(0, 206, 209, 0.3)"
+                : "rgba(255, 255, 255, 0.1)"
+            }
+          >
+            {isUpdatingSharing ? (
+              <Spinner size="small" color="$primary" />
+            ) : (
+              <>
+                <Text
+                  fontSize="$sm"
+                  color="$white"
+                  marginRight="$xs"
+                  fontWeight={500}
+                >
+                  {isLocationSharingEnabled ? "On" : "Off"}
+                </Text>
+                <Ionicons
+                  name={isLocationSharingEnabled ? "location" : "locate"}
+                  size={20}
+                  color={isLocationSharingEnabled ? "#00ced1" : "#ffffff"}
+                />
+              </>
+            )}
+          </XStack>
         </TouchableOpacity>
-        <Pressable style={styles.themeToggleButton} onPress={toggleTheme}>
-          <Ionicons
-            name={mapTheme === "dark" ? "sunny" : "moon"}
-            size={22}
-            color="#00ced1"
-          />
-        </Pressable>
+        <TouchableOpacity onPress={toggleTheme}>
+          <YStack
+            backgroundColor="rgba(23, 24, 28, 0.9)"
+            borderRadius={999}
+            width={44}
+            height={44}
+            alignItems="center"
+            justifyContent="center"
+            borderWidth={1}
+            borderColor="rgba(0, 206, 209, 0.35)"
+          >
+            <Ionicons
+              name={mapTheme === "dark" ? "sunny" : "moon"}
+              size={22}
+              color="#00ced1"
+            />
+          </YStack>
+        </TouchableOpacity>
         {isLocationSharingEnabled && (
-          <Pressable style={styles.recenterButton} onPress={onRecenter}>
-            <Ionicons name="locate" size={20} color="#00ced1" />
-          </Pressable>
+          <TouchableOpacity onPress={onRecenter}>
+            <YStack
+              backgroundColor="rgba(23, 24, 28, 0.9)"
+              borderRadius={999}
+              width={44}
+              height={44}
+              alignItems="center"
+              justifyContent="center"
+              borderWidth={1}
+              borderColor="rgba(0, 206, 209, 0.35)"
+            >
+              <Ionicons name="locate" size={20} color="#00ced1" />
+            </YStack>
+          </TouchableOpacity>
         )}
-      </View>
+      </YStack>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  leftButtonsGroup: {
-    position: "absolute",
-    left: 16,
-    top: 16,
-    width: 170,
-    gap: 10,
-  },
-  rightButtonsGroup: {
-    position: "absolute",
-    right: 16,
-    top: 16,
-    gap: 12,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-  },
-  themeToggleButton: {
-    backgroundColor: "rgba(23, 24, 28, 0.9)",
-    borderRadius: 999,
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.35)",
-  },
-  recenterButton: {
-    backgroundColor: "rgba(23, 24, 28, 0.9)",
-    borderRadius: 999,
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.35)",
-  },
-  locationToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(15, 23, 42, 0.9)",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  locationToggleActive: {
-    borderColor: "rgba(0, 206, 209, 0.3)",
-  },
-  locationToggleText: {
-    fontSize: typography.sm,
-    color: colors.white,
-    marginRight: spacing.xs,
-    fontWeight: typography.medium,
-  },
-  backgroundToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "rgba(15, 23, 42, 0.95)",
-    borderColor: "rgba(255,255,255,0.1)",
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.xs,
-  },
-  backgroundToggleActive: {
-    borderColor: "rgba(0, 206, 209, 0.35)",
-  },
-  backgroundToggleDisabled: {
-    opacity: 0.55,
-  },
-  backgroundToggleLabel: {
-    fontSize: typography.sm,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  backgroundToggleStatus: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
-    marginLeft: "auto",
-    marginRight: spacing.sm,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  backgroundTextDisabled: {
-    color: colors.textMuted,
-  },
-});

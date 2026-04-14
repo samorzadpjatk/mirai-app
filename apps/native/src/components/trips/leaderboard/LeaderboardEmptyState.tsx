@@ -1,27 +1,27 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, typography } from "~/styles";
+import { styled, Text, YStack } from "@mirai-app/ui";
 
 interface LeaderboardEmptyStateProps {
   message: string;
 }
 
+const Container = styled(YStack, {
+  name: "LeaderboardEmptyState",
+  flex: 1,
+  backgroundColor: "$backgroundDark",
+  justifyContent: "center",
+  alignItems: "center",
+});
+
+const Message = styled(Text, {
+  name: "LeaderboardEmptyMessage",
+  color: "$textMuted",
+  fontSize: "$lg",
+});
+
 export function LeaderboardEmptyState({ message }: LeaderboardEmptyStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>{message}</Text>
-    </View>
+    <Container>
+      <Message>{message}</Message>
+    </Container>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  text: {
-    color: colors.textMuted,
-    fontSize: typography.lg,
-  },
-});

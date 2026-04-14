@@ -1,5 +1,5 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { Image } from "react-native";
+import { styled, Text, XStack, YStack, Card } from "@mirai-app/ui";
 import type { RankedGroup } from "./types";
 
 interface LeaderboardListItemProps {
@@ -7,153 +7,184 @@ interface LeaderboardListItemProps {
   onPress?: (group: RankedGroup) => void;
 }
 
-export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps) {
+const Row = styled(XStack, {
+  name: "LeaderboardRow",
+  alignItems: "center",
+  gap: "$lg",
+  backgroundColor: "rgba(255, 255, 255, 0.05)",
+  paddingHorizontal: "$lg",
+  paddingVertical: "$md",
+  borderRadius: "$xl",
+  borderWidth: 1,
+  borderColor: "rgba(255, 255, 255, 0.05)",
+});
+
+const RowActive = styled(Row, {
+  name: "LeaderboardRowActive",
+  backgroundColor: "rgba(0, 206, 209, 0.1)",
+  borderColor: "rgba(0, 206, 209, 0.3)",
+  borderLeftWidth: 4,
+  borderLeftColor: "$primary",
+});
+
+const RankCell = styled(YStack, {
+  name: "RankCell",
+  width: 32,
+  alignItems: "center",
+});
+
+const RankText = styled(Text, {
+  name: "RankText",
+  fontSize: "$sm",
+  fontWeight: "$bold",
+  color: "rgba(255, 255, 255, 0.6)",
+});
+
+const RankTextActive = styled(RankText, {
+  name: "RankTextActive",
+  color: "$primary",
+});
+
+const Avatar = styled(YStack, {
+  name: "LeaderboardAvatar",
+  width: 48,
+  height: 48,
+  borderRadius: 24,
+  backgroundColor: "$cardDark",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+});
+
+const AvatarActive = styled(Avatar, {
+  name: "LeaderboardAvatarActive",
+  borderWidth: 2,
+  borderColor: "rgba(0, 206, 209, 0.2)",
+});
+
+const AvatarImage = styled(Image, {
+  name: "LeaderboardAvatarImage",
+  width: "100%",
+  height: "100%",
+});
+
+const AvatarText = styled(Text, {
+  name: "AvatarText",
+  fontSize: "$lg",
+  fontWeight: "$bold",
+  color: "$white",
+});
+
+const Content = styled(YStack, {
+  name: "LeaderboardContent",
+  flex: 1,
+});
+
+const NameRow = styled(XStack, {
+  name: "NameRow",
+  alignItems: "center",
+  gap: "$sm",
+});
+
+const GroupName = styled(Text, {
+  name: "GroupName",
+  fontSize: "$base",
+  fontWeight: "$bold",
+  color: "$white",
+});
+
+const YouBadge = styled(YStack, {
+  name: "YouBadge",
+  backgroundColor: "$primary",
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderRadius: "$sm",
+});
+
+const YouBadgeText = styled(Text, {
+  name: "YouBadgeText",
+  fontSize: 10,
+  fontWeight: "$bold",
+  color: "$backgroundDark",
+  textTransform: "uppercase",
+});
+
+const MemberCount = styled(Text, {
+  name: "MemberCount",
+  fontSize: "$xs",
+  color: "rgba(255, 255, 255, 0.4)",
+  marginTop: 2,
+});
+
+const ScoreCell = styled(YStack, {
+  name: "ScoreCell",
+  alignItems: "flex-end",
+});
+
+const ScoreText = styled(Text, {
+  name: "ScoreText",
+  fontSize: "$base",
+  fontWeight: "$bold",
+  color: "rgba(255, 255, 255, 0.8)",
+});
+
+const ScoreTextActive = styled(ScoreText, {
+  name: "ScoreTextActive",
+  color: "$primary",
+});
+
+export function LeaderboardListItem({
+  group,
+  onPress,
+}: LeaderboardListItemProps) {
+  const RowComponent = group.isCurrentUserGroup ? RowActive : Row;
+  const RankTextComponent = group.isCurrentUserGroup
+    ? RankTextActive
+    : RankText;
+  const ScoreTextComponent = group.isCurrentUserGroup
+    ? ScoreTextActive
+    : ScoreText;
+  const AvatarComponent = group.isCurrentUserGroup ? AvatarActive : Avatar;
+
   return (
-    <TouchableOpacity
-      style={[styles.row, group.isCurrentUserGroup && styles.rowActive]}
-      activeOpacity={0.85}
+    <Card
       onPress={() => onPress?.(group)}
+      pressStyle={{ opacity: 0.85 }}
+      backgroundColor="transparent"
+      borderWidth={0}
+      padding={0}
     >
-      <View style={styles.rankCell}>
-        <Text
-          style={[
-            styles.rankText,
-            group.isCurrentUserGroup && styles.rankTextActive,
-          ]}
-        >
-          {group.rank}
-        </Text>
-      </View>
+      <RowComponent>
+        <RankCell>
+          <RankTextComponent>{group.rank}</RankTextComponent>
+        </RankCell>
 
-      <View
-        style={[styles.avatar, group.isCurrentUserGroup && styles.avatarActive]}
-      >
-        {group.image ? (
-          <Image source={{ uri: group.image }} style={styles.avatarImage} resizeMode="cover" />
-        ) : (
-          <Text style={styles.avatarText}>{group.name.charAt(0)}</Text>
-        )}
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.nameRow}>
-          <Text style={styles.groupName}>{group.name}</Text>
-          {group.isCurrentUserGroup && (
-            <View style={styles.youBadge}>
-              <Text style={styles.youBadgeText}>YOUR GROUP</Text>
-            </View>
+        <AvatarComponent>
+          {group.image ? (
+            <AvatarImage source={{ uri: group.image }} resizeMode="cover" />
+          ) : (
+            <AvatarText>{group.name.charAt(0)}</AvatarText>
           )}
-        </View>
-        <Text style={styles.memberCount}>
-          {group.memberCount} Members active
-        </Text>
-      </View>
+        </AvatarComponent>
 
-      <View style={styles.scoreCell}>
-        <Text
-          style={[
-            styles.scoreText,
-            group.isCurrentUserGroup && styles.scoreTextActive,
-          ]}
-        >
-          {group.coins.toLocaleString()} pts
-        </Text>
-      </View>
-    </TouchableOpacity>
+        <Content>
+          <NameRow>
+            <GroupName>{group.name}</GroupName>
+            {group.isCurrentUserGroup && (
+              <YouBadge>
+                <YouBadgeText>YOUR GROUP</YouBadgeText>
+              </YouBadge>
+            )}
+          </NameRow>
+          <MemberCount>{group.memberCount} Members active</MemberCount>
+        </Content>
+
+        <ScoreCell>
+          <ScoreTextComponent>
+            {group.coins.toLocaleString()} pts
+          </ScoreTextComponent>
+        </ScoreCell>
+      </RowComponent>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  rowActive: {
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-    borderColor: "rgba(0, 206, 209, 0.3)",
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  rankCell: {
-    width: 32,
-    alignItems: "center",
-  },
-  rankText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: "rgba(255, 255, 255, 0.6)",
-  },
-  rankTextActive: {
-    color: colors.primary,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.cardDark,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarActive: {
-    borderWidth: 2,
-    borderColor: "rgba(0, 206, 209, 0.2)",
-  },
-  avatarText: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  content: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  groupName: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  youBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-  youBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: "uppercase",
-  },
-  memberCount: {
-    fontSize: typography.xs,
-    color: "rgba(255, 255, 255, 0.4)",
-    marginTop: 2,
-  },
-  scoreCell: {
-    alignItems: "flex-end",
-  },
-  scoreText: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  scoreTextActive: {
-    color: colors.primary,
-  },
-});

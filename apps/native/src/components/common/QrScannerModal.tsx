@@ -1,8 +1,8 @@
 import React, { useCallback, useRef, useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "~/styles";
+import { YStack, XStack, Text, Button } from "@mirai-app/ui";
 
 export interface QrScannerModalProps {
   visible: boolean;
@@ -40,7 +40,8 @@ export function QrScannerModal({
       onClose();
     } catch (error) {
       onClose();
-      const message = error instanceof Error ? error.message : "Invalid QR code";
+      const message =
+        error instanceof Error ? error.message : "Invalid QR code";
       Alert.alert("Invalid QR code", message);
     } finally {
       scanLockRef.current = false;
@@ -77,32 +78,34 @@ export function QrScannerModal({
   }, [visible, requestPermission]);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={handleClose}
-    >
-      <View style={styles.container}>
-        <View
-          style={[
-            styles.header,
-            { paddingTop: Math.max(insets.top + spacing.sm, spacing.xl) },
-          ]}
+    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
+      <YStack flex={1} backgroundColor="$backgroundDark">
+        <XStack
+          paddingHorizontal="$lg"
+          paddingBottom="$md"
+          paddingTop={Math.max(insets.top + 8, 20)}
+          alignItems="center"
+          justifyContent="space-between"
         >
-          <Text style={styles.title}>{title}</Text>
-          <Pressable
+          <Text color="$white" fontSize={20} fontWeight="700">
+            {title}
+          </Text>
+          <Button
             onPress={handleClose}
-            style={styles.closeButton}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            paddingVertical="$xs"
+            paddingHorizontal="$sm"
+            chromeless
           >
-            <Text style={styles.closeText}>Close</Text>
-          </Pressable>
-        </View>
-        
-        <View style={styles.cameraContainer}>
+            <Text color="$textSecondary" fontSize={16}>
+              Close
+            </Text>
+          </Button>
+        </XStack>
+
+        <YStack flex={1}>
           {cameraPermission?.granted ? (
             <CameraView
-              style={styles.camera}
+              style={{ flex: 1 }}
               facing="back"
               barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
               onBarcodeScanned={
@@ -112,86 +115,41 @@ export function QrScannerModal({
               }
             />
           ) : (
-            <View style={styles.permissionContainer}>
-              <Text style={styles.permissionText}>
+            <YStack
+              flex={1}
+              justifyContent="center"
+              alignItems="center"
+              paddingHorizontal="$xl"
+            >
+              <Text
+                color="$textSecondary"
+                fontSize={16}
+                textAlign="center"
+                marginBottom="$lg"
+              >
                 Camera permission is required to scan QR codes.
               </Text>
-              <Pressable style={styles.permissionButton} onPress={requestPermission}>
-                <Text style={styles.permissionButtonText}>Grant Permission</Text>
-              </Pressable>
-            </View>
+              <Button
+                onPress={requestPermission}
+                backgroundColor="$primary"
+                paddingHorizontal="$lg"
+                paddingVertical="$md"
+                borderRadius="$2"
+              >
+                <Text color="$white" fontSize={16} fontWeight="600">
+                  Grant Permission
+                </Text>
+              </Button>
+            </YStack>
           )}
-        </View>
-        
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>{instructionText}</Text>
-        </View>
-      </View>
+        </YStack>
+
+        <YStack paddingHorizontal="$lg" paddingVertical="$md">
+          <Text color="$textSecondary" fontSize={14} textAlign="center">
+            {instructionText}
+          </Text>
+        </YStack>
+      </YStack>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: {
-    color: colors.white,
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  closeButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  closeText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-  },
-  cameraContainer: {
-    flex: 1,
-  },
-  camera: {
-    flex: 1,
-  },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.xl,
-  },
-  permissionText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: spacing.lg,
-  },
-  permissionButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: 8,
-  },
-  permissionButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  footer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  footerText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    textAlign: "center",
-  },
-});

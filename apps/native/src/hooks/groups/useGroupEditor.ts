@@ -17,8 +17,8 @@ export function useGroupEditor(groupId?: string | null) {
 
   const [, updateMutation] = useMutation(UpdateGroupDocument);
 
-  // TODO: assignMutation and removeMutation need custom GraphQL mutations
-  // These are not yet available in the generated hooks
+  // NOTE: Member assignment/removal mutations not yet implemented
+  // These operations will be enabled when backend mutations are available
   const assignUser = async (_userId: string, _tripId: string) => {
     throw new Error("assignUser not yet implemented with GraphQL");
   };

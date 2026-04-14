@@ -1,13 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { Modal, TouchableOpacity, Alert } from "react-native";
 import {
   MapView,
   Camera,
@@ -17,7 +9,7 @@ import {
 } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { YStack, XStack, Text, Spinner } from "@mirai-app/ui";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { clientLogger } from "@mirai-app/shared";
@@ -204,7 +196,7 @@ export const LocationPicker: React.FC<Props> = ({
         });
       }
     } catch (error) {
-      clientLogger.error("Error getting location:", { error });
+      clientLogger.error("Error getting location: " + String(error));
       Alert.alert(
         "Location Error",
         "Unable to get your current location. Please try again.",
@@ -225,48 +217,56 @@ export const LocationPicker: React.FC<Props> = ({
       onRequestClose={onClose}
       presentationStyle="fullScreen"
     >
-      <View style={styles.container}>
+      <YStack flex={1} backgroundColor="$backgroundDark">
         {/* Header */}
-        <View
-          style={[
-            styles.header,
-            { paddingTop: Math.max(insets.top + spacing.sm, spacing.xl) },
-          ]}
+        <XStack
+          alignItems="center"
+          justifyContent="space-between"
+          paddingHorizontal="$lg"
+          paddingBottom="$md"
+          backgroundColor="$cardDark"
+          borderBottomWidth={1}
+          borderBottomColor="$borderDark"
+          paddingTop={Math.max(insets.top + 12, 24)}
         >
           <TouchableOpacity
             onPress={onClose}
-            style={styles.headerButton}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Text style={styles.headerButtonText}>Cancel</Text>
+            <Text color="$primary" fontSize="$base" fontWeight={600}>
+              Cancel
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Select Location</Text>
+          <Text color="$white" fontSize="$lg" fontWeight={700}>
+            Select Location
+          </Text>
           <TouchableOpacity
             onPress={handleConfirm}
-            style={[
-              styles.headerButton,
-              styles.headerButtonConfirm,
-              !selectedLocation && styles.headerButtonDisabled,
-            ]}
             disabled={!selectedLocation}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Text
-              style={[
-                styles.headerButtonText,
-                styles.headerButtonTextConfirm,
-                !selectedLocation && styles.headerButtonTextDisabled,
-              ]}
+            <YStack
+              backgroundColor={selectedLocation ? "$primary" : "$borderDark"}
+              opacity={selectedLocation ? 1 : 0.5}
+              borderRadius="$md"
+              paddingVertical="$sm"
+              paddingHorizontal="$md"
             >
-              Confirm
-            </Text>
+              <Text
+                color={selectedLocation ? "$white" : "$textTertiary"}
+                fontSize="$base"
+                fontWeight={600}
+              >
+                Confirm
+              </Text>
+            </YStack>
           </TouchableOpacity>
-        </View>
+        </XStack>
 
         {/* Map */}
-        <View style={styles.mapContainer}>
+        <YStack flex={1} position="relative">
           <MapView
-            style={styles.map}
+            style={{ flex: 1 }}
             mapStyle={currentMapStyle}
             logoEnabled={false}
             compassEnabled
@@ -300,13 +300,33 @@ export const LocationPicker: React.FC<Props> = ({
                 markerCoordinate.latitude,
               ]}
             >
-              <View style={{ opacity: selectedLocation ? 1 : 0 }}>
-                <View style={styles.markerContainer}>
-                  <View style={styles.marker}>
-                    <View style={styles.markerInner} />
-                  </View>
-                </View>
-              </View>
+              <YStack
+                opacity={selectedLocation ? 1 : 0}
+                alignItems="center"
+                justifyContent="center"
+              >
+                <YStack
+                  width={40}
+                  height={40}
+                  borderRadius={20}
+                  backgroundColor="$primary"
+                  borderWidth={3}
+                  borderColor="$white"
+                  alignItems="center"
+                  justifyContent="center"
+                  shadowColor="#000"
+                  shadowOpacity={0.3}
+                  shadowRadius={4}
+                  shadowOffset={{ width: 0, height: 2 }}
+                >
+                  <YStack
+                    width={12}
+                    height={12}
+                    borderRadius={6}
+                    backgroundColor="$white"
+                  />
+                </YStack>
+              </YStack>
             </MarkerView>
 
             {/* Raster overlays (same as UserMap) */}
@@ -329,37 +349,65 @@ export const LocationPicker: React.FC<Props> = ({
 
           {/* Loading indicator */}
           {!isMapReady && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Loading map...</Text>
-            </View>
+            <YStack
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              justifyContent="center"
+              alignItems="center"
+              backgroundColor="$backgroundDark"
+            >
+              <Spinner size="large" color="$primary" />
+              <Text color="$textSecondary" fontSize="$base" marginTop="$sm">
+                Loading map...
+              </Text>
+            </YStack>
           )}
 
           {/* Map controls */}
-          <View style={styles.mapControls}>
+          <YStack position="absolute" bottom="$xl" right="$lg">
             <TouchableOpacity
               onPress={handleCurrentLocation}
-              style={styles.mapControlButton}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               disabled={isLoadingLocation}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              {isLoadingLocation ? (
-                <ActivityIndicator size="small" color={colors.white} />
-              ) : (
-                <Ionicons
-                  name="location-sharp"
-                  size={20}
-                  color={colors.white}
-                  style={styles.mapControlButtonIcon}
-                />
-              )}
+              <YStack
+                backgroundColor="$cardDark"
+                borderRadius="$lg"
+                width={48}
+                height={48}
+                justifyContent="center"
+                alignItems="center"
+                borderWidth={1}
+                borderColor="$borderDark"
+                shadowColor="#000"
+                shadowOpacity={0.3}
+                shadowRadius={4}
+                shadowOffset={{ width: 0, height: 2 }}
+              >
+                {isLoadingLocation ? (
+                  <Spinner size="small" color="$white" />
+                ) : (
+                  <Ionicons name="location-sharp" size={20} color="#ffffff" />
+                )}
+              </YStack>
             </TouchableOpacity>
-          </View>
-        </View>
+          </YStack>
+        </YStack>
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
+        <XStack
+          backgroundColor="$cardDark"
+          borderTopWidth={1}
+          borderTopColor="$borderDark"
+          paddingHorizontal="$lg"
+          paddingVertical="$md"
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <Text color="$textSecondary" fontSize="$sm" flex={1}>
             {selectedLocation
               ? `Selected: ${selectedLocation.latitude.toFixed(6)}, ${selectedLocation.longitude.toFixed(6)}`
               : "Tap on the map to select a location"}
@@ -369,157 +417,23 @@ export const LocationPicker: React.FC<Props> = ({
               onPress={() => {
                 setSelectedLocation(null);
               }}
-              style={styles.clearButton}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Text style={styles.clearButtonText}>Clear</Text>
+              <YStack
+                paddingVertical="$sm"
+                paddingHorizontal="$md"
+                borderRadius="$md"
+                borderWidth={1}
+                borderColor="$borderDark"
+              >
+                <Text color="$textSecondary" fontSize="$sm" fontWeight={600}>
+                  Clear
+                </Text>
+              </YStack>
             </TouchableOpacity>
           )}
-        </View>
-      </View>
+        </XStack>
+      </YStack>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.cardDark,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDark,
-  },
-  headerButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-  },
-  headerButtonConfirm: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-  },
-  headerButtonDisabled: {
-    backgroundColor: colors.borderDark,
-    opacity: 0.5,
-  },
-  headerButtonText: {
-    color: colors.primary,
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-  },
-  headerButtonTextConfirm: {
-    color: colors.white,
-  },
-  headerButtonTextDisabled: {
-    color: colors.textTertiary,
-  },
-  headerTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-  },
-  mapContainer: {
-    flex: 1,
-    position: "relative",
-  },
-  map: {
-    flex: 1,
-  },
-  loadingContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.backgroundDark,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: typography.base,
-    marginTop: spacing.sm,
-  },
-  mapControls: {
-    position: "absolute",
-    bottom: spacing.xl,
-    right: spacing.lg,
-  },
-  mapControlButton: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  mapControlButtonIcon: {
-    fontSize: 20,
-  },
-  markerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  marker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    borderWidth: 3,
-    borderColor: colors.white,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  markerInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.white,
-  },
-  footer: {
-    backgroundColor: colors.cardDark,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderDark,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  footerText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    flex: 1,
-  },
-  clearButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  clearButtonText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-  },
-});

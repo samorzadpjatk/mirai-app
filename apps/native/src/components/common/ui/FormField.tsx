@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import type { StyleProp, ViewStyle } from "react-native";
+import { YStack, Text } from "@mirai-app/ui";
 
 interface FormFieldProps {
   label: string;
@@ -20,39 +20,27 @@ export function FormField({
   style,
 }: FormFieldProps) {
   return (
-    <View style={[styles.container, style]}>
-      <Text style={styles.label}>
+    <YStack marginBottom="$lg" style={style}>
+      <Text
+        fontSize="$sm"
+        fontWeight="600"
+        color="$textSecondary"
+        marginBottom="$xs"
+      >
         {label}
-        {required && <Text style={styles.required}> *</Text>}
+        {required && <Text color="$danger"> *</Text>}
       </Text>
       {children}
-      {hint && <Text style={styles.hint}>{hint}</Text>}
-      {error && <Text style={styles.error}>{error}</Text>}
-    </View>
+      {hint && (
+        <Text fontSize="$xs" color="$textTertiary" marginTop="$xs">
+          {hint}
+        </Text>
+      )}
+      {error && (
+        <Text fontSize="$xs" color="$danger" marginTop="$xs">
+          {error}
+        </Text>
+      )}
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  required: {
-    color: colors.danger,
-  },
-  hint: {
-    fontSize: typography.xs,
-    color: colors.textTertiary,
-    marginTop: spacing.xs,
-  },
-  error: {
-    fontSize: typography.xs,
-    color: colors.danger,
-    marginTop: spacing.xs,
-  },
-});

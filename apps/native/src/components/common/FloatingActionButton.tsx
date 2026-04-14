@@ -1,11 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  StyleSheet,
-  TouchableOpacity,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
-import { colors } from "~/styles";
+import { useTheme } from "@mirai-app/ui";
+import type { StyleProp, ViewStyle } from "react-native";
+import { Button, View } from "@mirai-app/ui";
 
 interface FloatingActionButtonProps {
   onPress: () => void;
@@ -14,7 +10,6 @@ interface FloatingActionButtonProps {
   iconSize?: number;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
-  activeOpacity?: number;
 }
 
 export function FloatingActionButton({
@@ -24,37 +19,40 @@ export function FloatingActionButton({
   iconSize = 32,
   disabled = false,
   style,
-  activeOpacity = 0.7,
 }: FloatingActionButtonProps) {
+  const theme = useTheme();
+
   return (
-    <TouchableOpacity
+    <Button
       onPress={onPress}
       disabled={disabled}
-      style={[styles.button, disabled && styles.buttonDisabled, style]}
-      activeOpacity={activeOpacity}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      width={58}
+      height={58}
+      borderRadius="$full"
+      backgroundColor="$primary"
+      alignItems="center"
+      justifyContent="center"
+      opacity={disabled ? 0.6 : 1}
+      pressStyle={{ scale: 0.95 }}
+      style={style}
     >
-      <Ionicons name={iconName} size={iconSize} color={colors.backgroundDark} />
-    </TouchableOpacity>
+      <View
+        style={{
+          shadowColor: theme.primary?.val ?? "#00ced1",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.35,
+          shadowRadius: 16,
+          elevation: 8,
+        }}
+      >
+        <Ionicons
+          name={iconName}
+          size={iconSize}
+          color={theme.backgroundDark?.val ?? "#17181c"}
+        />
+      </View>
+    </Button>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    width: 58,
-    height: 58,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-});

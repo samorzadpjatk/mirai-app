@@ -1,23 +1,22 @@
-import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useQuery } from "urql";
 import { useFocusEffect } from "expo-router";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
 import { useFileDownload } from "~/hooks/files";
 
-const getRoleColor = (role: string) => {
+const getRoleColor = (role: string): string => {
   switch (role) {
     case "ADMIN":
-      return colors.accentMagenta;
+      return "$accentMagenta";
     case "MODERATOR":
-      return colors.primary;
+      return "$primary";
     case "SERVICE":
-      return colors.slate400;
+      return "$slate400";
     default:
-      return colors.textMuted;
+      return "$colorMuted";
   }
 };
 
@@ -40,13 +39,13 @@ const getRoleBadgeStyle = (role: string) => {
   switch (role) {
     case "ADMIN":
       return {
-        backgroundColor: colors.magentaOpacity10,
-        borderColor: colors.magentaOpacity30,
+        backgroundColor: "rgba(236, 72, 153, 0.1)",
+        borderColor: "rgba(236, 72, 153, 0.3)",
       };
     case "MODERATOR":
       return {
-        backgroundColor: colors.primaryOpacity10,
-        borderColor: colors.primaryOpacity30,
+        backgroundColor: "rgba(0, 206, 209, 0.1)",
+        borderColor: "rgba(0, 206, 209, 0.3)",
       };
     case "SERVICE":
       return {
@@ -132,103 +131,74 @@ export function ProfileHeader() {
   );
 
   return (
-    <View style={styles.profileHeader}>
-      <View style={styles.avatarLarge}>
+    <YStack alignItems="center" paddingVertical="$10" position="relative">
+      <YStack
+        width={100}
+        height={100}
+        borderRadius="$full"
+        backgroundColor="$surface"
+        borderWidth={3}
+        borderColor="$primary"
+        alignItems="center"
+        justifyContent="center"
+        marginBottom="$4"
+        overflow="hidden"
+        shadowColor="rgba(0, 206, 209, 0.3)"
+        shadowOffset={{ width: 0, height: 0 }}
+        shadowOpacity={0.3}
+        shadowRadius={20}
+      >
         {avatarUri ? (
           <Image
             source={{ uri: avatarUri }}
-            style={styles.avatarImage}
+            style={{ width: "100%", height: "100%" }}
             contentFit="cover"
             cachePolicy="none"
           />
         ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarLargeText}>{initials}</Text>
-            {isDownloading ? (
-              <Text style={styles.avatarLoadingText}>Loading...</Text>
-            ) : null}
-          </View>
+          <YStack
+            width="100%"
+            height="100%"
+            alignItems="center"
+            justifyContent="center"
+            gap="$1"
+          >
+            <Text fontSize={36} fontWeight="$bold" color="$primary">
+              {initials}
+            </Text>
+            {isDownloading && (
+              <Text variant="caption" color="muted">
+                Loading...
+              </Text>
+            )}
+          </YStack>
         )}
-      </View>
+      </YStack>
 
-      <Text style={styles.userName}>
+      <Text variant="h3" color="default" marginBottom="$2">
         {first} {last}
       </Text>
 
-      <View style={[styles.roleBadge, roleBadgeStyle]}>
-        <Ionicons name="shield" size={14} color={roleColor} />
-        <Text style={[styles.roleText, { color: roleColor }]}>
-          {" "}
+      <XStack
+        alignItems="center"
+        gap="$1"
+        paddingHorizontal="$3"
+        paddingVertical="$1"
+        borderRadius="$full"
+        borderWidth={1}
+        {...roleBadgeStyle}
+      >
+        <Ionicons name="shield" size={14} color={roleColor as string} />
+        <Text
+          variant="caption"
+          fontWeight="$bold"
+          textTransform="uppercase"
+          letterSpacing={1}
+          color={roleColor as string}
+        >
           {getRoleLabel(roleValue)}
         </Text>
-      </View>
-    </View>
+      </XStack>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  profileHeader: {
-    alignItems: "center",
-    paddingVertical: spacing.xl * 2,
-    position: "relative",
-  },
-  avatarLarge: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.cardDark,
-    borderWidth: 3,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarFallback: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  avatarLargeText: {
-    fontSize: 36,
-    fontWeight: typography.bold,
-    color: colors.primary,
-  },
-  avatarLoadingText: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
-  },
-  userName: {
-    fontSize: typography.xxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-  },
-  roleBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.3)",
-  },
-  roleText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-});

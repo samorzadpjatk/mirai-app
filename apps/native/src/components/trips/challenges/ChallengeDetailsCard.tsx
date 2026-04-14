@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { Card, Text, YStack } from "@mirai-app/ui";
 
 interface ChallengeDetailsCardProps {
   challenge: {
@@ -62,68 +61,72 @@ export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
       : "Duration set by organizer. Starts automatically after moderation.";
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Challenge Details</Text>
-      </View>
+    <Card
+      marginBottom="$5"
+      borderWidth={1}
+      borderColor="rgba(255, 255, 255, 0.05)"
+    >
+      <YStack marginBottom="$4">
+        <Text
+          fontSize={10}
+          fontWeight="$bold"
+          color="muted"
+          textTransform="uppercase"
+          letterSpacing={2}
+          marginBottom="$3"
+        >
+          Challenge Details
+        </Text>
+      </YStack>
 
-      <View style={styles.row}>
-        <Text style={styles.label}>Submission window</Text>
-        <Text style={styles.value}>{timeWindowText}</Text>
-      </View>
+      <YStack marginBottom="$4">
+        <Text
+          fontSize={12}
+          color="muted"
+          textTransform="uppercase"
+          letterSpacing={1.5}
+          marginBottom={4}
+        >
+          Submission window
+        </Text>
+        <Text fontSize={14} color="white" lineHeight={20}>
+          {timeWindowText}
+        </Text>
+      </YStack>
 
       {challenge.scoringCategory === "PEER_VOTING" && (
-        <View style={styles.row}>
-          <Text style={styles.label}>Voting</Text>
-          <Text style={styles.value}>{votingWindowText}</Text>
-        </View>
+        <YStack marginBottom="$4">
+          <Text
+            fontSize={12}
+            color="muted"
+            textTransform="uppercase"
+            letterSpacing={1.5}
+            marginBottom={4}
+          >
+            Voting
+          </Text>
+          <Text fontSize={14} color="white" lineHeight={20}>
+            {votingWindowText}
+          </Text>
+        </YStack>
       )}
 
       {challenge.targetLatitude && challenge.targetLongitude && (
-        <View style={styles.row}>
-          <Text style={styles.label}>Target location</Text>
-          <Text style={styles.value}>
+        <YStack>
+          <Text
+            fontSize={12}
+            color="muted"
+            textTransform="uppercase"
+            letterSpacing={1.5}
+            marginBottom={4}
+          >
+            Target location
+          </Text>
+          <Text fontSize={14} color="white" lineHeight={20}>
             {challenge.targetLatitude}, {challenge.targetLongitude}
           </Text>
-        </View>
+        </YStack>
       )}
-    </View>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  title: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    marginBottom: spacing.md,
-  },
-  header: {
-    marginBottom: spacing.md,
-  },
-  row: {
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 14,
-    color: colors.white,
-    lineHeight: 20,
-  },
-});
