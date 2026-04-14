@@ -3,6 +3,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { useMutation, useClient } from "urql";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
+import { apiLogger } from "@mirai-app/shared";
 
 function resolveProjectId(): string | undefined {
   const expoConfigExtra = (Constants.expoConfig?.extra ?? null) as unknown;
@@ -112,7 +113,9 @@ export function useAutoPushSubscription() {
           await client.invalidate(GetMyNotificationsDocument);
         }
       } catch (error) {
-        console.warn("Failed to run automatic notification onboarding:", error);
+        apiLogger.warn("Failed to run automatic notification onboarding:", {
+          error,
+        });
       }
     })();
   }, [authUserId, hasSession, subscribeMutation, client]);

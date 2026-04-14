@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-describe("useFileUpload", () => {
+describe("[UNIT] useFileUpload", () => {
   test("module exports useFileUpload function", () => {
     const { useFileUpload } = require("../useFileUpload");
     expect(useFileUpload).toBeDefined();
@@ -10,7 +10,7 @@ describe("useFileUpload", () => {
   });
 });
 
-describe("useFileDownload", () => {
+describe("[UNIT] useFileDownload", () => {
   test("module exports useFileDownload function", () => {
     const { useFileDownload } = require("../useFileDownload");
     expect(useFileDownload).toBeDefined();

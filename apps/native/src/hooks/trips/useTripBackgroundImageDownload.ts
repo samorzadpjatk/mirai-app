@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { apiLogger } from "@mirai-app/shared";
 import { useFileDownload } from "~/hooks/files/useFileDownload";
 
 let placeholderUriCache: string | null | undefined;
@@ -64,10 +65,9 @@ export function useTripBackgroundImageDownload(
           } catch (placeholderError) {
             placeholderUriCache = null;
             if (!placeholderErrorLogged) {
-              console.warn(
-                "Failed to download placeholder image:",
-                placeholderError,
-              );
+              apiLogger.warn("Failed to download placeholder image:", {
+                error: placeholderError,
+              });
               placeholderErrorLogged = true;
             }
           }

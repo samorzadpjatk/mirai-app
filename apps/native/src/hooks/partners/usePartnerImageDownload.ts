@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { apiLogger } from "@mirai-app/shared";
 import { useFileDownload } from "~/hooks/files/useFileDownload";
 
 let placeholderUriCache: string | null | undefined;
 let placeholderErrorLogged = false;
 
-export function usePartnerImageDownload(
-  logoPath: string | null | undefined,
-) {
+export function usePartnerImageDownload(logoPath: string | null | undefined) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const {
@@ -64,10 +63,9 @@ export function usePartnerImageDownload(
           } catch (placeholderError) {
             placeholderUriCache = null;
             if (!placeholderErrorLogged) {
-              console.warn(
-                "Failed to download partner placeholder image:",
-                placeholderError,
-              );
+              apiLogger.warn("Failed to download partner placeholder image:", {
+                error: placeholderError,
+              });
               placeholderErrorLogged = true;
             }
           }

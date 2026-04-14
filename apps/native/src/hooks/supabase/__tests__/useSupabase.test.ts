@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-describe("useSupabase", () => {
+describe("[UNIT] useSupabase", () => {
   test("module exports useSupabase function", async () => {
     const { useSupabase } = await import("../useSupabase");
     expect(useSupabase).toBeDefined();

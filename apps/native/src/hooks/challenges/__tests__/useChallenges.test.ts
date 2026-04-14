@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-describe("useChallenges", () => {
+describe("[UNIT] useChallenges", () => {
   test("module exports useChallenges function", () => {
     const { useChallenges } = require("../useChallenges");
     expect(useChallenges).toBeDefined();
@@ -14,7 +14,7 @@ describe("useChallenges", () => {
   });
 });
 
-describe("useChallengeDetails", () => {
+describe("[UNIT] useChallengeDetails", () => {
   test("module exports useChallengeDetails function", () => {
     const { useChallengeDetails } = require("../useChallengeDetails");
     expect(useChallengeDetails).toBeDefined();
@@ -26,7 +26,7 @@ describe("useChallengeDetails", () => {
   });
 });
 
-describe("useChallengeCapture", () => {
+describe("[UNIT] useChallengeCapture", () => {
   test("module exports useChallengeCapture function", () => {
     const { useChallengeCapture } = require("../useChallengeCapture");
     expect(useChallengeCapture).toBeDefined();

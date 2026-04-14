@@ -3,6 +3,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
 import { useQuery, useMutation, useClient } from "urql";
+import { apiLogger } from "@mirai-app/shared";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;
@@ -97,7 +98,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const openAppSettings = useCallback(() => {
     void Linking.openSettings().catch((error) => {
-      console.warn("Failed to open app settings", error);
+      apiLogger.warn("Failed to open app settings", { error });
       Alert.alert("Error", "Could not open device settings");
     });
   }, []);
@@ -108,7 +109,9 @@ export function useNotifications(): UseNotificationsReturn {
         setPermission(data.status);
       })
       .catch((err) => {
-        console.warn("Failed to get notification permissions", err);
+        apiLogger.warn("Failed to get notification permissions", {
+          error: err,
+        });
       });
   }, []);
 

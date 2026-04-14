@@ -4,7 +4,7 @@
 
 // Tests for storage services
 
-describe("authStorage", () => {
+describe("[UNIT] authStorage", () => {
   test("exports authStorage object", async () => {
     const { authStorage } = await import("../../storage/storage");
     expect(authStorage).toBeDefined();
@@ -30,7 +30,7 @@ describe("authStorage", () => {
   });
 });
 
-describe("tusUrlStorage", () => {
+describe("[UNIT] tusUrlStorage", () => {
   test("exports tusUrlStorage factory function", async () => {
     const { tusUrlStorage } = await import("../../storage/tusUrlStorage");
     expect(tusUrlStorage).toBeDefined();
@@ -73,7 +73,7 @@ describe("tusUrlStorage", () => {
   });
 });
 
-describe("selectedTripStorage", () => {
+describe("[UNIT] selectedTripStorage", () => {
   test("exports getSelectedTripIdFromStorage function", async () => {
     const { getSelectedTripIdFromStorage } =
       await import("../../storage/selectedTripStorage");

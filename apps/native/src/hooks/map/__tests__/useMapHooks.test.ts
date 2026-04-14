@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-describe("useMapLocationStream", () => {
+describe("[UNIT] useMapLocationStream", () => {
   test("module exports useMapLocationStream function", async () => {
     const { useMapLocationStream } = await import("../useMapLocationStream");
     expect(useMapLocationStream).toBeDefined();
@@ -10,7 +10,7 @@ describe("useMapLocationStream", () => {
   });
 });
 
-describe("useMapUsers", () => {
+describe("[UNIT] useMapUsers", () => {
   test("module exports useMapUsers function", async () => {
     const { useMapUsers } = await import("../useMapUsers");
     expect(useMapUsers).toBeDefined();
@@ -18,7 +18,7 @@ describe("useMapUsers", () => {
   });
 });
 
-describe("useMapSelectedUser", () => {
+describe("[UNIT] useMapSelectedUser", () => {
   test("module exports useMapSelectedUser function", async () => {
     const { useMapSelectedUser } = await import("../useMapSelectedUser");
     expect(useMapSelectedUser).toBeDefined();
@@ -26,7 +26,7 @@ describe("useMapSelectedUser", () => {
   });
 });
 
-describe("useMapSharing", () => {
+describe("[UNIT] useMapSharing", () => {
   test("module exports useMapSharing function", async () => {
     const { useMapSharing } = await import("../useMapSharing");
     expect(useMapSharing).toBeDefined();
@@ -34,7 +34,7 @@ describe("useMapSharing", () => {
   });
 });
 
-describe("useMapActions", () => {
+describe("[UNIT] useMapActions", () => {
   test("module exports useMapActions function", async () => {
     const { useMapActions } = await import("../useMapActions");
     expect(useMapActions).toBeDefined();

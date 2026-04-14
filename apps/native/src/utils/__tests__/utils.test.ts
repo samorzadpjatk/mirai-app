@@ -4,7 +4,7 @@
 
 // Tests for native utilities
 
-describe("validation utilities", () => {
+describe("[UNIT] validation utilities", () => {
   test("exports formatDate function", async () => {
     const { formatDate } = await import("../validation");
     expect(formatDate).toBeDefined();
@@ -26,7 +26,7 @@ describe("validation utilities", () => {
   });
 });
 
-describe("format utilities", () => {
+describe("[UNIT] format utilities", () => {
   test("exports formatDate function", async () => {
     const { formatDate } = await import("../format");
     expect(formatDate).toBeDefined();
@@ -53,7 +53,7 @@ describe("format utilities", () => {
   });
 });
 
-describe("trip utilities", () => {
+describe("[UNIT] trip utilities", () => {
   test("exports isTripPast function", async () => {
     const { isTripPast } = await import("../trip");
     expect(isTripPast).toBeDefined();
@@ -95,7 +95,7 @@ describe("trip utilities", () => {
   });
 });
 
-describe("image utilities", () => {
+describe("[UNIT] image utilities", () => {
   test("exports getImageExtension function", async () => {
     const { getImageExtension } = await import("../image");
     expect(getImageExtension).toBeDefined();

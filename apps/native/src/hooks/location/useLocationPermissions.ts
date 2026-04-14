@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useQuery, useMutation } from "urql";
+import { apiLogger } from "@mirai-app/shared";
 import {
   GetMySharingSettingsDocument,
   UpdateLocationSharingDocument,
@@ -60,7 +61,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
           setIsLocationSharingEnabled(localEnabled);
         }
       } catch (error) {
-        console.warn("Failed to load location settings:", error);
+        apiLogger.warn("Failed to load location settings:", { error });
       } finally {
         setIsLoading(false);
       }
@@ -74,7 +75,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
         const { status } = await Location.getForegroundPermissionsAsync();
         setPermissionStatus(status as LocationPermissionStatus);
       } catch (error) {
-        console.warn("Failed to check location permissions:", error);
+        apiLogger.warn("Failed to check location permissions:", { error });
         setPermissionStatus("denied");
       }
     })();

@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
+import { apiLogger } from "@mirai-app/shared";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
@@ -26,20 +27,29 @@ export async function getBackgroundLocationPreference(): Promise<boolean> {
     const value = await AsyncStorage.getItem(BACKGROUND_LOCATION_SETTINGS_KEY);
     return value === "true";
   } catch (error) {
-    console.warn("Failed to read background location preference:", error);
+    apiLogger.warn("Failed to read background location preference:", { error });
     return false;
   }
 }
 
-export async function setBackgroundLocationPreference(enabled: boolean): Promise<void> {
-  await AsyncStorage.setItem(BACKGROUND_LOCATION_SETTINGS_KEY, enabled.toString());
+export async function setBackgroundLocationPreference(
+  enabled: boolean,
+): Promise<void> {
+  await AsyncStorage.setItem(
+    BACKGROUND_LOCATION_SETTINGS_KEY,
+    enabled.toString(),
+  );
 }
 
 export async function hasBackgroundLocationTaskStarted(): Promise<boolean> {
   try {
-    return await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
+    return await Location.hasStartedLocationUpdatesAsync(
+      BACKGROUND_LOCATION_TASK_NAME,
+    );
   } catch (error) {
-    console.warn("Failed to check background location task state:", error);
+    apiLogger.warn("Failed to check background location task state:", {
+      error,
+    });
     return false;
   }
 }

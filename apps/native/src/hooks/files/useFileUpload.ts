@@ -4,6 +4,7 @@ import { File } from "expo-file-system";
 import { graphqlClient } from "~/lib/graphql-client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
 import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
+import { apiLogger } from "@mirai-app/shared";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -196,10 +197,13 @@ export const useFileUpload = () => {
                       const refreshedTicket = await createUploadUrl({
                         storagePath: input.storagePath,
                       });
-                      console.warn("[Upload] Retrying with fresh signed URL", {
-                        storagePath: input.storagePath,
-                        attempt,
-                      });
+                      apiLogger.warn(
+                        "[Upload] Retrying with fresh signed URL",
+                        {
+                          storagePath: input.storagePath,
+                          attempt,
+                        },
+                      );
                       retrying = false;
                       startUpload(refreshedTicket);
                     } catch (refreshError) {
@@ -257,7 +261,7 @@ export const useFileUpload = () => {
                       urlStorage.removeUpload(previousUpload.urlStorageKey),
                     ),
                   );
-                  console.warn(
+                  apiLogger.warn(
                     "[Upload] Cleared previous resumable uploads for signed URL",
                     { storagePath: input.storagePath },
                   );

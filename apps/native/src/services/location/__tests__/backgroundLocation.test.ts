@@ -4,7 +4,7 @@
 
 // Tests for background location service
 
-describe("backgroundLocation service", () => {
+describe("[UNIT] backgroundLocation service", () => {
   test("exports getBackgroundLocationPreference function", async () => {
     const { getBackgroundLocationPreference } =
       await import("../backgroundLocation");
@@ -54,7 +54,7 @@ describe("backgroundLocation service", () => {
   });
 });
 
-describe("location constants", () => {
+describe("[UNIT] location constants", () => {
   test("exports LOCATION_SHARING_SETTINGS_KEY", async () => {
     const { LOCATION_SHARING_SETTINGS_KEY } = await import("../constants");
     expect(LOCATION_SHARING_SETTINGS_KEY).toBeDefined();

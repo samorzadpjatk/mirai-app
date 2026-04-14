@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiLogger } from "@mirai-app/shared";
 import type { TripListItem } from "~/components/trips/list/types";
 
 const SELECTED_TRIP_STORAGE_KEY = "selected_trip_id";
@@ -12,7 +13,9 @@ export async function getSelectedTripIdFromStorage(): Promise<string | null> {
   return SecureStore.getItemAsync(SELECTED_TRIP_STORAGE_KEY);
 }
 
-export async function setSelectedTripIdInStorage(tripId: string): Promise<void> {
+export async function setSelectedTripIdInStorage(
+  tripId: string,
+): Promise<void> {
   await SecureStore.setItemAsync(SELECTED_TRIP_STORAGE_KEY, tripId);
 }
 
@@ -26,7 +29,7 @@ const readJson = async <T>(key: string, fallback: T): Promise<T> => {
     if (!raw) return fallback;
     return (JSON.parse(raw) as T) ?? fallback;
   } catch (error) {
-    console.warn(`Failed to read cache key "${key}":`, error);
+    apiLogger.warn(`Failed to read cache key "${key}":`, { error });
     return fallback;
   }
 };
@@ -35,7 +38,7 @@ const writeJson = async <T>(key: string, value: T): Promise<void> => {
   try {
     await AsyncStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.warn(`Failed to write cache key "${key}":`, error);
+    apiLogger.warn(`Failed to write cache key "${key}":`, { error });
   }
 };
 
@@ -75,7 +78,10 @@ export async function upsertCachedTripListItem(
 }
 
 export async function getCachedTripById<T>(tripId: string): Promise<T | null> {
-  const detailsMap = await readJson<TripDetailsCacheMap>(TRIP_DETAILS_CACHE_KEY, {});
+  const detailsMap = await readJson<TripDetailsCacheMap>(
+    TRIP_DETAILS_CACHE_KEY,
+    {},
+  );
   const details = detailsMap[tripId];
   if (details) {
     return details as T;
@@ -90,7 +96,10 @@ export async function setCachedTripById<T>(
   tripId: string,
   trip: T,
 ): Promise<void> {
-  const detailsMap = await readJson<TripDetailsCacheMap>(TRIP_DETAILS_CACHE_KEY, {});
+  const detailsMap = await readJson<TripDetailsCacheMap>(
+    TRIP_DETAILS_CACHE_KEY,
+    {},
+  );
   detailsMap[tripId] = trip as unknown;
   await writeJson(TRIP_DETAILS_CACHE_KEY, detailsMap);
 }

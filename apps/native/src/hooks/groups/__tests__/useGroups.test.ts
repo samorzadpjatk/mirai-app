@@ -4,7 +4,7 @@
 
 // Tests for groups hooks - verify module structure and exports
 
-describe("useGroups", () => {
+describe("[UNIT] useGroups", () => {
   test("module exports useGroups function", async () => {
     const { useGroups } = await import("../useGroups");
     expect(useGroups).toBeDefined();
@@ -17,7 +17,7 @@ describe("useGroups", () => {
   });
 });
 
-describe("useGroupDetails", () => {
+describe("[UNIT] useGroupDetails", () => {
   test("module exports useGroupDetails function", async () => {
     const { useGroupDetails } = await import("../useGroupDetails");
     expect(useGroupDetails).toBeDefined();
@@ -30,7 +30,7 @@ describe("useGroupDetails", () => {
   });
 });
 
-describe("useCreateGroup", () => {
+describe("[UNIT] useCreateGroup", () => {
   test("module exports useCreateGroup function", async () => {
     const { useCreateGroup } = await import("../useCreateGroup");
     expect(useCreateGroup).toBeDefined();
@@ -43,7 +43,7 @@ describe("useCreateGroup", () => {
   });
 });
 
-describe("useGroupEditor", () => {
+describe("[UNIT] useGroupEditor", () => {
   test("module exports useGroupEditor function", async () => {
     const { useGroupEditor } = await import("../useGroupEditor");
     expect(useGroupEditor).toBeDefined();
@@ -56,7 +56,7 @@ describe("useGroupEditor", () => {
   });
 });
 
-describe("useMyGroup", () => {
+describe("[UNIT] useMyGroup", () => {
   test("module exports useMyGroup function", async () => {
     const { useMyGroup } = await import("../useMyGroup");
     expect(useMyGroup).toBeDefined();
@@ -69,7 +69,7 @@ describe("useMyGroup", () => {
   });
 });
 
-describe("Groups Hooks Index", () => {
+describe("[UNIT] Groups Hooks Index", () => {
   test("all hooks exported from index", async () => {
     const index = await import("../index");
     expect(index.useGroups).toBeDefined();

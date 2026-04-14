@@ -4,7 +4,7 @@
 
 // Tests for background location task
 
-describe("backgroundLocationTask", () => {
+describe("[UNIT] backgroundLocationTask", () => {
   test("module can be imported", async () => {
     // The module defines the task at load time
     const module = await import("../../background/backgroundLocationTask");

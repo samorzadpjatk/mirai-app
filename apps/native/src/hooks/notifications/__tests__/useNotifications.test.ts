@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-describe("useNotifications", () => {
+describe("[UNIT] useNotifications", () => {
   test("module exports useNotifications function", async () => {
     const { useNotifications } = await import("../useNotifications");
     expect(useNotifications).toBeDefined();
@@ -10,17 +10,19 @@ describe("useNotifications", () => {
   });
 });
 
-describe("useNotificationSchedules", () => {
+describe("[UNIT] useNotificationSchedules", () => {
   test("module exports useNotificationSchedules function", async () => {
-    const { useNotificationSchedules } = await import("../useNotificationSchedules");
+    const { useNotificationSchedules } =
+      await import("../useNotificationSchedules");
     expect(useNotificationSchedules).toBeDefined();
     expect(typeof useNotificationSchedules).toBe("function");
   });
 });
 
-describe("useAutoPushSubscription", () => {
+describe("[UNIT] useAutoPushSubscription", () => {
   test("module exports useAutoPushSubscription function", async () => {
-    const { useAutoPushSubscription } = await import("../useAutoPushSubscription");
+    const { useAutoPushSubscription } =
+      await import("../useAutoPushSubscription");
     expect(useAutoPushSubscription).toBeDefined();
     expect(typeof useAutoPushSubscription).toBe("function");
   });

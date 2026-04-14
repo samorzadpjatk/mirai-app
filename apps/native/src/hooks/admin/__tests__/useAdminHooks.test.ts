@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-describe("useAdminChallengesByTrip", () => {
+describe("[UNIT] useAdminChallengesByTrip", () => {
   test("module exports useAdminChallengesByTrip function", () => {
     const { useAdminChallengesByTrip } = require("../useAdminChallengesByTrip");
     expect(useAdminChallengesByTrip).toBeDefined();
@@ -10,7 +10,7 @@ describe("useAdminChallengesByTrip", () => {
   });
 });
 
-describe("useChallengeForm", () => {
+describe("[UNIT] useChallengeForm", () => {
   test("module exports useChallengeForm function", () => {
     const { useChallengeForm } = require("../useChallengeForm");
     expect(useChallengeForm).toBeDefined();
@@ -18,7 +18,7 @@ describe("useChallengeForm", () => {
   });
 });
 
-describe("useStaffVoting", () => {
+describe("[UNIT] useStaffVoting", () => {
   test("module exports useStaffVoting function", () => {
     const { useStaffVoting } = require("../useStaffVoting");
     expect(useStaffVoting).toBeDefined();

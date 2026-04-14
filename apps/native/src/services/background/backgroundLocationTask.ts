@@ -3,6 +3,7 @@ import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import { getTRPCClient } from "@mirai-app/frameworks/graphql";
+import { apiLogger } from "@mirai-app/shared";
 import { authStorage } from "~/services/storage/storage";
 import {
   SUPABASE_ANON_KEY,
@@ -67,7 +68,9 @@ async function getAccessToken(): Promise<string | null> {
   } = await supabaseClient.auth.getSession();
 
   if (error) {
-    console.warn("[BackgroundLocationTask] Failed to load session:", error);
+    apiLogger.warn("[BackgroundLocationTask] Failed to load session:", {
+      error,
+    });
     return null;
   }
 
@@ -83,7 +86,7 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
   const latitude = toFiniteNumberOrNull(location.coords.latitude);
   const longitude = toFiniteNumberOrNull(location.coords.longitude);
   if (latitude == null || longitude == null) {
-    console.warn(
+    apiLogger.warn(
       "[BackgroundLocationTask] Skipping update due to invalid coordinates.",
       {
         latitude: location.coords.latitude,

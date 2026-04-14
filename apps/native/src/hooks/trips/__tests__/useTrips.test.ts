@@ -4,7 +4,7 @@
 
 // Tests for trips hooks - verify module structure and exports
 
-describe("useTrips", () => {
+describe("[UNIT] useTrips", () => {
   test("module exports useTrips function", async () => {
     const { useTrips } = await import("../useTrips");
     expect(useTrips).toBeDefined();
@@ -17,7 +17,7 @@ describe("useTrips", () => {
   });
 });
 
-describe("useTripDetails", () => {
+describe("[UNIT] useTripDetails", () => {
   test("module exports useTripDetails function", async () => {
     const { useTripDetails } = await import("../useTripDetails");
     expect(useTripDetails).toBeDefined();
@@ -30,7 +30,7 @@ describe("useTripDetails", () => {
   });
 });
 
-describe("useTripResources", () => {
+describe("[UNIT] useTripResources", () => {
   test("module exports useTripResources function", async () => {
     const { useTripResources } = await import("../useTripResources");
     expect(useTripResources).toBeDefined();
@@ -43,7 +43,7 @@ describe("useTripResources", () => {
   });
 });
 
-describe("useSelectedTrip", () => {
+describe("[UNIT] useSelectedTrip", () => {
   test("module exports useSelectedTrip function", async () => {
     const { useSelectedTrip } = await import("../useSelectedTrip");
     expect(useSelectedTrip).toBeDefined();
@@ -56,7 +56,7 @@ describe("useSelectedTrip", () => {
   });
 });
 
-describe("useTripBackgroundImageDownload", () => {
+describe("[UNIT] useTripBackgroundImageDownload", () => {
   test("module exports useTripBackgroundImageDownload function", async () => {
     const { useTripBackgroundImageDownload } =
       await import("../useTripBackgroundImageDownload");
@@ -71,7 +71,7 @@ describe("useTripBackgroundImageDownload", () => {
   });
 });
 
-describe("Trips Hooks Index", () => {
+describe("[UNIT] Trips Hooks Index", () => {
   test("main hooks exported from index", async () => {
     const index = await import("../index");
     expect(index.useTrips).toBeDefined();

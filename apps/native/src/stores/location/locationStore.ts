@@ -2,6 +2,7 @@ import { createStore } from "zustand/vanilla";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, Linking } from "react-native";
 import * as Location from "expo-location";
+import { apiLogger } from "@mirai-app/shared";
 import {
   getBackgroundLocationPreference,
   hasBackgroundLocationTaskStarted,
@@ -88,13 +89,15 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       const localSharingEnabled = savedSharing === "true";
       set({
         isLocationSharingEnabled: serverSharingEnabled ?? localSharingEnabled,
-        permissionStatus: foregroundPermissions.status as LocationPermissionStatus,
-        backgroundPermissionStatus: backgroundPermissions.status as LocationPermissionStatus,
+        permissionStatus:
+          foregroundPermissions.status as LocationPermissionStatus,
+        backgroundPermissionStatus:
+          backgroundPermissions.status as LocationPermissionStatus,
         isBackgroundLocationEnabled: savedBackgroundEnabled,
         isBackgroundLocationActive: taskStarted,
       });
     } catch (error) {
-      console.warn("Failed to load location settings:", error);
+      apiLogger.warn("Failed to load location settings:", { error });
     } finally {
       set({ isLoading: false });
     }
@@ -117,7 +120,10 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       await startBackgroundLocationTask();
       set({ isBackgroundLocationActive: true });
     } catch (error) {
-      console.error("Failed to synchronize background location updates:", error);
+      console.error(
+        "Failed to synchronize background location updates:",
+        error,
+      );
       set({ isBackgroundLocationActive: false });
     }
   },
@@ -181,8 +187,12 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         return;
       }
 
-      const foregroundPermissions = await Location.getForegroundPermissionsAsync();
-      set({ permissionStatus: foregroundPermissions.status as LocationPermissionStatus });
+      const foregroundPermissions =
+        await Location.getForegroundPermissionsAsync();
+      set({
+        permissionStatus:
+          foregroundPermissions.status as LocationPermissionStatus,
+      });
 
       const foregroundStatus =
         foregroundPermissions.status === Location.PermissionStatus.GRANTED
@@ -207,13 +217,20 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       }
 
       const currentBackground = await Location.getBackgroundPermissionsAsync();
-      set({ backgroundPermissionStatus: currentBackground.status as LocationPermissionStatus });
+      set({
+        backgroundPermissionStatus:
+          currentBackground.status as LocationPermissionStatus,
+      });
 
       let backgroundStatus = currentBackground.status;
       if (backgroundStatus !== Location.PermissionStatus.GRANTED) {
-        const requestedBackground = await Location.requestBackgroundPermissionsAsync();
+        const requestedBackground =
+          await Location.requestBackgroundPermissionsAsync();
         backgroundStatus = requestedBackground.status;
-        set({ backgroundPermissionStatus: requestedBackground.status as LocationPermissionStatus });
+        set({
+          backgroundPermissionStatus:
+            requestedBackground.status as LocationPermissionStatus,
+        });
       }
 
       if (backgroundStatus !== Location.PermissionStatus.GRANTED) {
@@ -236,7 +253,10 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       await startBackgroundLocationTask();
       await setBackgroundLocationPreference(true);
 
-      set({ isBackgroundLocationEnabled: true, isBackgroundLocationActive: true });
+      set({
+        isBackgroundLocationEnabled: true,
+        isBackgroundLocationActive: true,
+      });
     } catch (error) {
       console.error("Failed to toggle background location updates:", error);
       Alert.alert(
@@ -263,7 +283,10 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       }
 
       set({ isLocationSharingEnabled: newEnabled });
-      await AsyncStorage.setItem(LOCATION_SHARING_SETTINGS_KEY, newEnabled.toString());
+      await AsyncStorage.setItem(
+        LOCATION_SHARING_SETTINGS_KEY,
+        newEnabled.toString(),
+      );
 
       if (newEnabled && state.permissionStatus === "undetermined") {
         await get().requestLocationPermissions();

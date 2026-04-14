@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useClient } from "urql";
 import * as Crypto from "expo-crypto";
+import { apiLogger } from "@mirai-app/shared";
 import { useLocationContext } from "~/stores/location";
 import { graphqlClient } from "~/lib/graphql-client";
 
@@ -220,11 +221,14 @@ export function useMapLocationStream(enabled: boolean) {
         }
       } catch (error) {
         if (error instanceof Error && error.message.includes("UNAUTHORIZED")) {
-          console.warn(
+          apiLogger.warn(
             "Location fetch unauthorized - user may not be logged in",
           );
         } else {
-          console.error("Location fetch error:", error);
+          apiLogger.error(
+            "Location fetch error:",
+            error instanceof Error ? error : new Error(String(error)),
+          );
         }
       }
     };

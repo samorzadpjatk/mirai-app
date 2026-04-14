@@ -5,7 +5,7 @@
 // Test to verify Jest setup is working correctly
 // Note: jest, describe, test, expect are globally available in Jest, no need to import
 
-describe("Jest Setup Verification", () => {
+describe("[UNIT] Jest Setup Verification", () => {
   test("Jest is running correctly", () => {
     expect(true).toBe(true);
   });
@@ -30,7 +30,7 @@ describe("Jest Setup Verification", () => {
   });
 });
 
-describe("Native Module Mocks - Basic Verification", () => {
+describe("[UNIT] Native Module Mocks - Basic Verification", () => {
   test("jest.mock is available", () => {
     expect(typeof jest.mock).toBe("function");
   });

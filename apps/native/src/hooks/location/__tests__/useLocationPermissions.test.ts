@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-describe("useLocationPermissions", () => {
+describe("[UNIT] useLocationPermissions", () => {
   test("module exports useLocationPermissions function", () => {
     const { useLocationPermissions } = require("../useLocationPermissions");
     expect(useLocationPermissions).toBeDefined();

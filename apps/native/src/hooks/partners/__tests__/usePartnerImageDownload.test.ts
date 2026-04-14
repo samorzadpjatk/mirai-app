@@ -2,9 +2,10 @@
  * @jest-environment node
  */
 
-describe("usePartnerImageDownload", () => {
+describe("[UNIT] usePartnerImageDownload", () => {
   test("module exports usePartnerImageDownload function", async () => {
-    const { usePartnerImageDownload } = await import("../usePartnerImageDownload");
+    const { usePartnerImageDownload } =
+      await import("../usePartnerImageDownload");
     expect(usePartnerImageDownload).toBeDefined();
     expect(typeof usePartnerImageDownload).toBe("function");
   });
