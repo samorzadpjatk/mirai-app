@@ -22,6 +22,20 @@ Read the [collaboration guidelines](CONTRIBUTING.md).
 > We are looking for maintainers to take over the project.
 > If you are interested, please contact the PJAIT's Student Council.
 
+## Agent Guidelines
+
+This codebase uses **layered AGENTS.md** files for AI agent guidance:
+
+- **Root** [`AGENTS.md`](AGENTS.md) — Universal conventions and quick reference
+- **Domain** [`packages/domain/AGENTS.md`](packages/domain/AGENTS.md) — Entities, value objects
+- **Use Cases** [`packages/use-cases/AGENTS.md`](packages/use-cases/AGENTS.md) — Effect orchestration
+- **Adapters** [`packages/adapters/AGENTS.md`](packages/adapters/AGENTS.md) — DI, controllers, gateways
+- **Frameworks** [`packages/frameworks/AGENTS.md`](packages/frameworks/AGENTS.md) — Layer composition
+- **Backend** [`apps/backend-server/AGENTS.md`](apps/backend-server/AGENTS.md) — tRPC routes
+- **Native** [`apps/native/AGENTS.md`](apps/native/AGENTS.md) — Mobile development
+- **Web** [`apps/web/AGENTS.md`](apps/web/AGENTS.md) — Frontend patterns
+- **Notifications** [`apps/notification-sender/AGENTS.md`](apps/notification-sender/AGENTS.md) — Background jobs
+
 ## Project Structure
 
 This monorepo uses **Turborepo** for builds and **Bun workspaces** for package management.
