@@ -224,24 +224,3 @@ export {
   type EffectError,
   type EffectRequirements,
 } from "./effect-utils";
-
-// ============================================================================
-// Result Type (Either/Result pattern for non-Effect code)
-// ============================================================================
-
-export {
-  ok,
-  err,
-  isOk,
-  isErr,
-  mapResult,
-  flatMapResult,
-  getOrElse,
-  fold,
-  fromNullable,
-  tryCatch,
-  fromPredicateResult,
-  type Result,
-  type Ok,
-  type Err,
-} from "./utils/result";
