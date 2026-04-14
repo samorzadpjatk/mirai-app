@@ -153,7 +153,7 @@ describe("[UNIT] logoutUserUseCase (Effect)", () => {
     return await Effect.runPromise(Effect.either(program));
   };
 
-  describe("successful logout", () => {
+  describe("[UNIT] successful logout", () => {
     it("should return success for valid session", async () => {
       const sessionId = "valid-session-123";
       const mockAuthContext = createMockAuthContext({
@@ -221,7 +221,7 @@ describe("[UNIT] logoutUserUseCase (Effect)", () => {
     });
   });
 
-  describe("error handling", () => {
+  describe("[UNIT] error handling", () => {
     it("should fail with LogoutError when sessionId is empty", async () => {
       const input: LogoutUserInput = { sessionId: "" };
 
@@ -263,7 +263,7 @@ describe("[UNIT] logoutUserUseCase (Effect)", () => {
     });
   });
 
-  describe("Effect patterns", () => {
+  describe("[UNIT] Effect patterns", () => {
     it("should work with Effect.either for error handling", async () => {
       const input: LogoutUserInput = { sessionId: "" };
 
@@ -312,7 +312,7 @@ describe("[UNIT] logoutUserUseCase (Effect)", () => {
     });
   });
 
-  describe("session handling", () => {
+  describe("[UNIT] session handling", () => {
     it("should handle logout for admin sessions", async () => {
       const sessionId = "admin-session";
       const mockAuthContext = createMockAuthContext({

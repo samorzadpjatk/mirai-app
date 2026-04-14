@@ -51,8 +51,8 @@ describe("[UNIT] AuthorizeModeratorUseCase", () => {
     userAuthContext = userResult.value;
   });
 
-  describe("execute", () => {
-    describe("ADMIN role", () => {
+  describe("[UNIT] execute", () => {
+    describe("[UNIT] ""ADMIN role () => {
       it("should return ok result when user has ADMIN role", () => {
         // Arrange
         const input: AuthorizeModeratorInput = {
@@ -85,7 +85,7 @@ describe("[UNIT] AuthorizeModeratorUseCase", () => {
       });
     });
 
-    describe("MODERATOR role", () => {
+    describe("[UNIT] MODERATOR role", () => {
       it("should return ok result when user has MODERATOR role", () => {
         // Arrange
         const input: AuthorizeModeratorInput = {
@@ -118,7 +118,7 @@ describe("[UNIT] AuthorizeModeratorUseCase", () => {
       });
     });
 
-    describe("USER role", () => {
+    describe("[UNIT] USER role", () => {
       it("should return error when user has USER role", () => {
         // Arrange
         const input: AuthorizeModeratorInput = {
@@ -178,7 +178,7 @@ describe("[UNIT] AuthorizeModeratorUseCase", () => {
       });
     });
 
-    describe("role hierarchy behavior", () => {
+    describe("[UNIT] role hierarchy behavior", () => {
       it("ADMIN should be able to perform all moderator operations (higher privilege)", () => {
         // This test documents that ADMIN > MODERATOR in the role hierarchy
         const operations = [
@@ -216,7 +216,7 @@ describe("[UNIT] AuthorizeModeratorUseCase", () => {
       });
     });
 
-    describe("singleton instance", () => {
+    describe("[UNIT] singleton instance", () => {
       it("should export a singleton instance", async () => {
         // Import the singleton
         const { authorizeModeratorUseCase } =

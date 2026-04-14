@@ -160,7 +160,7 @@ describe("[UNIT] getPurchaseHistoryUseCase (Effect)", () => {
     };
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return empty history when no purchases", async () => {
       const input: GetPurchaseHistoryInput = {
         tripId: "trip-123",

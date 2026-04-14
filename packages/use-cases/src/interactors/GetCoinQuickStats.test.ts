@@ -61,7 +61,7 @@ describe("[UNIT] getCoinQuickStatsUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return quick stats for trip", async () => {
       const input: GetCoinQuickStatsInput = { tripId: "trip-123" };
 

@@ -70,7 +70,7 @@ describe("[UNIT] getMostActiveAdminStatsUseCase (Effect)", () => {
     };
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return most active admin stats", async () => {
       const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
 

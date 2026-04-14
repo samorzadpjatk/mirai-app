@@ -49,7 +49,7 @@ describe("[UNIT] listSubmissionsByChallengeUseCase (Effect)", () => {
     countByChallengeAndStatus: () => Effect.succeed(submissions.length),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should list submissions for a challenge", async () => {
       const mockSubmissions = await Promise.all([
         createMockSubmission({

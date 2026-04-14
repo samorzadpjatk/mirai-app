@@ -61,7 +61,7 @@ describe("[UNIT] updateUserUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update user first and last name", async () => {
       // Arrange
       const existingUser = createValidUser({ id: "user-456" });

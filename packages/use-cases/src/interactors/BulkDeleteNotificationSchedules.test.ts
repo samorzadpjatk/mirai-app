@@ -75,7 +75,7 @@ describe("[UNIT] bulkDeleteNotificationSchedulesUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete multiple schedules successfully", async () => {
       // Create schedules first
       const schedule1 = createMockSchedule("schedule-1");

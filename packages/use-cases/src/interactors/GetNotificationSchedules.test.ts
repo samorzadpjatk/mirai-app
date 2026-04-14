@@ -94,7 +94,7 @@ describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return empty list when no schedules exist", async () => {
       const input: GetNotificationSchedulesInput = {};
 

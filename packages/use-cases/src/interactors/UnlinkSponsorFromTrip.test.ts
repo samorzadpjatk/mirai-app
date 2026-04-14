@@ -30,7 +30,7 @@ const runUseCase = async (input: UnlinkSponsorFromTripInput) => {
 };
 
 describe("[UNIT] unlinkSponsorFromTripUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should unlink sponsor from trip successfully", async () => {
       const input: UnlinkSponsorFromTripInput = {
         sponsorId: "sponsor-456",

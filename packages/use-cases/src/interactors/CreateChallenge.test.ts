@@ -80,7 +80,7 @@ describe("[UNIT] createChallengeUseCase (Effect)", () => {
     countByTripId: overrides?.countByTripId ?? (() => Effect.succeed(0)),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create challenge with valid input", async () => {
       const mockChallenge = createMockChallenge({
         id: "challenge-new",

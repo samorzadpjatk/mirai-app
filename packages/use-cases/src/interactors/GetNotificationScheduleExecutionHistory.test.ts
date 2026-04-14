@@ -132,7 +132,7 @@ describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () =>
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return execution history for schedule", async () => {
       const schedule = createMockSchedule("schedule-123");
       await Effect.runPromise(repo.create(schedule));

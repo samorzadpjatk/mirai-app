@@ -153,7 +153,7 @@ describe("[UNIT] refreshTokenUseCase (Effect)", () => {
     return await Effect.runPromise(Effect.either(program));
   };
 
-  describe("successful refresh", () => {
+  describe("[UNIT] successful refresh", () => {
     it("should return refreshed auth context on successful session refresh", async () => {
       const sessionId = "valid-session-123";
       const mockAuthContext = createMockAuthContext({
@@ -221,7 +221,7 @@ describe("[UNIT] refreshTokenUseCase (Effect)", () => {
     });
   });
 
-  describe("error handling", () => {
+  describe("[UNIT] error handling", () => {
     it("should fail with TokenRefreshError when sessionId is empty", async () => {
       const input: RefreshTokenInput = { sessionId: "" };
 
@@ -288,7 +288,7 @@ describe("[UNIT] refreshTokenUseCase (Effect)", () => {
     });
   });
 
-  describe("Effect patterns", () => {
+  describe("[UNIT] Effect patterns", () => {
     it("should work with Effect.either for error handling", async () => {
       const sessionId = "expired-session";
       mockAuthPort.setMockResponse(sessionId, {
@@ -345,7 +345,7 @@ describe("[UNIT] refreshTokenUseCase (Effect)", () => {
     });
   });
 
-  describe("input validation", () => {
+  describe("[UNIT] input validation", () => {
     it("should handle valid session ID", async () => {
       const sessionId = "valid-session-id-12345";
       const mockAuthContext = createMockAuthContext({

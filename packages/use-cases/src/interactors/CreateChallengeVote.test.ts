@@ -55,7 +55,7 @@ describe("[UNIT] createChallengeVoteUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create vote with valid input", async () => {
       // Arrange
       const input = createValidInput();

@@ -72,7 +72,7 @@ describe("[UNIT] getChallengeVoteByIdUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should retrieve vote by id", async () => {
       // Arrange
       const existingVote = await createTestVote({

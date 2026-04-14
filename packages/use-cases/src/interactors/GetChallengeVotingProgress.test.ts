@@ -46,7 +46,7 @@ describe("[UNIT] getChallengeVotingProgressUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return voting progress with submission stats", async () => {
       // Create votes for different submissions
       const vote1 = await Effect.runPromise(

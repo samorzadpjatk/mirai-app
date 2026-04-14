@@ -163,7 +163,7 @@ describe("[UNIT] authenticateUserUseCase", () => {
     return await Effect.runPromise(Effect.either(program));
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return AuthContext when token is valid", async () => {
       // Arrange
       const validToken = "valid-jwt-token-123";
@@ -300,7 +300,7 @@ describe("[UNIT] authenticateUserUseCase", () => {
     });
   });
 
-  describe("framework independence", () => {
+  describe("[UNIT] framework independence", () => {
     it("does not depend on framework-specific modules", async () => {
       // Verify that the use case loads without framework dependencies
       const module = await import("../AuthenticateUser.js");

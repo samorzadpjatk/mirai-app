@@ -41,7 +41,7 @@ describe("[UNIT] getCoinTransactionsUseCase (Effect)", () => {
     ...overrides,
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return transactions for trip", async () => {
       const mockTransactions = [
         createMockTransaction({ id: "tx-1", amount: 100 }),

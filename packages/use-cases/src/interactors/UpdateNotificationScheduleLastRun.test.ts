@@ -86,7 +86,7 @@ describe("[UNIT] updateNotificationScheduleLastRunUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update lastRun successfully", async () => {
       // Arrange
       const schedule = await createValidSchedule({

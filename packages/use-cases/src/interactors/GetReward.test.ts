@@ -66,7 +66,7 @@ describe("[UNIT] getRewardUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return reward with purchase count when found", async () => {
       // Arrange
       const reward = createValidReward({ id: "reward-123" });

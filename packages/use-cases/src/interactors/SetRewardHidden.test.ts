@@ -84,7 +84,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] setRewardHiddenUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should hide a reward", async () => {
       const input: SetRewardHiddenInput = {
         rewardId: "reward-123" as RewardId,

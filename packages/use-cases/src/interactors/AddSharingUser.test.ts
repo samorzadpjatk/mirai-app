@@ -76,7 +76,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] addSharingUserUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create new location when none exists and add user", async () => {
       const input: AddSharingUserInput = {
         ownerUserId: "user-123",

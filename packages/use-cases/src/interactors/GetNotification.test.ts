@@ -56,7 +56,7 @@ describe("[UNIT] getNotificationUseCase (Effect)", () => {
     countPendingByTripId: () => Effect.succeed(0),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return notification when found by ID", async () => {
       // Arrange
       const mockNotification = createValidNotification({

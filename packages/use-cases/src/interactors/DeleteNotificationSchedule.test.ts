@@ -95,7 +95,7 @@ describe("[UNIT] deleteNotificationScheduleUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete schedule successfully", async () => {
       const schedule = await createValidSchedule({
         id: "schedule-456",

@@ -64,7 +64,7 @@ describe("[UNIT] getDeliveryByNotificationIdUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return delivery by notification ID", async () => {
       repo.seed([createMockDelivery()]);
 

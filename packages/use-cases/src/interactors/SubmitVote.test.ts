@@ -57,7 +57,7 @@ describe("[UNIT] submitVoteUseCase (Effect)", () => {
     deleteByChallengeId: () => Effect.succeed(void 0),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should submit vote successfully", async () => {
       const mockVote = await createMockVote();
       const mockRepo = createMockRepo({

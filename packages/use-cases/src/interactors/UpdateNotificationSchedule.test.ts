@@ -85,7 +85,7 @@ describe("[UNIT] updateNotificationScheduleUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update schedule name", async () => {
       const schedule = await createValidSchedule({
         id: "schedule-456",

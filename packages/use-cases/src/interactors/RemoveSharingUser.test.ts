@@ -72,7 +72,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] removeSharingUserUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should remove user from sharing list", async () => {
       const input: RemoveSharingUserInput = {
         ownerUserId: "user-123",

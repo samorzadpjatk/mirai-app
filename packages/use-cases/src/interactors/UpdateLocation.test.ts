@@ -68,7 +68,7 @@ describe("[UNIT] updateLocationUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create new location when user has no existing location", async () => {
       // Arrange
       const input: UpdateLocationInput = {

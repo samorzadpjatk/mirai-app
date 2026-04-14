@@ -65,7 +65,7 @@ describe("[UNIT] deleteRewardUseCase (Effect)", () => {
     incrementQuantity: () => Effect.succeed(createValidReward()),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete reward successfully when no purchases exist", async () => {
       // Arrange
       const rewardId = RewardId.unsafeCreate("reward-456");

@@ -95,7 +95,7 @@ describe("[UNIT] duplicateNotificationScheduleUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should duplicate a schedule with default options", async () => {
       const schedule = await Effect.runPromise(
         NotificationSchedule.create({

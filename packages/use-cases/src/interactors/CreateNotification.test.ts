@@ -58,7 +58,7 @@ describe("[UNIT] createNotificationUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create notification with valid input", async () => {
       // Arrange
       const input = createValidInput();

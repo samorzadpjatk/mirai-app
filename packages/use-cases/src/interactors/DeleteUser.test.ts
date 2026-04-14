@@ -57,7 +57,7 @@ describe("[UNIT] deleteUserUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete user when found", async () => {
       const existingUser = createValidUser({ id: "user-to-delete" });
       await Effect.runPromise(repo.create(existingUser));

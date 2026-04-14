@@ -52,7 +52,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] getJudgedStaffVotingProgressUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return voting progress for all admins", async () => {
       const mockGetVotedPositions = (challengeId: string, voterId: string) => {
         if (voterId === "admin-1") return Promise.resolve([1, 2, 3]);

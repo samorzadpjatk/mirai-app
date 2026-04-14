@@ -121,7 +121,7 @@ describe("[UNIT] createActivityUseCase (Effect)", () => {
     return await Effect.runPromise(Effect.either(program));
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create activity with minimal input", async () => {
       const input = createValidInput();
 

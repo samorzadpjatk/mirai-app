@@ -46,7 +46,7 @@ describe("[UNIT] getSubmissionUseCase (Effect)", () => {
     countByChallengeAndStatus: () => Effect.succeed(0),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return submission when found", async () => {
       const mockSubmission = await createMockSubmission({
         id: "submission-456",

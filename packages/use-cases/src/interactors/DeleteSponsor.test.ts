@@ -52,7 +52,7 @@ describe("[UNIT] deleteSponsorUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete sponsor successfully", async () => {
       const result = await runUseCase(
         { sponsorId: "sponsor-456" },

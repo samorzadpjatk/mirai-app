@@ -1,11 +1,15 @@
 import type { Location, SharingUserInfo, LocationId } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
+import { DatabaseError } from "./errors";
 
 /**
  * LocationRepository Port
  *
  * This interface defines what operations the application needs
  * from any location repository implementation.
+ *
+ * All methods return Effect.Effect for composable error handling.
+ * Use Effect.runPromise at system boundaries (controllers/framework layer).
  *
  * Implementations (in adapters layer):
  * - DrizzleLocationRepository: Uses Drizzle ORM
@@ -15,19 +19,23 @@ export interface LocationRepository {
   /**
    * Create a new location
    */
-  create(location: Location): Effect.Effect<Location, never, never>;
+  create(location: Location): Effect.Effect<Location, DatabaseError, never>;
 
   /**
    * Find location by ID
    * @returns Location or null if not found
    */
-  findById(id: LocationId): Effect.Effect<Location | null, never, never>;
+  findById(
+    id: LocationId,
+  ): Effect.Effect<Location | null, DatabaseError, never>;
 
   /**
    * Find location by user ID
    * @returns Location or null if not found
    */
-  findByUserId(userId: string): Effect.Effect<Location | null, never, never>;
+  findByUserId(
+    userId: string,
+  ): Effect.Effect<Location | null, DatabaseError, never>;
 
   /**
    * Find all locations with pagination
@@ -35,37 +43,41 @@ export interface LocationRepository {
   findAll(options?: {
     limit?: number;
     offset?: number;
-  }): Effect.Effect<Location[], never, never>;
+  }): Effect.Effect<Location[], DatabaseError, never>;
 
   /**
    * Find locations for users that are sharing with a specific user
    */
-  findSharingWithUser(userId: string): Effect.Effect<Location[], never, never>;
+  findSharingWithUser(
+    userId: string,
+  ): Effect.Effect<Location[], DatabaseError, never>;
 
   /**
    * Find locations by user IDs
    */
-  findByUserIds(userIds: string[]): Effect.Effect<Location[], never, never>;
+  findByUserIds(
+    userIds: string[],
+  ): Effect.Effect<Location[], DatabaseError, never>;
 
   /**
    * Update location (upsert pattern for user locations)
    */
-  save(location: Location): Effect.Effect<Location, never, never>;
+  save(location: Location): Effect.Effect<Location, DatabaseError, never>;
 
   /**
    * Delete location
    */
-  delete(id: LocationId): Effect.Effect<void, never, never>;
+  delete(id: LocationId): Effect.Effect<void, DatabaseError, never>;
 
   /**
    * Delete location by user ID
    */
-  deleteByUserId(userId: string): Effect.Effect<void, never, never>;
+  deleteByUserId(userId: string): Effect.Effect<void, DatabaseError, never>;
 
   /**
    * Check if location exists for user
    */
-  existsForUser(userId: string): Effect.Effect<boolean, never, never>;
+  existsForUser(userId: string): Effect.Effect<boolean, DatabaseError, never>;
 }
 
 /**
@@ -73,25 +85,5 @@ export interface LocationRepository {
  */
 export class LocationRepositoryTag extends Context.Tag("LocationRepository")<
   LocationRepositoryTag,
-  {
-    create: (location: Location) => Effect.Effect<Location, never, never>;
-    findById: (id: LocationId) => Effect.Effect<Location | null, never, never>;
-    findByUserId: (
-      userId: string,
-    ) => Effect.Effect<Location | null, never, never>;
-    findAll: (options?: {
-      limit?: number;
-      offset?: number;
-    }) => Effect.Effect<Location[], never, never>;
-    findSharingWithUser: (
-      userId: string,
-    ) => Effect.Effect<Location[], never, never>;
-    findByUserIds: (
-      userIds: string[],
-    ) => Effect.Effect<Location[], never, never>;
-    save: (location: Location) => Effect.Effect<Location, never, never>;
-    delete: (id: LocationId) => Effect.Effect<void, never, never>;
-    deleteByUserId: (userId: string) => Effect.Effect<void, never, never>;
-    existsForUser: (userId: string) => Effect.Effect<boolean, never, never>;
-  }
+  LocationRepository
 >() {}

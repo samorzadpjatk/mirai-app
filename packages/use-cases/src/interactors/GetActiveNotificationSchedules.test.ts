@@ -75,7 +75,7 @@ describe("[UNIT] getActiveNotificationSchedulesUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return empty list when no active schedules", async () => {
       const result = await runUseCase();
 

@@ -75,7 +75,7 @@ describe("[UNIT] updateSponsorUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update sponsor name successfully", async () => {
       const existingSponsor = createValidSponsor({
         id: "sponsor-456",

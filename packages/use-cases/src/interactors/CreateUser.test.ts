@@ -50,7 +50,7 @@ describe("[UNIT] createUserUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create user with valid input", async () => {
       const input: CreateUserInput = {
         authUserId: "auth-123",

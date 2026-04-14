@@ -115,7 +115,7 @@ describe("[UNIT] createNotificationScheduleUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create schedule with valid input", async () => {
       const input = createValidInput({
         name: "Daily Reminder",

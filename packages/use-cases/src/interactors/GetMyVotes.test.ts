@@ -46,7 +46,7 @@ describe("[UNIT] getMyVotesUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return votes for specific voter", async () => {
       // Create votes for voter-456
       const vote1 = await Effect.runPromise(

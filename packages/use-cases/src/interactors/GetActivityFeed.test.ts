@@ -150,7 +150,7 @@ describe("[UNIT] getActivityFeedUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return empty feed when no activities", async () => {
       const input: GetActivityFeedInput = { tripId: "trip-123" };
 

@@ -201,7 +201,7 @@ describe("[UNIT] addReactionUseCase (Effect)", () => {
     return await Effect.runPromise(Effect.either(program));
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should add new reaction when user has no existing reaction of same type", async () => {
       const activity = createMockActivity();
       const input: AddReactionInput = {

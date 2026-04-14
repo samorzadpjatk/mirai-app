@@ -345,7 +345,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     accessChecker = new InMemoryTripAccessChecker();
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should successfully purchase reward", async () => {
       // Arrange
       const mockReward = createValidReward(10);

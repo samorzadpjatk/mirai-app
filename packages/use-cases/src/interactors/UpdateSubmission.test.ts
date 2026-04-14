@@ -52,7 +52,7 @@ describe("[UNIT] updateSubmissionUseCase (Effect)", () => {
     countByChallengeAndStatus: () => Effect.succeed(0),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update submission content successfully", async () => {
       const existing = await createMockSubmission({
         id: "submission-456",

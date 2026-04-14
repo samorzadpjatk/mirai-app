@@ -50,7 +50,7 @@ describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return failed deliveries", async () => {
       // Arrange
       repo.seed([

@@ -57,7 +57,7 @@ describe("[UNIT] getUserUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return user when found by ID", async () => {
       const mockUser = createValidUser({
         id: "user-456",

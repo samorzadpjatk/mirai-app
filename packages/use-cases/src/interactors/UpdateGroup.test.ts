@@ -66,7 +66,7 @@ describe("[UNIT] updateGroupUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update group name successfully", async () => {
       const existingGroup = createValidGroup({
         id: "group-456",

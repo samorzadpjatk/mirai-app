@@ -1,6 +1,5 @@
-import { Group } from "@mirai-app/domain";
-import { Effect } from "effect";
-import { GroupRepositoryTag } from "../ports/GroupRepository";
+import { Group, type Result, ok, err } from "@mirai-app/domain";
+import type { GroupRepository } from "../ports/GroupRepository";
 
 /**
  * Input for GetGroup use case
@@ -44,37 +43,47 @@ export class GetGroupNotFoundError extends Error {
  * Retrieves a group by ID.
  * Returns error if group not found.
  *
- * ## Effect-based Pattern
+ * ## Async/Await Pattern (Migrated from Effect)
  *
- * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ * This use case uses constructor injection and returns Promise<Result<T,E>>:
  *
  * ```typescript
- * const program = Effect.gen(function* () {
- *   const result = yield* getGroupUseCase({ groupId: "123" });
- *   return result;
- * });
+ * const useCase = new GetGroupUseCase(groupRepository);
+ * const result = await useCase.execute({ groupId: "123" });
  *
- * const runnable = program.pipe(
- *   Effect.provideService(GroupRepositoryTag, repository)
- * );
- *
- * const result = await Effect.runPromise(runnable);
+ * if (result.kind === "ok") {
+ *   console.log(result.value);
+ * } else {
+ *   console.error(result.error);
+ * }
  * ```
  */
-export function getGroupUseCase(
-  input: GetGroupInput,
-): Effect.Effect<GetGroupOutput, GetGroupNotFoundError, GroupRepositoryTag> {
-  return Effect.gen(function* () {
-    const groupRepo = yield* GroupRepositoryTag;
+export class GetGroupUseCase {
+  constructor(private readonly groupRepo: GroupRepository) {}
 
-    const group = yield* groupRepo.findById(input.groupId);
+  async execute(
+    input: GetGroupInput,
+  ): Promise<Result<GetGroupOutput, GetGroupNotFoundError>> {
+    const group = await this.groupRepo.findById(input.groupId);
 
     if (!group) {
-      return yield* Effect.fail(new GetGroupNotFoundError());
+      return err(new GetGroupNotFoundError());
     }
 
-    return toOutput(group);
-  });
+    return ok(toOutput(group));
+  }
+}
+
+/**
+ * Legacy function-based API for backward compatibility during migration
+ * @deprecated Use GetGroupUseCase class instead
+ */
+export async function getGroupUseCase(
+  input: GetGroupInput,
+  groupRepo: GroupRepository,
+): Promise<Result<GetGroupOutput, GetGroupNotFoundError>> {
+  const useCase = new GetGroupUseCase(groupRepo);
+  return useCase.execute(input);
 }
 
 function toOutput(group: Group): GetGroupOutput {

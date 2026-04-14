@@ -51,8 +51,8 @@ describe("[UNIT] AuthorizeAdminUseCase", () => {
     userAuthContext = userResult.value;
   });
 
-  describe("execute", () => {
-    describe("ADMIN role", () => {
+  describe("[UNIT] execute", () => {
+    describe("[UNIT] ""ADMIN role () => {
       it("should return ok result when user has ADMIN role", () => {
         // Arrange
         const input: AuthorizeAdminInput = {
@@ -85,7 +85,7 @@ describe("[UNIT] AuthorizeAdminUseCase", () => {
       });
     });
 
-    describe("MODERATOR role", () => {
+    describe("[UNIT] MODERATOR role", () => {
       it("should return error when user has MODERATOR role", () => {
         // Arrange
         const input: AuthorizeAdminInput = {
@@ -129,7 +129,7 @@ describe("[UNIT] AuthorizeAdminUseCase", () => {
       });
     });
 
-    describe("USER role", () => {
+    describe("[UNIT] USER role", () => {
       it("should return error when user has USER role", () => {
         // Arrange
         const input: AuthorizeAdminInput = {
@@ -172,7 +172,7 @@ describe("[UNIT] AuthorizeAdminUseCase", () => {
       });
     });
 
-    describe("singleton instance", () => {
+    describe("[UNIT] singleton instance", () => {
       it("should export a singleton instance", async () => {
         // Import the singleton
         const { authorizeAdminUseCase } = await import("./AuthorizeAdmin");

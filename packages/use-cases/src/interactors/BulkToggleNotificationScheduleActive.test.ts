@@ -80,7 +80,7 @@ describe("[UNIT] bulkToggleNotificationScheduleActiveUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should activate multiple schedules", async () => {
       // Create schedules first
       Effect.runSync(repo.create(createMockSchedule("schedule-1", false)));

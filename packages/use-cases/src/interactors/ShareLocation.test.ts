@@ -67,7 +67,7 @@ describe("[UNIT] shareLocationUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should share location with target user", async () => {
       // Arrange - seed existing location with sharing disabled
       const existingLocation = createValidLocation({

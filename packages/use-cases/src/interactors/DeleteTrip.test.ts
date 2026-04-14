@@ -55,7 +55,7 @@ describe("[UNIT] deleteTripUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete existing trip", async () => {
       const existingTrip = createValidTrip({ id: "trip-to-delete" });
       await Effect.runPromise(repo.create(existingTrip));

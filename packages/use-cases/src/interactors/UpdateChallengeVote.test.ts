@@ -73,7 +73,7 @@ describe("[UNIT] updateChallengeVoteUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update vote position", async () => {
       // Arrange
       const existingVote = await createTestVote({

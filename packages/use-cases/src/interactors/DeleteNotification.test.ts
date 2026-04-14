@@ -61,7 +61,7 @@ describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete notification successfully", async () => {
       // Arrange
       const notification = await createAndSaveNotification(

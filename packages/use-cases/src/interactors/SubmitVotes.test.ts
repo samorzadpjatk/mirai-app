@@ -48,7 +48,7 @@ describe("[UNIT] submitVotesUseCase (Effect)", () => {
     deleteByChallengeId: () => Effect.succeed(void 0),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should submit multiple votes successfully", async () => {
       const mockVotes = await Promise.all([
         createMockVote({

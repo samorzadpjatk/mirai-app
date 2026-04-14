@@ -65,7 +65,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return trip when found", async () => {
       // Arrange - seed existing trip
       const existingTrip = createValidTrip({

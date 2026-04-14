@@ -92,7 +92,7 @@ describe("[UNIT] updateChallengeStatusUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update status from HIDDEN to VISIBLE", async () => {
       const hiddenChallenge = createChallengeWithStatus(
         "challenge-1",

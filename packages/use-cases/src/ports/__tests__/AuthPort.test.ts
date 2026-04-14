@@ -55,7 +55,7 @@ class MockAuthPort implements AuthPort {
 // =============================================================================
 
 describe("[UNIT] AuthPort Interface Contract", () => {
-  describe("AuthPort Interface Structure", () => {
+  describe("[UNIT] AuthPort Interface Structure", () => {
     it("has validateToken method with correct signature", () => {
       const port = new MockAuthPort();
 
@@ -83,7 +83,7 @@ describe("[UNIT] AuthPort Interface Contract", () => {
     });
   });
 
-  describe("Error Types", () => {
+  describe("[UNIT] Error Types", () => {
     it("AuthError has correct _tag discriminator", () => {
       const error = new AuthError({ message: "Test error" });
 
@@ -193,7 +193,7 @@ describe("[UNIT] AuthPort Interface Contract", () => {
     });
   });
 
-  describe("Result Type Integration", () => {
+  describe("[UNIT] Result Type Integration", () => {
     it("validateToken returns a Result type", async () => {
       const port = new MockAuthPort();
       const result = await port.validateToken("test");
@@ -222,7 +222,7 @@ describe("[UNIT] AuthPort Interface Contract", () => {
     });
   });
 
-  describe("No Framework Dependencies", () => {
+  describe("[UNIT] No Framework Dependencies", () => {
     it("AuthPort source does not import from HTTP/GraphQL frameworks", async () => {
       // Read the source file and verify no framework imports
       const file = await import("../AuthPort.ts");

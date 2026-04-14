@@ -69,7 +69,7 @@ describe("[UNIT] updateRewardUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update reward name successfully", async () => {
       // Arrange
       const rewardId = RewardId.unsafeCreate("reward-456");

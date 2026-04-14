@@ -76,7 +76,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] updateSharingSettingsUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create new location when none exists with sharing enabled", async () => {
       const input: UpdateSharingSettingsInput = {
         userId: "user-123",

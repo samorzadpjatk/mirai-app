@@ -35,7 +35,7 @@ describe("[UNIT] deleteChallengeUseCase (Effect)", () => {
     }).pipe(Effect.orDie);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete challenge when found and not active", async () => {
       // Arrange
       const mockChallenge = await Effect.runPromise(

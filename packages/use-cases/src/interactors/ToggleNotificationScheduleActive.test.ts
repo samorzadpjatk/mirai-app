@@ -88,7 +88,7 @@ describe("[UNIT] toggleNotificationScheduleActiveUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should toggle schedule from active to inactive", async () => {
       // Arrange
       const schedule = await createValidSchedule({

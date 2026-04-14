@@ -75,7 +75,7 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update notification title", async () => {
       // Arrange
       const notification = await createAndSaveNotification();

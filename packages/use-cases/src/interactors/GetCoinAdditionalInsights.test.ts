@@ -76,7 +76,7 @@ describe("[UNIT] getCoinAdditionalInsightsUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return insights with recent transactions and most active admin", async () => {
       const input: GetCoinAdditionalInsightsInput = { tripId: "trip-123" };
 

@@ -74,7 +74,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] linkSponsorToTripUseCase", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should link sponsor to trip successfully", async () => {
       const mockSponsor = createValidSponsor({ id: "sponsor-456" });
 

@@ -160,7 +160,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] forceEndVotingUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return error when challengeId is empty", async () => {
       const program = forceEndVotingUseCase({
         challengeId: "",

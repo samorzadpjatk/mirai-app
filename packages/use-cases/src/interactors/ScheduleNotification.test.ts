@@ -62,7 +62,7 @@ describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should schedule notification successfully", async () => {
       // Arrange
       const notification = await createAndSaveNotification(

@@ -78,7 +78,7 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
     rewardRepo = new InMemoryRewardRepository();
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should list all visible rewards for a trip", async () => {
       // Arrange
       const reward1 = createValidReward({ id: "reward-1", name: "Reward 1" });

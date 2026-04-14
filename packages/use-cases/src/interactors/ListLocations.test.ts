@@ -60,7 +60,7 @@ describe("[UNIT] listLocationsUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return empty list when no locations found", async () => {
       const input: ListLocationsInput = { viewerUserId: "viewer-123" };
 

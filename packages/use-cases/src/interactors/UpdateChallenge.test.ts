@@ -58,7 +58,7 @@ describe("[UNIT] updateChallengeUseCase (Effect)", () => {
     );
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update challenge name", async () => {
       const existingChallenge = await createMockChallenge({
         id: "challenge-456",

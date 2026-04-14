@@ -66,7 +66,7 @@ describe("[UNIT] getSponsorUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return sponsor when found", async () => {
       const mockSponsor = createValidSponsor({
         id: "sponsor-456",

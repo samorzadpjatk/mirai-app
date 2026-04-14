@@ -65,7 +65,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update trip name", async () => {
       const existingTrip = createValidTrip({ id: "trip-456" });
       await Effect.runPromise(repo.create(existingTrip));

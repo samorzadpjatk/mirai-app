@@ -103,7 +103,7 @@ class MockPubSubService implements PubSubService {
 // =============================================================================
 
 describe("[UNIT] PubSubService Interface Contract", () => {
-  describe("PubSubService Interface Structure", () => {
+  describe("[UNIT] PubSubService Interface Structure", () => {
     it("has subscribe method with correct signature", () => {
       const service = new MockPubSubService();
       expect(typeof service.subscribe).toBe("function");
@@ -159,7 +159,7 @@ describe("[UNIT] PubSubService Interface Contract", () => {
     });
   });
 
-  describe("Error Types", () => {
+  describe("[UNIT] Error Types", () => {
     it("PubSubError has correct _tag discriminator", () => {
       const error = new PubSubError({ message: "Test error" });
       expect(error._tag).toBe("PubSubError");
@@ -227,7 +227,7 @@ describe("[UNIT] PubSubService Interface Contract", () => {
     });
   });
 
-  describe("AsyncIterable Integration", () => {
+  describe("[UNIT] AsyncIterable Integration", () => {
     it("subscribe returns an async iterable", () => {
       const service = new MockPubSubService();
       const { asyncIterable } = service.subscribe("test-channel");
@@ -253,7 +253,7 @@ describe("[UNIT] PubSubService Interface Contract", () => {
     });
   });
 
-  describe("No Framework Dependencies", () => {
+  describe("[UNIT] No Framework Dependencies", () => {
     it("PubSubError extends Error (standard JS)", () => {
       const error = new PubSubError({ message: "Test" });
       expect(error).toBeInstanceOf(Error);
@@ -276,7 +276,7 @@ describe("[UNIT] PubSubService Interface Contract", () => {
     });
   });
 
-  describe("Generic Type Support", () => {
+  describe("[UNIT] Generic Type Support", () => {
     it("subscribe supports generic payload type", () => {
       const service = new MockPubSubService();
       interface TestPayload {

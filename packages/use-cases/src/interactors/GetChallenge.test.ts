@@ -78,7 +78,7 @@ describe("[UNIT] getChallengeUseCase (Effect)", () => {
     countByTripId: () => Effect.succeed(1),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return challenge when found by ID", async () => {
       const mockChallenge = await createMockChallenge({
         id: "challenge-456",

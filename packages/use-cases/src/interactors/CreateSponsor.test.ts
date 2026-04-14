@@ -67,7 +67,7 @@ describe("[UNIT] createSponsorUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create sponsor with valid input", async () => {
       // Create a mock sponsor that matches the input
       const mockSponsor = Effect.runSync(

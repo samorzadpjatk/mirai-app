@@ -65,7 +65,7 @@ describe("[UNIT] listSponsorsUseCase", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should list all sponsors", async () => {
       const mockSponsors = [
         createValidSponsor({ id: "sponsor-1", name: "Sponsor 1" }),

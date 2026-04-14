@@ -147,7 +147,7 @@ describe("[UNIT] logTelemetryUseCase (Effect)", () => {
     ...overrides,
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should log telemetry with all required fields", async () => {
       const input = createValidInput();
 

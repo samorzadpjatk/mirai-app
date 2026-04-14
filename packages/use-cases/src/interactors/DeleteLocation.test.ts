@@ -64,7 +64,7 @@ describe("[UNIT] deleteLocationUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete location when found", async () => {
       // Arrange
       const existingLocation = createValidLocation({

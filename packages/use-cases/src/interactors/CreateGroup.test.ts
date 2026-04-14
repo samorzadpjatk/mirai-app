@@ -63,7 +63,7 @@ describe("[UNIT] createGroupUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create group with valid input", async () => {
       const input: CreateGroupInput = {
         tripId: "trip-123",

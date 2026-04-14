@@ -1,6 +1,6 @@
-import type { Location } from "@mirai-app/domain";
-import { Effect } from "effect";
-import { LocationRepositoryTag } from "../ports/LocationRepository";
+import type { Location, Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
+import type { LocationRepository } from "../ports/LocationRepository";
 
 /**
  * Input for GetLocation use case
@@ -67,33 +67,45 @@ function toOutput(location: Location): GetLocationOutput {
  * Retrieves a location by user ID.
  * Returns error if location not found.
  *
- * ## Effect-based Pattern
+ * ## Async/Await Pattern (Migrated from Effect)
  *
- * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ * This use case uses constructor injection and returns Promise<Result<T,E>>:
  *
  * ```typescript
- * const program = getLocationUseCase(input).pipe(
- *   Effect.provideService(LocationRepositoryTag, repository)
- * );
- * const result = await Effect.runPromise(program);
+ * const useCase = new GetLocationUseCase(locationRepository);
+ * const result = await useCase.execute({ userId: "123" });
+ *
+ * if (result.kind === "ok") {
+ *   console.log(result.value);
+ * } else {
+ *   console.error(result.error);
+ * }
  * ```
  */
-export function getLocationUseCase(
-  input: GetLocationInput,
-): Effect.Effect<
-  GetLocationOutput,
-  LocationNotFoundError,
-  LocationRepositoryTag
-> {
-  return Effect.gen(function* () {
-    const repo = yield* LocationRepositoryTag;
+export class GetLocationUseCase {
+  constructor(private readonly locationRepo: LocationRepository) {}
 
-    const location = yield* repo.findByUserId(input.userId);
+  async execute(
+    input: GetLocationInput,
+  ): Promise<Result<GetLocationOutput, LocationNotFoundError>> {
+    const location = await this.locationRepo.findByUserId(input.userId);
 
     if (!location) {
-      return yield* Effect.fail(new LocationNotFoundError());
+      return err(new LocationNotFoundError());
     }
 
-    return toOutput(location);
-  });
+    return ok(toOutput(location));
+  }
+}
+
+/**
+ * Legacy function-based API for backward compatibility during migration
+ * @deprecated Use GetLocationUseCase class instead
+ */
+export async function getLocationUseCase(
+  input: GetLocationInput,
+  locationRepo: LocationRepository,
+): Promise<Result<GetLocationOutput, LocationNotFoundError>> {
+  const useCase = new GetLocationUseCase(locationRepo);
+  return useCase.execute(input);
 }

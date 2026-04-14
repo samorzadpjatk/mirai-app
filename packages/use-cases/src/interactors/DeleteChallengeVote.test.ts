@@ -68,7 +68,7 @@ describe("[UNIT] deleteChallengeVoteUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete existing vote", async () => {
       // Arrange
       const existingVote = await createTestVote({

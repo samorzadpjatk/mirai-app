@@ -62,7 +62,7 @@ describe("[UNIT] deleteGroupUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete group when found", async () => {
       const existingGroup = createValidGroup({ id: "group-to-delete" });
       await Effect.runPromise(repo.create(existingGroup));

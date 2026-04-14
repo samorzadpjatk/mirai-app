@@ -193,7 +193,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] updatePurchaseStatusUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should update purchase status for staff user", async () => {
       const mockPurchase = createMockPurchase({ id: "purchase-456" });
 

@@ -1,6 +1,6 @@
 import type { User } from "@mirai-app/domain";
-import { Effect } from "effect";
-import { UserRepositoryTag } from "../ports/UserRepository";
+import { type Result, ok, err } from "@mirai-app/domain";
+import type { UserRepository } from "../ports/UserRepository";
 
 /**
  * Input for GetUser use case
@@ -40,37 +40,47 @@ export class GetUserNotFoundError extends Error {
  * Retrieves a user by ID.
  * Returns error if user not found.
  *
- * ## Effect-based Pattern
+ * ## Async/Await Pattern (Migrated from Effect)
  *
- * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ * This use case uses constructor injection and returns Promise<Result<T,E>>:
  *
  * ```typescript
- * const program = Effect.gen(function* () {
- *   const result = yield* getUserUseCase({ userId: "123" });
- *   return result;
- * });
+ * const useCase = new GetUserUseCase(userRepository);
+ * const result = await useCase.execute({ userId: "123" });
  *
- * const runnable = program.pipe(
- *   Effect.provideService(UserRepositoryTag, repository)
- * );
- *
- * const result = await Effect.runPromise(runnable);
+ * if (result.kind === "ok") {
+ *   console.log(result.value);
+ * } else {
+ *   console.error(result.error);
+ * }
  * ```
  */
-export function getUserUseCase(
-  input: GetUserInput,
-): Effect.Effect<GetUserOutput, GetUserNotFoundError, UserRepositoryTag> {
-  return Effect.gen(function* () {
-    const userRepo = yield* UserRepositoryTag;
+export class GetUserUseCase {
+  constructor(private readonly userRepo: UserRepository) {}
 
-    const user = yield* userRepo.findById(input.userId);
+  async execute(
+    input: GetUserInput,
+  ): Promise<Result<GetUserOutput, GetUserNotFoundError>> {
+    const user = await this.userRepo.findById(input.userId);
 
     if (!user) {
-      return yield* Effect.fail(new GetUserNotFoundError());
+      return err(new GetUserNotFoundError());
     }
 
-    return toOutput(user);
-  });
+    return ok(toOutput(user));
+  }
+}
+
+/**
+ * Legacy function-based API for backward compatibility during migration
+ * @deprecated Use GetUserUseCase class instead
+ */
+export async function getUserUseCase(
+  input: GetUserInput,
+  userRepo: UserRepository,
+): Promise<Result<GetUserOutput, GetUserNotFoundError>> {
+  const useCase = new GetUserUseCase(userRepo);
+  return useCase.execute(input);
 }
 
 function toOutput(user: User): GetUserOutput {

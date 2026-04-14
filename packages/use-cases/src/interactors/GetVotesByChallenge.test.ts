@@ -46,7 +46,7 @@ describe("[UNIT] getVotesByChallengeUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return votes for challenge", async () => {
       // Create votes from different voters
       const vote1 = await Effect.runPromise(

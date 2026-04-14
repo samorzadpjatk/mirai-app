@@ -67,7 +67,7 @@ describe("[UNIT] createSubmissionUseCase (Effect)", () => {
     countByChallengeAndStatus: () => Effect.succeed(0),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create submission successfully", async () => {
       const mockSubmission = await createMockSubmission({
         id: "submission-new",

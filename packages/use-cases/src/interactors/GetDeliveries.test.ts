@@ -49,7 +49,7 @@ describe("[UNIT] getDeliveriesUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return deliveries with pagination", async () => {
       // Arrange
       repo.seed([

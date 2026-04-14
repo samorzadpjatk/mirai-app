@@ -52,7 +52,7 @@ describe("[UNIT] getDeliveryStatsUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return delivery stats", async () => {
       // Arrange
       repo.seed([

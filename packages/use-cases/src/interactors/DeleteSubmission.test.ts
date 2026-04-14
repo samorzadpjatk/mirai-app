@@ -51,7 +51,7 @@ describe("[UNIT] deleteSubmissionUseCase (Effect)", () => {
     countByChallengeAndStatus: () => Effect.succeed(0),
   });
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should delete submission successfully when pending", async () => {
       const existing = await createMockSubmission({
         id: "submission-456" as SubmissionId,

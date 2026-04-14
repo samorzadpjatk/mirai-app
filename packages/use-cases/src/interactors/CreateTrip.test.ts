@@ -36,7 +36,7 @@ describe("[UNIT] createTripUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create trip with valid input", async () => {
       const startDate = new Date("2026-06-01");
       const endDate = new Date("2026-06-07");

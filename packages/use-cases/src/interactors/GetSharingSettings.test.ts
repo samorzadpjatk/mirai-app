@@ -60,7 +60,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] getSharingSettingsUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should return default settings when no location exists", async () => {
       const input: GetSharingSettingsInput = { userId: "user-123" };
 

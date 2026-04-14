@@ -64,7 +64,7 @@ describe("[UNIT] createRewardUseCase (Effect)", () => {
     return await Effect.runPromise(program);
   };
 
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should create reward with valid input", async () => {
       // Arrange
       const input = createValidInput();

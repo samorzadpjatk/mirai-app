@@ -172,7 +172,7 @@ const runUseCase = async (
 };
 
 describe("[UNIT] updateMyPurchaseStatusUseCase (Effect)", () => {
-  describe("execute", () => {
+  describe("[UNIT] execute", () => {
     it("should cancel purchase with refund when transitioning from BOUGHT to CANCELLED", async () => {
       const input: UpdateMyPurchaseStatusInput = {
         purchaseId: "purchase-123",
