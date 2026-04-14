@@ -69,7 +69,7 @@ class NotificationServiceError extends Error {
   readonly _tag = "NotificationServiceError";
   constructor(
     public readonly operation: string,
-    public readonly cause: unknown,
+    public override readonly cause: unknown,
   ) {
     super(`Notification service error (${operation}): ${String(cause)}`);
   }
@@ -263,16 +263,19 @@ class NotificationService {
 const handleNotificationInsert = (
   notificationService: NotificationService,
   payload: RealtimePostgresInsertPayload<NotificationRow>,
-) =>
-  Effect.gen(function* () {
-    const id = payload.new.id;
-    if (!id) {
+) => {
+  const id = payload.new.id;
+
+  if (!id) {
+    return Effect.gen(function* () {
       yield* Console.error("Missing notification ID in payload");
       return yield* Effect.fail(
         new NotificationServiceError("handleInsert", "Missing ID"),
       );
-    }
+    });
+  }
 
+  return Effect.gen(function* () {
     yield* Console.log(`Processing notification: ${id}`);
 
     // Track delivery start
@@ -331,6 +334,7 @@ const handleNotificationInsert = (
       }),
     ),
   );
+};
 
 // =============================================================================
 // Main Program with Effect
@@ -419,7 +423,7 @@ const program = Effect.gen(function* () {
   });
 
   // Keep the program running
-  yield* Effect.sleep("Infinity");
+  yield* Effect.sleep(Infinity);
 });
 
 /**

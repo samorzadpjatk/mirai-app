@@ -107,7 +107,7 @@ mock.module("../index", () => ({
     readonly _tag = "NotificationServiceError";
     constructor(
       public readonly operation: string,
-      public readonly cause: unknown,
+      public override readonly cause: unknown,
     ) {
       super(`Notification service error (${operation}): ${String(cause)}`);
     }
