@@ -21,13 +21,11 @@
     },
 
     "lint": {
-      "dependsOn": ["^build"],
       "outputs": [],
       "cache": true
     },
 
     "typecheck": {
-      "dependsOn": ["^build"],
       "outputs": [],
       "cache": true
     },
@@ -60,19 +58,16 @@
     },
 
     "depcruise": {
-      "dependsOn": ["^build"],
       "outputs": [],
       "cache": true
     },
 
     "depcruise:check": {
-      "dependsOn": ["^build"],
       "outputs": [],
       "cache": true
     },
 
     "depcruise:graph": {
-      "dependsOn": ["^build"],
       "outputs": ["dependency-graph.*"],
       "cache": true
     }
