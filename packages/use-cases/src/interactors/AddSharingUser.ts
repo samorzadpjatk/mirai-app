@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location } from "@mirai-app/domain";
 
@@ -29,35 +29,28 @@ export interface AddSharingUserOutput {
 /**
  * Error when trying to add self
  */
-export class CannotShareWithSelfError extends Error {
-  readonly _tag = "CannotShareWithSelfError";
-  constructor() {
-    super("Cannot share location with yourself");
-  }
-}
+export class CannotShareWithSelfError extends Data.TaggedError(
+  "CannotShareWithSelfError",
+)<{}> {}
 
 /**
  * Error when domain validation fails
  */
-export class AddSharingUserValidationError extends Error {
-  readonly _tag = "AddSharingUserValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class AddSharingUserValidationError extends Data.TaggedError(
+  "AddSharingUserValidationError",
+)<{
+  readonly message: string;
+}> {}
 
 /**
  * Error when repository operation fails
  */
-export class AddSharingUserRepositoryError extends Error {
-  readonly _tag = "AddSharingUserRepositoryError";
-  constructor(
-    public readonly operation: string,
-    override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class AddSharingUserRepositoryError extends Data.TaggedError(
+  "AddSharingUserRepositoryError",
+)<{
+  readonly operation: string;
+  readonly cause?: unknown;
+}> {}
 
 /**
  * AddSharingUser Use Case (Effect-based)
@@ -91,7 +84,7 @@ export function addSharingUserUseCase(
 
     // Prevent self-sharing
     if (input.ownerUserId === input.userToAddId) {
-      return yield* Effect.fail(new CannotShareWithSelfError());
+      return yield* Effect.fail(new CannotShareWithSelfError({}));
     }
 
     // Find existing location
@@ -100,7 +93,10 @@ export function addSharingUserUseCase(
       .pipe(
         Effect.mapError(
           (cause) =>
-            new AddSharingUserRepositoryError("find location by user", cause),
+            new AddSharingUserRepositoryError({
+              operation: "find location by user",
+              cause,
+            }),
         ),
       );
 
@@ -118,7 +114,8 @@ export function addSharingUserUseCase(
         ],
       }).pipe(
         Effect.mapError(
-          (error) => new AddSharingUserValidationError(error.message),
+          (error) =>
+            new AddSharingUserValidationError({ message: error.message }),
         ),
       );
 
@@ -127,7 +124,10 @@ export function addSharingUserUseCase(
         .pipe(
           Effect.mapError(
             (cause) =>
-              new AddSharingUserRepositoryError("create location", cause),
+              new AddSharingUserRepositoryError({
+                operation: "create location",
+                cause,
+              }),
           ),
         );
       return toOutput(saved);
@@ -143,7 +143,9 @@ export function addSharingUserUseCase(
       .pipe(
         Effect.mapError(
           (validationError) =>
-            new AddSharingUserValidationError(validationError.message),
+            new AddSharingUserValidationError({
+              message: validationError.message,
+            }),
         ),
       );
 
@@ -152,7 +154,11 @@ export function addSharingUserUseCase(
       .save(updatedLocation)
       .pipe(
         Effect.mapError(
-          (cause) => new AddSharingUserRepositoryError("save location", cause),
+          (cause) =>
+            new AddSharingUserRepositoryError({
+              operation: "save location",
+              cause,
+            }),
         ),
       );
 

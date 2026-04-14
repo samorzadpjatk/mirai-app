@@ -20,7 +20,7 @@
  * @module ports
  */
 
-import { Context, Effect } from "effect";
+import { Context, Data, Effect } from "effect";
 
 // =============================================================================
 // Domain Errors
@@ -29,48 +29,28 @@ import { Context, Effect } from "effect";
 /**
  * Base error for real-time operation failures
  */
-export class RealtimeError extends Error {
-  readonly _tag = "RealtimeError" as const;
-  readonly code = "REALTIME_ERROR" as const;
-  override readonly message: string;
-
-  constructor(props: { message: string }) {
-    super(props.message);
-    this.message = props.message;
-  }
-}
+export class RealtimeError extends Data.TaggedError("RealtimeError")<{
+  readonly message: string;
+  readonly code: "REALTIME_ERROR";
+}> {}
 
 /**
  * Error thrown when connection fails or is lost
  */
-export class ConnectionError extends Error {
-  readonly _tag = "ConnectionError" as const;
-  readonly code = "CONNECTION_ERROR" as const;
+export class ConnectionError extends Data.TaggedError("ConnectionError")<{
+  readonly message: string;
   readonly channel?: string;
-  override readonly message: string;
-
-  constructor(props: { message: string; channel?: string }) {
-    super(props.message);
-    this.message = props.message;
-    this.channel = props.channel;
-  }
-}
+  readonly code: "CONNECTION_ERROR";
+}> {}
 
 /**
  * Error thrown when subscription is invalid or fails
  */
-export class SubscriptionError extends Error {
-  readonly _tag = "SubscriptionError" as const;
-  readonly code = "SUBSCRIPTION_ERROR" as const;
+export class SubscriptionError extends Data.TaggedError("SubscriptionError")<{
+  readonly message: string;
   readonly channel: string;
-  override readonly message: string;
-
-  constructor(props: { message: string; channel: string }) {
-    super(props.message);
-    this.message = props.message;
-    this.channel = props.channel;
-  }
-}
+  readonly code: "SUBSCRIPTION_ERROR";
+}> {}
 
 // =============================================================================
 // Domain Types
@@ -111,7 +91,7 @@ export interface RealtimeSubscription {
   /** Current connection state */
   readonly state: ConnectionState;
   /** Unsubscribe from the channel */
-  unsubscribe(): Effect.Effect<void, RealtimeError, never>;
+  unsubscribe(): Effect.Effect<void, RealtimeError | ConnectionError, never>;
 }
 
 /**
@@ -162,7 +142,7 @@ export interface RealtimePort {
     config: ChannelConfig,
   ): Effect.Effect<
     RealtimeSubscription,
-    RealtimeError | SubscriptionError,
+    RealtimeError | ConnectionError | SubscriptionError,
     never
   >;
 
@@ -190,7 +170,11 @@ export interface RealtimePort {
     channel: string,
     event: string,
     payload: unknown,
-  ): Effect.Effect<void, RealtimeError, never>;
+  ): Effect.Effect<
+    void,
+    RealtimeError | ConnectionError | SubscriptionError,
+    never
+  >;
 
   /**
    * Track presence state for the current user in a channel
@@ -213,7 +197,11 @@ export interface RealtimePort {
   trackPresence(
     channel: string,
     state: PresenceState,
-  ): Effect.Effect<void, RealtimeError, never>;
+  ): Effect.Effect<
+    void,
+    RealtimeError | ConnectionError | SubscriptionError,
+    never
+  >;
 
   /**
    * Get the current connection state
@@ -242,7 +230,7 @@ export class RealtimePortTag extends Context.Tag("RealtimePort")<
       config: ChannelConfig,
     ) => Effect.Effect<
       RealtimeSubscription,
-      RealtimeError | SubscriptionError,
+      RealtimeError | ConnectionError | SubscriptionError,
       never
     >;
     broadcast: (

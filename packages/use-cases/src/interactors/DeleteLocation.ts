@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import type { LocationId } from "@mirai-app/domain";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 
@@ -18,31 +18,27 @@ export interface DeleteLocationOutput {
 }
 
 /**
- * Error types for DeleteLocation use case
+ * Error types for DeleteLocation use case - uses Data.TaggedError for Effect integration
  */
-export class DeleteLocationNotFoundError extends Error {
-  readonly _tag = "DeleteLocationNotFoundError";
-  constructor() {
-    super("Location not found");
-  }
-}
+export class DeleteLocationNotFoundError extends Data.TaggedError(
+  "DeleteLocationNotFoundError",
+)<{ locationId: string }> {}
 
-export class DeleteLocationError extends Error {
-  readonly _tag = "DeleteLocationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class DeleteLocationError extends Data.TaggedError(
+  "DeleteLocationError",
+)<{
+  message: string;
+}> {}
 
 /**
  * DeleteLocation Use Case
  *
  * Deletes a location by ID.
- * Returns error if location not found.
+ * Fails with DeleteLocationNotFoundError if location not found.
  *
- * ## Effect-based Pattern
+ * ## Effect.gen Pattern (Native)
  *
- * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ * This use case uses Context.Tag for dependency injection and returns native Effect.Effect<T, E, R>:
  *
  * ```typescript
  * const program = Effect.gen(function* () {
@@ -71,7 +67,9 @@ export function deleteLocationUseCase(
     const location = yield* locationRepo.findById(input.locationId);
 
     if (!location) {
-      return yield* Effect.fail(new DeleteLocationNotFoundError());
+      return yield* Effect.fail(
+        new DeleteLocationNotFoundError({ locationId: input.locationId }),
+      );
     }
 
     // Delete the location

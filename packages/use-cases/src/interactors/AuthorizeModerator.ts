@@ -3,13 +3,22 @@
  *
  * This use case validates that the authenticated user has either the
  * MODERATOR or ADMIN role. It follows the DDD pattern of keeping authorization
- * logic in the use case layer and using Result types for explicit error handling.
+ * logic in the use case layer and using Effect for explicit error handling.
  *
  * @module interactors
  */
 
-import { AuthContext, UserRole, type Result, ok, err } from "@mirai-app/domain";
-import { UnauthorizedError } from "@mirai-app/domain/errors";
+import { Effect, Data } from "effect";
+import { AuthContext, UserRole } from "@mirai-app/domain";
+
+/**
+ * Error when user is not authorized as moderator
+ */
+export class NotModeratorError extends Data.TaggedError("NotModeratorError")<{
+  readonly resource: string;
+  readonly action: string;
+  readonly userId: string;
+}> {}
 
 /**
  * Input for authorizing moderator access
@@ -29,10 +38,10 @@ export interface AuthorizeModeratorInput {
 export type AuthorizeModeratorOutput = void;
 
 /**
- * Use case for authorizing moderator access
+ * AuthorizeModerator Use Case (Effect-based)
  *
  * This is a pure synchronous function that checks if the authenticated user
- * has either the MODERATOR or ADMIN role. It returns a Result type for explicit
+ * has either the MODERATOR or ADMIN role. It returns Effect for explicit
  * error handling.
  *
  * Role hierarchy: ADMIN > MODERATOR > USER
@@ -42,36 +51,33 @@ export type AuthorizeModeratorOutput = void;
  *
  * @example
  * ```typescript
- * const result = authorizeModeratorUseCase.execute({
+ * const program = authorizeModeratorUseCase({
  *   authContext,
  *   resource: "Submission",
  *   action: "moderate"
  * });
  *
- * if (isOk(result)) {
+ * try {
+ *   await Effect.runPromise(program);
  *   // User is authorized, proceed with operation
- * } else {
+ * } catch (error) {
  *   // Handle authorization error
- *   authLogger.error("Moderator authorization failed", new Error(result.error.message));
+ *   if (error instanceof NotModeratorError) {
+ *     authLogger.error("Moderator authorization failed", error);
+ *   }
  * }
  * ```
  */
-export class AuthorizeModeratorUseCase {
-  /**
-   * Execute the authorization check
-   *
-   * @param input - Contains authContext and optional resource/action for error context
-   * @returns Result<void, UnauthorizedError> - Success if user is moderator or admin, error otherwise
-   */
-  execute(
-    input: AuthorizeModeratorInput,
-  ): Result<AuthorizeModeratorOutput, UnauthorizedError> {
+export function authorizeModeratorUseCase(
+  input: AuthorizeModeratorInput,
+): Effect.Effect<AuthorizeModeratorOutput, NotModeratorError> {
+  return Effect.gen(function* () {
     if (
       input.authContext.role !== UserRole.MODERATOR &&
       input.authContext.role !== UserRole.ADMIN
     ) {
-      return err(
-        new UnauthorizedError({
+      return yield* Effect.fail(
+        new NotModeratorError({
           resource: input.resource ?? "moderator operation",
           action: input.action ?? "execute",
           userId: input.authContext.userId as string,
@@ -79,11 +85,6 @@ export class AuthorizeModeratorUseCase {
       );
     }
 
-    return ok(undefined);
-  }
+    return undefined;
+  });
 }
-
-/**
- * Singleton instance for convenient usage
- */
-export const authorizeModeratorUseCase = new AuthorizeModeratorUseCase();

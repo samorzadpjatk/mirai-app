@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { UserRepositoryTag } from "../ports/UserRepository";
 
 /**
@@ -17,31 +17,25 @@ export interface DeleteUserOutput {
 }
 
 /**
- * Error type for DeleteUser use case
+ * Error types for DeleteUser use case - uses Data.TaggedError for Effect integration
  */
-export class DeleteUserNotFoundError extends Error {
-  readonly _tag = "DeleteUserNotFoundError";
-  constructor() {
-    super("User not found");
-  }
-}
+export class DeleteUserNotFoundError extends Data.TaggedError(
+  "DeleteUserNotFoundError",
+)<{ userId: string }> {}
 
-export class DeleteUserError extends Error {
-  readonly _tag = "DeleteUserError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class DeleteUserError extends Data.TaggedError("DeleteUserError")<{
+  message: string;
+}> {}
 
 /**
  * DeleteUser Use Case
  *
  * Deletes a user by ID.
- * Returns error if user not found.
+ * Fails with DeleteUserNotFoundError if user not found.
  *
- * ## Effect-based Pattern
+ * ## Effect.gen Pattern (Native)
  *
- * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ * This use case uses Context.Tag for dependency injection and returns native Effect.Effect<T, E, R>:
  *
  * ```typescript
  * const program = Effect.gen(function* () {
@@ -70,7 +64,9 @@ export function deleteUserUseCase(
     const user = yield* userRepo.findById(input.userId);
 
     if (!user) {
-      return yield* Effect.fail(new DeleteUserNotFoundError());
+      return yield* Effect.fail(
+        new DeleteUserNotFoundError({ userId: input.userId }),
+      );
     }
 
     // Delete the user

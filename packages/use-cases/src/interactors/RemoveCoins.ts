@@ -3,7 +3,7 @@ import type {
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
 import { CoinTransactionRepositoryTag } from "../ports/CoinTransactionRepository";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 
 /**
  * Input for RemoveCoins use case
@@ -26,47 +26,37 @@ export interface RemoveCoinsOutput {
 /**
  * Error types for RemoveCoins use case
  */
-export class GroupNotFoundError extends Error {
-  readonly _tag = "GroupNotFoundError";
-  constructor() {
-    super("Group not found");
-  }
-}
+export class GroupNotFoundError extends Data.TaggedError("GroupNotFoundError")<{
+  message: string;
+}> {}
 
-export class GroupNotInTripError extends Error {
-  readonly _tag = "GroupNotInTripError";
-  constructor() {
-    super("Group does not belong to this trip");
-  }
-}
+export class GroupNotInTripError extends Data.TaggedError(
+  "GroupNotInTripError",
+)<{
+  message: string;
+}> {}
 
-export class GroupDeletedError extends Error {
-  readonly _tag = "GroupDeletedError";
-  constructor() {
-    super("Group has been deleted");
-  }
-}
+export class GroupDeletedError extends Data.TaggedError("GroupDeletedError")<{
+  message: string;
+}> {}
 
-export class DecrementCoinsError extends Error {
-  readonly _tag = "DecrementCoinsError";
-  constructor() {
-    super("Failed to decrement group coins");
-  }
-}
+export class DecrementCoinsError extends Data.TaggedError(
+  "DecrementCoinsError",
+)<{
+  message: string;
+}> {}
 
-export class InsufficientCoinsError extends Error {
-  readonly _tag = "InsufficientCoinsError";
-  constructor() {
-    super("Group does not have enough coins");
-  }
-}
+export class InsufficientCoinsError extends Data.TaggedError(
+  "InsufficientCoinsError",
+)<{
+  message: string;
+}> {}
 
-export class CreateTransactionError extends Error {
-  readonly _tag = "CreateTransactionError";
-  constructor() {
-    super("Failed to create transaction");
-  }
-}
+export class CreateTransactionError extends Data.TaggedError(
+  "CreateTransactionError",
+)<{
+  message: string;
+}> {}
 
 /**
  * RemoveCoins Use Case
@@ -113,15 +103,23 @@ export function removeCoinsUseCase(
     );
 
     if (!groupCheck.exists) {
-      return yield* Effect.fail(new GroupNotFoundError());
+      return yield* Effect.fail(
+        new GroupNotFoundError({ message: "Group not found" }),
+      );
     }
 
     if (groupCheck.tripId !== input.tripId) {
-      return yield* Effect.fail(new GroupNotInTripError());
+      return yield* Effect.fail(
+        new GroupNotInTripError({
+          message: "Group does not belong to this trip",
+        }),
+      );
     }
 
     if (groupCheck.isDeleted) {
-      return yield* Effect.fail(new GroupDeletedError());
+      return yield* Effect.fail(
+        new GroupDeletedError({ message: "Group has been deleted" }),
+      );
     }
 
     // Check sufficient balance and decrement
@@ -131,7 +129,11 @@ export function removeCoinsUseCase(
     );
 
     if (!decrementResult.success) {
-      return yield* Effect.fail(new InsufficientCoinsError());
+      return yield* Effect.fail(
+        new InsufficientCoinsError({
+          message: "Group does not have enough coins",
+        }),
+      );
     }
 
     // Create transaction record (negative amount for removal)

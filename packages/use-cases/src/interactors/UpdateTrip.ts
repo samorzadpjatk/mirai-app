@@ -4,7 +4,7 @@ import {
   ValidationError,
   StateTransitionError,
 } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
 
 /**
@@ -44,26 +44,17 @@ export interface UpdateTripOutput {
 /**
  * Error types for UpdateTrip use case
  */
-export class UpdateTripNotFoundError extends Error {
-  readonly _tag = "UpdateTripNotFoundError";
-  constructor() {
-    super("Trip not found");
-  }
-}
+export class UpdateTripNotFoundError extends Data.TaggedError(
+  "UpdateTripNotFoundError",
+)<{ tripId: string }> {}
 
-export class UpdateTripValidationError extends Error {
-  readonly _tag = "UpdateTripValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UpdateTripValidationError extends Data.TaggedError(
+  "UpdateTripValidationError",
+)<{ message: string }> {}
 
-export class UpdateTripStateError extends Error {
-  readonly _tag = "UpdateTripStateError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UpdateTripStateError extends Data.TaggedError(
+  "UpdateTripStateError",
+)<{ message: string }> {}
 
 /**
  * UpdateTrip Use Case
@@ -102,13 +93,17 @@ export function updateTripUseCase(
     const trip = yield* tripRepo.findById(input.tripId);
 
     if (!trip) {
-      return yield* Effect.fail(new UpdateTripNotFoundError());
+      return yield* Effect.fail(
+        new UpdateTripNotFoundError({ tripId: input.tripId }),
+      );
     }
 
     // Cannot update completed or cancelled trips
     if (trip.isTerminal()) {
       return yield* Effect.fail(
-        new UpdateTripStateError("Cannot update a completed or cancelled trip"),
+        new UpdateTripStateError({
+          message: "Cannot update a completed or cancelled trip",
+        }),
       );
     }
 
@@ -133,9 +128,9 @@ export function updateTripUseCase(
         .pipe(
           Effect.mapError((error: ValidationError | StateTransitionError) => {
             if (error instanceof StateTransitionError) {
-              return new UpdateTripStateError(error.message);
+              return new UpdateTripStateError({ message: error.message });
             }
-            return new UpdateTripValidationError(error.message);
+            return new UpdateTripValidationError({ message: error.message });
           }),
         );
     }
@@ -150,9 +145,9 @@ export function updateTripUseCase(
         .pipe(
           Effect.mapError((error: ValidationError | StateTransitionError) => {
             if (error instanceof StateTransitionError) {
-              return new UpdateTripStateError(error.message);
+              return new UpdateTripStateError({ message: error.message });
             }
-            return new UpdateTripValidationError(error.message);
+            return new UpdateTripValidationError({ message: error.message });
           }),
         );
     }
@@ -161,9 +156,9 @@ export function updateTripUseCase(
     if (input.status !== undefined && input.status !== trip.status) {
       updatedTrip = yield* updatedTrip.updateStatus(input.status).pipe(
         Effect.mapError((error: StateTransitionError) => {
-          return new UpdateTripStateError(
-            `Invalid status transition from ${error.from} to ${error.to}`,
-          );
+          return new UpdateTripStateError({
+            message: `Invalid status transition from ${error.from} to ${error.to}`,
+          });
         }),
       );
     }

@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { ChallengeVote, ValidationError } from "@mirai-app/domain";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
@@ -32,33 +32,21 @@ export interface SubmitVoteOutput {
 /**
  * Error types for SubmitVote use case
  */
-export class SubmitVoteValidationError extends Error {
-  readonly _tag = "SubmitVoteValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class SubmitVoteValidationError extends Data.TaggedError(
+  "SubmitVoteValidationError",
+)<{ message: string }> {}
 
-export class VotePositionTakenError extends Error {
-  readonly _tag = "VotePositionTakenError";
-  constructor(message: string = "Vote position is already taken") {
-    super(message);
-  }
-}
+export class VotePositionTakenError extends Data.TaggedError(
+  "VotePositionTakenError",
+)<{ message?: string }> {}
 
-export class AlreadyVotedError extends Error {
-  readonly _tag = "AlreadyVotedError";
-  constructor(message: string = "You have already voted in this challenge") {
-    super(message);
-  }
-}
+export class AlreadyVotedError extends Data.TaggedError("AlreadyVotedError")<{
+  message?: string;
+}> {}
 
-export class VoteRepositoryError extends Error {
-  readonly _tag = "VoteRepositoryError";
-  constructor(message: string = "Failed to save vote") {
-    super(message);
-  }
-}
+export class VoteRepositoryError extends Data.TaggedError(
+  "VoteRepositoryError",
+)<{ message?: string }> {}
 
 /**
  * SubmitVote Use Case (Effect-based)
@@ -97,26 +85,28 @@ export function submitVoteUseCase(
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
       return yield* Effect.fail(
-        new SubmitVoteValidationError("challengeId is required"),
+        new SubmitVoteValidationError({ message: "challengeId is required" }),
       );
     }
 
     if (!input.submissionId || input.submissionId.trim() === "") {
       return yield* Effect.fail(
-        new SubmitVoteValidationError("submissionId is required"),
+        new SubmitVoteValidationError({ message: "submissionId is required" }),
       );
     }
 
     if (!input.voterId || input.voterId.trim() === "") {
       return yield* Effect.fail(
-        new SubmitVoteValidationError("voterId is required"),
+        new SubmitVoteValidationError({ message: "voterId is required" }),
       );
     }
 
     // Validate position
     if (input.position < 1 || input.position > 3) {
       return yield* Effect.fail(
-        new SubmitVoteValidationError("position must be between 1 and 3"),
+        new SubmitVoteValidationError({
+          message: "position must be between 1 and 3",
+        }),
       );
     }
 
@@ -128,7 +118,7 @@ export function submitVoteUseCase(
     );
 
     if (hasVotedForPosition) {
-      return yield* Effect.fail(new VotePositionTakenError());
+      return yield* Effect.fail(new VotePositionTakenError({}));
     }
 
     // For non-partial voting, check if voter has already voted at all
@@ -138,7 +128,7 @@ export function submitVoteUseCase(
         input.voterId,
       );
       if (hasVoted) {
-        return yield* Effect.fail(new AlreadyVotedError());
+        return yield* Effect.fail(new AlreadyVotedError({}));
       }
     }
 
@@ -155,7 +145,7 @@ export function submitVoteUseCase(
     }).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
-          new SubmitVoteValidationError(validationError.message),
+          new SubmitVoteValidationError({ message: validationError.message }),
       ),
     );
 
@@ -163,7 +153,9 @@ export function submitVoteUseCase(
     const saved = yield* voteRepo
       .create(vote)
       .pipe(
-        Effect.mapError(() => new VoteRepositoryError("Failed to save vote")),
+        Effect.mapError(
+          () => new VoteRepositoryError({ message: "Failed to save vote" }),
+        ),
       );
 
     return toOutput(saved);

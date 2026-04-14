@@ -2,7 +2,7 @@ import {
   NotificationSchedule,
   NotificationScheduleType,
 } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
 
@@ -32,19 +32,13 @@ export type CreateNotificationScheduleOutput = NotificationScheduleOutput;
 /**
  * Error types for CreateNotificationSchedule use case
  */
-export class DuplicateScheduleNameError extends Error {
-  readonly _tag = "DuplicateScheduleNameError";
-  constructor(name: string) {
-    super(`A schedule with the name "${name}" already exists for this trip`);
-  }
-}
+export class DuplicateScheduleNameError extends Data.TaggedError(
+  "DuplicateScheduleNameError",
+)<{ name: string }> {}
 
-export class ScheduleValidationError extends Error {
-  readonly _tag = "ScheduleValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class ScheduleValidationError extends Data.TaggedError(
+  "ScheduleValidationError",
+)<{ message: string }> {}
 
 /**
  * Helper function to convert NotificationSchedule to output DTO
@@ -109,7 +103,9 @@ export function createNotificationScheduleUseCase(
       );
 
       if (existing) {
-        return yield* Effect.fail(new DuplicateScheduleNameError(input.name));
+        return yield* Effect.fail(
+          new DuplicateScheduleNameError({ name: input.name }),
+        );
       }
     }
 
@@ -136,7 +132,7 @@ export function createNotificationScheduleUseCase(
     }).pipe(
       Effect.mapError(
         (validationError) =>
-          new ScheduleValidationError(validationError.message),
+          new ScheduleValidationError({ message: validationError.message }),
       ),
     );
 

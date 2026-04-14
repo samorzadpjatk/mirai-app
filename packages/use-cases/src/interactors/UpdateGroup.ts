@@ -3,7 +3,7 @@ import {
   StateTransitionError,
   ValidationError,
 } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
 
 /**
@@ -39,26 +39,17 @@ export interface UpdateGroupOutput {
 /**
  * Error types for UpdateGroup use case
  */
-export class UpdateGroupNotFoundError extends Error {
-  readonly _tag = "UpdateGroupNotFoundError";
-  constructor() {
-    super("Group not found");
-  }
-}
+export class UpdateGroupNotFoundError extends Data.TaggedError(
+  "UpdateGroupNotFoundError",
+)<{}> {}
 
-export class UpdateGroupDeletedError extends Error {
-  readonly _tag = "UpdateGroupDeletedError";
-  constructor() {
-    super("Cannot update a deleted group");
-  }
-}
+export class UpdateGroupDeletedError extends Data.TaggedError(
+  "UpdateGroupDeletedError",
+)<{}> {}
 
-export class UpdateGroupValidationError extends Error {
-  readonly _tag = "UpdateGroupValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UpdateGroupValidationError extends Data.TaggedError(
+  "UpdateGroupValidationError",
+)<{ message: string }> {}
 
 /**
  * UpdateGroup Use Case
@@ -99,11 +90,11 @@ export function updateGroupUseCase(
     const group = yield* groupRepo.findById(input.groupId);
 
     if (!group) {
-      return yield* Effect.fail(new UpdateGroupNotFoundError());
+      return yield* Effect.fail(new UpdateGroupNotFoundError({}));
     }
 
     if (group.isDeleted()) {
-      return yield* Effect.fail(new UpdateGroupDeletedError());
+      return yield* Effect.fail(new UpdateGroupDeletedError({}));
     }
 
     let updatedGroup: Group = group;
@@ -124,7 +115,7 @@ export function updateGroupUseCase(
         })
         .pipe(
           Effect.mapError((error: ValidationError | StateTransitionError) => {
-            return new UpdateGroupValidationError(error.message);
+            return new UpdateGroupValidationError({ message: error.message });
           }),
         );
     }
@@ -135,7 +126,7 @@ export function updateGroupUseCase(
         .changeOrganizer(input.organizerId)
         .pipe(
           Effect.mapError((error: ValidationError) => {
-            return new UpdateGroupValidationError(error.message);
+            return new UpdateGroupValidationError({ message: error.message });
           }),
         );
     }

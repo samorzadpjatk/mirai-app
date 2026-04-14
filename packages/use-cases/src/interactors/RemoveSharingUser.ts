@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location } from "@mirai-app/domain";
 
@@ -27,25 +27,19 @@ export interface RemoveSharingUserOutput {
 /**
  * Error when location is not found
  */
-export class LocationNotFoundError extends Error {
-  readonly _tag = "LocationNotFoundError";
-  constructor() {
-    super("Location not found");
-  }
-}
+export class LocationNotFoundError extends Data.TaggedError(
+  "LocationNotFoundError",
+)<{}> {}
 
 /**
  * Error when repository operation fails
  */
-export class RemoveSharingUserRepositoryError extends Error {
-  readonly _tag = "RemoveSharingUserRepositoryError";
-  constructor(
-    public readonly operation: string,
-    public override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class RemoveSharingUserRepositoryError extends Data.TaggedError(
+  "RemoveSharingUserRepositoryError",
+)<{
+  readonly operation: string;
+  readonly cause?: unknown;
+}> {}
 
 /**
  * RemoveSharingUser Use Case (Effect-based)
@@ -73,20 +67,18 @@ export function removeSharingUserUseCase(
     const locationRepo = yield* LocationRepositoryTag;
 
     // Find existing location
-    const location = yield* locationRepo
-      .findByUserId(input.ownerUserId)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new RemoveSharingUserRepositoryError(
-              "find location by user",
-              cause,
-            ),
-        ),
-      );
+    const location = yield* locationRepo.findByUserId(input.ownerUserId).pipe(
+      Effect.mapError(
+        (cause) =>
+          new RemoveSharingUserRepositoryError({
+            operation: "find location by user",
+            cause,
+          }),
+      ),
+    );
 
     if (!location) {
-      return yield* Effect.fail(new LocationNotFoundError());
+      return yield* Effect.fail(new LocationNotFoundError({}));
     }
 
     // Remove user from sharing list
@@ -98,7 +90,10 @@ export function removeSharingUserUseCase(
       .pipe(
         Effect.mapError(
           (cause) =>
-            new RemoveSharingUserRepositoryError("save location", cause),
+            new RemoveSharingUserRepositoryError({
+              operation: "save location",
+              cause,
+            }),
         ),
       );
 

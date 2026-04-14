@@ -213,7 +213,7 @@ describe("[UNIT] createNotificationScheduleUseCase (Effect)", () => {
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
         expect(either.left).toBeInstanceOf(DuplicateScheduleNameError);
-        expect(either.left.message).toContain("Duplicate Schedule");
+        expect(either.left.name).toBe("Duplicate Schedule");
       }
     });
 

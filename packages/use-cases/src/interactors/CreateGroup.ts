@@ -1,5 +1,5 @@
 import { Group, GroupStatus, ValidationError } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
 
 /**
@@ -36,19 +36,15 @@ export interface CreateGroupOutput {
 /**
  * Error types for CreateGroup use case
  */
-export class GroupCodeAlreadyExistsError extends Error {
-  readonly _tag = "GroupCodeAlreadyExistsError";
-  constructor() {
-    super("Group code already exists");
-  }
-}
+export class GroupCodeAlreadyExistsError extends Data.TaggedError(
+  "GroupCodeAlreadyExistsError",
+)<{
+  message: string;
+}> {}
 
-export class GroupCreationError extends Error {
-  readonly _tag = "GroupCreationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class GroupCreationError extends Data.TaggedError("GroupCreationError")<{
+  message: string;
+}> {}
 
 /**
  * CreateGroup Use Case
@@ -87,7 +83,11 @@ export function createGroupUseCase(
     const existingGroup = yield* groupRepo.findByCode(input.code);
 
     if (existingGroup) {
-      return yield* Effect.fail(new GroupCodeAlreadyExistsError());
+      return yield* Effect.fail(
+        new GroupCodeAlreadyExistsError({
+          message: "Group code already exists",
+        }),
+      );
     }
 
     // Create domain entity using Effect-based static create method
@@ -103,7 +103,7 @@ export function createGroupUseCase(
     }).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
-          new GroupCreationError(validationError.message),
+          new GroupCreationError({ message: validationError.message }),
       ),
     );
 

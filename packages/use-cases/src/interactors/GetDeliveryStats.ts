@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import {
   NotificationDeliveryRepositoryTag,
   type DeliveryStats,
@@ -20,14 +20,12 @@ export interface GetDeliveryStatsOutput extends DeliveryStats {}
 /**
  * Error types for GetDeliveryStats use case
  */
-export class GetDeliveryStatsError extends Error {
-  readonly _tag = "GetDeliveryStatsError";
-  constructor(cause: unknown) {
-    super(
-      `Failed to get delivery stats: ${cause instanceof Error ? cause.message : String(cause)}`,
-    );
-  }
-}
+export class GetDeliveryStatsError extends Data.TaggedError(
+  "GetDeliveryStatsError",
+)<{
+  message: string;
+  cause?: unknown;
+}> {}
 
 /**
  * GetDeliveryStats Use Case
@@ -60,7 +58,12 @@ export function getDeliveryStatsUseCase(
     return stats;
   }).pipe(
     Effect.catchAllCause((cause) =>
-      Effect.fail(new GetDeliveryStatsError(cause)),
+      Effect.fail(
+        new GetDeliveryStatsError({
+          message: `Failed to get delivery stats: ${cause}`,
+          cause,
+        }),
+      ),
     ),
   );
 }

@@ -1,5 +1,5 @@
 import { ChallengeVote, ValidationError } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
@@ -29,26 +29,23 @@ export interface UpdateChallengeVoteOutput {
 /**
  * Error types for UpdateChallengeVote use case
  */
-export class ChallengeVoteNotFoundError extends Error {
-  readonly _tag = "ChallengeVoteNotFoundError";
-  constructor() {
-    super("Vote not found");
-  }
-}
+export class ChallengeVoteNotFoundError extends Data.TaggedError(
+  "ChallengeVoteNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeVoteValidationError extends Error {
-  readonly _tag = "ChallengeVoteValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class ChallengeVoteValidationError extends Data.TaggedError(
+  "ChallengeVoteValidationError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeVoteUpdateRepositoryError extends Error {
-  readonly _tag = "ChallengeVoteUpdateRepositoryError";
-  constructor(message: string = "Failed to update vote") {
-    super(message);
-  }
-}
+export class ChallengeVoteUpdateRepositoryError extends Data.TaggedError(
+  "ChallengeVoteUpdateRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * UpdateChallengeVote Use Case
@@ -86,19 +83,19 @@ export function updateChallengeVoteUseCase(
     const voteRepo = yield* ChallengeVoteRepositoryTag;
 
     // Check if vote exists
-    const existingVote = yield* voteRepo
-      .findById(input.voteId)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new ChallengeVoteUpdateRepositoryError(
-              "Failed to load existing vote",
-            ),
-        ),
-      );
+    const existingVote = yield* voteRepo.findById(input.voteId).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeVoteUpdateRepositoryError({
+            message: "Failed to load existing vote",
+          }),
+      ),
+    );
 
     if (!existingVote) {
-      return yield* Effect.fail(new ChallengeVoteNotFoundError());
+      return yield* Effect.fail(
+        new ChallengeVoteNotFoundError({ message: "Vote not found" }),
+      );
     }
 
     // Create updated vote with new values
@@ -114,18 +111,21 @@ export function updateChallengeVoteUseCase(
     }).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
-          new ChallengeVoteValidationError(validationError.message),
+          new ChallengeVoteValidationError({
+            message: validationError.message,
+          }),
       ),
     );
 
     // Save to repository
-    const saved = yield* voteRepo
-      .create(vote)
-      .pipe(
-        Effect.mapError(
-          () => new ChallengeVoteUpdateRepositoryError("Failed to update vote"),
-        ),
-      );
+    const saved = yield* voteRepo.create(vote).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeVoteUpdateRepositoryError({
+            message: "Failed to update vote",
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });

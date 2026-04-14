@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
@@ -37,25 +37,21 @@ export interface GetJudgedStaffVotingProgressOutput {
 /**
  * Error when input validation fails
  */
-export class GetVotingProgressValidationError extends Error {
-  readonly _tag = "GetVotingProgressValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class GetVotingProgressValidationError extends Data.TaggedError(
+  "GetVotingProgressValidationError",
+)<{
+  readonly message: string;
+}> {}
 
 /**
  * Error when repository operation fails
  */
-export class GetVotingProgressRepositoryError extends Error {
-  readonly _tag = "GetVotingProgressRepositoryError";
-  constructor(
-    public readonly operation: string,
-    public override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class GetVotingProgressRepositoryError extends Data.TaggedError(
+  "GetVotingProgressRepositoryError",
+)<{
+  readonly operation: string;
+  readonly cause?: unknown;
+}> {}
 
 /**
  * GetJudgedStaffVotingProgress Use Case (Effect-based)
@@ -85,21 +81,23 @@ export function getJudgedStaffVotingProgressUseCase(
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
       return yield* Effect.fail(
-        new GetVotingProgressValidationError("challengeId is required"),
+        new GetVotingProgressValidationError({
+          message: "challengeId is required",
+        }),
       );
     }
 
     if (!input.tripId || input.tripId.trim() === "") {
       return yield* Effect.fail(
-        new GetVotingProgressValidationError("tripId is required"),
+        new GetVotingProgressValidationError({ message: "tripId is required" }),
       );
     }
 
     if (input.requiredPositions <= 0) {
       return yield* Effect.fail(
-        new GetVotingProgressValidationError(
-          "requiredPositions must be positive",
-        ),
+        new GetVotingProgressValidationError({
+          message: "requiredPositions must be positive",
+        }),
       );
     }
 
@@ -127,11 +125,11 @@ export function getJudgedStaffVotingProgressUseCase(
         .getVotedPositions(input.challengeId, participantId)
         .pipe(
           Effect.mapError(
-            (cause) =>
-              new GetVotingProgressRepositoryError(
-                "get voted positions",
-                cause,
-              ),
+            (err) =>
+              new GetVotingProgressRepositoryError({
+                operation: "get voted positions",
+                cause: err,
+              }),
           ),
         );
 

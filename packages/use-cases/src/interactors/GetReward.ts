@@ -1,5 +1,5 @@
 import { Reward, type RewardId } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { RewardRepositoryTag } from "../ports/RewardRepository";
 
 /**
@@ -33,19 +33,18 @@ export interface GetRewardOutput {
 /**
  * Error types for GetReward use case
  */
-export class RewardNotFoundError extends Error {
-  readonly _tag = "RewardNotFoundError";
-  constructor(rewardId: string) {
-    super(`Reward not found: ${rewardId}`);
-  }
-}
+export class RewardNotFoundError extends Data.TaggedError(
+  "RewardNotFoundError",
+)<{
+  message: string;
+  rewardId: string;
+}> {}
 
-export class RewardRepositoryError extends Error {
-  readonly _tag = "RewardRepositoryError";
-  constructor(message: string = "Failed to get reward") {
-    super(message);
-  }
-}
+export class RewardRepositoryError extends Data.TaggedError(
+  "RewardRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * GetReward Use Case
@@ -84,7 +83,12 @@ export function getRewardUseCase(
     const reward = yield* rewardRepo.findById(input.rewardId);
 
     if (!reward) {
-      return yield* Effect.fail(new RewardNotFoundError(input.rewardId));
+      return yield* Effect.fail(
+        new RewardNotFoundError({
+          message: `Reward not found: ${input.rewardId}`,
+          rewardId: input.rewardId,
+        }),
+      );
     }
 
     // Get purchase count
@@ -92,7 +96,10 @@ export function getRewardUseCase(
       .getPurchaseCount(input.rewardId)
       .pipe(
         Effect.mapError(
-          () => new RewardRepositoryError("Failed to get purchase count"),
+          () =>
+            new RewardRepositoryError({
+              message: "Failed to get purchase count",
+            }),
         ),
       );
 

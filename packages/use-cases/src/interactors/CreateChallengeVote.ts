@@ -1,5 +1,5 @@
 import { ChallengeVote, ValidationError } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
@@ -31,26 +31,23 @@ export interface CreateChallengeVoteOutput {
 /**
  * Error types for CreateChallengeVote use case
  */
-export class ChallengeVoteCreationError extends Error {
-  readonly _tag = "ChallengeVoteCreationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class ChallengeVoteCreationError extends Data.TaggedError(
+  "ChallengeVoteCreationError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeVoteAlreadyExistsError extends Error {
-  readonly _tag = "ChallengeVoteAlreadyExistsError";
-  constructor() {
-    super("Voter has already voted for this position in this challenge");
-  }
-}
+export class ChallengeVoteAlreadyExistsError extends Data.TaggedError(
+  "ChallengeVoteAlreadyExistsError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeVoteRepositoryError extends Error {
-  readonly _tag = "ChallengeVoteRepositoryError";
-  constructor(message: string = "Failed to create vote") {
-    super(message);
-  }
-}
+export class ChallengeVoteRepositoryError extends Data.TaggedError(
+  "ChallengeVoteRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * CreateChallengeVote Use Case
@@ -93,14 +90,19 @@ export function createChallengeVoteUseCase(
       .pipe(
         Effect.mapError(
           () =>
-            new ChallengeVoteRepositoryError(
-              "Failed to check existing vote status",
-            ),
+            new ChallengeVoteRepositoryError({
+              message: "Failed to check existing vote status",
+            }),
         ),
       );
 
     if (hasVoted) {
-      return yield* Effect.fail(new ChallengeVoteAlreadyExistsError());
+      return yield* Effect.fail(
+        new ChallengeVoteAlreadyExistsError({
+          message:
+            "Voter has already voted for this position in this challenge",
+        }),
+      );
     }
 
     // Create domain entity using Effect-based static create method
@@ -114,18 +116,21 @@ export function createChallengeVoteUseCase(
     }).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
-          new ChallengeVoteCreationError(validationError.message),
+          new ChallengeVoteCreationError({
+            message: validationError.message,
+          }),
       ),
     );
 
     // Save to repository
-    const saved = yield* voteRepo
-      .create(vote)
-      .pipe(
-        Effect.mapError(
-          () => new ChallengeVoteRepositoryError("Failed to create vote"),
-        ),
-      );
+    const saved = yield* voteRepo.create(vote).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeVoteRepositoryError({
+            message: "Failed to create vote",
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });

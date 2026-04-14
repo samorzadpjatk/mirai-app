@@ -74,8 +74,9 @@ export interface NotificationScheduleRepository {
 
   /**
    * Find all notification schedules with filtering and pagination
+   * Note: Renamed from findAll to avoid collision with BaseDrizzleRepository.findAll
    */
-  findAll(options?: {
+  findAllPaginated(options?: {
     filter?: NotificationScheduleFilter;
     pagination?: PaginationOptions;
   }): Effect.Effect<PaginatedResult<NotificationSchedule>, never, never>;
@@ -188,7 +189,7 @@ export class NotificationScheduleRepositoryTag extends Context.Tag(
     findByType: (
       type: NotificationScheduleType,
     ) => Effect.Effect<NotificationSchedule[], never, never>;
-    findAll: (options?: {
+    findAllPaginated: (options?: {
       filter?: NotificationScheduleFilter;
       pagination?: PaginationOptions;
     }) => Effect.Effect<PaginatedResult<NotificationSchedule>, never, never>;

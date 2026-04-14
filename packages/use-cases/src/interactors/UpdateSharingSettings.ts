@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location } from "@mirai-app/domain";
 
@@ -33,25 +33,21 @@ export interface UpdateSharingSettingsOutput {
 /**
  * Error when domain validation fails
  */
-export class UpdateSharingSettingsValidationError extends Error {
-  readonly _tag = "UpdateSharingSettingsValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UpdateSharingSettingsValidationError extends Data.TaggedError(
+  "UpdateSharingSettingsValidationError",
+)<{
+  readonly message: string;
+}> {}
 
 /**
  * Error when repository operation fails
  */
-export class UpdateSharingSettingsRepositoryError extends Error {
-  readonly _tag = "UpdateSharingSettingsRepositoryError";
-  constructor(
-    public readonly operation: string,
-    public override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class UpdateSharingSettingsRepositoryError extends Data.TaggedError(
+  "UpdateSharingSettingsRepositoryError",
+)<{
+  readonly operation: string;
+  readonly cause?: unknown;
+}> {}
 
 /**
  * UpdateSharingSettings Use Case (Effect-based)
@@ -82,17 +78,15 @@ export function updateSharingSettingsUseCase(
     );
 
     // Find existing location
-    let location = yield* locationRepo
-      .findByUserId(input.userId)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new UpdateSharingSettingsRepositoryError(
-              "find location by user",
-              cause,
-            ),
-        ),
-      );
+    let location = yield* locationRepo.findByUserId(input.userId).pipe(
+      Effect.mapError(
+        (cause) =>
+          new UpdateSharingSettingsRepositoryError({
+            operation: "find location by user",
+            cause,
+          }),
+      ),
+    );
 
     if (!location) {
       // Create new location if none exists
@@ -104,22 +98,23 @@ export function updateSharingSettingsUseCase(
         }),
       }).pipe(
         Effect.mapError(
-          (error) => new UpdateSharingSettingsValidationError(error.message),
+          (error) =>
+            new UpdateSharingSettingsValidationError({
+              message: error.message,
+            }),
         ),
       );
 
       // Persist the new location
-      const saved = yield* locationRepo
-        .create(newLocation)
-        .pipe(
-          Effect.mapError(
-            (cause) =>
-              new UpdateSharingSettingsRepositoryError(
-                "create location",
-                cause,
-              ),
-          ),
-        );
+      const saved = yield* locationRepo.create(newLocation).pipe(
+        Effect.mapError(
+          (cause) =>
+            new UpdateSharingSettingsRepositoryError({
+              operation: "create location",
+              cause,
+            }),
+        ),
+      );
 
       return toOutput(saved);
     } else {
@@ -137,9 +132,9 @@ export function updateSharingSettingsUseCase(
           .pipe(
             Effect.mapError(
               (validationError) =>
-                new UpdateSharingSettingsValidationError(
-                  validationError.message,
-                ),
+                new UpdateSharingSettingsValidationError({
+                  message: validationError.message,
+                }),
             ),
           );
       }
@@ -151,7 +146,10 @@ export function updateSharingSettingsUseCase(
       .pipe(
         Effect.mapError(
           (cause) =>
-            new UpdateSharingSettingsRepositoryError("save location", cause),
+            new UpdateSharingSettingsRepositoryError({
+              operation: "save location",
+              cause,
+            }),
         ),
       );
 

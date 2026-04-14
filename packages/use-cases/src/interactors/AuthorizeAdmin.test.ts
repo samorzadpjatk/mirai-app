@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import {
-  AuthorizeAdminUseCase,
+  authorizeAdminUseCase,
   type AuthorizeAdminInput,
+  NotAdminError,
 } from "./AuthorizeAdmin";
-import { AuthContext, UserRole, UserId, isOk, isErr } from "@mirai-app/domain";
-import { UnauthorizedError } from "@mirai-app/domain/errors";
+import { AuthContext, UserRole, UserId } from "@mirai-app/domain";
+import { Effect } from "effect";
 
 describe("[UNIT] AuthorizeAdminUseCase", () => {
-  let useCase: AuthorizeAdminUseCase;
   let adminAuthContext: AuthContext;
   let moderatorAuthContext: AuthContext;
   let userAuthContext: AuthContext;
@@ -18,58 +18,50 @@ describe("[UNIT] AuthorizeAdminUseCase", () => {
   const REGULAR_USER_ID = "550e8400-e29b-41d4-a716-446655440003";
 
   beforeEach(() => {
-    useCase = new AuthorizeAdminUseCase();
-
     const now = new Date();
     const adminUserId = UserId.create(ADMIN_USER_ID);
     const moderatorUserId = UserId.create(MODERATOR_USER_ID);
     const regularUserId = UserId.create(REGULAR_USER_ID);
 
-    // Create auth contexts for each role
-    const adminResult = AuthContext.create({
+    // Create auth contexts for each role using Effect.runSync
+    const adminEffect = AuthContext.create({
       userId: adminUserId,
       role: UserRole.ADMIN,
       authenticatedAt: now,
     });
-    const moderatorResult = AuthContext.create({
+    const moderatorEffect = AuthContext.create({
       userId: moderatorUserId,
       role: UserRole.MODERATOR,
       authenticatedAt: now,
     });
-    const userResult = AuthContext.create({
+    const userEffect = AuthContext.create({
       userId: regularUserId,
       role: UserRole.USER,
       authenticatedAt: now,
     });
 
-    if (isErr(adminResult) || isErr(moderatorResult) || isErr(userResult)) {
-      throw new Error("Failed to create test auth contexts");
-    }
-
-    adminAuthContext = adminResult.value;
-    moderatorAuthContext = moderatorResult.value;
-    userAuthContext = userResult.value;
+    adminAuthContext = Effect.runSync(adminEffect);
+    moderatorAuthContext = Effect.runSync(moderatorEffect);
+    userAuthContext = Effect.runSync(userEffect);
   });
 
-  describe("[UNIT] execute", () => {
-    describe("[UNIT] ""ADMIN role () => {
-      it("should return ok result when user has ADMIN role", () => {
+  describe("execute", () => {
+    describe("ADMIN role", () => {
+      it("should succeed when user has ADMIN role", async () => {
         // Arrange
         const input: AuthorizeAdminInput = {
           authContext: adminAuthContext,
         };
 
         // Act
-        const result = useCase.execute(input);
+        const program = authorizeAdminUseCase(input);
+        const result = await Effect.runPromise(program);
 
         // Assert
-        expect(isOk(result)).toBe(true);
-        if (isOk(result)) {
-          expect(result.value).toBeUndefined();
-        }
+        expect(result).toBeUndefined();
       });
 
-      it("should return ok result with custom resource and action", () => {
+      it("should succeed with custom resource and action", async () => {
         // Arrange
         const input: AuthorizeAdminInput = {
           authContext: adminAuthContext,
@@ -78,36 +70,36 @@ describe("[UNIT] AuthorizeAdminUseCase", () => {
         };
 
         // Act
-        const result = useCase.execute(input);
+        const program = authorizeAdminUseCase(input);
+        const result = await Effect.runPromise(program);
 
         // Assert
-        expect(isOk(result)).toBe(true);
+        expect(result).toBeUndefined();
       });
     });
 
-    describe("[UNIT] MODERATOR role", () => {
-      it("should return error when user has MODERATOR role", () => {
+    describe("MODERATOR role", () => {
+      it("should fail with NotAdminError when user has MODERATOR role", async () => {
         // Arrange
         const input: AuthorizeAdminInput = {
           authContext: moderatorAuthContext,
         };
 
-        // Act
-        const result = useCase.execute(input);
+        // Act & Assert
+        const program = authorizeAdminUseCase(input);
+        const either = await Effect.runPromise(Effect.either(program));
 
-        // Assert
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error).toBeInstanceOf(UnauthorizedError);
-          expect(result.error._tag).toBe("UnauthorizedError");
-          expect(result.error.code).toBe("UNAUTHORIZED");
-          expect(result.error.userId).toBe(MODERATOR_USER_ID);
-          expect(result.error.resource).toBe("admin operation");
-          expect(result.error.action).toBe("execute");
+        expect(either._tag).toBe("Left");
+        if (either._tag === "Left") {
+          expect(either.left).toBeInstanceOf(NotAdminError);
+          expect(either.left._tag).toBe("NotAdminError");
+          expect(either.left.userId).toBe(MODERATOR_USER_ID);
+          expect(either.left.resource).toBe("admin operation");
+          expect(either.left.action).toBe("execute");
         }
       });
 
-      it("should include custom resource and action in error", () => {
+      it("should include custom resource and action in error", async () => {
         // Arrange
         const input: AuthorizeAdminInput = {
           authContext: moderatorAuthContext,
@@ -115,43 +107,40 @@ describe("[UNIT] AuthorizeAdminUseCase", () => {
           action: "promote",
         };
 
-        // Act
-        const result = useCase.execute(input);
+        // Act & Assert
+        const program = authorizeAdminUseCase(input);
+        const either = await Effect.runPromise(Effect.either(program));
 
-        // Assert
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error.resource).toBe("User");
-          expect(result.error.action).toBe("promote");
-          expect(result.error.message).toContain("User");
-          expect(result.error.message).toContain("promote");
+        expect(either._tag).toBe("Left");
+        if (either._tag === "Left") {
+          expect(either.left.resource).toBe("User");
+          expect(either.left.action).toBe("promote");
         }
       });
     });
 
-    describe("[UNIT] USER role", () => {
-      it("should return error when user has USER role", () => {
+    describe("USER role", () => {
+      it("should fail with NotAdminError when user has USER role", async () => {
         // Arrange
         const input: AuthorizeAdminInput = {
           authContext: userAuthContext,
         };
 
-        // Act
-        const result = useCase.execute(input);
+        // Act & Assert
+        const program = authorizeAdminUseCase(input);
+        const either = await Effect.runPromise(Effect.either(program));
 
-        // Assert
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error).toBeInstanceOf(UnauthorizedError);
-          expect(result.error._tag).toBe("UnauthorizedError");
-          expect(result.error.code).toBe("UNAUTHORIZED");
-          expect(result.error.userId).toBe(REGULAR_USER_ID);
-          expect(result.error.resource).toBe("admin operation");
-          expect(result.error.action).toBe("execute");
+        expect(either._tag).toBe("Left");
+        if (either._tag === "Left") {
+          expect(either.left).toBeInstanceOf(NotAdminError);
+          expect(either.left._tag).toBe("NotAdminError");
+          expect(either.left.userId).toBe(REGULAR_USER_ID);
+          expect(either.left.resource).toBe("admin operation");
+          expect(either.left.action).toBe("execute");
         }
       });
 
-      it("should include userId in error message", () => {
+      it("should include userId in error", async () => {
         // Arrange
         const input: AuthorizeAdminInput = {
           authContext: userAuthContext,
@@ -159,40 +148,39 @@ describe("[UNIT] AuthorizeAdminUseCase", () => {
           action: "modify",
         };
 
-        // Act
-        const result = useCase.execute(input);
+        // Act & Assert
+        const program = authorizeAdminUseCase(input);
+        const either = await Effect.runPromise(Effect.either(program));
 
-        // Assert
-        expect(isErr(result)).toBe(true);
-        if (isErr(result)) {
-          expect(result.error.message).toContain(REGULAR_USER_ID);
-          expect(result.error.message).toContain("Settings");
-          expect(result.error.message).toContain("modify");
+        expect(either._tag).toBe("Left");
+        if (either._tag === "Left") {
+          expect(either.left.userId).toBe(REGULAR_USER_ID);
+          expect(either.left.resource).toBe("Settings");
+          expect(either.left.action).toBe("modify");
         }
       });
     });
 
-    describe("[UNIT] singleton instance", () => {
-      it("should export a singleton instance", async () => {
-        // Import the singleton
-        const { authorizeAdminUseCase } = await import("./AuthorizeAdmin");
-        expect(authorizeAdminUseCase).toBeInstanceOf(AuthorizeAdminUseCase);
+    describe("function export", () => {
+      it("should export a function (not a class)", async () => {
+        // Verify it's a function, not a class
+        expect(typeof authorizeAdminUseCase).toBe("function");
       });
 
-      it("singleton should work correctly", async () => {
-        const { authorizeAdminUseCase } = await import("./AuthorizeAdmin");
-
+      it("function should work correctly", async () => {
         // Test success case
-        const successResult = authorizeAdminUseCase.execute({
+        const successProgram = authorizeAdminUseCase({
           authContext: adminAuthContext,
         });
-        expect(isOk(successResult)).toBe(true);
+        const successResult = await Effect.runPromise(successProgram);
+        expect(successResult).toBeUndefined();
 
         // Test failure case
-        const failResult = authorizeAdminUseCase.execute({
+        const failProgram = authorizeAdminUseCase({
           authContext: userAuthContext,
         });
-        expect(isErr(failResult)).toBe(true);
+        const failEither = await Effect.runPromise(Effect.either(failProgram));
+        expect(failEither._tag).toBe("Left");
       });
     });
   });

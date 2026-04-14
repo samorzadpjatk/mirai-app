@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeVote } from "@mirai-app/domain";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
@@ -35,19 +35,17 @@ export interface GetMyVotesOutput {
 /**
  * Error types for GetMyVotes use case
  */
-export class GetMyVotesValidationError extends Error {
-  readonly _tag = "GetMyVotesValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class GetMyVotesValidationError extends Data.TaggedError(
+  "GetMyVotesValidationError",
+)<{
+  message: string;
+}> {}
 
-export class GetMyVotesRepositoryError extends Error {
-  readonly _tag = "GetMyVotesRepositoryError";
-  constructor(message: string = "Failed to retrieve votes") {
-    super(message);
-  }
-}
+export class GetMyVotesRepositoryError extends Data.TaggedError(
+  "GetMyVotesRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * GetMyVotes Use Case (Effect-based)
@@ -81,20 +79,31 @@ export function getMyVotesUseCase(
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
       return yield* Effect.fail(
-        new GetMyVotesValidationError("challengeId is required"),
+        new GetMyVotesValidationError({
+          message: "challengeId is required",
+        }),
       );
     }
 
     if (!input.voterId || input.voterId.trim() === "") {
       return yield* Effect.fail(
-        new GetMyVotesValidationError("voterId is required"),
+        new GetMyVotesValidationError({
+          message: "voterId is required",
+        }),
       );
     }
 
     // Fetch votes
     const votes = yield* voteRepo
       .findByChallengeAndVoter(input.challengeId, input.voterId)
-      .pipe(Effect.mapError(() => new GetMyVotesRepositoryError()));
+      .pipe(
+        Effect.mapError(
+          () =>
+            new GetMyVotesRepositoryError({
+              message: "Failed to retrieve votes",
+            }),
+        ),
+      );
 
     // Sort by position
     const sortedVotes = [...votes].sort(

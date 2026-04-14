@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 import type { Sponsor } from "@mirai-app/domain";
 
@@ -22,35 +22,26 @@ export interface LinkSponsorToTripOutput {
 /**
  * Error when sponsor is not found
  */
-export class LinkSponsorNotFoundError extends Error {
-  readonly _tag = "LinkSponsorNotFoundError";
-  constructor() {
-    super("Sponsor not found");
-  }
-}
+export class LinkSponsorNotFoundError extends Data.TaggedError(
+  "LinkSponsorNotFoundError",
+)<{ sponsorId: string }> {}
 
 /**
  * Error when sponsor is already linked to trip
  */
-export class SponsorAlreadyLinkedError extends Error {
-  readonly _tag = "SponsorAlreadyLinkedError";
-  constructor() {
-    super("Sponsor is already associated with this trip");
-  }
-}
+export class SponsorAlreadyLinkedError extends Data.TaggedError(
+  "SponsorAlreadyLinkedError",
+)<{ sponsorId: string; tripId: string }> {}
 
 /**
  * Error when repository operation fails
  */
-export class LinkSponsorRepositoryError extends Error {
-  readonly _tag = "LinkSponsorRepositoryError";
-  constructor(
-    public readonly operation: string,
-    public override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class LinkSponsorRepositoryError extends Data.TaggedError(
+  "LinkSponsorRepositoryError",
+)<{
+  operation: string;
+  cause?: unknown;
+}> {}
 
 /**
  * LinkSponsorToTrip Use Case (Effect-based)
@@ -80,16 +71,20 @@ export function linkSponsorToTripUseCase(
     const sponsorRepo = yield* SponsorRepositoryTag;
 
     // Check if sponsor exists
-    const sponsor = yield* sponsorRepo
-      .findById(input.sponsorId)
-      .pipe(
-        Effect.mapError(
-          (cause) => new LinkSponsorRepositoryError("find sponsor", cause),
-        ),
-      );
+    const sponsor = yield* sponsorRepo.findById(input.sponsorId).pipe(
+      Effect.mapError(
+        (cause) =>
+          new LinkSponsorRepositoryError({
+            operation: "find sponsor",
+            cause,
+          }),
+      ),
+    );
 
     if (!sponsor) {
-      return yield* Effect.fail(new LinkSponsorNotFoundError());
+      return yield* Effect.fail(
+        new LinkSponsorNotFoundError({ sponsorId: input.sponsorId }),
+      );
     }
 
     // Check if already linked
@@ -97,23 +92,33 @@ export function linkSponsorToTripUseCase(
       .isLinkedToTrip(input.sponsorId, input.tripId)
       .pipe(
         Effect.mapError(
-          (cause) => new LinkSponsorRepositoryError("check if linked", cause),
+          (cause) =>
+            new LinkSponsorRepositoryError({
+              operation: "check if linked",
+              cause,
+            }),
         ),
       );
 
     if (alreadyLinked) {
-      return yield* Effect.fail(new SponsorAlreadyLinkedError());
+      return yield* Effect.fail(
+        new SponsorAlreadyLinkedError({
+          sponsorId: input.sponsorId,
+          tripId: input.tripId,
+        }),
+      );
     }
 
     // Link sponsor to trip
-    yield* sponsorRepo
-      .linkToTrip(input.sponsorId, input.tripId)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new LinkSponsorRepositoryError("link sponsor to trip", cause),
-        ),
-      );
+    yield* sponsorRepo.linkToTrip(input.sponsorId, input.tripId).pipe(
+      Effect.mapError(
+        (cause) =>
+          new LinkSponsorRepositoryError({
+            operation: "link sponsor to trip",
+            cause,
+          }),
+      ),
+    );
 
     return {
       sponsorId: input.sponsorId,

@@ -66,10 +66,10 @@ describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
         findByTripIdAndName: (tripId: string, name: string) =>
           repo.findByTripIdAndName(tripId, name),
         findByType: (type: NotificationScheduleType) => repo.findByType(type),
-        findAll: (options?: {
+        findAllPaginated: (options?: {
           filter?: import("@mirai-app/domain").NotificationScheduleFilter;
           pagination?: import("@mirai-app/domain").PaginationOptions;
-        }) => repo.findAll(options),
+        }) => repo.findAllPaginated(options),
         findActive: (now?: Date) => repo.findActive(now),
         findUpcoming: (days?: number, now?: Date) =>
           repo.findUpcoming(days, now),

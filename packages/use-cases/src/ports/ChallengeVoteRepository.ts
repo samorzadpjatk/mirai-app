@@ -1,24 +1,6 @@
 import type { ChallengeVote } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
-
-/**
- * Repository error type for port interfaces
- * This is a common error type used across all repository implementations
- */
-export class DatabaseError extends Error {
-  readonly _tag = "DatabaseError" as const;
-  readonly code = "DATABASE_ERROR" as const;
-  readonly operation: string;
-  override readonly message: string;
-  override readonly cause?: unknown;
-
-  constructor(props: { operation: string; message: string; cause?: unknown }) {
-    super(`Database error in '${props.operation}': ${props.message}`);
-    this.operation = props.operation;
-    this.message = props.message;
-    this.cause = props.cause;
-  }
-}
+import { DatabaseError } from "./errors";
 
 /**
  * ChallengeVoteRepository Port

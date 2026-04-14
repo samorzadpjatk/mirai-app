@@ -1,5 +1,5 @@
 import { Challenge, ChallengeStatus, ValidationError } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 
 /**
@@ -41,33 +41,29 @@ export interface UpdateChallengeOutput {
 /**
  * Error types for UpdateChallenge use case
  */
-export class ChallengeNotFoundError extends Error {
-  readonly _tag = "ChallengeNotFoundError";
-  constructor() {
-    super("Challenge not found");
-  }
-}
+export class ChallengeNotFoundError extends Data.TaggedError(
+  "ChallengeNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeUpdateValidationError extends Error {
-  readonly _tag = "ChallengeUpdateValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class ChallengeUpdateValidationError extends Data.TaggedError(
+  "ChallengeUpdateValidationError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeTerminalStateError extends Error {
-  readonly _tag = "ChallengeTerminalStateError";
-  constructor() {
-    super("Cannot update a completed or cancelled challenge");
-  }
-}
+export class ChallengeTerminalStateError extends Data.TaggedError(
+  "ChallengeTerminalStateError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeUpdateRepositoryError extends Error {
-  readonly _tag = "ChallengeUpdateRepositoryError";
-  constructor(message: string = "Failed to update challenge") {
-    super(message);
-  }
-}
+export class ChallengeUpdateRepositoryError extends Data.TaggedError(
+  "ChallengeUpdateRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * UpdateChallenge Use Case
@@ -93,21 +89,28 @@ export function updateChallengeUseCase(
     const challengeRepo = yield* ChallengeRepositoryTag;
 
     // Find existing challenge
-    const challenge = yield* challengeRepo
-      .findById(input.challengeId)
-      .pipe(
-        Effect.mapError(
-          () => new ChallengeUpdateRepositoryError("Failed to load challenge"),
-        ),
-      );
+    const challenge = yield* challengeRepo.findById(input.challengeId).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeUpdateRepositoryError({
+            message: "Failed to load challenge",
+          }),
+      ),
+    );
 
     if (!challenge) {
-      return yield* Effect.fail(new ChallengeNotFoundError());
+      return yield* Effect.fail(
+        new ChallengeNotFoundError({ message: "Challenge not found" }),
+      );
     }
 
     // Check if challenge is in terminal state
     if (challenge.isTerminal()) {
-      return yield* Effect.fail(new ChallengeTerminalStateError());
+      return yield* Effect.fail(
+        new ChallengeTerminalStateError({
+          message: "Cannot update a completed or cancelled challenge",
+        }),
+      );
     }
 
     // Apply updates
@@ -130,7 +133,9 @@ export function updateChallengeUseCase(
         .pipe(
           Effect.mapError(
             (validationError: ValidationError) =>
-              new ChallengeUpdateValidationError(validationError.message),
+              new ChallengeUpdateValidationError({
+                message: validationError.message,
+              }),
           ),
         );
     }
@@ -160,7 +165,9 @@ export function updateChallengeUseCase(
         .pipe(
           Effect.mapError(
             (validationError: ValidationError) =>
-              new ChallengeUpdateValidationError(validationError.message),
+              new ChallengeUpdateValidationError({
+                message: validationError.message,
+              }),
           ),
         );
     }
@@ -186,19 +193,22 @@ export function updateChallengeUseCase(
         .pipe(
           Effect.mapError(
             (validationError: ValidationError) =>
-              new ChallengeUpdateValidationError(validationError.message),
+              new ChallengeUpdateValidationError({
+                message: validationError.message,
+              }),
           ),
         );
     }
 
     // Persist changes
-    const saved = yield* challengeRepo
-      .update(updatedChallenge)
-      .pipe(
-        Effect.mapError(
-          () => new ChallengeUpdateRepositoryError("Failed to save challenge"),
-        ),
-      );
+    const saved = yield* challengeRepo.update(updatedChallenge).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeUpdateRepositoryError({
+            message: "Failed to save challenge",
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });

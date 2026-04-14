@@ -110,7 +110,7 @@ export function getNotificationSchedulesUseCase(
   return Effect.gen(function* () {
     const repo = yield* NotificationScheduleRepositoryTag;
 
-    const result = yield* repo.findAll({
+    const result = yield* repo.findAllPaginated({
       ...(input.filter !== undefined && { filter: input.filter }),
       ...(input.pagination !== undefined && { pagination: input.pagination }),
     });

@@ -8,7 +8,7 @@ import {
   type PaginationOptions,
   type PaginatedResult,
 } from "../ports/RewardRepository";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import type { RewardId } from "@mirai-app/domain";
 
 /**
@@ -38,84 +38,63 @@ export interface PurchaseRewardOutput {
 /**
  * Error types for PurchaseReward use case
  */
-export class RewardNotFoundError extends Error {
-  readonly _tag = "RewardNotFoundError";
-  constructor() {
-    super("Reward not found");
-  }
-}
+export class RewardNotFoundError extends Data.TaggedError(
+  "RewardNotFoundError",
+)<{}> {}
 
-export class TripEndedError extends Error {
-  readonly _tag = "TripEndedError";
-  constructor() {
-    super("Cannot purchase rewards for ended trips");
-  }
-}
+export class TripEndedError extends Data.TaggedError("TripEndedError")<{}> {}
 
-export class RewardHiddenError extends Error {
-  readonly _tag = "RewardHiddenError";
-  constructor() {
-    super("Reward is hidden");
-  }
-}
+export class RewardHiddenError extends Data.TaggedError(
+  "RewardHiddenError",
+)<{}> {}
 
-export class InsufficientQuantityError extends Error {
-  readonly _tag = "InsufficientQuantityError";
-  constructor(requested: number, available: number) {
-    super(
-      `Not enough rewards available (requested: ${requested}, available: ${available})`,
-    );
-  }
-}
+export class InsufficientQuantityError extends Data.TaggedError(
+  "InsufficientQuantityError",
+)<{
+  requested: number;
+  available: number;
+}> {}
 
-export class NotGroupLeaderError extends Error {
-  readonly _tag = "NotGroupLeaderError";
-  constructor() {
-    super("Only group leaders can purchase rewards");
-  }
-}
+export class NotGroupLeaderError extends Data.TaggedError(
+  "NotGroupLeaderError",
+)<{}> {}
 
-export class InsufficientCoinsError extends Error {
-  readonly _tag = "InsufficientCoinsError";
-  constructor(needed: number, have: number) {
-    super(`Not enough coins (need: ${needed}, have: ${have})`);
-  }
-}
+export class InsufficientCoinsError extends Data.TaggedError(
+  "InsufficientCoinsError",
+)<{
+  needed: number;
+  have: number;
+}> {}
 
-export class RewardRepositoryError extends Error {
-  readonly _tag = "RewardRepositoryError";
-  constructor(message: string = "Failed to load reward") {
-    super(message);
-  }
-}
+export class RewardRepositoryError extends Data.TaggedError(
+  "RewardRepositoryError",
+)<{
+  message: string;
+}> {}
 
-export class TripAccessCheckerError extends Error {
-  readonly _tag = "TripAccessCheckerError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class TripAccessCheckerError extends Data.TaggedError(
+  "TripAccessCheckerError",
+)<{
+  message: string;
+}> {}
 
-export class TripPointsCalculatorError extends Error {
-  readonly _tag = "TripPointsCalculatorError";
-  constructor(message: string = "Failed to calculate points") {
-    super(message);
-  }
-}
+export class TripPointsCalculatorError extends Data.TaggedError(
+  "TripPointsCalculatorError",
+)<{
+  message: string;
+}> {}
 
-export class GroupCoinsServiceError extends Error {
-  readonly _tag = "GroupCoinsServiceError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class GroupCoinsServiceError extends Data.TaggedError(
+  "GroupCoinsServiceError",
+)<{
+  message: string;
+}> {}
 
-export class PurchaseCreationError extends Error {
-  readonly _tag = "PurchaseCreationError";
-  constructor(message: string) {
-    super(`Failed to create purchase: ${message}`);
-  }
-}
+export class PurchaseCreationError extends Data.TaggedError(
+  "PurchaseCreationError",
+)<{
+  message: string;
+}> {}
 
 export type PurchaseRewardError =
   | RewardNotFoundError
@@ -188,9 +167,13 @@ export function purchaseRewardUseCase(
 
     // Find the reward
     const reward = yield* rewardRepo.findById(input.rewardId).pipe(
-      Effect.mapError(() => new RewardRepositoryError("Failed to load reward")),
+      Effect.mapError(
+        () => new RewardRepositoryError({ message: "Failed to load reward" }),
+      ),
       Effect.flatMap((r) =>
-        r === null ? Effect.fail(new RewardNotFoundError()) : Effect.succeed(r),
+        r === null
+          ? Effect.fail(new RewardNotFoundError({}))
+          : Effect.succeed(r),
       ),
     );
 
@@ -199,23 +182,29 @@ export function purchaseRewardUseCase(
       .hasTripEnded(reward.tripId)
       .pipe(
         Effect.mapError(
-          () => new TripAccessCheckerError("Failed to check trip status"),
+          () =>
+            new TripAccessCheckerError({
+              message: "Failed to check trip status",
+            }),
         ),
       );
 
     if (hasEnded) {
-      return yield* Effect.fail(new TripEndedError());
+      return yield* Effect.fail(new TripEndedError({}));
     }
 
     // Check if reward is hidden
     if (reward.isHidden) {
-      return yield* Effect.fail(new RewardHiddenError());
+      return yield* Effect.fail(new RewardHiddenError({}));
     }
 
     // Check if sufficient quantity is available
     if (!reward.canPurchaseQuantity(input.quantity)) {
       return yield* Effect.fail(
-        new InsufficientQuantityError(input.quantity, reward.availableQuantity),
+        new InsufficientQuantityError({
+          requested: input.quantity,
+          available: reward.availableQuantity,
+        }),
       );
     }
 
@@ -224,12 +213,15 @@ export function purchaseRewardUseCase(
       .isGroupLeader(input.userId, reward.tripId)
       .pipe(
         Effect.mapError(
-          () => new TripAccessCheckerError("Failed to check leader status"),
+          () =>
+            new TripAccessCheckerError({
+              message: "Failed to check leader status",
+            }),
         ),
       );
 
     if (!leaderCheck.isLeader || !leaderCheck.groupId) {
-      return yield* Effect.fail(new NotGroupLeaderError());
+      return yield* Effect.fail(new NotGroupLeaderError({}));
     }
 
     // Calculate dynamic coin cost
@@ -237,7 +229,10 @@ export function purchaseRewardUseCase(
       .calculateTotalAvailablePoints(reward.tripId)
       .pipe(
         Effect.mapError(
-          () => new TripPointsCalculatorError("Failed to calculate points"),
+          () =>
+            new TripPointsCalculatorError({
+              message: "Failed to calculate points",
+            }),
         ),
       );
 
@@ -246,7 +241,10 @@ export function purchaseRewardUseCase(
       .calculateTotalCost(input.quantity, totalPoints)
       .pipe(
         Effect.mapError(
-          () => new RewardRepositoryError("Failed to calculate total cost"),
+          () =>
+            new RewardRepositoryError({
+              message: "Failed to calculate total cost",
+            }),
         ),
       );
 
@@ -255,7 +253,10 @@ export function purchaseRewardUseCase(
       .getBalance(leaderCheck.groupId)
       .pipe(
         Effect.mapError(
-          () => new GroupCoinsServiceError("Failed to get group coins"),
+          () =>
+            new GroupCoinsServiceError({
+              message: "Failed to get group coins",
+            }),
         ),
       );
 
@@ -263,7 +264,10 @@ export function purchaseRewardUseCase(
 
     if (!groupCoinsAmount.isGreaterThanOrEqual(totalCost)) {
       return yield* Effect.fail(
-        new InsufficientCoinsError(totalCost.toNumber(), groupCoins),
+        new InsufficientCoinsError({
+          needed: totalCost.toNumber(),
+          have: groupCoins,
+        }),
       );
     }
 
@@ -275,7 +279,9 @@ export function purchaseRewardUseCase(
       .pipe(
         Effect.mapError(
           () =>
-            new RewardRepositoryError("Failed to decrement reward quantity"),
+            new RewardRepositoryError({
+              message: "Failed to decrement reward quantity",
+            }),
         ),
       );
 
@@ -289,7 +295,8 @@ export function purchaseRewardUseCase(
       )
       .pipe(
         Effect.mapError(
-          () => new GroupCoinsServiceError("Failed to deduct coins"),
+          () =>
+            new GroupCoinsServiceError({ message: "Failed to deduct coins" }),
         ),
       );
 
@@ -306,7 +313,7 @@ export function purchaseRewardUseCase(
     const purchase = yield* purchaseResult.pipe(
       Effect.mapError(
         (error: { message: string }) =>
-          new PurchaseCreationError(error.message),
+          new PurchaseCreationError({ message: error.message }),
       ),
     );
 
@@ -314,7 +321,8 @@ export function purchaseRewardUseCase(
       .create(purchase)
       .pipe(
         Effect.mapError(
-          () => new RewardRepositoryError("Failed to save purchase"),
+          () =>
+            new RewardRepositoryError({ message: "Failed to save purchase" }),
         ),
       );
 
@@ -323,7 +331,10 @@ export function purchaseRewardUseCase(
       .getBalance(leaderCheck.groupId)
       .pipe(
         Effect.mapError(
-          () => new GroupCoinsServiceError("Failed to get remaining balance"),
+          () =>
+            new GroupCoinsServiceError({
+              message: "Failed to get remaining balance",
+            }),
         ),
       );
 

@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeVote } from "@mirai-app/domain";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
@@ -35,19 +35,17 @@ export interface GetVotesByChallengeOutput {
 /**
  * Error types for GetVotesByChallenge use case
  */
-export class GetVotesByChallengeValidationError extends Error {
-  readonly _tag = "GetVotesByChallengeValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class GetVotesByChallengeValidationError extends Data.TaggedError(
+  "GetVotesByChallengeValidationError",
+)<{
+  message: string;
+}> {}
 
-export class GetVotesByChallengeRepositoryError extends Error {
-  readonly _tag = "GetVotesByChallengeRepositoryError";
-  constructor(message: string = "Failed to retrieve votes") {
-    super(message);
-  }
-}
+export class GetVotesByChallengeRepositoryError extends Data.TaggedError(
+  "GetVotesByChallengeRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * GetVotesByChallenge Use Case (Effect-based)
@@ -82,14 +80,21 @@ export function getVotesByChallengeUseCase(
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
       return yield* Effect.fail(
-        new GetVotesByChallengeValidationError("challengeId is required"),
+        new GetVotesByChallengeValidationError({
+          message: "challengeId is required",
+        }),
       );
     }
 
     // Fetch all votes
-    const votes = yield* voteRepo
-      .findByChallengeId(input.challengeId)
-      .pipe(Effect.mapError(() => new GetVotesByChallengeRepositoryError()));
+    const votes = yield* voteRepo.findByChallengeId(input.challengeId).pipe(
+      Effect.mapError(
+        () =>
+          new GetVotesByChallengeRepositoryError({
+            message: "Failed to retrieve votes",
+          }),
+      ),
+    );
 
     // Sort by voterId then position
     const sortedVotes = [...votes].sort((a, b) => {

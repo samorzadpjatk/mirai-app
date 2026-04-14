@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { RewardRepositoryTag } from "../ports/RewardRepository";
 import type { RewardId } from "@mirai-app/domain";
 
@@ -19,19 +19,17 @@ export interface DeleteRewardOutput {
 /**
  * Error types for DeleteReward use case
  */
-export class RewardNotFoundError extends Error {
-  readonly _tag = "RewardNotFoundError";
-  constructor() {
-    super("Reward not found");
-  }
-}
+export class RewardNotFoundError extends Data.TaggedError(
+  "RewardNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class RewardHasPurchasesError extends Error {
-  readonly _tag = "RewardHasPurchasesError";
-  constructor() {
-    super("Cannot delete reward with existing purchases");
-  }
-}
+export class RewardHasPurchasesError extends Data.TaggedError(
+  "RewardHasPurchasesError",
+)<{
+  message: string;
+}> {}
 
 /**
  * DeleteReward Use Case
@@ -63,14 +61,20 @@ export function deleteRewardUseCase(
     const existing = yield* repo.findById(input.rewardId);
 
     if (!existing) {
-      return yield* Effect.fail(new RewardNotFoundError());
+      return yield* Effect.fail(
+        new RewardNotFoundError({ message: "Reward not found" }),
+      );
     }
 
     // Check if reward has purchases
     const hasPurchases = yield* repo.hasPurchases(input.rewardId);
 
     if (hasPurchases) {
-      return yield* Effect.fail(new RewardHasPurchasesError());
+      return yield* Effect.fail(
+        new RewardHasPurchasesError({
+          message: "Cannot delete reward with existing purchases",
+        }),
+      );
     }
 
     // Delete reward

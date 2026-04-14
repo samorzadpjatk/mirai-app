@@ -1,6 +1,6 @@
-import { Group, type Result, ok, err } from "@mirai-app/domain";
-import { Effect } from "effect";
-import type { GroupRepository } from "../ports/GroupRepository";
+import { Group, type GroupId } from "@mirai-app/domain";
+import { Effect, Data } from "effect";
+import { GroupRepositoryTag } from "../ports/GroupRepository";
 
 /**
  * Input for GetGroup use case
@@ -29,68 +29,51 @@ export interface GetGroupOutput {
 }
 
 /**
- * Error type for GetGroup use case
+ * Error type for GetGroup use case - uses Data.TaggedError for Effect integration
  */
-export class GetGroupNotFoundError extends Error {
-  readonly _tag = "GetGroupNotFoundError";
-  constructor() {
-    super("Group not found");
-  }
-}
+export class GetGroupNotFoundError extends Data.TaggedError(
+  "GetGroupNotFoundError",
+)<{ groupId: string }> {}
 
 /**
  * GetGroup Use Case
  *
  * Retrieves a group by ID.
- * Returns error if group not found.
+ * Fails with GetGroupNotFoundError if group not found.
  *
  * ## Effect.gen Pattern
  *
- * This use case uses constructor injection and returns Effect.Effect<Result<T,E>, never, never>:
+ * This use case uses Context.Tag for dependency injection:
  *
  * ```typescript
- * const useCase = new GetGroupUseCase(groupRepository);
- * const result = await Effect.runPromise(useCase.execute({ groupId: "123" }));
+ * const program = Effect.gen(function* () {
+ *   const result = yield* getGroupUseCase({ groupId: "123" });
+ *   return result;
+ * });
  *
- * if (result.kind === "ok") {
- *   logger.debug("Group retrieved", result.value);
- * } else {
- *   logger.error("Failed to get group", result.error);
- * }
+ * const runnable = program.pipe(
+ *   Effect.provideService(GroupRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
  * ```
- */
-export class GetGroupUseCase {
-  constructor(private readonly groupRepo: GroupRepository) {}
-
-  execute(
-    input: GetGroupInput,
-  ): Effect.Effect<
-    Result<GetGroupOutput, GetGroupNotFoundError>,
-    never,
-    never
-  > {
-    return Effect.gen(this, function* () {
-      const group = yield* this.groupRepo.findById(input.groupId);
-
-      if (!group) {
-        return err(new GetGroupNotFoundError());
-      }
-
-      return ok(toOutput(group));
-    });
-  }
-}
-
-/**
- * Legacy function-based API for backward compatibility during migration
- * @deprecated Use GetGroupUseCase class instead
  */
 export function getGroupUseCase(
   input: GetGroupInput,
-  groupRepo: GroupRepository,
-): Effect.Effect<Result<GetGroupOutput, GetGroupNotFoundError>, never, never> {
-  const useCase = new GetGroupUseCase(groupRepo);
-  return useCase.execute(input);
+): Effect.Effect<GetGroupOutput, GetGroupNotFoundError, GroupRepositoryTag> {
+  return Effect.gen(function* () {
+    const groupRepo = yield* GroupRepositoryTag;
+
+    const group = yield* groupRepo.findById(input.groupId);
+
+    if (!group) {
+      return yield* Effect.fail(
+        new GetGroupNotFoundError({ groupId: input.groupId }),
+      );
+    }
+
+    return toOutput(group);
+  });
 }
 
 function toOutput(group: Group): GetGroupOutput {

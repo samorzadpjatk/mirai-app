@@ -1,5 +1,5 @@
 import type { User } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { UserRepositoryTag } from "../ports/UserRepository";
 
 /**
@@ -29,19 +29,13 @@ export interface UpdateUserOutput {
 /**
  * Error types for UpdateUser use case
  */
-export class UserNotFoundError extends Error {
-  readonly _tag = "UserNotFoundError";
-  constructor() {
-    super("User not found");
-  }
-}
+export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
+  message: string;
+}> {}
 
-export class UserUpdateError extends Error {
-  readonly _tag = "UserUpdateError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UserUpdateError extends Data.TaggedError("UserUpdateError")<{
+  message: string;
+}> {}
 
 /**
  * UpdateUser Use Case
@@ -78,7 +72,9 @@ export function updateUserUseCase(
     const user = yield* userRepo.findById(input.userId);
 
     if (!user) {
-      return yield* Effect.fail(new UserNotFoundError());
+      return yield* Effect.fail(
+        new UserNotFoundError({ message: "User not found" }),
+      );
     }
 
     let updatedUser: User = user;
@@ -92,7 +88,8 @@ export function updateUserUseCase(
         })
         .pipe(
           Effect.mapError(
-            (validationError) => new UserUpdateError(validationError.message),
+            (validationError) =>
+              new UserUpdateError({ message: validationError.message }),
           ),
         );
 

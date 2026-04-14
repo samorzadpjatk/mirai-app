@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location } from "@mirai-app/domain";
 
@@ -27,28 +27,19 @@ export interface ShareLocationOutput {
 }
 
 /**
- * Error types for ShareLocation use case
+ * Error types for ShareLocation use case - uses Data.TaggedError for Effect integration
  */
-export class ShareLocationNotFoundError extends Error {
-  readonly _tag = "ShareLocationNotFoundError";
-  constructor() {
-    super("Location not found for user");
-  }
-}
+export class ShareLocationNotFoundError extends Data.TaggedError(
+  "ShareLocationNotFoundError",
+)<{ userId: string }> {}
 
-export class ShareLocationValidationError extends Error {
-  readonly _tag = "ShareLocationValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class ShareLocationValidationError extends Data.TaggedError(
+  "ShareLocationValidationError",
+)<{ message: string }> {}
 
-export class ShareLocationSelfShareError extends Error {
-  readonly _tag = "ShareLocationSelfShareError";
-  constructor() {
-    super("Cannot share location with yourself");
-  }
-}
+export class ShareLocationSelfShareError extends Data.TaggedError(
+  "ShareLocationSelfShareError",
+)<{}> {}
 
 /**
  * ShareLocation Use Case
@@ -57,9 +48,9 @@ export class ShareLocationSelfShareError extends Error {
  * If location doesn't exist, fails with error.
  * Adds the target user to the sharing list.
  *
- * ## Effect-based Pattern
+ * ## Effect.gen Pattern (Native)
  *
- * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ * This use case uses Context.Tag for dependency injection and returns native Effect.Effect<T, E, R>:
  *
  * ```typescript
  * const program = Effect.gen(function* () {
@@ -88,14 +79,16 @@ export function shareLocationUseCase(
 
     // Check for self-sharing
     if (input.userId === input.targetUserId) {
-      return yield* Effect.fail(new ShareLocationSelfShareError());
+      return yield* Effect.fail(new ShareLocationSelfShareError({}));
     }
 
     // Find existing location or fail
     const location = yield* locationRepo.findByUserId(input.userId);
 
     if (!location) {
-      return yield* Effect.fail(new ShareLocationNotFoundError());
+      return yield* Effect.fail(
+        new ShareLocationNotFoundError({ userId: input.userId }),
+      );
     }
 
     // Add user to sharing list using Effect
@@ -108,7 +101,9 @@ export function shareLocationUseCase(
     let updatedLocation = yield* addUserEffect.pipe(
       Effect.mapError(
         (validationError) =>
-          new ShareLocationValidationError(validationError.message),
+          new ShareLocationValidationError({
+            message: validationError.message,
+          }),
       ),
     );
 

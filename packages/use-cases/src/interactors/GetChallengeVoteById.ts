@@ -1,5 +1,5 @@
 import { ChallengeVote } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
@@ -26,19 +26,17 @@ export interface GetChallengeVoteByIdOutput {
 /**
  * Error types for GetChallengeVoteById use case
  */
-export class ChallengeVoteNotFoundError extends Error {
-  readonly _tag = "ChallengeVoteNotFoundError";
-  constructor() {
-    super("Vote not found");
-  }
-}
+export class ChallengeVoteNotFoundError extends Data.TaggedError(
+  "ChallengeVoteNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeVoteGetRepositoryError extends Error {
-  readonly _tag = "ChallengeVoteGetRepositoryError";
-  constructor(message: string = "Failed to retrieve vote") {
-    super(message);
-  }
-}
+export class ChallengeVoteGetRepositoryError extends Data.TaggedError(
+  "ChallengeVoteGetRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * GetChallengeVoteById Use Case
@@ -74,16 +72,19 @@ export function getChallengeVoteByIdUseCase(
     const voteRepo = yield* ChallengeVoteRepositoryTag;
 
     // Find vote by ID
-    const vote = yield* voteRepo
-      .findById(input.voteId)
-      .pipe(
-        Effect.mapError(
-          () => new ChallengeVoteGetRepositoryError("Failed to retrieve vote"),
-        ),
-      );
+    const vote = yield* voteRepo.findById(input.voteId).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeVoteGetRepositoryError({
+            message: "Failed to retrieve vote",
+          }),
+      ),
+    );
 
     if (!vote) {
-      return yield* Effect.fail(new ChallengeVoteNotFoundError());
+      return yield* Effect.fail(
+        new ChallengeVoteNotFoundError({ message: "Vote not found" }),
+      );
     }
 
     return toOutput(vote);

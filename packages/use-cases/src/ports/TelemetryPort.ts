@@ -1,26 +1,25 @@
 /**
- * TelemetryPort - Telemetry Logging Port Interface
+ * TelemetryPort - Telemetry Logging Port Interface (Effect-based)
  *
  * This interface defines telemetry/observability operations needed by the use cases layer.
  * It abstracts the telemetry mechanism, allowing different implementations
  * (console logging, external services like Datadog, etc.) in the adapters layer.
  *
  * Key Design Decisions:
- * - Uses Result type for explicit error handling
+ * - Uses Effect.Effect for composable error handling (no exceptions for expected errors)
  * - Returns void on success (fire-and-forget semantics)
- * - No framework dependencies (pure TypeScript interface)
- * - Async operations return Promises
+ * - No framework dependencies (pure TypeScript interface with Effect)
+ * - Async operations wrapped in Effect
  *
  * Implementations:
+ * - DrizzleTelemetryAdapter: Logs to database via Drizzle ORM
  * - ConsoleTelemetryAdapter: Logs to console
- * - DatadogTelemetryAdapter: Sends to Datadog
  * - NoOpTelemetryAdapter: For testing (does nothing)
  *
  * @module ports
  */
 
-import type { Result } from "@mirai-app/domain";
-import { Context, Effect } from "effect";
+import { Context, Effect, Data } from "effect";
 
 // =============================================================================
 // Domain Errors
@@ -29,20 +28,11 @@ import { Context, Effect } from "effect";
 /**
  * Error thrown when telemetry logging fails
  */
-export class TelemetryError extends Error {
-  readonly _tag = "TelemetryError" as const;
-  readonly code = "TELEMETRY_ERROR" as const;
+export class TelemetryError extends Data.TaggedError("TelemetryError")<{
   readonly operation: string;
-  override readonly cause?: unknown;
-  override readonly message: string;
-
-  constructor(props: { operation: string; message: string; cause?: unknown }) {
-    super(`Telemetry error in '${props.operation}': ${props.message}`);
-    this.operation = props.operation;
-    this.message = props.message;
-    this.cause = props.cause;
-  }
-}
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
 
 // =============================================================================
 // DTO Types
@@ -99,13 +89,15 @@ export type TelemetryEvent =
  *
  * This port abstracts the telemetry mechanism from the use cases,
  * enabling different implementations without changing business logic.
+ *
+ * All methods return Effect.Effect for composable error handling.
  */
 export interface TelemetryPort {
   /**
    * Log a telemetry event
    *
    * @param event - The telemetry event to log
-   * @returns Result<void, TelemetryError>
+   * @returns Effect.Effect<void, TelemetryError, never>
    *
    * @example
    * ```typescript
@@ -117,19 +109,22 @@ export interface TelemetryPort {
    *   timestamp: new Date()
    * };
    *
-   * const result = await telemetryPort.log(event);
-   * if (isErr(result)) {
+   * const effect = telemetryPort.log(event);
+   * const result = await Effect.runPromise(Effect.either(effect));
+   * if (Either.isLeft(result)) {
    *   // Handle logging failure (rare, usually non-critical)
    * }
    * ```
    */
-  log(event: TelemetryEvent): Promise<Result<void, TelemetryError>>;
+  readonly log: (
+    event: TelemetryEvent,
+  ) => Effect.Effect<void, TelemetryError, never>;
 
   /**
    * Log multiple telemetry events in batch
    *
    * @param events - Array of telemetry events to log
-   * @returns Result<void, TelemetryError>
+   * @returns Effect.Effect<void, TelemetryError, never>
    *
    * @example
    * ```typescript
@@ -138,35 +133,44 @@ export interface TelemetryPort {
    *   { type: "metric", name: "latency", value: 150, unit: "ms", timestamp: new Date() }
    * ];
    *
-   * await telemetryPort.logBatch(events);
+   * const effect = telemetryPort.logBatch(events);
+   * await Effect.runPromise(effect);
    * ```
    */
-  logBatch?(events: TelemetryEvent[]): Promise<Result<void, TelemetryError>>;
+  readonly logBatch?: (
+    events: TelemetryEvent[],
+  ) => Effect.Effect<void, TelemetryError, never>;
 
   /**
    * Flush any buffered telemetry data
    *
-   * @returns Result<void, TelemetryError>
+   * @returns Effect.Effect<void, TelemetryError, never>
    *
    * @example
    * ```typescript
    * // Ensure all telemetry is sent before shutting down
-   * await telemetryPort.flush();
+   * const effect = telemetryPort.flush();
+   * await Effect.runPromise(effect);
    * ```
    */
-  flush?(): Promise<Result<void, TelemetryError>>;
+  readonly flush?: () => Effect.Effect<void, TelemetryError, never>;
 }
 
 /**
  * TelemetryPort Context.Tag for Effect dependency injection
+ *
+ * This is the canonical Effect-based interface for telemetry operations.
+ * Use this Tag with Effect.gen and yield* for dependency resolution.
+ *
+ * @example
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const telemetry = yield* TelemetryPortTag;
+ *   yield* telemetry.log(event);
+ * });
+ * ```
  */
 export class TelemetryPortTag extends Context.Tag("TelemetryPort")<
   TelemetryPortTag,
-  {
-    log: (event: TelemetryEvent) => Effect.Effect<void, TelemetryError, never>;
-    logBatch?: (
-      events: TelemetryEvent[],
-    ) => Effect.Effect<void, TelemetryError, never>;
-    flush?: () => Effect.Effect<void, TelemetryError, never>;
-  }
+  TelemetryPort
 >() {}

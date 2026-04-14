@@ -1,5 +1,5 @@
 import { Sponsor } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
@@ -34,22 +34,18 @@ export interface UpdateSponsorOutput {
 /**
  * Error type when sponsor is not found
  */
-export class UpdateSponsorNotFoundError extends Error {
-  readonly _tag = "UpdateSponsorNotFoundError";
-  constructor() {
-    super("Sponsor not found");
-  }
-}
+export class UpdateSponsorNotFoundError extends Data.TaggedError(
+  "UpdateSponsorNotFoundError",
+)<{}> {}
 
 /**
  * Error type for validation failures
  */
-export class UpdateSponsorValidationError extends Error {
-  readonly _tag = "UpdateSponsorValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UpdateSponsorValidationError extends Data.TaggedError(
+  "UpdateSponsorValidationError",
+)<{
+  readonly message: string;
+}> {}
 
 /**
  * UpdateSponsor Use Case (Effect-based)
@@ -80,7 +76,7 @@ export function updateSponsorUseCase(
     const existing = yield* sponsorRepo.findById(input.sponsorId);
 
     if (!existing) {
-      return yield* Effect.fail(new UpdateSponsorNotFoundError());
+      return yield* Effect.fail(new UpdateSponsorNotFoundError({}));
     }
 
     // Update the entity
@@ -99,9 +95,9 @@ export function updateSponsorUseCase(
     // Run validation effect and convert validation errors to Effect.fail
     const updated = yield* Effect.catchAll(updateEffect, (error) =>
       Effect.fail(
-        new UpdateSponsorValidationError(
-          error instanceof Error ? error.message : String(error),
-        ),
+        new UpdateSponsorValidationError({
+          message: error instanceof Error ? error.message : String(error),
+        }),
       ),
     );
 

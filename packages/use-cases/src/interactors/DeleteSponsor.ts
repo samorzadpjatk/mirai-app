@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
@@ -19,12 +19,9 @@ export interface DeleteSponsorOutput {
 /**
  * Error type when sponsor is not found
  */
-export class DeleteSponsorNotFoundError extends Error {
-  readonly _tag = "DeleteSponsorNotFoundError";
-  constructor() {
-    super("Sponsor not found");
-  }
-}
+export class DeleteSponsorNotFoundError extends Data.TaggedError(
+  "DeleteSponsorNotFoundError",
+)<{}> {}
 
 /**
  * DeleteSponsor Use Case (Effect-based)
@@ -55,7 +52,7 @@ export function deleteSponsorUseCase(
     const exists = yield* sponsorRepo.exists(input.sponsorId);
 
     if (!exists) {
-      return yield* Effect.fail(new DeleteSponsorNotFoundError());
+      return yield* Effect.fail(new DeleteSponsorNotFoundError({}));
     }
 
     // Delete the sponsor

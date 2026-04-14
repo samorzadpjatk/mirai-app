@@ -3,7 +3,7 @@ import {
   SubmissionId,
   ValidationError,
 } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
 /**
@@ -43,28 +43,23 @@ export interface CreateSubmissionOutput {
 /**
  * Error types for CreateSubmission use case
  */
-export class SubmissionCreationError extends Error {
-  readonly _tag = "SubmissionCreationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class SubmissionCreationError extends Data.TaggedError(
+  "SubmissionCreationError",
+)<{
+  message: string;
+}> {}
 
-export class DuplicateSubmissionError extends Error {
-  readonly _tag = "DuplicateSubmissionError";
-  constructor(
-    message: string = "Submission already exists for this challenge and group",
-  ) {
-    super(message);
-  }
-}
+export class DuplicateSubmissionError extends Data.TaggedError(
+  "DuplicateSubmissionError",
+)<{
+  message: string;
+}> {}
 
-export class SubmissionRepositoryError extends Error {
-  readonly _tag = "SubmissionRepositoryError";
-  constructor(message: string = "Failed to create submission") {
-    super(message);
-  }
-}
+export class SubmissionRepositoryError extends Data.TaggedError(
+  "SubmissionRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * CreateSubmission Use Case (Effect-based)
@@ -108,7 +103,11 @@ export function createSubmissionUseCase(
     );
 
     if (exists) {
-      return yield* Effect.fail(new DuplicateSubmissionError());
+      return yield* Effect.fail(
+        new DuplicateSubmissionError({
+          message: "Submission already exists for this challenge and group",
+        }),
+      );
     }
 
     // Create domain entity using Effect-based static create method
@@ -125,18 +124,19 @@ export function createSubmissionUseCase(
     }).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
-          new SubmissionCreationError(validationError.message),
+          new SubmissionCreationError({ message: validationError.message }),
       ),
     );
 
     // Persist submission
-    const saved = yield* submissionRepo
-      .create(submission)
-      .pipe(
-        Effect.mapError(
-          () => new SubmissionRepositoryError("Failed to create submission"),
-        ),
-      );
+    const saved = yield* submissionRepo.create(submission).pipe(
+      Effect.mapError(
+        () =>
+          new SubmissionRepositoryError({
+            message: "Failed to create submission",
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });

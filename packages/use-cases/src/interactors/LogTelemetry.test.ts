@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { logTelemetryUseCase, type LogTelemetryInput } from "./LogTelemetry";
 import { Effect, Either } from "effect";
 import type { TelemetryPort, TelemetryEvent } from "../ports/TelemetryPort";
-import { TelemetryError } from "../ports/TelemetryPort";
+import { TelemetryError, TelemetryPortTag } from "../ports/TelemetryPort";
 
 // =============================================================================
 // Type Guard Helpers
@@ -34,7 +34,7 @@ function getLogEvent(
 }
 
 // =============================================================================
-// Mock TelemetryPort Implementation
+// Mock TelemetryPort Implementation (Effect-based)
 // =============================================================================
 
 /**
@@ -42,6 +42,7 @@ function getLogEvent(
  *
  * Records all logged events for verification.
  * Simulates both success and failure scenarios.
+ * Implements TelemetryPort with Effect.Effect return types.
  */
 class MockTelemetryPort implements TelemetryPort {
   private loggedEvents: TelemetryEvent[] = [];
@@ -92,35 +93,26 @@ class MockTelemetryPort implements TelemetryPort {
   }
 
   /**
-   * Mock implementation of TelemetryPort.log
+   * Mock implementation of TelemetryPort.log - returns Effect
    */
-  async log(
-    event: TelemetryEvent,
-  ): Promise<import("@mirai-app/domain").Result<void, TelemetryError>> {
+  log(event: TelemetryEvent): Effect.Effect<void, TelemetryError, never> {
     if (this.shouldFail) {
-      return { kind: "err", error: this.failWithError! };
+      return Effect.fail(this.failWithError!);
     }
 
     this.loggedEvents.push(event);
-    return { kind: "ok", value: undefined };
+    return Effect.void;
   }
 }
 
 // =============================================================================
-// Effect-based Mock Service
+// Effect-based Mock Service Factory
 // =============================================================================
 
-import { TelemetryPortTag } from "../ports/TelemetryPort";
-
-const createMockTelemetryPortService = (mockPort: MockTelemetryPort) => ({
-  log: (event: TelemetryEvent) =>
-    Effect.promise(() => mockPort.log(event)).pipe(
-      Effect.flatMap((result) =>
-        result.kind === "ok"
-          ? Effect.succeed(result.value)
-          : Effect.fail(result.error),
-      ),
-    ),
+const createMockTelemetryPortService = (
+  mockPort: MockTelemetryPort,
+): TelemetryPort => ({
+  log: (event: TelemetryEvent) => mockPort.log(event),
 });
 
 // =============================================================================

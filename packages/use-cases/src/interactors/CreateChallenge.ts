@@ -5,7 +5,7 @@ import {
   ScoringCategory,
   ValidationError,
 } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 
 /**
@@ -52,19 +52,13 @@ export interface CreateChallengeOutput {
 /**
  * Error types for CreateChallenge use case
  */
-export class ChallengeCreationError extends Error {
-  readonly _tag = "ChallengeCreationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class ChallengeCreationError extends Data.TaggedError(
+  "ChallengeCreationError",
+)<{ message: string }> {}
 
-export class ChallengeRepositoryError extends Error {
-  readonly _tag = "ChallengeRepositoryError";
-  constructor(message: string = "Failed to create challenge") {
-    super(message);
-  }
-}
+export class ChallengeRepositoryError extends Data.TaggedError(
+  "ChallengeRepositoryError",
+)<{ message: string }> {}
 
 /**
  * CreateChallenge Use Case
@@ -124,18 +118,19 @@ export function createChallengeUseCase(
     }).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
-          new ChallengeCreationError(validationError.message),
+          new ChallengeCreationError({ message: validationError.message }),
       ),
     );
 
     // Save to repository
-    const saved = yield* challengeRepo
-      .create(challenge)
-      .pipe(
-        Effect.mapError(
-          () => new ChallengeRepositoryError("Failed to create challenge"),
-        ),
-      );
+    const saved = yield* challengeRepo.create(challenge).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeRepositoryError({
+            message: "Failed to create challenge",
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });

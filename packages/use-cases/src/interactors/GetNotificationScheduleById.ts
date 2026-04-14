@@ -1,5 +1,5 @@
 import { NotificationSchedule } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
 
@@ -18,12 +18,9 @@ export type GetNotificationScheduleByIdOutput = NotificationScheduleOutput;
 /**
  * Error types for GetNotificationScheduleById use case
  */
-export class GetScheduleNotFoundError extends Error {
-  readonly _tag = "GetScheduleNotFoundError";
-  constructor() {
-    super("Notification schedule not found");
-  }
-}
+export class GetScheduleNotFoundError extends Data.TaggedError(
+  "GetScheduleNotFoundError",
+)<{ id: string }> {}
 
 /**
  * Helper function to convert NotificationSchedule to output DTO
@@ -84,7 +81,7 @@ export function getNotificationScheduleByIdUseCase(
     const schedule = yield* repo.findById(input.id);
 
     if (!schedule) {
-      return yield* Effect.fail(new GetScheduleNotFoundError());
+      return yield* Effect.fail(new GetScheduleNotFoundError({ id: input.id }));
     }
 
     return toOutput(schedule);

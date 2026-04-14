@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import {
   ChallengeVote,
   ValidationError,
@@ -51,33 +51,29 @@ export interface SubmitVotesOutput {
 /**
  * Error types for SubmitVotes use case
  */
-export class SubmitVotesValidationError extends Error {
-  readonly _tag = "SubmitVotesValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class SubmitVotesValidationError extends Data.TaggedError(
+  "SubmitVotesValidationError",
+)<{
+  message: string;
+}> {}
 
-export class BatchAlreadyVotedError extends Error {
-  readonly _tag = "BatchAlreadyVotedError";
-  constructor(message: string = "You have already voted in this challenge") {
-    super(message);
-  }
-}
+export class BatchAlreadyVotedError extends Data.TaggedError(
+  "BatchAlreadyVotedError",
+)<{
+  message: string;
+}> {}
 
-export class InvalidVoteSetError extends Error {
-  readonly _tag = "InvalidVoteSetError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class InvalidVoteSetError extends Data.TaggedError(
+  "InvalidVoteSetError",
+)<{
+  message: string;
+}> {}
 
-export class BatchVoteRepositoryError extends Error {
-  readonly _tag = "BatchVoteRepositoryError";
-  constructor(message: string = "Failed to save votes") {
-    super(message);
-  }
-}
+export class BatchVoteRepositoryError extends Data.TaggedError(
+  "BatchVoteRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * SubmitVotes Use Case (Effect-based)
@@ -119,19 +115,25 @@ export function submitVotesUseCase(
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
       return yield* Effect.fail(
-        new SubmitVotesValidationError("Challenge ID is required"),
+        new SubmitVotesValidationError({
+          message: "Challenge ID is required",
+        }),
       );
     }
 
     if (!input.voterId || input.voterId.trim() === "") {
       return yield* Effect.fail(
-        new SubmitVotesValidationError("Voter ID is required"),
+        new SubmitVotesValidationError({
+          message: "Voter ID is required",
+        }),
       );
     }
 
     if (!input.votes || input.votes.length === 0) {
       return yield* Effect.fail(
-        new SubmitVotesValidationError("At least one vote is required"),
+        new SubmitVotesValidationError({
+          message: "At least one vote is required",
+        }),
       );
     }
 
@@ -139,7 +141,11 @@ export function submitVotesUseCase(
     const hasVoted = yield* voteRepo.hasVoted(input.challengeId, input.voterId);
 
     if (hasVoted) {
-      return yield* Effect.fail(new BatchAlreadyVotedError());
+      return yield* Effect.fail(
+        new BatchAlreadyVotedError({
+          message: "You have already voted in this challenge",
+        }),
+      );
     }
 
     // Validate vote set (pure validation - no async)
@@ -153,7 +159,9 @@ export function submitVotesUseCase(
 
     if (!validation.isValid) {
       return yield* Effect.fail(
-        new InvalidVoteSetError(validation.error ?? "Invalid vote set"),
+        new InvalidVoteSetError({
+          message: validation.error ?? "Invalid vote set",
+        }),
       );
     }
 
@@ -172,7 +180,9 @@ export function submitVotesUseCase(
       }).pipe(
         Effect.mapError(
           (validationError: ValidationError) =>
-            new SubmitVotesValidationError(validationError.message),
+            new SubmitVotesValidationError({
+              message: validationError.message,
+            }),
         ),
       );
 
@@ -180,13 +190,14 @@ export function submitVotesUseCase(
     }
 
     // Persist votes
-    const savedVotes = yield* voteRepo
-      .createMany(voteEntities)
-      .pipe(
-        Effect.mapError(
-          () => new BatchVoteRepositoryError("Failed to save votes"),
-        ),
-      );
+    const savedVotes = yield* voteRepo.createMany(voteEntities).pipe(
+      Effect.mapError(
+        () =>
+          new BatchVoteRepositoryError({
+            message: "Failed to save votes",
+          }),
+      ),
+    );
 
     return {
       votes: savedVotes.map((v) => toOutput(v)),

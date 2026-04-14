@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationRepositoryTag } from "../ports/NotificationRepository";
 import type { Notification } from "@mirai-app/domain";
 
@@ -30,12 +30,9 @@ export interface GetNotificationOutput {
 /**
  * Error types for GetNotification use case
  */
-export class NotificationNotFoundError extends Error {
-  readonly _tag = "NotificationNotFoundError";
-  constructor() {
-    super("Notification not found");
-  }
-}
+export class NotificationNotFoundError extends Data.TaggedError(
+  "NotificationNotFoundError",
+)<{ notificationId: string }> {}
 
 /**
  * Helper function to convert Notification to output DTO
@@ -87,7 +84,9 @@ export function getNotificationUseCase(
     const notification = yield* repo.findById(input.notificationId);
 
     if (!notification) {
-      return yield* Effect.fail(new NotificationNotFoundError());
+      return yield* Effect.fail(
+        new NotificationNotFoundError({ notificationId: input.notificationId }),
+      );
     }
 
     return toOutput(notification);

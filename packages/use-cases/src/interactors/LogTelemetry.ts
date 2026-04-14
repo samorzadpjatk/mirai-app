@@ -12,7 +12,7 @@
  * @module interactors
  */
 
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { TelemetryPortTag, TelemetryError } from "../ports/TelemetryPort";
 import type { TelemetryEvent } from "../ports/TelemetryPort";
 
@@ -56,12 +56,9 @@ export interface LogTelemetryOutput {
 /**
  * Error when telemetry logging fails
  */
-export class LogTelemetryError extends Error {
-  readonly _tag = "LogTelemetryError";
-  constructor(public override readonly cause: unknown) {
-    super("Failed to log telemetry");
-  }
-}
+export class LogTelemetryError extends Data.TaggedError("LogTelemetryError")<{
+  readonly cause: unknown;
+}> {}
 
 // =============================================================================
 // Use Case

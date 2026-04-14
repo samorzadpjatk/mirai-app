@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
 
@@ -26,19 +26,13 @@ export type UpdateNotificationScheduleOutput = NotificationScheduleOutput;
 /**
  * Error types for UpdateNotificationSchedule use case
  */
-export class UpdateScheduleNotFoundError extends Error {
-  readonly _tag = "UpdateScheduleNotFoundError";
-  constructor() {
-    super("Notification schedule not found");
-  }
-}
+export class UpdateScheduleNotFoundError extends Data.TaggedError(
+  "UpdateScheduleNotFoundError",
+)<{ id: string }> {}
 
-export class UpdateScheduleValidationError extends Error {
-  readonly _tag = "UpdateScheduleValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UpdateScheduleValidationError extends Data.TaggedError(
+  "UpdateScheduleValidationError",
+)<{ message: string }> {}
 
 /**
  * Helper function to convert NotificationSchedule to output DTO
@@ -102,7 +96,9 @@ export function updateNotificationScheduleUseCase(
     const existing = yield* repo.findById(input.id);
 
     if (!existing) {
-      return yield* Effect.fail(new UpdateScheduleNotFoundError());
+      return yield* Effect.fail(
+        new UpdateScheduleNotFoundError({ id: input.id }),
+      );
     }
 
     // Apply updates using domain entity method (validation happens here)
@@ -127,7 +123,9 @@ export function updateNotificationScheduleUseCase(
     const updated = yield* updateResult.pipe(
       Effect.mapError(
         (validationError) =>
-          new UpdateScheduleValidationError(validationError.message),
+          new UpdateScheduleValidationError({
+            message: validationError.message,
+          }),
       ),
     );
 

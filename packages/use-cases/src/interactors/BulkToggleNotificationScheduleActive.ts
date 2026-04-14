@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 
 /**
@@ -20,12 +20,9 @@ export interface BulkToggleNotificationScheduleActiveOutput {
 /**
  * Error types for BulkToggleNotificationScheduleActive use case
  */
-export class BulkToggleValidationError extends Error {
-  readonly _tag = "BulkToggleValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class BulkToggleValidationError extends Data.TaggedError(
+  "BulkToggleValidationError",
+)<{ message: string }> {}
 
 /**
  * BulkToggleNotificationScheduleActive Use Case
@@ -55,7 +52,9 @@ export function bulkToggleNotificationScheduleActiveUseCase(
 
     if (input.ids.length === 0) {
       return yield* Effect.fail(
-        new BulkToggleValidationError("At least one ID must be provided"),
+        new BulkToggleValidationError({
+          message: "At least one ID must be provided",
+        }),
       );
     }
 

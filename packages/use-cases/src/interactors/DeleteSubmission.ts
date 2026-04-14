@@ -1,5 +1,5 @@
 import { SubmissionId } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
 /**
@@ -19,28 +19,23 @@ export interface DeleteSubmissionOutput {
 /**
  * Error types for DeleteSubmission use case
  */
-export class SubmissionDeleteNotFoundError extends Error {
-  readonly _tag = "SubmissionDeleteNotFoundError";
-  constructor(message: string = "Submission not found") {
-    super(message);
-  }
-}
+export class SubmissionDeleteNotFoundError extends Data.TaggedError(
+  "SubmissionDeleteNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class SubmissionDeleteNotAllowedError extends Error {
-  readonly _tag = "SubmissionDeleteNotAllowedError";
-  constructor(
-    message: string = "Cannot delete an approved or rejected submission",
-  ) {
-    super(message);
-  }
-}
+export class SubmissionDeleteNotAllowedError extends Data.TaggedError(
+  "SubmissionDeleteNotAllowedError",
+)<{
+  message: string;
+}> {}
 
-export class DeleteSubmissionRepositoryError extends Error {
-  readonly _tag = "DeleteSubmissionRepositoryError";
-  constructor(message: string = "Failed to delete submission") {
-    super(message);
-  }
-}
+export class DeleteSubmissionRepositoryError extends Data.TaggedError(
+  "DeleteSubmissionRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * DeleteSubmission Use Case (Effect-based)
@@ -78,34 +73,40 @@ export function deleteSubmissionUseCase(
     const submissionRepo = yield* ChallengeSubmissionRepositoryTag;
 
     // Find existing submission
-    const existing = yield* submissionRepo
-      .findById(input.submissionId)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new DeleteSubmissionRepositoryError("Failed to find submission"),
-        ),
-      );
+    const existing = yield* submissionRepo.findById(input.submissionId).pipe(
+      Effect.mapError(
+        () =>
+          new DeleteSubmissionRepositoryError({
+            message: "Failed to find submission",
+          }),
+      ),
+    );
 
     if (!existing) {
-      return yield* Effect.fail(new SubmissionDeleteNotFoundError());
+      return yield* Effect.fail(
+        new SubmissionDeleteNotFoundError({ message: "Submission not found" }),
+      );
     }
 
     // Check if can be deleted
     const canDelete = existing.canDelete();
     if (!canDelete) {
-      return yield* Effect.fail(new SubmissionDeleteNotAllowedError());
+      return yield* Effect.fail(
+        new SubmissionDeleteNotAllowedError({
+          message: "Cannot delete an approved or rejected submission",
+        }),
+      );
     }
 
     // Delete submission
-    yield* submissionRepo
-      .delete(input.submissionId)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new DeleteSubmissionRepositoryError("Failed to delete submission"),
-        ),
-      );
+    yield* submissionRepo.delete(input.submissionId).pipe(
+      Effect.mapError(
+        () =>
+          new DeleteSubmissionRepositoryError({
+            message: "Failed to delete submission",
+          }),
+      ),
+    );
 
     return { success: true };
   });

@@ -1,5 +1,5 @@
 import { Trip, TripStatus, ValidationError } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
 
 /**
@@ -35,12 +35,9 @@ export interface CreateTripOutput {
 /**
  * Error types for CreateTrip use case
  */
-export class TripCreationError extends Error {
-  readonly _tag = "TripCreationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class TripCreationError extends Data.TaggedError("TripCreationError")<{
+  message: string;
+}> {}
 
 /**
  * CreateTrip Use Case
@@ -82,7 +79,7 @@ export function createTripUseCase(
     }).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
-          new TripCreationError(validationError.message),
+          new TripCreationError({ message: validationError.message }),
       ),
     );
 

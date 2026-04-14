@@ -1,5 +1,5 @@
 import { User, UserRole } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { UserRepositoryTag } from "../ports/UserRepository";
 
 /**
@@ -29,19 +29,15 @@ export interface CreateUserOutput {
 /**
  * Error types for CreateUser use case
  */
-export class UserAlreadyExistsError extends Error {
-  readonly _tag = "UserAlreadyExistsError";
-  constructor() {
-    super("User with this auth ID already exists");
-  }
-}
+export class UserAlreadyExistsError extends Data.TaggedError(
+  "UserAlreadyExistsError",
+)<{
+  message: string;
+}> {}
 
-export class UserCreationError extends Error {
-  readonly _tag = "UserCreationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UserCreationError extends Data.TaggedError("UserCreationError")<{
+  message: string;
+}> {}
 
 /**
  * CreateUser Use Case
@@ -83,7 +79,11 @@ export function createUserUseCase(
     const exists = yield* userRepo.existsByAuthUserId(input.authUserId);
 
     if (exists) {
-      return yield* Effect.fail(new UserAlreadyExistsError());
+      return yield* Effect.fail(
+        new UserAlreadyExistsError({
+          message: "User with this auth ID already exists",
+        }),
+      );
     }
 
     // Create domain entity
@@ -94,7 +94,8 @@ export function createUserUseCase(
       role: input.role ?? UserRole.USER,
     }).pipe(
       Effect.mapError(
-        (validationError) => new UserCreationError(validationError.message),
+        (validationError) =>
+          new UserCreationError({ message: validationError.message }),
       ),
     );
 

@@ -1,5 +1,5 @@
 import { Sponsor } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
@@ -33,12 +33,11 @@ export interface CreateSponsorOutput {
 /**
  * Error type for CreateSponsor use case
  */
-export class CreateSponsorValidationError extends Error {
-  readonly _tag = "CreateSponsorValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class CreateSponsorValidationError extends Data.TaggedError(
+  "CreateSponsorValidationError",
+)<{
+  readonly message: string;
+}> {}
 
 /**
  * CreateSponsor Use Case (Effect-based)
@@ -79,9 +78,9 @@ export function createSponsorUseCase(
     // Run validation effect and convert validation errors to Effect.fail
     const sponsor = yield* Effect.catchAll(sponsorEffect, (error) =>
       Effect.fail(
-        new CreateSponsorValidationError(
-          error instanceof Error ? error.message : String(error),
-        ),
+        new CreateSponsorValidationError({
+          message: error instanceof Error ? error.message : String(error),
+        }),
       ),
     );
 

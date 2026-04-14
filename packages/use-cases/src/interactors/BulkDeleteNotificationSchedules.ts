@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 
 /**
@@ -21,12 +21,9 @@ export interface BulkDeleteNotificationSchedulesOutput {
 /**
  * Error types for BulkDeleteNotificationSchedules use case
  */
-export class BulkDeleteValidationError extends Error {
-  readonly _tag = "BulkDeleteValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class BulkDeleteValidationError extends Data.TaggedError(
+  "BulkDeleteValidationError",
+)<{ message: string }> {}
 
 /**
  * BulkDeleteNotificationSchedules Use Case
@@ -56,7 +53,9 @@ export function bulkDeleteNotificationSchedulesUseCase(
 
     if (input.ids.length === 0) {
       return yield* Effect.fail(
-        new BulkDeleteValidationError("At least one ID must be provided"),
+        new BulkDeleteValidationError({
+          message: "At least one ID must be provided",
+        }),
       );
     }
 

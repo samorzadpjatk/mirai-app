@@ -1,5 +1,5 @@
 import { Trip } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
 
 /**
@@ -36,12 +36,9 @@ export interface GetTripByIdOutput {
 /**
  * Error types for GetTripById use case
  */
-export class GetTripByIdNotFoundError extends Error {
-  readonly _tag = "GetTripByIdNotFoundError";
-  constructor() {
-    super("Trip not found");
-  }
-}
+export class GetTripByIdNotFoundError extends Data.TaggedError(
+  "GetTripByIdNotFoundError",
+)<{ tripId: string }> {}
 
 /**
  * GetTripById Use Case
@@ -80,7 +77,9 @@ export function getTripByIdUseCase(
     const trip = yield* tripRepo.findById(input.tripId);
 
     if (!trip) {
-      return yield* Effect.fail(new GetTripByIdNotFoundError());
+      return yield* Effect.fail(
+        new GetTripByIdNotFoundError({ tripId: input.tripId }),
+      );
     }
 
     return toOutput(trip);

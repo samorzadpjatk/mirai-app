@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
@@ -21,15 +21,12 @@ export interface UnlinkSponsorFromTripOutput {
 /**
  * Error when repository operation fails
  */
-export class UnlinkSponsorRepositoryError extends Error {
-  readonly _tag = "UnlinkSponsorRepositoryError";
-  constructor(
-    public readonly operation: string,
-    public override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class UnlinkSponsorRepositoryError extends Data.TaggedError(
+  "UnlinkSponsorRepositoryError",
+)<{
+  operation: string;
+  cause?: unknown;
+}> {}
 
 /**
  * UnlinkSponsorFromTrip Use Case (Effect-based)
@@ -56,14 +53,15 @@ export function unlinkSponsorFromTripUseCase(
     const sponsorRepo = yield* SponsorRepositoryTag;
 
     // Unlink sponsor from trip
-    yield* sponsorRepo
-      .unlinkFromTrip(input.sponsorId, input.tripId)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new UnlinkSponsorRepositoryError("unlink sponsor from trip", cause),
-        ),
-      );
+    yield* sponsorRepo.unlinkFromTrip(input.sponsorId, input.tripId).pipe(
+      Effect.mapError(
+        (cause) =>
+          new UnlinkSponsorRepositoryError({
+            operation: "unlink sponsor from trip",
+            cause,
+          }),
+      ),
+    );
 
     return {
       sponsorId: input.sponsorId,

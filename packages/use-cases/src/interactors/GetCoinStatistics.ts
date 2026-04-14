@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import type {
   CoinTransactionRepository,
   CoinStatistics,
@@ -22,12 +22,9 @@ export interface GetCoinStatisticsOutput extends CoinStatistics {
 /**
  * Error types for GetCoinStatistics use case
  */
-export class GetStatisticsError extends Error {
-  readonly _tag = "GetStatisticsError";
-  constructor(message: string) {
-    super(`Failed to get coin statistics: ${message}`);
-  }
-}
+export class GetStatisticsError extends Data.TaggedError("GetStatisticsError")<{
+  message: string;
+}> {}
 
 /**
  * GetCoinStatistics Use Case
@@ -62,11 +59,37 @@ export function getCoinStatisticsUseCase(
   return Effect.gen(function* () {
     const coinRepo = yield* CoinTransactionRepositoryTag;
 
-    const [transactionCount, addedCoins, removedCoins] = yield* Effect.all([
+    const countResult = yield* Effect.either(
       coinRepo.count({ tripId: input.tripId }),
+    );
+    const addedResult = yield* Effect.either(
       coinRepo.sumAddedCoins(input.tripId),
+    );
+    const removedResult = yield* Effect.either(
       coinRepo.sumRemovedCoins(input.tripId),
-    ]);
+    );
+
+    if (countResult._tag === "Left") {
+      return yield* Effect.fail(
+        new GetStatisticsError({ message: "Failed to get coin statistics" }),
+      );
+    }
+
+    if (addedResult._tag === "Left") {
+      return yield* Effect.fail(
+        new GetStatisticsError({ message: "Failed to get coin statistics" }),
+      );
+    }
+
+    if (removedResult._tag === "Left") {
+      return yield* Effect.fail(
+        new GetStatisticsError({ message: "Failed to get coin statistics" }),
+      );
+    }
+
+    const transactionCount = countResult.right;
+    const addedCoins = addedResult.right;
+    const removedCoins = removedResult.right;
 
     const added = addedCoins ?? 0;
     const removed = removedCoins ?? 0;
@@ -78,13 +101,5 @@ export function getCoinStatisticsUseCase(
       netBalance: added + removed,
       time: new Date(),
     };
-  }).pipe(
-    Effect.catchAll((error: unknown) =>
-      Effect.fail(
-        new GetStatisticsError(
-          error instanceof Error ? error.message : String(error),
-        ),
-      ),
-    ),
-  );
+  });
 }

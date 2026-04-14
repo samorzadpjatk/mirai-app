@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 
 /**
@@ -20,12 +20,9 @@ export interface DeleteNotificationScheduleOutput {
 /**
  * Error types for DeleteNotificationSchedule use case
  */
-export class DeleteScheduleNotFoundError extends Error {
-  readonly _tag = "DeleteScheduleNotFoundError";
-  constructor() {
-    super("Notification schedule not found");
-  }
-}
+export class DeleteScheduleNotFoundError extends Data.TaggedError(
+  "DeleteScheduleNotFoundError",
+)<{ id: string }> {}
 
 /**
  * DeleteNotificationSchedule Use Case
@@ -58,7 +55,9 @@ export function deleteNotificationScheduleUseCase(
     const existing = yield* repo.findById(input.id);
 
     if (!existing) {
-      return yield* Effect.fail(new DeleteScheduleNotFoundError());
+      return yield* Effect.fail(
+        new DeleteScheduleNotFoundError({ id: input.id }),
+      );
     }
 
     // Count executions before deletion

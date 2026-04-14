@@ -11,7 +11,9 @@
     "./interactors/*": "./src/interactors/*.ts",
     "./dto/*": "./src/dto/*.ts",
     "./errors/*": "./src/errors/*.ts",
-    "./modules/*": "./src/modules/*.ts"
+    "./modules/*": "./src/modules/*.ts",
+    "./test": "./src/test/index.ts",
+    "./test/*": "./src/test/*.ts"
   },
   "scripts": {
     "test": "bun test",

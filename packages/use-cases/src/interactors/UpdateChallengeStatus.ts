@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 import { ChallengeStatus } from "@mirai-app/domain";
 import type { Challenge } from "@mirai-app/domain";
@@ -26,35 +26,32 @@ export interface UpdateChallengeStatusOutput {
 /**
  * Error when challenge is not found
  */
-export class ChallengeNotFoundError extends Error {
-  readonly _tag = "ChallengeNotFoundError";
-  constructor() {
-    super("Challenge not found");
-  }
-}
+export class ChallengeNotFoundError extends Data.TaggedError(
+  "ChallengeNotFoundError",
+)<{
+  message: string;
+}> {}
 
 /**
  * Error when status transition is invalid
  */
-export class InvalidStatusTransitionError extends Error {
-  readonly _tag = "InvalidStatusTransitionError";
-  constructor(
-    public readonly fromStatus: string,
-    public readonly toStatus: string,
-  ) {
-    super(`Invalid status transition from ${fromStatus} to ${toStatus}`);
-  }
-}
+export class InvalidStatusTransitionError extends Data.TaggedError(
+  "InvalidStatusTransitionError",
+)<{
+  message: string;
+  fromStatus: string;
+  toStatus: string;
+}> {}
 
 /**
  * Error when challenge update fails
  */
-export class ChallengeUpdateError extends Error {
-  readonly _tag = "ChallengeUpdateError";
-  constructor(public override readonly cause: unknown) {
-    super("Failed to update challenge");
-  }
-}
+export class ChallengeUpdateError extends Data.TaggedError(
+  "ChallengeUpdateError",
+)<{
+  message: string;
+  cause: unknown;
+}> {}
 
 /**
  * UpdateChallengeStatus Use Case (Effect-based)
@@ -85,7 +82,9 @@ export function updateChallengeStatusUseCase(
     const challenge = yield* challengeRepo.findById(input.challengeId);
 
     if (!challenge) {
-      return yield* Effect.fail(new ChallengeNotFoundError());
+      return yield* Effect.fail(
+        new ChallengeNotFoundError({ message: "Challenge not found" }),
+      );
     }
 
     const previousStatus = challenge.status;
@@ -93,7 +92,11 @@ export function updateChallengeStatusUseCase(
     // Check if transition is valid
     if (!challenge.canTransitionTo(input.newStatus)) {
       return yield* Effect.fail(
-        new InvalidStatusTransitionError(previousStatus, input.newStatus),
+        new InvalidStatusTransitionError({
+          message: `Invalid status transition from ${previousStatus} to ${input.newStatus}`,
+          fromStatus: previousStatus,
+          toStatus: input.newStatus,
+        }),
       );
     }
 
@@ -102,7 +105,11 @@ export function updateChallengeStatusUseCase(
       .updateStatus(input.newStatus)
       .pipe(
         Effect.mapError(
-          (stateError) => new ChallengeUpdateError(stateError.message),
+          (stateError) =>
+            new ChallengeUpdateError({
+              message: "Failed to update challenge",
+              cause: stateError,
+            }),
         ),
       );
 

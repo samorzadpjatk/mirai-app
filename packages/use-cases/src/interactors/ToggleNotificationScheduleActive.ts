@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 import type { NotificationSchedule } from "@mirai-app/domain";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
@@ -18,12 +18,9 @@ export type ToggleNotificationScheduleActiveOutput = NotificationScheduleOutput;
 /**
  * Error types for ToggleNotificationScheduleActive use case
  */
-export class ToggleScheduleNotFoundError extends Error {
-  readonly _tag = "ToggleScheduleNotFoundError";
-  constructor() {
-    super("Notification schedule not found");
-  }
-}
+export class ToggleScheduleNotFoundError extends Data.TaggedError(
+  "ToggleScheduleNotFoundError",
+)<{ id: string }> {}
 
 /**
  * Helper function to convert NotificationSchedule to output DTO
@@ -84,7 +81,9 @@ export function toggleNotificationScheduleActiveUseCase(
     const existing = yield* repo.findById(input.id);
 
     if (!existing) {
-      return yield* Effect.fail(new ToggleScheduleNotFoundError());
+      return yield* Effect.fail(
+        new ToggleScheduleNotFoundError({ id: input.id }),
+      );
     }
 
     // Toggle active status

@@ -48,7 +48,7 @@ export {
 } from "./LogTelemetry";
 
 // =============================================================================
-// User Use Cases (Effect-based - PENDING MIGRATION)
+// User Use Cases (Effect-based - NATIVE)
 // =============================================================================
 export {
   createUserUseCase,
@@ -67,7 +67,7 @@ export {
 } from "./UpdateUser";
 
 export {
-  getUserUseCase,
+  GetUserUseCase,
   type GetUserInput,
   type GetUserOutput,
   GetUserNotFoundError,
@@ -82,7 +82,7 @@ export {
 } from "./DeleteUser";
 
 // =============================================================================
-// Location Use Cases (MIGRATED TO ASYNC/AWAIT)
+// Location Use Cases (Effect-based - NATIVE MIGRATION)
 // =============================================================================
 export {
   createLocationUseCase,
@@ -117,9 +117,8 @@ export {
   ShareLocationSelfShareError,
 } from "./ShareLocation";
 
-// Migrated: GetLocationUseCase - Async/Await pattern
+// Native: getLocationUseCase - Effect<T,E,R> pattern
 export {
-  GetLocationUseCase,
   getLocationUseCase,
   type GetLocationInput,
   type GetLocationOutput,
@@ -190,7 +189,6 @@ export {
 
 // Migrated: GetGroupUseCase - Async/Await pattern
 export {
-  GetGroupUseCase,
   getGroupUseCase,
   type GetGroupInput,
   type GetGroupOutput,

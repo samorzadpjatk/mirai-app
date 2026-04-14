@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
@@ -28,45 +28,33 @@ export interface ForceEndVotingOutput {
 /**
  * Error when challenge is not found
  */
-export class ForceEndChallengeNotFoundError extends Error {
-  readonly _tag = "ForceEndChallengeNotFoundError";
-  constructor() {
-    super("Challenge not found");
-  }
-}
+export class ForceEndChallengeNotFoundError extends Data.TaggedError(
+  "ForceEndChallengeNotFoundError",
+)<{}> {}
 
 /**
  * Error when validation fails
  */
-export class ForceEndValidationError extends Error {
-  readonly _tag = "ForceEndValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class ForceEndValidationError extends Data.TaggedError(
+  "ForceEndValidationError",
+)<{ message: string }> {}
 
 /**
  * Error when challenge is in wrong trip
  */
-export class ChallengeWrongTripError extends Error {
-  readonly _tag = "ChallengeWrongTripError";
-  constructor() {
-    super("Challenge not found in trip");
-  }
-}
+export class ChallengeWrongTripError extends Data.TaggedError(
+  "ChallengeWrongTripError",
+)<{}> {}
 
 /**
  * Error when operation fails
  */
-export class ForceEndOperationError extends Error {
-  readonly _tag = "ForceEndOperationError";
-  constructor(
-    public readonly operation: string,
-    public override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class ForceEndOperationError extends Data.TaggedError(
+  "ForceEndOperationError",
+)<{
+  operation: string;
+  cause?: unknown;
+}> {}
 
 /**
  * Dependencies for ForceEndVoting use case
@@ -109,19 +97,19 @@ export function forceEndVotingUseCase(
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
       return yield* Effect.fail(
-        new ForceEndValidationError("Challenge ID is required"),
+        new ForceEndValidationError({ message: "Challenge ID is required" }),
       );
     }
 
     if (!input.tripId || input.tripId.trim() === "") {
       return yield* Effect.fail(
-        new ForceEndValidationError("Trip ID is required"),
+        new ForceEndValidationError({ message: "Trip ID is required" }),
       );
     }
 
     if (!input.adminId || input.adminId.trim() === "") {
       return yield* Effect.fail(
-        new ForceEndValidationError("Admin ID is required"),
+        new ForceEndValidationError({ message: "Admin ID is required" }),
       );
     }
 
@@ -129,27 +117,29 @@ export function forceEndVotingUseCase(
     const challenge = yield* challengeRepo.findById(input.challengeId);
 
     if (!challenge) {
-      return yield* Effect.fail(new ForceEndChallengeNotFoundError());
+      return yield* Effect.fail(new ForceEndChallengeNotFoundError({}));
     }
 
     // Validate challenge is in correct trip
     if (challenge.tripId !== input.tripId) {
-      return yield* Effect.fail(new ChallengeWrongTripError());
+      return yield* Effect.fail(new ChallengeWrongTripError({}));
     }
 
     // Validate it's a judged staff challenge
     if (challenge.scoringCategory !== "JUDGED_STAFF") {
       return yield* Effect.fail(
-        new ForceEndValidationError(
-          "Force end is available only for judged staff challenges",
-        ),
+        new ForceEndValidationError({
+          message: "Force end is available only for judged staff challenges",
+        }),
       );
     }
 
     // Validate challenge is not already cancelled or completed
     if (challenge.status === "CANCELLED") {
       return yield* Effect.fail(
-        new ForceEndValidationError("Cancelled challenge cannot be finalized"),
+        new ForceEndValidationError({
+          message: "Cancelled challenge cannot be finalized",
+        }),
       );
     }
 
@@ -170,18 +160,19 @@ export function forceEndVotingUseCase(
     // Validate submission phase has ended
     if (!challenge.endTime) {
       return yield* Effect.fail(
-        new ForceEndValidationError(
-          "Staff voting requires submission end time",
-        ),
+        new ForceEndValidationError({
+          message: "Staff voting requires submission end time",
+        }),
       );
     }
 
     const now = new Date();
     if (challenge.endTime.getTime() > now.getTime()) {
       return yield* Effect.fail(
-        new ForceEndValidationError(
-          "You can force end staff voting only after submission phase ends",
-        ),
+        new ForceEndValidationError({
+          message:
+            "You can force end staff voting only after submission phase ends",
+        }),
       );
     }
 
@@ -208,7 +199,10 @@ export function forceEndVotingUseCase(
             adminId: input.adminId,
           }),
         catch: (cause) =>
-          new ForceEndOperationError("trigger completion callback", cause),
+          new ForceEndOperationError({
+            operation: "trigger completion callback",
+            cause,
+          }),
       });
     }
 
@@ -268,7 +262,10 @@ function recomputeSubmissionVotes(
   }).pipe(
     Effect.mapError(
       (cause) =>
-        new ForceEndOperationError("recompute submission votes", cause),
+        new ForceEndOperationError({
+          operation: "recompute submission votes",
+          cause,
+        }),
     ),
   );
 }

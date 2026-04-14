@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import type {
   CoinTransactionRepository,
   CoinTransaction,
@@ -31,12 +31,11 @@ export interface GetCoinTransactionsOutput {
 /**
  * Error types for GetCoinTransactions use case
  */
-export class GetTransactionsError extends Error {
-  readonly _tag = "GetTransactionsError";
-  constructor(message: string) {
-    super(`Failed to get coin transactions: ${message}`);
-  }
-}
+export class GetTransactionsError extends Data.TaggedError(
+  "GetTransactionsError",
+)<{
+  message: string;
+}> {}
 
 /**
  * GetCoinTransactions Use Case
@@ -79,10 +78,29 @@ export function getCoinTransactionsUseCase(
       ...(input.groupId && { groupId: input.groupId }),
     };
 
-    const [transactions, total] = yield* Effect.all([
+    const transactionsResult = yield* Effect.either(
       coinRepo.findMany(filters, { limit, offset }),
-      coinRepo.count(filters),
-    ]);
+    );
+    const totalResult = yield* Effect.either(coinRepo.count(filters));
+
+    if (transactionsResult._tag === "Left") {
+      return yield* Effect.fail(
+        new GetTransactionsError({
+          message: "Failed to get coin transactions",
+        }),
+      );
+    }
+
+    if (totalResult._tag === "Left") {
+      return yield* Effect.fail(
+        new GetTransactionsError({
+          message: "Failed to get coin transactions",
+        }),
+      );
+    }
+
+    const transactions = transactionsResult.right;
+    const total = totalResult.right;
 
     return {
       transactions,
@@ -93,13 +111,5 @@ export function getCoinTransactionsUseCase(
         hasMore: offset + limit < total,
       },
     };
-  }).pipe(
-    Effect.catchAll((error: unknown) =>
-      Effect.fail(
-        new GetTransactionsError(
-          error instanceof Error ? error.message : String(error),
-        ),
-      ),
-    ),
-  );
+  });
 }

@@ -1,5 +1,5 @@
 import { Trip } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
 
 /**
@@ -20,12 +20,9 @@ export interface DeleteTripOutput {
 /**
  * Error types for DeleteTrip use case
  */
-export class DeleteTripNotFoundError extends Error {
-  readonly _tag = "DeleteTripNotFoundError";
-  constructor() {
-    super("Trip not found");
-  }
-}
+export class DeleteTripNotFoundError extends Data.TaggedError(
+  "DeleteTripNotFoundError",
+)<{ tripId: string }> {}
 
 /**
  * DeleteTrip Use Case
@@ -60,7 +57,9 @@ export function deleteTripUseCase(
     const exists = yield* tripRepo.exists(input.tripId);
 
     if (!exists) {
-      return yield* Effect.fail(new DeleteTripNotFoundError());
+      return yield* Effect.fail(
+        new DeleteTripNotFoundError({ tripId: input.tripId }),
+      );
     }
 
     // Delete from repository

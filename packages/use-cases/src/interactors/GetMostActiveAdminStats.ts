@@ -2,7 +2,7 @@ import {
   CoinTransactionRepositoryTag,
   type MostActiveAdminStat,
 } from "../ports/CoinTransactionRepository";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 
 /**
  * Input for GetMostActiveAdminStats use case
@@ -23,12 +23,11 @@ export interface GetMostActiveAdminStatsOutput {
 /**
  * Error types for GetMostActiveAdminStats use case
  */
-export class CoinTransactionRepositoryError extends Error {
-  readonly _tag = "CoinTransactionRepositoryError";
-  constructor(message: string = "Failed to get most active admin stats") {
-    super(message);
-  }
-}
+export class CoinTransactionRepositoryError extends Data.TaggedError(
+  "CoinTransactionRepositoryError",
+)<{
+  readonly message: string;
+}> {}
 
 export type GetMostActiveAdminStatsError = CoinTransactionRepositoryError;
 
@@ -64,16 +63,14 @@ export function getMostActiveAdminStatsUseCase(
   return Effect.gen(function* () {
     const coinRepo = yield* CoinTransactionRepositoryTag;
 
-    const stats = yield* coinRepo
-      .getMostActiveAdmin(input.tripId)
-      .pipe(
-        Effect.mapError(
-          (error: unknown) =>
-            new CoinTransactionRepositoryError(
-              `Failed to get most active admin stats: ${error instanceof Error ? error.message : String(error)}`,
-            ),
-        ),
-      );
+    const stats = yield* coinRepo.getMostActiveAdmin(input.tripId).pipe(
+      Effect.mapError(
+        (error: unknown) =>
+          new CoinTransactionRepositoryError({
+            message: `Failed to get most active admin stats: ${error instanceof Error ? error.message : String(error)}`,
+          }),
+      ),
+    );
 
     if (!stats || stats.length === 0) {
       return null;

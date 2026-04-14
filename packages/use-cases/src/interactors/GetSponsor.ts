@@ -1,5 +1,5 @@
 import type { Sponsor } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 /**
@@ -29,12 +29,9 @@ export interface GetSponsorOutput {
 /**
  * Error type when sponsor is not found
  */
-export class GetSponsorNotFoundError extends Error {
-  readonly _tag = "GetSponsorNotFoundError";
-  constructor() {
-    super("Sponsor not found");
-  }
-}
+export class GetSponsorNotFoundError extends Data.TaggedError(
+  "GetSponsorNotFoundError",
+)<{}> {}
 
 /**
  * GetSponsor Use Case (Effect-based)
@@ -64,7 +61,7 @@ export function getSponsorUseCase(
     const sponsor = yield* sponsorRepo.findById(input.sponsorId);
 
     if (!sponsor) {
-      return yield* Effect.fail(new GetSponsorNotFoundError());
+      return yield* Effect.fail(new GetSponsorNotFoundError({}));
     }
 
     return toOutput(sponsor);

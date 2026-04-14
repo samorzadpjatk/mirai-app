@@ -1,5 +1,5 @@
 import { SubmissionId } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
 /**
@@ -50,19 +50,17 @@ export interface GetSubmissionOutput {
 /**
  * Error types for GetSubmission use case
  */
-export class SubmissionNotFoundError extends Error {
-  readonly _tag = "SubmissionNotFoundError";
-  constructor(message: string = "Submission not found") {
-    super(message);
-  }
-}
+export class SubmissionNotFoundError extends Data.TaggedError(
+  "SubmissionNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class GetSubmissionRepositoryError extends Error {
-  readonly _tag = "GetSubmissionRepositoryError";
-  constructor(message: string = "Failed to get submission") {
-    super(message);
-  }
-}
+export class GetSubmissionRepositoryError extends Data.TaggedError(
+  "GetSubmissionRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * GetSubmission Use Case (Effect-based)
@@ -98,16 +96,19 @@ export function getSubmissionUseCase(
     const submissionRepo = yield* ChallengeSubmissionRepositoryTag;
 
     // Find submission by ID
-    const submission = yield* submissionRepo
-      .findById(input.submissionId)
-      .pipe(
-        Effect.mapError(
-          () => new GetSubmissionRepositoryError("Failed to get submission"),
-        ),
-      );
+    const submission = yield* submissionRepo.findById(input.submissionId).pipe(
+      Effect.mapError(
+        () =>
+          new GetSubmissionRepositoryError({
+            message: "Failed to get submission",
+          }),
+      ),
+    );
 
     if (!submission) {
-      return yield* Effect.fail(new SubmissionNotFoundError());
+      return yield* Effect.fail(
+        new SubmissionNotFoundError({ message: "Submission not found" }),
+      );
     }
 
     return toOutput(submission);

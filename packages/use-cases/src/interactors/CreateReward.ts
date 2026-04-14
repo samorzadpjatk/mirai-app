@@ -1,5 +1,5 @@
 import { Reward, UserRole, ValidationError } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import {
   RewardRepositoryTag,
   TripAccessCheckerTag,
@@ -41,19 +41,15 @@ export interface CreateRewardOutput {
 /**
  * Error types for CreateReward use case
  */
-export class CreateRewardError extends Error {
-  readonly _tag = "CreateRewardError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class CreateRewardError extends Data.TaggedError("CreateRewardError")<{
+  message: string;
+}> {}
 
-export class RewardRepositoryError extends Error {
-  readonly _tag = "RewardRepositoryError";
-  constructor(message: string = "Failed to create reward") {
-    super(message);
-  }
-}
+export class RewardRepositoryError extends Data.TaggedError(
+  "RewardRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * CreateReward Use Case
@@ -98,7 +94,9 @@ export function createRewardUseCase(
       input.creatorRole !== UserRole.MODERATOR
     ) {
       return yield* Effect.fail(
-        new CreateRewardError("Only moderators and admins can create rewards"),
+        new CreateRewardError({
+          message: "Only moderators and admins can create rewards",
+        }),
       );
     }
 
@@ -106,7 +104,9 @@ export function createRewardUseCase(
     const hasEnded = yield* accessChecker.hasTripEnded(input.tripId);
     if (hasEnded) {
       return yield* Effect.fail(
-        new CreateRewardError("Cannot create rewards for ended trips"),
+        new CreateRewardError({
+          message: "Cannot create rewards for ended trips",
+        }),
       );
     }
 
@@ -123,18 +123,21 @@ export function createRewardUseCase(
     }).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
-          new CreateRewardError(validationError.message),
+          new CreateRewardError({
+            message: validationError.message,
+          }),
       ),
     );
 
     // Persist reward
-    const saved = yield* rewardRepo
-      .create(reward)
-      .pipe(
-        Effect.mapError(
-          () => new RewardRepositoryError("Failed to create reward"),
-        ),
-      );
+    const saved = yield* rewardRepo.create(reward).pipe(
+      Effect.mapError(
+        () =>
+          new RewardRepositoryError({
+            message: "Failed to create reward",
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });

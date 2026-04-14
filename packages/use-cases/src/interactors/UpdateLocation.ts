@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import { Location } from "@mirai-app/domain";
 import type { Location as LocationType } from "@mirai-app/domain";
@@ -41,28 +41,21 @@ export interface UpdateLocationOutput {
 }
 
 /**
- * Error types for UpdateLocation use case
+ * Error types for UpdateLocation use case - uses Data.TaggedError for Effect integration
  */
-export class LocationNotFoundError extends Error {
-  readonly _tag = "LocationNotFoundError";
-  constructor() {
-    super("Location not found");
-  }
-}
+export class LocationNotFoundError extends Data.TaggedError(
+  "LocationNotFoundError",
+)<{ userId: string }> {}
 
-export class LocationUpdateValidationError extends Error {
-  readonly _tag = "LocationUpdateValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class LocationUpdateValidationError extends Data.TaggedError(
+  "LocationUpdateValidationError",
+)<{ message: string }> {}
 
-export class LocationCreateError extends Error {
-  readonly _tag = "LocationCreateError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class LocationCreateError extends Data.TaggedError(
+  "LocationCreateError",
+)<{
+  message: string;
+}> {}
 
 /**
  * UpdateLocation Use Case
@@ -71,9 +64,9 @@ export class LocationCreateError extends Error {
  * Creates new location if none exists for the user.
  * Returns error if validation fails.
  *
- * ## Effect-based Pattern
+ * ## Effect.gen Pattern (Native)
  *
- * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ * This use case uses Context.Tag for dependency injection and returns native Effect.Effect<T, E, R>:
  *
  * ```typescript
  * const program = Effect.gen(function* () {

@@ -4,7 +4,7 @@ import {
   type PaginationOptions,
   type PaginatedResult,
 } from "../ports/RewardRepository";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 
 /**
  * Purchase with reward info for listing
@@ -46,26 +46,21 @@ export interface GetPurchaseHistoryOutput extends PaginatedResult<PurchaseWithDe
 /**
  * Error types for GetPurchaseHistory use case
  */
-export class NoGroupAccessError extends Error {
-  readonly _tag = "NoGroupAccessError";
-  constructor() {
-    super("Only trip participants with a group can view reward history");
-  }
-}
+export class NoGroupAccessError extends Data.TaggedError("NoGroupAccessError")<{
+  message: string;
+}> {}
 
-export class PurchaseRepositoryError extends Error {
-  readonly _tag = "PurchaseRepositoryError";
-  constructor(message: string = "Failed to fetch purchase history") {
-    super(message);
-  }
-}
+export class PurchaseRepositoryError extends Data.TaggedError(
+  "PurchaseRepositoryError",
+)<{
+  message: string;
+}> {}
 
-export class TripAccessCheckerError extends Error {
-  readonly _tag = "TripAccessCheckerError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class TripAccessCheckerError extends Data.TaggedError(
+  "TripAccessCheckerError",
+)<{
+  message: string;
+}> {}
 
 export type GetPurchaseHistoryError =
   | NoGroupAccessError
@@ -117,12 +112,19 @@ export function getPurchaseHistoryUseCase(
         .pipe(
           Effect.mapError(
             () =>
-              new TripAccessCheckerError("Failed to check group membership"),
+              new TripAccessCheckerError({
+                message: "Failed to check group membership",
+              }),
           ),
         );
 
       if (!leaderCheck.groupId) {
-        return yield* Effect.fail(new NoGroupAccessError());
+        return yield* Effect.fail(
+          new NoGroupAccessError({
+            message:
+              "Only trip participants with a group can view reward history",
+          }),
+        );
       }
 
       // User can only see their own group's purchases
@@ -135,7 +137,14 @@ export function getPurchaseHistoryUseCase(
         ...(groupIdFilter !== undefined && { groupId: groupIdFilter }),
         ...input.pagination,
       })
-      .pipe(Effect.mapError(() => new PurchaseRepositoryError()));
+      .pipe(
+        Effect.mapError(
+          () =>
+            new PurchaseRepositoryError({
+              message: "Failed to fetch purchase history",
+            }),
+        ),
+      );
 
     // Map to output format
     const items = result.items.map((purchase) => ({

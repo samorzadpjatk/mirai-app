@@ -1,5 +1,5 @@
 import { ChallengeVote } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
 /**
@@ -20,19 +20,17 @@ export interface DeleteChallengeVoteOutput {
 /**
  * Error types for DeleteChallengeVote use case
  */
-export class ChallengeVoteNotFoundError extends Error {
-  readonly _tag = "ChallengeVoteNotFoundError";
-  constructor() {
-    super("Vote not found");
-  }
-}
+export class ChallengeVoteNotFoundError extends Data.TaggedError(
+  "ChallengeVoteNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeVoteDeleteRepositoryError extends Error {
-  readonly _tag = "ChallengeVoteDeleteRepositoryError";
-  constructor(message: string = "Failed to delete vote") {
-    super(message);
-  }
-}
+export class ChallengeVoteDeleteRepositoryError extends Data.TaggedError(
+  "ChallengeVoteDeleteRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * DeleteChallengeVote Use Case
@@ -68,29 +66,30 @@ export function deleteChallengeVoteUseCase(
     const voteRepo = yield* ChallengeVoteRepositoryTag;
 
     // Check if vote exists
-    const existingVote = yield* voteRepo
-      .findById(input.voteId)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new ChallengeVoteDeleteRepositoryError(
-              "Failed to load existing vote",
-            ),
-        ),
-      );
+    const existingVote = yield* voteRepo.findById(input.voteId).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeVoteDeleteRepositoryError({
+            message: "Failed to load existing vote",
+          }),
+      ),
+    );
 
     if (!existingVote) {
-      return yield* Effect.fail(new ChallengeVoteNotFoundError());
+      return yield* Effect.fail(
+        new ChallengeVoteNotFoundError({ message: "Vote not found" }),
+      );
     }
 
     // Delete from repository
-    yield* voteRepo
-      .delete(input.voteId)
-      .pipe(
-        Effect.mapError(
-          () => new ChallengeVoteDeleteRepositoryError("Failed to delete vote"),
-        ),
-      );
+    yield* voteRepo.delete(input.voteId).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeVoteDeleteRepositoryError({
+            message: "Failed to delete vote",
+          }),
+      ),
+    );
 
     return {
       success: true,

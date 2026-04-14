@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 
 /**
@@ -33,12 +33,9 @@ export interface GetNotificationScheduleExecutionHistoryOutput {
 /**
  * Error types for GetNotificationScheduleExecutionHistory use case
  */
-export class ScheduleNotFoundError extends Error {
-  readonly _tag = "ScheduleNotFoundError";
-  constructor() {
-    super("Notification schedule not found");
-  }
-}
+export class ScheduleNotFoundError extends Data.TaggedError(
+  "ScheduleNotFoundError",
+)<{ scheduleId: string }> {}
 
 /**
  * GetNotificationScheduleExecutionHistory Use Case
@@ -70,7 +67,9 @@ export function getNotificationScheduleExecutionHistoryUseCase(
     const exists = yield* repo.exists(input.scheduleId);
 
     if (!exists) {
-      return yield* Effect.fail(new ScheduleNotFoundError());
+      return yield* Effect.fail(
+        new ScheduleNotFoundError({ scheduleId: input.scheduleId }),
+      );
     }
 
     const executions = yield* repo.getExecutionHistory(

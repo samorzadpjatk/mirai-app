@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import {
   NotificationDeliveryRepositoryTag,
   type NotificationDelivery,
@@ -47,21 +47,14 @@ export interface GetDeliveryByNotificationIdOutput {
 /**
  * Error types for GetDeliveryByNotificationId use case
  */
-export class DeliveryNotFoundError extends Error {
-  readonly _tag = "DeliveryNotFoundError";
-  constructor() {
-    super("Notification delivery not found");
-  }
-}
+export class DeliveryNotFoundError extends Data.TaggedError(
+  "DeliveryNotFoundError",
+)<{ notificationId: string }> {}
 
-export class GetDeliveryError extends Error {
-  readonly _tag = "GetDeliveryError";
-  constructor(cause: unknown) {
-    super(
-      `Failed to get delivery: ${cause instanceof Error ? cause.message : String(cause)}`,
-    );
-  }
-}
+export class GetDeliveryError extends Data.TaggedError("GetDeliveryError")<{
+  message: string;
+  cause?: unknown;
+}> {}
 
 /**
  * Helper function to convert NotificationDelivery to output DTO
@@ -120,7 +113,9 @@ export function getDeliveryByNotificationIdUseCase(
     const delivery = yield* repo.findByNotificationId(input.notificationId);
 
     if (!delivery || delivery.tripId !== input.tripId) {
-      return yield* Effect.fail(new DeliveryNotFoundError());
+      return yield* Effect.fail(
+        new DeliveryNotFoundError({ notificationId: input.notificationId }),
+      );
     }
 
     return toOutput(delivery);

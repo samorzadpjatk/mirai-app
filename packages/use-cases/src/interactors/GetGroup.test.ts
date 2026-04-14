@@ -1,21 +1,15 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import {
-  GetGroupUseCase,
   getGroupUseCase,
   type GetGroupInput,
   GetGroupNotFoundError,
 } from "./GetGroup";
+import { Group, GroupStatus } from "@mirai-app/domain";
 import {
-  Group,
-  GroupStatus,
-  type Result,
-  ok,
-  err,
-  isOk,
-  isErr,
-} from "@mirai-app/domain";
-import type { GroupRepository } from "../ports/GroupRepository";
+  GroupRepositoryTag,
+  type GroupRepository,
+} from "../ports/GroupRepository";
 
 /**
  * Simple in-memory mock repository for testing (Effect-based)
@@ -101,13 +95,13 @@ class MockGroupRepository implements GroupRepository {
   }
 }
 
-describe("[UNIT] GetGroupUseCase - Effect.gen", () => {
+describe("[UNIT] getGroupUseCase - Pure Effect Pattern", () => {
   let repo: MockGroupRepository;
-  let useCase: GetGroupUseCase;
+  let mockLayer: Layer.Layer<GroupRepositoryTag>;
 
   beforeEach(() => {
     repo = new MockGroupRepository();
-    useCase = new GetGroupUseCase(repo);
+    mockLayer = Layer.succeed(GroupRepositoryTag, repo);
   });
 
   const createValidGroup = (
@@ -121,7 +115,6 @@ describe("[UNIT] GetGroupUseCase - Effect.gen", () => {
       status: GroupStatus;
     }>,
   ): Group => {
-    // Domain entities still use Effect internally - unwrap with runSync
     const effect = Group.create({
       id: overrides?.id ?? "group-123",
       tripId: overrides?.tripId ?? "trip-123",
@@ -149,34 +142,34 @@ describe("[UNIT] GetGroupUseCase - Effect.gen", () => {
         groupId: "group-456",
       };
 
-      const result = await Effect.runPromise(useCase.execute(input));
+      const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
+      const result = await Effect.runPromise(program);
 
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.id).toBe("group-456");
-        expect(result.value.name).toBe("My Group");
-        expect(result.value.tripId).toBe("trip-456");
-        expect(result.value.code).toBe("TEST123");
-        expect(result.value.organizerId).toBe("user-123");
-        expect(result.value.coins).toBe(100);
-        expect(result.value.status).toBe("ACTIVE");
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.summary).toBeDefined();
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-        expect(result.value.updatedAt).toBeInstanceOf(Date);
-      }
+      expect(result.id).toBe("group-456");
+      expect(result.name).toBe("My Group");
+      expect(result.tripId).toBe("trip-456");
+      expect(result.code).toBe("TEST123");
+      expect(result.organizerId).toBe("user-123");
+      expect(result.coins).toBe(100);
+      expect(result.status).toBe("ACTIVE");
+      expect(result.isActive).toBe(true);
+      expect(result.summary).toBeDefined();
+      expect(result.createdAt).toBeInstanceOf(Date);
+      expect(result.updatedAt).toBeInstanceOf(Date);
     });
 
-    it("should fail when group not found", async () => {
+    it("should fail with GetGroupNotFoundError when group not found", async () => {
       const input: GetGroupInput = {
         groupId: "non-existent-id",
       };
 
-      const result = await Effect.runPromise(useCase.execute(input));
+      const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
+      const either = await Effect.runPromise(Effect.either(program));
 
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error).toBeInstanceOf(GetGroupNotFoundError);
+      expect(either._tag).toBe("Left");
+      if (either._tag === "Left") {
+        expect(either.left).toBeInstanceOf(GetGroupNotFoundError);
+        expect(either.left.groupId).toBe("non-existent-id");
       }
     });
 
@@ -200,14 +193,12 @@ describe("[UNIT] GetGroupUseCase - Effect.gen", () => {
         groupId: "group-deleted",
       };
 
-      const result = await Effect.runPromise(useCase.execute(input));
+      const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
+      const result = await Effect.runPromise(program);
 
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.id).toBe("group-deleted");
-        expect(result.value.isActive).toBe(false);
-        expect(result.value.status).toBe("DELETED");
-      }
+      expect(result.id).toBe("group-deleted");
+      expect(result.isActive).toBe(false);
+      expect(result.status).toBe("DELETED");
     });
 
     it("should return correct summary for group", async () => {
@@ -221,34 +212,10 @@ describe("[UNIT] GetGroupUseCase - Effect.gen", () => {
         groupId: "group-123",
       };
 
-      const result = await Effect.runPromise(useCase.execute(input));
+      const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
+      const result = await Effect.runPromise(program);
 
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.summary).toContain("Adventure Group");
-      }
-    });
-  });
-
-  describe("[UNIT] legacy function-based API", () => {
-    it("should work with legacy function API", async () => {
-      const mockGroup = createValidGroup({
-        id: "group-legacy",
-        name: "Legacy Test Group",
-      });
-      Effect.runSync(repo.create(mockGroup));
-
-      const input: GetGroupInput = {
-        groupId: "group-legacy",
-      };
-
-      const result = await Effect.runPromise(getGroupUseCase(input, repo));
-
-      expect(isOk(result)).toBe(true);
-      if (isOk(result)) {
-        expect(result.value.id).toBe("group-legacy");
-        expect(result.value.name).toBe("Legacy Test Group");
-      }
+      expect(result.summary).toContain("Adventure Group");
     });
   });
 });

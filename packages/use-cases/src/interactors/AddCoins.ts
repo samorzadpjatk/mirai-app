@@ -3,7 +3,7 @@ import type {
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
 import { CoinTransactionRepositoryTag } from "../ports/CoinTransactionRepository";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 
 /**
  * Input for AddCoins use case
@@ -26,40 +26,31 @@ export interface AddCoinsOutput {
 /**
  * Error types for AddCoins use case
  */
-export class GroupNotFoundError extends Error {
-  readonly _tag = "GroupNotFoundError";
-  constructor() {
-    super("Group not found");
-  }
-}
+export class GroupNotFoundError extends Data.TaggedError("GroupNotFoundError")<{
+  message: string;
+}> {}
 
-export class GroupNotInTripError extends Error {
-  readonly _tag = "GroupNotInTripError";
-  constructor() {
-    super("Group does not belong to this trip");
-  }
-}
+export class GroupNotInTripError extends Data.TaggedError(
+  "GroupNotInTripError",
+)<{
+  message: string;
+}> {}
 
-export class GroupDeletedError extends Error {
-  readonly _tag = "GroupDeletedError";
-  constructor() {
-    super("Group has been deleted");
-  }
-}
+export class GroupDeletedError extends Data.TaggedError("GroupDeletedError")<{
+  message: string;
+}> {}
 
-export class IncrementCoinsError extends Error {
-  readonly _tag = "IncrementCoinsError";
-  constructor() {
-    super("Failed to increment group coins");
-  }
-}
+export class IncrementCoinsError extends Data.TaggedError(
+  "IncrementCoinsError",
+)<{
+  message: string;
+}> {}
 
-export class CreateTransactionError extends Error {
-  readonly _tag = "CreateTransactionError";
-  constructor() {
-    super("Failed to create transaction");
-  }
-}
+export class CreateTransactionError extends Data.TaggedError(
+  "CreateTransactionError",
+)<{
+  message: string;
+}> {}
 
 /**
  * AddCoins Use Case
@@ -105,15 +96,23 @@ export function addCoinsUseCase(
     );
 
     if (!groupCheck.exists) {
-      return yield* Effect.fail(new GroupNotFoundError());
+      return yield* Effect.fail(
+        new GroupNotFoundError({ message: "Group not found" }),
+      );
     }
 
     if (groupCheck.tripId !== input.tripId) {
-      return yield* Effect.fail(new GroupNotInTripError());
+      return yield* Effect.fail(
+        new GroupNotInTripError({
+          message: "Group does not belong to this trip",
+        }),
+      );
     }
 
     if (groupCheck.isDeleted) {
-      return yield* Effect.fail(new GroupDeletedError());
+      return yield* Effect.fail(
+        new GroupDeletedError({ message: "Group has been deleted" }),
+      );
     }
 
     // Increment group coins

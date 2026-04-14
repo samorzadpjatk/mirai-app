@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location } from "@mirai-app/domain";
 
@@ -24,15 +24,12 @@ export interface GetSharingSettingsOutput {
 /**
  * Error when repository operation fails
  */
-export class GetSharingSettingsRepositoryError extends Error {
-  readonly _tag = "GetSharingSettingsRepositoryError";
-  constructor(
-    public readonly operation: string,
-    public override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class GetSharingSettingsRepositoryError extends Data.TaggedError(
+  "GetSharingSettingsRepositoryError",
+)<{
+  readonly operation: string;
+  readonly cause?: unknown;
+}> {}
 
 /**
  * GetSharingSettings Use Case (Effect-based)
@@ -59,17 +56,15 @@ export function getSharingSettingsUseCase(
   return Effect.gen(function* () {
     const locationRepo = yield* LocationRepositoryTag;
 
-    const location = yield* locationRepo
-      .findByUserId(input.userId)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new GetSharingSettingsRepositoryError(
-              "find location by user",
-              cause,
-            ),
-        ),
-      );
+    const location = yield* locationRepo.findByUserId(input.userId).pipe(
+      Effect.mapError(
+        (cause) =>
+          new GetSharingSettingsRepositoryError({
+            operation: "find location by user",
+            cause,
+          }),
+      ),
+    );
 
     if (!location) {
       // Return default settings

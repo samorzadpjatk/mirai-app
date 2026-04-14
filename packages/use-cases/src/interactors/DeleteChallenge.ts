@@ -1,5 +1,5 @@
 import { Challenge, ChallengeStatus } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 
 /**
@@ -20,26 +20,23 @@ export interface DeleteChallengeOutput {
 /**
  * Error types for DeleteChallenge use case
  */
-export class ChallengeNotFoundError extends Error {
-  readonly _tag = "ChallengeNotFoundError";
-  constructor() {
-    super("Challenge not found");
-  }
-}
+export class ChallengeNotFoundError extends Data.TaggedError(
+  "ChallengeNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeAlreadyActiveError extends Error {
-  readonly _tag = "ChallengeAlreadyActiveError";
-  constructor() {
-    super("Cannot delete an active challenge");
-  }
-}
+export class ChallengeAlreadyActiveError extends Data.TaggedError(
+  "ChallengeAlreadyActiveError",
+)<{
+  message: string;
+}> {}
 
-export class ChallengeDeleteRepositoryError extends Error {
-  readonly _tag = "ChallengeDeleteRepositoryError";
-  constructor(message: string = "Failed to delete challenge") {
-    super(message);
-  }
-}
+export class ChallengeDeleteRepositoryError extends Data.TaggedError(
+  "ChallengeDeleteRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * DeleteChallenge Use Case
@@ -77,32 +74,39 @@ export function deleteChallengeUseCase(
     const challengeRepo = yield* ChallengeRepositoryTag;
 
     // Check if challenge exists
-    const challenge = yield* challengeRepo
-      .findById(input.challengeId)
-      .pipe(
-        Effect.mapError(
-          () => new ChallengeDeleteRepositoryError("Failed to load challenge"),
-        ),
-      );
+    const challenge = yield* challengeRepo.findById(input.challengeId).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeDeleteRepositoryError({
+            message: "Failed to load challenge",
+          }),
+      ),
+    );
 
     if (!challenge) {
-      return yield* Effect.fail(new ChallengeNotFoundError());
+      return yield* Effect.fail(
+        new ChallengeNotFoundError({ message: "Challenge not found" }),
+      );
     }
 
     // Cannot delete active challenges (business rule)
     if (challenge.status === ChallengeStatus.ACTIVE) {
-      return yield* Effect.fail(new ChallengeAlreadyActiveError());
+      return yield* Effect.fail(
+        new ChallengeAlreadyActiveError({
+          message: "Cannot delete an active challenge",
+        }),
+      );
     }
 
     // Delete from repository
-    yield* challengeRepo
-      .delete(input.challengeId)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new ChallengeDeleteRepositoryError("Failed to delete challenge"),
-        ),
-      );
+    yield* challengeRepo.delete(input.challengeId).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeDeleteRepositoryError({
+            message: "Failed to delete challenge",
+          }),
+      ),
+    );
 
     return {
       success: true,

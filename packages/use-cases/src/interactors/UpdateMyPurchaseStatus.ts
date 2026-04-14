@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import {
   RewardRepositoryTag,
   RewardPurchaseRepositoryTag,
@@ -54,58 +54,51 @@ export interface UpdateMyPurchaseStatusOutput {
 /**
  * Error when purchase is not found
  */
-export class MyPurchaseNotFoundError extends Error {
-  readonly _tag = "MyPurchaseNotFoundError";
-  constructor() {
-    super("Purchase not found");
-  }
-}
+export class MyPurchaseNotFoundError extends Data.TaggedError(
+  "MyPurchaseNotFoundError",
+)<{
+  message: string;
+}> {}
 
 /**
  * Error when user is not the group leader
  */
-export class NotGroupLeaderError extends Error {
-  readonly _tag = "NotGroupLeaderError";
-  constructor() {
-    super("Only the group leader can update this purchase");
-  }
-}
+export class NotGroupLeaderError extends Data.TaggedError(
+  "NotGroupLeaderError",
+)<{
+  message: string;
+}> {}
 
 /**
  * Error when status transition is invalid for users
  */
-export class InvalidUserStatusTransitionError extends Error {
-  readonly _tag = "InvalidUserStatusTransitionError";
-  constructor(
-    public readonly fromStatus: string,
-    public readonly toStatus: string,
-  ) {
-    super(`Cannot change status from ${fromStatus} to ${toStatus}`);
-  }
-}
+export class InvalidUserStatusTransitionError extends Data.TaggedError(
+  "InvalidUserStatusTransitionError",
+)<{
+  message: string;
+  fromStatus: string;
+  toStatus: string;
+}> {}
 
 /**
  * Error when operation fails
  */
-export class UpdateMyPurchaseOperationError extends Error {
-  readonly _tag = "UpdateMyPurchaseOperationError";
-  constructor(
-    public readonly operation: string,
-    public override readonly cause?: unknown,
-  ) {
-    super(`Failed to ${operation}`);
-  }
-}
+export class UpdateMyPurchaseOperationError extends Data.TaggedError(
+  "UpdateMyPurchaseOperationError",
+)<{
+  message: string;
+  operation: string;
+  cause?: unknown;
+}> {}
 
 /**
  * Error when cancellation validation fails
  */
-export class InvalidCancellationError extends Error {
-  readonly _tag = "InvalidCancellationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class InvalidCancellationError extends Data.TaggedError(
+  "InvalidCancellationError",
+)<{
+  message: string;
+}> {}
 
 /**
  * UpdateMyPurchaseStatus Use Case (Effect-based)
@@ -148,16 +141,21 @@ export function updateMyPurchaseStatusUseCase(
     const accessChecker = yield* TripAccessCheckerTag;
 
     // Find the purchase
-    const purchase = yield* purchaseRepo
-      .findById(input.purchaseId)
-      .pipe(
-        Effect.mapError(
-          (cause) => new UpdateMyPurchaseOperationError("find purchase", cause),
-        ),
-      );
+    const purchase = yield* purchaseRepo.findById(input.purchaseId).pipe(
+      Effect.mapError(
+        (cause) =>
+          new UpdateMyPurchaseOperationError({
+            message: "Failed to find purchase",
+            operation: "find purchase",
+            cause,
+          }),
+      ),
+    );
 
     if (!purchase) {
-      return yield* Effect.fail(new MyPurchaseNotFoundError());
+      return yield* Effect.fail(
+        new MyPurchaseNotFoundError({ message: "Purchase not found" }),
+      );
     }
 
     // Verify user is the group leader for this purchase
@@ -166,19 +164,31 @@ export function updateMyPurchaseStatusUseCase(
       .pipe(
         Effect.mapError(
           (cause) =>
-            new UpdateMyPurchaseOperationError("check group leader", cause),
+            new UpdateMyPurchaseOperationError({
+              message: "Failed to check group leader",
+              operation: "check group leader",
+              cause,
+            }),
         ),
       );
 
     if (leaderCheck.groupId !== purchase.groupId) {
-      return yield* Effect.fail(new NotGroupLeaderError());
+      return yield* Effect.fail(
+        new NotGroupLeaderError({
+          message: "Only the group leader can update this purchase",
+        }),
+      );
     }
 
     // Check if this transition is allowed for users
     const allowedTransitions = USER_ALLOWED_TRANSITIONS[purchase.status] ?? [];
     if (!allowedTransitions.includes(input.newStatus)) {
       return yield* Effect.fail(
-        new InvalidUserStatusTransitionError(purchase.status, input.newStatus),
+        new InvalidUserStatusTransitionError({
+          message: `Cannot change status from ${purchase.status} to ${input.newStatus}`,
+          fromStatus: purchase.status,
+          toStatus: input.newStatus,
+        }),
       );
     }
 
@@ -188,7 +198,9 @@ export function updateMyPurchaseStatusUseCase(
       purchase.status !== RewardPurchaseStatus.BOUGHT
     ) {
       return yield* Effect.fail(
-        new InvalidCancellationError("Only pending purchases can be cancelled"),
+        new InvalidCancellationError({
+          message: "Only pending purchases can be cancelled",
+        }),
       );
     }
 
@@ -198,9 +210,9 @@ export function updateMyPurchaseStatusUseCase(
       purchase.status !== RewardPurchaseStatus.ACCEPTED
     ) {
       return yield* Effect.fail(
-        new InvalidCancellationError(
-          "Purchase can be moved to in delivery only after acceptance",
-        ),
+        new InvalidCancellationError({
+          message: "Purchase can be moved to in delivery only after acceptance",
+        }),
       );
     }
 
@@ -218,7 +230,11 @@ export function updateMyPurchaseStatusUseCase(
         .pipe(
           Effect.mapError(
             (cause) =>
-              new UpdateMyPurchaseOperationError("refund coins", cause),
+              new UpdateMyPurchaseOperationError({
+                message: "Failed to refund coins",
+                operation: "refund coins",
+                cause,
+              }),
           ),
         );
 
@@ -231,10 +247,11 @@ export function updateMyPurchaseStatusUseCase(
         .pipe(
           Effect.mapError(
             (cause) =>
-              new UpdateMyPurchaseOperationError(
-                "restore reward quantity",
+              new UpdateMyPurchaseOperationError({
+                message: "Failed to restore reward quantity",
+                operation: "restore reward quantity",
                 cause,
-              ),
+              }),
           ),
         );
 
@@ -247,7 +264,11 @@ export function updateMyPurchaseStatusUseCase(
       .pipe(
         Effect.mapError(
           (cause) =>
-            new UpdateMyPurchaseOperationError("update purchase status", cause),
+            new UpdateMyPurchaseOperationError({
+              message: "Failed to update purchase status",
+              operation: "update purchase status",
+              cause,
+            }),
         ),
       );
 

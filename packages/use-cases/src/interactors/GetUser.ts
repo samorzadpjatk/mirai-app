@@ -1,39 +1,38 @@
 import type { User } from "@mirai-app/domain";
-import { type Result, ok, err } from "@mirai-app/domain";
-import { Effect } from "effect";
-import type { UserRepository } from "../ports/UserRepository";
+import { Data, Effect } from "effect";
+import { UserRepositoryTag } from "../ports/UserRepository";
+import { DatabaseError } from "../ports/errors";
 
 /**
  * Input for GetUser use case
  */
 export interface GetUserInput {
-  userId: string;
+  readonly userId: string;
 }
 
 /**
- * Output DTO for GetUser use case
+ * Output for GetUser use case
  */
 export interface GetUserOutput {
-  id: string;
-  authUserId: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  role: string;
-  hasAvatar: boolean;
-  createdAt: Date;
-  lastSeenOn: Date | null;
+  readonly id: string;
+  readonly authUserId: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly fullName: string;
+  readonly role: string;
+  readonly hasAvatar: boolean;
+  readonly createdAt: Date;
+  readonly lastSeenOn: Date | null;
 }
 
 /**
  * Error type for GetUser use case
  */
-export class GetUserNotFoundError extends Error {
-  readonly _tag = "GetUserNotFoundError";
-  constructor() {
-    super("User not found");
-  }
-}
+export class GetUserNotFoundError extends Data.TaggedError(
+  "GetUserNotFoundError",
+)<{
+  readonly userId: string;
+}> {}
 
 /**
  * GetUser Use Case
@@ -41,49 +40,45 @@ export class GetUserNotFoundError extends Error {
  * Retrieves a user by ID.
  * Returns error if user not found.
  *
- * ## Effect.gen Pattern
+ * ## Effect-based Pattern
  *
- * This use case uses constructor injection and returns Effect.Effect<Result<T,E>, never, never>:
+ * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
  *
  * ```typescript
- * const useCase = new GetUserUseCase(userRepository);
- * const result = await Effect.runPromise(useCase.execute({ userId: "123" }));
+ * // With dependency injection
+ * const useCase = new GetUserUseCase();
+ * const program = useCase.execute({ userId: "123" });
  *
- * if (result.kind === "ok") {
- *   logger.debug("User retrieved", result.value);
- * } else {
- *   logger.error("Failed to get user", result.error);
- * }
+ * // Provide repository implementation
+ * const runnable = program.pipe(
+ *   Effect.provideService(UserRepositoryTag, repository)
+ * );
+ *
+ * // Run the effect
+ * const result = await Effect.runPromise(runnable);
  * ```
  */
 export class GetUserUseCase {
-  constructor(private readonly userRepo: UserRepository) {}
-
   execute(
     input: GetUserInput,
-  ): Effect.Effect<Result<GetUserOutput, GetUserNotFoundError>, never, never> {
-    return Effect.gen(this, function* () {
-      const user = yield* this.userRepo.findById(input.userId);
+  ): Effect.Effect<
+    GetUserOutput,
+    GetUserNotFoundError | DatabaseError,
+    UserRepositoryTag
+  > {
+    return Effect.gen(function* () {
+      const userRepo = yield* UserRepositoryTag;
+      const user = yield* userRepo.findById(input.userId);
 
       if (!user) {
-        return err(new GetUserNotFoundError());
+        return yield* Effect.fail(
+          new GetUserNotFoundError({ userId: input.userId }),
+        );
       }
 
-      return ok(toOutput(user));
+      return toOutput(user);
     });
   }
-}
-
-/**
- * Legacy function-based API for backward compatibility during migration
- * @deprecated Use GetUserUseCase class instead
- */
-export function getUserUseCase(
-  input: GetUserInput,
-  userRepo: UserRepository,
-): Effect.Effect<Result<GetUserOutput, GetUserNotFoundError>, never, never> {
-  const useCase = new GetUserUseCase(userRepo);
-  return useCase.execute(input);
 }
 
 function toOutput(user: User): GetUserOutput {

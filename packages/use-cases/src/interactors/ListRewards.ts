@@ -1,5 +1,5 @@
 import { CoinAmount, Reward } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import {
   RewardRepositoryTag,
   TripPointsCalculatorTag,
@@ -48,26 +48,21 @@ export interface ListRewardsOutput extends PaginatedResult<RewardWithCalculation
 /**
  * Error types for ListRewards use case
  */
-export class ListRewardsError extends Error {
-  readonly _tag = "ListRewardsError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class ListRewardsError extends Data.TaggedError("ListRewardsError")<{
+  message: string;
+}> {}
 
-export class RewardRepositoryError extends Error {
-  readonly _tag = "RewardRepositoryError";
-  constructor(message: string = "Failed to list rewards") {
-    super(message);
-  }
-}
+export class RewardRepositoryError extends Data.TaggedError(
+  "RewardRepositoryError",
+)<{
+  message: string;
+}> {}
 
-export class TripPointsCalculatorError extends Error {
-  readonly _tag = "TripPointsCalculatorError";
-  constructor(message: string = "Failed to calculate trip points") {
-    super(message);
-  }
-}
+export class TripPointsCalculatorError extends Data.TaggedError(
+  "TripPointsCalculatorError",
+)<{
+  message: string;
+}> {}
 
 /**
  * ListRewards Use Case
@@ -110,7 +105,9 @@ export function listRewardsUseCase(
       .pipe(
         Effect.mapError(
           () =>
-            new TripPointsCalculatorError("Failed to calculate trip points"),
+            new TripPointsCalculatorError({
+              message: "Failed to calculate trip points",
+            }),
         ),
       );
 
@@ -123,14 +120,20 @@ export function listRewardsUseCase(
           })
           .pipe(
             Effect.mapError(
-              () => new RewardRepositoryError("Failed to find rewards"),
+              () =>
+                new RewardRepositoryError({
+                  message: "Failed to find rewards",
+                }),
             ),
           )
       : yield* rewardRepo
           .findVisibleByTripId(input.tripId, input.pagination)
           .pipe(
             Effect.mapError(
-              () => new RewardRepositoryError("Failed to find rewards"),
+              () =>
+                new RewardRepositoryError({
+                  message: "Failed to find rewards",
+                }),
             ),
           );
 
@@ -149,16 +152,14 @@ export function listRewardsUseCase(
           // Calculate affordability if group coins provided
           const canAfford =
             groupCoins !== null
-              ? yield* reward
-                  .canAfford(groupCoins, 1, totalPoints)
-                  .pipe(
-                    Effect.mapError(
-                      () =>
-                        new ListRewardsError(
-                          "Failed to calculate affordability",
-                        ),
-                    ),
-                  )
+              ? yield* reward.canAfford(groupCoins, 1, totalPoints).pipe(
+                  Effect.mapError(
+                    () =>
+                      new ListRewardsError({
+                        message: "Failed to calculate affordability",
+                      }),
+                  ),
+                )
               : undefined;
 
           return {

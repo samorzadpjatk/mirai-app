@@ -1,7 +1,6 @@
-import type { Location, Result } from "@mirai-app/domain";
-import { ok, err } from "@mirai-app/domain";
-import { Effect } from "effect";
-import type { LocationRepository } from "../ports/LocationRepository";
+import type { Location } from "@mirai-app/domain";
+import { Data, Effect } from "effect";
+import { LocationRepositoryTag } from "../ports/LocationRepository";
 
 /**
  * Input for GetLocation use case
@@ -33,14 +32,11 @@ export interface GetLocationOutput {
 }
 
 /**
- * Error types for GetLocation use case
+ * Error types for GetLocation use case - uses Data.TaggedError for Effect integration
  */
-export class LocationNotFoundError extends Error {
-  readonly _tag = "LocationNotFoundError";
-  constructor() {
-    super("Location not found");
-  }
-}
+export class LocationNotFoundError extends Data.TaggedError(
+  "LocationNotFoundError",
+)<{ userId: string }> {}
 
 /**
  * Helper function to convert Location to output DTO
@@ -66,57 +62,43 @@ function toOutput(location: Location): GetLocationOutput {
  * GetLocation Use Case
  *
  * Retrieves a location by user ID.
- * Returns error if location not found.
+ * Fails with LocationNotFoundError if location not found.
  *
- * ## Effect.gen Pattern
+ * ## Effect.gen Pattern (Native)
  *
- * This use case uses constructor injection and returns Effect.Effect<Result<T,E>, never, never>:
+ * This use case uses Context.Tag for dependency injection and returns native Effect.Effect<T, E, R>:
  *
  * ```typescript
- * const useCase = new GetLocationUseCase(locationRepository);
- * const result = await Effect.runPromise(useCase.execute({ userId: "123" }));
+ * const program = Effect.gen(function* () {
+ *   const result = yield* getLocationUseCase({ userId: "123" });
+ *   return result;
+ * });
  *
- * if (result.kind === "ok") {
- *   logger.debug("Location retrieved", result.value);
- * } else {
- *   logger.error("Failed to get location", result.error);
- * }
+ * const runnable = program.pipe(
+ *   Effect.provideService(LocationRepositoryTag, repository)
+ * );
+ *
+ * const result = await Effect.runPromise(runnable);
  * ```
- */
-export class GetLocationUseCase {
-  constructor(private readonly locationRepo: LocationRepository) {}
-
-  execute(
-    input: GetLocationInput,
-  ): Effect.Effect<
-    Result<GetLocationOutput, LocationNotFoundError>,
-    never,
-    never
-  > {
-    return Effect.gen(this, function* () {
-      const location = yield* this.locationRepo.findByUserId(input.userId);
-
-      if (!location) {
-        return err(new LocationNotFoundError());
-      }
-
-      return ok(toOutput(location));
-    });
-  }
-}
-
-/**
- * Legacy function-based API for backward compatibility during migration
- * @deprecated Use GetLocationUseCase class instead
  */
 export function getLocationUseCase(
   input: GetLocationInput,
-  locationRepo: LocationRepository,
 ): Effect.Effect<
-  Result<GetLocationOutput, LocationNotFoundError>,
-  never,
-  never
+  GetLocationOutput,
+  LocationNotFoundError,
+  LocationRepositoryTag
 > {
-  const useCase = new GetLocationUseCase(locationRepo);
-  return useCase.execute(input);
+  return Effect.gen(function* () {
+    const locationRepo = yield* LocationRepositoryTag;
+
+    const location = yield* locationRepo.findByUserId(input.userId);
+
+    if (!location) {
+      return yield* Effect.fail(
+        new LocationNotFoundError({ userId: input.userId }),
+      );
+    }
+
+    return toOutput(location);
+  });
 }

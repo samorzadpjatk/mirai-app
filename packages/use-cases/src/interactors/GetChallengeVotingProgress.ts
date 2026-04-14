@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeVote } from "@mirai-app/domain";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 
@@ -30,19 +30,17 @@ export interface GetChallengeVotingProgressOutput {
 /**
  * Error types for GetChallengeVotingProgress use case
  */
-export class GetVotingProgressValidationError extends Error {
-  readonly _tag = "GetVotingProgressValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class GetVotingProgressValidationError extends Data.TaggedError(
+  "GetVotingProgressValidationError",
+)<{
+  message: string;
+}> {}
 
-export class GetVotingProgressRepositoryError extends Error {
-  readonly _tag = "GetVotingProgressRepositoryError";
-  constructor(message: string = "Failed to retrieve voting progress") {
-    super(message);
-  }
-}
+export class GetVotingProgressRepositoryError extends Data.TaggedError(
+  "GetVotingProgressRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * GetChallengeVotingProgress Use Case (Effect-based)
@@ -77,14 +75,21 @@ export function getChallengeVotingProgressUseCase(
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
       return yield* Effect.fail(
-        new GetVotingProgressValidationError("challengeId is required"),
+        new GetVotingProgressValidationError({
+          message: "challengeId is required",
+        }),
       );
     }
 
     // Fetch all votes for the challenge
-    const votes = yield* voteRepo
-      .findByChallengeId(input.challengeId)
-      .pipe(Effect.mapError(() => new GetVotingProgressRepositoryError()));
+    const votes = yield* voteRepo.findByChallengeId(input.challengeId).pipe(
+      Effect.mapError(
+        () =>
+          new GetVotingProgressRepositoryError({
+            message: "Failed to retrieve voting progress",
+          }),
+      ),
+    );
 
     // Calculate stats per submission
     const submissionMap = new Map<string, { count: number; score: number }>();

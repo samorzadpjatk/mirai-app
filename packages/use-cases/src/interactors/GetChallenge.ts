@@ -1,5 +1,5 @@
 import { Challenge } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 
 /**
@@ -40,19 +40,13 @@ export interface GetChallengeOutput {
 /**
  * Error types for GetChallenge use case
  */
-export class ChallengeNotFoundError extends Error {
-  readonly _tag = "ChallengeNotFoundError";
-  constructor() {
-    super("Challenge not found");
-  }
-}
+export class ChallengeNotFoundError extends Data.TaggedError(
+  "ChallengeNotFoundError",
+)<{ message: string; challengeId?: string }> {}
 
-export class ChallengeLoadError extends Error {
-  readonly _tag = "ChallengeLoadError";
-  constructor(message: string = "Failed to load challenge") {
-    super(message);
-  }
-}
+export class ChallengeLoadError extends Data.TaggedError("ChallengeLoadError")<{
+  message: string;
+}> {}
 
 /**
  * GetChallenge Use Case
@@ -92,12 +86,17 @@ export function getChallengeUseCase(
       .findById(input.challengeId)
       .pipe(
         Effect.mapError(
-          () => new ChallengeLoadError("Failed to load challenge"),
+          () => new ChallengeLoadError({ message: "Failed to load challenge" }),
         ),
       );
 
     if (!challenge) {
-      return yield* Effect.fail(new ChallengeNotFoundError());
+      return yield* Effect.fail(
+        new ChallengeNotFoundError({
+          message: "Challenge not found",
+          challengeId: input.challengeId,
+        }),
+      );
     }
 
     return toOutput(challenge);

@@ -241,7 +241,7 @@ describe("[UNIT] getTripByIdUseCase (Effect)", () => {
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
         expect(either.left).toBeInstanceOf(GetTripByIdNotFoundError);
-        expect(either.left.message).toContain("not found");
+        expect(either.left.tripId).toBe("non-existent-trip");
       }
     });
 

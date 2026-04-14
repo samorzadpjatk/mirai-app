@@ -1,5 +1,5 @@
 import { SubmissionId } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
 /**
@@ -56,12 +56,11 @@ export interface ListSubmissionsByChallengeOutput {
 /**
  * Error types for ListSubmissionsByChallenge use case
  */
-export class ListSubmissionsRepositoryError extends Error {
-  readonly _tag = "ListSubmissionsRepositoryError";
-  constructor(message: string = "Failed to list submissions") {
-    super(message);
-  }
-}
+export class ListSubmissionsRepositoryError extends Data.TaggedError(
+  "ListSubmissionsRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * ListSubmissionsByChallenge Use Case (Effect-based)
@@ -107,7 +106,9 @@ export function listSubmissionsByChallengeUseCase(
       .pipe(
         Effect.mapError(
           () =>
-            new ListSubmissionsRepositoryError("Failed to fetch submissions"),
+            new ListSubmissionsRepositoryError({
+              message: "Failed to fetch submissions",
+            }),
         ),
       );
 
@@ -117,7 +118,9 @@ export function listSubmissionsByChallengeUseCase(
       .pipe(
         Effect.mapError(
           () =>
-            new ListSubmissionsRepositoryError("Failed to count submissions"),
+            new ListSubmissionsRepositoryError({
+              message: "Failed to count submissions",
+            }),
         ),
       );
 

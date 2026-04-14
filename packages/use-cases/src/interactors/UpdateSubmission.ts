@@ -4,7 +4,7 @@ import {
   ValidationError,
   StateTransitionError,
 } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 
 /**
@@ -54,33 +54,29 @@ export interface UpdateSubmissionOutput {
 /**
  * Error types for UpdateSubmission use case
  */
-export class SubmissionUpdateNotFoundError extends Error {
-  readonly _tag = "SubmissionUpdateNotFoundError";
-  constructor(message: string = "Submission not found") {
-    super(message);
-  }
-}
+export class SubmissionUpdateNotFoundError extends Data.TaggedError(
+  "SubmissionUpdateNotFoundError",
+)<{
+  message: string;
+}> {}
 
-export class SubmissionUpdateValidationError extends Error {
-  readonly _tag = "SubmissionUpdateValidationError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class SubmissionUpdateValidationError extends Data.TaggedError(
+  "SubmissionUpdateValidationError",
+)<{
+  message: string;
+}> {}
 
-export class InvalidReviewActionError extends Error {
-  readonly _tag = "InvalidReviewActionError";
-  constructor(message: string = "Invalid review action") {
-    super(message);
-  }
-}
+export class InvalidReviewActionError extends Data.TaggedError(
+  "InvalidReviewActionError",
+)<{
+  message: string;
+}> {}
 
-export class UpdateSubmissionRepositoryError extends Error {
-  readonly _tag = "UpdateSubmissionRepositoryError";
-  constructor(message: string = "Failed to update submission") {
-    super(message);
-  }
-}
+export class UpdateSubmissionRepositoryError extends Data.TaggedError(
+  "UpdateSubmissionRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * UpdateSubmission Use Case (Effect-based)
@@ -119,17 +115,19 @@ export function updateSubmissionUseCase(
     const submissionRepo = yield* ChallengeSubmissionRepositoryTag;
 
     // Find existing submission
-    const existing = yield* submissionRepo
-      .findById(input.submissionId)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new UpdateSubmissionRepositoryError("Failed to find submission"),
-        ),
-      );
+    const existing = yield* submissionRepo.findById(input.submissionId).pipe(
+      Effect.mapError(
+        () =>
+          new UpdateSubmissionRepositoryError({
+            message: "Failed to find submission",
+          }),
+      ),
+    );
 
     if (!existing) {
-      return yield* Effect.fail(new SubmissionUpdateNotFoundError());
+      return yield* Effect.fail(
+        new SubmissionUpdateNotFoundError({ message: "Submission not found" }),
+      );
     }
 
     let updatedSubmission: ChallengeSubmission;
@@ -151,7 +149,9 @@ export function updateSubmissionUseCase(
           .pipe(
             Effect.mapError(
               (error: ValidationError | StateTransitionError) =>
-                new SubmissionUpdateValidationError(error.message),
+                new SubmissionUpdateValidationError({
+                  message: error.message,
+                }),
             ),
           );
         updatedSubmission = approved;
@@ -164,12 +164,18 @@ export function updateSubmissionUseCase(
           .pipe(
             Effect.mapError(
               (error: ValidationError | StateTransitionError) =>
-                new SubmissionUpdateValidationError(error.message),
+                new SubmissionUpdateValidationError({
+                  message: error.message,
+                }),
             ),
           );
         updatedSubmission = rejected;
       } else {
-        return yield* Effect.fail(new InvalidReviewActionError());
+        return yield* Effect.fail(
+          new InvalidReviewActionError({
+            message: "Invalid review action",
+          }),
+        );
       }
     } else {
       // Handle content updates
@@ -186,21 +192,23 @@ export function updateSubmissionUseCase(
         .pipe(
           Effect.mapError(
             (error: ValidationError | StateTransitionError) =>
-              new SubmissionUpdateValidationError(error.message),
+              new SubmissionUpdateValidationError({
+                message: error.message,
+              }),
           ),
         );
       updatedSubmission = updated;
     }
 
     // Persist updated submission
-    const saved = yield* submissionRepo
-      .update(updatedSubmission)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new UpdateSubmissionRepositoryError("Failed to update submission"),
-        ),
-      );
+    const saved = yield* submissionRepo.update(updatedSubmission).pipe(
+      Effect.mapError(
+        () =>
+          new UpdateSubmissionRepositoryError({
+            message: "Failed to update submission",
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });

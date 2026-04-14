@@ -1,5 +1,5 @@
 import { Reward, ValidationError, type RewardId } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { RewardRepositoryTag } from "../ports/RewardRepository";
 
 /**
@@ -35,26 +35,22 @@ export interface UpdateRewardOutput {
 /**
  * Error types for UpdateReward use case
  */
-export class RewardNotFoundError extends Error {
-  readonly _tag = "RewardNotFoundError";
-  constructor(rewardId: string) {
-    super(`Reward not found: ${rewardId}`);
-  }
-}
+export class RewardNotFoundError extends Data.TaggedError(
+  "RewardNotFoundError",
+)<{
+  message: string;
+  rewardId: string;
+}> {}
 
-export class UpdateRewardError extends Error {
-  readonly _tag = "UpdateRewardError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class UpdateRewardError extends Data.TaggedError("UpdateRewardError")<{
+  message: string;
+}> {}
 
-export class RewardRepositoryError extends Error {
-  readonly _tag = "RewardRepositoryError";
-  constructor(message: string = "Failed to update reward") {
-    super(message);
-  }
-}
+export class RewardRepositoryError extends Data.TaggedError(
+  "RewardRepositoryError",
+)<{
+  message: string;
+}> {}
 
 /**
  * UpdateReward Use Case
@@ -93,7 +89,12 @@ export function updateRewardUseCase(
     const existing = yield* rewardRepo.findById(input.rewardId);
 
     if (!existing) {
-      return yield* Effect.fail(new RewardNotFoundError(input.rewardId));
+      return yield* Effect.fail(
+        new RewardNotFoundError({
+          message: `Reward not found: ${input.rewardId}`,
+          rewardId: input.rewardId,
+        }),
+      );
     }
 
     // Apply updates to domain entity
@@ -108,18 +109,19 @@ export function updateRewardUseCase(
       .pipe(
         Effect.mapError(
           (validationError: ValidationError) =>
-            new UpdateRewardError(validationError.message),
+            new UpdateRewardError({ message: validationError.message }),
         ),
       );
 
     // Persist updated reward
-    const saved = yield* rewardRepo
-      .update(updated)
-      .pipe(
-        Effect.mapError(
-          () => new RewardRepositoryError("Failed to update reward"),
-        ),
-      );
+    const saved = yield* rewardRepo.update(updated).pipe(
+      Effect.mapError(
+        () =>
+          new RewardRepositoryError({
+            message: "Failed to update reward",
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });

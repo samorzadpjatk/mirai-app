@@ -178,7 +178,7 @@ describe("[UNIT] deleteTripUseCase (Effect)", () => {
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
         expect(either.left).toBeInstanceOf(DeleteTripNotFoundError);
-        expect(either.left.message).toContain("not found");
+        expect(either.left.tripId).toBe("non-existent-trip");
       }
     });
 

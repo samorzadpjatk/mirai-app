@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import {
   NotificationDeliveryRepositoryTag,
   type DeliveryPaginationOptions,
@@ -27,14 +27,9 @@ export interface GetDeliveriesOutput {
 /**
  * Error types for GetDeliveries use case
  */
-export class GetDeliveriesError extends Error {
-  readonly _tag = "GetDeliveriesError";
-  constructor(cause: unknown) {
-    super(
-      `Failed to get deliveries: ${cause instanceof Error ? cause.message : String(cause)}`,
-    );
-  }
-}
+export class GetDeliveriesError extends Data.TaggedError("GetDeliveriesError")<{
+  readonly cause: unknown;
+}> {}
 
 /**
  * GetDeliveries Use Case
@@ -77,6 +72,8 @@ export function getDeliveriesUseCase(
       offset,
     };
   }).pipe(
-    Effect.catchAllCause((cause) => Effect.fail(new GetDeliveriesError(cause))),
+    Effect.catchAllCause((cause) =>
+      Effect.fail(new GetDeliveriesError({ cause })),
+    ),
   );
 }

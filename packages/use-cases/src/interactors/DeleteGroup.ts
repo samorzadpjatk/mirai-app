@@ -1,5 +1,5 @@
 import { Group } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
 
 /**
@@ -18,31 +18,25 @@ export interface DeleteGroupOutput {
 }
 
 /**
- * Error type for DeleteGroup use case
+ * Error types for DeleteGroup use case - uses Data.TaggedError for Effect integration
  */
-export class DeleteGroupNotFoundError extends Error {
-  readonly _tag = "DeleteGroupNotFoundError";
-  constructor() {
-    super("Group not found");
-  }
-}
+export class DeleteGroupNotFoundError extends Data.TaggedError(
+  "DeleteGroupNotFoundError",
+)<{ groupId: string }> {}
 
-export class DeleteGroupError extends Error {
-  readonly _tag = "DeleteGroupError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class DeleteGroupError extends Data.TaggedError("DeleteGroupError")<{
+  message: string;
+}> {}
 
 /**
  * DeleteGroup Use Case
  *
  * Deletes a group by ID.
- * Returns error if group not found.
+ * Fails with DeleteGroupNotFoundError if group not found.
  *
- * ## Effect-based Pattern
+ * ## Effect.gen Pattern (Native)
  *
- * This use case returns Effect.Effect and uses Context.Tag for dependency injection:
+ * This use case uses Context.Tag for dependency injection and returns native Effect.Effect<T, E, R>:
  *
  * ```typescript
  * const program = Effect.gen(function* () {
@@ -71,7 +65,9 @@ export function deleteGroupUseCase(
     const group = yield* groupRepo.findById(input.groupId);
 
     if (!group) {
-      return yield* Effect.fail(new DeleteGroupNotFoundError());
+      return yield* Effect.fail(
+        new DeleteGroupNotFoundError({ groupId: input.groupId }),
+      );
     }
 
     // Delete the group

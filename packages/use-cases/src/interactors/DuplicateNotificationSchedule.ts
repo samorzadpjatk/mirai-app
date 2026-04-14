@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import {
   NotificationScheduleRepositoryTag,
   type NotificationScheduleExecutionRecord,
@@ -27,19 +27,13 @@ export interface DuplicateNotificationScheduleOutput {
 /**
  * Error types for DuplicateNotificationSchedule use case
  */
-export class DuplicateScheduleNotFoundError extends Error {
-  readonly _tag = "DuplicateScheduleNotFoundError";
-  constructor() {
-    super("Notification schedule not found");
-  }
-}
+export class DuplicateScheduleNotFoundError extends Data.TaggedError(
+  "DuplicateScheduleNotFoundError",
+)<{ id: string }> {}
 
-export class DuplicateScheduleError extends Error {
-  readonly _tag = "DuplicateScheduleError";
-  constructor(message: string) {
-    super(message);
-  }
-}
+export class DuplicateScheduleError extends Data.TaggedError(
+  "DuplicateScheduleError",
+)<{ message: string }> {}
 
 /**
  * Helper function to convert NotificationSchedule to output DTO
@@ -100,7 +94,9 @@ export function duplicateNotificationScheduleUseCase(
     const original = yield* repo.findById(input.id);
 
     if (!original) {
-      return yield* Effect.fail(new DuplicateScheduleNotFoundError());
+      return yield* Effect.fail(
+        new DuplicateScheduleNotFoundError({ id: input.id }),
+      );
     }
 
     // Create duplicate using domain method
@@ -114,7 +110,9 @@ export function duplicateNotificationScheduleUseCase(
       .pipe(
         Effect.mapError(
           (validationError) =>
-            new DuplicateScheduleError(validationError.message),
+            new DuplicateScheduleError({
+              message: validationError.message,
+            }),
         ),
       );
 

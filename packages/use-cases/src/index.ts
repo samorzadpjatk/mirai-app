@@ -143,7 +143,7 @@ export {
   UserUpdateError,
 } from "./interactors/UpdateUser";
 export {
-  getUserUseCase,
+  GetUserUseCase,
   type GetUserInput,
   type GetUserOutput,
   GetUserNotFoundError,
@@ -848,13 +848,6 @@ export {
 // Context Tags (Effect Dependency Injection)
 // =============================================================================
 export * from "./context/tags";
-
-// =============================================================================
-// Re-export domain types for convenience
-// =============================================================================
-export type { Result } from "@mirai-app/domain";
-
-export { ok, err } from "@mirai-app/domain";
 
 // Re-export domain enums needed by adapters layer
 export { UserRole } from "@mirai-app/domain";

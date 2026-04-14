@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
 import type { NotificationSchedule } from "@mirai-app/domain";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
@@ -20,12 +20,9 @@ export type UpdateNotificationScheduleLastRunOutput =
 /**
  * Error types for UpdateNotificationScheduleLastRun use case
  */
-export class UpdateLastRunNotFoundError extends Error {
-  readonly _tag = "UpdateLastRunNotFoundError";
-  constructor() {
-    super("Notification schedule not found");
-  }
-}
+export class UpdateLastRunNotFoundError extends Data.TaggedError(
+  "UpdateLastRunNotFoundError",
+)<{ id: string }> {}
 
 /**
  * Helper function to convert NotificationSchedule to output DTO
@@ -86,7 +83,9 @@ export function updateNotificationScheduleLastRunUseCase(
     const existing = yield* repo.findById(input.id);
 
     if (!existing) {
-      return yield* Effect.fail(new UpdateLastRunNotFoundError());
+      return yield* Effect.fail(
+        new UpdateLastRunNotFoundError({ id: input.id }),
+      );
     }
 
     // Update lastRun
