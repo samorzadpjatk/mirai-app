@@ -56,7 +56,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Module Structure Tests
   // ==========================================================================
 
-  describe("Module Structure", () => {
+  describe("[UNIT] Module Structure", () => {
     test("AppModule is defined and has correct name", () => {
       expect(AppModule).toBeDefined();
       expect(AppModule.name).toBe("AppModule");
@@ -90,7 +90,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Module Imports Tests
   // ==========================================================================
 
-  describe("Module Imports", () => {
+  describe("[UNIT] Module Imports", () => {
     test("imports contain expected modules", () => {
       const moduleNames = getImportNames(AppModule.imports);
 
@@ -141,7 +141,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Container Integration Tests
   // ==========================================================================
 
-  describe("Container Integration", () => {
+  describe("[UNIT] Container Integration", () => {
     test("AppModule can be loaded by container", () => {
       const container = initializeContainer([AppModule]);
 
@@ -183,7 +183,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Type Definition Tests
   // ==========================================================================
 
-  describe("Type Definitions", () => {
+  describe("[UNIT] Type Definitions", () => {
     test("AppModuleDef type is exported", () => {
       // Type-only test - verifies TypeScript compilation
       // If this compiles, the types are correctly exported
@@ -260,7 +260,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Helper Function Tests
   // ==========================================================================
 
-  describe("Helper Functions", () => {
+  describe("[UNIT] Helper Functions", () => {
     test("hasModule returns true for registered modules", () => {
       expect(hasModule("RepositoryModule")).toBe(true);
       expect(hasModule("UseCaseModule")).toBe(true);
@@ -301,7 +301,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Module Hierarchy Tests
   // ==========================================================================
 
-  describe("Module Hierarchy", () => {
+  describe("[UNIT] Module Hierarchy", () => {
     test("follows NestJS-like organization pattern", () => {
       // Verify the module has the expected structure
       expect(AppModule).toHaveProperty("imports");
@@ -340,7 +340,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Clean Architecture Compliance Tests
   // ==========================================================================
 
-  describe("Clean Architecture Compliance", () => {
+  describe("[UNIT] Clean Architecture Compliance", () => {
     test("AppModule lives in frameworks layer", () => {
       // This test documents the architectural location
       // The module is in packages/frameworks/src/di/
@@ -375,7 +375,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Future Module Integration Tests
   // ==========================================================================
 
-  describe("Future Module Integration", () => {
+  describe("[UNIT] Future Module Integration", () => {
     test("AppModule can be extended with additional modules", () => {
       // Test that we can create an extended module
       const ExtendedModule = createStaticModule({
@@ -407,7 +407,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // Module Re-initialization Tests
   // ==========================================================================
 
-  describe("Module Re-initialization", () => {
+  describe("[UNIT] Module Re-initialization", () => {
     test("AppModule can be re-initialized after reset", () => {
       initializeContainer([AppModule]);
       expect(isContainerInitialized()).toBe(true);

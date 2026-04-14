@@ -19,7 +19,7 @@ import { UserRole } from "../../../../domain/src/entities/User";
 import { asClass } from "awilix";
 
 describe("[UNIT] Test Fixtures", () => {
-  describe("createTestUserId", () => {
+  describe("[UNIT] createTestUserId", () => {
     it("should create a valid branded UserId", () => {
       const userId = createTestUserId();
 
@@ -44,7 +44,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("createTestUserIds", () => {
+  describe("[UNIT] createTestUserIds", () => {
     it("should create multiple UserIds", () => {
       const ids = createTestUserIds(3);
 
@@ -61,7 +61,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("createTestUserRole", () => {
+  describe("[UNIT] createTestUserRole", () => {
     it("should default to USER role", () => {
       const role = createTestUserRole();
 
@@ -76,7 +76,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("TestRoles", () => {
+  describe("[UNIT] TestRoles", () => {
     it("should provide pre-defined role values", () => {
       expect(TestRoles.user).toBe(UserRole.USER);
       expect(TestRoles.moderator).toBe(UserRole.MODERATOR);
@@ -85,7 +85,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("createTestAuthContext", () => {
+  describe("[UNIT] createTestAuthContext", () => {
     it("should create default auth context", () => {
       const context = createTestAuthContext();
 
@@ -128,7 +128,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("TestAuthContexts", () => {
+  describe("[UNIT] TestAuthContexts", () => {
     it("should provide user context factory", () => {
       const context = TestAuthContexts.user();
 
@@ -162,7 +162,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("createMockAuthPort", () => {
+  describe("[UNIT] createMockAuthPort", () => {
     it("should create mock with default valid token", async () => {
       const mockPort = createMockAuthPort();
       const result = await mockPort.validateToken("valid-test-token");
@@ -207,7 +207,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("createMockTelemetryPort", () => {
+  describe("[UNIT] createMockTelemetryPort", () => {
     it("should create mock with log method", async () => {
       const mockPort = createMockTelemetryPort();
 
@@ -247,7 +247,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("createMockPortFactory", () => {
+  describe("[UNIT] createMockPortFactory", () => {
     it("should register mock in container", () => {
       const container = createTestContainer();
       const mockPort = createMockAuthPort();
@@ -289,7 +289,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("createMockFn", () => {
+  describe("[UNIT] createMockFn", () => {
     it("should track function calls", () => {
       const mockFn = createMockFn("return-value");
 
@@ -336,7 +336,7 @@ describe("[UNIT] Test Fixtures", () => {
     });
   });
 
-  describe("Integration: Full DI Test Setup", () => {
+  describe("[UNIT] Integration: Full DI Test Setup", () => {
     it("should enable testing with mocked auth dependencies", async () => {
       // Setup test container with mocked auth
       const container = createTestContainer();

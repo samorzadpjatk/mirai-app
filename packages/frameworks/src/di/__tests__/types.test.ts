@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { TYPES, ServiceIdentifier, ServiceIdentifierValue } from "../types";
 
 describe("[UNIT] TYPES - Service Identifiers", () => {
-  describe("Required Symbols (Step 4 Success Criteria)", () => {
+  describe("[UNIT] Required Symbols (Step 4 Success Criteria)", () => {
     it("should have UserRepository symbol", () => {
       expect(TYPES.UserRepository).toBeDefined();
       expect(typeof TYPES.UserRepository).toBe("symbol");
@@ -24,7 +24,7 @@ describe("[UNIT] TYPES - Service Identifiers", () => {
     });
   });
 
-  describe("Cross-Realm Compatibility (Symbol.for())", () => {
+  describe("[UNIT] Cross-Realm Compatibility (Symbol.for())", () => {
     it("should use Symbol.for() for UserRepository", () => {
       const fromTypes = TYPES.UserRepository;
       const recreated = Symbol.for("UserRepository");
@@ -50,7 +50,7 @@ describe("[UNIT] TYPES - Service Identifiers", () => {
     });
   });
 
-  describe("Symbol Uniqueness", () => {
+  describe("[UNIT] Symbol Uniqueness", () => {
     it("should have unique symbols (no collisions)", () => {
       const symbols = Object.values(TYPES);
       const uniqueSymbols = new Set(symbols);
@@ -63,7 +63,7 @@ describe("[UNIT] TYPES - Service Identifiers", () => {
     });
   });
 
-  describe("Symbol Organization by Category", () => {
+  describe("[UNIT] Symbol Organization by Category", () => {
     it("should have Framework Services", () => {
       expect(TYPES.SupabaseClient).toBeDefined();
     });
@@ -101,7 +101,7 @@ describe("[UNIT] TYPES - Service Identifiers", () => {
     });
   });
 
-  describe("TypeScript Type Exports", () => {
+  describe("[UNIT] TypeScript Type Exports", () => {
     it("should export ServiceIdentifier type", () => {
       // This test verifies at compile time that the type is exported
       const key: ServiceIdentifier = "UserRepository";
@@ -115,7 +115,7 @@ describe("[UNIT] TYPES - Service Identifiers", () => {
     });
   });
 
-  describe("Symbol Descriptions", () => {
+  describe("[UNIT] Symbol Descriptions", () => {
     it("should have proper descriptions for required symbols", () => {
       expect(TYPES.UserRepository.description).toBe("UserRepository");
       expect(TYPES.ChallengeRepository.description).toBe("ChallengeRepository");

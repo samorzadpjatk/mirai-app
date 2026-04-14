@@ -51,7 +51,7 @@ describe("[UNIT] Effect Layer Integration", () => {
     });
   });
 
-  describe("Container Registration", () => {
+  describe("[UNIT] Container Registration", () => {
     test("setAwilixContainer and getAwilixContainer work correctly", () => {
       expect(hasAwilixContainer()).toBe(false);
 
@@ -62,7 +62,7 @@ describe("[UNIT] Effect Layer Integration", () => {
     });
   });
 
-  describe("fromAwilix", () => {
+  describe("[UNIT] fromAwilix", () => {
     test("creates a Layer that resolves from awilix container", async () => {
       setAwilixContainer(container);
 
@@ -81,7 +81,7 @@ describe("[UNIT] Effect Layer Integration", () => {
     });
   });
 
-  describe("buildAppLayer", () => {
+  describe("[UNIT] buildAppLayer", () => {
     test("builds complete AppLayer from container and tokens", async () => {
       setAwilixContainer(container);
 
@@ -107,7 +107,7 @@ describe("[UNIT] Effect Layer Integration", () => {
     });
   });
 
-  describe("runWithAwilixContainer", () => {
+  describe("[UNIT] runWithAwilixContainer", () => {
     test("runs Effect with container and tokens", async () => {
       const program = Effect.sync(() => {
         const service =

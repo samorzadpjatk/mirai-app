@@ -26,6 +26,7 @@
  */
 
 import { createContext, useContext, useCallback, useMemo } from "react";
+import { apiLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Types
@@ -127,7 +128,9 @@ class GraphQLClientImpl implements GraphQLClient {
     onData?: (data: T) => void,
   ): () => void {
     if (!this.wsEndpoint) {
-      console.warn("WebSocket endpoint not configured, subscriptions disabled");
+      apiLogger.warn(
+        "WebSocket endpoint not configured, subscriptions disabled",
+      );
       return () => {};
     }
 

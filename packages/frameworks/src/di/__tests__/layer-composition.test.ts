@@ -78,7 +78,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     resetAwilixContainer();
   });
 
-  describe("Container Management", () => {
+  describe("[UNIT] Container Management", () => {
     test("setAwilixContainer stores container globally", () => {
       expect(hasAwilixContainer()).toBe(false);
 
@@ -103,7 +103,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("createContainerLayer", () => {
+  describe("[UNIT] createContainerLayer", () => {
     test("creates Layer providing the container", async () => {
       const ContainerLayer = createContainerLayer(container);
 
@@ -146,7 +146,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("fromContainer", () => {
+  describe("[UNIT] fromContainer", () => {
     test("creates Layer from specific container (not global)", async () => {
       // Don't set global container - fromContainer doesn't need it
       const ServiceLayer = fromContainer<TestService>(container, "testService");
@@ -189,7 +189,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("fromAwilix", () => {
+  describe("[UNIT] fromAwilix", () => {
     test("creates Layer from global container", async () => {
       setAwilixContainer(container);
 
@@ -233,7 +233,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("fromAwilixWithTag", () => {
+  describe("[UNIT] fromAwilixWithTag", () => {
     test("creates Layer with custom Tag", async () => {
       setAwilixContainer(container);
 
@@ -272,7 +272,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("buildAppLayer", () => {
+  describe("[UNIT] buildAppLayer", () => {
     test("builds Layer from multiple tokens", async () => {
       const AppLayer = buildAppLayer(container, [
         "testService",
@@ -316,7 +316,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("buildAppLayerFromGlobal", () => {
+  describe("[UNIT] buildAppLayerFromGlobal", () => {
     test("uses global container to build Layer", async () => {
       setAwilixContainer(container);
 
@@ -344,7 +344,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("createServiceTag", () => {
+  describe("[UNIT] createServiceTag", () => {
     test("creates Tag and Layer factory", async () => {
       const UserRepo = createServiceTag<TestRepository>("testRepository");
 
@@ -390,7 +390,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("runWithAwilixContainer", () => {
+  describe("[UNIT] runWithAwilixContainer", () => {
     test("runs Effect with container-provided services", async () => {
       const Tag = Context.GenericTag<TestService>("testService");
 
@@ -426,7 +426,7 @@ describe("[UNIT] Effect Layer Composition", () => {
     });
   });
 
-  describe("runWithGlobalContainer", () => {
+  describe("[UNIT] runWithGlobalContainer", () => {
     test("runs Effect with global container", async () => {
       setAwilixContainer(container);
 

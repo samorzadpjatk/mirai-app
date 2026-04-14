@@ -66,7 +66,7 @@ describe("[UNIT] Effect Layer Composition Utilities", () => {
     resetAwilixContainer();
   });
 
-  describe("createServicesLayer", () => {
+  describe("[UNIT] createServicesLayer", () => {
     test("creates Layer from service map", async () => {
       const ServiceTag = Context.Tag("TestService")<
         TestServiceTag,
@@ -110,7 +110,7 @@ describe("[UNIT] Effect Layer Composition Utilities", () => {
     });
   });
 
-  describe("createCradleLayer", () => {
+  describe("[UNIT] createCradleLayer", () => {
     test("provides container as cradle", async () => {
       // Create a Layer that provides both the cradle access and individual services
       const CradleLayer = createCradleLayer(container);
@@ -133,7 +133,7 @@ describe("[UNIT] Effect Layer Composition Utilities", () => {
     });
   });
 
-  describe("createLazyLayer", () => {
+  describe("[UNIT] createLazyLayer", () => {
     test("resolves service lazily", async () => {
       const LazyLayer = createLazyLayer<TestService>(container, "testService");
 
@@ -182,7 +182,7 @@ describe("[UNIT] Effect Layer Composition Utilities", () => {
     });
   });
 
-  describe("composeWithContainer", () => {
+  describe("[UNIT] composeWithContainer", () => {
     test("composes container with additional layers", async () => {
       const ConfigTag = Context.Tag("Config")<ConfigTag, { apiUrl: string }>();
       const ConfigLayer = Layer.succeed(ConfigTag, {
@@ -233,7 +233,7 @@ describe("[UNIT] Effect Layer Composition Utilities", () => {
     });
   });
 
-  describe("createTransformedLayer", () => {
+  describe("[UNIT] createTransformedLayer", () => {
     test("transforms service before providing", async () => {
       const TransformedLayer = createTransformedLayer(
         container,
@@ -296,7 +296,7 @@ describe("[UNIT] Effect Layer Composition Utilities", () => {
     });
   });
 
-  describe("buildCompleteAppLayer", () => {
+  describe("[UNIT] buildCompleteAppLayer", () => {
     test("builds Layer with all options", async () => {
       const LoggerTag = Context.Tag("Logger")<
         LoggerTag,
@@ -373,7 +373,7 @@ describe("[UNIT] Effect Layer Composition Utilities", () => {
     });
   });
 
-  describe("initializeEffectAppLayer", () => {
+  describe("[UNIT] initializeEffectAppLayer", () => {
     test("initializes global container and returns Layer", async () => {
       setAwilixContainer(container);
 

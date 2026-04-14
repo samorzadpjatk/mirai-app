@@ -25,7 +25,7 @@ describe.skip("[UNIT] authHooks", () => {
     resetStore();
   });
 
-  describe("useAuth", () => {
+  describe("[UNIT] useAuth", () => {
     it("should return auth state and actions", () => {
       const auth = useAuth();
 
@@ -59,7 +59,7 @@ describe.skip("[UNIT] authHooks", () => {
     });
   });
 
-  describe("useUser", () => {
+  describe("[UNIT] useUser", () => {
     it("should return null when no user", () => {
       const user = useUser();
       expect(user).toBeNull();
@@ -85,7 +85,7 @@ describe.skip("[UNIT] authHooks", () => {
     });
   });
 
-  describe("useSession", () => {
+  describe("[UNIT] useSession", () => {
     it("should return null when no session", () => {
       const session = useSession();
       expect(session).toBeNull();
@@ -105,7 +105,7 @@ describe.skip("[UNIT] authHooks", () => {
     });
   });
 
-  describe("useIsAuthenticated", () => {
+  describe("[UNIT] useIsAuthenticated", () => {
     it("should return false when not authenticated", () => {
       const isAuthenticated = useIsAuthenticated();
       expect(isAuthenticated).toBe(false);
@@ -118,7 +118,7 @@ describe.skip("[UNIT] authHooks", () => {
     });
   });
 
-  describe("useAuthLoading", () => {
+  describe("[UNIT] useAuthLoading", () => {
     it("should return true when loading", () => {
       const isLoading = useAuthLoading();
       expect(isLoading).toBe(true);

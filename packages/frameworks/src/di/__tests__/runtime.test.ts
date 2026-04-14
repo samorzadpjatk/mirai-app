@@ -45,7 +45,7 @@ describe("[UNIT] Effect Runtime", () => {
     resetRuntime();
   });
 
-  describe("Initialization", () => {
+  describe("[UNIT] Initialization", () => {
     test("initializeRuntime creates a valid runtime", () => {
       expect(isRuntimeInitialized()).toBe(false);
 
@@ -72,7 +72,7 @@ describe("[UNIT] Effect Runtime", () => {
     });
   });
 
-  describe("runEffect", () => {
+  describe("[UNIT] runEffect", () => {
     test("runs a simple Effect successfully", async () => {
       initializeRuntime(TestLayer);
 
@@ -100,7 +100,7 @@ describe("[UNIT] Effect Runtime", () => {
     });
   });
 
-  describe("runEffectSync", () => {
+  describe("[UNIT] runEffectSync", () => {
     test("runs a synchronous Effect", () => {
       const effect = Effect.sync(() => 42);
 
@@ -109,7 +109,7 @@ describe("[UNIT] Effect Runtime", () => {
     });
   });
 
-  describe("runEffectWith", () => {
+  describe("[UNIT] runEffectWith", () => {
     test("runs Effect with the initialized application layer", async () => {
       const AdditionalTag = Effect.Tag("Additional")<
         AdditionalTag,
@@ -129,7 +129,7 @@ describe("[UNIT] Effect Runtime", () => {
     });
   });
 
-  describe("runEffectWithLayer", () => {
+  describe("[UNIT] runEffectWithLayer", () => {
     test("runs Effect with a custom layer on top", async () => {
       initializeRuntime(TestLayer);
 
@@ -146,7 +146,7 @@ describe("[UNIT] Effect Runtime", () => {
     });
   });
 
-  describe("mergeLayers", () => {
+  describe("[UNIT] mergeLayers", () => {
     test("merges two layers into one", async () => {
       const merged = mergeLayers(TestLayer, LoggerLayer);
 

@@ -86,7 +86,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     resetContainer();
   });
 
-  describe("Container Export", () => {
+  describe("[UNIT] Container Export", () => {
     test("exports container proxy that throws before initialization", () => {
       // Container is a proxy that throws before initialization
       expect(() => container.resolve("anything")).toThrow(
@@ -119,7 +119,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     });
   });
 
-  describe("Container Initialization", () => {
+  describe("[UNIT] Container Initialization", () => {
     test("initializeContainer creates and returns container", () => {
       const result = initializeContainer();
 
@@ -164,7 +164,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     });
   });
 
-  describe("Module Registration", () => {
+  describe("[UNIT] Module Registration", () => {
     test("createStaticModule creates a valid module", () => {
       expect(TestModule).toBeDefined();
       expect(TestModule.name).toBe("TestModule");
@@ -179,7 +179,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     });
   });
 
-  describe("Child Container Creation", () => {
+  describe("[UNIT] Child Container Creation", () => {
     test("createChildContainer returns new container", () => {
       initializeContainer();
 
@@ -257,7 +257,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     });
   });
 
-  describe("Test Container Creation", () => {
+  describe("[UNIT] Test Container Creation", () => {
     test("createTestContainer returns isolated container", () => {
       const testContainer = createTestContainer();
 
@@ -305,7 +305,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     });
   });
 
-  describe("Reset Container", () => {
+  describe("[UNIT] Reset Container", () => {
     test("resetContainer clears initialization state", () => {
       initializeContainer();
       expect(isContainerInitialized()).toBe(true);
@@ -332,7 +332,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     });
   });
 
-  describe("Service Functionality", () => {
+  describe("[UNIT] Service Functionality", () => {
     test("resolved service methods work correctly", () => {
       const testContainer = createTestContainer();
       testContainer.register({
@@ -392,7 +392,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     });
   });
 
-  describe("Clean Architecture Compliance", () => {
+  describe("[UNIT] Clean Architecture Compliance", () => {
     test("container lives in frameworks layer", () => {
       // This test documents the architectural decision
       // The container is in packages/frameworks/src/di/
@@ -418,7 +418,7 @@ describe("[UNIT] DI Container (awilix-modular)", () => {
     });
   });
 
-  describe("No reflect-metadata requirement", () => {
+  describe("[UNIT] No reflect-metadata requirement", () => {
     test("works without reflect-metadata import", () => {
       // This test verifies awilix-modular doesn't need reflect-metadata
       // Unlike Inversify which requires: import "reflect-metadata";

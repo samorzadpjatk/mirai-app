@@ -17,10 +17,11 @@
 import { schema, generateSDL } from "../schema";
 import { writeFileSync } from "fs";
 import { join } from "path";
+import { serverLogger } from "@mirai-app/shared";
 
 const SDL_PATH = join(process.cwd(), "graphql-sdl", "schema.graphql");
 
-console.log("📝 Generating GraphQL SDL...");
+serverLogger.info("📝 Generating GraphQL SDL...");
 
 try {
   const sdl = generateSDL();
@@ -35,18 +36,18 @@ try {
 
   writeFileSync(SDL_PATH, sdl, "utf-8");
 
-  console.log(`✅ SDL written to: ${SDL_PATH}`);
-  console.log(`📊 Schema stats:`);
-  console.log(`   - Types: ${sdl.match(/type\s+\w+/g)?.length ?? 0}`);
-  console.log(`   - Inputs: ${sdl.match(/input\s+\w+/g)?.length ?? 0}`);
-  console.log(`   - Enums: ${sdl.match(/enum\s+\w+/g)?.length ?? 0}`);
-  console.log(
-    `   - Queries: ${sdl.match(/\w+\(.*\):\s+\w+!?\s*$/gm)?.length ?? 0}`,
-  );
-  console.log(
-    `   - Mutations: ${sdl.match(/\w+\(.*\):\s+\w+!?\s*$/gm)?.length ?? 0}`,
-  );
+  serverLogger.info(`✅ SDL written to: ${SDL_PATH}`);
+  serverLogger.info(`📊 Schema stats:`, {
+    types: sdl.match(/type\s+\w+/g)?.length ?? 0,
+    inputs: sdl.match(/input\s+\w+/g)?.length ?? 0,
+    enums: sdl.match(/enum\s+\w+/g)?.length ?? 0,
+    queries: sdl.match(/\w+\(.*\):\s+\w+!?\s*$/gm)?.length ?? 0,
+    mutations: sdl.match(/\w+\(.*\):\s+\w+!?\s*$/gm)?.length ?? 0,
+  });
 } catch (error) {
-  console.error("❌ Failed to generate SDL:", error);
+  serverLogger.error(
+    "❌ Failed to generate SDL:",
+    error instanceof Error ? error : new Error(String(error)),
+  );
   process.exit(1);
 }
