@@ -3,7 +3,7 @@ import type { FastifyRequest } from "fastify";
 import { fastifyHeadersToFetchHeaders } from "../headers";
 
 describe("[UNIT] fastifyHeadersToFetchHeaders", () => {
-  describe("simple string header values", () => {
+  describe("[UNIT] simple string header values", () => {
     test("converts single string header value", () => {
       const mockHeaders = {
         "content-type": "application/json",
@@ -39,7 +39,7 @@ describe("[UNIT] fastifyHeadersToFetchHeaders", () => {
     });
   });
 
-  describe("array header values (multi-value headers)", () => {
+  describe("[UNIT] array header values (multi-value headers)", () => {
     test("converts array header values using append", () => {
       const mockHeaders = {
         "set-cookie": ["cookie1=value1", "cookie2=value2"],
@@ -83,7 +83,7 @@ describe("[UNIT] fastifyHeadersToFetchHeaders", () => {
     });
   });
 
-  describe("filtering undefined values", () => {
+  describe("[UNIT] filtering undefined values", () => {
     test("filters out undefined header values", () => {
       const mockHeaders = {
         "content-type": "application/json",
@@ -111,7 +111,7 @@ describe("[UNIT] fastifyHeadersToFetchHeaders", () => {
     });
   });
 
-  describe("empty/undefined headers object", () => {
+  describe("[UNIT] empty/undefined headers object", () => {
     test("handles empty headers object", () => {
       const mockHeaders = {} satisfies FastifyRequest["headers"];
 
@@ -140,7 +140,7 @@ describe("[UNIT] fastifyHeadersToFetchHeaders", () => {
     });
   });
 
-  describe("non-string value conversion", () => {
+  describe("[UNIT] non-string value conversion", () => {
     test("converts numbers to strings", () => {
       const mockHeaders = {
         "content-length": 1024 as unknown as string,
@@ -162,7 +162,7 @@ describe("[UNIT] fastifyHeadersToFetchHeaders", () => {
     });
   });
 
-  describe("console logging", () => {
+  describe("[UNIT] console logging", () => {
     test("logs conversion message", () => {
       const consoleSpy = spyOn(console, "log").mockImplementation(() => {});
 

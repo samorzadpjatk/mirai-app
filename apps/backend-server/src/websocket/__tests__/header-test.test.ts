@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from "bun:test";
 
-describe("[DEBUG] Header Test", () => {
+describe("[UNIT] [DEBUG] Header Test", () => {
   it("should have custom header", () => {
     const request = new Request("http://localhost:4000/graphql/ws", {
       headers: {

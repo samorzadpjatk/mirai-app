@@ -63,7 +63,7 @@ let testContext: TestContext;
 let adminToken: string;
 let userToken: string;
 
-describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
+describe("[INTEGRATION] GraphQL Yoga Endpoint () => {
   beforeAll(async () => {
     // Setup test container
     const container = createTestContainer();
@@ -175,7 +175,7 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
   // Endpoint Health Tests
   // =============================================================================
 
-  describe("GraphQL Endpoint Health", () => {
+  describe("[UNIT] GraphQL Endpoint Health", () => {
     it("GraphQL endpoint at /graphql responds to GET", async () => {
       const response = await fetch(`${testContext.baseUrl}/graphql`, {
         method: "GET",
@@ -219,7 +219,7 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
   // User Query Tests
   // =============================================================================
 
-  describe("User Query Endpoint", () => {
+  describe("[UNIT] User Query Endpoint", () => {
     it("returns user data via GraphQL HTTP endpoint", async () => {
       const response = await fetch(`${testContext.baseUrl}/graphql`, {
         method: "POST",
@@ -316,7 +316,7 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
   // Authentication Error Tests
   // =============================================================================
 
-  describe("Authentication Error Handling", () => {
+  describe("[UNIT] Authentication Error Handling", () => {
     it("returns UNAUTHENTICATED error when no token provided", async () => {
       const response = await fetch(`${testContext.baseUrl}/graphql`, {
         method: "POST",
@@ -394,7 +394,7 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
   // Schema Introspection Tests
   // =============================================================================
 
-  describe("Schema Introspection", () => {
+  describe("[UNIT] Schema Introspection", () => {
     it("supports introspection query", async () => {
       const response = await fetch(`${testContext.baseUrl}/graphql`, {
         method: "POST",
@@ -480,7 +480,7 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
   // GraphiQL Tests
   // =============================================================================
 
-  describe("GraphiQL Playground", () => {
+  describe("[UNIT] GraphiQL Playground", () => {
     it("serves GraphiQL UI at /graphql with Accept: text/html", async () => {
       const response = await fetch(`${testContext.baseUrl}/graphql`, {
         method: "GET",
@@ -503,7 +503,7 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
   // Context Isolation Tests
   // =============================================================================
 
-  describe("Context Isolation", () => {
+  describe("[UNIT] Context Isolation", () => {
     it("properly passes auth context to resolvers", async () => {
       // Make two concurrent requests with different tokens
       const [regularResponse, adminResponse] = await Promise.all([

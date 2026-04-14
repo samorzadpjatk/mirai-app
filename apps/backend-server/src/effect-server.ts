@@ -50,6 +50,7 @@
  */
 
 import { Context, Effect, Layer } from "effect";
+import { serverLogger } from "@mirai-app/shared";
 import type { BunServer } from "./bun-server";
 import type { HonoServer } from "./hono-server";
 import type { HonoConfig } from "./config/hono-config";
@@ -283,7 +284,7 @@ export function startServerProgram(): Effect.Effect<
     const server = yield* HttpServerTag;
     yield* server.start();
     yield* Effect.sync(() => {
-      console.log("[Effect] Server started successfully");
+      serverLogger.info("[Effect] Server started successfully");
     });
   });
 }
@@ -302,7 +303,7 @@ export function stopServerProgram(): Effect.Effect<
     const server = yield* HttpServerTag;
     yield* server.stop();
     yield* Effect.sync(() => {
-      console.log("[Effect] Server stopped successfully");
+      serverLogger.info("[Effect] Server stopped successfully");
     });
   });
 }
@@ -320,13 +321,13 @@ export function gracefulShutdownProgram(
 ): Effect.Effect<void, ServerStopError, HttpServerTag> {
   return Effect.gen(function* () {
     yield* Effect.sync(() => {
-      console.log(
+      serverLogger.info(
         `[Effect] Received ${signal}, initiating graceful shutdown...`,
       );
     });
     yield* stopServerProgram();
     yield* Effect.sync(() => {
-      console.log("[Effect] Graceful shutdown complete");
+      serverLogger.info("[Effect] Graceful shutdown complete");
     });
   });
 }

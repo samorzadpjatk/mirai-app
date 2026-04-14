@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from "bun:test";
 
-describe("[DEBUG] Minimal", () => {
+describe("[UNIT] [DEBUG] Minimal", () => {
   it("should have cookie header", () => {
     const request = new Request("http://localhost:4000/graphql/ws", {
       headers: {

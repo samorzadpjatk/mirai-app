@@ -35,7 +35,7 @@ const testConfig = {
 // Tests
 // =============================================================================
 
-describe("[INTEGRATION] Bun Server", () => {
+describe("[INTEGRATION] Bun Server () => {
   let server: BunServer;
 
   beforeAll(async () => {
@@ -51,7 +51,7 @@ describe("[INTEGRATION] Bun Server", () => {
     }
   });
 
-  describe("Server Lifecycle", () => {
+  describe("[UNIT] Server Lifecycle", () => {
     it("server is running", () => {
       expect(server.isRunning()).toBe(true);
     });
@@ -62,7 +62,7 @@ describe("[INTEGRATION] Bun Server", () => {
     });
   });
 
-  describe("HTTP Endpoints", () => {
+  describe("[UNIT] HTTP Endpoints", () => {
     it("GET / returns API info", async () => {
       const response = await fetch(`http://${TEST_HOST}:${TEST_PORT}/`);
       expect(response.status).toBe(200);
@@ -131,7 +131,7 @@ describe("[INTEGRATION] Bun Server", () => {
     });
   });
 
-  describe("WebSocket Support", () => {
+  describe("[UNIT] WebSocket Support", () => {
     it("GET /graphql/ws returns 426 without upgrade header", async () => {
       const response = await fetch(
         `http://${TEST_HOST}:${TEST_PORT}/graphql/ws`,
@@ -195,7 +195,7 @@ describe("[INTEGRATION] Bun Server", () => {
     });
   });
 
-  describe("Error Handling", () => {
+  describe("[UNIT] Error Handling", () => {
     it("handles malformed GraphQL requests", async () => {
       const response = await fetch(`http://${TEST_HOST}:${TEST_PORT}/graphql`, {
         method: "POST",

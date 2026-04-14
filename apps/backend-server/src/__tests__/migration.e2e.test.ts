@@ -68,7 +68,7 @@ interface TestUser {
 // Test Suite: Full Migration E2E
 // =============================================================================
 
-describe("[INTEGRATION] Unified Migration - All Phases", () => {
+describe("[INTEGRATION] Unified Migration - All Phases () => {
   let ctx: TestContext;
   const testUsers: Map<string, TestUser> = new Map();
 
@@ -122,7 +122,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
   // Phase 0: Foundation Setup (Auth, Realtime, Storage)
   // ===========================================================================
 
-  describe("Phase 0: Foundation - InMemory Adapters", () => {
+  describe("[UNIT] Phase 0: Foundation - InMemory Adapters", () => {
     beforeEach(() => {
       // Clear auth adapter between tests
       ctx.authAdapter.clear();
@@ -134,7 +134,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // Auth Flow Tests
     // -------------------------------------------------------------------------
 
-    describe("Auth Flow (InMemoryAuthAdapter)", () => {
+    describe("[UNIT] ""Auth Flow (InMemoryAuthAdapter) () => {
       it("completes full auth flow: create user → create session → validate token", async () => {
         // 1. Create test user in auth adapter (Phase 0)
         const userId = UserId.create("550e8400-e29b-41d4-a716-446655440000");
@@ -210,7 +210,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // Realtime Adapter Tests
     // -------------------------------------------------------------------------
 
-    describe("Realtime (InMemoryRealtimeAdapter)", () => {
+    describe("[UNIT] Realtime (InMemoryRealtimeAdapter)", () => {
       it("broadcasts and receives messages via InMemoryRealtimeAdapter", async () => {
         const realtimeAdapter = new InMemoryRealtimeAdapter();
         const receivedMessages: unknown[] = [];
@@ -273,7 +273,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // Storage Adapter Tests
     // -------------------------------------------------------------------------
 
-    describe("Storage (InMemoryStorageAdapter)", () => {
+    describe("[UNIT] Storage (InMemoryStorageAdapter)", () => {
       it("stores and retrieves files via InMemoryStorageAdapter", async () => {
         const storageAdapter = new InMemoryStorageAdapter();
         const testData = new Uint8Array([1, 2, 3, 4, 5]);
@@ -342,7 +342,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
   // Phase 1: Database (Dual-ORM Coexistence)
   // ===========================================================================
 
-  describe("Phase 1: Database - Dual-ORM Coexistence", () => {
+  describe("[UNIT] Phase 1: Database - Dual-ORM Coexistence () => {
     beforeEach(async () => {
       // Create test users in InMemory repository
       const adminUser = await Effect.runPromise(
@@ -401,7 +401,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // Repository Switching Tests
     // -------------------------------------------------------------------------
 
-    describe("Repository Provider Switching", () => {
+    describe("[UNIT] Repository Provider Switching", () => {
       it("uses InMemoryUserRepository when registered in DI", async () => {
         // Register InMemory repository
         ctx.container.register({
@@ -460,7 +460,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // Data Integrity Tests
     // -------------------------------------------------------------------------
 
-    describe("Data Integrity", () => {
+    describe("[UNIT] Data Integrity", () => {
       it("preserves user data through save and retrieve cycle", async () => {
         const originalUser = await Effect.runPromise(
           User.create({
@@ -523,7 +523,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
   // Phase 2: Real-Time Architecture
   // ===========================================================================
 
-  describe("Phase 2: Real-Time - EventBus + Services", () => {
+  describe("[UNIT] Phase 2: Real-Time - EventBus + Services", () => {
     beforeEach(() => {
       ctx.eventBus.clear();
     });
@@ -532,7 +532,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // EventBus Tests
     // -------------------------------------------------------------------------
 
-    describe("EventBus", () => {
+    describe("[UNIT] ""EventBus () => {
       it("publishes and subscribes to typed events", () => {
         const events: string[] = [];
 
@@ -693,7 +693,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // EventBus + Repository Integration
     // -------------------------------------------------------------------------
 
-    describe("EventBus + Repository Integration", () => {
+    describe("[UNIT] EventBus + Repository Integration", () => {
       it("publishes events when repository operations occur", async () => {
         const publishedEvents: string[] = [];
 
@@ -734,12 +734,12 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
   // Phase 3: API - GraphQL Integration
   // ===========================================================================
 
-  describe("Phase 3: API - GraphQL End-to-End", () => {
+  describe("[UNIT] Phase 3: API - GraphQL End-to-End", () => {
     // -------------------------------------------------------------------------
     // GraphQL Query Tests
     // -------------------------------------------------------------------------
 
-    describe("GraphQL Queries", () => {
+    describe("[UNIT] ""GraphQL Queries () => {
       it("executes user query through full stack", async () => {
         const adminUser = testUsers.get("admin");
         expect(adminUser).toBeDefined();
@@ -896,7 +896,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // Cross-Phase Integration Tests
     // -------------------------------------------------------------------------
 
-    describe("Cross-Phase Integration", () => {
+    describe("[UNIT] Cross-Phase Integration", () => {
       it("full flow: Auth → GraphQL → UseCase → Repository → EventBus", async () => {
         const adminUser = testUsers.get("admin");
         expect(adminUser).toBeDefined();
@@ -951,7 +951,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     // Server Health Tests
     // -------------------------------------------------------------------------
 
-    describe("Server Health", () => {
+    describe("[UNIT] Server Health", () => {
       it("responds to health check endpoint", async () => {
         const response = await fetch(`${ctx.baseUrl}/health`);
         expect(response.status).toBe(200);
@@ -986,7 +986,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
   // Integration Summary
   // ===========================================================================
 
-  describe("Migration Integration Summary", () => {
+  describe("[UNIT] Migration Integration Summary", () => {
     it("verifies all phases are operational", async () => {
       // Phase 0: InMemory adapters work
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440050");

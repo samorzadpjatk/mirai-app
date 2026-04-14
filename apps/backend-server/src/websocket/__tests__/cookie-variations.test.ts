@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from "bun:test";
 
-describe("[DEBUG] Cookie Header Variations", () => {
+describe("[UNIT] [DEBUG] Cookie Header Variations", () => {
   it("should access cookie headers set in various ways", () => {
     // Test 1: lowercase 'cookie'
     const req1 = new Request("http://localhost:4000/graphql/ws", {

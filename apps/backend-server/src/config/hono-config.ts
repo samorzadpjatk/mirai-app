@@ -26,6 +26,7 @@
  */
 
 import { env } from "node:process";
+import { serverLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Environment Detection
@@ -197,15 +198,12 @@ export function validateHonoConfig(): void {
  * Print configuration summary (safe to log - no secrets)
  */
 export function printHonoConfig(): void {
-  console.log("[Hono] Configuration:");
-  console.log(`  Port: ${honoConfig.port}`);
-  console.log(`  Host: ${honoConfig.host}`);
-  console.log(`  GraphQL Path: ${honoConfig.graphqlPath}`);
-  console.log(
-    `  GraphiQL: ${honoConfig.enableGraphiQL ? "enabled" : "disabled"}`,
-  );
-  console.log(`  Environment: ${honoConfig.env}`);
-  console.log(
-    `  Logging: ${honoConfig.enableLogging ? "enabled" : "disabled"}`,
-  );
+  serverLogger.info("[Hono] Configuration:", {
+    port: honoConfig.port,
+    host: honoConfig.host,
+    graphqlPath: honoConfig.graphqlPath,
+    graphiql: honoConfig.enableGraphiQL ? "enabled" : "disabled",
+    environment: honoConfig.env,
+    logging: honoConfig.enableLogging ? "enabled" : "disabled",
+  });
 }

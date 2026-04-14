@@ -7,7 +7,7 @@
 import { describe, it, expect } from "bun:test";
 import { extractAuthToken } from "../auth-handler";
 
-describe("[DEBUG] Request Headers", () => {
+describe("[UNIT] [DEBUG] Request Headers", () => {
   it("should extract token using the actual function", () => {
     const request = new Request("http://localhost:4000/graphql/ws", {
       headers: {

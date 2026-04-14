@@ -51,6 +51,7 @@ import {
   getContainer,
   isContainerInitialized,
 } from "@mirai-app/frameworks/di";
+import { serverLogger } from "@mirai-app/shared";
 import { honoConfig, type HonoConfig } from "./config/hono-config";
 import {
   createDefaultYogaHandler,
@@ -137,15 +138,15 @@ interface WebSocketData {
  */
 function initializeBunContainer(): AwilixContainer {
   if (isContainerInitialized()) {
-    console.log(
+    serverLogger.info(
       "[DI] Container already initialized, reusing existing container",
     );
     return getContainer();
   }
 
-  console.log("[DI] Initializing container with AppModule...");
+  serverLogger.info("[DI] Initializing container with AppModule...");
   const container = initializeContainer([AppModule]);
-  console.log("[DI] Container initialized successfully");
+  serverLogger.info("[DI] Container initialized successfully");
   return container;
 }
 
@@ -224,7 +225,7 @@ export function getActiveWebSocketCount(): number {
  * Close all WebSocket connections gracefully
  */
 function closeAllWebSockets(): void {
-  console.log(
+  serverLogger.info(
     `[Bun] Closing ${activeConnections.size} WebSocket connections...`,
   );
 
@@ -451,9 +452,9 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
         (ws as WebSocket & { data?: WebSocketData }).data = data;
         activeConnections.set(connectionId, data);
 
-        console.log(
-          `[Bun] WebSocket connected: ${connectionId} (total: ${activeConnections.size})`,
-        );
+        serverLogger.info(`[Bun] WebSocket connected: ${connectionId}`, {
+          totalConnections: activeConnections.size,
+        });
       },
 
       /**
@@ -521,8 +522,11 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
               ).authContext = authResult.authContext;
 
               sendMessage(ws, { type: MessageType.ConnectionAck });
-              console.log(
-                `[Bun] WebSocket authenticated: ${data.connectionId} (user: ${data.userId})`,
+              serverLogger.info(
+                `[Bun] WebSocket authenticated: ${data.connectionId}`,
+                {
+                  userId: data.userId,
+                },
               );
             } catch (error) {
               console.error("[Bun] WebSocket auth error:", error);
@@ -552,7 +556,7 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
 
             // Subscription execution is handled by GraphQL Yoga
             // This is just the WebSocket protocol layer
-            console.log(`[Bun] Subscription requested: ${parsed.id}`);
+            serverLogger.info(`[Bun] Subscription requested: ${parsed.id}`);
             break;
           }
 
@@ -584,8 +588,11 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
         const data = (ws as WebSocket & { data?: WebSocketData }).data;
         if (data) {
           activeConnections.delete(data.connectionId);
-          console.log(
-            `[Bun] WebSocket disconnected: ${data.connectionId} (total: ${activeConnections.size})`,
+          serverLogger.info(
+            `[Bun] WebSocket disconnected: ${data.connectionId}`,
+            {
+              totalConnections: activeConnections.size,
+            },
           );
         }
       },
@@ -612,7 +619,7 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
    */
   const start = async (): Promise<void> => {
     if (isRunning) {
-      console.log("[Bun] Server already running");
+      serverLogger.info("[Bun] Server already running");
       return;
     }
 
@@ -621,23 +628,23 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
         serverInstance = Bun.serve(bunServeConfig);
         isRunning = true;
 
-        console.log(
+        serverLogger.info(
           `[Bun] Server running at http://${config.host}:${config.port}`,
         );
-        console.log(
+        serverLogger.info(
           `[Bun] Health check: http://${config.host}:${config.port}/health`,
         );
-        console.log(
+        serverLogger.info(
           `[Bun] GraphQL health: http://${config.host}:${config.port}/graphql/health`,
         );
-        console.log(
+        serverLogger.info(
           `[Bun] GraphQL endpoint: http://${config.host}:${config.port}${config.graphqlPath}`,
         );
-        console.log(
+        serverLogger.info(
           `[Bun] GraphQL WebSocket: ws://${config.host}:${config.port}/graphql/ws`,
         );
         if (config.enableGraphiQL) {
-          console.log(
+          serverLogger.info(
             `[Bun] GraphiQL playground: http://${config.host}:${config.port}${config.graphqlPath}/graphiql`,
           );
         }
@@ -654,11 +661,11 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
    */
   const stop = async (): Promise<void> => {
     if (!isRunning || !serverInstance) {
-      console.log("[Bun] Server not running");
+      serverLogger.info("[Bun] Server not running");
       return;
     }
 
-    console.log("[Bun] Shutting down gracefully...");
+    serverLogger.info("[Bun] Shutting down gracefully...");
 
     // Close all WebSocket connections
     closeAllWebSockets();
@@ -667,7 +674,7 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
     serverInstance.stop(true); // true = force close after timeout
     isRunning = false;
 
-    console.log("[Bun] Server stopped");
+    serverLogger.info("[Bun] Server stopped");
   };
 
   /**
@@ -696,7 +703,7 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
   // ==========================================================================
 
   const shutdownHandler = async (signal: string) => {
-    console.log(`[Bun] Received ${signal}, shutting down...`);
+    serverLogger.info(`[Bun] Received ${signal}, shutting down...`);
     await stop();
     process.exit(0);
   };

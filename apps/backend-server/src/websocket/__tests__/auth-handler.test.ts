@@ -134,7 +134,7 @@ function createMockContainer(authPort: AuthPort): AwilixContainer {
 // =============================================================================
 
 describe("[UNIT] WebSocket Auth Handler", () => {
-  describe("extractAuthToken", () => {
+  describe("[UNIT] extractAuthToken", () => {
     it("should extract token from auth-token cookie", () => {
       const request = createMockRequest("http://localhost:4000/graphql/ws", {
         cookie: `${AUTH_TOKEN_COOKIE}=valid-token-123`,
@@ -220,7 +220,7 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
   });
 
-  describe("validateAuthToken", () => {
+  describe("[UNIT] validateAuthToken", () => {
     it("should return success for valid token", async () => {
       const mockContext: AuthContext = {
         userId: "user-123",
@@ -272,7 +272,7 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
   });
 
-  describe("handleWebSocketAuth", () => {
+  describe("[UNIT] handleWebSocketAuth", () => {
     it("should return error when no token provided", async () => {
       const request = new Request("http://localhost:4000/graphql/ws");
       const container = createMockContainer(new MockAuthPort());
@@ -317,7 +317,7 @@ describe("[UNIT] WebSocket Auth Handler", () => {
     });
   });
 
-  describe("createWebSocketContext", () => {
+  describe("[UNIT] createWebSocketContext", () => {
     it("should create context from successful auth result", () => {
       const mockContext: AuthContext = {
         userId: "user-123",

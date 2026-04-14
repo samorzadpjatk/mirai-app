@@ -48,6 +48,7 @@ import {
   getContainer,
   isContainerInitialized,
 } from "@mirai-app/frameworks/di";
+import { serverLogger } from "@mirai-app/shared";
 import { honoConfig, type HonoConfig } from "./config/hono-config";
 import {
   createDefaultYogaHandler,
@@ -108,15 +109,15 @@ export interface HonoContext {
  */
 function initializeHonoContainer(): AwilixContainer {
   if (isContainerInitialized()) {
-    console.log(
+    serverLogger.info(
       "[DI] Container already initialized, reusing existing container",
     );
     return getContainer();
   }
 
-  console.log("[DI] Initializing container with AppModule...");
+  serverLogger.info("[DI] Initializing container with AppModule...");
   const container = initializeContainer([AppModule]);
-  console.log("[DI] Container initialized successfully");
+  serverLogger.info("[DI] Container initialized successfully");
   return container;
 }
 
@@ -309,7 +310,7 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
    */
   const start = async (): Promise<void> => {
     if (isRunning) {
-      console.log("[Hono] Server already running");
+      serverLogger.info("[Hono] Server already running");
       return;
     }
 
@@ -325,20 +326,20 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
     return new Promise((resolve, reject) => {
       serverInstance?.on("listening", () => {
         isRunning = true;
-        console.log(
+        serverLogger.info(
           `[Hono] Server running at http://${config.host}:${config.port}`,
         );
-        console.log(
+        serverLogger.info(
           `[Hono] Health check: http://${config.host}:${config.port}/health`,
         );
-        console.log(
+        serverLogger.info(
           `[Hono] GraphQL health: http://${config.host}:${config.port}/graphql/health`,
         );
-        console.log(
+        serverLogger.info(
           `[Hono] GraphQL endpoint: http://${config.host}:${config.port}${config.graphqlPath}`,
         );
         if (config.enableGraphiQL) {
-          console.log(
+          serverLogger.info(
             `[Hono] GraphiQL playground: http://${config.host}:${config.port}${config.graphqlPath}/graphiql`,
           );
         }
@@ -358,23 +359,23 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
    */
   const stop = async (): Promise<void> => {
     if (!isRunning || !serverInstance) {
-      console.log("[Hono] Server not running");
+      serverLogger.info("[Hono] Server not running");
       return;
     }
 
-    console.log("[Hono] Shutting down gracefully...");
+    serverLogger.info("[Hono] Shutting down gracefully...");
 
     return new Promise((resolve) => {
       // Set shutdown timeout
       const shutdownTimeout = setTimeout(() => {
-        console.error("[Hono] Forced shutdown after timeout");
+        serverLogger.error("[Hono] Forced shutdown after timeout");
         process.exit(1);
       }, config.shutdownTimeout);
 
       serverInstance?.close(() => {
         clearTimeout(shutdownTimeout);
         isRunning = false;
-        console.log("[Hono] Server stopped");
+        serverLogger.info("[Hono] Server stopped");
         resolve();
       });
     });
@@ -408,7 +409,7 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
 
   // Handle graceful shutdown signals
   const shutdownHandler = async (signal: string) => {
-    console.log(`[Hono] Received ${signal}, shutting down...`);
+    serverLogger.info(`[Hono] Received ${signal}, shutting down...`);
     await stop();
     process.exit(0);
   };

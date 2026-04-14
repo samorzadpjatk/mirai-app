@@ -31,6 +31,7 @@ import { writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { printSchema } from "graphql";
+import { serverLogger } from "@mirai-app/shared";
 import { builder } from "./builder";
 
 // =============================================================================
@@ -279,7 +280,7 @@ export function saveSchemaToFile(sdl: string, filePath?: string): void {
 ${sdl}`;
 
   writeFileSync(outputPath, content, "utf-8");
-  console.log(`[Schema] SDL written to: ${outputPath}`);
+  serverLogger.info(`[Schema] SDL written to: ${outputPath}`);
 }
 
 /**
@@ -303,9 +304,9 @@ export function generateAndSaveSchema(): void {
  * generates and saves the schema file.
  */
 if (import.meta.main) {
-  console.log("[Schema] Generating GraphQL SDL...");
+  serverLogger.info("[Schema] Generating GraphQL SDL...");
   generateAndSaveSchema();
-  console.log("[Schema] Done!");
+  serverLogger.info("[Schema] Done!");
 }
 
 // =============================================================================

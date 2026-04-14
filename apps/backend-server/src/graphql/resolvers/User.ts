@@ -18,8 +18,7 @@
  * @module User/resolvers
  */
 
-console.log("[User Resolver] Loading User resolver module...");
-
+import { serverLogger } from "@mirai-app/shared";
 import { builder } from "../builder";
 import type {
   GetUserOutput,
@@ -63,18 +62,17 @@ const UserInput = builder.inputType("UserInput", {
 // Query Fields
 // =============================================================================
 
-console.log("[User Resolver] Registering query fields...");
+serverLogger.debug("[User Resolver] Registering query fields...");
 
 /**
  * Query: user(id: ID!) - Get user by ID
  *
  * Requires authentication. Users can view any user's profile.
  */
-console.log("[User Resolver] About to register 'user' query field");
-console.log(
-  "[User Resolver] Builder queryTypeKeys before:",
-  Object.keys((builder as any).queryType || {}),
-);
+serverLogger.debug("[User Resolver] About to register 'user' query field");
+serverLogger.debug("[User Resolver] Builder queryTypeKeys before", {
+  keys: Object.keys((builder as any).queryType || {}),
+});
 builder.queryField("user", (t) =>
   t.field({
     description: "Get a user by their unique ID",
@@ -102,7 +100,7 @@ builder.queryField("user", (t) =>
 
       // Debug logging
       if (process.env.ENABLE_TEST_LOGS === "1") {
-        console.log("[User Resolver] getById result:", result);
+        serverLogger.debug("[User Resolver] getById result", { result });
       }
 
       // Handle errors manually to support "not found" -> null semantics
@@ -119,11 +117,10 @@ builder.queryField("user", (t) =>
   }),
 );
 
-console.log("[User Resolver] Registered 'user' query field");
-console.log(
-  "[User Resolver] Builder queryType keys after user:",
-  Object.keys((builder as any).queryType || {}),
-);
+serverLogger.debug("[User Resolver] Registered 'user' query field");
+serverLogger.debug("[User Resolver] Builder queryType keys after user", {
+  keys: Object.keys((builder as any).queryType || {}),
+});
 
 /**
  * Query: users - Get all users (admin only)
@@ -168,7 +165,7 @@ builder.queryField("users", (t) =>
   }),
 );
 
-console.log("[User Resolver] Registered 'users' query field");
+serverLogger.debug("[User Resolver] Registered 'users' query field");
 
 /**
  * Query: me - Get current authenticated user
@@ -210,7 +207,7 @@ builder.queryField("me", (t) =>
   }),
 );
 
-console.log("[User Resolver] Registered 'me' query field");
+serverLogger.debug("[User Resolver] Registered 'me' query field");
 
 // =============================================================================
 // Mutation Fields
@@ -323,7 +320,7 @@ builder.mutationField("updateUser", (t) =>
 // Export
 // =============================================================================
 
-console.log(
+serverLogger.debug(
   "[User Resolver] Module loaded successfully - all fields registered",
 );
 

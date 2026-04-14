@@ -9,6 +9,7 @@
  */
 
 import { builder } from "../builder";
+import { serverLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Import Resolvers
@@ -93,14 +94,14 @@ import "../resolvers/sponsor";
  * Extend the Query type if additional root fields are needed.
  * Individual domain resolvers should prefer builder.queryField().
  */
-console.log("[Query.ts] Calling builder.queryType()");
+serverLogger.debug("[Query.ts] Calling builder.queryType()");
 builder.queryType({
   description: "Root query type for fetching data",
   authScopes: {
     public: true,
   },
 });
-console.log("[Query.ts] builder.queryType() done");
+serverLogger.debug("[Query.ts] builder.queryType() done");
 
 // =============================================================================
 // Export

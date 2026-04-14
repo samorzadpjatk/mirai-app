@@ -36,6 +36,7 @@
 
 import { createYoga, type YogaInitialContext } from "graphql-yoga";
 import type { Context as HonoContext } from "hono";
+import { serverLogger } from "@mirai-app/shared";
 import { schema } from "./schema";
 import { createSimpleContextFactory, type GraphQLContext } from "./context";
 
@@ -177,16 +178,16 @@ query GetUser($id: ID!) {
     logging: {
       debug: (...args) => {
         if (process.env.DEBUG_GRAPHQL === "true") {
-          console.debug("[GraphQL]", ...args);
+          serverLogger.debug("[GraphQL] " + args.join(" "));
         }
       },
       info: (...args) => {
         if (process.env.NODE_ENV !== "test") {
-          console.info("[GraphQL]", ...args);
+          serverLogger.info("[GraphQL] " + args.join(" "));
         }
       },
-      warn: (...args) => console.warn("[GraphQL]", ...args),
-      error: (...args) => console.error("[GraphQL]", ...args),
+      warn: (...args) => serverLogger.warn("[GraphQL] " + args.join(" ")),
+      error: (...args) => serverLogger.error("[GraphQL] " + args.join(" ")),
     },
     // Health check endpoint
     healthCheckEndpoint: "/health",

@@ -39,7 +39,7 @@ function getTestConfig() {
 // Tests
 // =============================================================================
 
-describe("[UNIT] Bun Server", () => {
+describe("[UNIT] Bun Server () => {
   let server: BunServer;
   let currentPort: number;
 
@@ -59,7 +59,7 @@ describe("[UNIT] Bun Server", () => {
     await new Promise((r) => setTimeout(r, 200));
   });
 
-  describe("Server Lifecycle", () => {
+  describe("[UNIT] Server Lifecycle", () => {
     it("can create server instance", () => {
       expect(server).toBeDefined();
       expect(server.app).toBeDefined();
@@ -93,7 +93,7 @@ describe("[UNIT] Bun Server", () => {
     });
   });
 
-  describe("HTTP Endpoints", () => {
+  describe("[UNIT] HTTP Endpoints () => {
     beforeEach(async () => {
       await server.start();
       currentPort = server.getPort();
@@ -154,7 +154,7 @@ describe("[UNIT] Bun Server", () => {
     });
   });
 
-  describe("WebSocket Upgrade", () => {
+  describe("[UNIT] WebSocket Upgrade () => {
     beforeEach(async () => {
       await server.start();
       currentPort = server.getPort();
@@ -287,7 +287,7 @@ describe("[UNIT] Bun Server", () => {
     });
   });
 
-  describe("CORS Configuration", () => {
+  describe("[UNIT] CORS Configuration", () => {
     it("responds with CORS headers when origin configured", async () => {
       const corsServer = createBunServer({
         ...honoConfig,
@@ -315,7 +315,7 @@ describe("[UNIT] Bun Server", () => {
     });
   });
 
-  describe("Graceful Shutdown", () => {
+  describe("[UNIT] Graceful Shutdown", () => {
     it("closes WebSocket connections on stop", async () => {
       await server.start();
       currentPort = server.getPort();
@@ -346,7 +346,7 @@ describe("[UNIT] Bun Server", () => {
     });
   });
 
-  describe("Error Handling", () => {
+  describe("[UNIT] Error Handling () => {
     beforeEach(async () => {
       await server.start();
       currentPort = server.getPort();

@@ -87,7 +87,7 @@ const TEST_USERS = {
   },
 };
 
-describe("[INTEGRATION] User GraphQL Resolvers", () => {
+describe("[INTEGRATION] User GraphQL Resolvers () => {
   let context: TestContext;
   let adminToken: string;
   let userToken: string;
@@ -248,7 +248,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
   // user(id: ID!) Query Tests
   // =============================================================================
 
-  describe("Query: user(id: ID!)", () => {
+  describe("[UNIT] Query: user(id: ID!)", () => {
     const USER_QUERY = `
       query GetUser($id: ID!) {
         user(id: $id) {
@@ -355,7 +355,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
   // Query: users Tests
   // =============================================================================
 
-  describe("Query: users (admin only)", () => {
+  describe("[UNIT] Query: users (admin only)", () => {
     const USERS_QUERY = `
       query GetUsers($limit: Int, $offset: Int) {
         users(limit: $limit, offset: $offset) {
@@ -423,7 +423,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
   // Query: me Tests
   // =============================================================================
 
-  describe("Query: me", () => {
+  describe("[UNIT] Query: me", () => {
     const ME_QUERY = `
       query GetMe {
         me {
@@ -505,7 +505,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
   // Schema Generation Test
   // =============================================================================
 
-  describe("Schema Generation", () => {
+  describe("[UNIT] Schema Generation", () => {
     it("generates valid GraphQL schema", () => {
       console.log("[Test] About to print schema...");
       const sdl = printSchema(schema);

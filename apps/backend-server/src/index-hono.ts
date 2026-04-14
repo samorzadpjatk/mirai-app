@@ -44,6 +44,7 @@ import {
   initializeRuntime,
   runEffectWith,
 } from "@mirai-app/frameworks/di";
+import { serverLogger } from "@mirai-app/shared";
 import { createBunServer } from "./bun-server";
 import {
   honoConfig,
@@ -72,20 +73,20 @@ import {
  */
 function initializeDependencies(): void {
   // Initialize awilix container with AppModule
-  console.log("[Effect] Initializing DI container...");
+  serverLogger.info("[Effect] Initializing DI container...");
   const container = initializeContainer([AppModule]);
 
   // Set the container for Effect integration
   setAwilixContainer(container);
 
   // Initialize Effect runtime
-  console.log("[Effect] Initializing Effect runtime...");
+  serverLogger.info("[Effect] Initializing Effect runtime...");
   const AppLayer = createBunServerLayer(createBunServer(honoConfig)).pipe(
     Layer.merge(createServerConfigLayer(honoConfig)),
   );
   initializeRuntime(AppLayer);
 
-  console.log("[Effect] Dependencies initialized successfully");
+  serverLogger.info("[Effect] Dependencies initialized successfully");
 }
 
 // =============================================================================
@@ -128,7 +129,7 @@ const startupProgram = Effect.gen(function* () {
   printHonoConfig();
 
   // Create Bun server with WebSocket support
-  console.log("[Effect] Creating Bun server...");
+  serverLogger.info("[Effect] Creating Bun server...");
   _server = createBunServer(honoConfig);
 
   // Create server layer with the instance
@@ -141,15 +142,15 @@ const startupProgram = Effect.gen(function* () {
 
   // Log startup success
   yield* Effect.sync(() => {
-    console.log("[Effect] Server startup complete");
-    console.log(
+    serverLogger.info("[Effect] Server startup complete");
+    serverLogger.info(
       `[Effect] Health check: http://${honoConfig.host}:${honoConfig.port}/health`,
     );
-    console.log(
+    serverLogger.info(
       `[Effect] GraphQL endpoint: http://${honoConfig.host}:${honoConfig.port}${honoConfig.graphqlPath}`,
     );
     if (honoConfig.enableGraphiQL) {
-      console.log(
+      serverLogger.info(
         `[Effect] GraphiQL playground: http://${honoConfig.host}:${honoConfig.port}${honoConfig.graphqlPath}/graphiql`,
       );
     }
@@ -166,7 +167,7 @@ const startupProgram = Effect.gen(function* () {
 const shutdownProgram = (signal: string) =>
   Effect.gen(function* () {
     yield* Effect.sync(() => {
-      console.log(`\n[Effect] Received ${signal}, initiating shutdown...`);
+      serverLogger.info(`[Effect] Received ${signal}, initiating shutdown...`);
     });
 
     if (_server && _server.isRunning()) {
@@ -176,7 +177,7 @@ const shutdownProgram = (signal: string) =>
     }
 
     yield* Effect.sync(() => {
-      console.log("[Effect] Shutdown complete");
+      serverLogger.info("[Effect] Shutdown complete");
     });
   });
 
@@ -252,7 +253,7 @@ export async function start(): Promise<BunServer> {
  */
 export async function stop(): Promise<void> {
   if (!_server) {
-    console.log("[Effect] Server not running");
+    serverLogger.info("[Effect] Server not running");
     return;
   }
 

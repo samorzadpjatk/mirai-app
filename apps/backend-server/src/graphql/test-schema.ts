@@ -1,32 +1,37 @@
 // Test script to check schema contents
 import { schema } from "./schema";
 import { printSchema } from "graphql";
+import { serverLogger } from "@mirai-app/shared";
 
 const sdl = printSchema(schema);
-console.log("=== Types in schema ===");
+serverLogger.debug("=== Types in schema ===");
 const types = sdl.match(/type\s+\w+/g);
 if (types) {
-  types.slice(0, 50).forEach((t) => console.log(t));
+  serverLogger.debug(`Types found: ${types.slice(0, 50).join(", ")}`);
 }
 
-console.log("\n=== User type present? ===");
-console.log(sdl.includes("type User"));
+serverLogger.debug("=== User type present? ===");
+serverLogger.debug(`User type present: ${sdl.includes("type User")}`);
 
-console.log("\n=== Query fields ===");
+serverLogger.debug("=== Query fields ===");
 const queryMatch = sdl.match(/type Query\s*\{([^}]+)\}/s);
 if (queryMatch) {
-  console.log(queryMatch[0].slice(0, 2000));
+  serverLogger.debug(`Query fields: ${queryMatch[0].slice(0, 2000)}`);
 } else {
-  console.log("Query type not found with simple regex");
+  serverLogger.debug("Query type not found with simple regex");
   // Try to find user field
   const lines = sdl.split("\n");
   const queryStart = lines.findIndex((l) => l.includes("type Query"));
   if (queryStart >= 0) {
-    console.log("Query type starts at line", queryStart);
-    console.log(lines.slice(queryStart, queryStart + 30).join("\n"));
+    serverLogger.debug(`Query type starts at line ${queryStart}`);
+    serverLogger.debug(
+      `Query type content: ${lines.slice(queryStart, queryStart + 30).join("\n")}`,
+    );
   }
 }
 
-console.log("\n=== Checking for user(id: ID!): User ===");
-console.log(sdl.includes("user(id: ID!): User"));
-console.log(sdl.includes("user(id"));
+serverLogger.debug("=== Checking for user(id: ID!): User ===");
+serverLogger.debug(
+  `user(id: ID!): User present: ${sdl.includes("user(id: ID!): User")}`,
+);
+serverLogger.debug(`user(id present: ${sdl.includes("user(id")}`);

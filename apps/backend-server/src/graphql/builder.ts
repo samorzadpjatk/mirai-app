@@ -32,6 +32,7 @@ import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
 import DataLoaderPlugin from "@pothos/plugin-dataloader";
 import RelayPlugin from "@pothos/plugin-relay";
 import { DateTimeResolver } from "graphql-scalars";
+import { serverLogger } from "@mirai-app/shared";
 import type {
   GetUserOutput,
   CreateUserOutput,
@@ -941,14 +942,14 @@ export const UserRoleEnum = builder.enumType("UserRole", {
  *
  * This will be extended by individual domain types.
  */
-console.log("[Builder] Creating Query type");
+serverLogger.debug("[Builder] Creating Query type");
 builder.queryType({
   description: "Root query type for fetching data",
   authScopes: {
     public: true,
   },
 });
-console.log("[Builder] Query type created");
+serverLogger.debug("[Builder] Query type created");
 
 /**
  * Create the root Mutation type
