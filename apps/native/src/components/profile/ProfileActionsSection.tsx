@@ -19,7 +19,7 @@ interface ProfileActionsSectionProps {
 export function ProfileActionsSection({
   onEditProfile,
 }: ProfileActionsSectionProps) {
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const router = useRouter();
   const { isSubscribed, isLoading, onTogglePress } = useNotifications();
   const {
@@ -68,8 +68,6 @@ export function ProfileActionsSection({
     router.replace("/auth/login");
   };
 
-  const hasAdminAccess = user?.role === "ADMIN" || user?.role === "MODERATOR";
-
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Actions</Text>
@@ -81,24 +79,6 @@ export function ProfileActionsSection({
         <Text style={styles.actionText}>Edit Profile</Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </TouchableOpacity>
-
-      {hasAdminAccess ? (
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push("/profile/admin-web")}
-        >
-          <View style={styles.actionIcon}>
-            <Ionicons name="globe-outline" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.actionTextWrap}>
-            <Text style={styles.actionTitle}>Open Web Admin</Text>
-            <Text style={styles.actionSubtext}>
-              Admin tools are available in the web dashboard
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </TouchableOpacity>
-      ) : null}
 
       <TouchableOpacity
         style={[styles.actionButton, isSubscribed && styles.activeButton]}

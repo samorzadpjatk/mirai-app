@@ -1,4 +1,3 @@
-export * from "./admin";
 export * from "./challenges";
 export * from "./files";
 export * from "./groups";
