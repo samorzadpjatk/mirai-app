@@ -8,6 +8,8 @@ node_modules/
 # testing
 coverage/
 *.lcov
+# spike/exploratory tests (temporary, don't commit)
+**/__spikes__/
 
 # database
 **/prisma/db.sqlite
