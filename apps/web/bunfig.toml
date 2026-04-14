@@ -1,3 +1,6 @@
 [test]
-preload = ["../../happydom.ts"]
+# Test setup is handled by test-setup.ts which includes Happy DOM registration
+# and TamaguiProvider configuration for component tests
+preload = ["./test-setup.ts"]
+
 coverageThreshold = { lines = 0.80, branches = 0.75 }

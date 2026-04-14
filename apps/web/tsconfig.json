@@ -6,7 +6,9 @@
     "lib": ["ES2022", "DOM"],
     "types": ["astro/client"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@mirai-app/ui": ["../../packages/ui/src/index.ts"],
+      "@mirai-app/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": ["src/**/*", ".astro/types.d.ts"]
