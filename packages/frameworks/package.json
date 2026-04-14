@@ -23,7 +23,8 @@
     "./stores": "./src/stores/index.ts",
     "./storage": "./src/storage/index.ts",
     "./supabase": "./src/supabase/index.ts",
-    "./layers": "./src/layers/index.ts"
+    "./layers": "./src/layers/index.ts",
+    "./di": "./src/di/index.ts"
   },
   "scripts": {
     "test": "bun test",

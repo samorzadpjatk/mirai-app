@@ -260,6 +260,14 @@ export function createTestContainer(): any {
   console.warn(
     "createTestContainer is deprecated. Use createTestLayer() instead. See test-layer.ts for migration guide.",
   );
+  // InMemory adapters cache for consistency within a test
+  const adapters = {
+    auth: new InMemoryAuthAdapter(),
+    realtime: new InMemoryRealtimeAdapter(),
+    storage: new InMemoryStorageAdapter(),
+    userRepo: new InMemoryUserRepository(),
+  };
+
   // Return a minimal mock that provides the services via Effect
   return {
     register: () => {},
@@ -268,15 +276,20 @@ export function createTestContainer(): any {
       switch (name) {
         case "authPort":
         case PORT_TOKENS.AuthPort:
-          return new InMemoryAuthAdapter();
+          return adapters.auth;
         case "realtimePort":
         case PORT_TOKENS.RealtimePort:
-          return new InMemoryRealtimeAdapter();
+          return adapters.realtime;
         case "storagePort":
         case PORT_TOKENS.StoragePort:
-          return new InMemoryStorageAdapter();
+          return adapters.storage;
         case "userRepository":
-          return new InMemoryUserRepository();
+        case PORT_TOKENS.UserRepository:
+          return adapters.userRepo;
+        // Controllers - lazy loaded with repository injection
+        case "userController":
+          // Dynamic import to avoid circular dependency
+          return { userRepository: adapters.userRepo };
         default:
           throw new Error(
             `Unknown service: ${name}. Use createTestLayer() with Layer.succeed instead.`,
