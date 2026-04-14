@@ -141,7 +141,7 @@ async function validateFile(
       }
     }
   } catch (error) {
-    console.error(`Error reading ${filePath}:`, error);
+    serverLogger.error(`Error reading ${filePath}:`, error);
   }
 
   return violations;
@@ -278,10 +278,8 @@ async function main() {
   const result = await validateAll(projectRoot);
 
   if (result.violations.length > 0) {
-    // eslint-disable-next-line no-console
-    console.error(formatViolations(result.violations));
-    // eslint-disable-next-line no-console
-    console.error(
+    serverLogger.error(formatViolations(result.violations));
+    serverLogger.error(
       `\n❌ Found ${result.violations.length} violation(s) in ${result.testFilesFound} test files.`,
     );
     process.exit(1);
@@ -294,6 +292,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Unexpected error:", error);
+  serverLogger.error("Unexpected error:", error);
   process.exit(1);
 });
