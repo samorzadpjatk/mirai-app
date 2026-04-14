@@ -4,10 +4,11 @@
  */
 
 import { readFileSync, writeFileSync } from "fs";
+import { serverLogger } from "@mirai-app/shared";
 
 const filePath = process.argv[2];
 if (!filePath) {
-  console.error("Usage: bun run update-test.ts <file-path>");
+  serverLogger.error("Usage: bun run update-test.ts <file-path>");
   process.exit(1);
 }
 
@@ -55,4 +56,4 @@ content = content.replace(
 );
 
 writeFileSync(filePath, content);
-console.log(`Updated ${filePath}`);
+serverLogger.info(`Updated ${filePath}`);

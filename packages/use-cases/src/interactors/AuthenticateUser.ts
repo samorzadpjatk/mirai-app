@@ -69,11 +69,11 @@ export interface AuthenticateUserOutput {
  *
  * try {
  *   const result = await Effect.runPromise(runnable);
- *   console.log(`User ${result.userId} authenticated with role ${result.role}`);
+ *   authLogger.info("User authenticated", { userId: result.userId, role: result.role });
  * } catch (error) {
  *   // Handle error
  *   if (error instanceof InvalidTokenError) {
- *     console.error("Invalid token");
+ *     authLogger.error("Invalid token", error);
  *   }
  * }
  * ```

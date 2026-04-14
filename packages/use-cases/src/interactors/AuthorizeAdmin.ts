@@ -46,7 +46,7 @@ export type AuthorizeAdminOutput = void;
  *   // User is authorized, proceed with operation
  * } else {
  *   // Handle authorization error
- *   console.error(result.error.message);
+ *   authLogger.error("Admin authorization failed", new Error(result.error.message));
  * }
  * ```
  */

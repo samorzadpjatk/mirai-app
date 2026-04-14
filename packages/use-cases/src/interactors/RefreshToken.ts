@@ -61,10 +61,10 @@ export interface RefreshTokenOutput {
  *
  * try {
  *   const result = await Effect.runPromise(runnable);
- *   console.log(`Session refreshed for user ${result.userId}`);
+ *   authLogger.info("Session refreshed", { userId: result.userId });
  * } catch (error) {
  *   if (error instanceof SessionExpiredError) {
- *     console.error("Session has expired, please login again");
+ *     authLogger.error("Session expired", error);
  *   }
  * }
  * ```

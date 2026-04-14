@@ -149,7 +149,7 @@ export interface RealtimePort {
    * const effect = realtimePort.subscribe("notifications:user-123", {
    *   events: ["new_notification"],
    *   onMessage: (event, payload) => {
-   *     console.log(`Received ${event}:`, payload);
+   *     logger.debug(`Received ${event}`, payload);
    *   }
    * });
    *
@@ -183,7 +183,7 @@ export interface RealtimePort {
    * );
    *
    * await Effect.runPromise(effect);
-   * console.log("Broadcast successful");
+   * logger.debug("Broadcast successful");
    * ```
    */
   broadcast(
@@ -207,7 +207,7 @@ export interface RealtimePort {
    * );
    *
    * await Effect.runPromise(effect);
-   * console.log("Presence tracked");
+   * logger.debug("Presence tracked");
    * ```
    */
   trackPresence(

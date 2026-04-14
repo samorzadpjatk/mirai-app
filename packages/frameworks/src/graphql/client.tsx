@@ -272,7 +272,7 @@ export function GraphQLProvider({
  *
  * // Subscription
  * const unsubscribe = subscribe(USER_UPDATES, { userId: "123" }, (data) => {
- *   console.log("User updated:", data);
+ *   clientLogger.debug("User updated", data);
  * });
  * ```
  */

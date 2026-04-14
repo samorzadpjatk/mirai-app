@@ -62,7 +62,7 @@ export interface LogoutUserOutput {
  * );
  *
  * const result = await Effect.runPromise(runnable);
- * console.log(`User logged out successfully: ${result.success}`);
+ * authLogger.info("User logged out", { success: result.success });
  * ```
  */
 export function logoutUserUseCase(

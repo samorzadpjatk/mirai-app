@@ -143,7 +143,7 @@ export interface AwsConfig {
  * @example
  * ```typescript
  * const config = readAwsConfigFromEnv();
- * console.log(config.region); // "us-east-1"
+ * logger.debug("AWS config loaded", { region: config.region });
  * ```
  */
 export function readAwsConfigFromEnv(): AwsConfig {

@@ -50,9 +50,9 @@ export class GetUserNotFoundError extends Error {
  * const result = await Effect.runPromise(useCase.execute({ userId: "123" }));
  *
  * if (result.kind === "ok") {
- *   console.log(result.value);
+ *   logger.debug("User retrieved", result.value);
  * } else {
- *   console.error(result.error);
+ *   logger.error("Failed to get user", result.error);
  * }
  * ```
  */

@@ -52,7 +52,7 @@ export type AuthorizeModeratorOutput = void;
  *   // User is authorized, proceed with operation
  * } else {
  *   // Handle authorization error
- *   console.error(result.error.message);
+ *   authLogger.error("Moderator authorization failed", new Error(result.error.message));
  * }
  * ```
  */

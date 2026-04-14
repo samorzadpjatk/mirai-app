@@ -8,6 +8,7 @@ import {
   afterEach,
 } from "bun:test";
 import { Effect, Either } from "effect";
+import { serverLogger } from "@mirai-app/shared";
 
 // Import Effect-based functions
 import {
@@ -76,12 +77,14 @@ mock.module("../index", () => ({
   },
   notificationSenderProgram: Effect.gen(function* () {
     yield* Effect.sync(() => {
-      console.log("Notification sender service started with Effect and urql");
+      serverLogger.info(
+        "Notification sender service started with Effect and urql",
+      );
     });
     return {
       cleanup: () =>
         Effect.sync(() => {
-          console.log("Shutting down...");
+          serverLogger.info("Shutting down...");
         }),
     };
   }),
@@ -358,7 +361,7 @@ describe("[UNIT] Delivery Tracking Flow", () => {
   });
 
   test("delivery summary is logged", async () => {
-    console.log("Delivery summary:", { mobile: { total: 1, sent: 1 } });
+    serverLogger.info("Delivery summary", { mobile: { total: 1, sent: 1 } });
     expect(consoleLogMock).toHaveBeenCalled();
   });
 });
@@ -401,7 +404,7 @@ describe("[UNIT] Delivery Failure Handling", () => {
     const service = new index.NotificationService(mockUrqlClient as any);
 
     const error = new Error("Network error");
-    console.error("Failed handling Notification INSERT:", error);
+    serverLogger.error("Failed handling Notification INSERT", error);
 
     expect(consoleErrorMock).toHaveBeenCalled();
   });
@@ -446,8 +449,8 @@ describe("[UNIT] Graceful Shutdown (SIGINT)", () => {
     expect(mockRemoveChannel).toHaveBeenCalled();
   });
 
-  test("shutdown logs message via console.log", async () => {
-    console.log("Shutting down...");
+  test("shutdown logs message via serverLogger", async () => {
+    serverLogger.info("Shutting down...");
     expect(consoleLogMock).toHaveBeenCalledWith("Shutting down...");
   });
 

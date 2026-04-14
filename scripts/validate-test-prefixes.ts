@@ -11,13 +11,7 @@
 
 import { readdir, readFile, stat } from "fs/promises";
 import { join, relative } from "path";
-
-// Simple logger to avoid monorepo dependency
-const serverLogger = {
-  info: (...args: any[]) => console.log(...args),
-  warn: (...args: any[]) => console.warn(...args),
-  error: (...args: any[]) => console.error(...args),
-};
+import { serverLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Configuration

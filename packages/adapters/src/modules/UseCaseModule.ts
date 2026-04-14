@@ -198,7 +198,7 @@ export interface ProviderConfig {
  * @example
  * ```typescript
  * const config = readProviderConfigFromEnv();
- * console.log(config.authProvider); // "supabase" or "inmemory"
+ * logger.debug("Provider config loaded", { authProvider: config.authProvider });
  * ```
  */
 export function readProviderConfigFromEnv(): ProviderConfig {

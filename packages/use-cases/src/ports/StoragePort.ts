@@ -239,7 +239,7 @@ export interface StoragePort {
    *   )
    * );
    *
-   * console.log("File uploaded:", metadata.path);
+   * logger.info("File uploaded", { path: metadata.path });
    * ```
    */
   upload(
@@ -292,7 +292,7 @@ export interface StoragePort {
    *   storagePort.delete("user-files", ["user-123/avatar.png", "user-123/document.pdf"])
    * );
    *
-   * console.log("Files deleted successfully");
+   * logger.info("Files deleted successfully");
    * ```
    */
   delete(
@@ -314,8 +314,7 @@ export interface StoragePort {
    *   storagePort.createSignedUrl("private-files", "confidential.pdf", 3600) // 1 hour
    * );
    *
-   * console.log("Signed URL:", signedUrlInfo.url);
-   * console.log("Expires at:", signedUrlInfo.expiresAt);
+   * logger.debug("Signed URL created", { url: signedUrlInfo.url, expiresAt: signedUrlInfo.expiresAt });
    * ```
    */
   createSignedUrl(

@@ -93,7 +93,7 @@ export class EventBus {
    * @example
    * ```typescript
    * const sub = eventBus.subscribe("NotificationCreated", (event) =>
-   *   Effect.sync(() => console.log("Notification created:", event.notificationId))
+   *   Effect.sync(() => logger.info("Notification created", { notificationId: event.notificationId }))
    * );
    *
    * // Later: unsubscribe

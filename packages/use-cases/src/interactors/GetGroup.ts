@@ -53,9 +53,9 @@ export class GetGroupNotFoundError extends Error {
  * const result = await Effect.runPromise(useCase.execute({ groupId: "123" }));
  *
  * if (result.kind === "ok") {
- *   console.log(result.value);
+ *   logger.debug("Group retrieved", result.value);
  * } else {
- *   console.error(result.error);
+ *   logger.error("Failed to get group", result.error);
  * }
  * ```
  */

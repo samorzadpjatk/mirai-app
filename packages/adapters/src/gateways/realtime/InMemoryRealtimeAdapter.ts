@@ -95,7 +95,7 @@ class InMemoryRealtimeSubscription implements RealtimeSubscription {
  *
  * // Subscribe to channel
  * const program = realtimePort.subscribe("test-channel", {
- *   onMessage: (event, payload) => console.log(event, payload)
+ *   onMessage: (event, payload) => logger.debug("Received message", { event, payload })
  * });
  *
  * const subscription = await Effect.runPromise(program);

@@ -240,9 +240,9 @@ function mapSupabaseUserToAuthContext(
  * // Handle with Effect.runPromise for direct value or error
  * try {
  *   const authContext = await Effect.runPromise(authPort.validateToken("token"));
- *   console.log("Authenticated user:", authContext.userId);
+ *   logger.info("Authenticated user", { userId: authContext.userId });
  * } catch (error) {
- *   console.error("Auth failed:", error.message);
+ *   logger.error("Auth failed", error instanceof Error ? error : new Error(String(error)));
  * }
  * ```
  */
@@ -269,7 +269,7 @@ export class SupabaseAuthAdapter implements AuthPort {
    *
    * // Run the effect
    * const result = await Effect.runPromise(effect);
-   * console.log(`User ${result.userId} authenticated with role ${result.role}`);
+   * logger.info("User authenticated", { userId: result.userId, role: result.role });
    * ```
    */
   validateToken(
@@ -336,9 +336,9 @@ export class SupabaseAuthAdapter implements AuthPort {
    * // Run the effect
    * try {
    *   const authContext = await Effect.runPromise(effect);
-   *   console.log("Session refreshed for user:", authContext.userId);
+   *   logger.info("Session refreshed for user", { userId: authContext.userId });
    * } catch (error) {
-   *   console.error("Failed to refresh session:", error.message);
+   *   logger.error("Failed to refresh session", error instanceof Error ? error : new Error(String(error)));
    * }
    * ```
    */

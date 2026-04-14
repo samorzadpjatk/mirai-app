@@ -216,7 +216,7 @@ function extractEndpoint(event: TelemetryEvent): string | undefined {
  * // Handle errors
  * const result = await Effect.runPromise(Effect.either(telemetry.log(event)));
  * if (Either.isLeft(result)) {
- *   console.error("Failed to log telemetry:", result.left.message);
+ *   logger.error("Failed to log telemetry", new Error(result.left.message));
  * }
  * ```
  */
@@ -248,7 +248,7 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    * const result = await Effect.runPromise(Effect.either(effect));
    * if (Either.isLeft(result)) {
    *   // Handle error (telemetry is usually non-critical)
-   *   console.warn("Telemetry logging failed:", result.left.message);
+   *   logger.warn("Telemetry logging failed", new Error(result.left.message));
    * }
    * ```
    */
@@ -292,7 +292,7 @@ export class DrizzleTelemetryAdapter implements TelemetryPort {
    * const effect = adapter.logBatch(events);
    * const result = await Effect.runPromise(Effect.either(effect));
    * if (Either.isLeft(result)) {
-   *   console.error("Batch telemetry failed:", result.left.message);
+   *   logger.error("Batch telemetry failed", new Error(result.left.message));
    * }
    * ```
    */

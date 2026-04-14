@@ -164,7 +164,7 @@ class SupabaseRealtimeSubscription implements RealtimeSubscription {
  * // With DI container (awilix-modular)
  * const realtimePort = container.resolve("realtimePort");
  * const result = realtimePort.subscribe("notifications:user-123", {
- *   onMessage: (event, payload) => console.log(event, payload)
+ *   onMessage: (event, payload) => logger.debug("Received realtime message", { event, payload })
  * });
  *
  * // Manual instantiation (backward-compatible)

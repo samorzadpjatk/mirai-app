@@ -119,7 +119,7 @@ export class InMemoryAuthAdapter implements AuthPort {
    * const result = await Effect.runPromise(effect);
    * // Token is valid, use auth context
    * const { userId, role } = result;
-   * console.log(`User ${userId} authenticated with role ${role}`);
+   * authLogger.info("User authenticated", { userId, role });
    * ```
    */
   validateToken(
@@ -222,7 +222,7 @@ export class InMemoryAuthAdapter implements AuthPort {
    *
    * const result = await Effect.runPromise(effect);
    * // Session refreshed successfully
-   * console.log("Session refreshed for user:", result.userId);
+   * authLogger.info("Session refreshed for user", { userId: result.userId });
    * ```
    */
   refreshSession(
@@ -331,7 +331,7 @@ export class InMemoryAuthAdapter implements AuthPort {
    * ```typescript
    * const userId = UserId.create("550e8400-e29b-41d4-a716-446655440000");
    * const session = adapter.createSession(userId, 3600);
-   * console.log("Token:", session.token);
+   * authLogger.debug("Session created", { token: session.token });
    * ```
    */
   createSession(
