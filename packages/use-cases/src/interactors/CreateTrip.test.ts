@@ -167,7 +167,7 @@ describe("[UNIT] createTripUseCase (Effect)", () => {
       expect(Either.isLeft(either)).toBe(true);
       if (Either.isLeft(either)) {
         expect(either.left).toBeInstanceOf(TripCreationError);
-        expect(either.left.message).toContain("endDate");
+        expect(either.left.message).toContain("start date");
       }
     });
 

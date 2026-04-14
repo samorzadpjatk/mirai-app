@@ -125,21 +125,19 @@ describe("[UNIT] getGroupUseCase (Effect)", () => {
     });
 
     it("should return deleted group if it exists", async () => {
-      const groupResult = Group.create({
-        id: "group-deleted",
-        tripId: "trip-123",
-        name: "Deleted Group",
-        code: "DELETED",
-        organizerId: "user-123",
-        description: null,
-        image: null,
-        coins: 0,
-        status: GroupStatus.DELETED,
-      });
-      if (groupResult.kind === "err") {
-        throw new Error("Failed to create test group");
-      }
-      const deletedGroup = groupResult.value;
+      const deletedGroup = Effect.runSync(
+        Group.create({
+          id: "group-deleted",
+          tripId: "trip-123",
+          name: "Deleted Group",
+          code: "DELETED",
+          organizerId: "user-123",
+          description: null,
+          image: null,
+          coins: 0,
+          status: GroupStatus.DELETED,
+        }),
+      );
       await Effect.runPromise(repo.create(deletedGroup));
 
       const input: GetGroupInput = {

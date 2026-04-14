@@ -127,23 +127,21 @@ describe("[UNIT] getLocationUseCase (Effect)", () => {
 
     it("should return location with null coordinates", async () => {
       // Arrange - Create location with explicit null coordinates
-      const locationResult = Location.create({
-        id: "loc-789",
-        userId: "user-789",
-        latitude: null,
-        longitude: null,
-        accuracy: null,
-        altitude: null,
-        altitudeAccuracy: null,
-        heading: null,
-        speed: null,
-        isSharingLocation: false,
-        usersToShareWith: [],
-      });
-      if (locationResult.kind === "err") {
-        throw new Error("Failed to create test location");
-      }
-      const mockLocation = locationResult.value;
+      const mockLocation = Effect.runSync(
+        Location.create({
+          id: "loc-789",
+          userId: "user-789",
+          latitude: null,
+          longitude: null,
+          accuracy: null,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+          isSharingLocation: false,
+          usersToShareWith: [],
+        }),
+      );
 
       // Act
       const result = await runUseCase(
@@ -177,26 +175,24 @@ describe("[UNIT] getLocationUseCase (Effect)", () => {
 
     it("should return location with sharing users list", async () => {
       // Arrange
-      const locationResult = Location.create({
-        id: "loc-sharing",
-        userId: "user-owner",
-        latitude: 52.52,
-        longitude: 13.405,
-        accuracy: 10,
-        altitude: null,
-        altitudeAccuracy: null,
-        heading: null,
-        speed: null,
-        isSharingLocation: true,
-        usersToShareWith: [
-          { id: "user-1", firstName: "John", lastName: "Doe" },
-          { id: "user-2", firstName: "Jane", lastName: "Smith" },
-        ],
-      });
-      if (locationResult.kind === "err") {
-        throw new Error("Failed to create test location");
-      }
-      const mockLocation = locationResult.value;
+      const mockLocation = Effect.runSync(
+        Location.create({
+          id: "loc-sharing",
+          userId: "user-owner",
+          latitude: 52.52,
+          longitude: 13.405,
+          accuracy: 10,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+          isSharingLocation: true,
+          usersToShareWith: [
+            { id: "user-1", firstName: "John", lastName: "Doe" },
+            { id: "user-2", firstName: "Jane", lastName: "Smith" },
+          ],
+        }),
+      );
 
       // Act
       const result = await runUseCase(

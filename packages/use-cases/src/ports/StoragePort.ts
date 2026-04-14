@@ -284,7 +284,7 @@ export interface StoragePort {
    *
    * @param bucket - The bucket/container name
    * @param paths - Array of file paths to delete
-   * @returns Effect.Effect<void, StorageError | DeleteError, never>
+   * @returns Effect.Effect<void, StorageError | DeleteError | FileNotFoundError, never>
    *
    * @example
    * ```typescript
@@ -298,7 +298,7 @@ export interface StoragePort {
   delete(
     bucket: string,
     paths: string[],
-  ): Effect.Effect<void, StorageError | DeleteError, never>;
+  ): Effect.Effect<void, StorageError | DeleteError | FileNotFoundError, never>;
 
   /**
    * Create a signed URL for temporary access to a file

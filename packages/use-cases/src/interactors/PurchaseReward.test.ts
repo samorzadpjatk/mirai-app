@@ -349,7 +349,9 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should successfully purchase reward", async () => {
       // Arrange
       const mockReward = createValidReward(10);
-      await rewardRepo.create(mockReward);
+
+      // Execute the Effect to actually store the reward
+      await Effect.runPromise(rewardRepo.create(mockReward));
 
       // Set up test data
       pointsCalc.setPoints("trip-123", 1000); // Total points for cost calculation
@@ -424,7 +426,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should reject purchase when user is not group leader", async () => {
       // Arrange
       const mockReward = createValidReward(10);
-      await rewardRepo.create(mockReward);
+      await Effect.runPromise(rewardRepo.create(mockReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       // Don't set user as group leader
@@ -455,7 +457,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should reject purchase when insufficient quantity", async () => {
       // Arrange
       const mockReward = createValidReward(5); // Only 5 available
-      await rewardRepo.create(mockReward);
+      await Effect.runPromise(rewardRepo.create(mockReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       coinsService.setBalance("group-123", 500);
@@ -487,7 +489,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should reject purchase when insufficient coins", async () => {
       // Arrange
       const mockReward = createValidReward(10);
-      await rewardRepo.create(mockReward);
+      await Effect.runPromise(rewardRepo.create(mockReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       coinsService.setBalance("group-123", 50); // Only 50 coins
@@ -519,7 +521,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should reject purchase when trip has ended", async () => {
       // Arrange
       const mockReward = createValidReward(10);
-      await rewardRepo.create(mockReward);
+      await Effect.runPromise(rewardRepo.create(mockReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       coinsService.setBalance("group-123", 500);
@@ -561,7 +563,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
         isHidden: true,
       });
       const hiddenReward = unwrap(hiddenRewardResult);
-      await rewardRepo.create(hiddenReward);
+      await Effect.runPromise(rewardRepo.create(hiddenReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       coinsService.setBalance("group-123", 500);
