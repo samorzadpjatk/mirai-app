@@ -87,7 +87,7 @@ const TEST_USERS = {
   },
 };
 
-describe("[INTEGRATION] User GraphQL Resolvers () => {
+describe("[INTEGRATION] User GraphQL Resolvers", () => {
   let context: TestContext;
   let adminToken: string;
   let userToken: string;

@@ -12,12 +12,14 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { Layer } from "effect";
 import {
   createBunServer,
   type BunServer,
   getActiveWebSocketCount,
 } from "../bun-server";
 import { honoConfig } from "../config/hono-config";
+import { createTestLayer } from "@mirai-app/frameworks/di";
 
 // =============================================================================
 // Test Configuration
@@ -39,13 +41,16 @@ function getTestConfig() {
 // Tests
 // =============================================================================
 
-describe("[UNIT] Bun Server () => {
+describe("[UNIT] Bun Server", () => {
   let server: BunServer;
   let currentPort: number;
 
+  let testLayer: Layer.Layer<unknown>;
+
   beforeEach(async () => {
     const config = getTestConfig();
-    server = createBunServer(config);
+    testLayer = createTestLayer();
+    server = createBunServer(config, testLayer);
     // Note: Server is not auto-started here because lifecycle tests
     // need to control start/stop themselves. Tests that need a running
     // server should start it and then call server.getPort() for the actual port.
@@ -93,7 +98,7 @@ describe("[UNIT] Bun Server () => {
     });
   });
 
-  describe("[UNIT] HTTP Endpoints () => {
+  describe("[UNIT] HTTP Endpoints", () => {
     beforeEach(async () => {
       await server.start();
       currentPort = server.getPort();
@@ -154,7 +159,7 @@ describe("[UNIT] Bun Server () => {
     });
   });
 
-  describe("[UNIT] WebSocket Upgrade () => {
+  describe("[UNIT] WebSocket Upgrade", () => {
     beforeEach(async () => {
       await server.start();
       currentPort = server.getPort();
@@ -346,7 +351,7 @@ describe("[UNIT] Bun Server () => {
     });
   });
 
-  describe("[UNIT] Error Handling () => {
+  describe("[UNIT] Error Handling", () => {
     beforeEach(async () => {
       await server.start();
       currentPort = server.getPort();

@@ -35,7 +35,7 @@ const testConfig = {
 // Tests
 // =============================================================================
 
-describe("[INTEGRATION] Bun Server () => {
+describe("[INTEGRATION] Bun Server", () => {
   let server: BunServer;
 
   beforeAll(async () => {

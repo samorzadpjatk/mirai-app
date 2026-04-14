@@ -25,7 +25,9 @@ import {
   AppModule,
   getContainer,
   isContainerInitialized,
+  createTestLayer,
 } from "@mirai-app/frameworks/di";
+import { Layer } from "effect";
 import { asClass, asValue } from "awilix";
 import {
   UserController,
@@ -68,7 +70,7 @@ interface TestUser {
 // Test Suite: Full Migration E2E
 // =============================================================================
 
-describe("[INTEGRATION] Unified Migration - All Phases () => {
+describe("[INTEGRATION] Unified Migration - All Phases", () => {
   let ctx: TestContext;
   const testUsers: Map<string, TestUser> = new Map();
 
@@ -87,8 +89,10 @@ describe("[INTEGRATION] Unified Migration - All Phases () => {
       enableGraphiQL: false,
     };
 
+    const testLayer = createTestLayer();
+
     ctx = {
-      server: createHonoServer(testConfig),
+      server: createHonoServer(testConfig, testLayer),
       container: createTestContainer(),
       authAdapter: new InMemoryAuthAdapter(),
       eventBus: new EventBus(),
@@ -134,7 +138,7 @@ describe("[INTEGRATION] Unified Migration - All Phases () => {
     // Auth Flow Tests
     // -------------------------------------------------------------------------
 
-    describe("[UNIT] ""Auth Flow (InMemoryAuthAdapter) () => {
+    describe("[UNIT] Auth Flow (InMemoryAuthAdapter)", () => {
       it("completes full auth flow: create user → create session → validate token", async () => {
         // 1. Create test user in auth adapter (Phase 0)
         const userId = UserId.create("550e8400-e29b-41d4-a716-446655440000");
@@ -342,7 +346,7 @@ describe("[INTEGRATION] Unified Migration - All Phases () => {
   // Phase 1: Database (Dual-ORM Coexistence)
   // ===========================================================================
 
-  describe("[UNIT] Phase 1: Database - Dual-ORM Coexistence () => {
+  describe("[UNIT] Phase 1: Database - Dual-ORM Coexistence", () => {
     beforeEach(async () => {
       // Create test users in InMemory repository
       const adminUser = await Effect.runPromise(
@@ -532,7 +536,7 @@ describe("[INTEGRATION] Unified Migration - All Phases () => {
     // EventBus Tests
     // -------------------------------------------------------------------------
 
-    describe("[UNIT] ""EventBus () => {
+    describe("[UNIT] EventBus", () => {
       it("publishes and subscribes to typed events", () => {
         const events: string[] = [];
 
@@ -739,7 +743,7 @@ describe("[INTEGRATION] Unified Migration - All Phases () => {
     // GraphQL Query Tests
     // -------------------------------------------------------------------------
 
-    describe("[UNIT] ""GraphQL Queries () => {
+    describe("[UNIT] GraphQL Queries", () => {
       it("executes user query through full stack", async () => {
         const adminUser = testUsers.get("admin");
         expect(adminUser).toBeDefined();

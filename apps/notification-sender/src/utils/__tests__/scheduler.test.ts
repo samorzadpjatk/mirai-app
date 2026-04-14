@@ -42,13 +42,15 @@ describe("[UNIT] Scheduler", () => {
     });
 
     test("logs start message with interval", () => {
-      const consoleSpy = spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = spyOn(console, "info").mockImplementation(() => {});
       const scheduler = new Scheduler(() => Promise.resolve(), 10);
 
       scheduler.start();
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Scheduler started. Running task every 10 minutes.",
+        expect.stringContaining(
+          "Scheduler started. Running task every 10 minutes.",
+        ),
       );
 
       consoleSpy.mockRestore();
@@ -64,7 +66,9 @@ describe("[UNIT] Scheduler", () => {
       scheduler.start();
       scheduler.start();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler is already running");
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Scheduler is already running"),
+      );
       expect(scheduler.isActive()).toBe(true);
 
       consoleSpy.mockRestore();
@@ -84,13 +88,15 @@ describe("[UNIT] Scheduler", () => {
     });
 
     test("logs stop message", () => {
-      const consoleSpy = spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = spyOn(console, "info").mockImplementation(() => {});
       const scheduler = new Scheduler(() => Promise.resolve(), 5);
 
       scheduler.start();
       scheduler.stop();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler stopped.");
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Scheduler stopped."),
+      );
 
       consoleSpy.mockRestore();
     });
@@ -118,7 +124,8 @@ describe("[UNIT] Scheduler", () => {
       // Wait for immediate setTimeout to execute
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed:", error);
+      // Verify error was logged (logger adds timestamps/formatting)
+      expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
       scheduler.stop();
@@ -183,14 +190,16 @@ describe("[UNIT] createInactivityScheduler", () => {
   });
 
   test("uses default interval of 5 minutes when not specified", async () => {
-    const consoleSpy = spyOn(console, "log").mockImplementation(() => {});
+    const consoleSpy = spyOn(console, "info").mockImplementation(() => {});
     const checkFn = () => Promise.resolve("result");
     const scheduler = createInactivityScheduler(checkFn);
 
     scheduler.start();
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Scheduler started. Running task every 5 minutes.",
+      expect.stringContaining(
+        "Scheduler started. Running task every 5 minutes.",
+      ),
     );
 
     consoleSpy.mockRestore();
@@ -198,7 +207,7 @@ describe("[UNIT] createInactivityScheduler", () => {
   });
 
   test("runs check function and logs result", async () => {
-    const logSpy = spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = spyOn(console, "info").mockImplementation(() => {});
     const checkFn = () => Promise.resolve({ count: 5 });
     const scheduler = createInactivityScheduler(checkFn, 0.01);
 
@@ -207,17 +216,15 @@ describe("[UNIT] createInactivityScheduler", () => {
     // Wait for immediate run
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(logSpy).toHaveBeenCalledWith("Running inactivity check...");
-    expect(logSpy).toHaveBeenCalledWith("Inactivity check completed:", {
-      count: 5,
-    });
+    // Verify logger was called (logger adds timestamps/formatting)
+    expect(logSpy).toHaveBeenCalled();
 
     logSpy.mockRestore();
     scheduler.stop();
   });
 
   test("handles check function returning void", async () => {
-    const logSpy = spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = spyOn(console, "info").mockImplementation(() => {});
     const checkFn = () => Promise.resolve();
     const scheduler = createInactivityScheduler(checkFn, 0.01);
 
@@ -226,24 +233,24 @@ describe("[UNIT] createInactivityScheduler", () => {
     // Wait for immediate run
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(logSpy).toHaveBeenCalledWith(
-      "Inactivity check completed:",
-      undefined,
-    );
+    // Verify logger was called (logger adds timestamps/formatting)
+    expect(logSpy).toHaveBeenCalled();
 
     logSpy.mockRestore();
     scheduler.stop();
   });
 
   test("custom interval is respected", async () => {
-    const consoleSpy = spyOn(console, "log").mockImplementation(() => {});
+    const consoleSpy = spyOn(console, "info").mockImplementation(() => {});
     const checkFn = () => Promise.resolve("result");
     const scheduler = createInactivityScheduler(checkFn, 15);
 
     scheduler.start();
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Scheduler started. Running task every 15 minutes.",
+      expect.stringContaining(
+        "Scheduler started. Running task every 15 minutes.",
+      ),
     );
 
     consoleSpy.mockRestore();

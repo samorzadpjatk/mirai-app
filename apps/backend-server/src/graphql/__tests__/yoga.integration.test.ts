@@ -18,7 +18,12 @@ import {
 } from "bun:test";
 import { createHonoServer, type HonoServer } from "../../hono-server";
 import { honoConfig } from "../../config/hono-config";
-import { createTestContainer, PORT_TOKENS } from "@mirai-app/frameworks/di";
+import {
+  createTestContainer,
+  PORT_TOKENS,
+  createTestLayer,
+} from "@mirai-app/frameworks/di";
+import { Layer } from "effect";
 import { asClass } from "awilix";
 import { InMemoryAuthAdapter } from "@mirai-app/adapters";
 import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
@@ -63,7 +68,7 @@ let testContext: TestContext;
 let adminToken: string;
 let userToken: string;
 
-describe("[INTEGRATION] GraphQL Yoga Endpoint () => {
+describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
   beforeAll(async () => {
     // Setup test container
     const container = createTestContainer();
@@ -139,7 +144,8 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint () => {
       enableLogging: false,
     };
 
-    const server = createHonoServer(testConfig);
+    const testLayer = createTestLayer();
+    const server = createHonoServer(testConfig, testLayer);
 
     // Override the DI container in the server with our test container
     // The server's DI middleware will use this container
