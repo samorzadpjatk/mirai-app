@@ -202,3 +202,4 @@ export const serverLogger = createLogger("server");
 export const dbLogger = createLogger("database");
 export const authLogger = createLogger("auth");
 export const apiLogger = createLogger("api");
+export const clientLogger = createLogger("client");
