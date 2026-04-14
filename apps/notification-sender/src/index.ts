@@ -29,11 +29,7 @@
 
 import { createSupabaseClient as createClient } from "@mirai-app/frameworks/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/frameworks/supabase";
-import {
-  createClient as createUrqlClient,
-  cacheExchange,
-  fetchExchange,
-} from "@urql/core";
+import { createClient as createUrqlClient, fetchExchange } from "@urql/core";
 import {
   TrackDeliveryStartDocument,
   SendMobileNotificationsDocument,
@@ -105,7 +101,7 @@ const createUrqlClientEffect = (endpoint: string, apiKey: string) =>
   Effect.sync(() =>
     createUrqlClient({
       url: endpoint,
-      exchanges: [cacheExchange, fetchExchange],
+      exchanges: [fetchExchange], // No cacheExchange - each notification is unique, caching provides no benefit
       fetchOptions: {
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -147,15 +143,18 @@ class NotificationService {
       );
 
       if (result.error) {
-        serverLogger.error("Failed to track delivery start:", {
-          error: result.error,
+        serverLogger.error("Failed to track delivery start:", undefined, {
+          graphQLError: result.error,
         });
         return false;
       }
 
       return result.data?.trackDeliveryStart?.success ?? false;
     } catch (error) {
-      serverLogger.error("Failed to track delivery start:", { error: error });
+      serverLogger.error(
+        "Failed to track delivery start:",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return false;
     }
   }
@@ -177,8 +176,8 @@ class NotificationService {
         );
 
       if (result.error) {
-        serverLogger.error("Failed to send mobile notifications:", {
-          error: result.error,
+        serverLogger.error("Failed to send mobile notifications:", undefined, {
+          graphQLError: result.error,
         });
         return { success: false, sent: 0, failed: 0, total: 0 };
       }
@@ -191,9 +190,10 @@ class NotificationService {
         total: payload?.total ?? 0,
       };
     } catch (error) {
-      serverLogger.error("Failed to send mobile notifications:", {
-        error: error,
-      });
+      serverLogger.error(
+        "Failed to send mobile notifications:",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return { success: false, sent: 0, failed: 0, total: 0 };
     }
   }
@@ -222,17 +222,18 @@ class NotificationService {
         );
 
       if (result.error) {
-        serverLogger.error("Failed to track delivery completion:", {
-          error: result.error,
+        serverLogger.error("Failed to track delivery completion:", undefined, {
+          graphQLError: result.error,
         });
         return false;
       }
 
       return result.data?.trackDeliveryComplete?.success ?? false;
     } catch (error) {
-      serverLogger.error("Failed to track delivery completion:", {
-        error: error,
-      });
+      serverLogger.error(
+        "Failed to track delivery completion:",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return false;
     }
   }
@@ -252,15 +253,18 @@ class NotificationService {
         );
 
       if (result.error) {
-        serverLogger.error("Failed to track delivery failure:", {
-          error: result.error,
+        serverLogger.error("Failed to track delivery failure:", undefined, {
+          graphQLError: result.error,
         });
         return false;
       }
 
       return result.data?.trackDeliveryFailure?.success ?? false;
     } catch (err) {
-      serverLogger.error("Failed to track delivery failure:", { error: err });
+      serverLogger.error(
+        "Failed to track delivery failure:",
+        err instanceof Error ? err : new Error(String(err)),
+      );
       return false;
     }
   }
@@ -449,7 +453,10 @@ export async function run(): Promise<void> {
 // Run the program at the boundary only when executed directly
 if (import.meta.main) {
   Effect.runPromise(program).catch((error) => {
-    serverLogger.error("Failed to start notification sender:", { error });
+    serverLogger.error(
+      "Failed to start notification sender:",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     process.exit(1);
   });
 }

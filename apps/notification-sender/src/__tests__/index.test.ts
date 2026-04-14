@@ -26,14 +26,12 @@ let subscribeStatusHandler: ((status: string) => void) | null = null;
 let sigintHandler: (() => void) | null = null;
 
 // Track GraphQL mutations
-const trackDeliveryStartMock = mock(() => Promise.resolve({ success: true }));
+const trackDeliveryStartMock = mock(() => Promise.resolve(true));
 const sendMobileNotificationsMock = mock(() =>
   Promise.resolve({ success: true, total: 1, sent: 1, failed: 0 }),
 );
-const trackDeliveryCompleteMock = mock(() =>
-  Promise.resolve({ success: true }),
-);
-const trackDeliveryFailureMock = mock(() => Promise.resolve({ success: true }));
+const trackDeliveryCompleteMock = mock(() => Promise.resolve(true));
+const trackDeliveryFailureMock = mock(() => Promise.resolve(true));
 const mockRemoveChannel = mock(() => Promise.resolve());
 const consoleLogMock = mock(() => {});
 const consoleInfoMock = mock(() => {});
@@ -91,16 +89,79 @@ mock.module("../index", () => ({
     };
   }),
   handleNotificationInsert: (
-    _service: NotificationService,
+    service: NotificationService,
     payload: { new: { id: string } },
   ) =>
     Effect.gen(function* () {
-      if (!payload.new.id) {
+      const id = payload.new.id;
+
+      if (!id) {
         return yield* Effect.fail(
           new NotificationServiceError("handleInsert", "Missing ID"),
         );
       }
-      return { success: true, id: payload.new.id };
+
+      // Track delivery start
+      const startResult = yield* Effect.tryPromise({
+        try: () => service.trackDeliveryStart(id),
+        catch: (error) =>
+          new NotificationServiceError("trackDeliveryStart", error),
+      });
+
+      if (!startResult) {
+        return yield* Effect.fail(
+          new NotificationServiceError(
+            "trackDeliveryStart",
+            "Failed to track delivery start",
+          ),
+        );
+      }
+
+      // Send mobile notifications
+      const mobileResult = yield* Effect.tryPromise({
+        try: () => service.sendMobileNotifications(id),
+        catch: (error) =>
+          new NotificationServiceError("sendMobileNotifications", error),
+      });
+
+      // Track completion or failure based on actual delivery result
+      if (mobileResult.success) {
+        yield* Effect.tryPromise({
+          try: () =>
+            service.trackDeliveryComplete(
+              id,
+              mobileResult.total,
+              mobileResult.sent,
+              mobileResult.failed,
+              mobileResult.failed > 0
+                ? `Partial success: ${mobileResult.failed} failed`
+                : null,
+            ),
+          catch: (error) =>
+            new NotificationServiceError("trackDeliveryComplete", error),
+        });
+
+        return {
+          success: true,
+          id,
+          sent: mobileResult.sent,
+          failed: mobileResult.failed,
+        };
+      } else {
+        // Failed delivery - track failure
+        const failureMessage = `Delivery failed: ${mobileResult.failed}/${mobileResult.total} recipients failed`;
+        yield* Effect.tryPromise({
+          try: () => service.trackDeliveryFailure(id, failureMessage),
+          catch: () => undefined,
+        });
+
+        return yield* Effect.fail(
+          new NotificationServiceError(
+            "sendMobileNotifications",
+            failureMessage,
+          ),
+        );
+      }
     }),
   MissingEnvError: class extends Error {
     readonly _tag = "MissingEnvError";
@@ -544,5 +605,69 @@ describe("[UNIT] handleNotificationInsert Effect", () => {
 
     // Should handle missing ID gracefully
     expect(result).toBeDefined();
+  });
+
+  test("should fail fast when trackDeliveryStart fails", async () => {
+    // Override mock to simulate trackDeliveryStart failure
+    trackDeliveryStartMock.mockImplementation(() => Promise.resolve(false));
+
+    const index = await import("../index");
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
+
+    const payload = { new: { id: "test-fail-start" } } as any;
+
+    const result = await Effect.runPromise(
+      Effect.either(index.handleNotificationInsert(service, payload)),
+    );
+
+    // Should fail when trackDeliveryStart returns false
+    expect(Either.isLeft(result)).toBe(true);
+
+    // Should not proceed to send mobile notifications
+    expect(sendMobileNotificationsMock).not.toHaveBeenCalled();
+
+    // Restore original mock
+    trackDeliveryStartMock.mockImplementation(() => Promise.resolve(true));
+  });
+
+  test("should track delivery failure when mobile notifications fail", async () => {
+    // Simulate mobile notification failure
+    sendMobileNotificationsMock.mockImplementation(() =>
+      Promise.resolve({
+        success: false,
+        total: 5,
+        sent: 0,
+        failed: 5,
+      }),
+    );
+
+    const index = await import("../index");
+    const mockUrqlClient = {
+      mutation: mock(() => Promise.resolve({ data: {}, error: null })),
+    };
+    const service = new index.NotificationService(mockUrqlClient as any);
+
+    const payload = { new: { id: "test-mobile-fail" } } as any;
+
+    const result = await Effect.runPromise(
+      Effect.either(index.handleNotificationInsert(service, payload)),
+    );
+
+    // Should fail the overall operation
+    expect(Either.isLeft(result)).toBe(true);
+
+    // Should track delivery failure
+    expect(trackDeliveryFailureMock).toHaveBeenCalled();
+
+    // Should NOT call trackDeliveryComplete on failure
+    expect(trackDeliveryCompleteMock).not.toHaveBeenCalled();
+
+    // Restore original mock
+    sendMobileNotificationsMock.mockImplementation(() =>
+      Promise.resolve({ success: true, total: 1, sent: 1, failed: 0 }),
+    );
   });
 });
