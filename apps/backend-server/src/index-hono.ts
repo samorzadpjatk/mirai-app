@@ -36,14 +36,13 @@
  * @module index-hono
  */
 
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import {
-  initializeContainer,
-  AppModule,
-  setAwilixContainer,
-  initializeRuntime,
-  runEffectWith,
-} from "@mirai-app/frameworks/di";
+  makeAppLayer,
+  type AppLayerConfig,
+} from "@mirai-app/frameworks/layers";
+import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
+import { createSupabaseClient } from "@mirai-app/frameworks/supabase/client";
 import { serverLogger } from "@mirai-app/shared";
 import { createBunServer } from "./bun-server";
 import {
@@ -62,29 +61,59 @@ import {
 } from "./effect-server";
 
 // =============================================================================
-// DI Container Initialization
+// Effect Layer Initialization
 // =============================================================================
 
+/** Global AppLayer instance - created once at bootstrap */
+let _appLayer: Layer.Layer<unknown> | null = null;
+
 /**
- * Initialize the DI container and Effect runtime
+ * Get the global AppLayer instance
+ * @returns The AppLayer or null if not initialized
+ */
+export function getAppLayer(): Layer.Layer<unknown> | null {
+  return _appLayer;
+}
+
+/**
+ * Create the AppLayer with database and Supabase clients
  *
- * This sets up both the awilix container and the Effect Layer system
- * so they work together seamlessly.
+ * This sets up the complete Effect Layer with all repositories and services.
+ */
+function createAppLayer(): Layer.Layer<unknown> {
+  serverLogger.info("[Effect] Creating database and Supabase clients...");
+
+  // Create database client
+  const db = createDrizzleClient(process.env.DATABASE_URL);
+
+  // Create Supabase client
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables are required",
+    );
+  }
+
+  const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
+
+  // Create AppLayer with all repositories and services
+  const config: AppLayerConfig = { supabase, db };
+  const appLayer = makeAppLayer(config);
+
+  serverLogger.info("[Effect] AppLayer created successfully");
+  return appLayer;
+}
+
+/**
+ * Initialize the Effect runtime with AppLayer
  */
 function initializeDependencies(): void {
-  // Initialize awilix container with AppModule
-  serverLogger.info("[Effect] Initializing DI container...");
-  const container = initializeContainer([AppModule]);
-
-  // Set the container for Effect integration
-  setAwilixContainer(container);
-
-  // Initialize Effect runtime
   serverLogger.info("[Effect] Initializing Effect runtime...");
-  const AppLayer = createBunServerLayer(createBunServer(honoConfig)).pipe(
-    Layer.merge(createServerConfigLayer(honoConfig)),
-  );
-  initializeRuntime(AppLayer);
+
+  // Create AppLayer with all dependencies
+  _appLayer = createAppLayer();
 
   serverLogger.info("[Effect] Dependencies initialized successfully");
 }
@@ -128,17 +157,25 @@ const startupProgram = Effect.gen(function* () {
   validateHonoConfig();
   printHonoConfig();
 
-  // Create Bun server with WebSocket support
+  // Get the global AppLayer
+  const appLayer = getAppLayer();
+  if (!appLayer) {
+    throw new Error(
+      "AppLayer not initialized. Call initializeDependencies() first.",
+    );
+  }
+
+  // Create Bun server with WebSocket support and AppLayer
   serverLogger.info("[Effect] Creating Bun server...");
-  _server = createBunServer(honoConfig);
+  _server = createBunServer(honoConfig, appLayer);
 
   // Create server layer with the instance
   const serverLayer = createBunServerLayer(_server);
   const configLayer = createServerConfigLayer(honoConfig);
-  const AppLayer = Layer.merge(serverLayer, configLayer);
+  const serverAppLayer = Layer.merge(serverLayer, configLayer);
 
-  // Start server within Effect
-  yield* Effect.provide(startServerProgram(), AppLayer);
+  // Start server within Effect (server layer merged with global AppLayer)
+  yield* Effect.provide(startServerProgram(), serverAppLayer);
 
   // Log startup success
   yield* Effect.sync(() => {

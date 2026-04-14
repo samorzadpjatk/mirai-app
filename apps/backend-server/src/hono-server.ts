@@ -40,14 +40,7 @@ import { Hono, type Context, type Next } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { serve, type ServerType } from "@hono/node-server";
-import { type AwilixContainer } from "awilix";
-import {
-  initializeContainer,
-  createChildContainer,
-  AppModule,
-  getContainer,
-  isContainerInitialized,
-} from "@mirai-app/frameworks/di";
+import type { Layer } from "effect";
 import { serverLogger } from "@mirai-app/shared";
 import { honoConfig, type HonoConfig } from "./config/hono-config";
 import {
@@ -88,37 +81,36 @@ export interface HonoServer {
 /**
  * Hono context variables
  *
- * Extended with DI container for request-scoped dependency injection.
+ * Extended with AppLayer for Effect-based dependency injection.
  */
 export interface HonoContext {
-  /** Request-scoped DI container */
-  container: AwilixContainer;
+  /** Effect AppLayer with all repositories and services */
+  appLayer: Layer.Layer<unknown>;
 }
 
 // =============================================================================
-// Container Integration
+// Layer Integration
 // =============================================================================
 
-/**
- * Initialize the DI container for Hono server
- *
- * Reuses existing container if already initialized (e.g., by tRPC server).
- * Otherwise, creates new container with AppModule.
- *
- * @returns The initialized container
- */
-function initializeHonoContainer(): AwilixContainer {
-  if (isContainerInitialized()) {
-    serverLogger.info(
-      "[DI] Container already initialized, reusing existing container",
-    );
-    return getContainer();
-  }
+/** Global AppLayer instance passed from bootstrap */
+let _appLayer: Layer.Layer<unknown> | null = null;
 
-  serverLogger.info("[DI] Initializing container with AppModule...");
-  const container = initializeContainer([AppModule]);
-  serverLogger.info("[DI] Container initialized successfully");
-  return container;
+/**
+ * Set the global AppLayer for the Hono server
+ * Called once during bootstrap.
+ *
+ * @param layer - The AppLayer with all dependencies
+ */
+export function setHonoAppLayer(layer: Layer.Layer<unknown>): void {
+  _appLayer = layer;
+}
+
+/**
+ * Get the global AppLayer for the Hono server
+ * @returns The AppLayer or null if not set
+ */
+export function getHonoAppLayer(): Layer.Layer<unknown> | null {
+  return _appLayer;
 }
 
 // =============================================================================
@@ -126,21 +118,13 @@ function initializeHonoContainer(): AwilixContainer {
 // =============================================================================
 
 /**
- * DI container middleware
+ * AppLayer middleware
  *
- * Creates a request-scoped child container for each request.
- * This allows request-specific dependencies (e.g., user context, request ID)
- * to be injected into use cases and controllers.
+ * Provides the AppLayer to each request for Effect-based DI.
  */
-function createDIMiddleware(container: AwilixContainer) {
+function createAppLayerMiddleware(layer: Layer.Layer<unknown>) {
   return async (c: Context, next: Next) => {
-    // Create request-scoped container
-    const requestContainer = createChildContainer(container);
-
-    // Store in context for access in handlers
-    c.set("container", requestContainer);
-
-    // Continue to next middleware/handler
+    c.set("appLayer", layer);
     await next();
   };
 }
@@ -191,11 +175,20 @@ function createErrorHandler(config: HonoConfig) {
  * Create Hono server with full configuration
  *
  * @param config - Server configuration
+ * @param appLayer - Effect AppLayer with all dependencies (optional if set globally)
  * @returns Configured Hono server instance
  */
-export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
-  // Initialize DI container
-  const container = initializeHonoContainer();
+export function createHonoServer(
+  config: HonoConfig = honoConfig,
+  appLayer?: Layer.Layer<unknown>,
+): HonoServer {
+  // Use provided layer or global layer
+  const layer = appLayer ?? _appLayer;
+  if (!layer) {
+    throw new Error(
+      "AppLayer is required. Pass it to createHonoServer() or call setHonoAppLayer() first.",
+    );
+  }
 
   // Create Hono app
   const app = new Hono();
@@ -223,8 +216,8 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
   // Error handling
   app.use("*", createErrorHandler(config));
 
-  // DI container - creates request-scoped container
-  app.use("*", createDIMiddleware(container));
+  // AppLayer middleware - provides Effect Layer for DI
+  app.use("*", createAppLayerMiddleware(layer));
 
   // ==========================================================================
   // Routes

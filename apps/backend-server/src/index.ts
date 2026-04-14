@@ -39,7 +39,7 @@
  * The server lifecycle is now managed through Effect's Layer system:
  * - `HttpServerTag` - Provides server lifecycle methods
  * - `HttpServerConfigTag` - Provides server configuration
- * - DI container is wired to Effect Layers via `setAwilixContainer`
+ * - AppLayer provides all repositories and services via Effect Context
  *
  * @module index
  */

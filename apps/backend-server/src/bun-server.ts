@@ -43,14 +43,7 @@
 import { Hono, type Context, type Next } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { type AwilixContainer } from "awilix";
-import {
-  initializeContainer,
-  createChildContainer,
-  AppModule,
-  getContainer,
-  isContainerInitialized,
-} from "@mirai-app/frameworks/di";
+import type { Layer } from "effect";
 import { serverLogger } from "@mirai-app/shared";
 import { honoConfig, type HonoConfig } from "./config/hono-config";
 import {
@@ -59,7 +52,8 @@ import {
 } from "./graphql/yoga-handler";
 import { schema } from "./graphql/schema";
 import { extractAuthToken, validateAuthToken } from "./websocket/auth-handler";
-import type { AuthPort } from "@mirai-app/use-cases";
+import { Effect } from "effect";
+import { AuthPortTag, type AuthPort } from "@mirai-app/use-cases";
 
 // =============================================================================
 // Types
@@ -97,11 +91,11 @@ export interface BunServer {
 /**
  * Hono context variables
  *
- * Extended with DI container for request-scoped dependency injection.
+ * Extended with AppLayer for Effect-based dependency injection.
  */
 export interface HonoContext {
-  /** Request-scoped DI container */
-  container: AwilixContainer;
+  /** Effect AppLayer with all repositories and services */
+  appLayer: Layer.Layer<unknown>;
 }
 
 /**
@@ -125,29 +119,20 @@ interface WebSocketData {
 }
 
 // =============================================================================
-// Container Integration
+// Layer Integration
 // =============================================================================
 
-/**
- * Initialize the DI container for Bun server
- *
- * Reuses existing container if already initialized.
- * Otherwise, creates new container with AppModule.
- *
- * @returns The initialized container
- */
-function initializeBunContainer(): AwilixContainer {
-  if (isContainerInitialized()) {
-    serverLogger.info(
-      "[DI] Container already initialized, reusing existing container",
-    );
-    return getContainer();
-  }
+/** Global AppLayer instance passed from bootstrap */
+let _appLayer: Layer.Layer<unknown> | null = null;
 
-  serverLogger.info("[DI] Initializing container with AppModule...");
-  const container = initializeContainer([AppModule]);
-  serverLogger.info("[DI] Container initialized successfully");
-  return container;
+/**
+ * Set the global AppLayer for the Bun server
+ * Called once during bootstrap.
+ *
+ * @param layer - The AppLayer with all dependencies
+ */
+function setAppLayer(layer: Layer.Layer<unknown>): void {
+  _appLayer = layer;
 }
 
 // =============================================================================
@@ -155,14 +140,13 @@ function initializeBunContainer(): AwilixContainer {
 // =============================================================================
 
 /**
- * DI container middleware
+ * AppLayer middleware
  *
- * Creates a request-scoped child container for each request.
+ * Provides the AppLayer to each request for Effect-based DI.
  */
-function createDIMiddleware(container: AwilixContainer) {
+function createAppLayerMiddleware(layer: Layer.Layer<unknown>) {
   return async (c: Context, next: Next) => {
-    const requestContainer = createChildContainer(container);
-    c.set("container", requestContainer);
+    c.set("appLayer", layer);
     await next();
   };
 }
@@ -288,11 +272,25 @@ function sendMessage(ws: WebSocket, message: Record<string, unknown>): void {
  * Create Bun server with WebSocket support
  *
  * @param config - Server configuration
+ * @param appLayer - Effect AppLayer with all dependencies
  * @returns Configured Bun server instance
  */
-export function createBunServer(config: HonoConfig = honoConfig): BunServer {
-  // Initialize DI container
-  const container = initializeBunContainer();
+export function createBunServer(
+  config: HonoConfig = honoConfig,
+  appLayer?: Layer.Layer<unknown>,
+): BunServer {
+  // Store AppLayer for use throughout the server
+  if (appLayer) {
+    setAppLayer(appLayer);
+  }
+
+  // Get the AppLayer (must be set before creating server)
+  const layer = appLayer ?? _appLayer;
+  if (!layer) {
+    throw new Error(
+      "AppLayer is required. Pass it to createBunServer() or call setAppLayer() first.",
+    );
+  }
 
   // Create Hono app
   const app = new Hono();
@@ -320,8 +318,8 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
   // Error handling
   app.use("*", createErrorHandler(config));
 
-  // DI container
-  app.use("*", createDIMiddleware(container));
+  // AppLayer middleware - provides Effect Layer for DI
+  app.use("*", createAppLayerMiddleware(layer));
 
   // ==========================================================================
   // Routes
@@ -496,9 +494,14 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
               break;
             }
 
-            // Validate token using auth port
+            // Validate token using auth port from AppLayer
             try {
-              const authPort = container.resolve<AuthPort>("authPort");
+              // Get AuthPort from the AppLayer using Effect
+              const authPortEffect = Effect.gen(function* () {
+                return yield* AuthPortTag;
+              }).pipe(Effect.provide(layer));
+              const authPort = await Effect.runPromise(authPortEffect);
+
               const authResult = await validateAuthToken(token, authPort);
 
               if (!authResult.success) {

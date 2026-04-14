@@ -3,12 +3,12 @@
  *
  * Creates GraphQL context from Hono requests.
  * Extracts authentication tokens, resolves auth context,
- * and provides DI container access to resolvers with Effect runtime.
+ * and provides AppLayer for Effect-based dependency injection.
  *
  * ## Architecture
  *
  * Context is created per-request and includes:
- * - `container`: Request-scoped DI container
+ * - `appLayer`: Effect Layer with all repositories and services
  * - `request`: Hono request object for header access
  * - `runtime`: Effect runtime for executing effects
  *
@@ -22,7 +22,7 @@
  *
  * const yoga = createYoga({
  *   schema,
- *   context: createContextFactory(container),
+ *   context: createContextFactory(),
  * });
  * ```
  *
@@ -30,7 +30,7 @@
  */
 
 import type { Context as HonoContext } from "hono";
-import type { AwilixContainer } from "awilix";
+import type { Layer } from "effect";
 import type { AuthContext } from "@mirai-app/domain";
 import { Effect, Runtime } from "effect";
 import type { Runtime as EffectRuntime } from "effect";
@@ -54,13 +54,13 @@ export type GraphQLRuntime = EffectRuntime<never>;
 /**
  * GraphQL context type
  *
- * Passed to all GraphQL resolvers. Contains the DI container,
+ * Passed to all GraphQL resolvers. Contains the AppLayer for Effect DI,
  * Hono request for accessing headers, and Effect runtime for
  * executing effects.
  */
 export interface GraphQLContext {
-  /** Request-scoped DI container */
-  container: AwilixContainer;
+  /** Effect Layer with all repositories and services */
+  appLayer: Layer.Layer<unknown>;
 
   /** Hono request object */
   request: Request;
@@ -98,10 +98,9 @@ function createGraphQLRuntime(): GraphQLRuntime {
  * Create GraphQL context factory for Hono requests
  *
  * Returns a function that creates context from Hono context.
- * The factory extracts the request-scoped DI container from Hono
+ * The factory extracts the AppLayer from Hono context
  * and creates a standard GraphQL context with Effect runtime.
  *
- * @param _rootContainer - The root DI container (for type inference)
  * @returns Context factory function for Yoga
  *
  * @example
@@ -121,17 +120,17 @@ function createGraphQLRuntime(): GraphQLRuntime {
  * });
  * ```
  */
-export function createContextFactory(
-  _rootContainer?: AwilixContainer,
-): (honoContext: HonoContext) => Promise<GraphQLContext> {
+export function createContextFactory(): (
+  honoContext: HonoContext,
+) => Promise<GraphQLContext> {
   return async (honoContext: HonoContext): Promise<GraphQLContext> => {
-    // Get request-scoped container from Hono context
-    const container = honoContext.get("container") as AwilixContainer;
+    // Get AppLayer from Hono context
+    const appLayer = honoContext.get("appLayer") as Layer.Layer<unknown>;
 
-    if (!container) {
+    if (!appLayer) {
       throw new Error(
-        "DI container not found in Hono context. " +
-          "Ensure createDIMiddleware is registered before GraphQL routes.",
+        "AppLayer not found in Hono context. " +
+          "Ensure AppLayer middleware is registered before GraphQL routes.",
       );
     }
 
@@ -149,9 +148,9 @@ export function createContextFactory(
     if (token) {
       try {
         // Resolve auth context from token using Effect-based use case
-        const authPort = container.resolve<AuthPort>("authPort");
+        // We use the AppLayer to get the AuthPort service
         const authEffect = authenticateUserUseCase({ token }).pipe(
-          Effect.provideService(AuthPortTag, authPort),
+          Effect.provide(appLayer),
         );
         const authEither = await Effect.runPromise(Effect.either(authEffect));
 
@@ -170,7 +169,7 @@ export function createContextFactory(
     }
 
     return {
-      container,
+      appLayer,
       request: honoContext.req.raw,
       runtime,
       ...(authContext ? { authContext } : {}),
@@ -190,13 +189,13 @@ export function createSimpleContextFactory(): (
   honoContext: HonoContext,
 ) => Promise<GraphQLContext> {
   return async (honoContext: HonoContext): Promise<GraphQLContext> => {
-    // Get request-scoped container from Hono context
-    const container = honoContext.get("container") as AwilixContainer;
+    // Get AppLayer from Hono context
+    const appLayer = honoContext.get("appLayer") as Layer.Layer<unknown>;
 
-    if (!container) {
+    if (!appLayer) {
       throw new Error(
-        "DI container not found in Hono context. " +
-          "Ensure createDIMiddleware is registered before GraphQL routes.",
+        "AppLayer not found in Hono context. " +
+          "Ensure AppLayer middleware is registered before GraphQL routes.",
       );
     }
 
@@ -204,7 +203,7 @@ export function createSimpleContextFactory(): (
     const runtime = createGraphQLRuntime();
 
     return {
-      container,
+      appLayer,
       request: honoContext.req.raw,
       runtime,
     };
