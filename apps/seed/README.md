@@ -3,6 +3,7 @@
 Application-level seeding for Supabase Storage + Prisma data.
 
 ## What it does
+
 - Creates required Supabase Storage buckets (files-public/image/video)
 - Uploads files from environment-specific asset directories
 - Reads YAML trip configs from `assets/{env}/config/**.yaml`
@@ -12,6 +13,7 @@ Application-level seeding for Supabase Storage + Prisma data.
 - Writes per-trip manifests to storage
 
 ## Folder structure
+
 ```
 apps/seed/assets/
   dev/                    # Development environment assets
@@ -34,7 +36,9 @@ apps/seed/assets/
 ```
 
 ## Trip YAML schema
+
 Minimal fields required:
+
 ```yaml
 key: example-trip
 name: Example Trip
@@ -49,20 +53,25 @@ info: info/example-trip-info.yaml
 ```
 
 Asset references must start with:
+
 - `images/` (uploaded to image bucket)
 - `public/` (uploaded to public bucket)
 
 ## Users CSV schema
+
 Headers supported:
+
 ```
 email,firstName,lastName,role,password,ghost,wristNumber,houseNumber
 ```
+
 - `role` defaults to `USER`
 - `ghost` accepts `true/false`
 
 ## Additional configuration files
 
 ### Sponsors YAML schema
+
 ```yaml
 - id: partner-1
   name: Example Sponsor
@@ -73,6 +82,7 @@ email,firstName,lastName,role,password,ghost,wristNumber,houseNumber
 ```
 
 ### Rewards YAML schema
+
 ```yaml
 - name: "Pizza na wieczór"
   description: "Zamówienie pizzy dla całej grupy na wieczorny relaks"
@@ -82,6 +92,7 @@ email,firstName,lastName,role,password,ghost,wristNumber,houseNumber
 ```
 
 ### Trip Info YAML schema
+
 ```yaml
 resources:
   - type: hero_image
@@ -150,36 +161,45 @@ insurance:
 ```
 
 ## Example files
+
 The seed app includes example configuration files in `assets/dev/`:
+
 - `config/example-trip.yaml` - Example trip configuration
 - `rewards/example-rewards.yaml` - Example rewards with images
-- `sponsors/example-sponsors.yaml` - Example sponsor configurations  
+- `sponsors/example-sponsors.yaml` - Example sponsor configurations
 - `info/example-info.yaml` - Example trip info with resources and insurance
 - `users/example-trip-members.csv` - Example user list (create as needed)
 
 ## Environment Setup
 
 ### Development
+
 Copy `.env.example` to `.env.dev` and configure with your development Supabase and database credentials:
+
 ```bash
 cp .env.example .env.dev
 # Edit .env.dev with your development values
 ```
 
 ### Production
+
 Copy `.env.example` to `.env.prod` and configure with your production Supabase and database credentials:
+
 ```bash
 cp .env.example .env.prod
 # Edit .env.prod with your production values
 ```
 
 ## Environment variables
+
 Required:
+
 - `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_URL`)
 - `SUPABASE_SERVICE_ROLE_KEY` (or `SERVICE_ROLE_KEY`)
 - `DATABASE_URL`
 
 Optional:
+
 - `SUPABASE_STORAGE_IMAGE_BUCKET` (default: `image`)
 - `SUPABASE_STORAGE_VIDEO_BUCKET` (default: `video`)
 - `SUPABASE_STORAGE_PUBLIC_BUCKET` (default: `files-public`)
@@ -191,18 +211,18 @@ in `apps/native/.env` so the app exposes the password login for the reviewer acc
 ## Available Scripts
 
 ### Seeding
-- `bun run dev` - Run seed with development environment
-- `bun run prod` - Run seed with production environment  
-- `bun run db:seed:dev` - Run seed with development environment (alias)
-- `bun run db:seed:prod` - Run seed with production environment (alias)
+
+- `bun run seed:dev` - Run seed with development environment
+- `bun run seed:prod` - Run seed with production environment
+- `bun run dev` - Alias for seed:dev
+- `bun run prod` - Alias for seed:prod
 
 ### Prisma Operations
+
 - `bun run db:generate` - Generate Prisma client
-- `bun run db:migrate` - Run Prisma migrations (no environment)
-- `bun run db:migrate:deploy` - Deploy migrations to production
 - `bun run db:migrate:dev` - Run migrations in development environment
 - `bun run db:migrate:prod` - Run migrations in production environment
-- `bun run db:reset` - Reset database (no environment)
+- `bun run db:migrate:deploy` - Deploy migrations to production
 - `bun run db:reset:dev` - Reset database in development environment
 - `bun run db:reset:prod` - Reset database in production environment
 - `bun run db:push:dev` - Push schema to development database
@@ -212,16 +232,18 @@ in `apps/native/.env` so the app exposes the password login for the reviewer acc
 - `bun run db:format` - Format Prisma schema
 
 ## Run
+
 ```bash
 # Install dependencies
 bun install
 
 # Development seeding
+bun run seed:dev
+# or
 bun run dev
-# Production seeding
-bun run prod
 
-# Or use the explicit aliases
-bun run db:seed:dev
-bun run db:seed:prod
+# Production seeding
+bun run seed:prod
+# or
+bun run prod
 ```

@@ -7,13 +7,12 @@ import type { TripConfig, AuthUserByEmail } from "./types";
 import { parseUsersCsv } from "./users";
 import { joinPath } from "./utils/path";
 import { readTextFile, readFile } from "./utils/fs";
-import { gql } from "graphql-tag";
 
 // =============================================================================
 // GraphQL Operation Documents
 // =============================================================================
 
-const UpsertTripDocument = gql`
+const UpsertTripDocument = `
   mutation UpsertTrip(
     $key: String!
     $name: String!
@@ -44,7 +43,7 @@ const UpsertTripDocument = gql`
   }
 `;
 
-const UpsertUserDocument = gql`
+const UpsertUserDocument = `
   mutation UpsertUser(
     $authUserId: String!
     $email: String!
@@ -72,7 +71,7 @@ const UpsertUserDocument = gql`
   }
 `;
 
-const AddTripParticipantDocument = gql`
+const AddTripParticipantDocument = `
   mutation AddTripParticipant($tripId: ID!, $userId: ID!) {
     addTripParticipant(input: { tripId: $tripId, userId: $userId }) {
       id
@@ -83,7 +82,6 @@ const AddTripParticipantDocument = gql`
   }
 `;
 
-// Types for GraphQL responses
 interface UpsertTripResponse {
   upsertTrip: {
     id: string;
@@ -122,10 +120,13 @@ interface AddTripParticipantResponse {
 // Trip Seeding
 // =============================================================================
 
-/**
- * Seed a trip with participants using GraphQL via urql
- * Uses service account authentication for admin-level operations
- */
+const ROLE_MAPPING: Record<string, string> = {
+  admin: "ADMIN",
+  moderator: "MODERATOR",
+  service: "SERVICE",
+  user: "USER",
+};
+
 export const seedTrip = async (
   tripConfig: TripConfig,
   usersCsvPath: string,
@@ -135,55 +136,22 @@ export const seedTrip = async (
   const usersCsv = await readTextFile(joinPath(envRoot, usersCsvPath));
   const users = parseUsersCsv(usersCsv);
 
-  // Handle background image upload if specified
-  let backgroundImagePath: string | undefined;
-  if (tripConfig.background) {
-    const backgroundAbsPath = joinPath(envRoot, tripConfig.background);
-    try {
-      const backgroundFile = readFile(backgroundAbsPath);
-      const { size } = await backgroundFile.stat();
+  // Handle background image upload
+  const backgroundImagePath = await uploadBackgroundImage(tripConfig, envRoot);
 
-      if (size > 0) {
-        // Generate storage path: trips/{trip-key}/background.{ext}
-        const client = getSupabaseClient();
-        const ext =
-          tripConfig.background.split(".").pop()?.toLowerCase() || "jpg";
-        const storagePath = `trips/${tripConfig.key}/background.${ext}`;
-
-        const { error } = await client.storage
-          .from(env.imageBucket)
-          .upload(storagePath, backgroundFile, {
-            upsert: true,
-            contentType: `image/${ext}`,
-          });
-
-        if (error) {
-          serverLogger.warn(
-            `✗ Background upload failed for ${tripConfig.name}: ${error.message}`,
-          );
-        } else {
-          backgroundImagePath = storagePath;
-          serverLogger.info(
-            `✓ Uploaded background for ${tripConfig.name}: ${storagePath}`,
-          );
-        }
-      }
-    } catch (err) {
-      serverLogger.warn(
-        `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}: ${String(err)}`,
-      );
-    }
-  }
-
-  // Create or update trip via GraphQL using urql
-  const trip = await upsertTripViaGraphQL({
-    key: tripConfig.key,
-    name: tripConfig.name,
-    description: tripConfig.description,
-    startDate: new Date(tripConfig.startDate),
-    endDate: new Date(tripConfig.endDate),
-    backgroundImagePath,
-  });
+  // Create or update trip
+  const trip = await executeMutation<UpsertTripResponse>(
+    UpsertTripDocument,
+    {
+      key: tripConfig.key,
+      name: tripConfig.name,
+      description: tripConfig.description,
+      startDate: new Date(tripConfig.startDate).toISOString(),
+      endDate: new Date(tripConfig.endDate).toISOString(),
+      backgroundImagePath,
+    },
+    "upsertTrip",
+  );
 
   if (!trip) {
     throw new Error(`Failed to create/update trip: ${tripConfig.name}`);
@@ -194,190 +162,182 @@ export const seedTrip = async (
     const email = row.email?.trim();
     if (!email) continue;
 
-    let authUser = authUsers.get(email.toLowerCase()) ?? null;
-    if (!authUser) {
-      authUser = await createAuthUserByEmail(
+    const authUser = await getOrCreateAuthUser(email, row, authUsers);
+    if (!authUser) continue;
+
+    const dbRole = ROLE_MAPPING[row.role?.toLowerCase() || "user"] || "USER";
+
+    const dbUser = await executeMutation<UpsertUserResponse>(
+      UpsertUserDocument,
+      {
+        authUserId: authUser.id,
         email,
-        row.firstName ?? "",
-        row.lastName ?? "",
-        row.role ?? "user",
-      );
-      if (!authUser) {
-        serverLogger.warn(
-          `✗ Supabase Auth user not found/created for ${email}, skipping DB user/participant.`,
-        );
-        continue;
-      }
-      authUsers.set(email.toLowerCase(), authUser);
-    }
-
-    // Create or update user via GraphQL using urql
-    const roleMapping: Record<string, string> = {
-      admin: "ADMIN",
-      moderator: "MODERATOR",
-      service: "SERVICE",
-      user: "USER",
-    };
-
-    const dbRole = roleMapping[row.role?.toLowerCase() || "user"] || "USER";
-
-    const dbUser = await upsertUserViaGraphQL({
-      authUserId: authUser.id,
-      email,
-      firstName: row.firstName ?? "",
-      lastName: row.lastName ?? "",
-      role: dbRole,
-    });
+        firstName: row.firstName ?? "",
+        lastName: row.lastName ?? "",
+        role: dbRole,
+      },
+      "upsertUser",
+    );
 
     if (!dbUser) {
       serverLogger.warn(`✗ Failed to create/update user for ${email}`);
       continue;
     }
 
-    // Add user as trip participant using urql
-    const participant = await addTripParticipantViaGraphQL({
-      tripId: trip.id,
-      userId: dbUser.id,
-    });
+    const participant = await executeMutation<AddTripParticipantResponse>(
+      AddTripParticipantDocument,
+      { tripId: trip.id, userId: dbUser.id },
+      "addTripParticipant",
+      true,
+    );
 
     if (participant) {
       serverLogger.info(`✓ Added ${email} to trip ${tripConfig.name}`);
     }
   }
 
-  // Add ghost user to trip
-  const ghostAuth = await ensureGhostAuthUser(authUsers);
-  if (ghostAuth) {
-    const ghostUser = await upsertUserViaGraphQL({
-      authUserId: ghostAuth.id,
-      email: env.seedGhostEmail,
-      firstName: "Ghost",
-      lastName: "User",
-      role: "USER",
-    });
-
-    if (ghostUser) {
-      await addTripParticipantViaGraphQL({
-        tripId: trip.id,
-        userId: ghostUser.id,
-      });
-      serverLogger.info(`✓ Added ghost user to trip ${tripConfig.name}`);
-    }
-  }
+  // Add ghost user
+  await addGhostUserToTrip(trip.id, tripConfig.name, authUsers);
 
   serverLogger.info(`Trip seeded: ${trip.name} (${users.length} participants)`);
   return trip;
 };
 
 // =============================================================================
-// GraphQL Operations via urql
+// Helper Functions
 // =============================================================================
 
-/**
- * Upsert trip via GraphQL API using urql
- * Uses service account for admin operations
- */
-async function upsertTripViaGraphQL(input: {
-  key: string;
-  name: string;
-  description?: string;
-  startDate: Date;
-  endDate: Date;
-  backgroundImagePath?: string;
-}) {
-  try {
-    const result = await seedUrqlClient.mutation<UpsertTripResponse>(
-      UpsertTripDocument,
-      {
-        key: input.key,
-        name: input.name,
-        description: input.description,
-        startDate: input.startDate.toISOString(),
-        endDate: input.endDate.toISOString(),
-        backgroundImagePath: input.backgroundImagePath,
-      },
-    );
+async function uploadBackgroundImage(
+  tripConfig: TripConfig,
+  envRoot: string,
+): Promise<string | undefined> {
+  if (!tripConfig.background) return undefined;
 
-    if (result.error) {
-      serverLogger.warn("GraphQL error (upsertTrip)", { error: result.error });
-      return null;
+  const backgroundAbsPath = joinPath(envRoot, tripConfig.background);
+  try {
+    const backgroundFile = readFile(backgroundAbsPath);
+    const { size } = await backgroundFile.stat();
+
+    if (size === 0) return undefined;
+
+    const client = getSupabaseClient();
+    const ext = tripConfig.background.split(".").pop()?.toLowerCase() || "jpg";
+    const storagePath = `trips/${tripConfig.key}/background.${ext}`;
+
+    const { error } = await client.storage
+      .from(env.imageBucket)
+      .upload(storagePath, backgroundFile, {
+        upsert: true,
+        contentType: `image/${ext}`,
+      });
+
+    if (error) {
+      serverLogger.warn(
+        `✗ Background upload failed for ${tripConfig.name}: ${error.message}`,
+      );
+      return undefined;
     }
 
-    return result.data?.upsertTrip ?? null;
-  } catch (error) {
-    serverLogger.error("Failed to upsert trip:", { error });
-    return null;
+    serverLogger.info(
+      `✓ Uploaded background for ${tripConfig.name}: ${storagePath}`,
+    );
+    return storagePath;
+  } catch (err) {
+    serverLogger.warn(
+      `✗ Failed to read background image ${tripConfig.background}: ${String(err)}`,
+    );
+    return undefined;
   }
 }
 
-/**
- * Upsert user via GraphQL API using urql
- */
-async function upsertUserViaGraphQL(input: {
-  authUserId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-}) {
-  try {
-    const result = await seedUrqlClient.mutation<UpsertUserResponse>(
-      UpsertUserDocument,
-      {
-        authUserId: input.authUserId,
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        role: input.role,
-      },
+async function getOrCreateAuthUser(
+  email: string,
+  row: { firstName?: string; lastName?: string; role?: string },
+  authUsers: AuthUserByEmail,
+) {
+  let authUser = authUsers.get(email.toLowerCase()) ?? null;
+  if (!authUser) {
+    authUser = await createAuthUserByEmail(
+      email,
+      row.firstName ?? "",
+      row.lastName ?? "",
+      row.role ?? "user",
     );
-
-    if (result.error) {
-      serverLogger.warn("GraphQL error (upsertUser)", { error: result.error });
+    if (!authUser) {
+      serverLogger.warn(`✗ Supabase Auth user not found/created for ${email}`);
       return null;
     }
-
-    return result.data?.upsertUser ?? null;
-  } catch (error) {
-    serverLogger.error("Failed to upsert user:", { error });
-    return null;
+    authUsers.set(email.toLowerCase(), authUser);
   }
+  return authUser;
 }
 
-/**
- * Add trip participant via GraphQL API using urql
- */
-async function addTripParticipantViaGraphQL(input: {
-  tripId: string;
-  userId: string;
-}) {
-  try {
-    const result = await seedUrqlClient.mutation<AddTripParticipantResponse>(
+async function addGhostUserToTrip(
+  tripId: string,
+  tripName: string,
+  authUsers: AuthUserByEmail,
+) {
+  const ghostAuth = await ensureGhostAuthUser(authUsers);
+  if (!ghostAuth) return;
+
+  const ghostUser = await executeMutation<UpsertUserResponse>(
+    UpsertUserDocument,
+    {
+      authUserId: ghostAuth.id,
+      email: env.seedGhostEmail,
+      firstName: "Ghost",
+      lastName: "User",
+      role: "USER",
+    },
+    "upsertUser",
+  );
+
+  if (ghostUser) {
+    await executeMutation<AddTripParticipantResponse>(
       AddTripParticipantDocument,
-      {
-        tripId: input.tripId,
-        userId: input.userId,
-      },
+      { tripId, userId: ghostUser.id },
+      "addTripParticipant",
+      true,
+    );
+    serverLogger.info(`✓ Added ghost user to trip ${tripName}`);
+  }
+}
+
+async function executeMutation<TResponse>(
+  document: string,
+  variables: Record<string, unknown>,
+  operationName: string,
+  allowAlreadyExists = false,
+): Promise<TResponse[keyof TResponse] | null> {
+  try {
+    const result = await seedUrqlClient.mutation<TResponse>(
+      document,
+      variables,
     );
 
     if (result.error) {
-      // Participant may already exist - that's ok
-      if (result.error.message?.includes("already exists")) {
+      if (
+        allowAlreadyExists &&
+        result.error.message?.includes("already exists")
+      ) {
         return {
           id: "existing",
-          ...input,
-          joinedAt: new Date().toISOString(),
-        };
+          ...variables,
+        } as unknown as TResponse[keyof TResponse];
       }
-      serverLogger.warn("GraphQL error (addTripParticipant)", {
+      serverLogger.warn(`GraphQL error (${operationName})`, {
         error: result.error,
       });
       return null;
     }
 
-    return result.data?.addTripParticipant ?? null;
+    const key = Object.keys(result.data || {})[0] as keyof TResponse;
+    return result.data?.[key] ?? null;
   } catch (error) {
-    serverLogger.error("Failed to add trip participant:", { error });
+    serverLogger.error(
+      `Failed ${operationName}:`,
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return null;
   }
 }

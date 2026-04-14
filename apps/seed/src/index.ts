@@ -52,15 +52,19 @@ const requiredEnvVars = [
 
 class MissingEnvError extends Error {
   readonly _tag = "MissingEnvError";
-  constructor(public readonly varName: string) {
+  varName: string;
+  constructor(varName: string) {
     super(`Missing required environment variable: ${varName}`);
+    this.varName = varName;
   }
 }
 
 class SeedError extends Error {
   readonly _tag = "SeedError";
-  constructor(public readonly cause: unknown) {
+  override cause: unknown;
+  constructor(cause: unknown) {
     super(`Seed operation failed: ${String(cause)}`);
+    this.cause = cause;
   }
 }
 

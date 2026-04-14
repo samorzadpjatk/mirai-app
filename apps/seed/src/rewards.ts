@@ -2,11 +2,12 @@ import { serverLogger } from "@mirai-app/shared";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import { env } from "./config/env";
 import type { RewardConfig, AuthUserByEmail } from "./types";
-
-const SERVICE_ROLE_KEY = env.serviceRoleKey;
-const GRAPHQL_ENDPOINT = env.graphqlEndpoint;
+import {
+  executeGraphQL,
+  FindUserByAuthIdDocument,
+  CreateRewardDocument,
+} from "./graphql-executor";
 
 export const loadRewardConfigs = async (
   envRoot: string,
@@ -37,9 +38,14 @@ export const seedRewards = async (
   // Find a valid user to create rewards (prefer admin/moderator)
   let creatorUserId: string | null = null;
 
-  for (const [email, authUser] of authUsers.entries()) {
-    // Query user via GraphQL
-    const user = await findUserByAuthId(authUser.id);
+  for (const [_email, authUser] of authUsers.entries()) {
+    const result = await executeGraphQL(FindUserByAuthIdDocument, {
+      authUserId: authUser.id,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const users = result && (result as any).users;
+    const user = users?.[0];
     if (user) {
       if (user.role === "ADMIN" || user.role === "MODERATOR") {
         creatorUserId = user.id;
@@ -59,164 +65,27 @@ export const seedRewards = async (
   serverLogger.info(`Using user ${creatorUserId} to create rewards`);
 
   for (const rewardConfig of rewardConfigs) {
-    try {
-      // Map image path to storage path if provided
-      let imageUrl = rewardConfig.image;
-      if (imageUrl && !imageUrl.startsWith("rewards/")) {
-        imageUrl = `rewards/${imageUrl.split("/").pop()}`;
-      }
+    // Map image path to storage path if provided
+    let imageUrl = rewardConfig.image;
+    if (imageUrl && !imageUrl.startsWith("rewards/")) {
+      imageUrl = `rewards/${imageUrl.split("/").pop()}`;
+    }
 
-      // Create reward via GraphQL
-      const reward = await createRewardViaGraphQL({
-        tripId,
-        name: rewardConfig.name,
-        description: rewardConfig.description,
-        type: "PHYSICAL", // Default type
-        cost: rewardConfig.coinCost,
-        quantity: rewardConfig.availableQuantity,
-        imageUrl: imageUrl || undefined,
-      });
+    const rewardResult = await executeGraphQL(CreateRewardDocument, {
+      tripId,
+      name: rewardConfig.name,
+      description: rewardConfig.description,
+      type: "PHYSICAL",
+      cost: rewardConfig.coinCost,
+      quantity: rewardConfig.availableQuantity,
+      imageUrl: imageUrl || undefined,
+    });
 
-      if (reward) {
-        serverLogger.info(`✓ Created reward: ${rewardConfig.name}`);
-      } else {
-        serverLogger.warn(`✗ Failed to create reward: ${rewardConfig.name}`);
-      }
-    } catch (error) {
-      serverLogger.error(
-        `Error creating reward ${rewardConfig.name}:`,
-        error instanceof Error ? error : new Error(String(error)),
-      );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (rewardResult && (rewardResult as any).createReward) {
+      serverLogger.info(`✓ Created reward: ${rewardConfig.name}`);
+    } else {
+      serverLogger.warn(`✗ Failed to create reward: ${rewardConfig.name}`);
     }
   }
 };
-
-// =============================================================================
-// GraphQL Operations
-// =============================================================================
-
-async function findUserByAuthId(authUserId: string) {
-  const query = `
-    query FindUserByAuthId($authUserId: String!) {
-      users(filter: { authUserId: $authUserId }) {
-        id
-        role
-      }
-    }
-  `;
-
-  try {
-    const response = await fetch(GRAPHQL_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify({
-        query,
-        variables: { authUserId },
-      }),
-    });
-
-    const result = (await response.json()) as {
-      data?: { users: Array<{ id: string; role: string }> };
-    };
-
-    return result.data?.users?.[0] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-async function createRewardViaGraphQL(input: {
-  tripId: string;
-  name: string;
-  description: string;
-  type: string;
-  cost: number;
-  quantity: number;
-  imageUrl?: string;
-}) {
-  const query = `
-    mutation CreateReward(
-      $tripId: ID!
-      $name: String!
-      $description: String
-      $type: String!
-      $cost: Int
-      $quantity: Int
-      $imageUrl: String
-    ) {
-      createReward(
-        input: {
-          tripId: $tripId
-          name: $name
-          description: $description
-          type: $type
-          cost: $cost
-          quantity: $quantity
-          imageUrl: $imageUrl
-        }
-      ) {
-        id
-        tripId
-        name
-        description
-        type
-        cost
-        quantity
-        imageUrl
-        createdAt
-      }
-    }
-  `;
-
-  try {
-    const response = await fetch(GRAPHQL_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        "X-Service-Account": "seed",
-      },
-      body: JSON.stringify({
-        query,
-        variables: input,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
-    }
-
-    const result = (await response.json()) as {
-      data?: {
-        createReward: {
-          id: string;
-          tripId: string;
-          name: string;
-          description: string;
-          type: string;
-          cost?: number;
-          quantity?: number;
-          imageUrl?: string;
-          createdAt: string;
-        };
-      };
-      errors?: Array<{ message: string }>;
-    };
-
-    if (result.errors) {
-      serverLogger.warn("GraphQL errors:", { errors: result.errors });
-      return null;
-    }
-
-    return result.data?.createReward ?? null;
-  } catch (error) {
-    serverLogger.error(
-      "Failed to create reward:",
-      error instanceof Error ? error : new Error(String(error)),
-    );
-    return null;
-  }
-}
