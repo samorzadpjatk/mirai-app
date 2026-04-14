@@ -15,13 +15,25 @@ export {
   validateNotEmpty,
   validateMinLength,
   validateMaxLength,
-  isValidUUID,
+  // Note: isValidUUID is exported from branded-id (for ID validation)
   validateUUID,
   isValidURL,
   isFutureDate,
   isPastDate,
   isValidDateRange,
 } from "./utils/validation";
+
+// Branded ID factory (for creating type-safe identifiers)
+export {
+  createBrandedId,
+  isValidUUID,
+  isValidCUID,
+  type BrandedId,
+  type BrandedIdFactory,
+} from "./utils/branded-id";
+
+// Test constants (for test files)
+export { TestIds, type TestIdKey } from "./utils/test-ids";
 
 // Unified Domain Error Hierarchy (consolidates 124 error classes into 20 types)
 // All new code should use these error classes
