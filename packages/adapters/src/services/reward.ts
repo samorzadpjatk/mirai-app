@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import type { DrizzleTripAccessChecker } from "./trip-access";
 import type { DrizzleTripPointsCalculator } from "./trip-points";
 import type { RewardController } from "../controllers/reward";
-import { ServiceError } from "../errors/adapter-errors";
+import { ServiceError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleRewardService

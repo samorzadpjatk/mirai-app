@@ -6,6 +6,7 @@ import type {
 import type { EventBus, EventHandler } from "./EventBus";
 import type { Expo, ExpoPushMessage, ExpoPushTicket } from "expo-server-sdk";
 import { Effect, Data } from "effect";
+import { serverLogger } from "@mirai-app/shared";
 
 /**
  * PushSubscription
@@ -426,7 +427,7 @@ export class NotificationDeliveryService {
     deviceToken: string,
     error: string,
   ): void {
-    console.error(
+    serverLogger.error(
       `[NotificationDeliveryService] Notification ${originalEvent.notificationId} failed: ${error}`,
     );
   }

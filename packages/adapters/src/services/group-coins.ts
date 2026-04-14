@@ -2,7 +2,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { groups, coinTransactions } from "@mirai-app/frameworks/drizzle/schema";
 import { eq, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { ServiceError } from "../errors/adapter-errors";
+import { ServiceError } from "@mirai-app/adapters/errors";
 
 /**
  * Manages group coin balance and transactions

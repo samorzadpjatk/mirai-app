@@ -5,7 +5,8 @@ import {
   type ExpoPushTicket,
 } from "expo-server-sdk";
 import { Effect } from "effect";
-import { ServiceError } from "../errors/adapter-errors";
+import { ServiceError } from "@mirai-app/adapters/errors";
+import { serverLogger } from "@mirai-app/shared";
 
 // ============================================================================
 // Template Types and Utilities (moved from trpc-utils/notificationTemplates)
@@ -548,9 +549,9 @@ export class NotificationService {
             const t = await executeWithRetry(
               () => expo.sendPushNotificationsAsync(chunk),
               (err, retryAttempt) => {
-                console.error(
+                serverLogger.error(
                   `Error sending push notification chunk (attempt ${retryAttempt + 1}):`,
-                  err,
+                  { error: err },
                 );
               },
               undefined,

@@ -2,7 +2,7 @@ import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { Effect } from "effect";
 import { DrizzleCoinTransactionService } from "../coin-transaction";
 import type { CoinTransactionController } from "../../controllers/coin-transaction";
-import { ServiceError } from "../../errors/adapter-errors";
+import { ServiceError } from "@mirai-app/adapters/errors";
 
 // Simple mock db
 const createMockDb = () => ({

@@ -8,7 +8,7 @@ import {
 import { eq, sql } from "drizzle-orm";
 import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
 import type { DrizzleRankingActivityService } from "./ranking-activity";
-import { ServiceError } from "../errors/adapter-errors";
+import { ServiceError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleCoinService

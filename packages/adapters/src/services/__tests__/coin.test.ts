@@ -4,7 +4,7 @@ import { DrizzleCoinService } from "../coin";
 import type { DrizzleRankingActivityService } from "../ranking-activity";
 import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
 import type { CoinTransaction } from "@mirai-app/use-cases";
-import { ServiceError } from "../../errors/adapter-errors";
+import { ServiceError } from "@mirai-app/adapters/errors";
 
 // Simple mock db factory
 const createMockDb = () => ({

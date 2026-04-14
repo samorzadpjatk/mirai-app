@@ -7,7 +7,7 @@ import {
 } from "@mirai-app/frameworks/drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import type { CoinTransactionController } from "../controllers/coin-transaction";
-import { ServiceError } from "../errors/adapter-errors";
+import { ServiceError } from "@mirai-app/adapters/errors";
 
 /**
  * DrizzleCoinTransactionService

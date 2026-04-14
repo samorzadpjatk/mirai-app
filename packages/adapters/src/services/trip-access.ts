@@ -7,7 +7,7 @@ import {
 } from "@mirai-app/frameworks/drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { Effect } from "effect";
-import { ServiceError } from "../errors/adapter-errors";
+import { ServiceError } from "@mirai-app/adapters/errors";
 
 export interface GroupLeaderCheckResult {
   isLeader: boolean;
