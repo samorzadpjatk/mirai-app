@@ -79,6 +79,9 @@ export interface HonoServer {
 
   /** Check if server is running */
   isRunning: () => boolean;
+
+  /** Get the actual port the server is listening on (useful for dynamic port allocation) */
+  getPort: () => number;
 }
 
 /**
@@ -295,14 +298,7 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
   let serverInstance: ServerType | null = null;
   let isRunning = false;
 
-  // Create server but don't start yet
-  const server = serve({
-    fetch: app.fetch,
-    port: config.port,
-    hostname: config.host,
-  });
-
-  serverInstance = server;
+  // Server creation is deferred to start() to avoid port conflicts during module import
 
   // ==========================================================================
   // Control Methods
@@ -317,13 +313,17 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
       return;
     }
 
-    return new Promise((resolve, reject) => {
-      if (!serverInstance) {
-        reject(new Error("Server not initialized"));
-        return;
-      }
+    // Create server instance on first start
+    if (!serverInstance) {
+      serverInstance = serve({
+        fetch: app.fetch,
+        port: config.port,
+        hostname: config.host,
+      });
+    }
 
-      serverInstance.on("listening", () => {
+    return new Promise((resolve, reject) => {
+      serverInstance?.on("listening", () => {
         isRunning = true;
         console.log(
           `[Hono] Server running at http://${config.host}:${config.port}`,
@@ -387,6 +387,21 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
     return isRunning;
   };
 
+  /**
+   * Get the actual port the server is listening on
+   * Returns the configured port if server hasn't started yet,
+   * or the dynamically allocated port if using port 0
+   */
+  const getPort = (): number => {
+    if (serverInstance && isRunning) {
+      const address = serverInstance.address();
+      if (typeof address === "object" && address !== null) {
+        return address.port;
+      }
+    }
+    return config.port;
+  };
+
   // ==========================================================================
   // Graceful Shutdown
   // ==========================================================================
@@ -403,11 +418,14 @@ export function createHonoServer(config: HonoConfig = honoConfig): HonoServer {
 
   return {
     app,
-    server,
+    get server() {
+      return serverInstance;
+    },
     yoga,
     start,
     stop,
     isRunning: checkIsRunning,
+    getPort,
   };
 }
 

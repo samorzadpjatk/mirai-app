@@ -88,6 +88,9 @@ export interface BunServer {
 
   /** Get active WebSocket connections count */
   getWebSocketCount: () => number;
+
+  /** Get the actual port the server is listening on */
+  getPort: () => number;
 }
 
 /**
@@ -402,7 +405,10 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
     hostname: config.host,
 
     // HTTP request handler
-    fetch: async (request: Request) => {
+    fetch: async (
+      request: Request,
+      server: { upgrade: (req: Request) => boolean },
+    ) => {
       const url = new URL(request.url);
 
       // Check for WebSocket upgrade request
@@ -411,9 +417,16 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
           "upgrade",
         );
         if (upgrade === "websocket") {
-          // Bun will handle the upgrade via the websocket handler below
-          return new Response("WebSocket upgrade required", { status: 426 });
+          // Let Bun handle the WebSocket upgrade
+          const upgraded = server.upgrade(request);
+          if (upgraded) {
+            return new Response("WebSocket upgrade successful", {
+              status: 101,
+            });
+          }
         }
+        // No upgrade header or upgrade failed
+        return new Response("WebSocket upgrade required", { status: 426 });
       }
 
       // Regular HTTP request - pass to Hono
@@ -671,6 +684,13 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
     return activeConnections.size;
   };
 
+  /**
+   * Get the actual port the server is listening on
+   */
+  const getPort = (): number => {
+    return serverInstance?.port ?? config.port;
+  };
+
   // ==========================================================================
   // Graceful Shutdown
   // ==========================================================================
@@ -692,6 +712,7 @@ export function createBunServer(config: HonoConfig = honoConfig): BunServer {
     stop,
     isRunning: checkIsRunning,
     getWebSocketCount,
+    getPort,
   };
 }
 

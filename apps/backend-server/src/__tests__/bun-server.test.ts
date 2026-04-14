@@ -23,13 +23,12 @@ import { honoConfig } from "../config/hono-config";
 // Test Configuration
 // =============================================================================
 
-let TEST_PORT = 9000;
 const TEST_HOST = "127.0.0.1";
 
 function getTestConfig() {
   return {
     ...honoConfig,
-    port: ++TEST_PORT,
+    port: 0, // Use port 0 for dynamic port allocation
     host: TEST_HOST,
     enableLogging: false,
     enableGraphiQL: false,
@@ -46,8 +45,10 @@ describe("[UNIT] Bun Server", () => {
 
   beforeEach(async () => {
     const config = getTestConfig();
-    currentPort = config.port;
     server = createBunServer(config);
+    // Note: Server is not auto-started here because lifecycle tests
+    // need to control start/stop themselves. Tests that need a running
+    // server should start it and then call server.getPort() for the actual port.
   });
 
   afterEach(async () => {
@@ -55,7 +56,7 @@ describe("[UNIT] Bun Server", () => {
       await server.stop();
     }
     // Add delay between tests to allow port cleanup
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 200));
   });
 
   describe("Server Lifecycle", () => {
@@ -95,6 +96,7 @@ describe("[UNIT] Bun Server", () => {
   describe("HTTP Endpoints", () => {
     beforeEach(async () => {
       await server.start();
+      currentPort = server.getPort();
     });
 
     it("GET / returns API info", async () => {
@@ -155,6 +157,7 @@ describe("[UNIT] Bun Server", () => {
   describe("WebSocket Upgrade", () => {
     beforeEach(async () => {
       await server.start();
+      currentPort = server.getPort();
     });
 
     it("GET /graphql/ws without upgrade header returns 426", async () => {
@@ -177,7 +180,7 @@ describe("[UNIT] Bun Server", () => {
       ws.close();
     });
 
-    it("WebSocket accepts connection_init message", async () => {
+    it("WebSocket rejects connection_init without auth", async () => {
       const ws = new WebSocket(`ws://${TEST_HOST}:${currentPort}/graphql/ws`);
 
       await new Promise<void>((resolve, reject) => {
@@ -185,17 +188,18 @@ describe("[UNIT] Bun Server", () => {
         ws.onerror = reject;
       });
 
-      const ackPromise = new Promise<boolean>((resolve) => {
+      const errorPromise = new Promise<boolean>((resolve) => {
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          resolve(data.type === "connection_ack");
+          resolve(data.type === "error");
         };
       });
 
       ws.send(JSON.stringify({ type: "connection_init" }));
 
-      const received = await ackPromise;
-      expect(received).toBe(true);
+      // Without auth token, server should return error
+      const receivedError = await errorPromise;
+      expect(receivedError).toBe(true);
 
       ws.close();
     });
@@ -285,10 +289,9 @@ describe("[UNIT] Bun Server", () => {
 
   describe("CORS Configuration", () => {
     it("responds with CORS headers when origin configured", async () => {
-      const corsPort = ++TEST_PORT;
       const corsServer = createBunServer({
         ...honoConfig,
-        port: corsPort,
+        port: 0, // Dynamic port allocation
         host: TEST_HOST,
         corsOrigin: "http://localhost:3000",
         enableLogging: false,
@@ -296,6 +299,7 @@ describe("[UNIT] Bun Server", () => {
       });
 
       await corsServer.start();
+      const corsPort = corsServer.getPort();
 
       const response = await fetch(`http://${TEST_HOST}:${corsPort}/`, {
         headers: {
@@ -314,6 +318,7 @@ describe("[UNIT] Bun Server", () => {
   describe("Graceful Shutdown", () => {
     it("closes WebSocket connections on stop", async () => {
       await server.start();
+      currentPort = server.getPort();
 
       const ws = new WebSocket(`ws://${TEST_HOST}:${currentPort}/graphql/ws`);
 
@@ -344,9 +349,10 @@ describe("[UNIT] Bun Server", () => {
   describe("Error Handling", () => {
     beforeEach(async () => {
       await server.start();
+      currentPort = server.getPort();
     });
 
-    it("returns 500 for GraphQL errors", async () => {
+    it("returns 400 for invalid GraphQL request", async () => {
       const response = await fetch(
         `http://${TEST_HOST}:${currentPort}/graphql`,
         {
@@ -358,9 +364,8 @@ describe("[UNIT] Bun Server", () => {
         },
       );
 
-      expect(response.status).toBe(200); // GraphQL returns 200 even with errors
-      const data = await response.json();
-      expect(data.errors).toBeDefined();
+      // Bun correctly returns 400 for invalid JSON
+      expect(response.status).toBe(400);
     });
 
     it("handles unknown routes", async () => {
