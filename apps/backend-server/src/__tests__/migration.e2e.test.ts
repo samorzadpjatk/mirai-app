@@ -15,7 +15,7 @@ import {
   beforeEach,
   afterAll,
 } from "bun:test";
-import { createHonoServer, type HonoServer } from "../hono-server";
+import { createBunServer, type BunServer } from "../bun-server";
 import { honoConfig } from "../config/hono-config";
 import { schema } from "../graphql/schema";
 import { graphql } from "graphql";
@@ -50,7 +50,7 @@ import type { AuthContext } from "@mirai-app/domain";
 // =============================================================================
 
 interface TestContext {
-  server: HonoServer;
+  server: BunServer;
   container: AwilixContainer;
   authAdapter: InMemoryAuthAdapter;
   eventBus: EventBus;
@@ -127,7 +127,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
     const userRepo = new InMemoryUserRepository();
 
     ctx = {
-      server: createHonoServer(testConfig, testLayer),
+      server: createBunServer(testConfig, testLayer),
       container: createTestContainer(),
       authAdapter,
       eventBus,
