@@ -15,7 +15,7 @@ mock.module("../LoginForm", () => ({
   LoginForm: () => <div data-testid="login-form">Login Form Component</div>,
 }));
 
-describe("LoginApp", () => {
+describe("[UNIT] LoginApp", () => {
   test("renders AuthProvider wrapper", () => {
     const { container } = render(<LoginApp />);
 

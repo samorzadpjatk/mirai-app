@@ -11,7 +11,7 @@ mock.module("../../lib/logout", () => ({
   logout: mockLogout,
 }));
 
-describe("LogoutButton", () => {
+describe("[UNIT] LogoutButton", () => {
   beforeEach(() => {
     mockLogout.mockClear();
   });

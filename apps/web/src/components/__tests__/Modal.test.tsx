@@ -4,7 +4,7 @@ import { describe, test, expect, afterEach } from "bun:test";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { Modal } from "../ui/Modal";
 
-describe("Modal", () => {
+describe("[UNIT] Modal", () => {
   afterEach(() => {
     cleanup();
   });

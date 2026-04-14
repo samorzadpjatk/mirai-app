@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import { env } from "./lib/env";
+import { clientLogger } from "@mirai-app/shared";
 
 const PUBLIC_ROUTES = new Set(["/login"]);
 
@@ -27,14 +28,18 @@ const getDbRole = async (accessToken: string): Promise<string | null> => {
     });
 
     if (!response.ok) {
-      console.error("[Middleware] GraphQL request failed:", response.status);
+      clientLogger.error("[Middleware] GraphQL request failed:", {
+        status: response.status,
+      });
       return null;
     }
 
     const result = await response.json();
 
     if (result.errors && result.errors.length > 0) {
-      console.error("[Middleware] GraphQL errors:", result.errors);
+      clientLogger.error("[Middleware] GraphQL errors:", {
+        errors: result.errors,
+      });
       return null;
     }
 
@@ -50,7 +55,7 @@ const getDbRole = async (accessToken: string): Promise<string | null> => {
 
     return null;
   } catch (err) {
-    console.error("[Middleware] getDbRole failed:", err);
+    clientLogger.error("[Middleware] getDbRole failed:", { error: err });
     return null;
   }
 };
@@ -89,7 +94,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       roleFromDb ?? (data.user.app_metadata?.role as string | undefined);
 
     if (typeof role !== "string" || role.toUpperCase() !== "ADMIN") {
-      console.error("[Middleware] Forbidden: role is not ADMIN");
+      clientLogger.error("[Middleware] Forbidden: role is not ADMIN");
       return new Response("Forbidden", { status: 403 });
     }
   }

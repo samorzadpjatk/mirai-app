@@ -4,7 +4,7 @@ import { describe, test, expect, afterEach } from "bun:test";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { OTPCodeInput } from "../OTPCodeInput";
 
-describe("OTPCodeInput", () => {
+describe("[UNIT] OTPCodeInput", () => {
   // Clean up after each test
   afterEach(() => {
     cleanup();

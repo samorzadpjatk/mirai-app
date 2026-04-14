@@ -4,7 +4,7 @@ import { describe, test, expect, afterEach } from "bun:test";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { Select } from "../ui/Select";
 
-describe("Select", () => {
+describe("[UNIT] Select", () => {
   afterEach(() => {
     cleanup();
   });
