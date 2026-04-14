@@ -1,14 +1,19 @@
 /**
- * Structured Logging System
+ * Structured Logging System (Deprecated)
  *
- * Replaces console.log with a proper logger that supports:
- * - Log levels (debug, info, warn, error)
- * - Structured output (JSON)
- * - Context/metadata attachment
- * - Environment-based filtering
- * - Integration with Effect
+ * ⚠️ DEPRECATED: This custom logger is being phased out in favor of Effect's
+ * built-in logging capabilities. For Effect-based code, use `EffectLogger` from
+ * `@mirai-app/shared` which provides native Effect integration.
+ *
+ * For non-Effect code, this logger still works but consider migrating to
+ * Effect or using console.* directly for simple cases.
+ *
+ * Migration guide:
+ * - Effect code: Replace `serverLogger.info(msg, ctx)` with `yield* EffectLogger.info(msg, ctx)`
+ * - Non-Effect code: Keep using this logger or use console.* directly
  *
  * @module logger
+ * @deprecated Use EffectLogger from "./effect-logger" for Effect-based code
  */
 
 // ============================================================================

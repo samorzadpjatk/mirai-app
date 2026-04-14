@@ -1,6 +1,6 @@
 import type { AnyDomainEvent, DomainEvent } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
-import { serverLogger } from "@mirai-app/shared";
+import { EffectLogger } from "@mirai-app/shared";
 
 /**
  * EventBusError for EventBus operations
@@ -222,13 +222,11 @@ export class EventBus {
           effects.push(
             handler(event).pipe(
               Effect.catchAll((error: EventBusError) =>
-                Effect.sync(() => {
-                  serverLogger.error(
-                    `EventBus: Handler error for event ${event.type}: ${error.message}`,
-                    undefined,
-                    { operation: error.operation },
-                  );
-                }),
+                EffectLogger.error(
+                  `EventBus: Handler error for event ${event.type}: ${error.message}`,
+                  undefined,
+                  { operation: error.operation },
+                ),
               ),
             ),
           );
@@ -242,13 +240,11 @@ export class EventBus {
           effects.push(
             handler(event).pipe(
               Effect.catchAll((error: EventBusError) =>
-                Effect.sync(() => {
-                  serverLogger.error(
-                    `EventBus: Wildcard handler error for event ${event.type}: ${error.message}`,
-                    undefined,
-                    { operation: error.operation },
-                  );
-                }),
+                EffectLogger.error(
+                  `EventBus: Wildcard handler error for event ${event.type}: ${error.message}`,
+                  undefined,
+                  { operation: error.operation },
+                ),
               ),
             ),
           );
