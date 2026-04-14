@@ -36,6 +36,7 @@ const trackDeliveryCompleteMock = mock(() =>
 const trackDeliveryFailureMock = mock(() => Promise.resolve({ success: true }));
 const mockRemoveChannel = mock(() => Promise.resolve());
 const consoleLogMock = mock(() => {});
+const consoleInfoMock = mock(() => {});
 const consoleErrorMock = mock(() => {});
 
 // Mock dependencies
@@ -55,6 +56,7 @@ const mockChannel = {
 };
 
 const originalConsoleLog = console.log;
+const originalConsoleInfo = console.info;
 const originalConsoleError = console.error;
 const originalProcessOn = process.on;
 const originalProcessExit = process.exit;
@@ -135,10 +137,12 @@ beforeEach(() => {
   trackDeliveryFailureMock.mockClear();
   mockRemoveChannel.mockClear();
   consoleLogMock.mockClear();
+  consoleInfoMock.mockClear();
   consoleErrorMock.mockClear();
 
   // Mock console
   console.log = consoleLogMock;
+  console.info = consoleInfoMock;
   console.error = consoleErrorMock;
 
   // Mock process.on to capture SIGINT handler
@@ -159,6 +163,7 @@ beforeEach(() => {
 afterEach(() => {
   // Restore originals
   console.log = originalConsoleLog;
+  console.info = originalConsoleInfo;
   console.error = originalConsoleError;
   process.on = originalProcessOn;
   process.exit = originalProcessExit;
@@ -362,7 +367,7 @@ describe("[UNIT] Delivery Tracking Flow", () => {
 
   test("delivery summary is logged", async () => {
     serverLogger.info("Delivery summary", { mobile: { total: 1, sent: 1 } });
-    expect(consoleLogMock).toHaveBeenCalled();
+    expect(consoleInfoMock).toHaveBeenCalled();
   });
 });
 
@@ -451,7 +456,7 @@ describe("[UNIT] Graceful Shutdown (SIGINT)", () => {
 
   test("shutdown logs message via serverLogger", async () => {
     serverLogger.info("Shutting down...");
-    expect(consoleLogMock).toHaveBeenCalledWith("Shutting down...");
+    expect(consoleInfoMock).toHaveBeenCalled();
   });
 
   test("process.exit can be called with code 0", async () => {

@@ -30,9 +30,11 @@ export interface GetUserOutput {
  */
 export class GetUserNotFoundError extends Data.TaggedError(
   "GetUserNotFoundError",
-)<{
-  readonly userId: string;
-}> {}
+)<{ readonly userId: string }> {
+  get message(): string {
+    return `User not found: ${this.userId}`;
+  }
+}
 
 /**
  * GetUser Use Case

@@ -268,10 +268,43 @@ export function createTestContainer(): any {
     userRepo: new InMemoryUserRepository(),
   };
 
+  // Registry to store registered values (for backward compatibility)
+  const registry: Record<string, unknown> = {};
+
   // Return a minimal mock that provides the services via Effect
   return {
-    register: () => {},
+    register: (values: Record<string, unknown>) => {
+      // Store registered values for later resolution
+      // Handle awilix resolvers by extracting the underlying value
+      for (const [key, value] of Object.entries(values)) {
+        if (value && typeof value === "object") {
+          const resolver = value as {
+            resolve?: () => unknown;
+            value?: unknown;
+          };
+          // Check if this is an awilix asValue resolver
+          if ("resolve" in resolver && typeof resolver.resolve === "function") {
+            // Extract the value from the resolver
+            // awilix asValue stores the value internally and resolve() returns it
+            try {
+              // Create a minimal container context for resolve
+              const mockContainer = { options: {} };
+              registry[key] = resolver.resolve.call(resolver, mockContainer);
+              continue;
+            } catch {
+              // If resolve fails, fall through to store as-is
+            }
+          }
+        }
+        registry[key] = value;
+      }
+    },
     resolve: (name: string) => {
+      // Check registry first for registered values (backward compatibility)
+      if (name in registry) {
+        return registry[name];
+      }
+
       // Map old container names to InMemory adapters
       switch (name) {
         case "authPort":
