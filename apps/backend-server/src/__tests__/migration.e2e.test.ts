@@ -39,7 +39,7 @@ import {
 } from "@mirai-app/adapters/gateways/in-memory";
 import { EventBus } from "@mirai-app/adapters";
 import { User, UserRole, UserId } from "@mirai-app/domain";
-import { Effect } from "effect";
+import { Effect, Either } from "effect";
 import type { AwilixContainer } from "awilix";
 
 // =============================================================================
@@ -68,56 +68,61 @@ interface TestUser {
 // Test Suite: Full Migration E2E
 // =============================================================================
 
-describe("[E2E] Unified Migration - All Phases", () => {
+describe("[INTEGRATION] Unified Migration - All Phases", () => {
   let ctx: TestContext;
   const testUsers: Map<string, TestUser> = new Map();
+
+  // Global setup for all phases
+  beforeAll(async () => {
+    // Initialize container if not already done
+    if (!isContainerInitialized()) {
+      initializeContainer([AppModule]);
+    }
+
+    // Create server with test configuration
+    const testConfig = {
+      ...honoConfig,
+      port: 0, // Use dynamic port allocation for tests
+      enableLogging: false,
+      enableGraphiQL: false,
+    };
+
+    ctx = {
+      server: createHonoServer(testConfig),
+      container: createTestContainer(),
+      authAdapter: new InMemoryAuthAdapter(),
+      eventBus: new EventBus(),
+      userRepo: new InMemoryUserRepository(),
+      baseUrl: "", // Will be set after server starts
+    };
+
+    // Register InMemory adapters
+    ctx.container.register({
+      authPort: asClass(InMemoryAuthAdapter).singleton(),
+      realtimePort: asClass(InMemoryRealtimeAdapter).singleton(),
+      storagePort: asClass(InMemoryStorageAdapter).singleton(),
+      eventBus: asValue(ctx.eventBus),
+    });
+
+    // Start server
+    await ctx.server.start();
+
+    // Get actual port and update baseUrl (handles dynamic port allocation with port: 0)
+    const actualPort = ctx.server.getPort();
+    ctx.baseUrl = `http://127.0.0.1:${actualPort}`;
+  });
+
+  afterAll(async () => {
+    if (ctx?.server) {
+      await ctx.server.stop();
+    }
+  });
 
   // ===========================================================================
   // Phase 0: Foundation Setup (Auth, Realtime, Storage)
   // ===========================================================================
 
   describe("Phase 0: Foundation - InMemory Adapters", () => {
-    beforeAll(async () => {
-      // Initialize container if not already done
-      if (!isContainerInitialized()) {
-        initializeContainer([AppModule]);
-      }
-
-      // Create server with test configuration
-      const testConfig = {
-        ...honoConfig,
-        port: 4001, // Use different port for tests
-        enableLogging: false,
-        enableGraphiQL: false,
-      };
-
-      ctx = {
-        server: createHonoServer(testConfig),
-        container: createTestContainer(),
-        authAdapter: new InMemoryAuthAdapter(),
-        eventBus: new EventBus(),
-        userRepo: new InMemoryUserRepository(),
-        baseUrl: `http://127.0.0.1:${testConfig.port}`,
-      };
-
-      // Register InMemory adapters
-      ctx.container.register({
-        authPort: asClass(InMemoryAuthAdapter).singleton(),
-        realtimePort: asClass(InMemoryRealtimeAdapter).singleton(),
-        storagePort: asClass(InMemoryStorageAdapter).singleton(),
-        eventBus: asValue(ctx.eventBus),
-      });
-
-      // Start server
-      await ctx.server.start();
-    });
-
-    afterAll(async () => {
-      if (ctx?.server) {
-        await ctx.server.stop();
-      }
-    });
-
     beforeEach(() => {
       // Clear auth adapter between tests
       ctx.authAdapter.clear();
@@ -145,20 +150,22 @@ describe("[E2E] Unified Migration - All Phases", () => {
 
         // 3. Validate token
         const result = await ctx.authAdapter.validateToken(session.token);
-        expect(result.kind).toBe("ok");
+        const either = await Effect.runPromise(Effect.either(result));
+        expect(Either.isRight(either)).toBe(true);
 
-        if (result.kind === "ok") {
-          expect(result.value.userId).toEqual(userId);
-          expect(result.value.role).toBe(UserRole.USER);
+        if (Either.isRight(either)) {
+          expect(either.right.userId).toEqual(userId);
+          expect(either.right.role).toBe(UserRole.USER);
         }
       });
 
       it("rejects invalid tokens with proper error type", async () => {
         const result = await ctx.authAdapter.validateToken("invalid-token");
-        expect(result.kind).toBe("err");
+        const either = await Effect.runPromise(Effect.either(result));
+        expect(Either.isLeft(either)).toBe(true);
 
-        if (result.kind === "err") {
-          expect(result.error._tag).toBe("InvalidTokenError");
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("InvalidTokenError");
         }
       });
 
@@ -173,10 +180,11 @@ describe("[E2E] Unified Migration - All Phases", () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
 
         const result = await ctx.authAdapter.validateToken(session.token);
-        expect(result.kind).toBe("err");
+        const either = await Effect.runPromise(Effect.either(result));
+        expect(Either.isLeft(either)).toBe(true);
 
-        if (result.kind === "err") {
-          expect(result.error._tag).toBe("SessionExpiredError");
+        if (Either.isLeft(either)) {
+          expect(either.left._tag).toBe("SessionExpiredError");
         }
       });
 
@@ -190,9 +198,11 @@ describe("[E2E] Unified Migration - All Phases", () => {
         // Both tokens should be valid
         const result1 = await ctx.authAdapter.validateToken(session1.token);
         const result2 = await ctx.authAdapter.validateToken(session2.token);
+        const either1 = await Effect.runPromise(Effect.either(result1));
+        const either2 = await Effect.runPromise(Effect.either(result2));
 
-        expect(result1.kind).toBe("ok");
-        expect(result2.kind).toBe("ok");
+        expect(Either.isRight(either1)).toBe(true);
+        expect(Either.isRight(either2)).toBe(true);
       });
     });
 
@@ -201,17 +211,30 @@ describe("[E2E] Unified Migration - All Phases", () => {
     // -------------------------------------------------------------------------
 
     describe("Realtime (InMemoryRealtimeAdapter)", () => {
-      it("publishes and receives messages via InMemoryRealtimeAdapter", async () => {
+      it("broadcasts and receives messages via InMemoryRealtimeAdapter", async () => {
         const realtimeAdapter = new InMemoryRealtimeAdapter();
-        const receivedMessages: string[] = [];
+        const receivedMessages: unknown[] = [];
 
         // Subscribe to channel
-        await realtimeAdapter.subscribe("test-channel", (message) => {
-          receivedMessages.push(message);
-        });
+        const sub = await Effect.runPromise(
+          realtimeAdapter.subscribe("test-channel", {
+            onMessage: (event, payload) => {
+              receivedMessages.push(payload);
+            },
+          }),
+        );
 
-        // Publish message
-        await realtimeAdapter.publish("test-channel", "Hello, World!");
+        // Broadcast message
+        await Effect.runPromise(
+          realtimeAdapter.broadcast(
+            "test-channel",
+            "test-event",
+            "Hello, World!",
+          ),
+        );
+
+        // Cleanup
+        await Effect.runPromise(sub.unsubscribe());
 
         // InMemory adapter is synchronous
         expect(receivedMessages).toContain("Hello, World!");
@@ -219,17 +242,27 @@ describe("[E2E] Unified Migration - All Phases", () => {
 
       it("isolates channels - messages don't cross channels", async () => {
         const realtimeAdapter = new InMemoryRealtimeAdapter();
-        const channel1Messages: string[] = [];
-        const channel2Messages: string[] = [];
+        const channel1Messages: unknown[] = [];
+        const channel2Messages: unknown[] = [];
 
-        await realtimeAdapter.subscribe("channel-1", (msg) =>
-          channel1Messages.push(msg),
+        await Effect.runPromise(
+          realtimeAdapter.subscribe("channel-1", {
+            onMessage: (event, payload) => channel1Messages.push(payload),
+          }),
         );
-        await realtimeAdapter.subscribe("channel-2", (msg) =>
-          channel2Messages.push(msg),
+        await Effect.runPromise(
+          realtimeAdapter.subscribe("channel-2", {
+            onMessage: (event, payload) => channel2Messages.push(payload),
+          }),
         );
 
-        await realtimeAdapter.publish("channel-1", "Message for channel 1");
+        await Effect.runPromise(
+          realtimeAdapter.broadcast(
+            "channel-1",
+            "test-event",
+            "Message for channel 1",
+          ),
+        );
 
         expect(channel1Messages).toContain("Message for channel 1");
         expect(channel2Messages).not.toContain("Message for channel 1");
@@ -253,7 +286,10 @@ describe("[E2E] Unified Migration - All Phases", () => {
           "application/octet-stream",
         );
 
-        expect(uploadResult.kind).toBe("ok");
+        const uploadEither = await Effect.runPromise(
+          Effect.either(uploadResult),
+        );
+        expect(Either.isRight(uploadEither)).toBe(true);
 
         // Download file
         const downloadResult = await storageAdapter.download(
@@ -261,10 +297,13 @@ describe("[E2E] Unified Migration - All Phases", () => {
           "test-file.bin",
         );
 
-        expect(downloadResult.kind).toBe("ok");
+        const downloadEither = await Effect.runPromise(
+          Effect.either(downloadResult),
+        );
+        expect(Either.isRight(downloadEither)).toBe(true);
 
-        if (downloadResult.kind === "ok") {
-          expect(downloadResult.value).toEqual(testData);
+        if (Either.isRight(downloadEither)) {
+          expect(downloadEither.right).toEqual(testData);
         }
       });
 
@@ -276,7 +315,8 @@ describe("[E2E] Unified Migration - All Phases", () => {
           "non-existent-file.bin",
         );
 
-        expect(result.kind).toBe("err");
+        const either = await Effect.runPromise(Effect.either(result));
+        expect(Either.isLeft(either)).toBe(true);
       });
 
       it("generates valid public URLs", async () => {
@@ -287,11 +327,12 @@ describe("[E2E] Unified Migration - All Phases", () => {
           "test-file.bin",
         );
 
-        expect(urlResult.kind).toBe("ok");
+        const either = await Effect.runPromise(Effect.either(urlResult));
+        expect(Either.isRight(either)).toBe(true);
 
-        if (urlResult.kind === "ok") {
-          expect(urlResult.value).toContain("test-bucket");
-          expect(urlResult.value).toContain("test-file.bin");
+        if (Either.isRight(either)) {
+          expect(either.right).toContain("test-bucket");
+          expect(either.right).toContain("test-file.bin");
         }
       });
     });
@@ -661,7 +702,7 @@ describe("[E2E] Unified Migration - All Phases", () => {
         });
 
         // Create and save user
-        const user = User.create({
+        const userResult = User.create({
           id: "550e8400-e29b-41d4-a716-446655440030",
           authUserId: "auth-event-test",
           firstName: "Event",
@@ -671,14 +712,15 @@ describe("[E2E] Unified Migration - All Phases", () => {
           createdAt: new Date(),
         });
 
-        if (user.kind === "ok") {
-          await ctx.userRepo.save(user.value);
+        const userEither = await Effect.runPromise(Effect.either(userResult));
+        if (Either.isRight(userEither)) {
+          await Effect.runPromise(ctx.userRepo.create(userEither.right));
 
           // Simulate publishing event after save
           ctx.eventBus.publish({
             id: crypto.randomUUID(),
             type: "UserSaved",
-            userId: user.value.id,
+            userId: userEither.right.id,
             occurredAt: new Date(),
           } as any);
 
@@ -951,10 +993,11 @@ describe("[E2E] Unified Migration - All Phases", () => {
       ctx.authAdapter.createUser({ id: userId, role: UserRole.USER });
       const session = ctx.authAdapter.createSession(userId);
       const authResult = await ctx.authAdapter.validateToken(session.token);
-      expect(authResult.kind).toBe("ok");
+      const authEither = await Effect.runPromise(Effect.either(authResult));
+      expect(Either.isRight(authEither)).toBe(true);
 
       // Phase 1: Repository works
-      const user = User.create({
+      const userResult = User.create({
         id: "550e8400-e29b-41d4-a716-446655440050",
         authUserId: "auth-integration",
         firstName: "Integration",
@@ -963,20 +1006,31 @@ describe("[E2E] Unified Migration - All Phases", () => {
         hasAvatar: false,
         createdAt: new Date(),
       });
-      if (user.kind === "ok") {
-        await ctx.userRepo.save(user.value);
-        const found = await ctx.userRepo.findById(user.value.id);
+      const userEither = await Effect.runPromise(Effect.either(userResult));
+      if (Either.isRight(userEither)) {
+        await Effect.runPromise(ctx.userRepo.create(userEither.right));
+        const found = await Effect.runPromise(
+          ctx.userRepo.findById(userEither.right.id),
+        );
         expect(found).toBeDefined();
       }
 
       // Phase 2: EventBus works
       const events: string[] = [];
-      ctx.eventBus.subscribe("IntegrationTest", (e) => events.push(e.type));
-      ctx.eventBus.publish({
-        id: "test",
-        type: "IntegrationTest",
-        occurredAt: new Date(),
-      } as any);
+      // subscribe returns EventSubscription, not Effect
+      ctx.eventBus.subscribe("IntegrationTest", (e) => {
+        events.push(e.type);
+        return Effect.void;
+      });
+      await Effect.runPromise(
+        ctx.eventBus.publish({
+          id: "test",
+          type: "IntegrationTest",
+          occurredAt: new Date(),
+        } as any),
+      );
+      // Give EventBus time to process
+      await new Promise((r) => setTimeout(r, 50));
       expect(events).toContain("IntegrationTest");
 
       // Phase 3: Server responds
