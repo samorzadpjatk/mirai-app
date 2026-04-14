@@ -90,7 +90,6 @@ export class LocationStreamingService {
    */
   initialize(): void {
     if (this.isInitialized) {
-      console.warn("LocationStreamingService already initialized");
       return;
     }
 
@@ -102,7 +101,6 @@ export class LocationStreamingService {
 
     this.unsubscribe = subscription.unsubscribe;
     this.isInitialized = true;
-    console.log("LocationStreamingService initialized");
   }
 
   /**
@@ -113,7 +111,6 @@ export class LocationStreamingService {
   initializeEffect(): Effect.Effect<void, LocationStreamingError, never> {
     return Effect.gen(this, function* () {
       if (this.isInitialized) {
-        console.warn("LocationStreamingService already initialized");
         return;
       }
 
@@ -129,7 +126,6 @@ export class LocationStreamingService {
 
       this.unsubscribe = subscription.unsubscribe;
       this.isInitialized = true;
-      console.log("LocationStreamingService initialized");
     });
   }
 
@@ -142,7 +138,6 @@ export class LocationStreamingService {
       this.unsubscribe = null;
     }
     this.isInitialized = false;
-    console.log("LocationStreamingService shut down");
   }
 
   /**
@@ -157,7 +152,6 @@ export class LocationStreamingService {
         this.unsubscribe = null;
       }
       this.isInitialized = false;
-      console.log("LocationStreamingService shut down");
     });
   }
 
@@ -205,30 +199,11 @@ export class LocationStreamingService {
       );
 
       if (result.throttled) {
-        console.log(
-          `[LocationStreamingService] Location update throttled for user ${event.userId}`,
-        );
         return;
       }
 
-      if (result.success) {
-        console.log(
-          `[LocationStreamingService] Broadcast location to ${result.broadcastCount} friends for user ${event.userId}`,
-        );
-      }
-
-      // Log any errors
-      if (result.errors.length > 0) {
-        console.error(
-          `[LocationStreamingService] Broadcast errors:`,
-          result.errors,
-        );
-      }
+      // Don't throw - streaming failures shouldn't crash the request
     } catch (error) {
-      console.error(
-        `[LocationStreamingService] Error handling location update for user ${event.userId}:`,
-        error,
-      );
       // Don't throw - streaming failures shouldn't crash the request
     }
   }
@@ -282,26 +257,7 @@ export class LocationStreamingService {
         onlineFriendIds,
       );
 
-      if (result.throttled) {
-        console.log(
-          `[LocationStreamingService] Location update throttled for user ${event.userId}`,
-        );
-        return;
-      }
-
-      if (result.success) {
-        console.log(
-          `[LocationStreamingService] Broadcast location to ${result.broadcastCount} friends for user ${event.userId}`,
-        );
-      }
-
-      // Log any errors
-      if (result.errors.length > 0) {
-        console.error(
-          `[LocationStreamingService] Broadcast errors:`,
-          result.errors,
-        );
-      }
+      // Throttling and errors are handled by ConnectionManager
     });
   }
 

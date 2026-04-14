@@ -128,7 +128,6 @@ export class NotificationDeliveryService {
    */
   initialize(): void {
     if (this.isInitialized) {
-      console.warn("NotificationDeliveryService already initialized");
       return;
     }
 
@@ -140,7 +139,6 @@ export class NotificationDeliveryService {
 
     this.unsubscribe = subscription.unsubscribe;
     this.isInitialized = true;
-    console.log("NotificationDeliveryService initialized");
   }
 
   /**
@@ -151,7 +149,6 @@ export class NotificationDeliveryService {
   initializeEffect(): Effect.Effect<void, NotificationDeliveryError, never> {
     return Effect.gen(this, function* () {
       if (this.isInitialized) {
-        console.warn("NotificationDeliveryService already initialized");
         return;
       }
 
@@ -164,7 +161,6 @@ export class NotificationDeliveryService {
 
       this.unsubscribe = subscription.unsubscribe;
       this.isInitialized = true;
-      console.log("NotificationDeliveryService initialized");
     });
   }
 
@@ -177,7 +173,6 @@ export class NotificationDeliveryService {
       this.unsubscribe = null;
     }
     this.isInitialized = false;
-    console.log("NotificationDeliveryService shut down");
   }
 
   /**
@@ -192,7 +187,6 @@ export class NotificationDeliveryService {
         this.unsubscribe = null;
       }
       this.isInitialized = false;
-      console.log("NotificationDeliveryService shut down");
     });
   }
 
@@ -202,10 +196,6 @@ export class NotificationDeliveryService {
   private async handleNotificationCreated(
     event: NotificationCreated,
   ): Promise<void> {
-    console.log(
-      `[NotificationDeliveryService] Processing notification ${event.notificationId}`,
-    );
-
     try {
       // Get push subscriptions for the recipient
       const subscriptions = await this.pushSubscriptionRepository.findByUserId(
@@ -213,9 +203,6 @@ export class NotificationDeliveryService {
       );
 
       if (subscriptions.length === 0) {
-        console.log(
-          `[NotificationDeliveryService] No push subscriptions for user ${event.recipientId}`,
-        );
         return;
       }
 
@@ -224,19 +211,9 @@ export class NotificationDeliveryService {
         this.deliverToSubscriptionsEffect(event, subscriptions),
       );
 
-      // Log results
-      const successCount = results.filter((r) => r.success).length;
-      console.log(
-        `[NotificationDeliveryService] Delivered ${successCount}/${results.length} notifications`,
-      );
-
       // Handle failures (invalid tokens, etc.)
       await this.handleFailures(results, subscriptions);
     } catch (error) {
-      console.error(
-        `[NotificationDeliveryService] Error delivering notification ${event.notificationId}:`,
-        error,
-      );
       // Don't throw - delivery failures shouldn't crash the request
     }
   }
@@ -248,10 +225,6 @@ export class NotificationDeliveryService {
     event: NotificationCreated,
   ): Effect.Effect<void, NotificationDeliveryError, never> {
     return Effect.gen(this, function* () {
-      console.log(
-        `[NotificationDeliveryService] Processing notification ${event.notificationId}`,
-      );
-
       // Get push subscriptions for the recipient
       const subscriptions = yield* Effect.tryPromise({
         try: () =>
@@ -265,9 +238,6 @@ export class NotificationDeliveryService {
       });
 
       if (subscriptions.length === 0) {
-        console.log(
-          `[NotificationDeliveryService] No push subscriptions for user ${event.recipientId}`,
-        );
         return;
       }
 
@@ -275,12 +245,6 @@ export class NotificationDeliveryService {
       const results = yield* this.deliverToSubscriptionsEffect(
         event,
         subscriptions,
-      );
-
-      // Log results
-      const successCount = results.filter((r) => r.success).length;
-      console.log(
-        `[NotificationDeliveryService] Delivered ${successCount}/${results.length} notifications`,
       );
 
       // Handle failures (invalid tokens, etc.)
@@ -384,9 +348,6 @@ export class NotificationDeliveryService {
             result.error?.includes("Invalid token") ||
             result.error?.includes("DeviceNotRegistered")
           ) {
-            console.log(
-              `[NotificationDeliveryService] Removing invalid token for user ${subscription.userId}`,
-            );
             yield* Effect.tryPromise({
               try: () =>
                 this.pushSubscriptionRepository.delete(subscription.id),
@@ -420,9 +381,6 @@ export class NotificationDeliveryService {
           result.error?.includes("Invalid token") ||
           result.error?.includes("DeviceNotRegistered")
         ) {
-          console.log(
-            `[NotificationDeliveryService] Removing invalid token for user ${subscription.userId}`,
-          );
           await this.pushSubscriptionRepository.delete(subscription.id);
         }
       }
@@ -456,11 +414,8 @@ export class NotificationDeliveryService {
     originalEvent: NotificationCreated,
     deviceToken: string,
   ): void {
-    // This would typically be imported from domain events
-    // For now, we log it
-    console.log(
-      `[NotificationDeliveryService] Notification ${originalEvent.notificationId} delivered to device`,
-    );
+    // This would typically publish an event to the event bus
+    // Implementation deferred until event system is fully integrated
   }
 
   /**
