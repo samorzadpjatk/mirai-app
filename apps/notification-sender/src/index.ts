@@ -147,13 +147,15 @@ class NotificationService {
       );
 
       if (result.error) {
-        console.error("Failed to track delivery start:", result.error);
+        serverLogger.error("Failed to track delivery start:", {
+          error: result.error,
+        });
         return false;
       }
 
       return result.data?.trackDeliveryStart?.success ?? false;
     } catch (error) {
-      console.error("Failed to track delivery start:", error);
+      serverLogger.error("Failed to track delivery start:", { error: error });
       return false;
     }
   }
@@ -175,7 +177,9 @@ class NotificationService {
         );
 
       if (result.error) {
-        console.error("Failed to send mobile notifications:", result.error);
+        serverLogger.error("Failed to send mobile notifications:", {
+          error: result.error,
+        });
         return { success: false, sent: 0, failed: 0, total: 0 };
       }
 
@@ -187,7 +191,9 @@ class NotificationService {
         total: payload?.total ?? 0,
       };
     } catch (error) {
-      console.error("Failed to send mobile notifications:", error);
+      serverLogger.error("Failed to send mobile notifications:", {
+        error: error,
+      });
       return { success: false, sent: 0, failed: 0, total: 0 };
     }
   }
@@ -216,13 +222,17 @@ class NotificationService {
         );
 
       if (result.error) {
-        console.error("Failed to track delivery completion:", result.error);
+        serverLogger.error("Failed to track delivery completion:", {
+          error: result.error,
+        });
         return false;
       }
 
       return result.data?.trackDeliveryComplete?.success ?? false;
     } catch (error) {
-      console.error("Failed to track delivery completion:", error);
+      serverLogger.error("Failed to track delivery completion:", {
+        error: error,
+      });
       return false;
     }
   }
@@ -242,13 +252,15 @@ class NotificationService {
         );
 
       if (result.error) {
-        console.error("Failed to track delivery failure:", result.error);
+        serverLogger.error("Failed to track delivery failure:", {
+          error: result.error,
+        });
         return false;
       }
 
       return result.data?.trackDeliveryFailure?.success ?? false;
     } catch (err) {
-      console.error("Failed to track delivery failure:", err);
+      serverLogger.error("Failed to track delivery failure:", { error: err });
       return false;
     }
   }
@@ -437,7 +449,7 @@ export async function run(): Promise<void> {
 // Run the program at the boundary only when executed directly
 if (import.meta.main) {
   Effect.runPromise(program).catch((error) => {
-    console.error("Failed to start notification sender:", error);
+    serverLogger.error("Failed to start notification sender:", { error });
     process.exit(1);
   });
 }
