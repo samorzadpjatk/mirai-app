@@ -35,6 +35,18 @@ export {
 // Test constants (for test files)
 export { TestIds, type TestIdKey } from "./utils/test-ids";
 
+// Mock factories (for test files)
+export {
+  Mocks,
+  mockUser,
+  mockAdmin,
+  mockModerator,
+  mockUsers,
+  mockTrip,
+  mockGroup,
+  mockChallenge,
+} from "./utils/mock-factories";
+
 // Unified Domain Error Hierarchy (consolidates 124 error classes into 20 types)
 // All new code should use these error classes
 export {
