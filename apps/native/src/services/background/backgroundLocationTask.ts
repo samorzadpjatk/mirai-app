@@ -3,7 +3,7 @@ import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import { getTRPCClient } from "@mirai-app/frameworks/graphql";
-import { apiLogger } from "@mirai-app/shared";
+import { clientLogger } from "@mirai-app/shared";
 import { authStorage } from "~/services/storage/storage";
 import {
   SUPABASE_ANON_KEY,
@@ -68,7 +68,7 @@ async function getAccessToken(): Promise<string | null> {
   } = await supabaseClient.auth.getSession();
 
   if (error) {
-    apiLogger.warn("[BackgroundLocationTask] Failed to load session:", {
+    clientLogger.warn("[BackgroundLocationTask] Failed to load session:", {
       error,
     });
     return null;
@@ -86,7 +86,7 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
   const latitude = toFiniteNumberOrNull(location.coords.latitude);
   const longitude = toFiniteNumberOrNull(location.coords.longitude);
   if (latitude == null || longitude == null) {
-    apiLogger.warn(
+    clientLogger.warn(
       "[BackgroundLocationTask] Skipping update due to invalid coordinates.",
       {
         latitude: location.coords.latitude,
@@ -122,7 +122,7 @@ try {
     BACKGROUND_LOCATION_TASK_NAME,
     async ({ data, error }) => {
       if (error) {
-        console.error("[BackgroundLocationTask] Task failed:", error);
+        clientLogger.error("[BackgroundLocationTask] Task failed:", { error });
         return;
       }
 
@@ -149,9 +149,11 @@ try {
       try {
         await sendLocationUpdate(latestLocation);
       } catch (taskError) {
-        console.error(
+        clientLogger.error(
           "[BackgroundLocationTask] Failed to send location update:",
-          taskError,
+          {
+            error: taskError,
+          },
         );
       } finally {
         isSending = false;
@@ -164,6 +166,8 @@ try {
     !(error instanceof Error) ||
     !error.message.includes("has already been defined")
   ) {
-    console.error("[BackgroundLocationTask] Failed to define task:", error);
+    clientLogger.error("[BackgroundLocationTask] Failed to define task:", {
+      error,
+    });
   }
 }

@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiLogger } from "@mirai-app/shared";
+import { clientLogger } from "@mirai-app/shared";
 import type { TripListItem } from "~/components/trips/list/types";
 
 const SELECTED_TRIP_STORAGE_KEY = "selected_trip_id";
@@ -29,7 +29,7 @@ const readJson = async <T>(key: string, fallback: T): Promise<T> => {
     if (!raw) return fallback;
     return (JSON.parse(raw) as T) ?? fallback;
   } catch (error) {
-    apiLogger.warn(`Failed to read cache key "${key}":`, { error });
+    clientLogger.warn(`Failed to read cache key "${key}":`, { error });
     return fallback;
   }
 };
@@ -38,7 +38,7 @@ const writeJson = async <T>(key: string, value: T): Promise<void> => {
   try {
     await AsyncStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    apiLogger.warn(`Failed to write cache key "${key}":`, { error });
+    clientLogger.warn(`Failed to write cache key "${key}":`, { error });
   }
 };
 
