@@ -23,7 +23,6 @@
     "./stores": "./src/stores/index.ts",
     "./storage": "./src/storage/index.ts",
     "./supabase": "./src/supabase/index.ts",
-    "./di": "./src/di/index.ts",
     "./layers": "./src/layers/index.ts"
   },
   "scripts": {

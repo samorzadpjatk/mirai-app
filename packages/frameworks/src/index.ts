@@ -57,53 +57,6 @@
  */
 
 // =============================================================================
-// Dependency Injection
-// =============================================================================
-
-export {
-  // Core Container
-  container,
-  initializeContainer,
-  createChildContainer,
-  createTestContainer,
-  resetContainer,
-  TYPES,
-  type ServiceIdentifier,
-  // Effect Runtime
-  initializeRuntime,
-  createRuntimeFromLayer,
-  getRuntime,
-  getAppLayer,
-  isRuntimeInitialized,
-  resetRuntime,
-  runEffect,
-  runEffectExit,
-  runEffectSync,
-  runEffectWith,
-  runEffectWithLayer,
-  runEffectWithRuntime,
-  mergeLayers,
-  mergeLayerArray,
-  composeLayers,
-  buildRuntimeFromLayer,
-  // Effect Layer Integration
-  setAwilixContainer,
-  getAwilixContainer,
-  hasAwilixContainer,
-  resetAwilixContainer,
-  createContainerLayer,
-  fromAwilix,
-  fromAwilixWithTag,
-  fromContainer,
-  buildAppLayer,
-  buildAppLayerFromGlobal,
-  createServiceTag,
-  runWithAwilixContainer,
-  runWithGlobalContainer,
-  AwilixContainerTag,
-} from "./di";
-
-// =============================================================================
 // Phase 1: Drizzle ORM Configuration (Prisma Replacement)
 // =============================================================================
 
@@ -142,6 +95,124 @@ export type {
   StorageAdapter,
 } from "./supabase/types";
 export { REALTIME_CHANNEL_STATES } from "./supabase/types";
+
+// =============================================================================
+// Effect Layer Compositions (DI Factories)
+// =============================================================================
+
+/**
+ * Effect Layer compositions for dependency injection.
+ *
+ * These provide unified factories for binding Context.Tags to implementations.
+ *
+ * ### Complete App Layer (Recommended)
+ * ```typescript
+ * import { makeAppLayer, AppLayerConfig } from "@mirai-app/frameworks";
+ *
+ * const appLayer = makeAppLayer({ supabase, db });
+ *
+ * const program = Effect.gen(function* () {
+ *   const userRepo = yield* UserRepositoryTag;
+ *   const auth = yield* AuthPortTag;
+ *   // ... use repos and services
+ * }).pipe(Effect.provide(appLayer));
+ * ```
+ *
+ * ### Individual Layers (Selective Composition)
+ * ```typescript
+ * import { makeRepositoryLayer, makeServiceLayer } from "@mirai-app/frameworks";
+ *
+ * const repoLayer = makeRepositoryLayer(db);
+ * const serviceLayer = makeServiceLayer({ supabase, db });
+ * const combined = Layer.merge(repoLayer, serviceLayer);
+ * ```
+ */
+export {
+  // App Layer (unified)
+  makeAppLayer,
+  makeRepositoriesOnlyLayer,
+  makeServicesOnlyLayer,
+  type AppLayerConfig,
+  // Repository Layer
+  makeRepositoryLayer,
+  makeUserDomainLayer,
+  makeTripRewardDomainLayer,
+  makeChallengeDomainLayer,
+  makeNotificationDomainLayer,
+  makeContentDomainLayer,
+  makeReportingDomainLayer,
+  // Service Layer
+  makeServiceLayer,
+  makeSupabaseServicesLayer,
+  makeTelemetryServiceLayer,
+  makePubSubServiceLayer,
+  makeAuthLayer,
+  makeRealtimeLayer,
+  makeStorageLayer,
+  type ServiceLayerConfig,
+  type SupabaseClient,
+  type DrizzleDb,
+} from "./layers";
+
+// =============================================================================
+// Test Utilities (Effect Layer-based)
+// =============================================================================
+
+/**
+ * Test utilities for Effect-based dependency injection.
+ *
+ * ### Creating Test Layers
+ * ```typescript
+ * import { createTestLayer, runWithTestLayer } from "@mirai-app/frameworks";
+ * import { Effect } from "effect";
+ * import { UserRepositoryTag } from "@mirai-app/use-cases";
+ *
+ * const testLayer = createTestLayer();
+ *
+ * const result = await runWithTestLayer(testLayer,
+ *   Effect.gen(function* () {
+ *     const repo = yield* UserRepositoryTag;
+ *     return yield* repo.findById("123");
+ *   })
+ * );
+ * ```
+ *
+ * ### Individual Service Layers
+ * ```typescript
+ * import { createAuthTestLayer, createUserRepositoryTestLayer } from "@mirai-app/frameworks";
+ * import { Layer } from "effect";
+ *
+ * const authLayer = createAuthTestLayer();
+ * const userLayer = createUserRepositoryTestLayer();
+ * const combined = Layer.merge(authLayer, userLayer);
+ * ```
+ */
+export {
+  // Test Layer Creation
+  createTestLayer,
+  createMinimalTestLayer,
+  createAuthTestLayer,
+  createRealtimeTestLayer,
+  createStorageTestLayer,
+  createUserRepositoryTestLayer,
+  // Test Execution
+  runWithTestLayer,
+  // Types
+  type TestLayer,
+  type TestLayerConfig,
+  // Backward Compatibility (deprecated)
+  createTestContainer,
+  createConfiguredTestContainer,
+  createTestContainerFromModule,
+  createMockPortFactory,
+  createMockFn,
+  type MockFn,
+  PORT_TOKENS,
+  getInMemoryAuthAdapter,
+  getInMemoryRealtimeAdapter,
+  getInMemoryStorageAdapter,
+  clearInMemoryAdapters,
+} from "./di/test-layer";
 
 // =============================================================================
 // Re-export Inner Layers (for convenience)
