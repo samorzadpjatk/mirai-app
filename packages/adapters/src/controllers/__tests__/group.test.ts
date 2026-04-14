@@ -63,7 +63,7 @@ describe("[UNIT] GroupController", () => {
     controller = new GroupController(mockGroupRepository);
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return group by ID", async () => {
       const result = await controller.getById({ id: TEST_GROUP_ID });
 
@@ -93,7 +93,7 @@ describe("[UNIT] GroupController", () => {
     });
   });
 
-  describe("getByCode", () => {
+  describe("[UNIT] getByCode", () => {
     it("should return group by code", async () => {
       const result = await controller.getByCode({ code: "ABC123" });
 
@@ -121,7 +121,7 @@ describe("[UNIT] GroupController", () => {
     });
   });
 
-  describe("getByTripId", () => {
+  describe("[UNIT] getByTripId", () => {
     it("should return groups for trip", async () => {
       const result = await controller.getByTripId({ tripId: TEST_TRIP_ID });
 
@@ -143,7 +143,7 @@ describe("[UNIT] GroupController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create group with valid input", async () => {
       mockGroupRepository.findByCode = mock(() => Effect.succeed(null));
 
@@ -195,7 +195,7 @@ describe("[UNIT] GroupController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update group with valid input", async () => {
       const input = {
         groupId: TEST_GROUP_ID,
@@ -244,7 +244,7 @@ describe("[UNIT] GroupController", () => {
     });
   });
 
-  describe("addCoins", () => {
+  describe("[UNIT] addCoins", () => {
     it("should add coins to group", async () => {
       const input = {
         groupId: TEST_GROUP_ID,
@@ -281,7 +281,7 @@ describe("[UNIT] GroupController", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("[UNIT] delete", () => {
     it("should soft delete group", async () => {
       const result = await controller.delete({ id: TEST_GROUP_ID });
 
@@ -311,7 +311,7 @@ describe("[UNIT] GroupController", () => {
     });
   });
 
-  describe("getByOrganizer", () => {
+  describe("[UNIT] getByOrganizer", () => {
     it("should return groups by organizer", async () => {
       const result = await controller.getByOrganizer({
         organizerId: TEST_USER_ID,
@@ -330,7 +330,7 @@ describe("[UNIT] GroupController", () => {
     });
   });
 
-  describe("list", () => {
+  describe("[UNIT] list", () => {
     it("should return paginated groups", async () => {
       const result = await controller.list({ limit: 10, offset: 0 });
 

@@ -25,7 +25,7 @@ describe("[UNIT] DrizzleTripAccessChecker", () => {
     service = new DrizzleTripAccessChecker({} as DrizzleDb);
   });
 
-  describe("isStaff", () => {
+  describe("[UNIT] isStaff", () => {
     it("should return true for admin", async () => {
       const mockDb = createMockDb([{ role: "ADMIN" }]);
       const testService = new DrizzleTripAccessChecker(mockDb);
@@ -70,7 +70,7 @@ describe("[UNIT] DrizzleTripAccessChecker", () => {
     });
   });
 
-  describe("isGroupLeader", () => {
+  describe("[UNIT] isGroupLeader", () => {
     it("should return Effect that can be run", () => {
       const effect = service.isGroupLeader("user-123", "trip-123");
 
@@ -79,7 +79,7 @@ describe("[UNIT] DrizzleTripAccessChecker", () => {
     });
   });
 
-  describe("hasTripEnded", () => {
+  describe("[UNIT] hasTripEnded", () => {
     it("should return Effect that can be run", () => {
       const effect = service.hasTripEnded("trip-123");
 

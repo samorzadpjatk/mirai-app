@@ -31,7 +31,7 @@ describe("[UNIT] DrizzleCoinTransactionService", () => {
     } as unknown as CoinTransactionController;
   });
 
-  describe("ServiceError from adapter-errors", () => {
+  describe("[UNIT] ServiceError from adapter-errors", () => {
     it("should use the shared ServiceError class", () => {
       const originalError = new Error("Query timeout");
       const error = new ServiceError({
@@ -65,7 +65,7 @@ describe("[UNIT] DrizzleCoinTransactionService", () => {
     });
   });
 
-  describe("getCoinTransactionsForUser - Effect return type", () => {
+  describe("[UNIT] getCoinTransactionsForUser - Effect return type", () => {
     it("should return an Effect (type verification)", () => {
       const mockDb = createMockDb();
       const service = new DrizzleCoinTransactionService(
@@ -144,7 +144,7 @@ describe("[UNIT] DrizzleCoinTransactionService", () => {
     });
   });
 
-  describe("Effect pattern verification", () => {
+  describe("[UNIT] Effect pattern verification", () => {
     it("should use Effect.tryPromise for async operations", async () => {
       let selectCalled = false;
       const trackingDb = {

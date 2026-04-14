@@ -34,7 +34,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // runEffect
   // ============================================================================
-  describe("runEffect", () => {
+  describe("[UNIT] runEffect", () => {
     it("should return success value for successful Effect", async () => {
       const effect = Effect.succeed(42);
       const result = await runEffect(effect);
@@ -84,7 +84,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // runEffectWithHandler
   // ============================================================================
-  describe("runEffectWithHandler", () => {
+  describe("[UNIT] runEffectWithHandler", () => {
     it("should return success value for successful Effect", async () => {
       const effect = Effect.succeed("data");
       const result = await runEffectWithHandler(effect, {});
@@ -273,7 +273,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // mapErrorToHttpStatus
   // ============================================================================
-  describe("mapErrorToHttpStatus", () => {
+  describe("[UNIT] mapErrorToHttpStatus", () => {
     it("should map ValidationError to 400", () => {
       const error = ValidationError.forField("email", "Invalid");
       expect(mapErrorToHttpStatus(error)).toBe(400);
@@ -337,7 +337,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // mapDomainErrorToHttpError
   // ============================================================================
-  describe("mapDomainErrorToHttpError", () => {
+  describe("[UNIT] mapDomainErrorToHttpError", () => {
     it("should create HttpBadRequestError for ValidationError", () => {
       const error = ValidationError.forField("email", "Invalid format");
       const httpError = mapDomainErrorToHttpError(error);
@@ -395,7 +395,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // mapErrorToGraphQLCode
   // ============================================================================
-  describe("mapErrorToGraphQLCode", () => {
+  describe("[UNIT] mapErrorToGraphQLCode", () => {
     it("should map ValidationError to BAD_USER_INPUT", () => {
       const error = ValidationError.forField("email", "Invalid");
       expect(mapErrorToGraphQLCode(error)).toBe("BAD_USER_INPUT");
@@ -441,7 +441,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // mapErrorToGraphQL
   // ============================================================================
-  describe("mapErrorToGraphQL", () => {
+  describe("[UNIT] mapErrorToGraphQL", () => {
     it("should create GraphQLError with message and extensions", () => {
       const error = ValidationError.forField("email", "Invalid format");
       const graphqlError = mapErrorToGraphQL(error);
@@ -500,7 +500,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // runEffectGraphQL
   // ============================================================================
-  describe("runEffectGraphQL", () => {
+  describe("[UNIT] runEffectGraphQL", () => {
     it("should return success value for successful Effect", async () => {
       const effect = Effect.succeed(42);
       const result = await runEffectGraphQL(effect);
@@ -526,7 +526,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // runEffectGraphQLWithHandler
   // ============================================================================
-  describe("runEffectGraphQLWithHandler", () => {
+  describe("[UNIT] runEffectGraphQLWithHandler", () => {
     it("should return success value for successful Effect", async () => {
       const effect = Effect.succeed("data");
       const result = await runEffectGraphQLWithHandler(effect, {});
@@ -564,7 +564,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // isDomainError
   // ============================================================================
-  describe("isDomainError", () => {
+  describe("[UNIT] isDomainError", () => {
     it("should return true for domain errors", () => {
       const error = ValidationError.forField("email", "Invalid");
       expect(isDomainError(error)).toBe(true);
@@ -591,7 +591,7 @@ describe("[UNIT] effect-executor", () => {
   // ============================================================================
   // getErrorTag
   // ============================================================================
-  describe("getErrorTag", () => {
+  describe("[UNIT] getErrorTag", () => {
     it("should return _tag for domain errors", () => {
       const error = ValidationError.forField("email", "Invalid");
       expect(getErrorTag(error)).toBe("ValidationError");

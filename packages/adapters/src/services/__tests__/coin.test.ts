@@ -81,7 +81,7 @@ describe("[UNIT] DrizzleCoinService", () => {
     } as unknown as DrizzleRankingActivityService;
   });
 
-  describe("ServiceError from adapter-errors", () => {
+  describe("[UNIT] ServiceError from adapter-errors", () => {
     it("should use the shared ServiceError class", () => {
       const originalError = new Error("Database connection failed");
       const error = new ServiceError({
@@ -115,7 +115,7 @@ describe("[UNIT] DrizzleCoinService", () => {
     });
   });
 
-  describe("addCoinsWithActivity - Effect return type", () => {
+  describe("[UNIT] addCoinsWithActivity - Effect return type", () => {
     it("should return an Effect (type verification)", () => {
       const mockDb = createMockDb();
       const service = new DrizzleCoinService(
@@ -211,7 +211,7 @@ describe("[UNIT] DrizzleCoinService", () => {
     });
   });
 
-  describe("removeCoinsWithActivity - Effect return type", () => {
+  describe("[UNIT] removeCoinsWithActivity - Effect return type", () => {
     it("should return an Effect (type verification)", () => {
       const mockDb = createMockDb();
       const service = new DrizzleCoinService(
@@ -269,7 +269,7 @@ describe("[UNIT] DrizzleCoinService", () => {
     });
   });
 
-  describe("Effect pattern verification", () => {
+  describe("[UNIT] Effect pattern verification", () => {
     it("should use Effect.tryPromise for async operations", async () => {
       let transactionCalled = false;
       const trackingDb = {

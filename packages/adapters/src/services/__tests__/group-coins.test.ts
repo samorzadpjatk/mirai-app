@@ -11,7 +11,7 @@ describe("[UNIT] DrizzleGroupCoinsService", () => {
     service = new DrizzleGroupCoinsService({} as DrizzleDb);
   });
 
-  describe("getBalance", () => {
+  describe("[UNIT] getBalance", () => {
     it("should return Effect that can be run", () => {
       const effect = service.getBalance("group-123");
 
@@ -20,7 +20,7 @@ describe("[UNIT] DrizzleGroupCoinsService", () => {
     });
   });
 
-  describe("deductCoins", () => {
+  describe("[UNIT] deductCoins", () => {
     it("should return Effect that can be run", () => {
       const effect = service.deductCoins(
         "group-123",
@@ -34,7 +34,7 @@ describe("[UNIT] DrizzleGroupCoinsService", () => {
     });
   });
 
-  describe("addCoins", () => {
+  describe("[UNIT] addCoins", () => {
     it("should return Effect that can be run", () => {
       const effect = service.addCoins(
         "group-123",

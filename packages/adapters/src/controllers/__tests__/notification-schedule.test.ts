@@ -91,7 +91,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     controller = new NotificationScheduleController(mockRepository);
   });
 
-  describe("getAll", () => {
+  describe("[UNIT] getAll", () => {
     it("should return schedules with pagination", async () => {
       const result = await controller.getAll({});
 
@@ -110,7 +110,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return schedule by ID", async () => {
       const result = await controller.getById({ id: TEST_SCHEDULE_ID });
 
@@ -127,7 +127,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create schedule with valid input", async () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() + 10);
@@ -179,7 +179,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update schedule with just name change", async () => {
       const result = await controller.update({
         id: TEST_SCHEDULE_ID,
@@ -201,7 +201,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("[UNIT] delete", () => {
     it("should delete schedule", async () => {
       const result = await controller.delete({ id: TEST_SCHEDULE_ID });
 
@@ -209,7 +209,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("bulkDelete", () => {
+  describe("[UNIT] bulkDelete", () => {
     it("should delete multiple schedules", async () => {
       const input = {
         ids: [
@@ -228,7 +228,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("toggleActive", () => {
+  describe("[UNIT] toggleActive", () => {
     it("should toggle schedule active status", async () => {
       const result = await controller.toggleActive({ id: TEST_SCHEDULE_ID });
 
@@ -236,7 +236,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("bulkToggleActive", () => {
+  describe("[UNIT] bulkToggleActive", () => {
     it("should toggle multiple schedules", async () => {
       const input = {
         ids: [
@@ -255,7 +255,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("duplicate", () => {
+  describe("[UNIT] duplicate", () => {
     it("should duplicate schedule", async () => {
       const input = {
         id: TEST_SCHEDULE_ID,
@@ -268,7 +268,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("getActive", () => {
+  describe("[UNIT] getActive", () => {
     it("should return active schedules", async () => {
       const result = await controller.getActive();
 
@@ -279,7 +279,7 @@ describe("[UNIT] NotificationScheduleController", () => {
     });
   });
 
-  describe("getUpcoming", () => {
+  describe("[UNIT] getUpcoming", () => {
     it("should return upcoming schedules", async () => {
       const result = await controller.getUpcoming({ days: 7 });
 

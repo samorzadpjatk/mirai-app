@@ -28,7 +28,7 @@ describe("[UNIT] ConnectionManager", () => {
     connectionManager = new ConnectionManager(mockRealtimePort);
   });
 
-  describe("userConnected", () => {
+  describe("[UNIT] userConnected", () => {
     it("should register a new connection", () => {
       const info = connectionManager.userConnected("user-1", "conn-1");
 
@@ -46,7 +46,7 @@ describe("[UNIT] ConnectionManager", () => {
     });
   });
 
-  describe("userDisconnected", () => {
+  describe("[UNIT] userDisconnected", () => {
     it("should remove connection by ID", () => {
       connectionManager.userConnected("user-1", "conn-1");
       connectionManager.userDisconnected("user-1", "conn-1");
@@ -66,7 +66,7 @@ describe("[UNIT] ConnectionManager", () => {
     });
   });
 
-  describe("getUserConnections", () => {
+  describe("[UNIT] getUserConnections", () => {
     it("should return connections for user", () => {
       connectionManager.userConnected("user-1", "conn-1");
       connectionManager.userConnected("user-1", "conn-2");
@@ -84,7 +84,7 @@ describe("[UNIT] ConnectionManager", () => {
     });
   });
 
-  describe("isUserOnline", () => {
+  describe("[UNIT] isUserOnline", () => {
     it("should return true for connected user", () => {
       connectionManager.userConnected("user-1", "conn-1");
 
@@ -96,7 +96,7 @@ describe("[UNIT] ConnectionManager", () => {
     });
   });
 
-  describe("getOnlineUsers", () => {
+  describe("[UNIT] getOnlineUsers", () => {
     it("should return all online users", () => {
       connectionManager.userConnected("user-1", "conn-1");
       connectionManager.userConnected("user-2", "conn-2");
@@ -109,7 +109,7 @@ describe("[UNIT] ConnectionManager", () => {
     });
   });
 
-  describe("broadcastLocation", () => {
+  describe("[UNIT] broadcastLocation", () => {
     it("should broadcast location to online friends", async () => {
       connectionManager.userConnected("user-1", "conn-1");
       connectionManager.userConnected("friend-1", "conn-2");
@@ -165,7 +165,7 @@ describe("[UNIT] ConnectionManager", () => {
     });
   });
 
-  describe("cleanupStaleConnections", () => {
+  describe("[UNIT] cleanupStaleConnections", () => {
     it("should remove stale connections", async () => {
       connectionManager.userConnected("user-1", "conn-1");
 
@@ -180,7 +180,7 @@ describe("[UNIT] ConnectionManager", () => {
     });
   });
 
-  describe("clear", () => {
+  describe("[UNIT] clear", () => {
     it("should remove all connections", () => {
       connectionManager.userConnected("user-1", "conn-1");
       connectionManager.userConnected("user-2", "conn-2");

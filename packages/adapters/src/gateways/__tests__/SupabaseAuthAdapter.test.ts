@@ -86,7 +86,7 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
   // Constructor Tests
   // =============================================================================
 
-  describe("constructor", () => {
+  describe("[UNIT] constructor", () => {
     it("should create adapter with injected SupabaseClient", () => {
       const mockSupabase = createMockSupabaseClient();
       const adapter = new SupabaseAuthAdapter(mockSupabase);
@@ -101,7 +101,7 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
   // validateToken Tests
   // =============================================================================
 
-  describe("validateToken", () => {
+  describe("[UNIT] validateToken", () => {
     it("should return AuthContext when token is valid", async () => {
       // Arrange
       const mockUser = createMockSupabaseUser({
@@ -584,7 +584,7 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
   // refreshSession Tests
   // =============================================================================
 
-  describe("refreshSession", () => {
+  describe("[UNIT] refreshSession", () => {
     it("should return AuthContext when session is valid", async () => {
       // Arrange
       const mockUser = createMockSupabaseUser({
@@ -827,7 +827,7 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
   // Error Type Consistency Tests
   // =============================================================================
 
-  describe("error type consistency", () => {
+  describe("[UNIT] error type consistency", () => {
     it("should use correct error tags for all error types", async () => {
       const mockSupabase = createMockSupabaseClient({
         getUserResult: {
@@ -873,7 +873,7 @@ describe("[INTEGRATION] SupabaseAuthAdapter", () => {
   // Edge Cases
   // =============================================================================
 
-  describe("edge cases", () => {
+  describe("[UNIT] edge cases", () => {
     it("should handle user with missing id field", async () => {
       // Arrange - user without id (shouldn't happen but handle gracefully)
       const mockUser = {

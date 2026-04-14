@@ -75,7 +75,7 @@ describe("[UNIT] CoinController", () => {
     controller = new CoinController(mockCoinRepository);
   });
 
-  describe("addCoins", () => {
+  describe("[UNIT] addCoins", () => {
     it("should add coins successfully", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -116,7 +116,7 @@ describe("[UNIT] CoinController", () => {
     });
   });
 
-  describe("removeCoins", () => {
+  describe("[UNIT] removeCoins", () => {
     it("should remove coins successfully", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -152,7 +152,7 @@ describe("[UNIT] CoinController", () => {
     });
   });
 
-  describe("schemas", () => {
+  describe("[UNIT] schemas", () => {
     it("should expose validation schemas", () => {
       expect(controller.schemas.addCoins).toBeDefined();
       expect(controller.schemas.removeCoins).toBeDefined();

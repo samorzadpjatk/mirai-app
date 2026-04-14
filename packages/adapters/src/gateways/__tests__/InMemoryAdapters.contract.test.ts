@@ -19,19 +19,19 @@ import {
 import { AuthContext, UserRole, UserId } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 
-describe("[CONTRACT] InMemory Adapters", () => {
+describe("[UNIT] [CONTRACT] InMemory Adapters", () => {
   // =============================================================================
   // AuthPort Contract Tests (via InMemoryAuthAdapter)
   // =============================================================================
 
-  describe("AuthPort - InMemoryAuthAdapter", () => {
+  describe("[UNIT] ""AuthPort - InMemoryAuthAdapter () => {
     let adapter: InMemoryAuthAdapter;
 
     beforeEach(() => {
       adapter = new InMemoryAuthAdapter();
     });
 
-    describe("validateToken", () => {
+    describe("[UNIT] validateToken", () => {
       it("should return Either type on success", async () => {
         const userId = UserId.create("550e8400-e29b-41d4-a716-446655440001");
         adapter.createUser({ id: userId, role: UserRole.USER });
@@ -151,7 +151,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("refreshSession", () => {
+    describe("[UNIT] refreshSession", () => {
       it("should return Either type on success", async () => {
         const userId = UserId.create("550e8400-e29b-41d4-a716-446655440006");
         adapter.createUser({ id: userId, role: UserRole.USER });
@@ -238,14 +238,14 @@ describe("[CONTRACT] InMemory Adapters", () => {
   // RealtimePort Contract Tests (via InMemoryRealtimeAdapter)
   // =============================================================================
 
-  describe("RealtimePort - InMemoryRealtimeAdapter", () => {
+  describe("[UNIT] RealtimePort - InMemoryRealtimeAdapter", () => {
     let adapter: InMemoryRealtimeAdapter;
 
     beforeEach(() => {
       adapter = new InMemoryRealtimeAdapter();
     });
 
-    describe("subscribe", () => {
+    describe("[UNIT] ""subscribe () => {
       it("should return Either<RealtimeSubscription, RealtimeError | SubscriptionError>", async () => {
         const result = adapter.subscribe("test-channel", {
           onMessage: () => {},
@@ -319,7 +319,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("broadcast", () => {
+    describe("[UNIT] broadcast", () => {
       it("should return Either<void, RealtimeError>", async () => {
         const result = await adapter.broadcast("test-channel", "event", {
           data: "value",
@@ -435,7 +435,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("trackPresence", () => {
+    describe("[UNIT] trackPresence", () => {
       it("should return Either<void, RealtimeError>", async () => {
         const result = await adapter.trackPresence("presence-channel", {
           userId: "user-1",
@@ -513,7 +513,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("getConnectionState", () => {
+    describe("[UNIT] getConnectionState", () => {
       it("should return ConnectionState type", () => {
         const state = adapter.getConnectionState();
 
@@ -535,7 +535,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("unsubscribe", () => {
+    describe("[UNIT] unsubscribe", () => {
       it("should return Either<void, RealtimeError>", async () => {
         const subResult = adapter.subscribe("unsub-channel", {
           onMessage: () => {},
@@ -598,14 +598,14 @@ describe("[CONTRACT] InMemory Adapters", () => {
   // StoragePort Contract Tests (via InMemoryStorageAdapter)
   // =============================================================================
 
-  describe("StoragePort - InMemoryStorageAdapter", () => {
+  describe("[UNIT] StoragePort - InMemoryStorageAdapter", () => {
     let adapter: InMemoryStorageAdapter;
 
     beforeEach(() => {
       adapter = new InMemoryStorageAdapter();
     });
 
-    describe("upload", () => {
+    describe("[UNIT] ""upload () => {
       it("should return Either<FileMetadata, StorageError | UploadError>", async () => {
         const buffer = Buffer.from("test content");
         const result = await adapter.upload("test-bucket", "test.txt", buffer);
@@ -712,7 +712,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("download", () => {
+    describe("[UNIT] download", () => {
       it("should return Either<DownloadResult, StorageError | FileNotFoundError>", async () => {
         const buffer = Buffer.from("content");
         await Effect.runPromise(adapter.upload("bucket", "file.txt", buffer));
@@ -776,7 +776,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("delete", () => {
+    describe("[UNIT] delete", () => {
       it("should return Either<void, StorageError | FileNotFoundError>", async () => {
         const buffer = Buffer.from("content");
         await Effect.runPromise(adapter.upload("bucket", "file.txt", buffer));
@@ -829,7 +829,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("createSignedUrl", () => {
+    describe("[UNIT] createSignedUrl", () => {
       it("should return Either<SignedUrlInfo, StorageError | FileNotFoundError>", async () => {
         const buffer = Buffer.from("content");
         await Effect.runPromise(adapter.upload("bucket", "file.txt", buffer));
@@ -904,7 +904,7 @@ describe("[CONTRACT] InMemory Adapters", () => {
       });
     });
 
-    describe("adapter-specific helper methods", () => {
+    describe("[UNIT] adapter-specific helper methods", () => {
       it("should track file metadata", async () => {
         const buffer = Buffer.from("test content");
         await Effect.runPromise(

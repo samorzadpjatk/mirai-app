@@ -19,7 +19,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
   // Constructor Tests
   // =============================================================================
 
-  describe("constructor", () => {
+  describe("[UNIT] constructor", () => {
     it("should create adapter with empty state", () => {
       const newAdapter = new InMemoryAuthAdapter();
 
@@ -33,7 +33,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
   // validateToken Tests
   // =============================================================================
 
-  describe("validateToken", () => {
+  describe("[UNIT] validateToken", () => {
     it("should return AuthContext when token is valid", async () => {
       // Arrange
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440001");
@@ -227,7 +227,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
   // refreshSession Tests
   // =============================================================================
 
-  describe("refreshSession", () => {
+  describe("[UNIT] refreshSession", () => {
     it("should return AuthContext when session is valid", async () => {
       // Arrange
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440010");
@@ -327,7 +327,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
   // Test Helper Methods
   // =============================================================================
 
-  describe("createUser", () => {
+  describe("[UNIT] createUser", () => {
     it("should create a user with default USER role", () => {
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440020");
 
@@ -368,7 +368,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("createSession", () => {
+  describe("[UNIT] createSession", () => {
     it("should create a session with default expiration", () => {
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440030");
       adapter.createUser({ id: userId });
@@ -408,7 +408,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("createSessionWithId", () => {
+  describe("[UNIT] createSessionWithId", () => {
     it("should create a session with specific ID", () => {
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440040");
       adapter.createUser({ id: userId });
@@ -424,7 +424,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("getUser", () => {
+  describe("[UNIT] getUser", () => {
     it("should return undefined for non-existent user", () => {
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440050");
 
@@ -444,7 +444,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("getSession", () => {
+  describe("[UNIT] getSession", () => {
     it("should return undefined for non-existent session", () => {
       const session = adapter.getSession("non-existent");
 
@@ -463,7 +463,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("getSessionByToken", () => {
+  describe("[UNIT] getSessionByToken", () => {
     it("should return session by token", () => {
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440070");
       adapter.createUser({ id: userId });
@@ -482,7 +482,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("hasUser", () => {
+  describe("[UNIT] hasUser", () => {
     it("should return false for non-existent user", () => {
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440080");
 
@@ -497,7 +497,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("hasSession", () => {
+  describe("[UNIT] hasSession", () => {
     it("should return false for non-existent session", () => {
       expect(adapter.hasSession("non-existent")).toBe(false);
     });
@@ -511,7 +511,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("deleteUser", () => {
+  describe("[UNIT] deleteUser", () => {
     it("should delete user and all their sessions", () => {
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440100");
       adapter.createUser({ id: userId });
@@ -550,7 +550,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("deleteSession", () => {
+  describe("[UNIT] deleteSession", () => {
     it("should delete session and its token mapping", () => {
       const userId = UserId.create("550e8400-e29b-41d4-a716-446655440110");
       adapter.createUser({ id: userId });
@@ -568,7 +568,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("clear", () => {
+  describe("[UNIT] clear", () => {
     it("should clear all users and sessions", () => {
       const userId1 = UserId.create("550e8400-e29b-41d4-a716-446655440120");
       const userId2 = UserId.create("550e8400-e29b-41d4-a716-446655440121");
@@ -602,7 +602,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("getAllUsers", () => {
+  describe("[UNIT] getAllUsers", () => {
     it("should return empty array when no users", () => {
       const users = adapter.getAllUsers();
 
@@ -621,7 +621,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
     });
   });
 
-  describe("getAllSessions", () => {
+  describe("[UNIT] getAllSessions", () => {
     it("should return empty array when no sessions", () => {
       const sessions = adapter.getAllSessions();
 
@@ -644,7 +644,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
   // Error Type Consistency Tests
   // =============================================================================
 
-  describe("error type consistency", () => {
+  describe("[UNIT] error type consistency", () => {
     it("should use correct error tags for all error types", async () => {
       // InvalidTokenError
       const invalidTokenResult = await adapter.validateToken("unknown");
@@ -677,7 +677,7 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
   // Edge Cases
   // =============================================================================
 
-  describe("edge cases", () => {
+  describe("[UNIT] edge cases", () => {
     it("should handle multiple users with different roles", async () => {
       const adminId = UserId.create("550e8400-e29b-41d4-a716-446655440160");
       const modId = UserId.create("550e8400-e29b-41d4-a716-446655440161");

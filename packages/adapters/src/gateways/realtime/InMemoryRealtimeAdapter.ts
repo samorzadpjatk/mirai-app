@@ -24,6 +24,7 @@ import {
   RealtimeError,
   SubscriptionError,
 } from "@mirai-app/use-cases/ports/RealtimePort";
+import { serverLogger } from "@mirai-app/shared";
 import { Effect } from "effect";
 
 // =============================================================================
@@ -222,9 +223,11 @@ export class InMemoryRealtimeAdapter implements RealtimePort {
             config.onMessage?.(event, payload);
           } catch (error) {
             // Log but don't fail - other subscribers should still receive
-            console.warn(
-              `Message handler error for subscription ${subscription.id}:`,
-              error,
+            serverLogger.warn(
+              `Message handler error for subscription ${subscription.id}`,
+              {
+                error: error instanceof Error ? error.message : String(error),
+              },
             );
           }
         }

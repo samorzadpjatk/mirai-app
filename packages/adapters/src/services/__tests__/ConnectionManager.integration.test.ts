@@ -24,7 +24,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Connection Tracking
   // =============================================================================
 
-  describe("connection tracking (add/remove)", () => {
+  describe("[UNIT] connection tracking (add/remove)", () => {
     it("should track user connection", () => {
       const connection = connectionManager.userConnected("user-1", "conn-1");
 
@@ -122,7 +122,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Broadcast to Specific Users
   // =============================================================================
 
-  describe("broadcast to specific users", () => {
+  describe("[UNIT] broadcast to specific users", () => {
     beforeEach(() => {
       // Setup connections
       connectionManager.userConnected("user-1", "conn-1");
@@ -231,7 +231,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Friend-Based Broadcasting
   // =============================================================================
 
-  describe("friend-based broadcasting", () => {
+  describe("[UNIT] friend-based broadcasting", () => {
     it("should broadcast to multiple friends", async () => {
       // Setup: user-1 is sharing location, user-2, user-3, user-4 are friends
       connectionManager.userConnected("user-1", "conn-1");
@@ -324,7 +324,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Disconnection Handling
   // =============================================================================
 
-  describe("disconnection handling", () => {
+  describe("[UNIT] disconnection handling", () => {
     it("should stop broadcasting to disconnected users", async () => {
       // Setup
       connectionManager.userConnected("user-1", "conn-1");
@@ -420,7 +420,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Throttling
   // =============================================================================
 
-  describe("throttling", () => {
+  describe("[UNIT] throttling", () => {
     beforeEach(() => {
       connectionManager = new ConnectionManager(realtimePort, {
         throttleMs: 100, // 100ms throttle
@@ -515,7 +515,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Activity Tracking
   // =============================================================================
 
-  describe("activity tracking", () => {
+  describe("[UNIT] activity tracking", () => {
     it("should update activity timestamp on broadcast", async () => {
       const connection = connectionManager.userConnected("user-1", "conn-1");
       const initialActivity = connection.lastActivityAt;
@@ -578,7 +578,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Online Users
   // =============================================================================
 
-  describe("online users", () => {
+  describe("[UNIT] online users", () => {
     it("should get list of online users", () => {
       connectionManager.userConnected("user-1", "conn-1");
       connectionManager.userConnected("user-2", "conn-2");
@@ -618,7 +618,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Stale Connection Cleanup
   // =============================================================================
 
-  describe("stale connection cleanup", () => {
+  describe("[UNIT] stale connection cleanup", () => {
     it("should remove connections idle longer than maxIdleMs", () => {
       // Create connection
       const connection = connectionManager.userConnected("user-1", "conn-1");
@@ -661,7 +661,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Error Handling
   // =============================================================================
 
-  describe("error handling", () => {
+  describe("[UNIT] error handling", () => {
     it("should handle broadcast errors gracefully", async () => {
       // Create a mock realtimePort that returns errors
       const mockRealtimePort = {
@@ -736,7 +736,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Configuration Options
   // =============================================================================
 
-  describe("configuration options", () => {
+  describe("[UNIT] configuration options", () => {
     it("should use default throttleMs when not specified", () => {
       const defaultManager = new ConnectionManager(realtimePort);
 
@@ -779,7 +779,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Connection Info Queries
   // =============================================================================
 
-  describe("connection info queries", () => {
+  describe("[UNIT] connection info queries", () => {
     it("should get all connections for a user", () => {
       connectionManager.userConnected("user-1", "conn-1", { device: "mobile" });
       connectionManager.userConnected("user-1", "conn-2", {
@@ -826,7 +826,7 @@ describe("[INTEGRATION] ConnectionManager with RealtimePort", () => {
   // Clear All
   // =============================================================================
 
-  describe("clear all", () => {
+  describe("[UNIT] clear all", () => {
     it("should remove all connections", () => {
       connectionManager.userConnected("user-1", "conn-1");
       connectionManager.userConnected("user-2", "conn-2");

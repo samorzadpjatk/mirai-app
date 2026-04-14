@@ -186,7 +186,7 @@ describe("[UNIT] RewardController", () => {
     );
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return reward by ID", async () => {
       const result = await controller.getById({ id: REWARD_ID });
 
@@ -205,7 +205,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("getByTrip", () => {
+  describe("[UNIT] getByTrip", () => {
     it("should return rewards for trip", async () => {
       const result = await controller.getByTrip({ tripId: TRIP_ID });
 
@@ -216,7 +216,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("getByTripAdmin", () => {
+  describe("[UNIT] getByTripAdmin", () => {
     it("should return all rewards including hidden", async () => {
       const result = await controller.getByTripAdmin({ tripId: TRIP_ID });
 
@@ -224,7 +224,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create reward with valid input", async () => {
       const input = {
         name: "New Reward",
@@ -259,7 +259,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update reward", async () => {
       const input = {
         rewardId: REWARD_ID,
@@ -272,7 +272,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("setHidden", () => {
+  describe("[UNIT] setHidden", () => {
     it("should hide reward", async () => {
       const input = {
         rewardId: REWARD_ID,
@@ -299,7 +299,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("[UNIT] delete", () => {
     it("should delete reward", async () => {
       const result = await controller.delete({ rewardId: REWARD_ID });
 
@@ -315,7 +315,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("purchase", () => {
+  describe("[UNIT] purchase", () => {
     it("should purchase reward", async () => {
       const input = {
         rewardId: REWARD_ID,
@@ -339,7 +339,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("getTotalAvailablePoints", () => {
+  describe("[UNIT] getTotalAvailablePoints", () => {
     it("should return total points", async () => {
       const result = await controller.getTotalAvailablePoints({
         tripId: TRIP_ID,
@@ -352,7 +352,7 @@ describe("[UNIT] RewardController", () => {
     });
   });
 
-  describe("getPurchaseHistory", () => {
+  describe("[UNIT] getPurchaseHistory", () => {
     it("should return purchase history", async () => {
       const input = {
         tripId: TRIP_ID,

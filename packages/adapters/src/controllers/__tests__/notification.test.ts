@@ -99,7 +99,7 @@ describe("[UNIT] NotificationController", () => {
     controller = new NotificationController(mockNotificationRepository);
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return notification by ID", async () => {
       const result = await controller.getById({ id: TEST_NOTIFICATION_ID });
 
@@ -125,7 +125,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("getByTripId", () => {
+  describe("[UNIT] getByTripId", () => {
     it("should return notifications for trip", async () => {
       const result = await controller.getByTripId({ tripId: TEST_TRIP_ID });
 
@@ -136,7 +136,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create notification with valid input", async () => {
       const input = {
         title: "New Notification",
@@ -174,7 +174,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update notification", async () => {
       const input = {
         notificationId: TEST_NOTIFICATION_ID,
@@ -198,7 +198,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("updateStatus", () => {
+  describe("[UNIT] updateStatus", () => {
     it("should update notification status", async () => {
       const input = {
         notificationId: TEST_NOTIFICATION_ID,
@@ -229,7 +229,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("list", () => {
+  describe("[UNIT] list", () => {
     it("should return paginated list", async () => {
       const result = await controller.list({ limit: 10, offset: 0 });
 
@@ -240,7 +240,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("listByStatus", () => {
+  describe("[UNIT] listByStatus", () => {
     it("should return notifications by status", async () => {
       const result = await controller.listByStatus({
         status: "DRAFT",
@@ -252,7 +252,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("listByPriority", () => {
+  describe("[UNIT] listByPriority", () => {
     it("should return notifications by priority", async () => {
       const result = await controller.listByPriority({
         priority: "HIGH",
@@ -264,7 +264,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("findReadyToSend", () => {
+  describe("[UNIT] findReadyToSend", () => {
     it("should return ready notifications", async () => {
       const result = await controller.findReadyToSend();
 
@@ -272,7 +272,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("findOverdue", () => {
+  describe("[UNIT] findOverdue", () => {
     it("should return overdue notifications", async () => {
       const result = await controller.findOverdue();
 
@@ -280,7 +280,7 @@ describe("[UNIT] NotificationController", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("[UNIT] delete", () => {
     it("should delete notification", async () => {
       const result = await controller.delete({ id: TEST_NOTIFICATION_ID });
 

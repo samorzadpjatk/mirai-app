@@ -24,7 +24,7 @@ describe("[UNIT] EventEmitterPubSub", () => {
     pubSub = new EventEmitterPubSub();
   });
 
-  describe("Basic Operations", () => {
+  describe("[UNIT] Basic Operations", () => {
     it("can subscribe to a channel", () => {
       const subscription = pubSub.subscribe("test-channel");
       expect(subscription).toHaveProperty("asyncIterable");
@@ -58,7 +58,7 @@ describe("[UNIT] EventEmitterPubSub", () => {
     });
   });
 
-  describe("Pub/Sub Flow", () => {
+  describe("[UNIT] Pub/Sub Flow", () => {
     it("subscriber receives published messages", async () => {
       const channel = "test-channel";
       const testPayload = { id: "123", message: "Hello" };
@@ -159,7 +159,7 @@ describe("[UNIT] EventEmitterPubSub", () => {
     });
   });
 
-  describe("Channel Isolation", () => {
+  describe("[UNIT] Channel Isolation", () => {
     it("subscribers only receive messages from their channel", async () => {
       const channel1 = "channel-1";
       const channel2 = "channel-2";
@@ -208,7 +208,7 @@ describe("[UNIT] EventEmitterPubSub", () => {
     });
   });
 
-  describe("Unsubscribe Behavior", () => {
+  describe("[UNIT] Unsubscribe Behavior", () => {
     it("unsubscribe stops the async iterable", async () => {
       const channel = "test-channel";
       const subscription = pubSub.subscribe<string>(channel);
@@ -260,7 +260,7 @@ describe("[UNIT] EventEmitterPubSub", () => {
     });
   });
 
-  describe("Resource Management", () => {
+  describe("[UNIT] Resource Management", () => {
     it("tracks active channels", () => {
       pubSub.subscribe("channel-1");
       pubSub.subscribe("channel-2");
@@ -294,7 +294,7 @@ describe("[UNIT] EventEmitterPubSub", () => {
     });
   });
 
-  describe("Edge Cases", () => {
+  describe("[UNIT] Edge Cases", () => {
     it("publishing to channel with no subscribers does not throw", () => {
       expect(() =>
         pubSub.publish("empty-channel", { data: "test" }),

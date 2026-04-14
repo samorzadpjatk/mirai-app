@@ -23,7 +23,7 @@ describe("[UNIT] DrizzleTelemetryAdapter", () => {
     );
   });
 
-  describe("log", () => {
+  describe("[UNIT] log", () => {
     it("should log a log event successfully", async () => {
       const event: TelemetryEvent = {
         type: "log",
@@ -173,7 +173,7 @@ describe("[UNIT] DrizzleTelemetryAdapter", () => {
     });
   });
 
-  describe("logBatch", () => {
+  describe("[UNIT] logBatch", () => {
     it("should log multiple events in batch", async () => {
       const events: TelemetryEvent[] = [
         {
@@ -230,7 +230,7 @@ describe("[UNIT] DrizzleTelemetryAdapter", () => {
     });
   });
 
-  describe("flush", () => {
+  describe("[UNIT] flush", () => {
     it("should always succeed (no-op)", async () => {
       const effect = adapter.flush();
       const result = await Effect.runPromise(Effect.either(effect));
@@ -247,7 +247,7 @@ describe("[UNIT] DrizzleTelemetryAdapter", () => {
     });
   });
 
-  describe("error handling", () => {
+  describe("[UNIT] error handling", () => {
     it("should handle foreign key constraint errors", async () => {
       const pgError = new Error("Foreign key failed") as Error & {
         code: string;

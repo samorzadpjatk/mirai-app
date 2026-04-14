@@ -43,7 +43,7 @@ describe("[UNIT] StorageController", () => {
     controller = new StorageController(mockSupabaseClient);
   });
 
-  describe("createUploadUrl", () => {
+  describe("[UNIT] createUploadUrl", () => {
     it("should create upload URL", async () => {
       const result = await controller.createUploadUrl({
         storagePath: "images/test.jpg",
@@ -65,7 +65,7 @@ describe("[UNIT] StorageController", () => {
     });
   });
 
-  describe("createDownloadUrl", () => {
+  describe("[UNIT] createDownloadUrl", () => {
     it("should create download URL", async () => {
       const result = await controller.createDownloadUrl({
         storagePath: "images/test.jpg",
@@ -95,7 +95,7 @@ describe("[UNIT] StorageController", () => {
     });
   });
 
-  describe("createPublicUrl", () => {
+  describe("[UNIT] createPublicUrl", () => {
     it("should return public URL for public bucket", async () => {
       const result = await controller.createPublicUrl({
         storagePath: "files-public/test.jpg",

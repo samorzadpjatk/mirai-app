@@ -3,6 +3,7 @@ import type {
   SupabaseUser,
 } from "@mirai-app/frameworks/supabase";
 import type { AuthUser } from "@mirai-app/frameworks/stores";
+import { authLogger } from "@mirai-app/shared";
 
 // Inline type definitions to replace the removed Prisma dependency
 type Role = "ADMIN" | "MODERATOR" | "SERVICE" | "USER";
@@ -316,8 +317,11 @@ export class AuthServer {
     );
 
     if (adminLookup.error) {
-      console.warn(
-        `[Auth] Failed to check ban status for ${session.authUserId}: ${adminLookup.error.message}`,
+      authLogger.warn(
+        `[Auth] Failed to check ban status for ${session.authUserId}`,
+        {
+          error: adminLookup.error.message,
+        },
       );
     } else {
       const adminUser = adminLookup.data.user as AdminUserWithBan | null;

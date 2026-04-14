@@ -8,7 +8,7 @@ import {
   type AnyDomainEvent,
 } from "@mirai-app/domain";
 
-describe("[CONTRACT] EventBus", () => {
+describe("[UNIT] [CONTRACT] EventBus", () => {
   let eventBus: EventBus;
 
   beforeEach(() => {
@@ -19,7 +19,7 @@ describe("[CONTRACT] EventBus", () => {
   // Subscribe/Publish Workflow
   // =============================================================================
 
-  describe("subscribe/publish workflow", () => {
+  describe("[UNIT] ""subscribe/publish workflow () => {
     it("should deliver event to subscribed handler", async () => {
       // Arrange
       const receivedEvents: AnyDomainEvent[] = [];
@@ -122,7 +122,7 @@ describe("[CONTRACT] EventBus", () => {
   // Multiple Subscribers for Same Event
   // =============================================================================
 
-  describe("multiple subscribers for same event", () => {
+  describe("[UNIT] multiple subscribers for same event", () => {
     it("should deliver to all subscribers of the same event type", async () => {
       // Arrange
       const handlerCalls: string[] = [];
@@ -209,7 +209,7 @@ describe("[CONTRACT] EventBus", () => {
   // Wildcard Subscription (subscribeAll)
   // =============================================================================
 
-  describe("wildcard subscription (subscribeAll)", () => {
+  describe("[UNIT] wildcard subscription (subscribeAll)", () => {
     it("should receive all events regardless of type", async () => {
       // Arrange
       const allEvents: AnyDomainEvent[] = [];
@@ -347,7 +347,7 @@ describe("[CONTRACT] EventBus", () => {
   // Unsubscribe Functionality
   // =============================================================================
 
-  describe("unsubscribe functionality", () => {
+  describe("[UNIT] unsubscribe functionality", () => {
     it("should stop receiving events after unsubscribe", async () => {
       // Arrange
       const events: AnyDomainEvent[] = [];
@@ -489,7 +489,7 @@ describe("[CONTRACT] EventBus", () => {
   // Error Isolation
   // =============================================================================
 
-  describe("error isolation", () => {
+  describe("[UNIT] error isolation", () => {
     it("should continue delivering to other handlers when one fails", async () => {
       // Arrange
       const receivedEvents: string[] = [];
@@ -589,7 +589,7 @@ describe("[CONTRACT] EventBus", () => {
   // Effect Handler Support
   // =============================================================================
 
-  describe("Effect handler support", () => {
+  describe("[UNIT] Effect handler support", () => {
     it("should support Effect handlers", async () => {
       // Arrange
       const receivedEvents: AnyDomainEvent[] = [];
@@ -651,7 +651,7 @@ describe("[CONTRACT] EventBus", () => {
   // Legacy Handler Support
   // =============================================================================
 
-  describe("legacy handler support (subscribeLegacy)", () => {
+  describe("[UNIT] legacy handler support (subscribeLegacy)", () => {
     it("should support legacy async handlers", async () => {
       // Arrange
       const receivedEvents: AnyDomainEvent[] = [];
@@ -738,7 +738,7 @@ describe("[CONTRACT] EventBus", () => {
   // Fire-and-Forget
   // =============================================================================
 
-  describe("publishFireAndForget", () => {
+  describe("[UNIT] publishFireAndForget", () => {
     it("should publish without blocking", () => {
       // Arrange
       let handlerCalled = false;
@@ -770,7 +770,7 @@ describe("[CONTRACT] EventBus", () => {
   // Event Type Safety
   // =============================================================================
 
-  describe("event type safety", () => {
+  describe("[UNIT] event type safety", () => {
     it("should maintain type information in delivered events", async () => {
       // Arrange
       let receivedEvent: AnyDomainEvent | null = null;
@@ -905,7 +905,7 @@ describe("[CONTRACT] EventBus", () => {
   // Clear and getHandlerCount
   // =============================================================================
 
-  describe("clear and getHandlerCount", () => {
+  describe("[UNIT] clear and getHandlerCount", () => {
     it("should clear all handlers", () => {
       // Arrange
       eventBus.subscribe("NotificationCreated", () => Effect.void);
@@ -950,7 +950,7 @@ describe("[CONTRACT] EventBus", () => {
   // Edge Cases
   // =============================================================================
 
-  describe("edge cases", () => {
+  describe("[UNIT] edge cases", () => {
     it("should handle publishing with no subscribers gracefully", async () => {
       const event = new NotificationCreated(
         "event-30",

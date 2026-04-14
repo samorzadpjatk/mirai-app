@@ -68,7 +68,7 @@ describe("[UNIT] UserController", () => {
     controller = new UserController(mockUserRepository);
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return user by ID on success", async () => {
       const result = await controller.getById({ id: TEST_USER_ID });
 
@@ -101,7 +101,7 @@ describe("[UNIT] UserController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create user with valid input", async () => {
       const input = {
         authUserId: "550e8400-e29b-41d4-a716-446655440003",
@@ -167,7 +167,7 @@ describe("[UNIT] UserController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update user with valid input", async () => {
       const input = {
         userId: TEST_USER_ID,
@@ -204,7 +204,7 @@ describe("[UNIT] UserController", () => {
     });
   });
 
-  describe("list", () => {
+  describe("[UNIT] list", () => {
     it("should return paginated list of users", async () => {
       const result = await controller.list({ limit: 10, offset: 0 });
 

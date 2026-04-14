@@ -101,7 +101,7 @@ describe("[UNIT] LocationController", () => {
     controller = new LocationController(mockLocationRepository);
   });
 
-  describe("getByUserId", () => {
+  describe("[UNIT] getByUserId", () => {
     it("should return location for user", async () => {
       const result = await controller.getByUserId({ userId: TEST_USER_ID });
 
@@ -120,7 +120,7 @@ describe("[UNIT] LocationController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create location with valid input", async () => {
       const input = {
         userId: TEST_USER_ID,
@@ -150,7 +150,7 @@ describe("[UNIT] LocationController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update existing location", async () => {
       const input = {
         userId: TEST_USER_ID,
@@ -179,7 +179,7 @@ describe("[UNIT] LocationController", () => {
     });
   });
 
-  describe("list", () => {
+  describe("[UNIT] list", () => {
     it("should return list of locations", async () => {
       const result = await controller.list({ viewerUserId: TEST_USER_ID });
 
@@ -190,7 +190,7 @@ describe("[UNIT] LocationController", () => {
     });
   });
 
-  describe("updateSharingSettings", () => {
+  describe("[UNIT] updateSharingSettings", () => {
     it("should update sharing settings", async () => {
       const result = await controller.updateSharingSettings({
         userId: TEST_USER_ID,
@@ -201,7 +201,7 @@ describe("[UNIT] LocationController", () => {
     });
   });
 
-  describe("deleteByUserId", () => {
+  describe("[UNIT] deleteByUserId", () => {
     it("should delete location by user ID", async () => {
       const result = await controller.deleteByUserId({ userId: TEST_USER_ID });
 

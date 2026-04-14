@@ -91,7 +91,7 @@ describe("[UNIT] NotificationDeliveryController", () => {
     controller = new NotificationDeliveryController(mockRepository);
   });
 
-  describe("getDeliveries", () => {
+  describe("[UNIT] getDeliveries", () => {
     it("should return deliveries", async () => {
       const result = await controller.getDeliveries({ tripId: TRIP_ID });
 
@@ -120,7 +120,7 @@ describe("[UNIT] NotificationDeliveryController", () => {
     });
   });
 
-  describe("getDeliveryByNotificationId", () => {
+  describe("[UNIT] getDeliveryByNotificationId", () => {
     it("should return delivery by notification ID", async () => {
       const result = await controller.getDeliveryByNotificationId({
         notificationId: NOTIFICATION_ID,
@@ -143,7 +143,7 @@ describe("[UNIT] NotificationDeliveryController", () => {
     });
   });
 
-  describe("getDeliveryStats", () => {
+  describe("[UNIT] getDeliveryStats", () => {
     it("should return delivery stats", async () => {
       const result = await controller.getDeliveryStats({ tripId: TRIP_ID });
 
@@ -155,7 +155,7 @@ describe("[UNIT] NotificationDeliveryController", () => {
     });
   });
 
-  describe("getFailedDeliveries", () => {
+  describe("[UNIT] getFailedDeliveries", () => {
     it("should return failed deliveries", async () => {
       const result = await controller.getFailedDeliveries({
         tripId: TRIP_ID,

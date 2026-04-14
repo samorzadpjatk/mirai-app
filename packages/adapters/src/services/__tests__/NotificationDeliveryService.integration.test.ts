@@ -156,7 +156,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
   // EventBus Integration
   // =============================================================================
 
-  describe("EventBus integration", () => {
+  describe("[UNIT] EventBus integration", () => {
     it("should subscribe to NotificationCreated events on initialize", () => {
       deliveryService.initialize();
 
@@ -199,7 +199,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
   // Notification Delivery Workflow
   // =============================================================================
 
-  describe("notification delivery workflow", () => {
+  describe("[UNIT] notification delivery workflow", () => {
     beforeEach(() => {
       deliveryService.initialize();
     });
@@ -367,7 +367,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
   // Error Handling
   // =============================================================================
 
-  describe("error handling", () => {
+  describe("[UNIT] error handling", () => {
     beforeEach(() => {
       deliveryService.initialize();
     });
@@ -542,7 +542,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
   // Direct Delivery
   // =============================================================================
 
-  describe("direct delivery method", () => {
+  describe("[UNIT] direct delivery method", () => {
     it("should deliver notification directly via deliver()", async () => {
       // Arrange
       pushSubscriptionRepo.addSubscription({
@@ -605,7 +605,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
   // Chunking and Batch Processing
   // =============================================================================
 
-  describe("chunking and batch processing", () => {
+  describe("[UNIT] chunking and batch processing", () => {
     beforeEach(() => {
       deliveryService.initialize();
     });
@@ -645,7 +645,7 @@ describe("[INTEGRATION] NotificationDeliveryService with EventBus", () => {
   // Edge Cases
   // =============================================================================
 
-  describe("edge cases", () => {
+  describe("[UNIT] edge cases", () => {
     beforeEach(() => {
       deliveryService.initialize();
     });

@@ -21,7 +21,7 @@ describe("[UNIT] controller-helpers - Effect functions", () => {
   // ============================================================================
   // handleEffect
   // ============================================================================
-  describe("handleEffect", () => {
+  describe("[UNIT] handleEffect", () => {
     it("should return success value for successful Effect", async () => {
       const effect = Effect.succeed({ id: "1", name: "Test" });
       const result = await handleEffect(effect);
@@ -69,7 +69,7 @@ describe("[UNIT] controller-helpers - Effect functions", () => {
   // ============================================================================
   // effectToControllerResult
   // ============================================================================
-  describe("effectToControllerResult", () => {
+  describe("[UNIT] effectToControllerResult", () => {
     it("should return success ControllerResult for successful Effect", async () => {
       const effect = Effect.succeed({ id: "1", name: "Test" });
       const result = await effectToControllerResult(effect);
@@ -119,7 +119,7 @@ describe("[UNIT] controller-helpers - Effect functions", () => {
   // ============================================================================
   // handleEffectAsync
   // ============================================================================
-  describe("handleEffectAsync", () => {
+  describe("[UNIT] handleEffectAsync", () => {
     it("should return success value for successful Effect", async () => {
       const effect = Effect.succeed({ id: "1", name: "Test" });
       const result = await handleEffectAsync(effect);
@@ -168,7 +168,7 @@ describe("[UNIT] controller-helpers - Effect functions", () => {
   // ============================================================================
   // handleEffectGraphQL
   // ============================================================================
-  describe("handleEffectGraphQL", () => {
+  describe("[UNIT] handleEffectGraphQL", () => {
     it("should return success value for successful Effect", async () => {
       const effect = Effect.succeed({ id: "1", name: "Test" });
       const result = await handleEffectGraphQL(effect);

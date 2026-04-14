@@ -62,7 +62,7 @@ describe("[UNIT] TripController", () => {
     controller = new TripController(mockTripRepository);
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return trip by ID", async () => {
       const result = await controller.getById({ id: TRIP_ID });
 
@@ -89,7 +89,7 @@ describe("[UNIT] TripController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create trip with valid input", async () => {
       const input = {
         name: "New Trip",
@@ -132,7 +132,7 @@ describe("[UNIT] TripController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update trip", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -156,7 +156,7 @@ describe("[UNIT] TripController", () => {
     });
   });
 
-  describe("updateStatus", () => {
+  describe("[UNIT] updateStatus", () => {
     it("should update trip status", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -199,7 +199,7 @@ describe("[UNIT] TripController", () => {
     });
   });
 
-  describe("list", () => {
+  describe("[UNIT] list", () => {
     it("should return paginated trips", async () => {
       const result = await controller.list({ limit: 10, offset: 0 });
 
@@ -210,7 +210,7 @@ describe("[UNIT] TripController", () => {
     });
   });
 
-  describe("listByStatus", () => {
+  describe("[UNIT] listByStatus", () => {
     it("should return trips by status", async () => {
       const result = await controller.listByStatus({
         status: "ACTIVE",
@@ -222,7 +222,7 @@ describe("[UNIT] TripController", () => {
     });
   });
 
-  describe("findActive", () => {
+  describe("[UNIT] findActive", () => {
     it("should return active trips", async () => {
       const result = await controller.findActive();
 
@@ -233,7 +233,7 @@ describe("[UNIT] TripController", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("[UNIT] delete", () => {
     it("should delete trip", async () => {
       const result = await controller.delete({ id: TRIP_ID });
 

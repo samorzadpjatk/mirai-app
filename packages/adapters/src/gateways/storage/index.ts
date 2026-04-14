@@ -7,3 +7,4 @@
 
 export { SupabaseStorageAdapter } from "./SupabaseStorageAdapter";
 export { InMemoryStorageAdapter } from "./InMemoryStorageAdapter";
+export { S3StorageAdapter } from "./S3StorageAdapter";

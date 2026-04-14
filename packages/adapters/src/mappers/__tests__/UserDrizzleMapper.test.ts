@@ -22,7 +22,7 @@ describe("[UNIT] UserDrizzleMapper", () => {
     updatedAt: overrides?.updatedAt ?? new Date("2026-01-15"),
   });
 
-  describe("toDomain", () => {
+  describe("[UNIT] toDomain", () => {
     it("should map Drizzle record to domain entity", () => {
       const record = createMockUserSelect();
 
@@ -70,7 +70,7 @@ describe("[UNIT] UserDrizzleMapper", () => {
     });
   });
 
-  describe("toDrizzleInsert", () => {
+  describe("[UNIT] toDrizzleInsert", () => {
     it("should map domain entity to Drizzle insert", () => {
       const effect = User.create({
         id: "user-456",
@@ -103,7 +103,7 @@ describe("[UNIT] UserDrizzleMapper", () => {
     });
   });
 
-  describe("toDrizzleUpdate", () => {
+  describe("[UNIT] toDrizzleUpdate", () => {
     it("should map domain entity to Drizzle update", () => {
       const effect = User.create({
         id: "user-789",
@@ -135,7 +135,7 @@ describe("[UNIT] UserDrizzleMapper", () => {
     });
   });
 
-  describe("round-trip conversion", () => {
+  describe("[UNIT] round-trip conversion", () => {
     it("should preserve data through domain -> drizzle -> domain", () => {
       const effect = User.create({
         id: "user-roundtrip",

@@ -101,7 +101,7 @@ describe("[UNIT] ChallengeController", () => {
     controller = new ChallengeController(mockChallengeRepository);
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return challenge by ID", async () => {
       const result = await controller.getById({ id: TEST_CHALLENGE_ID });
 
@@ -128,7 +128,7 @@ describe("[UNIT] ChallengeController", () => {
     });
   });
 
-  describe("getByTripId", () => {
+  describe("[UNIT] getByTripId", () => {
     it("should return challenges for trip", async () => {
       const result = await controller.getByTripId({ tripId: TEST_TRIP_ID });
 
@@ -139,7 +139,7 @@ describe("[UNIT] ChallengeController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create challenge with valid input", async () => {
       const input = {
         tripId: TEST_TRIP_ID,
@@ -185,7 +185,7 @@ describe("[UNIT] ChallengeController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update challenge with valid input", async () => {
       const input = {
         challengeId: TEST_CHALLENGE_ID,
@@ -207,7 +207,7 @@ describe("[UNIT] ChallengeController", () => {
     });
   });
 
-  describe("updateStatus", () => {
+  describe("[UNIT] updateStatus", () => {
     it("should update challenge status", async () => {
       const input = {
         challengeId: TEST_CHALLENGE_ID,
@@ -235,7 +235,7 @@ describe("[UNIT] ChallengeController", () => {
     });
   });
 
-  describe("list", () => {
+  describe("[UNIT] list", () => {
     it("should return paginated list", async () => {
       const result = await controller.list({ limit: 10, offset: 0 });
 
@@ -252,7 +252,7 @@ describe("[UNIT] ChallengeController", () => {
     });
   });
 
-  describe("listByStatus", () => {
+  describe("[UNIT] listByStatus", () => {
     it("should return challenges by status", async () => {
       const result = await controller.listByStatus({
         status: "ACTIVE",
@@ -288,7 +288,7 @@ describe("[UNIT] ChallengeController", () => {
     });
   });
 
-  describe("findActive", () => {
+  describe("[UNIT] findActive", () => {
     it("should return active challenges", async () => {
       const result = await controller.findActive();
 
@@ -299,7 +299,7 @@ describe("[UNIT] ChallengeController", () => {
     });
   });
 
-  describe("findOpenForSubmission", () => {
+  describe("[UNIT] findOpenForSubmission", () => {
     it("should return open challenges", async () => {
       const result = await controller.findOpenForSubmission();
 

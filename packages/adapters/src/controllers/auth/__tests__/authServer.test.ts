@@ -251,7 +251,7 @@ describe("[UNIT] parseRolesFromToken", () => {
 });
 
 describe("[UNIT] AuthServer", () => {
-  describe("constructor", () => {
+  describe("[UNIT] constructor", () => {
     test("creates instance with prisma client", () => {
       const mockDb = createMockPrismaClient();
       const authServer = new AuthServer(mockDb);
@@ -259,7 +259,7 @@ describe("[UNIT] AuthServer", () => {
     });
   });
 
-  describe("getSession", () => {
+  describe("[UNIT] getSession", () => {
     test("returns null when no access token and no session", async () => {
       const mockSupabase = createMockSupabaseClient({
         getUser: { user: null },
@@ -317,7 +317,7 @@ describe("[UNIT] AuthServer", () => {
     });
   });
 
-  describe("requireAuth", () => {
+  describe("[UNIT] requireAuth", () => {
     test("throws AuthenticationError when no access token provided and no session", async () => {
       const mockSupabase = createMockSupabaseClient({
         getUser: { user: null, error: null },
@@ -386,7 +386,7 @@ describe("[UNIT] AuthServer", () => {
     });
   });
 
-  describe("requireAdmin", () => {
+  describe("[UNIT] requireAdmin", () => {
     test("throws AuthorizationError when user is not admin", async () => {
       const mockSupabaseUser = createMockSupabaseUser();
       const mockDbUser = createMockDbUser({ role: "USER" });
@@ -441,7 +441,7 @@ describe("[UNIT] AuthServer", () => {
     });
   });
 
-  describe("requireModerator", () => {
+  describe("[UNIT] requireModerator", () => {
     test("throws AuthorizationError when user is not moderator or admin", async () => {
       const mockSupabaseUser = createMockSupabaseUser();
       const mockDbUser = createMockDbUser({ role: "USER" });

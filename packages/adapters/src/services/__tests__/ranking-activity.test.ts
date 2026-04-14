@@ -14,7 +14,7 @@ describe("[UNIT] DrizzleRankingActivityService", () => {
     service = new DrizzleRankingActivityService({} as DrizzleDb);
   });
 
-  describe("captureTripRankingSnapshot", () => {
+  describe("[UNIT] captureTripRankingSnapshot", () => {
     it("should return Effect that can be run", () => {
       const effect = service.captureTripRankingSnapshot(
         {} as DrizzleDb,
@@ -40,7 +40,7 @@ describe("[UNIT] DrizzleRankingActivityService", () => {
     });
   });
 
-  describe("createRankChangeActivities", () => {
+  describe("[UNIT] createRankChangeActivities", () => {
     it("should return Effect that can be run", () => {
       const previousSnapshot: RankSnapshot = new Map();
       const effect = service.createRankChangeActivities({

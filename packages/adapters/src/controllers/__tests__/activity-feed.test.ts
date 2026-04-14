@@ -113,7 +113,7 @@ describe("[UNIT] ActivityFeedController", () => {
     controller = new ActivityFeedController(mockActivityFeedRepository);
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return activity by ID", async () => {
       const result = await controller.getById({ id: ACTIVITY_ID });
 
@@ -142,7 +142,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("getByTrip", () => {
+  describe("[UNIT] getByTrip", () => {
     it("should return activities for trip", async () => {
       const result = await controller.getByTrip({ tripId: TRIP_ID });
 
@@ -160,7 +160,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("createCustom", () => {
+  describe("[UNIT] createCustom", () => {
     it("should create activity with valid input", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -187,7 +187,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update activity", async () => {
       const input = {
         activityId: ACTIVITY_ID,
@@ -231,7 +231,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("setPinned", () => {
+  describe("[UNIT] setPinned", () => {
     it("should pin an activity", async () => {
       const input = {
         activityId: ACTIVITY_ID,
@@ -279,7 +279,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("hide", () => {
+  describe("[UNIT] hide", () => {
     it("should hide an activity", async () => {
       const input = {
         activityId: ACTIVITY_ID,
@@ -336,7 +336,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("unhide", () => {
+  describe("[UNIT] unhide", () => {
     it("should unhide a hidden activity", async () => {
       mockActivityFeedRepository.findById = mock(() =>
         Effect.succeed(
@@ -373,7 +373,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("[UNIT] delete", () => {
     it("should delete activity", async () => {
       const result = await controller.delete({ activityId: ACTIVITY_ID });
 
@@ -401,7 +401,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("toggleReaction", () => {
+  describe("[UNIT] toggleReaction", () => {
     it("should add reaction to activity", async () => {
       const input = {
         activityId: ACTIVITY_ID,
@@ -427,7 +427,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("createUserPost", () => {
+  describe("[UNIT] createUserPost", () => {
     it("should create user post activity", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -453,7 +453,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("createSubmission", () => {
+  describe("[UNIT] createSubmission", () => {
     it("should create submission activity", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -474,7 +474,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("createChallengeEvent", () => {
+  describe("[UNIT] createChallengeEvent", () => {
     it("should create challenge event activity", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -494,7 +494,7 @@ describe("[UNIT] ActivityFeedController", () => {
     });
   });
 
-  describe("createRankChange", () => {
+  describe("[UNIT] createRankChange", () => {
     it("should create rank change activity", async () => {
       const input = {
         tripId: TRIP_ID,

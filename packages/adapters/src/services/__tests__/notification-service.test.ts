@@ -6,7 +6,7 @@ import {
 } from "../notification-service";
 
 describe("[UNIT] NotificationService", () => {
-  describe("static factory methods", () => {
+  describe("[UNIT] static factory methods", () => {
     it("should create coins added notification", () => {
       const notification = NotificationService.createCoinsAddedNotification(
         "Test Group",
@@ -67,7 +67,7 @@ describe("[UNIT] NotificationService", () => {
     });
   });
 
-  describe("template utilities", () => {
+  describe("[UNIT] template utilities", () => {
     it("should create notification with correct structure", () => {
       const notification = NotificationService.createCoinsAddedNotification(
         "Guild Name",
@@ -95,7 +95,7 @@ describe("[UNIT] NotificationService", () => {
     });
   });
 
-  describe("Effect integration", () => {
+  describe("[UNIT] Effect integration", () => {
     it("sendMobileNotifications should return Effect", () => {
       // Create a minimal mock prisma
       const mockPrisma = {

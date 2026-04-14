@@ -139,7 +139,7 @@ describe("[UNIT] SponsorController", () => {
     controller = new SponsorController(mockSponsorRepository);
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return sponsor by ID", async () => {
       const result = await controller.getById({ id: TEST_SPONSOR_ID });
 
@@ -168,7 +168,7 @@ describe("[UNIT] SponsorController", () => {
     });
   });
 
-  describe("list", () => {
+  describe("[UNIT] list", () => {
     it("should return all sponsors", async () => {
       const result = await controller.list({});
 
@@ -193,7 +193,7 @@ describe("[UNIT] SponsorController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create sponsor with valid input", async () => {
       const input = {
         name: "New Sponsor",
@@ -234,7 +234,7 @@ describe("[UNIT] SponsorController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update sponsor", async () => {
       // Create a mock with update method that returns Effect
       const mockWithUpdate = createMockSponsor({ id: TEST_SPONSOR_ID });
@@ -287,7 +287,7 @@ describe("[UNIT] SponsorController", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("[UNIT] delete", () => {
     it("should delete sponsor", async () => {
       mockSponsorRepository.findById = mock((id: string) =>
         Effect.succeed(
@@ -316,7 +316,7 @@ describe("[UNIT] SponsorController", () => {
     });
   });
 
-  describe("linkToTrip", () => {
+  describe("[UNIT] linkToTrip", () => {
     it("should link sponsor to trip", async () => {
       mockSponsorRepository.findById = mock((id: string) =>
         Effect.succeed(
@@ -355,7 +355,7 @@ describe("[UNIT] SponsorController", () => {
     });
   });
 
-  describe("unlinkFromTrip", () => {
+  describe("[UNIT] unlinkFromTrip", () => {
     it("should unlink sponsor from trip", async () => {
       mockSponsorRepository.findById = mock((id: string) =>
         Effect.succeed(
@@ -401,7 +401,7 @@ describe("[UNIT] SponsorController", () => {
     });
   });
 
-  describe("getByTripId", () => {
+  describe("[UNIT] getByTripId", () => {
     it("should return sponsors for trip", async () => {
       const result = await controller.getByTripId({ tripId: TEST_TRIP_ID });
 

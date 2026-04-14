@@ -49,7 +49,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     repo = new TestRepository();
   });
 
-  describe("seed and reset", () => {
+  describe("[UNIT] seed and reset", () => {
     it("should seed items using Effect", async () => {
       const items: TestEntity[] = [
         { id: "1", name: "Item 1", value: 100 },
@@ -75,7 +75,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     });
   });
 
-  describe("createGeneric", () => {
+  describe("[UNIT] createGeneric", () => {
     it("should create item and return Effect", async () => {
       const item: TestEntity = { id: "1", name: "Item 1", value: 100 };
 
@@ -89,7 +89,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     });
   });
 
-  describe("findByIdGeneric", () => {
+  describe("[UNIT] findByIdGeneric", () => {
     it("should return item as Effect when found", async () => {
       const item: TestEntity = { id: "1", name: "Item 1", value: 100 };
       await Effect.runPromise(repo.create(item));
@@ -108,7 +108,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     });
   });
 
-  describe("findAllGeneric", () => {
+  describe("[UNIT] findAllGeneric", () => {
     it("should return all items as Effect", async () => {
       const items: TestEntity[] = [
         { id: "1", name: "Item 1", value: 100 },
@@ -153,7 +153,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     });
   });
 
-  describe("updateGeneric", () => {
+  describe("[UNIT] updateGeneric", () => {
     it("should update existing item and return Effect", async () => {
       const item: TestEntity = { id: "1", name: "Item 1", value: 100 };
       await Effect.runPromise(repo.create(item));
@@ -178,7 +178,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     });
   });
 
-  describe("deleteGeneric", () => {
+  describe("[UNIT] deleteGeneric", () => {
     it("should delete item using Effect", async () => {
       const item: TestEntity = { id: "1", name: "Item 1", value: 100 };
       await Effect.runPromise(repo.create(item));
@@ -190,7 +190,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     });
   });
 
-  describe("existsGeneric", () => {
+  describe("[UNIT] existsGeneric", () => {
     it("should return true Effect when item exists", async () => {
       const item: TestEntity = { id: "1", name: "Item 1", value: 100 };
       await Effect.runPromise(repo.create(item));
@@ -209,7 +209,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     });
   });
 
-  describe("countGeneric", () => {
+  describe("[UNIT] countGeneric", () => {
     it("should return count as Effect", async () => {
       const items: TestEntity[] = [
         { id: "1", name: "Item 1", value: 100 },
@@ -224,7 +224,7 @@ describe("[UNIT] InMemoryRepository (Effect-based)", () => {
     });
   });
 
-  describe("DatabaseError", () => {
+  describe("[UNIT] DatabaseError", () => {
     it("should create DatabaseError with correct properties", () => {
       const error = new DatabaseError({
         operation: "testOperation",

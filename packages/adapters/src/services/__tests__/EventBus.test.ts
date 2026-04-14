@@ -18,7 +18,7 @@ describe("[UNIT] EventBus", () => {
     eventBus = new EventBus();
   });
 
-  describe("publish/subscribe", () => {
+  describe("[UNIT] publish/subscribe", () => {
     it("should deliver events to subscribers", async () => {
       const handler = mock(() => Effect.void);
 
@@ -68,7 +68,7 @@ describe("[UNIT] EventBus", () => {
     });
   });
 
-  describe("error handling", () => {
+  describe("[UNIT] error handling", () => {
     it("should continue if one subscriber fails", async () => {
       const errorHandler = mock(() =>
         Effect.fail({
@@ -92,7 +92,7 @@ describe("[UNIT] EventBus", () => {
     });
   });
 
-  describe("subscribeAll", () => {
+  describe("[UNIT] subscribeAll", () => {
     it("should deliver all events to wildcard subscriber", async () => {
       const wildcardHandler = mock(() => Effect.void);
 
@@ -108,7 +108,7 @@ describe("[UNIT] EventBus", () => {
     });
   });
 
-  describe("subscribeLegacy", () => {
+  describe("[UNIT] subscribeLegacy", () => {
     it("should support legacy async handlers", async () => {
       const legacyHandler = mock(() => Promise.resolve());
 
@@ -150,7 +150,7 @@ describe("[UNIT] EventBus", () => {
     });
   });
 
-  describe("publishFireAndForget", () => {
+  describe("[UNIT] publishFireAndForget", () => {
     it("should publish without blocking", () => {
       const handler = mock(() => Effect.void);
 
@@ -166,7 +166,7 @@ describe("[UNIT] EventBus", () => {
     });
   });
 
-  describe("getHandlerCount", () => {
+  describe("[UNIT] getHandlerCount", () => {
     it("should return correct handler count", () => {
       eventBus.subscribe("EventA", () => Effect.void);
       eventBus.subscribe("EventA", () => Effect.void);
@@ -178,7 +178,7 @@ describe("[UNIT] EventBus", () => {
     });
   });
 
-  describe("clear", () => {
+  describe("[UNIT] clear", () => {
     it("should remove all handlers", () => {
       eventBus.subscribe("EventA", () => Effect.void);
       eventBus.subscribe("EventB", () => Effect.void);

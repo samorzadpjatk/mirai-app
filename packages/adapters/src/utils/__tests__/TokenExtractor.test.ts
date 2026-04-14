@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { TokenExtractor } from "../TokenExtractor";
 
 describe("[UNIT] TokenExtractor", () => {
-  describe("extract", () => {
+  describe("[UNIT] extract", () => {
     it("should return null for null input", () => {
       const result = TokenExtractor.extract(null);
       expect(result).toBeNull();
@@ -93,7 +93,7 @@ describe("[UNIT] TokenExtractor", () => {
     });
   });
 
-  describe("fromHeaders", () => {
+  describe("[UNIT] fromHeaders", () => {
     it("should extract token from headers with lowercase authorization", () => {
       const result = TokenExtractor.fromHeaders({
         authorization: "Bearer token123",

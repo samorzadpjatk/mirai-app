@@ -107,7 +107,7 @@ describe("[UNIT] ChallengeVoteController", () => {
     );
   });
 
-  describe("getMyVotes", () => {
+  describe("[UNIT] getMyVotes", () => {
     it("should return votes for voter", async () => {
       const input = {
         challengeId: CHALLENGE_ID,
@@ -132,7 +132,7 @@ describe("[UNIT] ChallengeVoteController", () => {
     });
   });
 
-  describe("getByChallenge", () => {
+  describe("[UNIT] getByChallenge", () => {
     it("should return all votes for challenge", async () => {
       const input = {
         challengeId: CHALLENGE_ID,
@@ -147,7 +147,7 @@ describe("[UNIT] ChallengeVoteController", () => {
     });
   });
 
-  describe("getVotingProgress", () => {
+  describe("[UNIT] getVotingProgress", () => {
     it("should return voting progress", async () => {
       const input = {
         challengeId: CHALLENGE_ID,
@@ -159,7 +159,7 @@ describe("[UNIT] ChallengeVoteController", () => {
     });
   });
 
-  describe("getJudgedStaffProgress", () => {
+  describe("[UNIT] getJudgedStaffProgress", () => {
     it("should return staff voting progress", async () => {
       const input = {
         challengeId: CHALLENGE_ID,
@@ -187,7 +187,7 @@ describe("[UNIT] ChallengeVoteController", () => {
     });
   });
 
-  describe("submitVote", () => {
+  describe("[UNIT] submitVote", () => {
     it("should submit vote", async () => {
       const input = {
         challengeId: CHALLENGE_ID,
@@ -213,7 +213,7 @@ describe("[UNIT] ChallengeVoteController", () => {
     });
   });
 
-  describe("submitVotes", () => {
+  describe("[UNIT] submitVotes", () => {
     it("should submit multiple votes", async () => {
       const input = {
         challengeId: CHALLENGE_ID,
@@ -243,7 +243,7 @@ describe("[UNIT] ChallengeVoteController", () => {
     });
   });
 
-  describe("forceEndVoting", () => {
+  describe("[UNIT] forceEndVoting", () => {
     it("should force end voting", async () => {
       const input = {
         challengeId: CHALLENGE_ID,

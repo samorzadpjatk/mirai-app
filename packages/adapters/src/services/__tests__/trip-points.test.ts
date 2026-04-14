@@ -19,7 +19,7 @@ describe("[UNIT] DrizzleTripPointsCalculator", () => {
     service = new DrizzleTripPointsCalculator(mockDb);
   });
 
-  describe("calculateTotalAvailablePoints", () => {
+  describe("[UNIT] calculateTotalAvailablePoints", () => {
     it("should calculate total points from challenges", async () => {
       // Mock the db to return challenges
       const mockChallenges = [

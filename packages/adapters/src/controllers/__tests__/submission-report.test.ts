@@ -86,7 +86,7 @@ describe("[UNIT] SubmissionReportController", () => {
     controller = new SubmissionReportController(mockReportRepository);
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create report with valid input", async () => {
       const input = {
         tripId: TRIP_ID,
@@ -136,7 +136,7 @@ describe("[UNIT] SubmissionReportController", () => {
     });
   });
 
-  describe("getBySubmission", () => {
+  describe("[UNIT] getBySubmission", () => {
     it("should return reports for submission", async () => {
       const result = await controller.getBySubmission({
         submissionId: SUBMISSION_ID,

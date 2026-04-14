@@ -127,7 +127,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
     controller = new ChallengeSubmissionController(mockSubmissionRepository);
   });
 
-  describe("getById", () => {
+  describe("[UNIT] getById", () => {
     it("should return submission by ID", async () => {
       const result = await controller.getById({
         submissionId: SubmissionId.toString(SUBMISSION_ID),
@@ -150,7 +150,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
     });
   });
 
-  describe("getByChallengeAndGroup", () => {
+  describe("[UNIT] getByChallengeAndGroup", () => {
     it("should return submission for challenge and group", async () => {
       const result = await controller.getByChallengeAndGroup({
         challengeId: CHALLENGE_ID,
@@ -178,7 +178,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
     });
   });
 
-  describe("listByChallenge", () => {
+  describe("[UNIT] listByChallenge", () => {
     it("should return submissions for challenge", async () => {
       const result = await controller.listByChallenge({
         challengeId: CHALLENGE_ID,
@@ -201,7 +201,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
     });
   });
 
-  describe("create", () => {
+  describe("[UNIT] create", () => {
     it("should create submission with valid input", async () => {
       const input = {
         challengeId: CHALLENGE_ID,
@@ -240,7 +240,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
     });
   });
 
-  describe("update", () => {
+  describe("[UNIT] update", () => {
     it("should update submission content", async () => {
       const input = {
         submissionId: SubmissionId.toString(SUBMISSION_ID),
@@ -291,7 +291,7 @@ describe("[UNIT] ChallengeSubmissionController", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("[UNIT] delete", () => {
     it("should delete submission", async () => {
       const result = await controller.delete({
         submissionId: SubmissionId.toString(SUBMISSION_ID),

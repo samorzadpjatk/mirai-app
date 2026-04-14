@@ -77,7 +77,7 @@ describe("[UNIT] CoinTransactionController", () => {
     controller = new CoinTransactionController(mockCoinRepository);
   });
 
-  describe("getStatistics", () => {
+  describe("[UNIT] getStatistics", () => {
     it("should return statistics", async () => {
       const result = await controller.getStatistics({ tripId: TRIP_ID });
 
@@ -99,7 +99,7 @@ describe("[UNIT] CoinTransactionController", () => {
     });
   });
 
-  describe("getAll", () => {
+  describe("[UNIT] getAll", () => {
     it("should return paginated transactions", async () => {
       const result = await controller.getAll({
         tripId: TRIP_ID,
@@ -114,7 +114,7 @@ describe("[UNIT] CoinTransactionController", () => {
     });
   });
 
-  describe("getCoinTransactions", () => {
+  describe("[UNIT] getCoinTransactions", () => {
     it("should return transactions for participant", async () => {
       const result = await controller.getCoinTransactions({
         tripId: TRIP_ID,

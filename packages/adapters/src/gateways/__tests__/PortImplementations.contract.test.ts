@@ -21,19 +21,19 @@ import { UserId, UserRole } from "@mirai-app/domain";
  * - Interface compliance verification
  */
 
-describe("[CONTRACT] Port Implementation Consistency", () => {
+describe("[UNIT] [CONTRACT] Port Implementation Consistency", () => {
   // =============================================================================
   // AuthPort Implementation Consistency
   // =============================================================================
 
-  describe("AuthPort - InMemory vs Supabase consistency", () => {
+  describe("[UNIT] ""AuthPort - InMemory vs Supabase consistency () => {
     let inMemoryAdapter: InMemoryAuthAdapter;
 
     beforeEach(() => {
       inMemoryAdapter = new InMemoryAuthAdapter();
     });
 
-    describe("interface compliance", () => {
+    describe("[UNIT] interface compliance", () => {
       it("InMemoryAuthAdapter should implement AuthPort interface", () => {
         // Type check - if this compiles, the interface is implemented
         const authPort: AuthPort = inMemoryAdapter;
@@ -66,7 +66,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("error handling consistency", () => {
+    describe("[UNIT] error handling consistency", () => {
       it("should return InvalidTokenError for invalid token", async () => {
         const effect = inMemoryAdapter.validateToken("invalid-token");
         const either = await Effect.runPromise(Effect.either(effect));
@@ -106,7 +106,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("success response consistency", () => {
+    describe("[UNIT] success response consistency", () => {
       it("should return AuthContext with required fields on success", async () => {
         const userId = UserId.create("550e8400-e29b-41d4-a716-446655440004");
         inMemoryAdapter.createUser({ id: userId, role: UserRole.USER });
@@ -163,14 +163,14 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
   // RealtimePort Implementation Consistency
   // =============================================================================
 
-  describe("RealtimePort - InMemory vs Supabase consistency", () => {
+  describe("[UNIT] RealtimePort - InMemory vs Supabase consistency", () => {
     let inMemoryAdapter: InMemoryRealtimeAdapter;
 
     beforeEach(() => {
       inMemoryAdapter = new InMemoryRealtimeAdapter();
     });
 
-    describe("interface compliance", () => {
+    describe("[UNIT] ""interface compliance () => {
       it("InMemoryRealtimeAdapter should implement RealtimePort interface", () => {
         const realtimePort: RealtimePort = inMemoryAdapter;
         expect(realtimePort).toBeDefined();
@@ -214,7 +214,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("subscription consistency", () => {
+    describe("[UNIT] subscription consistency", () => {
       it("should return RealtimeSubscription on successful subscribe", async () => {
         const effect = inMemoryAdapter.subscribe("channel", {
           onMessage: () => {},
@@ -276,7 +276,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("broadcast consistency", () => {
+    describe("[UNIT] broadcast consistency", () => {
       it("should return success for successful broadcast", async () => {
         const effect = inMemoryAdapter.broadcast("channel", "event", {
           data: "value",
@@ -314,7 +314,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("presence consistency", () => {
+    describe("[UNIT] presence consistency", () => {
       it("should return success for successful presence tracking", async () => {
         const effect = inMemoryAdapter.trackPresence("channel", {
           userId: "user-1",
@@ -344,14 +344,14 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
   // StoragePort Implementation Consistency
   // =============================================================================
 
-  describe("StoragePort - InMemory vs Supabase consistency", () => {
+  describe("[UNIT] StoragePort - InMemory vs Supabase consistency", () => {
     let inMemoryAdapter: InMemoryStorageAdapter;
 
     beforeEach(() => {
       inMemoryAdapter = new InMemoryStorageAdapter();
     });
 
-    describe("interface compliance", () => {
+    describe("[UNIT] ""interface compliance () => {
       it("InMemoryStorageAdapter should implement StoragePort interface", () => {
         // @ts-expect-error - Return type mismatch in download() method (test-only, adapter works at runtime)
         const storagePort: StoragePort = inMemoryAdapter;
@@ -408,7 +408,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("upload consistency", () => {
+    describe("[UNIT] upload consistency", () => {
       it("should return FileMetadata on successful upload", async () => {
         const effect = inMemoryAdapter.upload(
           "bucket",
@@ -466,7 +466,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("download consistency", () => {
+    describe("[UNIT] download consistency", () => {
       it("should return file content on successful download", async () => {
         const content = "test file content";
         await Effect.runPromise(
@@ -494,7 +494,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("delete consistency", () => {
+    describe("[UNIT] delete consistency", () => {
       it("should remove file on successful delete", async () => {
         await Effect.runPromise(
           inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("content")),
@@ -519,7 +519,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("signed URL consistency", () => {
+    describe("[UNIT] signed URL consistency", () => {
       it("should return SignedUrlInfo on success", async () => {
         await Effect.runPromise(
           inMemoryAdapter.upload("bucket", "file.txt", Buffer.from("content")),
@@ -562,8 +562,8 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
   // State Management Consistency
   // =============================================================================
 
-  describe("state management consistency", () => {
-    describe("InMemoryAuthAdapter", () => {
+  describe("[UNIT] state management consistency", () => {
+    describe("[UNIT] ""InMemoryAuthAdapter () => {
       it("should maintain isolated state between instances", async () => {
         const adapter1 = new InMemoryAuthAdapter();
         const adapter2 = new InMemoryAuthAdapter();
@@ -594,7 +594,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("InMemoryRealtimeAdapter", () => {
+    describe("[UNIT] InMemoryRealtimeAdapter", () => {
       it("should maintain isolated state between instances", async () => {
         const adapter1 = new InMemoryRealtimeAdapter();
         const adapter2 = new InMemoryRealtimeAdapter();
@@ -626,7 +626,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
       });
     });
 
-    describe("InMemoryStorageAdapter", () => {
+    describe("[UNIT] InMemoryStorageAdapter", () => {
       it("should maintain isolated state between instances", async () => {
         const adapter1 = new InMemoryStorageAdapter();
         const adapter2 = new InMemoryStorageAdapter();
@@ -660,7 +660,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
   // Error Structure Consistency
   // =============================================================================
 
-  describe("error structure consistency", () => {
+  describe("[UNIT] error structure consistency", () => {
     it("all errors should have _tag property", async () => {
       const authAdapter = new InMemoryAuthAdapter();
       const realtimeAdapter = new InMemoryRealtimeAdapter();
@@ -740,7 +740,7 @@ describe("[CONTRACT] Port Implementation Consistency", () => {
   // Effect Type Consistency
   // =============================================================================
 
-  describe("Effect type consistency across all ports", () => {
+  describe("[UNIT] Effect type consistency across all ports", () => {
     it("all adapters should use Effect<A, E> pattern", async () => {
       const authAdapter = new InMemoryAuthAdapter();
       const realtimeAdapter = new InMemoryRealtimeAdapter();

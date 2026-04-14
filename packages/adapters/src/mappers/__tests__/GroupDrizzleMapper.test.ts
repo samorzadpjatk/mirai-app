@@ -24,7 +24,7 @@ describe("[UNIT] GroupDrizzleMapper", () => {
     updatedAt: overrides?.updatedAt ?? new Date("2026-01-15"),
   });
 
-  describe("toDomain", () => {
+  describe("[UNIT] toDomain", () => {
     it("should map Drizzle record to domain entity", () => {
       const record = createMockGroupSelect();
 
@@ -58,7 +58,7 @@ describe("[UNIT] GroupDrizzleMapper", () => {
     });
   });
 
-  describe("toDrizzleInsert", () => {
+  describe("[UNIT] toDrizzleInsert", () => {
     it("should map domain entity to Drizzle insert", () => {
       const effect = Group.create({
         id: "group-456",
@@ -120,7 +120,7 @@ describe("[UNIT] GroupDrizzleMapper", () => {
     });
   });
 
-  describe("toDrizzleUpdate", () => {
+  describe("[UNIT] toDrizzleUpdate", () => {
     it("should map domain entity to Drizzle update", () => {
       const effect = Group.create({
         id: "group-789",
@@ -153,7 +153,7 @@ describe("[UNIT] GroupDrizzleMapper", () => {
     });
   });
 
-  describe("round-trip conversion", () => {
+  describe("[UNIT] round-trip conversion", () => {
     it("should preserve data through domain -> drizzle -> domain", () => {
       const effect = Group.create({
         id: "group-roundtrip",
