@@ -196,15 +196,15 @@ export class Location {
    *
    * Returns Effect<Location, ValidationError, never>
    */
-  updateCoordinates(props: {
+  updateCoordinates = (props: {
     latitude?: number | null;
     longitude?: number | null;
     accuracy?: number | null;
     altitude?: number | null;
     speed?: number | null;
     heading?: number | null;
-  }): Effect.Effect<Location, ValidationError, never> {
-    return Effect.gen(function* () {
+  }): Effect.Effect<Location, ValidationError, never> => {
+    return Effect.gen(this, function* () {
       const updates: Partial<Location> = {};
 
       // Validate and update latitude if provided
@@ -268,38 +268,38 @@ export class Location {
 
       return updateEntity(this, updates, Location);
     });
-  }
+  };
 
   /**
    * Start sharing location
    */
-  startSharing(): Location {
+  startSharing = (): Location => {
     return updateEntity(
       this,
       { sharingLocation: true, timestamp: new Date() },
       Location,
     );
-  }
+  };
 
   /**
    * Stop sharing location
    */
-  stopSharing(): Location {
+  stopSharing = (): Location => {
     return updateEntity(
       this,
       { sharingLocation: false, timestamp: new Date() },
       Location,
     );
-  }
+  };
 
   /**
    * Add a user to share location with
    *
    * Returns Effect<Location, ValidationError, never>
    */
-  addSharingUser(
+  addSharingUser = (
     user: SharingUserInfo,
-  ): Effect.Effect<Location, ValidationError, never> {
+  ): Effect.Effect<Location, ValidationError, never> => {
     // Prevent self-sharing
     if (user.id === this.userId) {
       return Effect.fail(
@@ -330,12 +330,12 @@ export class Location {
         Location,
       ),
     );
-  }
+  };
 
   /**
    * Remove a user from sharing list
    */
-  removeSharingUser(userId: string): Location {
+  removeSharingUser = (userId: string): Location => {
     return updateEntity(
       this,
       {
@@ -344,16 +344,16 @@ export class Location {
       },
       Location,
     );
-  }
+  };
 
   /**
    * Update the entire sharing users list
    *
    * Returns Effect<Location, ValidationError, never>
    */
-  updateSharingUsers(
+  updateSharingUsers = (
     users: SharingUserInfo[],
-  ): Effect.Effect<Location, ValidationError, never> {
+  ): Effect.Effect<Location, ValidationError, never> => {
     // Prevent self-sharing
     if (users.some((u) => u.id === this.userId)) {
       return Effect.fail(
@@ -371,53 +371,53 @@ export class Location {
         Location,
       ),
     );
-  }
+  };
 
   /**
    * Update last inactivity notification timestamp
    */
-  updateInactivityNotification(): Location {
+  updateInactivityNotification = (): Location => {
     return updateEntity(
       this,
       { lastInactivityNotification: new Date() },
       Location,
     );
-  }
+  };
 
   /**
    * Check if location sharing is enabled
    */
-  isSharingLocation(): boolean {
+  isSharingLocation = (): boolean => {
     return this.sharingLocation;
-  }
+  };
 
   /**
    * Check if location is accurate enough (< 50 meters)
    */
-  isAccurate(): boolean {
+  isAccurate = (): boolean => {
     return (
       this.accuracy !== null && this.accuracy <= VALIDATION.accuracy.medium
     );
-  }
+  };
 
   /**
    * Check if user is moving (speed > 0)
    */
-  isMoving(): boolean {
+  isMoving = (): boolean => {
     return this.speed !== null && this.speed > 0;
-  }
+  };
 
   /**
    * Check if location has valid coordinates
    */
-  hasCoordinates(): boolean {
+  hasCoordinates = (): boolean => {
     return this.latitude !== null && this.longitude !== null;
-  }
+  };
 
   /**
    * Get accuracy level
    */
-  getAccuracyLevel(): LocationAccuracy {
+  getAccuracyLevel = (): LocationAccuracy => {
     if (this.accuracy === null) {
       return LocationAccuracy.UNKNOWN;
     }
@@ -428,24 +428,24 @@ export class Location {
       return LocationAccuracy.MEDIUM;
     }
     return LocationAccuracy.LOW;
-  }
+  };
 
   /**
    * Get coordinates as [lat, lng] tuple
    * Returns null if coordinates are not set
    */
-  getCoordinates(): [number, number] | null {
+  getCoordinates = (): [number, number] | null => {
     if (this.latitude === null || this.longitude === null) {
       return null;
     }
     return [this.latitude, this.longitude];
-  }
+  };
 
   /**
    * Calculate distance to another location using Haversine formula
    * Returns distance in kilometers, or null if either location has no coordinates
    */
-  distanceTo(other: Location): number | null {
+  distanceTo = (other: Location): number | null => {
     if (!this.hasCoordinates() || !other.hasCoordinates()) {
       return null;
     }
@@ -461,7 +461,7 @@ export class Location {
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
-  }
+  };
 
   /**
    * Check if this location is within a given radius of coordinates
@@ -469,11 +469,11 @@ export class Location {
    * @param longitude - Center point longitude
    * @param radiusKm - Radius in kilometers
    */
-  isWithinRadius(
+  isWithinRadius = (
     latitude: number,
     longitude: number,
     radiusKm: number,
-  ): boolean {
+  ): boolean => {
     if (!this.hasCoordinates()) {
       return false;
     }
@@ -486,12 +486,12 @@ export class Location {
     );
 
     return distance <= radiusKm;
-  }
+  };
 
   /**
    * Check if this location can be viewed by a specific user
    */
-  canBeViewedBy(viewerUserId: string): boolean {
+  canBeViewedBy = (viewerUserId: string): boolean => {
     // Owner can always view
     if (viewerUserId === this.userId) {
       return true;
@@ -504,34 +504,34 @@ export class Location {
 
     // Check if viewer is in sharing list
     return this.usersToShareWith.some((u) => u.id === viewerUserId);
-  }
+  };
 
   /**
    * Check if sharing with a specific user
    */
-  isSharingWith(userId: string): boolean {
+  isSharingWith = (userId: string): boolean => {
     return this.usersToShareWith.some((u) => u.id === userId);
-  }
+  };
 
   /**
    * Check if location data is stale (older than threshold)
    * @param thresholdMs - Threshold in milliseconds (default: 5 minutes)
    */
-  isStale(thresholdMs: number = 5 * 60 * 1000): boolean {
+  isStale = (thresholdMs: number = 5 * 60 * 1000): boolean => {
     return Date.now() - this.timestamp.getTime() > thresholdMs;
-  }
+  };
 
   /**
    * Convert degrees to radians
    */
-  private toRadians(degrees: number): number {
+  private toRadians = (degrees: number): number => {
     return (degrees * Math.PI) / 180;
-  }
+  };
 
   /**
    * Get location summary
    */
-  getSummary(): string {
+  getSummary = (): string => {
     if (!this.hasCoordinates()) {
       return "No coordinates available";
     }
@@ -540,7 +540,7 @@ export class Location {
       ? `±${this.accuracy.toFixed(0)}m`
       : "unknown accuracy";
     return `${coords} (${accuracy})`;
-  }
+  };
 
   /**
    * Convert to Expo-compliant location object format
