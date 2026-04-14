@@ -500,6 +500,98 @@ describe("[INTEGRATION] PrismaUserRepository", () => {});
 
 ---
 
+## Common Patterns
+
+### Pattern 1: Branded ID Value Objects
+
+**When to use:** Creating type-safe identifiers that can't be mixed up (e.g., `UserId` vs `ChallengeId`).
+
+**Implementation:**
+
+```typescript
+// File: packages/domain/src/value-objects/UserId.ts
+import {
+  createBrandedId,
+  isValidUUID,
+  type BrandedId,
+} from "../utils/branded-id";
+
+export const UserId = createBrandedId("UserId", { validate: isValidUUID });
+export type UserId = BrandedId<"UserId">;
+```
+
+**API:**
+
+```typescript
+const id = UserId.create("valid-uuid-string"); // Validates and returns UserId
+const id2 = UserId.unsafeCreate("any-string"); // No validation
+const id3 = UserId.generate(); // New random UUID
+const same = UserId.equals(id, id2); // Boolean comparison
+const str = UserId.toString(id); // Convert to string
+```
+
+**Validation Options:**
+
+- `isValidUUID` - For UUID-based IDs
+- `isValidCUID` - For CUID-based IDs (Prisma default)
+- Custom function - For flexible validation
+
+**Benefits:**
+
+- Compile-time prevention of ID mix-ups
+- Consistent API across all ID types
+- 80% code reduction vs copy-paste approach
+
+---
+
+### Pattern 2: Spike/Exploratory Test Cleanup
+
+**When to use:** After investigating framework behavior or debugging issues.
+
+**Problem:** Temporary test files accumulate in `__tests__/` directories.
+
+**Solution:**
+
+1. **Create spike directory (gitignored):**
+
+   ```bash
+   mkdir __spikes__
+   echo "**/__spikes__/" >> .gitignore
+   ```
+
+2. **Move exploratory code there:**
+
+   ```bash
+   mv debug-headers.test.ts __spikes__/
+   ```
+
+3. **Delete when done:**
+   ```bash
+   rm -rf __spikes__/
+   ```
+
+**Identification:**
+
+- Tests with `[DEBUG]`, `[SPIKE]`, `exploratory` in names
+- Single assertions testing library behavior
+- Files testing cookie headers, Request behavior, etc.
+
+---
+
+### Pattern 3: Waste Identification Checklist
+
+**Before refactoring, ask:**
+
+| Question                                     | Action if Yes                      |
+| -------------------------------------------- | ---------------------------------- |
+| Is this code copy-pasted in 3+ places?       | Create generic factory/abstraction |
+| Are there test files with `[DEBUG]` in name? | Delete or move to `__spikes__/`    |
+| Are specs in `done/` older than 1 week?      | Archive to `.specs/archive/`       |
+| Are plans in `plans/` older than 90 days?    | Review and delete if stale         |
+| Does this duplicate validation logic?        | Centralize in domain utilities     |
+
+---
+
 ## Skill reference
 
 | Skill                    | Path                                       | Use case                  |
@@ -515,5 +607,5 @@ describe("[INTEGRATION] PrismaUserRepository", () => {});
 
 ---
 
-**Last Updated:** 2026-04-09  
-**Version:** 1.1.0
+**Last Updated:** 2026-04-14  
+**Version:** 1.2.0

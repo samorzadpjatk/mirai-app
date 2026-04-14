@@ -361,7 +361,80 @@ See **§10.2** for complete migration patterns from Result, Either, async/await,
 
 ---
 
-## 5.2 Use Cases Layer (`packages/use-cases/`)
+## 5.2 Value Objects Pattern (`packages/domain/src/value-objects/`)
+
+### Branded ID Factory Pattern
+
+**Purpose:** Create type-safe, non-interchangeable identifiers with validation.
+
+**Problem:** Copy-pasting 50+ lines for each ID type creates massive duplication (19 ID types × 50 lines = 950 lines of nearly identical code).
+
+**Solution:** Generic `createBrandedId()` factory with pluggable validation.
+
+**Pattern:**
+
+```typescript
+// File: packages/domain/src/utils/branded-id.ts
+export type BrandedId<Brand extends string> = string & {
+  readonly __brand: Brand;
+};
+
+export interface BrandedIdFactory<Brand extends string> {
+  create(id: string): BrandedId<Brand>;
+  unsafeCreate(id: string): BrandedId<Brand>;
+  generate(): BrandedId<Brand>;
+  equals(a: BrandedId<Brand>, b: BrandedId<Brand>): boolean;
+  toString(id: BrandedId<Brand>): string;
+}
+
+export function createBrandedId<Brand extends string>(
+  brand: Brand,
+  options: {
+    validate: (id: string) => boolean;
+    errorMessage?: string | ((id: string) => string);
+  },
+): BrandedIdFactory<Brand> {
+  // Factory implementation
+}
+
+// Built-in validators
+export function isValidUUID(id: string): boolean;
+export function isValidCUID(id: string): boolean;
+```
+
+**Usage:**
+
+```typescript
+// File: packages/domain/src/value-objects/UserId.ts (14 lines vs 60 lines)
+import {
+  createBrandedId,
+  isValidUUID,
+  type BrandedId,
+} from "../utils/branded-id";
+
+export const UserId = createBrandedId("UserId", { validate: isValidUUID });
+export type UserId = BrandedId<"UserId">;
+```
+
+**Benefits:**
+
+- **78% code reduction** (960 → 210 lines)
+- **Single source of truth** for ID validation logic
+- **Full type safety** - `UserId` and `ChallengeId` are incompatible
+- **Consistent API** - All IDs have `.create()`, `.generate()`, `.equals()`
+- **Easy to extend** - New ID type = 1 line of code
+
+**Validation Strategies:**
+
+| Strategy        | Use Case                | Example IDs                |
+| --------------- | ----------------------- | -------------------------- |
+| `isValidUUID`   | Database uses UUID      | UserId, TripId, ActivityId |
+| `isValidCUID`   | Prisma/Supabase default | ChallengeId, LocationId    |
+| Custom function | Flexible validation     | SponsorId, ReportId        |
+
+---
+
+## 5.3 Use Cases Layer (`packages/use-cases/`)
 
 See **§10.5.2** for detailed use case patterns with Effect, including error composition, testing with mock layers, and DI with Context.Tags.
 
@@ -796,7 +869,96 @@ No changes.
 
 # 8. Kaizen Conventions
 
-No changes.
+## 8.1 Waste Identification Checklist (Muda Analysis)
+
+Apply the 7 types of waste to code reviews and refactoring decisions:
+
+| Waste Type          | Software Manifestation                    | Detection                            | Fix Strategy               |
+| ------------------- | ----------------------------------------- | ------------------------------------ | -------------------------- |
+| **Overproduction**  | Unused features, speculative abstractions | Search for dead code, unused exports | Delete or feature-flag     |
+| **Waiting**         | Slow builds, long CI times                | Measure build/test duration          | Caching, parallelization   |
+| **Transportation**  | Excessive data transformations            | Count mapping layers                 | Consolidate mappers        |
+| **Over-processing** | Duplicate validation, excessive logging   | Review validation chains             | Centralize, deduplicate    |
+| **Inventory**       | Unmerged branches, stale specs            | `git branch -a`, `.specs/` audit     | Merge or delete            |
+| **Motion**          | Context switching, repetitive tasks       | Developer time tracking              | Automate, create templates |
+| **Defects**         | Flaky tests, tech debt                    | Test stability metrics               | Stabilize, refactor        |
+
+## 8.2 Code Duplication Patterns
+
+### Pattern 1: Copy-Pasted Boilerplate (High Impact)
+
+**Symptoms:**
+
+- Multiple files with 90%+ identical code
+- Only string literals or types differ
+- Maintenance burden scales with copy count
+
+**Example:** 19 ID value object files with identical factory methods.
+
+**Solution:** Generic factory with type parameters
+
+```typescript
+// Before: 19 files × 60 lines = 1140 lines
+// After: 1 factory (100 lines) + 19 exports (5 lines each) = 195 lines
+// Reduction: 83%
+```
+
+### Pattern 2: Exploratory/Spike Test Files
+
+**Symptoms:**
+
+- `[DEBUG]` or `spike` in test names
+- Tests verify framework behavior, not application logic
+- Single assertions testing library quirks
+
+**Example:** `debug-headers.test.ts`, `minimal-debug.test.ts`
+
+**Solution:**
+
+1. Create `__spikes__/` directory in `.gitignore`
+2. Move exploratory code there
+3. Delete when investigation complete
+4. Document learnings in code comments, not test files
+
+**Prevention:**
+
+```gitignore
+# .gitignore
+**/__spikes__/
+```
+
+### Pattern 3: Stale Specifications
+
+**Symptoms:**
+
+- Plans in `.specs/plans/` older than 90 days
+- Tasks in `.specs/tasks/done/` accumulating
+- "Maybe future" work never scheduled
+
+**Solution:**
+
+- Auto-archive specs after 90 days of inactivity
+- Convert actionable plans to tasks immediately
+- Delete or archive completed tasks weekly
+
+## 8.3 PDCA Improvement Cycle
+
+**Process for systematic waste elimination:**
+
+```
+PLAN:   Identify waste → Set measurable target → Design experiment
+DO:     Implement change → Document deviations → Collect data
+CHECK:  Measure results → Compare to baseline → Learn from data
+ACT:    Standardize success → Learn from failure → Next cycle
+```
+
+**Example Cycles:**
+
+| Cycle | Target                      | Result             | Time   |
+| ----- | --------------------------- | ------------------ | ------ |
+| 1     | Eliminate ID duplication    | 78% reduction      | 45 min |
+| 2     | Clean WebSocket spike tests | 71% file reduction | 10 min |
+| 3     | Review plans inventory      | TBD                | TBD    |
 
 ---
 
