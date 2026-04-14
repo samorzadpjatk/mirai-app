@@ -120,6 +120,38 @@ export class Group {
   }
 
   /**
+   * Factory method to reconstitute a Group from persistence
+   * Bypasses validation for loading existing data
+   */
+  static reconstitute(data: {
+    id: string;
+    tripId: string;
+    name: string;
+    description: string | null;
+    image: string | null;
+    organizerId: string;
+    code: string;
+    coins: number;
+    status: GroupStatus;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Group {
+    return new Group(
+      data.id,
+      data.tripId,
+      data.name,
+      data.description,
+      data.image,
+      data.organizerId,
+      data.code,
+      data.coins,
+      data.status,
+      data.createdAt,
+      data.updatedAt,
+    );
+  }
+
+  /**
    * Update group details (name, description, image)
    * Returns a new Group instance (immutable)
    * Cannot update if group is deleted
@@ -129,6 +161,7 @@ export class Group {
     description?: string | null;
     image?: string | null;
   }): Effect.Effect<Group, ValidationError | StateTransitionError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       // Cannot update deleted group
@@ -185,6 +218,7 @@ export class Group {
   changeOrganizer(
     newOrganizerId: string,
   ): Effect.Effect<Group, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const organizerId = yield* validate.id(newOrganizerId, "organizerId");
@@ -197,7 +231,8 @@ export class Group {
    * Add coins to group balance
    * Returns an Effect with new Group instance or ValidationError
    */
-  addCoins(amount: number): Effect.Effect<Group, ValidationError, never> {
+  addCoins = (amount: number): Effect.Effect<Group, ValidationError, never> => {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const validated = yield* validate.number(amount, "amount", {
@@ -207,14 +242,17 @@ export class Group {
 
       return updateEntity(self, { coins: self.coins + validated }, Group);
     });
-  }
+  };
 
   /**
    * Spend coins from group balance
    * Returns a new Group instance (immutable)
    * Returns error if insufficient balance
    */
-  spendCoins(amount: number): Effect.Effect<Group, ValidationError, never> {
+  spendCoins = (
+    amount: number,
+  ): Effect.Effect<Group, ValidationError, never> => {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const validated = yield* validate.number(amount, "amount", {
@@ -233,13 +271,13 @@ export class Group {
 
       return updateEntity(self, { coins: self.coins - validated }, Group);
     });
-  }
+  };
 
   /**
    * Mark group as deleted (soft delete)
    * Returns an Effect with new Group instance or StateTransitionError
    */
-  markAsDeleted(): Effect.Effect<Group, StateTransitionError, never> {
+  markAsDeleted = (): Effect.Effect<Group, StateTransitionError, never> => {
     if (!stateMachine.canTransition(this.status, GroupStatus.DELETED)) {
       return Effect.fail(
         new StateTransitionError({
@@ -253,40 +291,40 @@ export class Group {
     return Effect.succeed(
       updateEntity(this, { status: GroupStatus.DELETED }, Group),
     );
-  }
+  };
 
   /**
    * Check if group is active (not deleted)
    */
-  isActive(): boolean {
+  isActive = (): boolean => {
     return this.status === GroupStatus.ACTIVE && !this.isDeleted();
-  }
+  };
 
   /**
    * Check if group is deleted
    */
-  isDeleted(): boolean {
+  isDeleted = (): boolean => {
     return this.status === GroupStatus.DELETED;
-  }
+  };
 
   /**
    * Check if group has enough coins
    */
-  hasEnoughCoins(amount: number): boolean {
+  hasEnoughCoins = (amount: number): boolean => {
     return this.coins >= amount;
-  }
+  };
 
   /**
    * Get current coin balance
    */
-  getBalance(): number {
+  getBalance = (): number => {
     return this.coins;
-  }
+  };
 
   /**
    * Get group summary for display
    */
-  getSummary(): string {
+  getSummary = (): string => {
     return `${this.name} (${this.code}) - ${this.coins} coins`;
-  }
+  };
 }

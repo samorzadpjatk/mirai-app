@@ -126,6 +126,7 @@ export class Sponsor {
     offsetY?: number | null;
     isActive?: boolean;
   }): Effect.Effect<Sponsor, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const updates: Partial<Sponsor> = {};

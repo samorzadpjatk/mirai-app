@@ -106,14 +106,43 @@ export class Trip {
   }
 
   /**
+   * Factory method to reconstitute a Trip from persistence
+   * Bypasses validation for loading existing data
+   */
+  static reconstitute(data: {
+    id: string;
+    name: string;
+    description: string | null;
+    startDate: Date;
+    endDate: Date;
+    backgroundImagePath: string | null;
+    status: TripStatus;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Trip {
+    return new Trip(
+      data.id,
+      data.name,
+      data.description,
+      data.startDate,
+      data.endDate,
+      data.backgroundImagePath,
+      data.status,
+      data.createdAt,
+      data.updatedAt,
+    );
+  }
+
+  /**
    * Update trip details
    * Returns a new Trip instance (immutable)
    */
-  updateDetails(props: {
+  updateDetails = (props: {
     name?: string;
     description?: string | null;
     backgroundImagePath?: string | null;
-  }): Effect.Effect<Trip, ValidationError | StateTransitionError, never> {
+  }): Effect.Effect<Trip, ValidationError, never> => {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       // Cannot update completed or cancelled trips
@@ -149,16 +178,17 @@ export class Trip {
 
       return updateEntity(self, updates, Trip);
     });
-  }
+  };
 
   /**
    * Update trip dates
    * Returns a new Trip instance (immutable)
    */
-  updateDates(props: {
+  updateDates = (props: {
     startDate?: Date;
     endDate?: Date;
-  }): Effect.Effect<Trip, ValidationError | StateTransitionError, never> {
+  }): Effect.Effect<Trip, ValidationError | StateTransitionError, never> => {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       // Cannot update completed or cancelled trips
@@ -184,13 +214,13 @@ export class Trip {
 
       return updateEntity(self, updates, Trip);
     });
-  }
+  };
 
   /**
    * Start the trip
    * Returns an Effect with new Trip instance or StateTransitionError
    */
-  start(): Effect.Effect<Trip, StateTransitionError, never> {
+  start = (): Effect.Effect<Trip, StateTransitionError, never> => {
     if (!stateMachine.canTransition(this.status, TripStatus.ACTIVE)) {
       return Effect.fail(
         new StateTransitionError({
@@ -204,13 +234,13 @@ export class Trip {
     return Effect.succeed(
       updateEntity(this, { status: TripStatus.ACTIVE }, Trip),
     );
-  }
+  };
 
   /**
    * Complete the trip
    * Returns an Effect with new Trip instance or StateTransitionError
    */
-  complete(): Effect.Effect<Trip, StateTransitionError, never> {
+  complete = (): Effect.Effect<Trip, StateTransitionError, never> => {
     if (!stateMachine.canTransition(this.status, TripStatus.COMPLETED)) {
       return Effect.fail(
         new StateTransitionError({
@@ -224,13 +254,13 @@ export class Trip {
     return Effect.succeed(
       updateEntity(this, { status: TripStatus.COMPLETED }, Trip),
     );
-  }
+  };
 
   /**
    * Cancel the trip
    * Returns an Effect with new Trip instance or StateTransitionError
    */
-  cancel(): Effect.Effect<Trip, StateTransitionError, never> {
+  cancel = (): Effect.Effect<Trip, StateTransitionError, never> => {
     if (!stateMachine.canTransition(this.status, TripStatus.CANCELLED)) {
       return Effect.fail(
         new StateTransitionError({
@@ -244,98 +274,98 @@ export class Trip {
     return Effect.succeed(
       updateEntity(this, { status: TripStatus.CANCELLED }, Trip),
     );
-  }
+  };
 
   /**
    * Check if trip is in planning phase
    */
-  isPlanning(): boolean {
+  isPlanning = (): boolean => {
     return this.status === TripStatus.PLANNING;
-  }
+  };
 
   /**
    * Check if trip is active
    */
-  isActive(): boolean {
+  isActive = (): boolean => {
     return this.status === TripStatus.ACTIVE;
-  }
+  };
 
   /**
    * Check if trip is completed
    */
-  isCompleted(): boolean {
+  isCompleted = (): boolean => {
     return this.status === TripStatus.COMPLETED;
-  }
+  };
 
   /**
    * Check if trip is cancelled
    */
-  isCancelled(): boolean {
+  isCancelled = (): boolean => {
     return this.status === TripStatus.CANCELLED;
-  }
+  };
 
   /**
    * Check if trip is in a terminal state (COMPLETED or CANCELLED)
    */
-  isTerminal(): boolean {
+  isTerminal = (): boolean => {
     return stateMachine.isTerminal(this.status);
-  }
+  };
 
   /**
    * Check if trip has started (start date has passed)
    */
-  hasStarted(): boolean {
+  hasStarted = (): boolean => {
     return new Date() >= this.startDate;
-  }
+  };
 
   /**
    * Check if trip has ended (end date has passed)
    */
-  hasEnded(): boolean {
+  hasEnded = (): boolean => {
     return new Date() > this.endDate;
-  }
+  };
 
   /**
    * Check if trip is currently ongoing
    */
-  isOngoing(): boolean {
+  isOngoing = (): boolean => {
     const now = new Date();
     return now >= this.startDate && now <= this.endDate;
-  }
+  };
 
   /**
    * Get duration of trip in days
    */
-  getDurationInDays(): number {
+  getDurationInDays = (): number => {
     const diffTime = Math.abs(
       this.endDate.getTime() - this.startDate.getTime(),
     );
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  }
+  };
 
   /**
    * Get trip summary for display
    */
-  getSummary(): string {
+  getSummary = (): string => {
     const startStr = this.startDate.toLocaleDateString();
     const endStr = this.endDate.toLocaleDateString();
     return `${this.name} (${startStr} - ${endStr})`;
-  }
+  };
 
   /**
    * Check if the trip can transition to a specific status
    */
-  canTransitionTo(targetStatus: TripStatus): boolean {
+  canTransitionTo = (targetStatus: TripStatus): boolean => {
     return stateMachine.canTransition(this.status, targetStatus);
-  }
+  };
 
   /**
    * Update the trip status with validation
    * Returns an Effect with new Trip instance or StateTransitionError
    */
-  updateStatus(
+  updateStatus = (
     newStatus: TripStatus,
-  ): Effect.Effect<Trip, StateTransitionError, never> {
+  ): Effect.Effect<Trip, StateTransitionError, never> => {
     if (!stateMachine.canTransition(this.status, newStatus)) {
       return Effect.fail(
         new StateTransitionError({
@@ -347,5 +377,5 @@ export class Trip {
     }
 
     return Effect.succeed(updateEntity(this, { status: newStatus }, Trip));
-  }
+  };
 }

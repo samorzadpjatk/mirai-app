@@ -90,6 +90,7 @@ export class CoinAmount {
    * Multiply by a positive integer factor
    */
   multiply(factor: number): Effect.Effect<CoinAmount, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       if (!Number.isInteger(factor) || factor < 0) {

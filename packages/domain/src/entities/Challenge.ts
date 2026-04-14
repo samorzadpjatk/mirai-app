@@ -296,6 +296,7 @@ export class Challenge {
     description?: string | null;
     image?: string | null;
   }): Effect.Effect<Challenge, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const updates: Partial<Challenge> = {};
@@ -362,6 +363,7 @@ export class Challenge {
     secondPlacePoints?: number | null;
     thirdPlacePoints?: number | null;
   }): Effect.Effect<Challenge, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const updates: Partial<Challenge> = {};
@@ -428,6 +430,7 @@ export class Challenge {
     dailyStartTime?: string | null;
     dailyEndTime?: string | null;
   }): Effect.Effect<Challenge, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const updates: Partial<Challenge> = {};

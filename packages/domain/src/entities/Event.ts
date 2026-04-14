@@ -109,6 +109,7 @@ export class Event {
     location?: string;
     description?: string;
   }): Effect.Effect<Event, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       // Validate title if provided
@@ -155,6 +156,7 @@ export class Event {
     startTime?: Date;
     endTime?: Date;
   }): Effect.Effect<Event, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const newStartTime = props.startTime ?? self.startTime;
@@ -177,6 +179,7 @@ export class Event {
    * Returns Effect<Event, ValidationError, never>
    */
   assignToGroup(groupId: string): Effect.Effect<Event, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const validatedGroupId = yield* validate.id(groupId, "groupId");
@@ -200,6 +203,7 @@ export class Event {
    * Returns Effect<Event, ValidationError, never>
    */
   addFile(filePath: string): Effect.Effect<Event, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const validatedFilePath = yield* validate.string(filePath, "filePath", {

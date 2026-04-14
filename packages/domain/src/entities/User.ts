@@ -128,6 +128,7 @@ export class User {
     firstName: string;
     lastName: string;
   }): Effect.Effect<User, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       // Validate firstName (allow empty, but validate if non-empty)

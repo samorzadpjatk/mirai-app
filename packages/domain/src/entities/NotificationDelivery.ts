@@ -203,6 +203,7 @@ export class NotificationDelivery {
   markAsFailed(
     errors: string,
   ): Effect.Effect<NotificationDelivery, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const validated = yield* validate.string(errors, "errors", {
@@ -231,6 +232,7 @@ export class NotificationDelivery {
     successCount?: number;
     failureCount?: number;
   }): Effect.Effect<NotificationDelivery, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const total = props.totalRecipients ?? self.totalRecipients;

@@ -600,6 +600,7 @@ export class ActivityFeed {
     title?: string;
     description?: string | null;
   }): Effect.Effect<ActivityFeed, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       const updates: Partial<ActivityFeed> = {};

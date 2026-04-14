@@ -411,6 +411,7 @@ export class NotificationSchedule {
     minute?: number;
     isActive?: boolean;
   }): Effect.Effect<NotificationSchedule, ValidationError, never> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       if (props.name !== undefined) {

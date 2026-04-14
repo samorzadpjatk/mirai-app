@@ -201,18 +201,51 @@ export class Reward {
   }
 
   /**
+   * Factory method to reconstitute a Reward from persistence
+   * Bypasses validation for loading existing data
+   */
+  static reconstitute(data: {
+    id: RewardId;
+    name: string;
+    description: string | null;
+    availableQuantity: number;
+    coinCostPercentage: CoinAmount;
+    images: string[];
+    isHidden: boolean;
+    tripId: string;
+    createdById: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Reward {
+    return new Reward(
+      data.id,
+      data.name,
+      data.description,
+      data.availableQuantity,
+      data.coinCostPercentage,
+      data.images,
+      data.isHidden,
+      data.tripId,
+      data.createdById,
+      data.createdAt,
+      data.updatedAt,
+    );
+  }
+
+  /**
    * Update reward details
    * Returns a new Reward instance (immutable)
    *
    * Returns Effect<Reward, ValidationError, never>
    */
-  update(props: {
+  update = (props: {
     name?: string;
     description?: string;
     availableQuantity?: number;
     images?: string[];
     coinCostPercentage?: number;
-  }): Effect.Effect<Reward, ValidationError, never> {
+  }): Effect.Effect<Reward, ValidationError, never> => {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
       // Validate name if provided
@@ -303,13 +336,13 @@ export class Reward {
         new Date(), // updatedAt
       );
     });
-  }
+  };
 
   /**
    * Hide this reward
    * Returns a new Reward instance (immutable)
    */
-  hide(): Reward {
+  hide = (): Reward => {
     return new Reward(
       this.id,
       this.name,
@@ -323,13 +356,13 @@ export class Reward {
       this.createdAt,
       new Date(), // updatedAt
     );
-  }
+  };
 
   /**
    * Unhide this reward
    * Returns a new Reward instance (immutable)
    */
-  unhide(): Reward {
+  unhide = (): Reward => {
     return new Reward(
       this.id,
       this.name,
@@ -343,7 +376,7 @@ export class Reward {
       this.createdAt,
       new Date(), // updatedAt
     );
-  }
+  };
 
   /**
    * Decrease available quantity (when a purchase is made)
@@ -351,9 +384,9 @@ export class Reward {
    *
    * Returns Effect<Reward, ValidationError, never>
    */
-  decrementQuantity(
+  decrementQuantity = (
     amount: number,
-  ): Effect.Effect<Reward, ValidationError, never> {
+  ): Effect.Effect<Reward, ValidationError, never> => {
     if (!Number.isInteger(amount) || amount < 1) {
       return Effect.fail(
         new ValidationError({
@@ -387,16 +420,16 @@ export class Reward {
         new Date(), // updatedAt
       ),
     );
-  }
+  };
 
   /**
    * Increase available quantity (when a purchase is cancelled/refunded)
    *
    * Returns Effect<Reward, ValidationError, never>
    */
-  incrementQuantity(
+  incrementQuantity = (
     amount: number,
-  ): Effect.Effect<Reward, ValidationError, never> {
+  ): Effect.Effect<Reward, ValidationError, never> => {
     if (!Number.isInteger(amount) || amount < 1) {
       return Effect.fail(
         new ValidationError({
@@ -431,13 +464,13 @@ export class Reward {
         new Date(), // updatedAt
       ),
     );
-  }
+  };
 
   /**
    * Calculate dynamic coin cost based on total available points in the trip
    * The stored coinCost is a percentage (1-100) of total available points
    */
-  calculateDynamicCoinCost(totalAvailablePoints: number): CoinAmount {
+  calculateDynamicCoinCost = (totalAvailablePoints: number): CoinAmount => {
     if (totalAvailablePoints <= 0) {
       // Return minimum cost of 1 coin
       return CoinAmount.unsafeCreate(1);
@@ -448,62 +481,62 @@ export class Reward {
 
     // Ensure minimum cost of 1 coin
     return CoinAmount.unsafeCreate(Math.max(1, dynamicCost));
-  }
+  };
 
   /**
    * Check if reward is in stock
    */
-  isInStock(): boolean {
+  isInStock = (): boolean => {
     return this.availableQuantity > 0;
-  }
+  };
 
   /**
    * Check if a group can afford to purchase a given quantity
    * Returns Effect<boolean, ValidationError, never>
    */
-  canAfford(
+  canAfford = (
     groupCoins: CoinAmount,
     quantity: number,
     totalAvailablePoints: number,
-  ): Effect.Effect<boolean, ValidationError, never> {
+  ): Effect.Effect<boolean, ValidationError, never> => {
     const unitCost = this.calculateDynamicCoinCost(totalAvailablePoints);
     return Effect.map(unitCost.multiply(quantity), (totalCost) =>
       groupCoins.isGreaterThanOrEqual(totalCost),
     );
-  }
+  };
 
   /**
    * Calculate total cost for a purchase
    * Returns Effect to handle potential multiplication overflow
    */
-  calculateTotalCost(
+  calculateTotalCost = (
     quantity: number,
     totalAvailablePoints: number,
-  ): Effect.Effect<CoinAmount, ValidationError, never> {
+  ): Effect.Effect<CoinAmount, ValidationError, never> => {
     const unitCost = this.calculateDynamicCoinCost(totalAvailablePoints);
     return unitCost.multiply(quantity);
-  }
+  };
 
   /**
    * Get primary image (first image or null)
    */
-  getPrimaryImage(): string | null {
+  getPrimaryImage = (): string | null => {
     return this.images[0] ?? null;
-  }
+  };
 
   /**
    * Check if reward can be purchased (in stock, not hidden)
    */
-  canBePurchased(): boolean {
+  canBePurchased = (): boolean => {
     return this.isInStock() && !this.isHidden;
-  }
+  };
 
   /**
    * Check if a quantity can be purchased
    */
-  canPurchaseQuantity(quantity: number): boolean {
+  canPurchaseQuantity = (quantity: number): boolean => {
     return this.canBePurchased() && this.availableQuantity >= quantity;
-  }
+  };
 }
 
 /**
