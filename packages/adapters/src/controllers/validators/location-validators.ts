@@ -75,6 +75,21 @@ const LocationFieldsSchema = Schema.Struct({
   isSharingLocation: Schema.optional(Schema.Boolean),
 });
 
+// Schema for center coordinates (number only, no null)
+const CenterCoordinateSchema = Schema.optional(
+  Schema.Number.pipe(
+    Schema.greaterThanOrEqualTo(-90),
+    Schema.lessThanOrEqualTo(90),
+  ),
+);
+
+const CenterLongitudeSchema = Schema.optional(
+  Schema.Number.pipe(
+    Schema.greaterThanOrEqualTo(-180),
+    Schema.lessThanOrEqualTo(180),
+  ),
+);
+
 // List schema with custom cross-field validation
 const ListSchema = Schema.Struct({
   viewerUserId: Schema.String.pipe(
@@ -84,16 +99,14 @@ const ListSchema = Schema.Struct({
   radiusKm: Schema.optional(
     Schema.Number.pipe(Schema.greaterThan(0), Schema.lessThanOrEqualTo(1000)),
   ),
-  centerLatitude: LatitudeSchema,
-  centerLongitude: LongitudeSchema,
+  centerLatitude: CenterCoordinateSchema,
+  centerLongitude: CenterLongitudeSchema,
 }).pipe(
   Schema.filter((data) => {
-    if (data.radiusKm !== undefined && data.radiusKm !== null) {
+    if (data.radiusKm !== undefined) {
       if (
         data.centerLatitude === undefined ||
-        data.centerLatitude === null ||
-        data.centerLongitude === undefined ||
-        data.centerLongitude === null
+        data.centerLongitude === undefined
       ) {
         return "centerLatitude and centerLongitude are required when radiusKm is provided";
       }

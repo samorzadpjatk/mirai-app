@@ -334,7 +334,7 @@ export class NotificationScheduleController {
     }
 
     const program = bulkDeleteNotificationSchedulesUseCase({
-      ids: parsed.data.ids,
+      ids: Array.from(parsed.data.ids),
     });
 
     return (await runWithLayer(program, this.appLayer)) as ControllerResult<{
@@ -384,7 +384,7 @@ export class NotificationScheduleController {
     }
 
     const program = bulkToggleNotificationScheduleActiveUseCase({
-      ids: parsed.data.ids,
+      ids: Array.from(parsed.data.ids),
       isActive: parsed.data.isActive,
     });
 

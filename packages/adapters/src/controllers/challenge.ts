@@ -195,7 +195,7 @@ export class ChallengeController {
       }));
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as unknown as 
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: Array<{
@@ -210,7 +210,7 @@ export class ChallengeController {
             createdAt: Date;
           }>;
         }
-      | { success: false; error: string }
+      | { success: false; error: string };
   }
 
   /**
@@ -264,7 +264,7 @@ export class ChallengeController {
       autoApprove: parsed.data.autoApprove,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as unknown as 
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -279,7 +279,7 @@ export class ChallengeController {
             createdAt: Date;
           };
         }
-      | { success: false; error: string }
+      | { success: false; error: string };
   }
 
   /**
@@ -328,7 +328,7 @@ export class ChallengeController {
       autoApprove: parsed.data.autoApprove,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as unknown as 
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -342,7 +342,7 @@ export class ChallengeController {
             isOpenForSubmission: boolean;
           };
         }
-      | { success: false; error: string }
+      | { success: false; error: string };
   }
 
   /**
@@ -375,7 +375,7 @@ export class ChallengeController {
       newStatus: parsed.data.newStatus as ChallengeStatus,
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as unknown as 
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: {
@@ -387,7 +387,7 @@ export class ChallengeController {
             updatedAt: Date;
           };
         }
-      | { success: false; error: string }
+      | { success: false; error: string };
   }
 
   /**
@@ -421,8 +421,8 @@ export class ChallengeController {
     const effect = Effect.gen(function* () {
       const repo = yield* ChallengeRepositoryTag;
       const challenges = yield* repo.findAll({
-        limit: parsed.data.limit,
-        offset: parsed.data.offset,
+        limit: parsed.data.limit ?? 50,
+        offset: parsed.data.offset ?? 0,
       });
       return challenges.map((challenge) => ({
         id: challenge.id,
@@ -437,7 +437,7 @@ export class ChallengeController {
       }));
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as unknown as 
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: Array<{
@@ -452,7 +452,7 @@ export class ChallengeController {
             createdAt: Date;
           }>;
         }
-      | { success: false; error: string }
+      | { success: false; error: string };
   }
 
   /**
@@ -488,10 +488,9 @@ export class ChallengeController {
       const challenges = yield* repo.findByStatus(
         parsed.data.status as ChallengeStatus,
       );
-      const paginated = challenges.slice(
-        parsed.data.offset,
-        parsed.data.offset + parsed.data.limit,
-      );
+      const offset = parsed.data.offset ?? 0;
+      const limit = parsed.data.limit ?? 50;
+      const paginated = challenges.slice(offset, offset + limit);
       return paginated.map((challenge) => ({
         id: challenge.id,
         tripId: challenge.tripId,
@@ -505,7 +504,7 @@ export class ChallengeController {
       }));
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as unknown as 
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: Array<{
@@ -520,7 +519,7 @@ export class ChallengeController {
             createdAt: Date;
           }>;
         }
-      | { success: false; error: string }
+      | { success: false; error: string };
   }
 
   /**
@@ -559,7 +558,7 @@ export class ChallengeController {
       }));
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as unknown as 
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: Array<{
@@ -574,7 +573,7 @@ export class ChallengeController {
             createdAt: Date;
           }>;
         }
-      | { success: false; error: string }
+      | { success: false; error: string };
   }
 
   /**
@@ -613,7 +612,7 @@ export class ChallengeController {
       }));
     });
 
-    return (await runWithLayer(effect, this.appLayer)) as unknown as 
+    return (await runWithLayer(effect, this.appLayer)) as unknown as
       | {
           success: true;
           data: Array<{
@@ -628,6 +627,6 @@ export class ChallengeController {
             createdAt: Date;
           }>;
         }
-      | { success: false; error: string }
+      | { success: false; error: string };
   }
 }
