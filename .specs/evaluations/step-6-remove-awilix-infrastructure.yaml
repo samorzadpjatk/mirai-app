@@ -1,0 +1,290 @@
+evaluation_spec:
+  version: "1.0"
+  title: "Step 6: Remove awilix Infrastructure"
+  description: "Evaluate the complete removal of awilix-modular DI system from the Mirai App monorepo"
+  artifact_type: "code"
+
+  rubrics:
+    - id: "di-directory-removal"
+      name: "DI Directory Removal"
+      description: "The packages/frameworks/src/di/ directory must be completely removed"
+      weight: 30
+      criteria:
+        - check: "Directory does not exist"
+          command: "test ! -d packages/frameworks/src/di/"
+          severity: "critical"
+          points: 15
+        - check: "No orphaned DI files in frameworks package"
+          command: "find packages/frameworks/src -name '*.ts' -type f | xargs grep -l 'awilix' 2>/dev/null || echo 'No awilix references found'"
+          expected_output_contains: "No awilix references found"
+          severity: "critical"
+          points: 15
+
+    - id: "dependency-cleanup"
+      name: "Dependency Cleanup"
+      description: "All awilix dependencies must be removed from package.json files"
+      weight: 25
+      criteria:
+        - check: "awilix-modular removed from frameworks package.json"
+          command: "cat packages/frameworks/package.json | grep -E '(awilix-modular|awilix)' || echo 'Clean'"
+          expected_output: "Clean"
+          severity: "critical"
+          points: 10
+        - check: "awilix-modular removed from root package.json if present"
+          command: "cat package.json | grep -E '(awilix-modular|awilix)' || echo 'Clean'"
+          expected_output: "Clean"
+          severity: "high"
+          points: 10
+        - check: "No @types/awilix in devDependencies"
+          command: "cat packages/frameworks/package.json | grep '@types/awilix' || echo 'Clean'"
+          expected_output: "Clean"
+          severity: "medium"
+          points: 5
+
+    - id: "import-cleanup"
+      name: "Import Statement Cleanup"
+      description: "All awilix-related imports must be removed from source files"
+      weight: 25
+      criteria:
+        - check: "No awilix imports in domain package"
+          command: "grep -r 'from.*awilix' packages/domain/src/ 2>/dev/null | wc -l | tr -d ' '"
+          expected_output: "0"
+          severity: "critical"
+          points: 5
+        - check: "No awilix imports in use-cases package"
+          command: "grep -r 'from.*awilix' packages/use-cases/src/ 2>/dev/null | wc -l | tr -d ' '"
+          expected_output: "0"
+          severity: "critical"
+          points: 5
+        - check: "No awilix imports in adapters package"
+          command: "grep -r 'from.*awilix' packages/adapters/src/ 2>/dev/null | wc -l | tr -d ' '"
+          expected_output: "0"
+          severity: "critical"
+          points: 5
+        - check: "No awilix imports in frameworks package"
+          command: "grep -r 'from.*awilix' packages/frameworks/src/ 2>/dev/null | wc -l | tr -d ' '"
+          expected_output: "0"
+          severity: "critical"
+          points: 5
+        - check: "No awilix imports in apps directory"
+          command: "grep -r 'from.*awilix' apps/ 2>/dev/null | wc -l | tr -d ' '"
+          expected_output: "0"
+          severity: "critical"
+          points: 5
+
+    - id: "export-cleanup"
+      name: "Export Statement Cleanup"
+      description: "DI-related exports must be removed from index files"
+      weight: 10
+      criteria:
+        - check: "No DI exports from frameworks index"
+          command: "cat packages/frameworks/src/index.ts 2>/dev/null | grep -E '(di/|container|DI|awilix)' || echo 'Clean'"
+          expected_output: "Clean"
+          severity: "high"
+          points: 5
+        - check: "Frameworks package exports only Effect-related items"
+          command: "cat packages/frameworks/src/index.ts 2>/dev/null | head -20"
+          must_not_contain: ["awilix", "container", "DI", "createModule"]
+          severity: "medium"
+          points: 5
+
+    - id: "lockfile-cleanup"
+      name: "Lockfile Cleanup"
+      description: "awilix entries must be removed from lockfiles"
+      weight: 5
+      criteria:
+        - check: "No awilix in bun.lockb (if exists)"
+          command: "if [ -f bun.lockb ]; then bun pm ls | grep awilix || echo 'Clean'; else echo 'Clean'; fi"
+          expected_output: "Clean"
+          severity: "low"
+          points: 3
+        - check: "No awilix in bun.lock (if exists)"
+          command: "if [ -f bun.lock ]; then grep -i 'awilix' bun.lock | head -5 || echo 'Clean'; else echo 'Clean'; fi"
+          expected_output: "Clean"
+          severity: "low"
+          points: 2
+
+    - id: "code-quality"
+      name: "Code Quality After Removal"
+      description: "Code should be clean with no comments referencing removed DI system"
+      weight: 5
+      criteria:
+        - check: "No TODO comments about awilix removal"
+          command: "grep -riE 'todo.*awilix|fixme.*awilix|remove.*awilix' packages/ apps/ 2>/dev/null | wc -l | tr -d ' '"
+          expected_output: "0"
+          severity: "low"
+          points: 2
+        - check: "No commented-out awilix code"
+          command: "grep -rE '//.*awilix|#.*awilix' packages/ apps/ 2>/dev/null | wc -l | tr -d ' '"
+          expected_output: "0"
+          severity: "low"
+          points: 3
+
+  checklists:
+    pre_validation:
+      - item: "Checkout the implementation branch/commit"
+        required: true
+      - item: "Run 'bun install' to verify dependencies resolve"
+        required: true
+      - item: "Verify working directory is clean"
+        required: false
+
+    structural_validation:
+      - item: "packages/frameworks/src/di/ directory does not exist"
+        required: true
+      - item: "packages/frameworks/src/di/container.ts does not exist"
+        required: true
+      - item: "packages/frameworks/src/di/effect-layer.ts does not exist"
+        required: true
+      - item: "packages/frameworks/src/di/index.ts does not exist"
+        required: true
+      - item: "packages/frameworks/src/di/modules/ directory does not exist"
+        required: true
+
+    dependency_validation:
+      - item: "awilix-modular is not in any package.json dependencies"
+        required: true
+      - item: "awilix is not in any package.json dependencies"
+        required: true
+      - item: "@types/awilix is not in any package.json devDependencies"
+        required: true
+
+    import_validation:
+      - item: "No 'awilix' imports in any source file"
+        required: true
+      - item: "No 'awilix-modular' imports in any source file"
+        required: true
+      - item: "No 'createModule' references in any source file"
+        required: true
+      - item: "No 'createContainer' references in any source file"
+        required: true
+      - item: "No 'Lifetime' references from awilix in any source file"
+        required: true
+
+    post_validation:
+      - item: "TypeScript compilation succeeds"
+        command: "bun run typecheck"
+        required: true
+      - item: "Unit tests pass"
+        command: "bun test:unit"
+        required: true
+      - item: "No lint errors"
+        command: "bun run lint"
+        required: false
+      - item: "Application can start without errors"
+        command: "bun run build"
+        required: true
+
+  scoring:
+    scale: "0-100"
+    passing_threshold: 95
+    excellent_threshold: 98
+
+    deductions:
+      critical_violation: 30
+      high_violation: 15
+      medium_violation: 10
+      low_violation: 5
+
+    grade_levels:
+      - grade: "A+"
+        min_score: 98
+        description: "Complete removal, all traces eliminated"
+      - grade: "A"
+        min_score: 95
+        description: "Complete removal, minor non-functional remnants"
+      - grade: "B"
+        min_score: 85
+        description: "Substantial removal, some imports or files remaining"
+      - grade: "C"
+        min_score: 70
+        description: "Partial removal, significant infrastructure still present"
+      - grade: "F"
+        min_score: 0
+        description: "Incomplete removal, blocks Step 7"
+
+    blocking_conditions:
+      - condition: "packages/frameworks/src/di/ directory still exists"
+        reason: "Step 6 core requirement not met"
+      - condition: "awilix-modular still in package.json dependencies"
+        reason: "Dependency not removed"
+      - condition: "Any awilix imports remain in production code"
+        reason: "Imports not cleaned up"
+      - condition: "TypeScript compilation fails"
+        reason: "Code is broken after removal"
+      - condition: "Unit tests fail"
+        reason: "Functionality regression"
+
+  verification_commands:
+    summary:
+      - name: "Count remaining awilix references"
+        command: "echo '=== awilix references ===' && grep -r 'awilix' packages/ apps/ --include='*.ts' --include='*.tsx' --include='*.json' 2>/dev/null | wc -l && echo '=== File list ===' && grep -rl 'awilix' packages/ apps/ --include='*.ts' --include='*.tsx' --include='*.json' 2>/dev/null"
+
+      - name: "Verify DI directory removal"
+        command: "ls -la packages/frameworks/src/ 2>/dev/null | grep di || echo 'DI directory successfully removed'"
+
+      - name: "Check package.json dependencies"
+        command: "echo '=== Frameworks package.json ===' && cat packages/frameworks/package.json | grep -A5 'dependencies' && echo '=== Root package.json ===' && cat package.json | grep -A5 'dependencies'"
+
+      - name: "Verify app still builds"
+        command: "cd apps/backend-server && bun run typecheck 2>&1 | tail -10"
+
+    detailed:
+      - name: "Full file tree of frameworks src"
+        command: "find packages/frameworks/src -type f -name '*.ts' | head -30"
+
+      - name: "List all imports in frameworks index"
+        command: "cat packages/frameworks/src/index.ts 2>/dev/null"
+
+      - name: "Verify no container references"
+        command: "grep -r 'container' packages/frameworks/src/ --include='*.ts' 2>/dev/null | grep -v 'Effect' | head -10 || echo 'No container references found'"
+
+  output_format:
+    summary_required: true
+    detailed_report: true
+    show_partial_scores: true
+    show_checklist_results: true
+    show_commands_output: true
+
+    sections:
+      - "executive_summary"
+      - "rubric_scores"
+      - "checklist_results"
+      - "blocking_conditions"
+      - "recommendations"
+      - "command_outputs"
+
+  recommendations:
+    if_di_directory_remains:
+      - "Delete packages/frameworks/src/di/ recursively"
+      - "Remove all subdirectories under di/"
+      - "Ensure git tracks the deletion: git rm -r packages/frameworks/src/di/"
+
+    if_imports_remain:
+      - "Use IDE find/replace to remove all 'from.*awilix' imports"
+      - "Remove unused import statements"
+      - "Check for dynamic imports: import('awilix')"
+
+    if_dependencies_remain:
+      - "Run 'bun remove awilix-modular' in affected packages"
+      - "Run 'bun remove @types/awilix' for dev dependencies"
+      - "Verify bun.lockb is updated after removal"
+
+    if_tests_fail:
+      - "Check for tests that were mocking container behavior"
+      - "Verify Effect Layers are properly provided in test setup"
+      - "Ensure test utilities don't reference deleted DI code"
+
+  success_criteria:
+    required:
+      - "packages/frameworks/src/di/ directory completely removed"
+      - "No awilix, awilix-modular, or @types/awilix in any package.json"
+      - "No awilix-related imports in any TypeScript source file"
+      - "TypeScript compilation succeeds"
+      - "Unit tests pass"
+
+    optional_but_recommended:
+      - "Lockfile updated (bun.lockb cleaned)"
+      - "No commented-out DI code"
+      - "No TODO comments about DI removal"
+      - "Frameworks package exports only Effect-related utilities"

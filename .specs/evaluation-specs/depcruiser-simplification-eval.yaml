@@ -1,0 +1,365 @@
+# Dependency Cruiser Configuration Evaluation Specification
+# Target: .dependency-cruiser.mjs
+# Purpose: Simplify and improve dependency cruiser rules while maintaining layer boundaries
+
+metadata:
+  artifact_type: configuration
+  target_file: .dependency-cruiser.mjs
+  evaluation_framework: LLM-as-Judge
+  scoring_model: rubric-based-weighted
+  version: 1.0.0
+
+evaluation_scope:
+  primary_objectives:
+    - Simplify over-engineered rules
+    - Maintain layer boundary enforcement
+    - Improve comment quality (explain "why", not just "what")
+    - Group related rules logically
+    - Preserve circular dependency detection effectiveness
+    - Preserve orphans detection effectiveness
+
+  constraints:
+    - Clean Architecture: Frameworks → Adapters → Use Cases → Domain
+    - No reduction in boundary enforcement capability
+    - Circular dependency detection must remain active and effective
+    - Orphans detection must remain active and effective
+
+scoring:
+  total_points: 100
+  passing_threshold: 80
+
+  weights:
+    rule_simplification: 25
+    layer_boundary_enforcement: 25
+    code_clarity_documentation: 20
+    rule_organization: 15
+    circular_dependency_handling: 10
+    orphans_handling: 5
+
+rubrics:
+  - dimension: rule_simplification
+    weight: 25
+    description: Rules are not over-engineered; complexity is justified
+    criteria:
+      excellent:
+        score_range: [23, 25]
+        indicators:
+          - "Rules are concise without unnecessary regex complexity"
+          - "No redundant or duplicate rules"
+          - "Pattern matching is clear and maintainable"
+          - "Configuration is DRY (Don't Repeat Yourself)"
+          - "~20-30% reduction in lines of code while preserving functionality"
+      good:
+        score_range: [18, 22]
+        indicators:
+          - "Most rules are simplified"
+          - "Minor redundancy remains"
+          - "Some regex patterns could be cleaner"
+          - "Slight reduction in code size"
+      needs_improvement:
+        score_range: [13, 17]
+        indicators:
+          - "Over-complex patterns still present"
+          - "Notable redundancy between rules"
+          - "Minimal or no reduction in code size"
+          - "Rules harder to maintain than original"
+      insufficient:
+        score_range: [0, 12]
+        indicators:
+          - "Configuration is more complex than original"
+          - "Significant over-engineering remains"
+          - "Rules are harder to understand"
+          - "Lost functionality during simplification"
+
+  - dimension: layer_boundary_enforcement
+    weight: 25
+    description: Layer boundaries are correctly enforced per Clean Architecture
+    criteria:
+      excellent:
+        score_range: [23, 25]
+        indicators:
+          - "Domain has zero external dependencies (pure)"
+          - "Use Cases only depend on Domain (Effect services excluded)"
+          - "Adapters only depend on Use Cases and Domain"
+          - "Frameworks only depend on Adapters, Use Cases, Domain"
+          - "No violations of inward-only dependency rule"
+          - "Layer boundary rules are explicit and enforced"
+      good:
+        score_range: [18, 22]
+        indicators:
+          - "Minor boundary issues"
+          - "One or two rules could be clearer"
+          - "Dependencies generally correct but edge cases not covered"
+      needs_improvement:
+        score_range: [13, 17]
+        indicators:
+          - "Some boundary violations not caught"
+          - "Unclear which rules enforce which boundaries"
+          - "Missing enforcement for one layer"
+      insufficient:
+        score_range: [0, 12]
+        indicators:
+          - "Domain has external dependencies"
+          - "Use Cases import from Adapters or Frameworks"
+          - "Violations of Clean Architecture dependency rule"
+
+  - dimension: code_clarity_documentation
+    weight: 20
+    description: Comments explain 'why', not just 'what'
+    criteria:
+      excellent:
+        score_range: [18, 20]
+        indicators:
+          - "Every rule category has a 'why' comment"
+          - "Comments explain architectural rationale"
+          - "No 'what' comments that duplicate code intent"
+          - "Edge cases and exceptions are documented with reasoning"
+          - "References to Clean Architecture principles included"
+      good:
+        score_range: [14, 17]
+        indicators:
+          - "Most rules have explanatory comments"
+          - "Some 'what' comments remain but majority explain 'why'"
+          - "Key architectural decisions documented"
+      needs_improvement:
+        score_range: [10, 13]
+        indicators:
+          - "Mix of 'what' and 'why' comments"
+          - "Missing comments on complex rules"
+          - "Documentation doesn't explain architectural rationale"
+      insufficient:
+        score_range: [0, 9]
+        indicators:
+          - "Mostly 'what' comments or no comments"
+          - "Comments don't add value beyond reading the code"
+          - "No explanation of why rules exist"
+
+  - dimension: rule_organization
+    weight: 15
+    description: Related rules are logically grouped and ordered
+    criteria:
+      excellent:
+        score_range: [14, 15]
+        indicators:
+          - "Rules grouped by layer or concern"
+          - "Consistent ordering (e.g., Domain → Use Cases → Adapters → Frameworks)"
+          - "Grouping comments clearly demarcate sections"
+          - "Related rules are adjacent (not scattered)"
+          - "Logical flow from fundamental to specific rules"
+      good:
+        score_range: [11, 13]
+        indicators:
+          - "Most rules grouped logically"
+          - "Minor scattering of related rules"
+          - "Some grouping but could be tighter"
+      needs_improvement:
+        score_range: [8, 10]
+        indicators:
+          - "Rules partially grouped but inconsistent"
+          - "Related rules separated"
+          - "No clear organizational pattern"
+      insufficient:
+        score_range: [0, 7]
+        indicators:
+          - "Rules scattered randomly"
+          - "No grouping or sectioning"
+          - "Disorganized structure makes maintenance difficult"
+
+  - dimension: circular_dependency_handling
+    weight: 10
+    description: No circular dependencies rule remains effective
+    criteria:
+      excellent:
+        score_range: [9, 10]
+        indicators:
+          - "no-circular rule is present and active"
+          - "Severity level appropriate (error or warn based on policy)"
+          - "Coverage includes all relevant paths"
+          - "Rule correctly configured without false positives"
+          - "Documentation explains why circular deps are prohibited"
+      good:
+        score_range: [7, 8]
+        indicators:
+          - "Rule present but minor configuration issues"
+          - "Slightly too permissive or restrictive"
+      needs_improvement:
+        score_range: [5, 6]
+        indicators:
+          - "Rule present but ineffective (wrong severity, wrong paths)"
+          - "May miss actual circular dependencies"
+      insufficient:
+        score_range: [0, 4]
+        indicators:
+          - "Rule removed or disabled"
+          - "Circular dependencies no longer detected"
+          - "False positives make rule unusable"
+
+  - dimension: orphans_handling
+    weight: 5
+    description: No orphans rule remains effective
+    criteria:
+      excellent:
+        score_range: [5, 5]
+        indicators:
+          - "no-orphans rule is present and active"
+          - "Appropriate severity for orphaned modules"
+          - "Exclusions are justified and documented"
+          - "Detects truly orphaned files"
+      good:
+        score_range: [4, 4]
+        indicators:
+          - "Rule present but minor issues with exclusions"
+      needs_improvement:
+        score_range: [3, 3]
+        indicators:
+          - "Rule present but too many false positives"
+          - "Too permissive (too many exclusions)"
+      insufficient:
+        score_range: [0, 2]
+        indicators:
+          - "Rule removed or ineffective"
+          - "Orphaned modules not detected"
+
+checklist:
+  - id: LAYER-01
+    category: layer_boundary
+    requirement: "Domain layer rules enforce purity (no external deps)"
+    check_method: "Verify domain-pure rule exists and forbids imports from adapters, frameworks, or node_modules"
+    weight: critical
+
+  - id: LAYER-02
+    category: layer_boundary
+    requirement: "Use Cases layer only depends on Domain"
+    check_method: "Verify use-cases-depends-on-domain-only rule excludes only Effect and related infrastructure"
+    weight: critical
+
+  - id: LAYER-03
+    category: layer_boundary
+    requirement: "Adapters layer depends only on inner layers"
+    check_method: "Verify adapters-depends-on-inner-layers rule allows imports from use-cases and domain only"
+    weight: critical
+
+  - id: SIMP-01
+    category: simplification
+    requirement: "No redundant rule definitions"
+    check_method: "Check for duplicate or near-duplicate rules; each rule should have unique purpose"
+    weight: major
+
+  - id: SIMP-02
+    category: simplification
+    requirement: "Patterns are readable and maintainable"
+    check_method: "Regex patterns should not be excessively complex; consider string matching where appropriate"
+    weight: major
+
+  - id: DOC-01
+    category: documentation
+    requirement: "Comments explain architectural rationale"
+    check_method: "Sample 5 random rules; verify comments explain why the rule exists, not just what it does"
+    weight: critical
+
+  - id: DOC-02
+    category: documentation
+    requirement: "Layer ordering rationale documented"
+    check_method: "Check for section comments explaining Clean Architecture layer dependencies"
+    weight: major
+
+  - id: ORG-01
+    category: organization
+    requirement: "Rules grouped by layer"
+    check_method: "Verify domain rules are together, use-case rules together, etc."
+    weight: major
+
+  - id: ORG-02
+    category: organization
+    requirement: "Consistent ordering within groups"
+    check_method: "Check that rules follow logical progression (e.g., restriction before exception)"
+    weight: minor
+
+  - id: CIRC-01
+    category: circular_deps
+    requirement: "No circular dependencies rule active"
+    check_method: "Verify 'no-circular' rule exists in forbidden section with appropriate severity"
+    weight: critical
+
+  - id: ORPH-01
+    category: orphans
+    requirement: "No orphans rule active"
+    check_method: "Verify 'no-orphans' rule exists and is not disabled"
+    weight: major
+
+validation_commands:
+  - name: validate_config
+    command: "bunx dependency-cruiser --validate .dependency-cruiser.mjs ."
+    expected_result: "exits 0 (no config syntax errors)"
+
+  - name: check_line_count
+    command: "wc -l < .dependency-cruiser.mjs"
+    note: "Should show reduction from 143 lines (target ~100-120 lines)"
+
+  - name: verify_rules_active
+    command: "bunx dependency-cruiser --list-rules .dependency-cruiser.mjs"
+    expected_result: "Shows all expected rules are loaded"
+
+edge_cases:
+  - scenario: "Effect library imports in use-cases"
+    expected_behavior: "Use cases CAN import Effect (and related functional libraries) even though it's 'external' - these should be allowed"
+    verification: "Check that use-cases-depends-on-domain-only rule excludes 'effect' or similar libraries"
+
+  - scenario: "Test files importing from multiple layers"
+    expected_behavior: "Test files may need to import from multiple layers; verify they're handled appropriately"
+    verification: "Check if tests are excluded from certain layer rules or handled separately"
+
+  - scenario: "Shared types/constants between layers"
+    expected_behavior: "Shared code should typically live in domain; verify no bypassing of layer rules"
+    verification: "Look for shared- or common- patterns and how they're handled"
+
+  - scenario: "Node.js built-ins (fs, path, etc.)"
+    expected_behavior: "Built-ins should generally be allowed in all layers except Domain (which should be pure)"
+    verification: "Domain layer rule should forbid even node: imports to maintain purity"
+
+scoring_guide:
+  - "Start with 100 points and deduct for violations in each dimension"
+  - "Critical checklist failures auto-cap the dimension score at 'needs_improvement'"
+  - "Multiple failures in same dimension compound deductions"
+  - "Bonus consideration: If simplification achieves >30% line reduction without losing functionality, +5 points (max 100)"
+
+output_format:
+  summary_fields:
+    - overall_score
+    - passed_threshold
+    - dimension_scores
+    - checklist_summary
+    - key_findings
+    - recommendations
+
+  required_sections:
+    - "Executive Summary (2-3 sentences)"
+    - "Dimension-by-dimension scoring with evidence"
+    - "Checklist results (pass/fail for each item)"
+    - "Key strengths"
+    - "Priority improvements (if any)"
+
+anti_patterns:
+  - pattern: "sacrificing_functionality"
+    description: "Removing or weakening rules just to make config shorter"
+    consequence: "Loss of layer boundary enforcement"
+
+  - pattern: "over_abstracting"
+    description: "Creating complex helper functions or generators for simple rules"
+    consequence: "Config harder to understand than before"
+
+  - pattern: "what_without_why"
+    description: "Adding comments that describe the regex pattern rather than the architectural reason"
+    consequence: "Documentation doesn't help future maintainers"
+
+  - pattern: "rule_scattering"
+    description: "Keeping related rules separated across the file"
+    consequence: "Harder to understand layer boundaries as a whole"
+
+  - pattern: "removing_circular_detection"
+    description: "Removing no-circular rule to simplify"
+    consequence: "Circular dependencies can be introduced undetected"
+
+  - pattern: "removing_orphans_detection"
+    description: "Removing no-orphans rule to simplify"
+    consequence: "Dead code can accumulate in codebase"

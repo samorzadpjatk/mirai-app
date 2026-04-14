@@ -1,0 +1,499 @@
+# Error Migration Evaluation Specification
+# Version: 1.0.0
+# Target: Full monorepo error system migration to unified-errors.ts
+
+evaluation_spec:
+  metadata:
+    task_name: "Unified Error System Migration"
+    version: "1.0.0"
+    scope: "packages/* and apps/*"
+    target_file: "packages/domain/src/errors/unified-errors.ts"
+    old_error_files:
+      - "packages/domain/src/errors/domain-errors.ts"
+      - "packages/domain/src/errors/effect-errors.ts"
+      - "packages/domain/src/errors/DomainErrors.ts"
+    created_at: "2026-04-14"
+
+  # ============================================================
+  # SECTION 1: RUBRICS - Core Evaluation Criteria
+  # ============================================================
+  rubrics:
+    - id: "R1"
+      name: "Import Migration Completeness"
+      weight: 25
+      description: "All error imports must use unified-errors barrel export"
+      criteria:
+        - "No imports from old error files remain"
+        - "All imports use 'from @mirai-app/domain/errors' pattern"
+        - "Named imports reference valid unified error classes"
+      scoring:
+        5: "100% of imports migrated - zero old imports found via grep"
+        4: "95-99% migrated - minor legacy imports in non-critical paths"
+        3: "85-94% migrated - some significant files still using old imports"
+        2: "70-84% migrated - major migration gaps"
+        1: "<70% migrated - incomplete migration"
+        0: "Migration not attempted or <50% complete"
+
+    - id: "R2"
+      name: "Old Error File Removal"
+      weight: 20
+      description: "Legacy error files must be deleted after confirming no imports"
+      criteria:
+        - "domain-errors.ts removed from filesystem"
+        - "effect-errors.ts removed from filesystem"
+        - "DomainErrors.ts removed from filesystem"
+        - "Removal only after import verification passes"
+      scoring:
+        5: "All 3 old files removed, zero remaining references"
+        4: "2 of 3 files removed, minimal references remain"
+        3: "1 of 3 files removed, some cleanup needed"
+        2: "Files marked for removal but still exist"
+        1: "Files exist with TODOs but no actual removal"
+        0: "No removal attempted"
+
+    - id: "R3"
+      name: "Code Quality and Correctness"
+      weight: 25
+      description: "Migrated code must maintain functionality and follow patterns"
+      criteria:
+        - "Error class names unchanged (no breaking changes)"
+        - "Error constructors maintain same parameters"
+        - "Effect-based error handling preserved"
+        - "Type safety maintained (no 'any' types introduced)"
+        - "No runtime behavior changes in error handling"
+      scoring:
+        5: "All migrations maintain 100% API compatibility"
+        4: "Minor parameter ordering differences with no impact"
+        3: "Some type adjustments needed but functional"
+        2: "Breaking changes in error APIs requiring fixes"
+        1: "Significant API changes or type regressions"
+        0: "Non-functional or severely broken migration"
+
+    - id: "R4"
+      name: "Unified Error Coverage"
+      weight: 15
+      description: "All 20 unified error types must be properly exported and usable"
+      criteria:
+        - "All 20 error types exported from unified-errors.ts"
+        - "Each error type tested with at least one usage"
+        - "Barrel export pattern correctly implemented"
+        - "No duplicate error definitions between old and new"
+      scoring:
+        5: "All 20 types fully exported and actively used"
+        4: "18-19 types exported, minor gaps"
+        3: "15-17 types exported, some consolidation needed"
+        2: "12-14 types exported, significant gaps"
+        1: "<12 types properly exported"
+        0: "Barrel export broken or missing"
+
+    - id: "R5"
+      name: "Dependency Cleanup"
+      weight: 15
+      description: "Package dependencies and barrel exports must be clean"
+      criteria:
+        - "No references to old error files in barrel exports"
+        - "No dead imports in package.json or tsconfig"
+        - "Clean dependency graph via dependency-cruiser"
+        - "No circular imports introduced"
+      scoring:
+        5: "Perfectly clean dependency graph, no issues"
+        4: "Minor cosmetic import cleanup needed"
+        3: "Some unused imports or references remain"
+        2: "Noticeable dependency issues to resolve"
+        1: "Major dependency graph problems"
+        0: "New circular dependencies or broken imports"
+
+  # ============================================================
+  # SECTION 2: CHECKLISTS - Verification Steps
+  # ============================================================
+  checklists:
+    pre_migration_baseline:
+      - id: "PRE-1"
+        task: "Record grep results for old imports before migration"
+        command: |
+          grep -r "from.*domain-errors" --include="*.ts" --include="*.tsx" packages/ apps/ | wc -l
+          grep -r "from.*effect-errors" --include="*.ts" --include="*.tsx" packages/ apps/ | wc -l
+          grep -r "from.*DomainErrors" --include="*.ts" --include="*.tsx" packages/ apps/ | wc -l
+        expected: "Baseline numbers recorded for comparison"
+
+    import_verification:
+      - id: "IMP-1"
+        task: "Verify zero imports from domain-errors.ts"
+        command: 'grep -r "from.*domain-errors" --include="*.ts" --include="*.tsx" packages/ apps/ 2>/dev/null || echo "PASS: No imports found"'
+        pass_condition: "No output or 'PASS' message"
+        severity: "critical"
+
+      - id: "IMP-2"
+        task: "Verify zero imports from effect-errors.ts"
+        command: 'grep -r "from.*effect-errors" --include="*.ts" --include="*.tsx" packages/ apps/ 2>/dev/null || echo "PASS: No imports found"'
+        pass_condition: "No output or 'PASS' message"
+        severity: "critical"
+
+      - id: "IMP-3"
+        task: "Verify zero imports from DomainErrors.ts"
+        command: 'grep -r "from.*DomainErrors" --include="*.ts" --include="*.tsx" packages/ apps/ 2>/dev/null || echo "PASS: No imports found"'
+        pass_condition: "No output or 'PASS' message"
+        severity: "critical"
+
+      - id: "IMP-4"
+        task: "Verify unified-errors.ts barrel export exists"
+        command: "ls -la packages/domain/src/errors/unified-errors.ts"
+        pass_condition: "File exists and is readable"
+        severity: "critical"
+
+      - id: "IMP-5"
+        task: "Count unified error imports as positive indicator"
+        command: 'grep -r "from @mirai-app/domain/errors" --include="*.ts" --include="*.tsx" packages/ apps/ | wc -l'
+        pass_condition: "> 0 imports found"
+        severity: "info"
+
+    file_removal_verification:
+      - id: "REM-1"
+        task: "Verify domain-errors.ts is deleted"
+        command: 'test -f packages/domain/src/errors/domain-errors.ts && echo "FAIL: File exists" || echo "PASS: File removed"'
+        pass_condition: "Output contains 'PASS'"
+        severity: "critical"
+
+      - id: "REM-2"
+        task: "Verify effect-errors.ts is deleted"
+        command: 'test -f packages/domain/src/errors/effect-errors.ts && echo "FAIL: File exists" || echo "PASS: File removed"'
+        pass_condition: "Output contains 'PASS'"
+        severity: "critical"
+
+      - id: "REM-3"
+        task: "Verify DomainErrors.ts is deleted"
+        command: 'test -f packages/domain/src/errors/DomainErrors.ts && echo "FAIL: File exists" || echo "PASS: File removed"'
+        pass_condition: "Output contains 'PASS'"
+        severity: "critical"
+
+    code_quality_verification:
+      - id: "QUAL-1"
+        task: "Run TypeScript compiler to check for type errors"
+        command: "bunx tsc --noEmit -p packages/domain/tsconfig.json"
+        pass_condition: "Exit code 0"
+        severity: "critical"
+
+      - id: "QUAL-2"
+        task: "Run linter to check code style"
+        command: "bunx eslint packages/domain/src/errors --ext .ts"
+        pass_condition: "Exit code 0 or only warnings"
+        severity: "high"
+
+      - id: "QUAL-3"
+        task: "Run dependency cruiser to check architecture"
+        command: "bunx dependency-cruiser --validate .dependency-cruiser.mjs packages/domain/src/errors"
+        pass_condition: "Exit code 0"
+        severity: "high"
+
+      - id: "QUAL-4"
+        task: "Verify no 'any' types introduced in error handling"
+        command: 'grep -r ": any" packages/domain/src/errors/*.ts 2>/dev/null | grep -v "node_modules" | wc -l'
+        pass_condition: "Output is 0"
+        severity: "high"
+
+    test_verification:
+      - id: "TEST-1"
+        task: "Run domain layer unit tests"
+        command: "cd packages/domain && bun test"
+        pass_condition: "Exit code 0"
+        severity: "critical"
+
+      - id: "TEST-2"
+        task: "Run use-cases layer tests"
+        command: "cd packages/use-cases && bun test"
+        pass_condition: "Exit code 0"
+        severity: "critical"
+
+      - id: "TEST-3"
+        task: "Run adapters layer tests"
+        command: "cd packages/adapters && bun test"
+        pass_condition: "Exit code 0"
+        severity: "high"
+
+      - id: "TEST-4"
+        task: "Verify unified error usage in at least 10 locations"
+        command: 'grep -r "from @mirai-app/domain/errors" --include="*.ts" packages/ apps/ | grep -E "(new |catch|Error)" | wc -l'
+        pass_condition: ">= 10"
+        severity: "medium"
+
+  # ============================================================
+  # SECTION 3: SCORING CRITERIA
+  # ============================================================
+  scoring:
+    scale:
+      min: 0
+      max: 5
+      step: 1
+
+    thresholds:
+      excellent:
+        min_score: 4.5
+        max_score: 5.0
+        label: "Excellent"
+        description: "Migration complete, all criteria exceeded"
+        action: "Approve with commendation"
+
+      good:
+        min_score: 3.5
+        max_score: 4.4
+        label: "Good"
+        description: "Migration successful with minor cleanup needed"
+        action: "Approve with suggestions"
+
+      acceptable:
+        min_score: 2.5
+        max_score: 3.4
+        label: "Acceptable"
+        description: "Migration mostly complete but gaps remain"
+        action: "Approve with required follow-ups"
+
+      needs_work:
+        min_score: 1.5
+        max_score: 2.4
+        label: "Needs Work"
+        description: "Incomplete migration, significant issues"
+        action: "Request revisions"
+
+      insufficient:
+        min_score: 0.0
+        max_score: 1.4
+        label: "Insufficient"
+        description: "Migration not acceptable"
+        action: "Reject and request re-implementation"
+
+    calculation:
+      method: "weighted_average"
+      weights:
+        R1: 0.25
+        R2: 0.20
+        R3: 0.25
+        R4: 0.15
+        R5: 0.15
+
+    critical_items:
+      - id: "IMP-1"
+        description: "All domain-errors imports must be removed"
+        must_pass: true
+        failure_action: "Auto-fail evaluation"
+
+      - id: "IMP-2"
+        description: "All effect-errors imports must be removed"
+        must_pass: true
+        failure_action: "Auto-fail evaluation"
+
+      - id: "IMP-3"
+        description: "All DomainErrors imports must be removed"
+        must_pass: true
+        failure_action: "Auto-fail evaluation"
+
+      - id: "TEST-1"
+        description: "Domain tests must pass"
+        must_pass: true
+        failure_action: "Reduce score by 2 points minimum"
+
+  # ============================================================
+  # SECTION 4: EVIDENCE COLLECTION
+  # ============================================================
+  evidence_collection:
+    required:
+      - type: "grep_results"
+        description: "Before and after grep results for old imports"
+        format: "text or markdown table"
+
+      - type: "file_listing"
+        description: "Directory listing of packages/domain/src/errors/"
+        format: "ls -la output"
+
+      - type: "test_results"
+        description: "Test output showing all tests passing"
+        format: "test runner output"
+
+      - type: "diff_summary"
+        description: "Summary of changed files and line counts"
+        format: "git diff --stat or similar"
+
+    optional:
+      - type: "dependency_graph"
+        description: "Dependency cruiser graph of error relationships"
+        format: "SVG or DOT"
+
+      - type: "coverage_report"
+        description: "Test coverage for error handling code"
+        format: "HTML or markdown"
+
+  # ============================================================
+  # SECTION 5: EVALUATION WORKFLOW
+  # ============================================================
+  workflow:
+    phases:
+      - name: "Phase 1: Automated Verification"
+        steps:
+          - "Run all checklist commands in import_verification section"
+          - "Run all checklist commands in file_removal_verification section"
+          - "Run all checklist commands in code_quality_verification section"
+          - "Run all checklist commands in test_verification section"
+        duration_estimate: "2-3 minutes"
+        abort_if: "Any critical item fails"
+
+      - name: "Phase 2: Rubric Scoring"
+        steps:
+          - "Evaluate R1: Import Migration Completeness (0-5)"
+          - "Evaluate R2: Old Error File Removal (0-5)"
+          - "Evaluate R3: Code Quality and Correctness (0-5)"
+          - "Evaluate R4: Unified Error Coverage (0-5)"
+          - "Evaluate R5: Dependency Cleanup (0-5)"
+        duration_estimate: "5-10 minutes"
+
+      - name: "Phase 3: Score Calculation"
+        steps:
+          - "Calculate weighted average across all rubrics"
+          - "Apply critical item penalties if any failed"
+          - "Determine final threshold category"
+          - "Generate verdict and action recommendation"
+        duration_estimate: "1-2 minutes"
+
+    judge_instructions: |
+      1. Execute all checklist items in Phase 1 using the provided commands
+      2. For each rubric in Phase 2, assign a score from 0-5 based on criteria
+      3. Calculate weighted average using the weights provided
+      4. Check if any critical items failed and apply penalties
+      5. Determine final verdict based on threshold category
+      6. Include specific evidence in your evaluation report
+
+  # ============================================================
+  # SECTION 6: REPORT TEMPLATE
+  # ============================================================
+  report_template:
+    structure:
+      header: |
+        # Error Migration Evaluation Report
+        **Task:** Unified Error System Migration
+        **Evaluated At:** {timestamp}
+        **Judge:** {judge_name}
+
+      executive_summary: |
+        ## Executive Summary
+
+        **Overall Score:** {overall_score}/5.0 ({threshold_label})
+
+        **Verdict:** {verdict}
+
+        **Key Findings:**
+        - Old imports remaining: {old_import_count}
+        - Files successfully migrated: {migrated_file_count}
+        - Tests passing: {test_status}
+
+      detailed_scores: |
+        ## Rubric Scores
+
+        | Rubric | Weight | Score | Weighted |
+        |--------|--------|-------|----------|
+        | R1: Import Migration | 25% | {r1_score} | {r1_weighted} |
+        | R2: File Removal | 20% | {r2_score} | {r2_weighted} |
+        | R3: Code Quality | 25% | {r3_score} | {r3_weighted} |
+        | R4: Error Coverage | 15% | {r4_score} | {r4_weighted} |
+        | R5: Dependency Cleanup | 15% | {r5_score} | {r5_weighted} |
+        | **TOTAL** | **100%** | - | **{overall_score}** |
+
+      checklist_results: |
+        ## Checklist Results
+
+        ### Import Verification
+        - IMP-1 (domain-errors imports): {imp1_status}
+        - IMP-2 (effect-errors imports): {imp2_status}
+        - IMP-3 (DomainErrors imports): {imp3_status}
+        - IMP-4 (unified-errors exists): {imp4_status}
+        - IMP-5 (unified imports count): {imp5_count}
+
+        ### File Removal
+        - REM-1 (domain-errors.ts removed): {rem1_status}
+        - REM-2 (effect-errors.ts removed): {rem2_status}
+        - REM-3 (DomainErrors.ts removed): {rem3_status}
+
+        ### Code Quality
+        - QUAL-1 (TypeScript check): {qual1_status}
+        - QUAL-2 (ESLint): {qual2_status}
+        - QUAL-3 (Dependency cruiser): {qual3_status}
+        - QUAL-4 (No 'any' types): {qual4_status}
+
+        ### Tests
+        - TEST-1 (Domain tests): {test1_status}
+        - TEST-2 (Use-case tests): {test2_status}
+        - TEST-3 (Adapter tests): {test3_status}
+        - TEST-4 (Usage count): {test4_count}
+
+      evidence: |
+        ## Evidence
+
+        ### Import Counts
+        ```
+        {grep_results}
+        ```
+
+        ### Directory Listing
+        ```
+        {directory_listing}
+        ```
+
+      recommendations: |
+        ## Recommendations
+
+        {recommendations_list}
+
+      footer: |
+        ---
+        **Evaluation completed:** {timestamp}
+        **Next steps:** {next_steps}
+
+    variables:
+      - name: timestamp
+        source: system
+        format: ISO8601
+      - name: judge_name
+        source: judge_config
+      - name: overall_score
+        source: calculation
+        precision: 2
+      - name: threshold_label
+        source: scoring.thresholds
+      - name: verdict
+        source: scoring.thresholds.action
+      - name: old_import_count
+        source: checklist_results
+      - name: migrated_file_count
+        source: evidence_collection
+      - name: test_status
+        source: checklist_results
+      - name: r1_score through r5_score
+        source: rubric_evaluation
+      - name: recommendations_list
+        source: judge_analysis
+
+  # ============================================================
+  # SECTION 7: EDGE CASE HANDLING
+  # ============================================================
+  edge_cases:
+    - scenario: "Files using old errors but not yet migrated (intentional)"
+      detection: "grep finds imports but file has explicit @migration-ignore comment"
+      handling: "Allow if documented with justification in comment"
+      score_impact: "No penalty if properly documented"
+
+    - scenario: "Old error files still exist but are empty (stub files)"
+      detection: "File exists but contains only re-exports from unified-errors"
+      handling: "Acceptable as transitional state, but mark for future removal"
+      score_impact: "-0.5 from R2 if more than 1 week old"
+
+    - scenario: "Tests are flaky and fail intermittently"
+      detection: "Multiple test runs show different results"
+      handling: "Run tests 3 times, take majority result"
+      score_impact: "Use most common result"
+
+    - scenario: "New error types added during migration"
+      detection: "unified-errors.ts has >20 error types"
+      handling: "Verify all are properly exported and used"
+      score_impact: "Bonus +0.5 to R4 if all properly integrated"
+
+    - scenario: "Circular imports detected in dependency cruiser"
+      detection: "dependency-cruiser reports violations"
+      handling: "Must fix before approval - no exceptions"
+      score_impact: "Auto-cap at 'Needs Work' if unresolved"

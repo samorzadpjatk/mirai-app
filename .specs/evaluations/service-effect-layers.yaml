@@ -1,0 +1,420 @@
+---
+# Evaluation Specification: Service Effect Layers Creation
+# Step 2/7: Migrate from awilix-modular DI to pure Effect Context/Layer system
+# Target: packages/frameworks/src/layers/ServiceLayer.ts
+
+specification:
+  title: "Service Effect Layers Implementation"
+  version: "1.0.0"
+  step: 2
+  total_steps: 7
+  artifact_type: "code"
+  target_file: "packages/frameworks/src/layers/ServiceLayer.ts"
+
+  context:
+    previous_step: "RepositoryLayer.ts created with 17 repository bindings"
+    pattern_reference: "CLAUDE.md §10.4 Layer Composition"
+    services_to_implement:
+      - name: Auth
+        port_tag: AuthPortTag
+        implementations:
+          - SupabaseAuthAdapter
+          - InMemoryAuthAdapter
+      - name: Realtime
+        port_tag: RealtimePortTag
+        implementations:
+          - SupabaseRealtimeAdapter
+          - InMemoryRealtimeAdapter
+      - name: Storage
+        port_tag: StoragePortTag
+        implementations:
+          - SupabaseStorageAdapter
+          - S3StorageAdapter
+          - InMemoryStorageAdapter
+      - name: Telemetry
+        port_tag: TelemetryPortTag
+        implementations:
+          - DrizzleTelemetryAdapter
+      - name: PubSub
+        port_tag: PubSubServiceTag
+        implementations:
+          - EventEmitterPubSub (in-memory)
+
+scoring:
+  max_score: 100
+  passing_threshold: 80
+
+  weights:
+    structural_compliance: 25
+    service_bindings: 30
+    implementation_quality: 25
+    documentation_completeness: 15
+    integration_consistency: 5
+
+rubrics:
+  structural_compliance:
+    weight: 25
+    criteria:
+      - id: SC-01
+        name: "File Location and Naming"
+        points: 5
+        description: "ServiceLayer.ts exists at packages/frameworks/src/layers/ServiceLayer.ts"
+        verification: |
+          File must be created at exact path matching 
+          the pattern established by RepositoryLayer.ts
+
+      - id: SC-02
+        name: "Module Header Documentation"
+        points: 5
+        description: "File includes comprehensive JSDoc header explaining purpose and patterns"
+        verification: |
+          Must include:
+          - Module description
+          - Pattern reference to CLAUDE.md §10.4
+          - Usage examples
+          - @module annotation
+
+      - id: SC-03
+        name: "Section Organization"
+        points: 5
+        description: "Code organized into clearly marked sections with visual separators"
+        verification: |
+          Must have sections:
+          1. Service Tags (Ports) imports
+          2. Adapter Implementations imports
+          3. Service Layer Factories
+          4. Full Service Layer composition
+          5. Re-exports
+          Use // ======= style separators
+
+      - id: SC-04
+        name: "Consistent Import Pattern"
+        points: 5
+        description: "Imports follow the same structure as RepositoryLayer.ts"
+        verification: |
+          - Grouped by domain/concern
+          - Clear comments for each group
+          - No wildcards, explicit imports
+          - Uses @mirai-app/use-cases and @mirai-app/adapters aliases
+
+      - id: SC-05
+        name: "Export Structure"
+        points: 5
+        description: "Proper export of all factories and the main layer composer"
+        verification: |
+          Must export:
+          - Individual service factory functions
+          - makeServiceLayer (main composer)
+          - Any required type re-exports
+
+  service_bindings:
+    weight: 30
+    criteria:
+      - id: SB-01
+        name: "Auth Service Layer"
+        points: 6
+        description: "AuthPortTag bound to SupabaseAuthAdapter"
+        verification: |
+          Must have:
+          - import { AuthPortTag } from "@mirai-app/use-cases"
+          - import { SupabaseAuthAdapter, InMemoryAuthAdapter } from "@mirai-app/adapters"
+          - makeAuthServiceLayer factory accepting SupabaseClient
+          - Layer.succeed(AuthPortTag, new SupabaseAuthAdapter(client))
+          - Layer.succeed for InMemory variant
+
+      - id: SB-02
+        name: "Realtime Service Layer"
+        points: 6
+        description: "RealtimePortTag bound to SupabaseRealtimeAdapter"
+        verification: |
+          Must have:
+          - import { RealtimePortTag } from "@mirai-app/use-cases"
+          - import { SupabaseRealtimeAdapter, InMemoryRealtimeAdapter } from "@mirai-app/adapters"
+          - makeRealtimeServiceLayer factory accepting SupabaseClient
+          - Layer.succeed(RealtimePortTag, new SupabaseRealtimeAdapter(client))
+          - Layer.succeed for InMemory variant
+
+      - id: SB-03
+        name: "Storage Service Layer"
+        points: 6
+        description: "StoragePortTag bound to SupabaseStorageAdapter"
+        verification: |
+          Must have:
+          - import { StoragePortTag } from "@mirai-app/use-cases"
+          - import { SupabaseStorageAdapter, S3StorageAdapter, InMemoryStorageAdapter } from "@mirai-app/adapters"
+          - makeStorageServiceLayer factory accepting SupabaseClient and config
+          - Layer.succeed(StoragePortTag, new SupabaseStorageAdapter(client))
+          - Layer.succeed variants for S3 and InMemory adapters
+
+      - id: SB-04
+        name: "Telemetry Service Layer"
+        points: 6
+        description: "TelemetryPortTag bound to DrizzleTelemetryAdapter"
+        verification: |
+          Must have:
+          - import { TelemetryPortTag } from "@mirai-app/use-cases"
+          - import { DrizzleTelemetryAdapter } from "@mirai-app/adapters"
+          - makeTelemetryServiceLayer factory accepting DrizzleDb
+          - Layer.succeed(TelemetryPortTag, new DrizzleTelemetryAdapter(db))
+
+      - id: SB-05
+        name: "PubSub Service Layer"
+        points: 6
+        description: "PubSubServiceTag bound to implementation"
+        verification: |
+          Must have:
+          - import { PubSubServiceTag } from "@mirai-app/use-cases"
+          - PubSub implementation (EventEmitterPubSub or in-memory)
+          - makePubSubServiceLayer factory
+          - Layer.succeed(PubSubServiceTag, new PubSubImplementation())
+
+  implementation_quality:
+    weight: 25
+    criteria:
+      - id: IQ-01
+        name: "Layer.succeed Pattern"
+        points: 5
+        description: "All service bindings use Layer.succeed with correct syntax"
+        verification: |
+          Pattern: Layer.succeed(Tag, new Implementation(dependencies))
+          - No Layer.effect for synchronous construction
+          - No Layer.scoped for singleton-like services
+          - Correct dependency injection into constructors
+
+      - id: IQ-02
+        name: "Layer.mergeAll Composition"
+        points: 5
+        description: "Service layers composed using Layer.mergeAll"
+        verification: |
+          Pattern: 
+          Layer.mergeAll(
+            makeAuthServiceLayer(...),
+            makeRealtimeServiceLayer(...),
+            ...
+          )
+          Must merge all 5 service domain layers
+
+      - id: IQ-03
+        name: "Factory Function Signatures"
+        points: 5
+        description: "All factory functions have correct typed parameters"
+        verification: |
+          - makeAuthServiceLayer(client: SupabaseClient): Layer.Layer<...>
+          - makeRealtimeServiceLayer(client: SupabaseClient): Layer.Layer<...>
+          - makeStorageServiceLayer(client: SupabaseClient): Layer.Layer<...>
+          - makeTelemetryServiceLayer(db: DrizzleDb): Layer.Layer<...>
+          - makePubSubServiceLayer(): Layer.Layer<...>
+
+      - id: IQ-04
+        name: "Type Safety"
+        points: 5
+        description: "All Layers properly typed with Context.Tag types"
+        verification: |
+          - No 'any' types
+          - Return types explicitly declared where needed
+          - Tag types match interface definitions
+          - Layer type parameters correct
+
+      - id: IQ-05
+        name: "Test Layer Variants"
+        points: 5
+        description: "In-memory/test implementations provided for all services"
+        verification: |
+          Must export:
+          - makeTestAuthLayer(): Layer.succeed(AuthPortTag, new InMemoryAuthAdapter())
+          - makeTestRealtimeLayer(): Layer.succeed(RealtimePortTag, new InMemoryRealtimeAdapter())
+          - makeTestStorageLayer(): Layer.succeed(StoragePortTag, new InMemoryStorageAdapter())
+          - makeTestTelemetryLayer(): with mock/stub implementation
+          - makeTestPubSubLayer(): with in-memory implementation
+
+  documentation_completeness:
+    weight: 15
+    criteria:
+      - id: DC-01
+        name: "JSDoc for Each Factory"
+        points: 5
+        description: "Every factory function has comprehensive JSDoc"
+        verification: |
+          Each factory must document:
+          - Purpose and what services it provides
+          - Parameter descriptions
+          - Return type documentation
+          - Usage example
+
+      - id: DC-02
+        name: "Main Composer Documentation"
+        points: 5
+        description: "makeServiceLayer has detailed documentation"
+        verification: |
+          Must include:
+          - Overview of all 5 services bound
+          - @example showing full usage
+          - @param tags for all parameters
+          - @returns documentation
+
+      - id: DC-03
+        name: "Inline Comments"
+        points: 5
+        description: "Clear inline comments explaining layer composition"
+        verification: |
+          - Comments for each service group
+          - Explanation of merge strategy
+          - References to CLAUDE.md patterns
+
+  integration_consistency:
+    weight: 5
+    criteria:
+      - id: IC-01
+        name: "Consistent with RepositoryLayer"
+        points: 2
+        description: "Code style matches RepositoryLayer.ts patterns"
+        verification: |
+          - Same comment separator style
+          - Same import grouping
+          - Same export pattern
+          - Same factory naming convention
+
+      - id: IC-02
+        name: "Framework Integration Ready"
+        points: 3
+        description: "Layer ready for integration with awilix-modular bridge"
+        verification: |
+          - Types exported for container bridging
+          - Compatible with Effect.runPromise pattern
+          - No framework-specific code in layer
+
+checklists:
+  pre_submission:
+    - "File created at packages/frameworks/src/layers/ServiceLayer.ts"
+    - "All 5 service Tags imported from @mirai-app/use-cases"
+    - "All adapter implementations imported from @mirai-app/adapters"
+    - "5 individual service layer factory functions created"
+    - "1 main makeServiceLayer composer function created"
+    - "5 test layer factory functions created"
+    - "All functions use Layer.succeed pattern"
+    - "All compositions use Layer.mergeAll"
+    - "JSDoc headers present on all exported functions"
+    - "Consistent section separators (// =======) used"
+    - "No TypeScript compilation errors"
+    - "Code follows RepositoryLayer.ts style conventions"
+
+  quality_verification:
+    - "No 'any' types used"
+    - "All imports are explicit (no wildcards)"
+    - "Parameter types match implementation constructors"
+    - "Return types specified for all factory functions"
+    - "Consistent naming: make*ServiceLayer for factories"
+    - "Test variants named: makeTest*Layer"
+    - "Error types not mixed (no throwing in factories)"
+    - "Layer composition is flat (no nested mergeAll)"
+
+  final_integration:
+    - "File exports all required factories"
+    - "Re-exports any required types from dependencies"
+    - "Ready for use in awilix-modular bridge"
+    - "Compatible with Effect.provide pattern"
+
+scoring_matrix:
+  excellent: # 90-100
+    description: "Exceeds all requirements with exemplary code quality"
+    requirements:
+      - All criteria met with exemplary JSDoc
+      - Additional helper utilities provided
+      - Perfect type safety throughout
+      - Comprehensive test layer variants
+
+  good: # 80-89
+    description: "Meets all requirements with minor stylistic variations"
+    requirements:
+      - All 5 services implemented correctly
+      - All factories present and working
+      - Documentation adequate
+      - Pattern consistency maintained
+
+  acceptable: # 70-79
+    description: "Meets core requirements with some gaps"
+    requirements:
+      - At least 4 of 5 services implemented
+      - Main composer function works
+      - Basic documentation present
+      - Some inconsistencies with RepositoryLayer pattern
+
+  needs_revision: # 50-69
+    description: "Significant gaps or pattern violations"
+    requirements:
+      - 3 or fewer services implemented
+      - Major pattern violations
+      - Missing documentation
+      - Type safety issues
+
+  insufficient: # 0-49
+    description: "Does not meet basic requirements"
+    requirements:
+      - Fewer than 3 services
+      - Fundamental pattern errors
+      - File missing or non-functional
+
+judge_instructions: |
+  Evaluation Process:
+  1. Verify file exists at correct location
+  2. Check all 5 service tags are imported and bound
+  3. Verify Layer.succeed pattern is used correctly
+  4. Confirm Layer.mergeAll composition in main factory
+  5. Review JSDoc completeness
+  6. Check type safety and TypeScript compilation
+  7. Compare style consistency with RepositoryLayer.ts
+  8. Verify test layer variants are provided
+
+  Common Issues to Flag:
+  - Using Layer.effect instead of Layer.succeed
+  - Missing InMemory/test implementations
+  - Incorrect import paths
+  - Missing documentation sections
+  - Inconsistent naming conventions
+  - Type errors or 'any' usage
+
+  Scoring Guidance:
+  - Deduct 5 points per missing service binding
+  - Deduct 3 points per missing test layer variant
+  - Deduct 2 points per documentation gap
+  - Deduct 10 points for pattern violations (Layer.effect, wrong merge)
+  - Deduct 5 points for type safety issues
+
+example_reference: |
+  RepositoryLayer.ts serves as the primary reference.
+  Key patterns to follow:
+
+  // Section separators
+  // =============================================================================
+  // Section Name
+  // =============================================================================
+
+  // Factory pattern
+  export const makeUserDomainLayer = (db: DrizzleDb) =>
+    Layer.mergeAll(
+      Layer.succeed(UserRepositoryTag, new DrizzleUserRepository(db)),
+      ...
+    );
+
+  // Main composer
+  export const makeRepositoryLayer = (db: DrizzleDb) =>
+    Layer.mergeAll(
+      makeUserDomainLayer(db),
+      ...
+    );
+
+success_criteria: |
+  The implementation is successful when:
+  1. All 5 service Context.Tags are bound to implementations using Layer.succeed
+  2. A unified makeServiceLayer factory composes all services with Layer.mergeAll
+  3. Test layer variants exist for all services using InMemory implementations
+  4. Documentation matches RepositoryLayer.ts quality and style
+  5. Code compiles without TypeScript errors
+  6. Pattern is consistent with CLAUDE.md §10.4 guidelines
+
+next_step_preparation: |
+  This ServiceLayer will be merged with RepositoryLayer in Step 4/7.
+  Ensure:
+  - Export patterns are compatible with Layer.mergeAll between layers
+  - Type exports enable proper composition
+  - Naming conventions allow easy integration
