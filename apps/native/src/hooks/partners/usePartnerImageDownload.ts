@@ -63,9 +63,12 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
           } catch (placeholderError) {
             placeholderUriCache = null;
             if (!placeholderErrorLogged) {
-              clientLogger.warn("Failed to download partner placeholder image:", {
-                error: placeholderError,
-              });
+              clientLogger.warn(
+                "Failed to download partner placeholder image:",
+                {
+                  error: placeholderError,
+                },
+              );
               placeholderErrorLogged = true;
             }
           }
@@ -84,7 +87,7 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
         if (!mountedRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
         if (!message.includes("component unmounted")) {
-          clientLogger.error("Failed to load partner image:", { error });
+          clientLogger.error("Failed to load partner image:", error as Error);
         }
         if (mountedRef.current) setImageUrl(null);
       } finally {

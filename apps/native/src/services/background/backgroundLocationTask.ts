@@ -122,7 +122,10 @@ try {
     BACKGROUND_LOCATION_TASK_NAME,
     async ({ data, error }) => {
       if (error) {
-        clientLogger.error("[BackgroundLocationTask] Task failed:", { error });
+        clientLogger.error(
+          "[BackgroundLocationTask] Task failed:",
+          error as unknown as Error,
+        );
         return;
       }
 
@@ -151,9 +154,7 @@ try {
       } catch (taskError) {
         clientLogger.error(
           "[BackgroundLocationTask] Failed to send location update:",
-          {
-            error: taskError,
-          },
+          taskError as Error,
         );
       } finally {
         isSending = false;
@@ -166,8 +167,9 @@ try {
     !(error instanceof Error) ||
     !error.message.includes("has already been defined")
   ) {
-    clientLogger.error("[BackgroundLocationTask] Failed to define task:", {
-      error,
-    });
+    clientLogger.error(
+      "[BackgroundLocationTask] Failed to define task:",
+      error as Error,
+    );
   }
 }

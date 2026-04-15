@@ -112,7 +112,7 @@ export default function RewardsView({ tripId }: Props) {
         { text: "OK", style: "default" },
       ]);
     } catch (error) {
-      clientLogger.error("Failed to refresh rewards:", { error });
+      clientLogger.error("Failed to refresh rewards:", error as Error);
       Alert.alert("Error", "Failed to refresh rewards");
     } finally {
       setRefreshing(false);
@@ -423,7 +423,6 @@ export default function RewardsView({ tripId }: Props) {
 
                 {/* Purchase Button */}
                 <Button
-                  
                   onPress={() => openPurchaseModal(reward)}
                   disabled={
                     !reward.canAfford ||
@@ -564,10 +563,8 @@ export default function RewardsView({ tripId }: Props) {
                 </Card>
 
                 <Button
-                  
                   onPress={handlePurchase}
                   disabled={purchaseReward.isPending}
-                  
                   marginBottom="$6"
                 >
                   {purchaseReward.isPending ? "Claiming..." : "Confirm claim"}
@@ -640,11 +637,7 @@ export default function RewardsView({ tripId }: Props) {
                       ))}
                     </ScrollView>
                     {previewImages.length > 1 ? (
-                      <XStack
-                        justifyContent="center"
-                        gap={6}
-                        marginTop={10}
-                      >
+                      <XStack justifyContent="center" gap={6} marginTop={10}>
                         {previewImages.map((_, index) => (
                           <YStack
                             key={`dot-${index}`}
@@ -718,7 +711,6 @@ export default function RewardsView({ tripId }: Props) {
                 </Card>
 
                 <Button
-                  
                   onPress={() => {
                     setShowRewardDetailsModal(false);
                     openPurchaseModal(previewReward);

@@ -120,7 +120,7 @@ export function useNotifications(): UseNotificationsReturn {
       for (const sub of subscriptionStatus.subscriptions) {
         const result = await unsubscribeMutation({ token: sub.token });
         if (result.error) {
-          clientLogger.error("Failed to unsubscribe:", { error: result.error });
+          clientLogger.error("Failed to unsubscribe:", result.error as Error);
         }
       }
       // Invalidate cache after unsubscribing
@@ -152,7 +152,7 @@ export function useNotifications(): UseNotificationsReturn {
         // Invalidate cache after subscribing
         await client.invalidate(GetSubscriptionStatusDocument);
       } else {
-        clientLogger.error("Failed to subscribe:", { error: result.error });
+        clientLogger.error("Failed to subscribe:", result.error as Error);
       }
     }
   }, [
@@ -172,7 +172,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   const onTogglePress = useCallback(() => {
     void toggleSubscription().catch((err) => {
-      clientLogger.error("Error toggling notifications:", { error: err });
+      clientLogger.error("Error toggling notifications:", err as Error);
       Alert.alert("Error", "Failed to update notification settings");
     });
   }, [toggleSubscription]);

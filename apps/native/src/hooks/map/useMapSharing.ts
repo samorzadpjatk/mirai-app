@@ -78,9 +78,10 @@ export function useMapSharing(
     });
 
     if (result.error) {
-      clientLogger.error("[Map] Failed to update sharing:", {
-        error: result.error,
-      });
+      clientLogger.error(
+        "[Map] Failed to update sharing:",
+        result.error as Error,
+      );
       Alert.alert(
         "Update Failed",
         "Failed to update sharing settings. Please try again.",
@@ -96,9 +97,10 @@ export function useMapSharing(
     const result = await removeUserMutation({ userId });
 
     if (result.error) {
-      clientLogger.error("[Map] Failed to remove user from sharing:", {
-        error: result.error,
-      });
+      clientLogger.error(
+        "[Map] Failed to remove user from sharing:",
+        result.error as Error,
+      );
       Alert.alert(
         "Remove Failed",
         "Failed to remove user from sharing. Please try again.",

@@ -323,7 +323,7 @@ export const useCommunityFeed = ({
         }
       } catch (error) {
         // Revert optimistic update on error - refetch the page
-        clientLogger.error("Failed to toggle reaction:", { error });
+        clientLogger.error("Failed to toggle reaction:", error as Error);
         await refetch();
       }
     },

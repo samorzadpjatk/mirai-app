@@ -266,7 +266,7 @@ export default function LoginScreen() {
     } catch (err) {
       setIsPolicyModalVisible(false);
       Alert.alert("Błąd", "Nie udało się otworzyć polityki prywatności.");
-      clientLogger.error("[PrivacyPolicy] download error:", { error: err });
+      clientLogger.error("[PrivacyPolicy] download error:", err as Error);
     } finally {
       setIsPolicyLoading(false);
     }
@@ -525,7 +525,7 @@ export default function LoginScreen() {
             minScale={1}
             maxScale={8}
             onError={(err) => {
-              clientLogger.error("[PrivacyPolicy] PDF error:", { error: err });
+              clientLogger.error("[PrivacyPolicy] PDF error:", err as Error);
               Alert.alert("Błąd", "Nie udało się otworzyć PDF.");
             }}
           />

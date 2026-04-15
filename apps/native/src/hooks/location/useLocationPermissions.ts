@@ -96,7 +96,10 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
 
         return status as LocationPermissionStatus;
       } catch (error) {
-        clientLogger.error("Failed to request location permissions:", { error });
+        clientLogger.error(
+          "Failed to request location permissions:",
+          error as Error,
+        );
         setPermissionStatus("denied");
         Alert.alert(
           "Location Permission Required",
@@ -129,7 +132,10 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
           await requestLocationPermissions();
         }
       } catch (error) {
-        clientLogger.error("Failed to toggle location sharing:", { error });
+        clientLogger.error(
+          "Failed to toggle location sharing:",
+          error as Error,
+        );
         if (error instanceof Error) {
           Alert.alert(
             "Authentication Error",

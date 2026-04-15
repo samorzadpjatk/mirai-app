@@ -211,7 +211,7 @@ export const mapOverlayStore = createStore<MapOverlayStore>()((set, get) => ({
         });
       }
     } catch (error) {
-      clientLogger.error("Failed to remove user:", { error });
+      clientLogger.error("Failed to remove user:", error as Error);
     } finally {
       setIsRemovingUser(false);
     }

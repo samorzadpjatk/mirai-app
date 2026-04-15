@@ -192,7 +192,7 @@ export default function GroupDetailsScreen() {
               await client.invalidate("GetGroupRanking");
               router.replace(`/trips/groups?tripId=${group.trip?.id}`);
             } catch (error) {
-              clientLogger.error("Failed to leave group:", { error });
+              clientLogger.error("Failed to leave group:", error as Error);
               Alert.alert("Error", "Failed to leave group");
             } finally {
               setIsLeaving(false);

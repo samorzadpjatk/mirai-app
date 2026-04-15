@@ -120,9 +120,10 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       await startBackgroundLocationTask();
       set({ isBackgroundLocationActive: true });
     } catch (error) {
-      clientLogger.error("Failed to synchronize background location updates:", {
-        error,
-      });
+      clientLogger.error(
+        "Failed to synchronize background location updates:",
+        error as Error,
+      );
       set({ isBackgroundLocationActive: false });
     }
   },
@@ -131,7 +132,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
     try {
       await Linking.openSettings();
     } catch (error) {
-      clientLogger.error("Failed to open system settings:", { error });
+      clientLogger.error("Failed to open system settings:", error as Error);
       Alert.alert(
         "Settings Unavailable",
         "Unable to open system settings on this device.",
@@ -153,7 +154,10 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
 
       return status as LocationPermissionStatus;
     } catch (error) {
-      clientLogger.error("Failed to request location permissions:", { error });
+      clientLogger.error(
+        "Failed to request location permissions:",
+        error as Error,
+      );
       set({ permissionStatus: "denied" });
       Alert.alert(
         "Location Permission Required",
@@ -257,9 +261,10 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         isBackgroundLocationActive: true,
       });
     } catch (error) {
-      clientLogger.error("Failed to toggle background location updates:", {
-        error,
-      });
+      clientLogger.error(
+        "Failed to toggle background location updates:",
+        error as Error,
+      );
       Alert.alert(
         "Background Updates Error",
         "Failed to change background location updates. Please try again.",
@@ -298,7 +303,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         set({ isBackgroundLocationActive: false });
       }
     } catch (error) {
-      clientLogger.error("Failed to toggle location sharing:", { error });
+      clientLogger.error("Failed to toggle location sharing:", error as Error);
       if (error instanceof Error) {
         Alert.alert(
           "Authentication Error",

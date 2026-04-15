@@ -149,9 +149,10 @@ export function useJudgement(
       });
 
       if (result.error) {
-        clientLogger.error("Failed to review challenge submission:", {
-          error: result.error,
-        });
+        clientLogger.error(
+          "Failed to review challenge submission:",
+          result.error as Error,
+        );
       } else {
         // Invalidate and refetch submissions
         await client.invalidate("GetChallengeSubmissions", { challengeId });

@@ -44,9 +44,10 @@ export function NotificationScheduleCard({
                 useGetNotificationSchedulesQuery.document,
               );
             } else {
-              clientLogger.error("Error deleting schedule:", {
-                error: result.error,
-              });
+              clientLogger.error(
+                "Error deleting schedule:",
+                result.error as Error,
+              );
             }
           },
         },
@@ -60,7 +61,7 @@ export function NotificationScheduleCard({
       // Invalidate schedules so list refreshes
       await client.invalidate(useGetNotificationSchedulesQuery.document);
     } else {
-      clientLogger.error("Error toggling schedule:", { error: result.error });
+      clientLogger.error("Error toggling schedule:", result.error as Error);
     }
   };
 

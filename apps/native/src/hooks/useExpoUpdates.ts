@@ -39,7 +39,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
         setShowUpdatePopup(true);
       }
     } catch (err) {
-      clientLogger.error("Error checking for updates:", { error: err });
+      clientLogger.error("Error checking for updates:", err as Error);
       setError("Failed to check for updates");
     } finally {
       setIsChecking(false);
@@ -57,7 +57,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
       // Restart the app to apply the update
       await Updates.reloadAsync();
     } catch (err) {
-      clientLogger.error("Error downloading update:", { error: err });
+      clientLogger.error("Error downloading update:", err as Error);
       setError("Failed to download update");
       setIsDownloading(false);
     }

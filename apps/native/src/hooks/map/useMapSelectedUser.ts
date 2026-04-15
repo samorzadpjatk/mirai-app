@@ -36,7 +36,7 @@ export function useMapSelectedUser({
     try {
       await updateSharing(newIds);
     } catch (err) {
-      clientLogger.error("Failed to stop sharing:", { error: err });
+      clientLogger.error("Failed to stop sharing:", err as Error);
       // Error handling is now done in useMapSharing hook
     }
   };

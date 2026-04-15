@@ -41,7 +41,7 @@ export function useShareModal({
     try {
       await updateSharing?.(newIds);
     } catch (err) {
-      clientLogger.error("Failed to update sharing:", { error: err });
+      clientLogger.error("Failed to update sharing:", err as Error);
     }
     reset();
   };

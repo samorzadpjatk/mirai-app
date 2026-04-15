@@ -66,7 +66,7 @@ export default function TripInfoScreen() {
         heroImageDownload
           .download({ storagePath: heroResource.storagePath })
           .catch((err) =>
-            clientLogger.error("Failed to download hero image:", { error: err }),
+            clientLogger.error("Failed to download hero image:", err as Error),
           );
       }
 
@@ -74,7 +74,10 @@ export default function TripInfoScreen() {
         mapBgImageDownload
           .download({ storagePath: mapBgResource.storagePath })
           .catch((err) =>
-            clientLogger.error("Failed to download map bg image:", { error: err }),
+            clientLogger.error(
+              "Failed to download map bg image:",
+              err as Error,
+            ),
           );
       }
     }
@@ -122,7 +125,7 @@ export default function TripInfoScreen() {
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
       } catch (error) {
-        clientLogger.error("Error handling Infopack PDF:", { error });
+        clientLogger.error("Error handling Infopack PDF:", error as Error);
         Alert.alert(
           "Error",
           "Could not open the infopack. Please try again later.",
@@ -155,7 +158,7 @@ export default function TripInfoScreen() {
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
       } catch (error) {
-        clientLogger.error("Error handling PDF:", { error });
+        clientLogger.error("Error handling PDF:", error as Error);
         Alert.alert("Error", "Could not open the map. Please try again later.");
       }
     }
@@ -485,7 +488,7 @@ export default function TripInfoScreen() {
                 // PDF loaded successfully
               }}
               onError={(error) => {
-                clientLogger.error("PDF Error:", { error });
+                clientLogger.error("PDF Error:", error as Error);
                 Alert.alert("Error", "Could not load PDF");
               }}
               enablePaging={false}

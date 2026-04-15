@@ -86,7 +86,10 @@ export function useTripBackgroundImageDownload(
         if (!mountedRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
         if (!message.includes("component unmounted")) {
-          clientLogger.error("Failed to load trip background image:", { error });
+          clientLogger.error(
+            "Failed to load trip background image:",
+            error as Error,
+          );
         }
         if (mountedRef.current) setImageUrl(null);
       } finally {

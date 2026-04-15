@@ -170,7 +170,7 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
         role: user.role,
       };
     } catch (error) {
-      clientLogger.error("Failed to fetch user:", { error });
+      clientLogger.error("Failed to fetch user:", error as Error);
       return null;
     }
   };

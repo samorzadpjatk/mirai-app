@@ -59,7 +59,7 @@ export default function CreateGroupScreen() {
       Alert.alert("Success", "Group created successfully!");
       router.push(`/trips/groups/${newGroup.id}`);
     } catch (err: unknown) {
-      clientLogger.error("Create group error:", { error: err });
+      clientLogger.error("Create group error:", err as Error);
       if (err instanceof Error) {
         Alert.alert("Error", err.message);
       } else {
