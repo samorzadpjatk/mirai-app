@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { useQuery } from "urql";
+import { CreateDownloadUrlDocument } from "@mirai-app/graphql-client";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import type { VotingSubmission } from "../../../hooks/admin/useStaffVoting";
@@ -21,15 +21,9 @@ export function VotingCard({
   onPick,
   disabled = false,
 }: VotingCardProps) {
-  // Use urql's useQuery hook for fetching image URL
+  // Use urql's useQuery hook with generated document for fetching image URL
   const [imageResult] = useQuery({
-    query: `
-      query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-        createDownloadUrl(input: $input) {
-          signedUrl
-        }
-      }
-    `,
+    query: CreateDownloadUrlDocument,
     variables: {
       input: {
         storagePath: submission.imagePath,

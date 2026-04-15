@@ -1,13 +1,18 @@
 "use client";
 
 import { useMemo, useCallback } from "react";
-import { useQuery, useMutation, useClient } from "urql";
+import { useQuery, useClient } from "urql";
 import {
   GetChallengeSubmissionsDocument,
   type GetChallengeSubmissionsQuery,
+  useUpdateChallengeSubmissionMutation,
+  useCreateSubmissionReportMutation,
+  ReviewAction,
+  SubmissionStatus,
+  type ReportReason,
 } from "@mirai-app/graphql-client/urql";
 
-export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
+export { SubmissionStatus };
 
 export interface SubmissionItem {
   id: string;
@@ -24,8 +29,8 @@ export interface SubmissionItem {
   awardedPoints: number;
   bonusPoints: number;
   reviewedBy: {
-    firstName: string | null;
-    lastName: string | null;
+    firstName: string;
+    lastName: string;
     email: string | null;
   } | null;
   group: {
@@ -35,38 +40,16 @@ export interface SubmissionItem {
   };
 }
 
-// GraphQL mutation for reviewing submissions
-const REVIEW_SUBMISSION_MUTATION = `
-  mutation ReviewChallengeSubmission($input: ReviewChallengeSubmissionInput!) {
-    reviewChallengeSubmission(input: $input) {
-      submission {
-        id
-        status
-        rejectionReason
-        awardedPoints
-        bonusPoints
-        ranking
-      }
-    }
-  }
-`;
-
-// GraphQL mutation for creating submission reports (flagging)
-const CREATE_SUBMISSION_REPORT_MUTATION = `
-  mutation CreateSubmissionReport($input: CreateSubmissionReportInput!) {
-    createSubmissionReport(input: $input) {
-      report {
-        id
-      }
-    }
-  }
-`;
-
 const parseSubmissionStatus = (value: string): SubmissionStatus => {
-  if (value === "APPROVED" || value === "REJECTED" || value === "PENDING") {
-    return value;
+  switch (value) {
+    case "APPROVED":
+      return SubmissionStatus.Approved;
+    case "REJECTED":
+      return SubmissionStatus.Rejected;
+    case "PENDING":
+    default:
+      return SubmissionStatus.Pending;
   }
-  return "PENDING";
 };
 
 const parseSubmissionsFromQuery = (
@@ -80,8 +63,8 @@ const parseSubmissionsFromQuery = (
 
       const reviewedBy = item.reviewedBy
         ? {
-            firstName: item.reviewedBy.firstName ?? null,
-            lastName: item.reviewedBy.lastName ?? null,
+            firstName: item.reviewedBy.firstName,
+            lastName: item.reviewedBy.lastName,
             email: item.reviewedBy.email ?? null,
           }
         : null;
@@ -110,7 +93,7 @@ const parseSubmissionsFromQuery = (
         },
       };
     })
-    .filter((item): item is SubmissionItem => item !== null);
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 };
 
 export function useChallengeSubmissions(tripId: string, challengeId: string) {
@@ -133,8 +116,8 @@ export function useChallengeSubmissions(tripId: string, challengeId: string) {
     [submissionsResult.data],
   );
 
-  // Review mutation using urql
-  const [, reviewMutation] = useMutation(REVIEW_SUBMISSION_MUTATION);
+  // Review mutation using generated hook
+  const [, reviewMutation] = useUpdateChallengeSubmissionMutation();
 
   const reviewSubmission = useCallback(
     async (input: {
@@ -145,7 +128,10 @@ export function useChallengeSubmissions(tripId: string, challengeId: string) {
       const result = await reviewMutation({
         input: {
           submissionId: input.id,
-          status: input.status,
+          reviewAction:
+            input.status === "APPROVED"
+              ? ReviewAction.Approve
+              : ReviewAction.Reject,
           rejectionReason: input.rejectionReason,
         },
       });
@@ -155,7 +141,7 @@ export function useChallengeSubmissions(tripId: string, challengeId: string) {
       }
 
       // Invalidate cache after successful review
-      client.invalidate(GetChallengeSubmissionsDocument, {
+      (client as any).invalidate(GetChallengeSubmissionsDocument, {
         challengeId,
         tripId,
         limit: 100,
@@ -167,8 +153,8 @@ export function useChallengeSubmissions(tripId: string, challengeId: string) {
     [reviewMutation, client, challengeId, tripId],
   );
 
-  // Flag mutation using urql
-  const [, flagMutation] = useMutation(CREATE_SUBMISSION_REPORT_MUTATION);
+  // Flag mutation using generated hook
+  const [, flagMutation] = useCreateSubmissionReportMutation();
 
   const flagSubmission = useCallback(
     async (input: {
@@ -176,11 +162,15 @@ export function useChallengeSubmissions(tripId: string, challengeId: string) {
       reason: string;
       details?: string;
     }) => {
+      // Map string reason to ReportReason enum
+      const reasonEnum = input.reason
+        .toUpperCase()
+        .replace(/\s+/g, "_") as ReportReason;
+
       const result = await flagMutation({
         input: {
-          tripId,
           submissionId: input.submissionId,
-          reason: input.reason,
+          reason: reasonEnum,
           details: input.details,
         },
       });
@@ -191,7 +181,7 @@ export function useChallengeSubmissions(tripId: string, challengeId: string) {
 
       return result.data;
     },
-    [flagMutation, tripId],
+    [flagMutation],
   );
 
   return {

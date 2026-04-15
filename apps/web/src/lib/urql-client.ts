@@ -22,7 +22,6 @@ import {
   type SSRExchange,
 } from "@urql/core";
 import { createClient as createWSClient } from "graphql-ws";
-import { apiLogger } from "@mirai-app/shared";
 import { env } from "./env";
 
 // =============================================================================
@@ -85,23 +84,6 @@ const getWSClient = (): ReturnType<typeof createWSClient> => {
       connectionParams: () => {
         // No need to pass auth token - WebSocket uses cookies
         return {};
-      },
-      on: {
-        connected: () => {
-          apiLogger.info("[WebSocket] Connected");
-        },
-        error: (error) => {
-          apiLogger.error(
-            "[WebSocket] Error:",
-            error instanceof Error ? error : new Error(String(error)),
-          );
-        },
-        closed: (event) => {
-          apiLogger.info("[WebSocket] Closed", {
-            code: event.code,
-            reason: event.reason,
-          });
-        },
       },
     });
   }
@@ -244,13 +226,3 @@ export const resetUrqlClient = (): void => {
 export const extractSSRData = (): unknown => {
   return ssr?.extractData();
 };
-
-// =============================================================================
-// Legacy Compatibility
-// =============================================================================
-
-/**
- * Legacy graphql-request client for gradual migration
- * @deprecated Use urqlClient instead
- */
-export { urqlClient as graphqlClient };

@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useClient } from "urql";
+import {
+  useCreateUploadUrlMutation,
+  CreateDownloadUrlDocument,
+  type CreateDownloadUrlQuery,
+  type CreateDownloadUrlQueryVariables,
+} from "@mirai-app/graphql-client";
 import { authStore } from "@mirai-app/frameworks/auth/client";
 import {
   validateImageFile,
@@ -121,30 +127,6 @@ const uploadWithProgress = (
     xhr.send(file);
   });
 
-// GraphQL mutation for creating upload URL
-const CREATE_UPLOAD_URL_MUTATION = `
-  mutation CreateUploadUrl($input: CreateUploadUrlInput!) {
-    createUploadUrl(input: $input) {
-      token
-      bucket
-      objectPath
-      storagePath
-      url
-    }
-  }
-`;
-
-// GraphQL query for creating download URL
-const CREATE_DOWNLOAD_URL_QUERY = `
-  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-    createDownloadUrl(input: $input) {
-      signedUrl
-      storagePath
-      expiresIn
-    }
-  }
-`;
-
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
@@ -185,6 +167,7 @@ const parseSignedUrlResult = (value: unknown): string => {
 
 export function useWebFileUpload(validationOptions?: FileValidationOptions) {
   const urqlClient = useClient();
+  const [, createUploadUrl] = useCreateUploadUrlMutation();
 
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [progress, setProgress] = useState<UploadProgress>(initialProgress);
@@ -276,25 +259,23 @@ export function useWebFileUpload(validationOptions?: FileValidationOptions) {
       setResult(null);
 
       try {
-        // Use urql to get upload URL
-        const uploadResult = await urqlClient
-          .mutation(CREATE_UPLOAD_URL_MUTATION, {
-            input: {
-              storagePath: input.storagePath,
-              upsert: input.upsert ?? true,
-            },
-          })
-          .toPromise();
+        // Use generated hook for mutation
+        const { data: uploadData, error: uploadError } = await createUploadUrl({
+          input: {
+            storagePath: input.storagePath,
+            upsert: input.upsert ?? true,
+          },
+        });
 
-        if (uploadResult.error) {
-          throw uploadResult.error;
+        if (uploadError) {
+          throw uploadError;
         }
 
-        if (!uploadResult.data?.createUploadUrl) {
+        if (!uploadData?.createUploadUrl) {
           throw new Error("Failed to get upload URL.");
         }
 
-        const ticket = parseUploadTicket(uploadResult.data.createUploadUrl);
+        const ticket = parseUploadTicket(uploadData.createUploadUrl);
 
         // Get supabase URL from env
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -351,17 +332,17 @@ export function useWebFileUpload(validationOptions?: FileValidationOptions) {
         throw new Error(message);
       }
     },
-    [selectedFile, urqlClient],
+    [selectedFile, createUploadUrl],
   );
 
   const verifyFileAccessible = useCallback(
     async (storagePath: string): Promise<string> => {
+      // Use generated GraphQL document with urql client
       const response = await urqlClient
-        .query(CREATE_DOWNLOAD_URL_QUERY, {
-          input: {
-            storagePath,
-          },
-        })
+        .query<
+          CreateDownloadUrlQuery,
+          CreateDownloadUrlQueryVariables
+        >(CreateDownloadUrlDocument, { input: { storagePath } })
         .toPromise();
 
       if (response.error) {

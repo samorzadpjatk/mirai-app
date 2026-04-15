@@ -1,8 +1,6 @@
 import { authStore, type AuthUser } from "@mirai-app/frameworks/auth/client";
-import { getTRPCClient } from "@mirai-app/frameworks/graphql/client";
-import { apiLogger } from "@mirai-app/shared";
 import { supabase } from "./supabase";
-import { env } from "./env";
+import { urqlClient } from "./urql-client";
 
 interface UserGetMyResponse {
   id: string;
@@ -13,34 +11,41 @@ interface UserGetMyResponse {
   role: "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
 }
 
-const GET_ME_QUERY = `
-  query GetMe {
-    me {
-      id
-      authUserId
-      email
-      firstName
-      lastName
-      role
+/**
+ * Execute GraphQL query to fetch current user using urql
+ */
+async function executeGetMyUser(): Promise<UserGetMyResponse | null> {
+  const GET_ME_QUERY = `
+    query GetMe {
+      me {
+        id
+        authUserId
+        firstName
+        lastName
+        role
+      }
     }
-  }
-`;
+  `;
 
-const getMyUser = async (
-  accessToken: string,
-): Promise<UserGetMyResponse | null> => {
-  const { client, cleanup } = getTRPCClient(
-    env.graphqlUrl,
-    env.graphqlWsUrl,
-    accessToken,
-  );
-  try {
-    const result = await client.query<{ me: UserGetMyResponse }>(GET_ME_QUERY);
-    return result.me;
-  } finally {
-    await cleanup();
+  const result = await urqlClient.query(GET_ME_QUERY, {}).toPromise();
+
+  if (result.error) {
+    throw result.error;
   }
-};
+
+  const me = result.data?.me;
+  if (!me) return null;
+
+  // Map to our interface (email is not in the response, will be handled separately if needed)
+  return {
+    id: me.id,
+    authUserId: me.authUserId,
+    email: null, // Not available in GetCurrentUserDocument - fetched separately if needed
+    firstName: me.firstName ?? null,
+    lastName: me.lastName ?? null,
+    role: me.role,
+  };
+}
 
 const mapToAuthUser = (user: {
   id: string;
@@ -72,7 +77,7 @@ export const onAuthUserFetch = async (
   }
 
   try {
-    const me = await getMyUser(session.access_token);
+    const me = await executeGetMyUser();
     if (me?.authUserId !== authUserId) {
       return null;
     }
@@ -85,11 +90,7 @@ export const onAuthUserFetch = async (
       lastName: me.lastName ?? null,
       role: me.role,
     });
-  } catch (error) {
-    apiLogger.warn("[web] GraphQL me query failed, falling back to Supabase", {
-      error,
-    });
-
+  } catch {
     const { data, error: supabaseError } = await supabase.auth.getUser(
       session.access_token,
     );
@@ -124,7 +125,7 @@ export const checkIsAdminUser = async () => {
   }
 
   try {
-    const me = await getMyUser(session.access_token);
+    const me = await executeGetMyUser();
     if (!me) {
       return false;
     }

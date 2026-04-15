@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "urql";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
 import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
@@ -33,8 +32,6 @@ const formatDateTime = (value: string | null): string => {
 };
 
 export function ChallengeAnalyticsPanel(props: ChallengeAnalyticsPanelProps) {
-  const trpcClient = useTRPCClient();
-
   // For tRPC calls that aren't available via GraphQL yet, we can use a custom query
   // that calls the tRPC client directly. This is a bridge pattern.
   const [submissionsResult] = useQuery({

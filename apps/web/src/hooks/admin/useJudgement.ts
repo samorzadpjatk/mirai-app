@@ -1,11 +1,17 @@
 "use client";
 
 import { useMemo, useCallback } from "react";
-import { useQuery, useMutation, useClient } from "urql";
+import { useClient } from "urql";
 import {
   GetChallengeSubmissionsDocument,
   GetVotesByChallengeDocument,
+  useGetChallengeQuery,
+  useGetChallengeSubmissionsQuery,
+  useGetVotesByChallengeQuery,
+  useUpdateChallengeSubmissionMutation,
+  useUpdateChallengeMutation,
   type GetChallengeSubmissionsQuery,
+  type ReviewAction,
 } from "@mirai-app/graphql-client/urql";
 
 type ChallengeStatus =
@@ -49,154 +55,6 @@ export interface JudgementSubmission {
     image: string | null;
   };
 }
-
-// GraphQL query to get challenge by ID
-const GET_CHALLENGE_QUERY = `
-  query GetChallenge($id: ID!, $tripId: ID!) {
-    challenge(id: $id, tripId: $tripId) {
-      id
-      name
-      scoringCategory
-      status
-      basePoints
-      firstPlacePoints
-      secondPlacePoints
-      thirdPlacePoints
-    }
-  }
-`;
-
-// GraphQL mutation for reviewing submissions
-const REVIEW_SUBMISSION_MUTATION = `
-  mutation ReviewChallengeSubmission($input: ReviewChallengeSubmissionInput!) {
-    reviewChallengeSubmission(input: $input) {
-      submission {
-        id
-        status
-        rejectionReason
-        awardedPoints
-        bonusPoints
-        ranking
-      }
-    }
-  }
-`;
-
-// GraphQL mutation for updating challenge status
-const UPDATE_CHALLENGE_MUTATION = `
-  mutation UpdateChallenge($input: UpdateChallengeInput!) {
-    updateChallenge(input: $input) {
-      challenge {
-        id
-        status
-      }
-    }
-  }
-`;
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const parseChallenge = (value: unknown): JudgementChallenge | null => {
-  if (!isObject(value)) return null;
-  if (
-    typeof value.id !== "string" ||
-    typeof value.tripId !== "string" ||
-    typeof value.name !== "string"
-  ) {
-    return null;
-  }
-
-  const status = value.status;
-  const validStatus: ChallengeStatus =
-    status === "HIDDEN" ||
-    status === "VISIBLE" ||
-    status === "ACTIVE" ||
-    status === "VOTING_PHASE" ||
-    status === "COMPLETED" ||
-    status === "CANCELLED"
-      ? status
-      : "HIDDEN";
-
-  return {
-    id: value.id,
-    tripId: value.tripId,
-    name: value.name,
-    scoringCategory:
-      typeof value.scoringCategory === "string"
-        ? value.scoringCategory
-        : "SPEED",
-    status: validStatus,
-    basePoints: typeof value.basePoints === "number" ? value.basePoints : 0,
-    firstPlacePoints:
-      typeof value.firstPlacePoints === "number"
-        ? value.firstPlacePoints
-        : null,
-    secondPlacePoints:
-      typeof value.secondPlacePoints === "number"
-        ? value.secondPlacePoints
-        : null,
-    thirdPlacePoints:
-      typeof value.thirdPlacePoints === "number"
-        ? value.thirdPlacePoints
-        : null,
-  };
-};
-
-const parseSubmission = (value: unknown): JudgementSubmission | null => {
-  if (!isObject(value) || typeof value.id !== "string") {
-    return null;
-  }
-
-  const group = isObject(value.group) ? value.group : null;
-  if (
-    !group ||
-    typeof group.id !== "string" ||
-    typeof group.name !== "string"
-  ) {
-    return null;
-  }
-
-  const statusRaw = value.status;
-  const status: JudgementSubmission["status"] =
-    statusRaw === "APPROVED" ||
-    statusRaw === "REJECTED" ||
-    statusRaw === "PENDING"
-      ? statusRaw
-      : "PENDING";
-
-  return {
-    id: value.id,
-    status,
-    imageIds: Array.isArray(value.imageIds)
-      ? value.imageIds.filter(
-          (item): item is string => typeof item === "string",
-        )
-      : [],
-    videoId: typeof value.videoId === "string" ? value.videoId : null,
-    textContent:
-      typeof value.textContent === "string" ? value.textContent : null,
-    latitude: typeof value.latitude === "number" ? value.latitude : null,
-    longitude: typeof value.longitude === "number" ? value.longitude : null,
-    voteScore: typeof value.voteScore === "number" ? value.voteScore : 0,
-    voteCount: typeof value.voteCount === "number" ? value.voteCount : 0,
-    ranking: typeof value.ranking === "number" ? value.ranking : null,
-    awardedPoints:
-      typeof value.awardedPoints === "number" ? value.awardedPoints : 0,
-    bonusPoints: typeof value.bonusPoints === "number" ? value.bonusPoints : 0,
-    rejectionReason:
-      typeof value.rejectionReason === "string" ? value.rejectionReason : null,
-    createdAt:
-      typeof value.createdAt === "string"
-        ? value.createdAt
-        : new Date().toISOString(),
-    group: {
-      id: group.id,
-      name: group.name,
-      image: typeof group.image === "string" ? group.image : null,
-    },
-  };
-};
 
 const parseSubmissionsFromQuery = (
   data: GetChallengeSubmissionsQuery | undefined,
@@ -242,39 +100,48 @@ const parseSubmissionsFromQuery = (
 export function useJudgement(tripId: string, challengeId: string) {
   const client = useClient();
 
-  // Challenge query using urql
-  const [challengeResult, reexecuteChallenge] = useQuery({
-    query: GET_CHALLENGE_QUERY,
+  // Challenge query using generated hook
+  const [challengeResult, reexecuteChallenge] = useGetChallengeQuery({
     variables: { id: challengeId, tripId },
     pause: !tripId || !challengeId,
   });
 
-  const challenge = useMemo(() => {
+  const challenge = useMemo((): JudgementChallenge | null => {
     if (!challengeResult.data?.challenge) return null;
-    return parseChallenge(challengeResult.data.challenge);
+
+    const c = challengeResult.data.challenge;
+    return {
+      id: c.id,
+      tripId: c.tripId,
+      name: c.name,
+      scoringCategory: c.scoringCategory,
+      status: c.status as ChallengeStatus,
+      basePoints: c.basePoints,
+      firstPlacePoints: c.firstPlacePoints ?? null,
+      secondPlacePoints: c.secondPlacePoints ?? null,
+      thirdPlacePoints: c.thirdPlacePoints ?? null,
+    };
   }, [challengeResult.data]);
 
-  // Submissions query using urql
-  const [submissionsResult, reexecuteSubmissions] = useQuery({
-    query: GetChallengeSubmissionsDocument,
-    variables: {
-      challengeId,
-      tripId,
-      limit: 100,
-      offset: 0,
-    },
-    pause: !tripId || !challengeId,
-  });
+  // Submissions query using generated hook
+  const [submissionsResult, reexecuteSubmissions] =
+    useGetChallengeSubmissionsQuery({
+      variables: {
+        challengeId,
+        limit: 100,
+        offset: 0,
+      },
+      pause: !challengeId,
+    });
 
-  // Votes query using urql
-  const [votesResult] = useQuery({
-    query: GetVotesByChallengeDocument,
+  // Votes query using generated hook
+  const [votesResult] = useGetVotesByChallengeQuery({
     variables: { challengeId },
     pause: !challengeId,
   });
 
-  // Review mutation using urql
-  const [, reviewMutation] = useMutation(REVIEW_SUBMISSION_MUTATION);
+  // Review mutation using generated hook
+  const [, reviewMutation] = useUpdateChallengeSubmissionMutation();
 
   const reviewSubmission = useCallback(
     async (input: {
@@ -288,7 +155,7 @@ export function useJudgement(tripId: string, challengeId: string) {
       const result = await reviewMutation({
         input: {
           submissionId: input.id,
-          status: input.status,
+          reviewAction: input.status as ReviewAction,
           rejectionReason: input.rejectionReason,
           awardedPoints: input.awardedPoints,
           bonusPoints: input.bonusPoints,
@@ -301,27 +168,26 @@ export function useJudgement(tripId: string, challengeId: string) {
       }
 
       // Invalidate related queries
-      client.invalidate(GetChallengeSubmissionsDocument, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (client as any).invalidate(GetChallengeSubmissionsDocument, {
         challengeId,
-        tripId,
         limit: 100,
         offset: 0,
       });
 
       return result.data;
     },
-    [reviewMutation, client, challengeId, tripId],
+    [reviewMutation, client, challengeId],
   );
 
-  // Complete challenge mutation using urql
-  const [, completeChallengeMutation] = useMutation(UPDATE_CHALLENGE_MUTATION);
+  // Complete challenge mutation using generated hook
+  const [, completeChallengeMutation] = useUpdateChallengeMutation();
 
   const completeChallenge = useCallback(async () => {
     const result = await completeChallengeMutation({
       input: {
         id: challengeId,
         tripId,
-        status: "COMPLETED",
       },
     });
 
@@ -330,15 +196,15 @@ export function useJudgement(tripId: string, challengeId: string) {
     }
 
     // Invalidate related queries
-    client.invalidate(GetChallengeSubmissionsDocument, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (client as any).invalidate(GetChallengeSubmissionsDocument, {
       challengeId,
-      tripId,
       limit: 100,
       offset: 0,
     });
 
     return result.data;
-  }, [completeChallengeMutation, client, challengeId, tripId]);
+  }, [completeChallengeMutation, client, challengeId]);
 
   const submissions = useMemo(
     () => parseSubmissionsFromQuery(submissionsResult.data),

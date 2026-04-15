@@ -9,7 +9,6 @@ import { useEffect } from "react";
 import { env } from "../lib/env";
 import { onAuthUserFetch } from "../lib/auth";
 import { supabase } from "../lib/supabase";
-import { clientLogger } from "@mirai-app/shared";
 
 // Refresh token 5 minutes before expiration
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
@@ -40,22 +39,12 @@ const scheduleTokenRefresh = (accessToken: string): (() => void) | null => {
 
   if (delay <= 0) {
     // Token is already expiring or expired, refresh immediately
-    void authStore
-      .getState()
-      .refreshSession()
-      .catch((err) =>
-        clientLogger.error("Token refresh failed:", err as Error),
-      );
+    void authStore.getState().refreshSession();
     return null;
   }
 
   const timeoutId = setTimeout(() => {
-    void authStore
-      .getState()
-      .refreshSession()
-      .catch((err) =>
-        clientLogger.error("Token refresh failed:", err as Error),
-      );
+    void authStore.getState().refreshSession();
   }, delay);
 
   return () => clearTimeout(timeoutId);

@@ -1,18 +1,17 @@
 import { defineMiddleware } from "astro:middleware";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import { env } from "./lib/env";
-import { clientLogger } from "@mirai-app/shared";
+import {
+  GetCurrentUserDocument,
+  type GetCurrentUserQuery,
+} from "@mirai-app/graphql-client";
 
 const PUBLIC_ROUTES = new Set(["/login"]);
 
-const GET_ME_QUERY = `
-  query GetMe {
-    me {
-      id
-      role
-    }
-  }
-`;
+interface GraphQLResponse<T> {
+  data?: T;
+  errors?: Array<{ message: string }>;
+}
 
 const getDbRole = async (accessToken: string): Promise<string | null> => {
   try {
@@ -23,23 +22,18 @@ const getDbRole = async (accessToken: string): Promise<string | null> => {
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        query: GET_ME_QUERY,
+        query: GetCurrentUserDocument.loc?.source.body,
       }),
     });
 
     if (!response.ok) {
-      clientLogger.error("[Middleware] GraphQL request failed:", {
-        status: response.status,
-      });
       return null;
     }
 
-    const result = await response.json();
+    const result =
+      (await response.json()) as GraphQLResponse<GetCurrentUserQuery>;
 
     if (result.errors && result.errors.length > 0) {
-      clientLogger.error("[Middleware] GraphQL errors:", {
-        errors: result.errors,
-      });
       return null;
     }
 
@@ -54,8 +48,7 @@ const getDbRole = async (accessToken: string): Promise<string | null> => {
     }
 
     return null;
-  } catch (err) {
-    clientLogger.error("[Middleware] getDbRole failed:", err as Error);
+  } catch {
     return null;
   }
 };
@@ -94,7 +87,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
       roleFromDb ?? (data.user.app_metadata?.role as string | undefined);
 
     if (typeof role !== "string" || role.toUpperCase() !== "ADMIN") {
-      clientLogger.error("[Middleware] Forbidden: role is not ADMIN");
       return new Response("Forbidden", { status: 403 });
     }
   }

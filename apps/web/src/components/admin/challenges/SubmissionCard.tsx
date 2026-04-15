@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useClient } from "urql";
+import { CreateDownloadUrlDocument } from "@mirai-app/graphql-client";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import { Modal } from "../../ui/Modal";
@@ -56,14 +57,7 @@ const formatReviewer = (submission: SubmissionItem): string => {
   return reviewedBy.email ?? "Unknown reviewer";
 };
 
-// GraphQL query for creating download URL
-const CREATE_DOWNLOAD_URL_QUERY = `
-  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-    createDownloadUrl(input: $input) {
-      signedUrl
-    }
-  }
-`;
+// Using CreateDownloadUrlDocument from @mirai-app/graphql-client
 
 export function SubmissionCard({
   submission,
@@ -93,7 +87,7 @@ export function SubmissionCard({
     setIsOpeningImage(true);
     try {
       const result = await urqlClient
-        .query(CREATE_DOWNLOAD_URL_QUERY, { input: { storagePath } })
+        .query(CreateDownloadUrlDocument, { input: { storagePath } })
         .toPromise();
 
       if (result.error) {
