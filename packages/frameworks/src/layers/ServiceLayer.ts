@@ -171,5 +171,4 @@ export const makeStorageLayer = (supabase: SupabaseClient) =>
 // Re-exports for convenience
 // =============================================================================
 
-export { DrizzleDb, SupabaseClient };
-export type { ServiceLayerConfig };
+export type { DrizzleDb, SupabaseClient, ServiceLayerConfig };

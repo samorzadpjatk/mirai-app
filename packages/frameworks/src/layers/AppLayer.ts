@@ -131,8 +131,11 @@ export const makeServicesOnlyLayer = (config: ServiceLayerConfig) =>
 // Re-exports for convenience
 // =============================================================================
 
-export { DrizzleDb } from "./RepositoryLayer";
-export { ServiceLayerConfig, SupabaseClient } from "./ServiceLayer";
+export type {
+  DrizzleDb,
+  ServiceLayerConfig,
+  SupabaseClient,
+} from "./ServiceLayer";
 export type { AppLayerConfig };
 
 // Re-export individual layer factories for advanced composition

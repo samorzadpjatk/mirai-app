@@ -58,8 +58,8 @@ export {
   makeNotificationDomainLayer,
   makeContentDomainLayer,
   makeReportingDomainLayer,
-  type DrizzleDb,
 } from "./RepositoryLayer";
+export type { DrizzleDb } from "./RepositoryLayer";
 
 // =============================================================================
 // Service Layer (External Services)
@@ -73,6 +73,5 @@ export {
   makeAuthLayer,
   makeRealtimeLayer,
   makeStorageLayer,
-  type ServiceLayerConfig,
-  type SupabaseClient,
 } from "./ServiceLayer";
+export type { ServiceLayerConfig, SupabaseClient } from "./ServiceLayer";

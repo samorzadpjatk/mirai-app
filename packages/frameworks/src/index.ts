@@ -195,23 +195,20 @@ export {
   createRealtimeTestLayer,
   createStorageTestLayer,
   createUserRepositoryTestLayer,
+  // Mock Helpers
+  mockLayerOf,
+  mockLayers,
+  createMockAuthLayer,
+  createMockRepositoryLayer,
+  createMockPortLayer,
+  createTestLayerWithHelpers,
   // Test Execution
   runWithTestLayer,
   // Types
   type TestLayer,
   type TestLayerConfig,
-  // Backward Compatibility (deprecated)
-  createTestContainer,
-  createConfiguredTestContainer,
-  createTestContainerFromModule,
-  createMockPortFactory,
-  createMockFn,
-  type MockFn,
-  PORT_TOKENS,
-  getInMemoryAuthAdapter,
-  getInMemoryRealtimeAdapter,
-  getInMemoryStorageAdapter,
-  clearInMemoryAdapters,
+  type TestLayerOptions,
+  type TestLayerResult,
 } from "./di/test-layer";
 
 // =============================================================================

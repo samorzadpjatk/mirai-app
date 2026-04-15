@@ -229,4 +229,4 @@ export const makeRepositoryLayer = (db: DrizzleDb) =>
 // Re-exports for convenience
 // =============================================================================
 
-export { DrizzleDb };
+export type { DrizzleDb };
