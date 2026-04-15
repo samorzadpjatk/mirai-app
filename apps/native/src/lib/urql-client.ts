@@ -76,13 +76,7 @@ const customFetch = async (
  */
 const wsClient = createWSClient({
   url: WS_ENDPOINT,
-  // WebSocket automatically sends cookies on same-domain
-  // No need to manually set auth headers
   retryAttempts: Infinity,
-  connectionParams: async () => {
-    // Include any additional connection params if needed
-    return {};
-  },
 });
 
 // =============================================================================
@@ -127,7 +121,7 @@ export const getUrqlClient = (): Client => {
         updates: {
           // Automatically update cache on mutations
           Mutation: {
-            createCustomActivity: (result, args, cache, info) => {
+            createCustomActivity: (result, args, cache) => {
               // Invalidate activity feed cache when new activity created
               cache.invalidate("Query", "activitiesByTrip", {
                 input: { tripId: (args.input as { tripId: string }).tripId },

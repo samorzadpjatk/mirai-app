@@ -1,52 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "urql";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import {
-  useGetGroupRankingQuery,
-  useCreateDownloadUrlMutation,
-} from "@mirai-app/graphql-client";
 import type { CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
-
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
-  const token = await SecureStore.getItemAsync("sb-access-token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
-
-// GraphQL document for group ranking
-const GetGroupRankingDocument = `
-  query GetGroupRanking($tripId: ID!) {
-    groupRanking(tripId: $tripId) {
-      data {
-        id
-        name
-        image
-        coins
-        participants {
-          id
-        }
-      }
-    }
-  }
-`;
-
-// GraphQL document for creating download URL
-const CreateDownloadUrlDocument = `
-  mutation CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-    createDownloadUrl(input: $input) {
-      signedUrl
-    }
-  }
-`;
 
 interface UseCommunityActivityDataProps {
   activities: CommunityFeedActivity[];

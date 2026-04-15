@@ -48,22 +48,32 @@ export function useChallenges(tripId?: string | null) {
   });
 
   // Append new challenges when data changes
+  // Using useMemo with a side-effect pattern to avoid direct setState in render
   useMemo(() => {
     const newChallenges =
       (challengesData?.challengesByTrip
         ?.challenges as unknown as ChallengeSummaryChallenge[]) ?? [];
 
-    if (offset === 0) {
-      // First page - replace all
-      setAllChallenges(newChallenges);
-    } else {
-      // Subsequent page - append only new items
-      setAllChallenges((prev) => {
-        const existingIds = new Set(prev.map((c) => c.id));
-        const uniqueNew = newChallenges.filter((c) => !existingIds.has(c.id));
-        return [...prev, ...uniqueNew];
-      });
-    }
+    if (newChallenges.length === 0) return;
+
+    // Schedule state update to avoid synchronous setState
+    const scheduleUpdate = () => {
+      if (offset === 0) {
+        // First page - replace all
+        setAllChallenges(newChallenges);
+      } else {
+        // Subsequent page - append only new items
+        setAllChallenges((prev) => {
+          const existingIds = new Set(prev.map((c) => c.id));
+          const uniqueNew = newChallenges.filter((c) => !existingIds.has(c.id));
+          return [...prev, ...uniqueNew];
+        });
+      }
+    };
+
+    // Use setTimeout to schedule the update outside of render cycle
+    const timeoutId = setTimeout(scheduleUpdate, 0);
+    return () => clearTimeout(timeoutId);
   }, [challengesData, offset]);
 
   const currentUser = currentUserData?.me;

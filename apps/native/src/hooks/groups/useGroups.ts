@@ -9,7 +9,7 @@ export function useGroups(tripId?: string | null) {
   const [searchQuery, setSearchQuery] = useState("");
   const [offset, setOffset] = useState(0);
 
-  const [{ data, fetching, error }] = useQuery({
+  const [{ data, fetching }] = useQuery({
     query: GetGroupsByTripDocument,
     variables: {
       tripId: tripId ?? "",

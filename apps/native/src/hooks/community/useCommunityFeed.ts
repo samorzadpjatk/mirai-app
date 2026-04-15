@@ -1,11 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
-import { useMutation, useClient } from "urql";
+import { useMutation } from "urql";
 import { GraphQLClient } from "graphql-request";
 import * as SecureStore from "expo-secure-store";
-import {
-  useGetActivitiesByTripQuery,
-  useToggleActivityReactionMutation,
-} from "@mirai-app/graphql-client";
+import { useGetActivitiesByTripQuery } from "@mirai-app/graphql-client";
 import type {
   CommunityFeedActivity,
   ActivityFilter,
@@ -84,74 +81,11 @@ interface UseCommunityFeedProps {
   focusActivityId?: string;
 }
 
-// GraphQL document for activities by trip query
-const GetActivitiesByTripDocument = `
-  query GetActivitiesByTrip($tripId: ID!, $limit: Int = 30, $cursor: ActivityCursorInput) {
-    activitiesByTrip(tripId: $tripId, limit: $limit, cursor: $cursor) {
-      activities {
-        id
-        activityType
-        createdAt
-        isPinned
-        reactionsSummary {
-          total
-          counts {
-            heart
-            fire
-            clap
-            star
-          }
-          myReactions
-        }
-        userPost {
-          id
-          content
-          imagePaths
-          author {
-            user {
-              id
-              firstName
-              lastName
-              hasAvatar
-            }
-            houseNumber
-          }
-        }
-        admin {
-          id
-          firstName
-          lastName
-          hasAvatar
-        }
-        tripId
-        rankChange {
-          newRank
-          previousRank
-        }
-      }
-      pagination {
-        total
-        page
-        pageSize
-        totalPages
-        hasMore
-      }
-      nextCursor {
-        id
-        createdAt
-        isPinned
-      }
-    }
-  }
-`;
-
 export const useCommunityFeed = ({
   selectedTripId,
   selectedFilter,
   focusActivityId,
 }: UseCommunityFeedProps) => {
-  const client = useClient();
-
   // Pagination state
   const [pages, setPages] = useState<FeedPageData[]>([]);
   const [currentCursor, setCurrentCursor] = useState<FeedCursor>(null);
@@ -172,7 +106,7 @@ export const useCommunityFeed = ({
 
   // Manual fetch function for pagination
   const fetchPage = useCallback(
-    async (cursor: FeedCursor, isNextPage = false) => {
+    async (cursor: FeedCursor) => {
       if (!selectedTripId) {
         return {
           activities: [],
@@ -261,36 +195,39 @@ export const useCommunityFeed = ({
     await loadInitial();
   }, [loadInitial]);
 
-  const applyReactionSummaryToFeed = (
-    activityId: string,
-    updater:
-      | CommunityFeedActivity["reactionsSummary"]
-      | ((
-          current: CommunityFeedActivity["reactionsSummary"] | undefined,
-        ) => CommunityFeedActivity["reactionsSummary"]),
-    queryKeyOverride?: readonly unknown[],
-  ) => {
-    const queryKey = queryKeyOverride ?? feedQueryKey;
-    if (!queryKey) return;
+  const applyReactionSummaryToFeed = useCallback(
+    (
+      activityId: string,
+      updater:
+        | CommunityFeedActivity["reactionsSummary"]
+        | ((
+            current: CommunityFeedActivity["reactionsSummary"] | undefined,
+          ) => CommunityFeedActivity["reactionsSummary"]),
+      queryKeyOverride?: readonly unknown[],
+    ) => {
+      const queryKey = queryKeyOverride ?? feedQueryKey;
+      if (!queryKey) return;
 
-    // Update local state instead of queryClient
-    setPages((currentPages) =>
-      currentPages.map((page) => ({
-        ...page,
-        activities: page.activities.map((activity) => {
-          if (activity.id !== activityId) return activity;
-          const nextSummary =
-            typeof updater === "function"
-              ? updater(activity.reactionsSummary)
-              : updater;
-          return {
-            ...activity,
-            reactionsSummary: nextSummary,
-          };
-        }),
-      })),
-    );
-  };
+      // Update local state instead of queryClient
+      setPages((currentPages) =>
+        currentPages.map((page) => ({
+          ...page,
+          activities: page.activities.map((activity) => {
+            if (activity.id !== activityId) return activity;
+            const nextSummary =
+              typeof updater === "function"
+                ? updater(activity.reactionsSummary)
+                : updater;
+            return {
+              ...activity,
+              reactionsSummary: nextSummary,
+            };
+          }),
+        })),
+      );
+    },
+    [feedQueryKey],
+  );
 
   // GraphQL mutation for toggling heart reaction
   const [, toggleHeartMutation] = useMutation(ToggleActivityReactionDocument);
@@ -327,7 +264,13 @@ export const useCommunityFeed = ({
         await refetch();
       }
     },
-    [feedQueryKey, selectedTripId, toggleHeartMutation, refetch],
+    [
+      feedQueryKey,
+      selectedTripId,
+      toggleHeartMutation,
+      refetch,
+      applyReactionSummaryToFeed,
+    ],
   );
 
   const activities = useMemo(
