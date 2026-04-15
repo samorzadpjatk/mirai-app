@@ -1,4 +1,3 @@
-import { serverLogger } from "@mirai-app/shared";
 import type { SponsorConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
@@ -26,10 +25,7 @@ export const seedSponsors = async (
   _seedEnv: string,
   sponsorConfigs: SponsorConfig[],
 ): Promise<void> => {
-  serverLogger.info("Seeding sponsors...");
-
   if (sponsorConfigs.length === 0) {
-    serverLogger.info("No sponsors configured, skipping...");
     return;
   }
 
@@ -45,19 +41,10 @@ export const seedSponsors = async (
     const sponsor = sponsorResult && (sponsorResult as any).createSponsor;
 
     if (sponsor) {
-      serverLogger.info(`✓ Created sponsor: ${sponsorConfig.name}`);
-
-      const linkResult = await executeGraphQL(LinkSponsorToTripDocument, {
+      await executeGraphQL(LinkSponsorToTripDocument, {
         sponsorId: sponsor.id,
         tripId,
       });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (linkResult && (linkResult as any).linkSponsorToTrip) {
-        serverLogger.info(
-          `✓ Associated sponsor ${sponsorConfig.name} with trip`,
-        );
-      }
     } else {
       // Try to find existing sponsor
       const existingResult = await executeGraphQL(FindSponsorByNameDocument, {
@@ -68,23 +55,11 @@ export const seedSponsors = async (
       const existing = existingResult && (existingResult as any).sponsors;
 
       if (existing?.[0]) {
-        serverLogger.info(`Found existing sponsor: ${sponsorConfig.name}`);
-        const linkResult = await executeGraphQL(LinkSponsorToTripDocument, {
+        await executeGraphQL(LinkSponsorToTripDocument, {
           sponsorId: existing[0].id,
           tripId,
         });
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (linkResult && (linkResult as any).linkSponsorToTrip) {
-          serverLogger.info(
-            `✓ Associated existing sponsor ${sponsorConfig.name} with trip`,
-          );
-        }
-      } else {
-        serverLogger.warn(`✗ Failed to create sponsor: ${sponsorConfig.name}`);
       }
     }
   }
-
-  serverLogger.info("✓ Sponsors seeding completed");
 };

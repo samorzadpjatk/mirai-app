@@ -1,4 +1,3 @@
-import { serverLogger } from "@mirai-app/shared";
 import type { SeedEnv, TripInfoConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile, readFile } from "./utils/fs";
@@ -31,10 +30,7 @@ export const seedTripInfo = async (
   seedEnv: SeedEnv,
   infoConfig: TripInfoConfig,
 ): Promise<void> => {
-  serverLogger.info("Seeding trip info...");
-
   if (!infoConfig?.resources?.length) {
-    serverLogger.info("No trip info configured, skipping...");
     return;
   }
 
@@ -57,13 +53,6 @@ export const seedTripInfo = async (
       value: resourceConfig.value,
       sortOrder: resourceConfig.sortOrder ?? 0,
     });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (result && (result as any).createTripResource) {
-      serverLogger.info(
-        `✓ Seeded resource: ${resourceConfig.label} (${resourceConfig.type})`,
-      );
-    }
   }
 
   // Handle insurance if present
@@ -87,10 +76,8 @@ export const seedTripInfo = async (
     const insurance =
       insuranceResult && (insuranceResult as any).createTripInsurance;
     if (insurance) {
-      serverLogger.info(`✓ Seeded insurance: ${infoConfig.insurance.label}`);
-
       for (const stepConfig of infoConfig.insurance.steps) {
-        const stepResult = await executeGraphQL(CreateInsuranceStepDocument, {
+        await executeGraphQL(CreateInsuranceStepDocument, {
           insuranceId: insurance.id,
           stepNumber: stepConfig.stepNumber,
           title: stepConfig.title,
@@ -99,16 +86,9 @@ export const seedTripInfo = async (
           exampleCall: stepConfig.exampleCall,
           additionalText: stepConfig.additionalText,
         });
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (stepResult && (stepResult as any).createInsuranceStep) {
-          serverLogger.info(`✓ Seeded insurance step: ${stepConfig.title}`);
-        }
       }
     }
   }
-
-  serverLogger.info("✓ Trip info seeding completed");
 };
 
 async function uploadResourceFile(
@@ -138,9 +118,6 @@ async function uploadResourceFile(
       bucketName = env.videoBucket;
       objectPath = resourceConfig.storagePath.replace("videos/", "");
     } else {
-      serverLogger.warn(
-        `Unknown storage path format: ${resourceConfig.storagePath}`,
-      );
       bucketName = env.publicBucket;
       objectPath = resourceConfig.storagePath;
     }
@@ -151,13 +128,8 @@ async function uploadResourceFile(
       .upload(objectPath, file, { upsert: true });
 
     if (uploadError) {
-      serverLogger.warn(
-        `Failed to upload file ${resourceConfig.storagePath}: ${uploadError.message}`,
-      );
       return null;
     }
-
-    serverLogger.info(`✓ Uploaded file: ${resourceConfig.storagePath}`);
 
     // Get public URL for public bucket files
     if (bucketName === env.publicBucket) {
@@ -168,10 +140,7 @@ async function uploadResourceFile(
     }
 
     return null;
-  } catch (fileError) {
-    serverLogger.warn(`Failed to process file ${resourceConfig.storagePath}:`, {
-      error: fileError,
-    });
+  } catch {
     return null;
   }
 }

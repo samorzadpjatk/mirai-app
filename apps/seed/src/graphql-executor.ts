@@ -7,7 +7,6 @@
  * @module graphql-executor
  */
 
-import { serverLogger } from "@mirai-app/shared";
 import type { DocumentNode } from "graphql";
 import { env } from "./config/env";
 
@@ -54,7 +53,6 @@ export async function executeGraphQL<
 ): Promise<TData | null> {
   const query = documentToString(document);
   if (!query) {
-    serverLogger.error("Empty GraphQL document");
     return null;
   }
 
@@ -69,7 +67,6 @@ export async function executeGraphQL<
     });
 
     if (!response.ok) {
-      serverLogger.warn(`GraphQL HTTP error: ${response.status}`);
       return null;
     }
 
@@ -85,17 +82,12 @@ export async function executeGraphQL<
       );
 
       if (nonDuplicateErrors.length > 0) {
-        serverLogger.warn("GraphQL errors:", { errors: nonDuplicateErrors });
         return null;
       }
     }
 
     return result.data ?? null;
-  } catch (error) {
-    serverLogger.error(
-      "GraphQL execution failed:",
-      error instanceof Error ? error : new Error(String(error)),
-    );
+  } catch {
     return null;
   }
 }

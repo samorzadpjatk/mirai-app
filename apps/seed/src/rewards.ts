@@ -1,4 +1,3 @@
-import { serverLogger } from "@mirai-app/shared";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
@@ -58,11 +57,8 @@ export const seedRewards = async (
   }
 
   if (!creatorUserId) {
-    serverLogger.warn("No valid database user found to create rewards");
     return;
   }
-
-  serverLogger.info(`Using user ${creatorUserId} to create rewards`);
 
   for (const rewardConfig of rewardConfigs) {
     // Map image path to storage path if provided
@@ -80,12 +76,5 @@ export const seedRewards = async (
       quantity: rewardConfig.availableQuantity,
       imageUrl: imageUrl || undefined,
     });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (rewardResult && (rewardResult as any).createReward) {
-      serverLogger.info(`✓ Created reward: ${rewardConfig.name}`);
-    } else {
-      serverLogger.warn(`✗ Failed to create reward: ${rewardConfig.name}`);
-    }
   }
 };

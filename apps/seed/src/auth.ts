@@ -1,4 +1,3 @@
-import { serverLogger } from "@mirai-app/shared";
 import { env } from "./config/env";
 import { getSupabaseClient } from "./config/supabase";
 import type { AuthUserByEmail } from "./types";
@@ -39,12 +38,8 @@ export const createAuthUserByEmail = async (
     app_metadata: { role },
   });
   if (error || !data.user) {
-    serverLogger.warn(
-      `Failed to create Supabase Auth user for ${email}: ${error?.message ?? "unknown error"}`,
-    );
     return null;
   }
-  serverLogger.info(`Created Supabase Auth user for ${email}`);
   return data.user;
 };
 
@@ -55,9 +50,6 @@ export const ensureGhostAuthUser = async (authUsers: AuthUserByEmail) => {
   let user = authUsers.get(email.toLowerCase()) ?? null;
   if (user) return user;
   if (!env.seedGhostPassword) {
-    serverLogger.warn(
-      `Ghost user ${email} missing and SEED_GHOST_PASSWORD not set; skipping ghost auth creation.`,
-    );
     return null;
   }
   const { data, error } = await client.auth.admin.createUser({
@@ -68,12 +60,8 @@ export const ensureGhostAuthUser = async (authUsers: AuthUserByEmail) => {
     app_metadata: { role: "user" },
   });
   if (error || !data.user) {
-    serverLogger.warn(
-      `Failed to create ghost auth user ${email}: ${error?.message ?? "unknown error"}`,
-    );
     return null;
   }
-  serverLogger.info(`Created ghost auth user ${email}`);
   authUsers.set(email.toLowerCase(), data.user);
   return data.user;
 };

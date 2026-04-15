@@ -1,4 +1,3 @@
-import { serverLogger } from "@mirai-app/shared";
 import { assetsRoot } from "./constants";
 import { ensureBuckets, uploadAssets, ensurePlaceholderImage } from "./storage";
 import { loadAuthUsers } from "./auth";
@@ -17,7 +16,6 @@ export const runSeed = async () => {
   const seedEnv: SeedEnv = arg === "--prod" ? "prod" : "dev";
   const envRoot = joinPath(assetsRoot, seedEnv);
 
-  serverLogger.info(`Seeding environment: ${seedEnv}`);
   if (!(await dirExists(envRoot))) {
     throw new Error(`Missing assets directory for environment: ${envRoot}`);
   }
@@ -33,7 +31,6 @@ export const runSeed = async () => {
     const seededTrip = await seedTrip(trip, trip.users, envRoot, authUsers);
 
     if (!seededTrip) {
-      serverLogger.warn(`✗ Failed to seed trip: ${trip.key}`);
       continue;
     }
 
@@ -49,10 +46,8 @@ export const runSeed = async () => {
         seedEnv,
         sponsorConfigs,
       );
-    } catch (error) {
-      serverLogger.warn(`✗ Failed to seed sponsors for trip ${trip.key}`, {
-        error,
-      });
+    } catch {
+      // Sponsor seeding failed, continue
     }
 
     // Seed rewards if the trip has a rewards config
@@ -60,10 +55,8 @@ export const runSeed = async () => {
       try {
         const rewardConfigs = await loadRewardConfigs(envRoot, trip.rewards);
         await seedRewards(rewardConfigs, seededTrip.id, authUsers);
-      } catch (error) {
-        serverLogger.warn(`✗ Failed to seed rewards for trip ${trip.key}`, {
-          error,
-        });
+      } catch {
+        // Reward seeding failed, continue
       }
     }
 
@@ -72,13 +65,9 @@ export const runSeed = async () => {
       try {
         const infoConfig = await loadTripInfoConfig(envRoot, trip.info);
         await seedTripInfo(env.databaseUrl, seededTrip.id, seedEnv, infoConfig);
-      } catch (error) {
-        serverLogger.warn(`✗ Failed to seed trip info for trip ${trip.key}`, {
-          error,
-        });
+      } catch {
+        // Trip info seeding failed, continue
       }
     }
   }
-
-  serverLogger.info("Seeding completed");
 };

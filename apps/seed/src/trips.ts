@@ -1,4 +1,3 @@
-import { serverLogger } from "@mirai-app/shared";
 import { createAuthUserByEmail, ensureGhostAuthUser } from "./auth";
 import { getSupabaseClient } from "./config/supabase";
 import { env } from "./config/env";
@@ -180,26 +179,20 @@ export const seedTrip = async (
     );
 
     if (!dbUser) {
-      serverLogger.warn(`✗ Failed to create/update user for ${email}`);
       continue;
     }
 
-    const participant = await executeMutation<AddTripParticipantResponse>(
+    await executeMutation<AddTripParticipantResponse>(
       AddTripParticipantDocument,
       { tripId: trip.id, userId: dbUser.id },
       "addTripParticipant",
       true,
     );
-
-    if (participant) {
-      serverLogger.info(`✓ Added ${email} to trip ${tripConfig.name}`);
-    }
   }
 
   // Add ghost user
   await addGhostUserToTrip(trip.id, tripConfig.name, authUsers);
 
-  serverLogger.info(`Trip seeded: ${trip.name} (${users.length} participants)`);
   return trip;
 };
 
@@ -232,20 +225,11 @@ async function uploadBackgroundImage(
       });
 
     if (error) {
-      serverLogger.warn(
-        `✗ Background upload failed for ${tripConfig.name}: ${error.message}`,
-      );
       return undefined;
     }
 
-    serverLogger.info(
-      `✓ Uploaded background for ${tripConfig.name}: ${storagePath}`,
-    );
     return storagePath;
-  } catch (err) {
-    serverLogger.warn(
-      `✗ Failed to read background image ${tripConfig.background}: ${String(err)}`,
-    );
+  } catch {
     return undefined;
   }
 }
@@ -264,7 +248,6 @@ async function getOrCreateAuthUser(
       row.role ?? "user",
     );
     if (!authUser) {
-      serverLogger.warn(`✗ Supabase Auth user not found/created for ${email}`);
       return null;
     }
     authUsers.set(email.toLowerCase(), authUser);
@@ -299,7 +282,6 @@ async function addGhostUserToTrip(
       "addTripParticipant",
       true,
     );
-    serverLogger.info(`✓ Added ghost user to trip ${tripName}`);
   }
 }
 
@@ -325,19 +307,12 @@ async function executeMutation<TResponse>(
           ...variables,
         } as unknown as TResponse[keyof TResponse];
       }
-      serverLogger.warn(`GraphQL error (${operationName})`, {
-        error: result.error,
-      });
       return null;
     }
 
     const key = Object.keys(result.data || {})[0] as keyof TResponse;
     return result.data?.[key] ?? null;
-  } catch (error) {
-    serverLogger.error(
-      `Failed ${operationName}:`,
-      error instanceof Error ? error : new Error(String(error)),
-    );
+  } catch {
     return null;
   }
 }

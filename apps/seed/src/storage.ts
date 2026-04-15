@@ -1,4 +1,3 @@
-import { serverLogger } from "@mirai-app/shared";
 import { env } from "./config/env";
 import { getSupabaseClient } from "./config/supabase";
 import { assetsRoot } from "./constants";
@@ -30,7 +29,6 @@ export const ensureBuckets = async () => {
     });
     if (createError)
       throw new Error(`createBucket ${bucket} failed: ${createError.message}`);
-    serverLogger.info(`Created bucket ${bucket}`);
   }
 };
 
@@ -44,7 +42,6 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
     .list("image/placeholder", { search: "trip-background.png" });
 
   if (existingFile && existingFile.length > 0) {
-    serverLogger.info("✓ Placeholder image already exists");
     return;
   }
 
@@ -62,22 +59,7 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
         upsert: true,
         contentType: "image/png",
       });
-
-    if (error) {
-      serverLogger.warn(
-        `✗ Failed to upload placeholder image: ${error.message}`,
-      );
-    } else {
-      serverLogger.info(`✓ Uploaded placeholder image: ${placeholderPath}`);
-    }
-  } catch (err) {
-    serverLogger.warn(
-      `✗ Placeholder image file not found at ${placeholderAbsPath}`,
-    );
-    serverLogger.info(
-      `  Note: Add a placeholder image at apps/seed/assets/${seedEnv}/images/placeholder/trip-background.png`,
-    );
-  }
+  } catch {}
 };
 
 export const uploadAssets = async (seedEnv: SeedEnv) => {
@@ -109,12 +91,5 @@ export const uploadAssets = async (seedEnv: SeedEnv) => {
       .upload(objectPath, file, {
         upsert: true,
       });
-    if (error) {
-      serverLogger.warn(
-        `✗ Upload failed ${bucketName}/${objectPath}: ${error.message}`,
-      );
-    } else {
-      serverLogger.info(`✓ Uploaded ${bucketName}/${objectPath}`);
-    }
   }
 };

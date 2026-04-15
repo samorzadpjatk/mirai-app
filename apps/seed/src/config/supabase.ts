@@ -23,17 +23,3 @@ export function getSupabaseClient(): ReturnType<typeof createSupabaseClient> {
   }
   return _supabaseClient;
 }
-
-/**
- * @deprecated Use getSupabaseClient() for lazy initialization
- * This export is kept for backward compatibility but should not be used in new code
- */
-export const supabase = new Proxy(
-  {} as ReturnType<typeof createSupabaseClient>,
-  {
-    get(_target, prop) {
-      const client = getSupabaseClient();
-      return client[prop as keyof typeof client];
-    },
-  },
-);

@@ -41,7 +41,6 @@ import {
   type TrackDeliveryFailureMutation,
 } from "@mirai-app/graphql-client/urql";
 import { Effect, Console } from "effect";
-import { serverLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Environment Configuration
@@ -143,18 +142,11 @@ class NotificationService {
       );
 
       if (result.error) {
-        serverLogger.error("Failed to track delivery start:", undefined, {
-          graphQLError: result.error,
-        });
         return false;
       }
 
       return result.data?.trackDeliveryStart?.success ?? false;
     } catch (error) {
-      serverLogger.error(
-        "Failed to track delivery start:",
-        error instanceof Error ? error : new Error(String(error)),
-      );
       return false;
     }
   }
@@ -176,9 +168,6 @@ class NotificationService {
         );
 
       if (result.error) {
-        serverLogger.error("Failed to send mobile notifications:", undefined, {
-          graphQLError: result.error,
-        });
         return { success: false, sent: 0, failed: 0, total: 0 };
       }
 
@@ -190,10 +179,6 @@ class NotificationService {
         total: payload?.total ?? 0,
       };
     } catch (error) {
-      serverLogger.error(
-        "Failed to send mobile notifications:",
-        error instanceof Error ? error : new Error(String(error)),
-      );
       return { success: false, sent: 0, failed: 0, total: 0 };
     }
   }
@@ -222,18 +207,11 @@ class NotificationService {
         );
 
       if (result.error) {
-        serverLogger.error("Failed to track delivery completion:", undefined, {
-          graphQLError: result.error,
-        });
         return false;
       }
 
       return result.data?.trackDeliveryComplete?.success ?? false;
     } catch (error) {
-      serverLogger.error(
-        "Failed to track delivery completion:",
-        error instanceof Error ? error : new Error(String(error)),
-      );
       return false;
     }
   }
@@ -253,18 +231,11 @@ class NotificationService {
         );
 
       if (result.error) {
-        serverLogger.error("Failed to track delivery failure:", undefined, {
-          graphQLError: result.error,
-        });
         return false;
       }
 
       return result.data?.trackDeliveryFailure?.success ?? false;
     } catch (err) {
-      serverLogger.error(
-        "Failed to track delivery failure:",
-        err instanceof Error ? err : new Error(String(err)),
-      );
       return false;
     }
   }
@@ -393,7 +364,7 @@ const notificationSenderProgram = Effect.gen(function* () {
       },
     )
     .subscribe((status) => {
-      serverLogger.info("Realtime channel status", { status });
+      // Channel status updates
     });
 
   yield* Console.log(
@@ -452,11 +423,7 @@ export async function run(): Promise<void> {
 
 // Run the program at the boundary only when executed directly
 if (import.meta.main) {
-  Effect.runPromise(program).catch((error) => {
-    serverLogger.error(
-      "Failed to start notification sender:",
-      error instanceof Error ? error : new Error(String(error)),
-    );
+  Effect.runPromise(program).catch(() => {
     process.exit(1);
   });
 }
