@@ -12,7 +12,6 @@ import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCr
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { getImageExtension, getImageContentType } from "~/utils/image";
-import { clientLogger } from "@mirai-app/shared";
 
 export default function CreateGroupScreen() {
   const router = useRouter();
@@ -59,7 +58,6 @@ export default function CreateGroupScreen() {
       Alert.alert("Success", "Group created successfully!");
       router.push(`/trips/groups/${newGroup.id}`);
     } catch (err: unknown) {
-      clientLogger.error("Create group error:", err as Error);
       if (err instanceof Error) {
         Alert.alert("Error", err.message);
       } else {

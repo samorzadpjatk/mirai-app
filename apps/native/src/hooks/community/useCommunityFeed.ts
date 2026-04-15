@@ -1,13 +1,15 @@
 import { useCallback, useMemo, useState } from "react";
-import { useMutation } from "urql";
 import { GraphQLClient } from "graphql-request";
 import * as SecureStore from "expo-secure-store";
-import { useGetActivitiesByTripQuery } from "@mirai-app/graphql-client";
+import {
+  useGetActivitiesByTripQuery,
+  useToggleActivityReactionMutation,
+  ReactionType,
+} from "@mirai-app/graphql-client";
 import type {
   CommunityFeedActivity,
   ActivityFilter,
 } from "~/components/community/CommunityActivityCard";
-import { clientLogger } from "@mirai-app/shared";
 
 const createGraphQLClient = async () => {
   const graphqlUrl =
@@ -230,7 +232,7 @@ export const useCommunityFeed = ({
   );
 
   // GraphQL mutation for toggling heart reaction
-  const [, toggleHeartMutation] = useMutation(ToggleActivityReactionDocument);
+  const [, toggleHeartMutation] = useToggleActivityReactionMutation();
 
   const handleToggleHeart = useCallback(
     async (activityId: string) => {
@@ -247,7 +249,7 @@ export const useCommunityFeed = ({
       try {
         const result = await toggleHeartMutation({
           activityId,
-          reaction: "heart",
+          reaction: ReactionType.Heart,
         });
 
         if (result.data?.toggleActivityReaction) {
@@ -258,9 +260,8 @@ export const useCommunityFeed = ({
             queryKey,
           );
         }
-      } catch (error) {
+      } catch {
         // Revert optimistic update on error - refetch the page
-        clientLogger.error("Failed to toggle reaction:", error as Error);
         await refetch();
       }
     },
@@ -309,24 +310,5 @@ export const useCommunityFeed = ({
     handleToggleHeart,
   };
 };
-
-// GraphQL document for toggle reaction mutation
-const ToggleActivityReactionDocument = `
-  mutation ToggleActivityReaction($activityId: ID!, $reaction: String!) {
-    toggleActivityReaction(activityId: $activityId, reaction: $reaction) {
-      activityId
-      reactionsSummary {
-        total
-        counts {
-          heart
-          fire
-          clap
-          star
-        }
-        myReactions
-      }
-    }
-  }
-`;
 
 export type { FeedCursor, FeedPageData };

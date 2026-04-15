@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { clientLogger } from "@mirai-app/shared";
 import { useFileDownload } from "~/hooks/files/useFileDownload";
 
 let placeholderUriCache: string | null | undefined;
@@ -60,17 +59,9 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
             } else {
               placeholderUriCache = null;
             }
-          } catch (placeholderError) {
+          } catch {
             placeholderUriCache = null;
-            if (!placeholderErrorLogged) {
-              clientLogger.warn(
-                "Failed to download partner placeholder image:",
-                {
-                  error: placeholderError,
-                },
-              );
-              placeholderErrorLogged = true;
-            }
+            placeholderErrorLogged = true;
           }
         }
 
@@ -83,12 +74,8 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
 
         // Final fallback - null (no image)
         setImageUrl(null);
-      } catch (error) {
+      } catch {
         if (!mountedRef.current) return;
-        const message = error instanceof Error ? error.message : String(error);
-        if (!message.includes("component unmounted")) {
-          clientLogger.error("Failed to load partner image:", error as Error);
-        }
         if (mountedRef.current) setImageUrl(null);
       } finally {
         if (mountedRef.current) setIsLoading(false);

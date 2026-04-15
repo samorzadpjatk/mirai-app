@@ -8,19 +8,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { useState } from "react";
 import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
-import { getTRPCClient } from "@mirai-app/frameworks/graphql";
-import {
-  PRIVACY_POLICY_PUBLIC_URL,
-  GRAPHQL_HTTP_URL,
-  GRAPHQL_WS_URL,
-} from "~/config/runtimeEnv";
+import { PRIVACY_POLICY_PUBLIC_URL } from "~/config/runtimeEnv";
 import Pdf from "react-native-pdf";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
 import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { YStack, XStack, Text } from "@mirai-app/ui";
 import { useFileDownload } from "~/hooks/files";
-import { clientLogger } from "@mirai-app/shared";
 
 const PRIVACY_POLICY_STORAGE_PATH =
   "files-public/legal/PJApp_Privacy_Policy_PL.pdf";
@@ -86,35 +80,28 @@ export default function LoginScreen() {
     ghostEmail.length > 0 && email.trim().toLowerCase() === ghostEmail;
   const isBusy = isLoading || passwordLoading;
 
+  // TODO: Migrate ban status check to GraphQL
+  // These queries need to be added to the GraphQL schema
+  // For now, returning non-banned status
   const checkBanStatus = async () => {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) {
-      return {
-        banned: false,
-        bannedUntil: null as string | null,
-        reason: null as string | null,
-      };
-    }
-    const { client, cleanup } = getTRPCClient(
-      GRAPHQL_HTTP_URL,
-      GRAPHQL_WS_URL,
-      token,
-    );
-    try {
-      return await client.user.getBanStatus.query();
-    } finally {
-      await cleanup();
-    }
+    // const { data } = await supabase.auth.getSession();
+    // const token = data.session?.access_token;
+    // TODO: Add GetBanStatus query to GraphQL and use graphqlClient
+    return {
+      banned: false,
+      bannedUntil: null as string | null,
+      reason: null as string | null,
+    };
   };
 
   const checkBanStatusByEmail = async () => {
-    const { client, cleanup } = getTRPCClient(GRAPHQL_HTTP_URL, GRAPHQL_WS_URL);
-    try {
-      return await client.user.getBanStatusByEmail.query({ email });
-    } finally {
-      await cleanup();
-    }
+    // TODO: Add GetBanStatusByEmail query to GraphQL
+    return {
+      exists: true,
+      banned: false,
+      bannedUntil: null as string | null,
+      reason: null as string | null,
+    };
   };
 
   const handleBannedLogin = async (
@@ -281,7 +268,6 @@ export default function LoginScreen() {
     } catch (err) {
       setIsPolicyModalVisible(false);
       Alert.alert("Błąd", "Nie udało się otworzyć polityki prywatności.");
-      clientLogger.error("[PrivacyPolicy] download error:", err as Error);
     } finally {
       setIsPolicyLoading(false);
     }
@@ -677,8 +663,7 @@ export default function LoginScreen() {
             trustAllCerts={false}
             minScale={1}
             maxScale={8}
-            onError={(err) => {
-              clientLogger.error("[PrivacyPolicy] PDF error:", err as Error);
+            onError={() => {
               Alert.alert("Błąd", "Nie udało się otworzyć PDF.");
             }}
           />

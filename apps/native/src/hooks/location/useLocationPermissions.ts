@@ -3,7 +3,6 @@ import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useQuery, useMutation } from "urql";
-import { clientLogger } from "@mirai-app/shared";
 import {
   GetMySharingSettingsDocument,
   UpdateLocationSharingDocument,
@@ -60,8 +59,8 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
         } else {
           setIsLocationSharingEnabled(localEnabled);
         }
-      } catch (error) {
-        clientLogger.warn("Failed to load location settings:", { error });
+      } catch {
+        // Silently ignore load errors
       } finally {
         setIsLoading(false);
       }
@@ -74,8 +73,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
       try {
         const { status } = await Location.getForegroundPermissionsAsync();
         setPermissionStatus(status as LocationPermissionStatus);
-      } catch (error) {
-        clientLogger.warn("Failed to check location permissions:", { error });
+      } catch {
         setPermissionStatus("denied");
       }
     })();
@@ -95,11 +93,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
         }
 
         return status as LocationPermissionStatus;
-      } catch (error) {
-        clientLogger.error(
-          "Failed to request location permissions:",
-          error as Error,
-        );
+      } catch {
         setPermissionStatus("denied");
         Alert.alert(
           "Location Permission Required",
@@ -131,19 +125,11 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
         if (enabled && permissionStatus === "undetermined") {
           await requestLocationPermissions();
         }
-      } catch (error) {
-        clientLogger.error(
-          "Failed to toggle location sharing:",
-          error as Error,
+      } catch {
+        Alert.alert(
+          "Authentication Error",
+          "Failed to update location settings. Please check your connection and try again.",
         );
-        if (error instanceof Error) {
-          Alert.alert(
-            "Authentication Error",
-            "Failed to update location settings. Please check your connection and try again.",
-          );
-        } else {
-          Alert.alert("Error", "Failed to update location settings");
-        }
       }
     },
     [permissionStatus, requestLocationPermissions, updateSharing],

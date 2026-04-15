@@ -1,5 +1,4 @@
 import * as SecureStore from "expo-secure-store";
-import { clientLogger } from "@mirai-app/shared";
 import type { PreviousUpload, UrlStorage } from "tus-js-client";
 
 type StoredUploadsMap = Record<string, Record<string, PreviousUpload>>;
@@ -13,8 +12,7 @@ const readStore = async (): Promise<StoredUploadsMap> => {
 
     const parsed = JSON.parse(raw) as StoredUploadsMap;
     return parsed ?? {};
-  } catch (error) {
-    clientLogger.warn("Failed to read tus upload storage", { error });
+  } catch {
     return {};
   }
 };
@@ -22,8 +20,8 @@ const readStore = async (): Promise<StoredUploadsMap> => {
 const writeStore = async (store: StoredUploadsMap): Promise<void> => {
   try {
     await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(store));
-  } catch (error) {
-    clientLogger.warn("Failed to persist tus upload storage", { error });
+  } catch {
+    // Silently ignore write errors
   }
 };
 

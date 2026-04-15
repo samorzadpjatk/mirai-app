@@ -4,7 +4,6 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery, useMutation, useClient } from "urql";
 import { Ionicons } from "@expo/vector-icons";
 import { YStack, XStack, Text, View } from "@mirai-app/ui";
-import { clientLogger } from "@mirai-app/shared";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   GetGroupDocument,
@@ -189,8 +188,7 @@ export default function GroupDetailsScreen() {
                 reexecuteRanking({ requestPolicy: "network-only" }),
               ]);
               router.replace(`/trips/groups?tripId=${group.trip?.id}`);
-            } catch (error) {
-              clientLogger.error("Failed to leave group:", error as Error);
+            } catch {
               Alert.alert("Error", "Failed to leave group");
             } finally {
               setIsLeaving(false);

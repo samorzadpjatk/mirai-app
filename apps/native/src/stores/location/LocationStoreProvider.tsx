@@ -1,49 +1,16 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { useQuery, useMutation, useClient } from "urql";
+import { useClient } from "urql";
 import { Alert } from "react-native";
 import { locationStore, setLocationServerUpdater } from "./locationStore";
-import { clientLogger } from "@mirai-app/shared";
-
-// GraphQL documents (inline until location operations are generated)
-const GetMySharingSettingsDocument = `
-  query GetMySharingSettings {
-    mySharingSettings {
-      isSharingLocation
-      usersToShareWith {
-        id
-        firstName
-        lastName
-      }
-    }
-  }
-`;
-
-const UpdateSharingSettingsDocument = `
-  mutation UpdateSharingSettings($input: UpdateSharingSettingsInput!) {
-    updateLocationSharing(input: $input) {
-      id
-      isSharingLocation
-      usersToShareWith {
-        id
-        firstName
-        lastName
-      }
-    }
-  }
-`;
+import {
+  useGetLocationSharingSettingsQuery,
+  useSetLocationSharingSettingsMutation,
+  GetLocationSharingSettingsDocument,
+} from "@mirai-app/graphql-client";
 
 interface LocationStoreProviderProps {
   children: ReactNode;
 }
-
-type SharingSettings = {
-  isSharingLocation: boolean;
-  usersToShareWith: Array<{
-    id: string;
-    firstName?: string;
-    lastName?: string;
-  }>;
-};
 
 /**
  * Bridges the Zustand location store with GraphQL server data.
@@ -55,18 +22,12 @@ export function LocationStoreProvider({
   const client = useClient();
   const hasHydrated = useRef(false);
 
-  // GraphQL query for sharing settings
-  const [{ data: sharingSettingsData }] = useQuery<{
-    mySharingSettings: SharingSettings | null;
-  }>({
-    query: GetMySharingSettingsDocument,
-  });
+  // GraphQL query for sharing settings using generated hook
+  const [{ data: sharingSettingsData }] = useGetLocationSharingSettingsQuery();
   const sharingSettings = sharingSettingsData?.mySharingSettings;
 
-  // GraphQL mutation for updating sharing settings
-  const [, executeUpdateSharing] = useMutation<{
-    updateLocationSharing: SharingSettings;
-  }>(UpdateSharingSettingsDocument);
+  // GraphQL mutation for updating sharing settings using generated hook
+  const [, executeUpdateSharing] = useSetLocationSharingSettingsMutation();
 
   const updateSharingMutation = useMemo(
     () => ({
@@ -77,9 +38,6 @@ export function LocationStoreProvider({
         const result = await executeUpdateSharing({ input });
         if (result.error) {
           const error = result.error;
-          clientLogger.error("Failed to update location sharing settings:", 
-            error,
-          );
           if (error?.message?.includes("UNAUTHORIZED")) {
             Alert.alert(
               "Authentication Required",
@@ -99,8 +57,15 @@ export function LocationStoreProvider({
           throw error;
         }
         // Invalidate cache on success
-        await client.invalidate("GetMySharingSettings");
-        return result.data!.updateLocationSharing;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (client as any).invalidate(GetLocationSharingSettingsDocument);
+        // Return the settings from the nested response structure
+        return (
+          result.data?.updateSharingSettings?.settings ?? {
+            isSharingLocation: input.isSharingLocation,
+            usersToShareWith: [],
+          }
+        );
       },
     }),
     [executeUpdateSharing, client],

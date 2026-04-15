@@ -7,7 +7,6 @@ import {
 } from "@mirai-app/graphql-client";
 import { useTrips } from "~/hooks/trips";
 import { XStack, Text } from "@mirai-app/ui";
-import { clientLogger } from "@mirai-app/shared";
 import {
   AppModalShell,
   AppModalFooter,
@@ -102,8 +101,6 @@ export function CreateScheduleModal({
         setCreateEndDate("");
         setCreateHour("9");
         setCreateMinute("0");
-      } else {
-        clientLogger.error("Error creating schedule:", result.error as Error);
       }
       setIsCreating(false);
     }

@@ -7,7 +7,6 @@ import {
   UpdateLocationSharingDocument,
   RemoveUserFromSharingDocument,
 } from "@mirai-app/graphql-client";
-import { clientLogger } from "@mirai-app/shared";
 
 // Type definitions for sharing user info
 type SharingUserInfo = {
@@ -78,10 +77,6 @@ export function useMapSharing(
     });
 
     if (result.error) {
-      clientLogger.error(
-        "[Map] Failed to update sharing:",
-        result.error as Error,
-      );
       Alert.alert(
         "Update Failed",
         "Failed to update sharing settings. Please try again.",
@@ -97,10 +92,6 @@ export function useMapSharing(
     const result = await removeUserMutation({ userId });
 
     if (result.error) {
-      clientLogger.error(
-        "[Map] Failed to remove user from sharing:",
-        result.error as Error,
-      );
       Alert.alert(
         "Remove Failed",
         "Failed to remove user from sharing. Please try again.",

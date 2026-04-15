@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-import { useMutation, useClient } from "urql";
+import { useClient } from "urql";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
-import { clientLogger } from "@mirai-app/shared";
+import {
+  useSubscribeNotificationsMutation,
+  GetNotificationSubscriptionStatusDocument,
+} from "@mirai-app/graphql-client/urql";
 
 function resolveProjectId(): string | undefined {
   const expoConfigExtra = (Constants.expoConfig?.extra ?? null) as unknown;
@@ -42,26 +45,13 @@ function parseToken(value: unknown): string | null {
   return trimmedToken.length > 0 ? trimmedToken : null;
 }
 
-// GraphQL mutation to subscribe to push notifications
-const SubscribeToNotificationsDocument = `
-  mutation SubscribeToNotifications($token: String!) {
-    subscribeToNotifications(token: $token) {
-      success
-      subscription {
-        id
-        isActive
-      }
-    }
-  }
-`;
-
 export function useAutoPushSubscription() {
   const { session } = useAuth();
   const attemptedForUserRef = useRef<string | null>(null);
   const client = useClient();
 
-  // GraphQL mutation for subscribing to push notifications
-  const [, subscribeMutation] = useMutation(SubscribeToNotificationsDocument);
+  // Use generated hook for subscribing to push notifications
+  const [, subscribeMutation] = useSubscribeNotificationsMutation();
 
   const hasSession = !!session?.access_token;
   const authUserId = session?.user?.id ?? null;
@@ -110,27 +100,11 @@ export function useAutoPushSubscription() {
 
         // Invalidate notification queries to refresh subscription status on success
         if (!result.error) {
-          await client.invalidate(GetMyNotificationsDocument);
+          await client.invalidate(GetNotificationSubscriptionStatusDocument);
         }
-      } catch (error) {
-        clientLogger.warn("Failed to run automatic notification onboarding:", {
-          error,
-        });
+      } catch {
+        // Silently ignore auto push subscription errors
       }
     })();
   }, [authUserId, hasSession, subscribeMutation, client]);
 }
-
-// Document for cache invalidation
-const GetMyNotificationsDocument = `
-  query GetMyNotifications {
-    myNotificationSubscriptions {
-      isSubscribed
-      subscriptions {
-        token
-        platform
-        createdAt
-      }
-    }
-  }
-`;

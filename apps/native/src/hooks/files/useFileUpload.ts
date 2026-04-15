@@ -4,7 +4,11 @@ import { File } from "expo-file-system";
 import { getUrqlClient } from "~/lib/urql-client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
 import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
-import { clientLogger } from "@mirai-app/shared";
+import {
+  CreateUploadUrlDocument,
+  type CreateUploadUrlMutation,
+  type CreateUploadUrlMutationVariables,
+} from "@mirai-app/graphql-client";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -35,19 +39,6 @@ interface UploadTicket {
   token: string;
   storagePath: string;
 }
-
-// GraphQL document for creating upload URL
-const CreateUploadUrlDocument = `
-  mutation CreateUploadUrl($input: CreateUploadUrlInput!) {
-    createUploadUrl(input: $input) {
-      bucket
-      objectPath
-      storagePath
-      resumableUrl
-      token
-    }
-  }
-`;
 
 export const useFileUpload = () => {
   const supabase = useSupabaseClient();
@@ -94,19 +85,11 @@ export const useFileUpload = () => {
       const urqlClient = getUrqlClient();
       const result = await urqlClient
         .mutation<
-          {
-            createUploadUrl: {
-              bucket: string;
-              objectPath: string;
-              storagePath: string;
-              resumableUrl: string;
-              token: string;
-            };
-          },
-          { input: { storagePath: string; upsert?: boolean } }
+          CreateUploadUrlMutation,
+          CreateUploadUrlMutationVariables
         >(CreateUploadUrlDocument, { input })
         .toPromise();
-      if (result.error || !result.data) {
+      if (result.error || !result.data?.createUploadUrl) {
         throw result.error || new Error("Failed to create upload URL");
       }
       return result.data.createUploadUrl;
@@ -189,11 +172,6 @@ export const useFileUpload = () => {
                     ? uploadError
                     : new Error("Upload failed");
 
-                clientLogger.error("[Upload] Tus upload error", {
-                  storagePath: input.storagePath,
-                  message: errorObject.message,
-                });
-
                 if (
                   !retrying &&
                   attempt < maxAttempts - 1 &&
@@ -206,13 +184,7 @@ export const useFileUpload = () => {
                       const refreshedTicket = await createUploadUrl({
                         storagePath: input.storagePath,
                       });
-                      clientLogger.warn(
-                        "[Upload] Retrying with fresh signed URL",
-                        {
-                          storagePath: input.storagePath,
-                          attempt,
-                        },
-                      );
+                      // Retrying with fresh signed URL
                       retrying = false;
                       startUpload(refreshedTicket);
                     } catch (refreshError) {
@@ -270,10 +242,7 @@ export const useFileUpload = () => {
                       urlStorage.removeUpload(previousUpload.urlStorageKey),
                     ),
                   );
-                  clientLogger.warn(
-                    "[Upload] Cleared previous resumable uploads for signed URL",
-                    { storagePath: input.storagePath },
-                  );
+                  // Cleared previous resumable uploads for signed URL
                 }
                 tusUpload.start();
               })
@@ -311,10 +280,6 @@ export const useFileUpload = () => {
         });
       } catch (uploadError) {
         const errorObject = uploadError as Error;
-        clientLogger.error("[Upload] Failed to start upload", {
-          storagePath: input.storagePath,
-          message: errorObject.message,
-        });
         if (mountedRef.current) {
           setStatus("error");
           setError(errorObject);

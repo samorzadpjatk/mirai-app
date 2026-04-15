@@ -3,6 +3,7 @@ import { TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { useQuery } from "urql";
 import { YStack, XStack, Text } from "@mirai-app/ui";
+import { CreateDownloadUrlDocument } from "@mirai-app/graphql-client";
 
 interface GroupMember {
   id: string;
@@ -16,15 +17,6 @@ interface GroupMember {
 interface GroupMemberListProps {
   members: GroupMember[];
 }
-
-// Inline GraphQL document for createDownloadUrl
-const CreateDownloadUrlDocument = `
-  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-    createDownloadUrl(input: $input) {
-      signedUrl
-    }
-  }
-`;
 
 function MemberAvatar({ member }: { member: GroupMember }) {
   const [result] = useQuery({

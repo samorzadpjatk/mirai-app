@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import type { UserLocation } from "~/components/map/UserMap";
-import { clientLogger } from "@mirai-app/shared";
 
 interface UseMapSelectedUserArgs {
   session?: { user?: { id?: string } } | null;
@@ -35,8 +34,7 @@ export function useMapSelectedUser({
     const newIds = sharingUserIds.filter((id) => id !== selectedUser.id);
     try {
       await updateSharing(newIds);
-    } catch (err) {
-      clientLogger.error("Failed to stop sharing:", err as Error);
+    } catch {
       // Error handling is now done in useMapSharing hook
     }
   };

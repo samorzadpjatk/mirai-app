@@ -9,7 +9,6 @@ import {
 import { Card, XStack, YStack, Text, Button } from "@mirai-app/ui";
 import { formatRelativeTime, formatDate } from "~/utils/format";
 import type { NotificationScheduleItem } from "~/types/notifications";
-import { clientLogger } from "@mirai-app/shared";
 
 interface NotificationScheduleCardProps {
   schedule: NotificationScheduleItem;
@@ -43,11 +42,6 @@ export function NotificationScheduleCard({
               await client.invalidate(
                 useGetNotificationSchedulesQuery.document,
               );
-            } else {
-              clientLogger.error(
-                "Error deleting schedule:",
-                result.error as Error,
-              );
             }
           },
         },
@@ -60,8 +54,6 @@ export function NotificationScheduleCard({
     if (!result.error) {
       // Invalidate schedules so list refreshes
       await client.invalidate(useGetNotificationSchedulesQuery.document);
-    } else {
-      clientLogger.error("Error toggling schedule:", result.error as Error);
     }
   };
 

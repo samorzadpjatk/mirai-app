@@ -2,8 +2,13 @@ import { useEffect, useState, useCallback } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
-import { useQuery, useMutation, useClient } from "urql";
-import { clientLogger } from "@mirai-app/shared";
+import { useClient } from "urql";
+import {
+  useGetNotificationSubscriptionStatusQuery,
+  useSubscribeNotificationsMutation,
+  useUnsubscribeNotificationsMutation,
+  GetNotificationSubscriptionStatusDocument,
+} from "@mirai-app/graphql-client/urql";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;
@@ -17,57 +22,19 @@ export interface UseNotificationsReturn {
   testNotification: () => void;
 }
 
-// GraphQL documents for notification operations (not yet in generated hooks)
-const GetSubscriptionStatusDocument = `
-  query GetNotificationSubscriptionStatus {
-    myNotificationSubscriptions {
-      isSubscribed
-      subscriptions {
-        token
-        platform
-        createdAt
-      }
-    }
-  }
-`;
-
-const SubscribeNotificationsDocument = `
-  mutation SubscribeNotifications($token: String!) {
-    subscribeToNotifications(input: { token: $token }) {
-      success
-      subscription {
-        token
-        platform
-      }
-    }
-  }
-`;
-
-const UnsubscribeNotificationsDocument = `
-  mutation UnsubscribeNotifications($token: String!) {
-    unsubscribeFromNotifications(input: { token: $token }) {
-      success
-    }
-  }
-`;
-
 export function useNotifications(): UseNotificationsReturn {
   const client = useClient();
 
-  // GraphQL query for subscription status using urql
-  const [subscriptionQueryResult] = useQuery({
-    query: GetSubscriptionStatusDocument,
-  });
+  // Use generated hook for subscription status query
+  const [subscriptionQueryResult] = useGetNotificationSubscriptionStatusQuery();
 
   const subscriptionStatus =
     subscriptionQueryResult.data?.myNotificationSubscriptions;
   const isStatusLoading = subscriptionQueryResult.fetching;
 
-  // GraphQL mutation for subscribing
-  const [, subscribeMutation] = useMutation(SubscribeNotificationsDocument);
-
-  // GraphQL mutation for unsubscribing
-  const [, unsubscribeMutation] = useMutation(UnsubscribeNotificationsDocument);
+  // Use generated hooks for mutations
+  const [, subscribeMutation] = useSubscribeNotificationsMutation();
+  const [, unsubscribeMutation] = useUnsubscribeNotificationsMutation();
 
   const [permission, setPermission] = useState<Notifications.PermissionStatus>(
     Notifications.PermissionStatus.UNDETERMINED,
@@ -97,8 +64,7 @@ export function useNotifications(): UseNotificationsReturn {
   }, []);
 
   const openAppSettings = useCallback(() => {
-    void Linking.openSettings().catch((error) => {
-      clientLogger.warn("Failed to open app settings", { error });
+    void Linking.openSettings().catch(() => {
       Alert.alert("Error", "Could not open device settings");
     });
   }, []);
@@ -108,10 +74,8 @@ export function useNotifications(): UseNotificationsReturn {
       .then((data) => {
         setPermission(data.status);
       })
-      .catch((err) => {
-        clientLogger.warn("Failed to get notification permissions", {
-          error: err,
-        });
+      .catch(() => {
+        // Silently ignore permission check errors
       });
   }, []);
 
@@ -120,11 +84,11 @@ export function useNotifications(): UseNotificationsReturn {
       for (const sub of subscriptionStatus.subscriptions) {
         const result = await unsubscribeMutation({ token: sub.token });
         if (result.error) {
-          clientLogger.error("Failed to unsubscribe:", result.error as Error);
+          // Silently ignore unsubscribe errors
         }
       }
       // Invalidate cache after unsubscribing
-      await client.invalidate(GetSubscriptionStatusDocument);
+      await client.invalidate(GetNotificationSubscriptionStatusDocument);
       return;
     }
 
@@ -150,9 +114,7 @@ export function useNotifications(): UseNotificationsReturn {
       const result = await subscribeMutation({ token: tokenData.data });
       if (!result.error) {
         // Invalidate cache after subscribing
-        await client.invalidate(GetSubscriptionStatusDocument);
-      } else {
-        clientLogger.error("Failed to subscribe:", result.error as Error);
+        await client.invalidate(GetNotificationSubscriptionStatusDocument);
       }
     }
   }, [
@@ -171,8 +133,7 @@ export function useNotifications(): UseNotificationsReturn {
   }, []);
 
   const onTogglePress = useCallback(() => {
-    void toggleSubscription().catch((err) => {
-      clientLogger.error("Error toggling notifications:", err as Error);
+    void toggleSubscription().catch(() => {
       Alert.alert("Error", "Failed to update notification settings");
     });
   }, [toggleSubscription]);

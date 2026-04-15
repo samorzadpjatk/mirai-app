@@ -12,7 +12,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YStack, XStack, Text, Spinner } from "@mirai-app/ui";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { clientLogger } from "@mirai-app/shared";
 
 export interface LocationCoordinate {
   latitude: number;
@@ -144,7 +143,6 @@ export const LocationPicker: React.FC<Props> = ({
   };
 
   const handleMapLoadError = () => {
-    clientLogger.error("Map failed to load");
     setIsMapReady(true); // Still set to true to hide loading indicator
   };
 
@@ -195,8 +193,7 @@ export const LocationPicker: React.FC<Props> = ({
           animationDuration: 1000,
         });
       }
-    } catch (error) {
-      clientLogger.error("Error getting location: " + String(error));
+    } catch {
       Alert.alert(
         "Location Error",
         "Unable to get your current location. Please try again.",

@@ -34,15 +34,9 @@ import {
 } from "@expo-google-fonts/ibm-plex-sans";
 import { useAuth, useAuthLoading } from "@mirai-app/frameworks/auth/client";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
-import { clientLogger } from "@mirai-app/shared";
 import { SupabaseProvider } from "@mirai-app/frameworks/supabase/react";
-import { APIProvider, useTRPCClient } from "@mirai-app/frameworks/graphql";
-import {
-  SUPABASE_ANON_KEY,
-  SUPABASE_URL,
-  GRAPHQL_HTTP_URL,
-  GRAPHQL_WS_URL,
-} from "~/config/runtimeEnv";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";
+import { urqlClient } from "~/lib/urql-client";
 import "~/services/background/backgroundLocationTask";
 import { authStorage } from "~/services/storage/storage";
 import "../../global.css";
@@ -146,33 +140,75 @@ function App() {
   );
 }
 
-function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
-  const trpcClient = useTRPCClient();
-
-  const onUserFetch = async () => {
-    try {
-      // Use native-client GraphQL for user fetch (tRPC-compatible API)
-      const user = await trpcClient.user.getMy.query();
-      if (!user) return null;
-
-      // Transform database user to AuthUser format
-      return {
-        id: user.id,
-        authUserId: user.authUserId,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        name:
-          user.firstName && user.lastName
-            ? `${user.firstName} ${user.lastName}`
-            : user.firstName || user.lastName || null,
-        emailVerified: user.emailVerified ?? null,
-        role: user.role,
-      };
-    } catch (error) {
-      clientLogger.error("Failed to fetch user:", error as Error);
-      return null;
+/**
+ * Fetch current user via GraphQL using urql
+ */
+async function fetchCurrentUser(): Promise<{
+  id: string;
+  authUserId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  emailVerified: boolean | null;
+  role: string;
+} | null> {
+  const GET_ME_QUERY = `
+    query GetMe {
+      me {
+        id
+        authUserId
+        email
+        firstName
+        lastName
+        emailVerified
+        role
+      }
     }
+  `;
+
+  try {
+    const result = await urqlClient.query(GET_ME_QUERY, {}).toPromise();
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    const user = result.data?.me;
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      authUserId: user.authUserId,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      emailVerified: user.emailVerified ?? null,
+      role: user.role,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
+  const onUserFetch = async () => {
+    const user = await fetchCurrentUser();
+    if (!user) return null;
+
+    // Transform database user to AuthUser format
+    return {
+      id: user.id,
+      authUserId: user.authUserId,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name:
+        user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.firstName || user.lastName || null,
+      emailVerified: user.emailVerified ? new Date() : null,
+      role: user.role as "USER" | "ADMIN" | "MODERATOR" | "SERVICE",
+    };
   };
 
   return (
@@ -207,13 +243,11 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <TamaguiProvider config={config} defaultTheme="dark">
           <SupabaseProvider client={supabaseClient}>
-            <APIProvider httpUrl={GRAPHQL_HTTP_URL} wsUrl={GRAPHQL_WS_URL}>
-              <AuthStoreProviderWrapper>
-                <LocationStoreProvider>
-                  <App />
-                </LocationStoreProvider>
-              </AuthStoreProviderWrapper>
-            </APIProvider>
+            <AuthStoreProviderWrapper>
+              <LocationStoreProvider>
+                <App />
+              </LocationStoreProvider>
+            </AuthStoreProviderWrapper>
           </SupabaseProvider>
         </TamaguiProvider>
       </SafeAreaProvider>

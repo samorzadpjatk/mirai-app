@@ -18,7 +18,6 @@ import { useFileDownload } from "~/hooks/files";
 import { useTripResources, useSelectedTrip } from "~/hooks/trips";
 import { useLocalSearchParams } from "expo-router";
 import LoadingScreen from "../../../components/LoadingScreen";
-import { clientLogger } from "@mirai-app/shared";
 import { YStack, XStack, Text } from "@mirai-app/ui";
 
 // Color values for React Native styles
@@ -104,22 +103,11 @@ export default function TripInfoScreen() {
       const mapBgResource = getResource("MAP_BG_IMAGE");
 
       if (heroResource?.storagePath) {
-        heroImageDownload
-          .download({ storagePath: heroResource.storagePath })
-          .catch((err) =>
-            clientLogger.error("Failed to download hero image:", err as Error),
-          );
+        heroImageDownload.download({ storagePath: heroResource.storagePath });
       }
 
       if (mapBgResource?.storagePath) {
-        mapBgImageDownload
-          .download({ storagePath: mapBgResource.storagePath })
-          .catch((err) =>
-            clientLogger.error(
-              "Failed to download map bg image:",
-              err as Error,
-            ),
-          );
+        mapBgImageDownload.download({ storagePath: mapBgResource.storagePath });
       }
     }
   }, [getResource, heroImageDownload, isLoading, mapBgImageDownload]);
@@ -148,9 +136,7 @@ export default function TripInfoScreen() {
   const handleWhatsAppPress = () => {
     const whatsappResource = getResource("WHATSAPP");
     if (whatsappResource?.url) {
-      Linking.openURL(whatsappResource.url).catch(() => {
-        clientLogger.error("Failed to open WhatsApp");
-      });
+      Linking.openURL(whatsappResource.url);
     }
   };
 
@@ -164,8 +150,7 @@ export default function TripInfoScreen() {
         setPdfModalTitle("Infopack");
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
-      } catch (error) {
-        clientLogger.error("Error handling Infopack PDF:", error as Error);
+      } catch {
         Alert.alert(
           "Error",
           "Could not open the infopack. Please try again later.",
@@ -197,8 +182,7 @@ export default function TripInfoScreen() {
         setPdfModalTitle("PDF Map");
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
-      } catch (error) {
-        clientLogger.error("Error handling PDF:", error as Error);
+      } catch {
         Alert.alert("Error", "Could not open the map. Please try again later.");
       }
     }
@@ -770,8 +754,7 @@ export default function TripInfoScreen() {
               onLoadComplete={() => {
                 // PDF loaded successfully
               }}
-              onError={(error) => {
-                clientLogger.error("PDF Error:", error as Error);
+              onError={() => {
                 Alert.alert("Error", "Could not load PDF");
               }}
               enablePaging={false}

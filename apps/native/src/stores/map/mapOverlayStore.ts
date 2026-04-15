@@ -12,7 +12,6 @@ import { scheduleOnRN } from "react-native-worklets";
 import type { UserLocation } from "~/components/map/UserMap";
 import { usePanelAnimation, useShareModal } from "~/hooks/ui";
 import { useMapSelectedUser } from "~/hooks/map";
-import { clientLogger } from "@mirai-app/shared";
 
 export type MapTheme = "dark" | "light";
 
@@ -210,8 +209,8 @@ export const mapOverlayStore = createStore<MapOverlayStore>()((set, get) => ({
           },
         });
       }
-    } catch (error) {
-      clientLogger.error("Failed to remove user:", error as Error);
+    } catch {
+      // Silently ignore remove user errors
     } finally {
       setIsRemovingUser(false);
     }

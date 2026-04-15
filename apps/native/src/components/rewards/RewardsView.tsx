@@ -17,7 +17,6 @@ import { useRewards, usePurchaseReward } from "~/hooks/rewards";
 import { useMyGroup } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import type { RewardListItem } from "./types";
-import { clientLogger } from "@mirai-app/shared";
 import { YStack, XStack, Text, Button, Card } from "@mirai-app/ui";
 
 interface Props {
@@ -111,8 +110,7 @@ export default function RewardsView({ tripId }: Props) {
       Alert.alert("Updated", "Reward pricing has been refreshed", [
         { text: "OK", style: "default" },
       ]);
-    } catch (error) {
-      clientLogger.error("Failed to refresh rewards:", error as Error);
+    } catch {
       Alert.alert("Error", "Failed to refresh rewards");
     } finally {
       setRefreshing(false);

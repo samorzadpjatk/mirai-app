@@ -2,7 +2,6 @@ import { createStore } from "zustand/vanilla";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, Linking } from "react-native";
 import * as Location from "expo-location";
-import { clientLogger } from "@mirai-app/shared";
 import {
   getBackgroundLocationPreference,
   hasBackgroundLocationTaskStarted,
@@ -96,8 +95,8 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         isBackgroundLocationEnabled: savedBackgroundEnabled,
         isBackgroundLocationActive: taskStarted,
       });
-    } catch (error) {
-      clientLogger.warn("Failed to load location settings:", { error });
+    } catch {
+      // Silently ignore load errors
     } finally {
       set({ isLoading: false });
     }
@@ -119,11 +118,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
 
       await startBackgroundLocationTask();
       set({ isBackgroundLocationActive: true });
-    } catch (error) {
-      clientLogger.error(
-        "Failed to synchronize background location updates:",
-        error as Error,
-      );
+    } catch {
       set({ isBackgroundLocationActive: false });
     }
   },
@@ -131,8 +126,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
   openSystemLocationSettings: async () => {
     try {
       await Linking.openSettings();
-    } catch (error) {
-      clientLogger.error("Failed to open system settings:", error as Error);
+    } catch {
       Alert.alert(
         "Settings Unavailable",
         "Unable to open system settings on this device.",
@@ -153,11 +147,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       }
 
       return status as LocationPermissionStatus;
-    } catch (error) {
-      clientLogger.error(
-        "Failed to request location permissions:",
-        error as Error,
-      );
+    } catch {
       set({ permissionStatus: "denied" });
       Alert.alert(
         "Location Permission Required",
@@ -260,11 +250,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         isBackgroundLocationEnabled: true,
         isBackgroundLocationActive: true,
       });
-    } catch (error) {
-      clientLogger.error(
-        "Failed to toggle background location updates:",
-        error as Error,
-      );
+    } catch {
       Alert.alert(
         "Background Updates Error",
         "Failed to change background location updates. Please try again.",
@@ -302,16 +288,11 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         await stopBackgroundLocationTask();
         set({ isBackgroundLocationActive: false });
       }
-    } catch (error) {
-      clientLogger.error("Failed to toggle location sharing:", error as Error);
-      if (error instanceof Error) {
-        Alert.alert(
-          "Authentication Error",
-          "Failed to update location settings. Please check your connection and try again.",
-        );
-      } else {
-        Alert.alert("Error", "Failed to update location settings");
-      }
+    } catch {
+      Alert.alert(
+        "Authentication Error",
+        "Failed to update location settings. Please check your connection and try again.",
+      );
     } finally {
       set({ isUpdatingSharing: false });
     }

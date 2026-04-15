@@ -4,7 +4,6 @@ import {
   DeleteNotificationScheduleDocument,
   ToggleNotificationScheduleActiveDocument,
 } from "@mirai-app/graphql-client";
-import { clientLogger } from "@mirai-app/shared";
 
 export function useNotificationSchedules() {
   const client = useClient();
@@ -25,7 +24,6 @@ export function useNotificationSchedules() {
   const deleteSchedule = async (id: string) => {
     const result = await deleteScheduleMutation({ id });
     if (result.error) {
-      clientLogger.error("Error deleting schedule:", result.error as Error);
       throw result.error;
     }
     // Invalidate query
@@ -35,7 +33,6 @@ export function useNotificationSchedules() {
   const toggleActive = async (id: string) => {
     const result = await toggleMutation({ id });
     if (result.error) {
-      clientLogger.error("Error toggling schedule:", result.error as Error);
       throw result.error;
     }
     // Invalidate query

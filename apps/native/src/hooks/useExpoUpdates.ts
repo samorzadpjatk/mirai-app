@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import * as Updates from "expo-updates";
-import { clientLogger } from "@mirai-app/shared";
 
 interface UseExpoUpdatesReturn {
   isUpdateAvailable: boolean;
@@ -38,8 +37,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
         setIsUpdateAvailable(true);
         setShowUpdatePopup(true);
       }
-    } catch (err) {
-      clientLogger.error("Error checking for updates:", err as Error);
+    } catch {
       setError("Failed to check for updates");
     } finally {
       setIsChecking(false);
@@ -56,8 +54,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
 
       // Restart the app to apply the update
       await Updates.reloadAsync();
-    } catch (err) {
-      clientLogger.error("Error downloading update:", err as Error);
+    } catch {
       setError("Failed to download update");
       setIsDownloading(false);
     }

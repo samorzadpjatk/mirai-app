@@ -3,23 +3,12 @@ import { useQuery, useMutation, useClient } from "urql";
 import {
   GetChallengeSubmissionsDocument,
   UpdateChallengeSubmissionDocument,
+  useGetChallengeQuery,
   type ChallengeSubmission,
 } from "@mirai-app/graphql-client";
 import { useStore } from "zustand";
 import { judgementStore } from "./judgementStores";
 import type { ReviewStatus, Submission } from "./judgementStores";
-import { clientLogger } from "@mirai-app/shared";
-
-// Inline GraphQL document for GetChallenge
-const GetChallengeDocument = `
-  query GetChallenge($id: ID!, $tripId: ID!) {
-    challenge(id: $id, tripId: $tripId) {
-      id
-      name
-      scoringCategory
-    }
-  }
-`;
 
 /**
  * Hook that replaces the old JudgementProvider + useJudgement pattern.
@@ -51,18 +40,12 @@ export function useJudgement(
     pause: !tripId || !challengeId,
   });
 
-  // Get challenge details using direct request (no generated hook available)
-  const [{ data: challengeData, fetching: challengeFetching }] = useQuery<{
-    challenge: {
-      id: string;
-      name: string;
-      scoringCategory: string;
-    } | null;
-  }>({
-    query: GetChallengeDocument,
-    variables: { id: challengeId, tripId },
-    pause: !tripId || !challengeId,
-  });
+  // Get challenge details using generated hook
+  const [{ data: challengeData, fetching: challengeFetching }] =
+    useGetChallengeQuery({
+      variables: { id: challengeId ?? "", tripId: tripId ?? "" },
+      pause: !tripId || !challengeId,
+    });
 
   // GraphQL mutation for reviewing submissions
   const [, executeReview] = useMutation(UpdateChallengeSubmissionDocument);
@@ -149,10 +132,7 @@ export function useJudgement(
       });
 
       if (result.error) {
-        clientLogger.error(
-          "Failed to review challenge submission:",
-          result.error as Error,
-        );
+        // Error silently ignored
       } else {
         // Invalidate and refetch submissions
         await client.invalidate("GetChallengeSubmissions", { challengeId });

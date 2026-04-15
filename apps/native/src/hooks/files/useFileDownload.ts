@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
-import { clientLogger } from "@mirai-app/shared";
 import { getUrqlClient } from "~/lib/urql-client";
+import {
+  CreateDownloadUrlDocument,
+  type CreateDownloadUrlQuery,
+  type CreateDownloadUrlQueryVariables,
+} from "@mirai-app/graphql-client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 
@@ -25,17 +29,6 @@ interface DownloadResult {
   fileName: string | null;
   totalBytes: number;
 }
-
-// GraphQL document for creating download URL
-const CreateDownloadUrlDocument = `
-  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-    createDownloadUrl(input: $input) {
-      storagePath
-      signedUrl
-      expiresAt
-    }
-  }
-`;
 
 const toDownloadResult = (file: File, fileName: string): DownloadResult => ({
   uri: file.uri,
@@ -161,14 +154,8 @@ export const useFileDownload = () => {
         if (stableCachedFile.exists && input.skipCache) {
           try {
             stableCachedFile.delete();
-          } catch (deleteError) {
-            clientLogger.warn("[Download] Failed to clear cached file", {
-              storagePath: input.storagePath,
-              message:
-                deleteError instanceof Error
-                  ? deleteError.message
-                  : "Unknown error",
-            });
+          } catch {
+            // Silently ignore delete errors
           }
         }
 
@@ -179,28 +166,17 @@ export const useFileDownload = () => {
         } else {
           const urqlClient = getUrqlClient();
           const response = await urqlClient
-            .mutation<
-              {
-                createDownloadUrl: {
-                  storagePath: string;
-                  signedUrl: string;
-                  expiresAt: string;
-                };
-              },
+            .mutation<CreateDownloadUrlQuery, CreateDownloadUrlQueryVariables>(
+              CreateDownloadUrlDocument,
               {
                 input: {
-                  storagePath: string;
-                  expiresInSeconds?: number;
-                };
-              }
-            >(CreateDownloadUrlDocument, {
-              input: {
-                storagePath: input.storagePath,
-                expiresInSeconds: input.expiresInSeconds,
+                  storagePath: input.storagePath,
+                  expiresInSeconds: input.expiresInSeconds,
+                },
               },
-            })
+            )
             .toPromise();
-          if (response.error || !response.data) {
+          if (response.error || !response.data?.createDownloadUrl) {
             throw response.error || new Error("Failed to get download URL");
           }
           signedUrl = response.data.createDownloadUrl.signedUrl;
@@ -227,14 +203,8 @@ export const useFileDownload = () => {
         if (targetFile.exists && input.skipCache) {
           try {
             targetFile.delete();
-          } catch (deleteError) {
-            clientLogger.warn("[Download] Failed to clear cached file", {
-              storagePath: input.storagePath,
-              message:
-                deleteError instanceof Error
-                  ? deleteError.message
-                  : "Unknown error",
-            });
+          } catch {
+            // Silently ignore delete errors
           }
         }
 
@@ -248,11 +218,8 @@ export const useFileDownload = () => {
             if (message.toLowerCase().includes("destination already exists")) {
               try {
                 if (targetFile.exists) targetFile.delete();
-              } catch (deleteErr) {
-                clientLogger.warn(
-                  "[Download] Failed to delete existing target file",
-                  { error: deleteErr },
-                );
+              } catch {
+                // Silently ignore delete errors
               }
               try {
                 return await File.downloadFileAsync(signedUrl, targetFile);

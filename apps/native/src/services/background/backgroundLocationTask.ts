@@ -1,15 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
+import { print } from "graphql";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
-import { NativeGraphQLClient } from "@mirai-app/frameworks/graphql";
-import { clientLogger } from "@mirai-app/shared";
-import { authStorage } from "~/services/storage/storage";
 import {
-  SUPABASE_ANON_KEY,
-  SUPABASE_URL,
-  GRAPHQL_HTTP_URL,
-} from "~/config/runtimeEnv";
+  UpdateLocationDocument,
+  type UpdateLocationInput,
+} from "@mirai-app/graphql-client";
+import { urqlClient } from "~/lib/urql-client";
+import { authStorage } from "~/services/storage/storage";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
@@ -52,55 +52,47 @@ async function shouldSendBackgroundLocation(): Promise<boolean> {
   return sharingEnabled === "true" && backgroundEnabled === "true";
 }
 
-async function getAccessToken(): Promise<string | null> {
-  const {
-    data: { session },
-    error,
-  } = await supabaseClient.auth.getSession();
+/**
+ * Execute GraphQL mutation to update location using urql
+ * Uses generated UpdateLocationDocument from @mirai-app/graphql-client
+ */
+async function executeLocationUpdate(params: {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+}): Promise<void> {
+  const { latitude, longitude, accuracy } = params;
 
-  if (error) {
-    clientLogger.warn("[BackgroundLocationTask] Failed to load session:", {
-      error,
-    });
-    return null;
+  const input: UpdateLocationInput = {
+    latitude,
+    longitude,
+    accuracy,
+  };
+
+  // Convert DocumentNode to GraphQL string using print()
+  const mutationString = print(UpdateLocationDocument);
+
+  const result = await urqlClient
+    .mutation(mutationString, { input })
+    .toPromise();
+
+  if (result.error) {
+    throw result.error;
   }
-
-  return session?.access_token ?? null;
 }
 
 async function sendLocationUpdate(location: LocationObject): Promise<void> {
-  const accessToken = await getAccessToken();
-  if (!accessToken) {
-    return;
-  }
-
   const latitude = toFiniteNumberOrNull(location.coords.latitude);
   const longitude = toFiniteNumberOrNull(location.coords.longitude);
   if (latitude == null || longitude == null) {
-    clientLogger.warn(
-      "[BackgroundLocationTask] Skipping update due to invalid coordinates.",
-      {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      },
-    );
     return;
   }
 
-  const client = new NativeGraphQLClient({
-    endpoint: GRAPHQL_HTTP_URL,
-    getAuthToken: () => accessToken,
+  await executeLocationUpdate({
+    latitude,
+    longitude,
+    accuracy: toNonNegativeOrNull(location.coords.accuracy) ?? undefined,
   });
-
-  try {
-    await client.location.update.mutate({
-      latitude,
-      longitude,
-      accuracy: toNonNegativeOrNull(location.coords.accuracy) ?? undefined,
-    });
-  } finally {
-    // No cleanup needed for GraphQL client
-  }
 }
 
 try {
@@ -108,10 +100,6 @@ try {
     BACKGROUND_LOCATION_TASK_NAME,
     async ({ data, error }) => {
       if (error) {
-        clientLogger.error(
-          "[BackgroundLocationTask] Task failed:",
-          error as unknown as Error,
-        );
         return;
       }
 
@@ -137,25 +125,13 @@ try {
       isSending = true;
       try {
         await sendLocationUpdate(latestLocation);
-      } catch (taskError) {
-        clientLogger.error(
-          "[BackgroundLocationTask] Failed to send location update:",
-          taskError as Error,
-        );
+      } catch {
+        // Silently ignore task errors
       } finally {
         isSending = false;
       }
     },
   );
-} catch (error) {
+} catch {
   // Hot reload can try to re-register the same task name in development.
-  if (
-    !(error instanceof Error) ||
-    !error.message.includes("has already been defined")
-  ) {
-    clientLogger.error(
-      "[BackgroundLocationTask] Failed to define task:",
-      error as Error,
-    );
-  }
 }
