@@ -1,12 +1,6 @@
 import { builder } from "../builder";
 import { ChallengeType, CreateChallengeInput } from "../types/Challenge";
 import {
-  GetChallengeUseCase,
-  CreateChallengeUseCase,
-  type GetChallengeInput,
-  type CreateChallengeInput as CreateChallengeUseCaseInput,
-} from "@mirai-app/use-cases";
-import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
@@ -28,16 +22,14 @@ builder.queryFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const useCase = context.container.resolve<GetChallengeUseCase>(
-        "getChallengeUseCase",
-      );
-      const result = await useCase.execute({ challengeId: args.id });
+      const controller = context.controllers.challengeController;
+      const result = await controller.getById({ id: args.id });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -74,9 +66,7 @@ builder.mutationFields((t) => ({
     },
     authScopes: { admin: true },
     resolve: async (_, args, context) => {
-      const useCase = context.container.resolve<CreateChallengeUseCase>(
-        "createChallengeUseCase",
-      );
+      const controller = context.controllers.challengeController;
 
       const statusMap: Record<string, ChallengeStatus> = {
         HIDDEN: ChallengeStatus.HIDDEN,
@@ -104,7 +94,7 @@ builder.mutationFields((t) => ({
         PEER_VOTING: ScoringCategory.PEER_VOTING,
       };
 
-      const result = await useCase.execute({
+      const result = await controller.create({
         tripId: args.input.tripId,
         name: args.input.name,
         description: args.input.description ?? undefined,
@@ -115,16 +105,16 @@ builder.mutationFields((t) => ({
           ScoringCategory.SPEED,
         points: args.input.points ?? undefined,
         isRecurring: args.input.isRecurring ?? false,
-        startDate: args.input.startDate ?? undefined,
-        endDate: args.input.endDate ?? undefined,
+        startTime: args.input.startDate ?? undefined,
+        endTime: args.input.endDate ?? undefined,
         status: ChallengeStatus.HIDDEN,
       });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 }));
