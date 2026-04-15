@@ -62,8 +62,7 @@ builder.queryField("queryName", (t) =>
     authScopes: { authenticated: true },
     resolve: async (_root, args, context) => {
       await requireAuth(context);
-      const controller =
-        context.container.resolve<Controller>("controllerName");
+      const controller = context.controllers.controllerName;
       const result = await controller.getById({ id: args.id });
       if (!result.success) {
         if (result.error.toLowerCase().includes("not found")) {
@@ -91,8 +90,7 @@ builder.mutationField("mutationName", (t) =>
     authScopes: { authenticated: true }, // or moderator: true, admin: true
     resolve: async (_root, args, context) => {
       const authContext = await requireAuth(context);
-      const controller =
-        context.container.resolve<Controller>("controllerName");
+      const controller = context.controllers.controllerName;
       const result = await controller.action({ ...args.input });
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
@@ -154,11 +152,11 @@ For adding email verification or other auth fields:
 emailVerified: t.boolean({
   description: "Whether user's email is verified",
   nullable: false,
-  resolve: async (user, _args, context) => {
-    const authService = context.container.resolve<AuthService>("authService");
-    const authUser = await authService.getUserById(user.authUserId);
-    return authUser?.email_confirmed_at != null;
-  },
+    resolve: async (user, _args, context) => {
+      const authService = context.controllers.authController;
+      const authUser = await authService.getUserById(user.authUserId);
+      return authUser?.email_confirmed_at != null;
+    },
 }),
 ```
 

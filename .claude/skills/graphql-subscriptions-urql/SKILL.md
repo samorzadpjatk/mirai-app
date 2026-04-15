@@ -100,7 +100,7 @@ builder.subscriptionField("activityFeedUpdated", (t) =>
       tripId: t.arg.id({ required: true }),
     },
     subscribe: async function* (parent, args, context) {
-      const pubsub = context.container.resolve("pubSubService");
+      const pubsub = context.controllers.pubSubService;
       const channel = `activity:feed:${args.tripId}`;
 
       for await (const activity of pubsub.subscribe(channel)) {
@@ -119,7 +119,7 @@ builder.subscriptionField("locationUpdated", (t) =>
       userIds: t.arg.idList({ required: true }),
     },
     subscribe: async function* (parent, args, context) {
-      const pubsub = context.container.resolve("pubSubService");
+      const pubsub = context.controllers.pubSubService;
 
       // Subscribe to multiple user channels
       const channels = args.userIds.map((id) => `location:${id}`);
@@ -140,7 +140,7 @@ builder.subscriptionField("challengeVotingUpdated", (t) =>
       challengeId: t.arg.id({ required: true }),
     },
     subscribe: async function* (parent, args, context) {
-      const pubsub = context.container.resolve("pubSubService");
+      const pubsub = context.controllers.pubSubService;
 
       for await (const progress of pubsub.subscribe(
         `voting:${args.challengeId}`,
