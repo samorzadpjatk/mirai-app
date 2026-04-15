@@ -15,14 +15,11 @@ const asExifRecord = (exif: ImagePickerAsset["exif"]): ExifRecord | null => {
   return exif as ExifRecord;
 };
 
-const readOrientation = (
-  exif: ImagePickerAsset["exif"],
-): number | null => {
+const readOrientation = (exif: ImagePickerAsset["exif"]): number | null => {
   const exifRecord = asExifRecord(exif);
   if (!exifRecord) return null;
 
-  const directOrientation =
-    exifRecord.Orientation ?? exifRecord.orientation;
+  const directOrientation = exifRecord.Orientation ?? exifRecord.orientation;
   if (typeof directOrientation === "number") return directOrientation;
   if (typeof directOrientation === "string") {
     const parsed = Number.parseInt(directOrientation, 10);
@@ -31,9 +28,7 @@ const readOrientation = (
   return null;
 };
 
-const hasExplicitMirroredFlag = (
-  exif: ImagePickerAsset["exif"],
-): boolean => {
+const hasExplicitMirroredFlag = (exif: ImagePickerAsset["exif"]): boolean => {
   const exifRecord = asExifRecord(exif);
   if (!exifRecord) return false;
 
@@ -43,15 +38,15 @@ const hasExplicitMirroredFlag = (
     if (typeof value === "number") return value === 1;
     if (typeof value === "string") {
       const normalized = value.toLowerCase();
-      return normalized === "true" || normalized === "1" || normalized === "yes";
+      return (
+        normalized === "true" || normalized === "1" || normalized === "yes"
+      );
     }
     return false;
   });
 };
 
-const isLikelyFrontCamera = (
-  exif: ImagePickerAsset["exif"],
-): boolean => {
+const isLikelyFrontCamera = (exif: ImagePickerAsset["exif"]): boolean => {
   const exifRecord = asExifRecord(exif);
   if (!exifRecord) return false;
 
@@ -63,9 +58,7 @@ const isLikelyFrontCamera = (
   });
 };
 
-const resolveFormat = (
-  mimeType?: string | null,
-): SaveFormat => {
+const resolveFormat = (mimeType?: string | null): SaveFormat => {
   switch (mimeType) {
     case "image/png":
       return SaveFormat.PNG;
@@ -102,13 +95,13 @@ const runManipulation = async (
       }
     }
 
-    const image = await context.renderAsync();
-    const result = await image.saveAsync({
+    const view = await context.renderAsync();
+    const result = await view.saveAsync({
       compress: 0.9,
       format,
     });
     context.release();
-    image.release();
+    view.release();
     return result;
   }
 };

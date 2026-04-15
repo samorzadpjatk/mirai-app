@@ -161,9 +161,8 @@ export function useJudgement(
     [currentSubmission, executeReview, addDismissedId, client, challengeId],
   );
 
-  // Check if mutation is in progress
-  const [, executeReviewState] = useMutation(UpdateChallengeSubmissionDocument);
-  const isReviewing = false; // urql doesn't provide isPending directly, track manually if needed
+  // Check if mutation is in progress - urql doesn't provide isPending directly
+  const isReviewing = false;
 
   return {
     tripId,

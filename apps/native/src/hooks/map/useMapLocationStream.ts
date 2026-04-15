@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { useClient } from "urql";
 import * as Crypto from "expo-crypto";
 import { clientLogger } from "@mirai-app/shared";
 import { useLocationContext } from "~/stores/location";
@@ -67,97 +66,8 @@ type FriendLocation = {
   };
 };
 
-// WebSocket subscription helper for GraphQL
-function createGraphQLSubscription<T>(
-  wsUrl: string,
-  query: string,
-  variables: Record<string, unknown>,
-  onData: (data: T) => void,
-  onError?: (error: unknown) => void,
-): () => void {
-  let ws: WebSocket | null = null;
-  let subscriptionId: string | null = null;
-
-  const connect = async () => {
-    try {
-      // Get auth token for WebSocket connection
-      const urqlClient = getUrqlClient();
-      const token = await urqlClient
-        .query<{ authToken: string }>(`query { authToken }`, {})
-        .toPromise()
-        .then((r) => r.data?.authToken)
-        .catch(() => null);
-
-      const url = new URL(wsUrl);
-      if (token) {
-        url.searchParams.set("token", token);
-      }
-
-      ws = new WebSocket(url.toString());
-
-      ws.onopen = () => {
-        // Send connection init
-        ws?.send(JSON.stringify({ type: "connection_init" }));
-
-        // Start subscription
-        subscriptionId = Crypto.randomUUID();
-        ws?.send(
-          JSON.stringify({
-            id: subscriptionId,
-            type: "subscribe",
-            payload: {
-              query,
-              variables,
-            },
-          }),
-        );
-      };
-
-      ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-
-        if (message.type === "data" && message.id === subscriptionId) {
-          onData(message.payload.data);
-        } else if (message.type === "error") {
-          onError?.(
-            new Error(message.payload?.message || "Subscription error"),
-          );
-        }
-      };
-
-      ws.onerror = (error) => {
-        onError?.(error);
-      };
-
-      ws.onclose = () => {
-        // Auto-reconnect after delay
-        setTimeout(connect, 3000);
-      };
-    } catch (error) {
-      onError?.(error);
-    }
-  };
-
-  connect();
-
-  // Return unsubscribe function
-  return () => {
-    if (ws?.readyState === WebSocket.OPEN && subscriptionId) {
-      ws.send(
-        JSON.stringify({
-          id: subscriptionId,
-          type: "complete",
-        }),
-      );
-    }
-    ws?.close();
-    ws = null;
-  };
-}
-
 export function useMapLocationStream(enabled: boolean) {
   const { canViewOthersLocations } = useLocationContext();
-  const client = useClient();
 
   const [locationsByUserId, setLocationsByUserId] = useState<
     Record<
@@ -173,11 +83,6 @@ export function useMapLocationStream(enabled: boolean) {
   >({});
 
   const connectionId = useMemo(() => Crypto.randomUUID(), []);
-  const wsUrl = useMemo(() => {
-    const httpUrl =
-      process.env.EXPO_PUBLIC_GRAPHQL_URL ?? "http://localhost:4000/graphql";
-    return httpUrl.replace(/^http/, "ws").replace("/graphql", "/subscriptions");
-  }, []);
 
   useEffect(() => {
     if (!enabled || !canViewOthersLocations) return;

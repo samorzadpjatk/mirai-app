@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useQuery, useMutation, useClient } from "urql";
 import { Alert } from "react-native";
 import { locationStore, setLocationServerUpdater } from "./locationStore";
@@ -67,40 +67,43 @@ export function LocationStoreProvider({
     updateLocationSharing: SharingSettings;
   }>(UpdateSharingSettingsDocument);
 
-  const updateSharingMutation = {
-    mutateAsync: async (input: {
-      isSharingLocation: boolean;
-      userIdsToShareWith?: string[];
-    }) => {
-      const result = await executeUpdateSharing({ input });
-      if (result.error) {
-        const error = result.error;
-        clientLogger.error("Failed to update location sharing settings:", {
-          error,
-        });
-        if (error?.message?.includes("UNAUTHORIZED")) {
-          Alert.alert(
-            "Authentication Required",
-            "Please sign in again to update location settings.",
-          );
-        } else if (error?.message?.includes("FORBIDDEN")) {
-          Alert.alert(
-            "Access Denied",
-            "You don't have permission to update location settings.",
-          );
-        } else {
-          Alert.alert(
-            "Connection Error",
-            "Failed to update location sharing settings. Please check your internet connection and try again.",
-          );
+  const updateSharingMutation = useMemo(
+    () => ({
+      mutateAsync: async (input: {
+        isSharingLocation: boolean;
+        userIdsToShareWith?: string[];
+      }) => {
+        const result = await executeUpdateSharing({ input });
+        if (result.error) {
+          const error = result.error;
+          clientLogger.error("Failed to update location sharing settings:", {
+            error,
+          });
+          if (error?.message?.includes("UNAUTHORIZED")) {
+            Alert.alert(
+              "Authentication Required",
+              "Please sign in again to update location settings.",
+            );
+          } else if (error?.message?.includes("FORBIDDEN")) {
+            Alert.alert(
+              "Access Denied",
+              "You don't have permission to update location settings.",
+            );
+          } else {
+            Alert.alert(
+              "Connection Error",
+              "Failed to update location sharing settings. Please check your internet connection and try again.",
+            );
+          }
+          throw error;
         }
-        throw error;
-      }
-      // Invalidate cache on success
-      await client.invalidate("GetMySharingSettings");
-      return result.data!.updateLocationSharing;
-    },
-  };
+        // Invalidate cache on success
+        await client.invalidate("GetMySharingSettings");
+        return result.data!.updateLocationSharing;
+      },
+    }),
+    [executeUpdateSharing, client],
+  );
 
   // Inject the server updater into the store
   useEffect(() => {
