@@ -1840,6 +1840,8 @@ export type Mutation = {
   submitVote?: Maybe<SubmitVotePayload>;
   /** Submit multiple votes for a challenge (batch) */
   submitVotes?: Maybe<SubmitVotesPayload>;
+  /** Subscribe to push notifications */
+  subscribeToNotifications: SubscribeToNotificationsResult;
   /** Toggle a reaction on an activity */
   toggleActivityReaction: ToggleReactionResult;
   /** Toggle the active status of a notification schedule (admin only) */
@@ -1854,6 +1856,8 @@ export type Mutation = {
   unhideActivity: Activity;
   /** Unlink a sponsor from a trip (admin only) */
   unlinkSponsorFromTrip?: Maybe<UnlinkSponsorFromTripPayload>;
+  /** Unsubscribe from push notifications */
+  unsubscribeFromNotifications: UnsubscribeFromNotificationsResult;
   /** Update an activity */
   updateActivity: Activity;
   /** Update an existing challenge (admin only) */
@@ -2152,6 +2156,12 @@ export type MutationSubmitVotesArgs = {
 
 
 /** Root mutation type for modifying data */
+export type MutationSubscribeToNotificationsArgs = {
+  input: SubscribeToNotificationsInput;
+};
+
+
+/** Root mutation type for modifying data */
 export type MutationToggleActivityReactionArgs = {
   input: ToggleReactionInput;
 };
@@ -2190,6 +2200,12 @@ export type MutationUnhideActivityArgs = {
 /** Root mutation type for modifying data */
 export type MutationUnlinkSponsorFromTripArgs = {
   input: UnlinkSponsorFromTripInput;
+};
+
+
+/** Root mutation type for modifying data */
+export type MutationUnsubscribeFromNotificationsArgs = {
+  input: UnsubscribeFromNotificationsInput;
 };
 
 
@@ -2292,6 +2308,15 @@ export type MutationUpdateTripArgs = {
 /** Root mutation type for modifying data */
 export type MutationUpdateUserArgs = {
   input: UpdateUserInput;
+};
+
+/** Result of fetching user's push notification subscriptions */
+export type MyNotificationSubscriptions = {
+  __typename?: 'MyNotificationSubscriptions';
+  /** Whether user has any active subscriptions */
+  isSubscribed: Scalars['Boolean']['output'];
+  /** List of active subscriptions */
+  subscriptions: Array<PushNotificationSubscription>;
 };
 
 /** Result of fetching current user's notifications */
@@ -2660,6 +2685,17 @@ export type PurchaseRewardPayload = {
   remainingRewardQuantity: Scalars['Int']['output'];
 };
 
+/** A push notification subscription */
+export type PushNotificationSubscription = {
+  __typename?: 'PushNotificationSubscription';
+  /** When subscription was created */
+  createdAt: Scalars['DateTime']['output'];
+  /** Platform (ios, android, web, unknown) */
+  platform: Scalars['String']['output'];
+  /** Expo push token */
+  token: Scalars['String']['output'];
+};
+
 /** Root query type for fetching data */
 export type Query = {
   __typename?: 'Query';
@@ -2725,6 +2761,8 @@ export type Query = {
   myCoinTransactions: Array<CoinTransaction>;
   /** Get the current user's location */
   myLocation?: Maybe<Location>;
+  /** Get current user's push notification subscriptions */
+  myNotificationSubscriptions: MyNotificationSubscriptions;
   /** Get current user's notifications */
   myNotifications: MyNotificationsResult;
   /** Get current user's location sharing settings */
@@ -3601,6 +3639,21 @@ export type SubmitVotesPayload = {
   votes: Array<ChallengeVote>;
 };
 
+/** Input for subscribing to push notifications */
+export type SubscribeToNotificationsInput = {
+  /** Expo push token */
+  token: Scalars['String']['input'];
+};
+
+/** Result of subscribing to push notifications */
+export type SubscribeToNotificationsResult = {
+  __typename?: 'SubscribeToNotificationsResult';
+  /** The created subscription details */
+  subscription?: Maybe<PushNotificationSubscription>;
+  /** Whether the subscription was successful */
+  success: Scalars['Boolean']['output'];
+};
+
 /** Root subscription type for real-time updates */
 export type Subscription = {
   __typename?: 'Subscription';
@@ -3812,6 +3865,19 @@ export type UnlinkSponsorFromTripPayload = {
   tripId: Scalars['ID']['output'];
   /** Whether the unlink was successful */
   unlinked: Scalars['Boolean']['output'];
+};
+
+/** Input for unsubscribing from push notifications */
+export type UnsubscribeFromNotificationsInput = {
+  /** Expo push token to unsubscribe */
+  token: Scalars['String']['input'];
+};
+
+/** Result of unsubscribing from push notifications */
+export type UnsubscribeFromNotificationsResult = {
+  __typename?: 'UnsubscribeFromNotificationsResult';
+  /** Whether the unsubscription was successful */
+  success: Scalars['Boolean']['output'];
 };
 
 /** Input for updating an activity */
@@ -4895,6 +4961,20 @@ export type RemoveCoinsMutationVariables = Exact<{
 
 export type RemoveCoinsMutation = { __typename?: 'Mutation', removeCoins?: { __typename?: 'CoinTransactionResult', id: string, amount: number, groupId: string, adminId: string, createdAt: any, transaction: { __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null } } | null };
 
+export type CreateUploadUrlMutationVariables = Exact<{
+  input: CreateUploadUrlInput;
+}>;
+
+
+export type CreateUploadUrlMutation = { __typename?: 'Mutation', createUploadUrl?: { __typename?: 'UploadUrlResult', bucket: string, storagePath: string, objectPath: string, resumableUrl: string, token: string } | null };
+
+export type CreateDownloadUrlQueryVariables = Exact<{
+  input: CreateDownloadUrlInput;
+}>;
+
+
+export type CreateDownloadUrlQuery = { __typename?: 'Query', createDownloadUrl?: { __typename?: 'DownloadUrlResult', signedUrl: string, expiresAt: any } | null };
+
 export type GetGroupJoinRequestQueryVariables = Exact<{
   groupId: Scalars['ID']['input'];
 }>;
@@ -5048,6 +5128,37 @@ export type RemoveUserFromGroupMutationVariables = Exact<{
 
 
 export type RemoveUserFromGroupMutation = { __typename?: 'Mutation', removeUserFromGroup: { __typename?: 'RemoveUserFromGroupPayload', group: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } } };
+
+export type GetLocationSharingSettingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetLocationSharingSettingsQuery = { __typename?: 'Query', mySharingSettings?: { __typename?: 'LocationSharingSettings', isSharingLocation: boolean, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } | null };
+
+export type GetSharedFriendLocationsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetSharedFriendLocationsQuery = { __typename?: 'Query', friendsLocations?: { __typename?: 'FriendsLocationsConnection', total: number, locations: Array<{ __typename?: 'FriendLocation', id: string, userId: string, latitude?: number | null, longitude?: number | null, accuracy?: number | null, altitude?: number | null, heading?: number | null, speed?: number | null, isSharingLocation: boolean, distanceKm?: number | null, timestamp: any }> } | null };
+
+export type SetLocationSharingSettingsMutationVariables = Exact<{
+  input: UpdateSharingSettingsInput;
+}>;
+
+
+export type SetLocationSharingSettingsMutation = { __typename?: 'Mutation', updateSharingSettings?: { __typename?: 'UpdateSharingSettingsPayload', settings: { __typename?: 'LocationSharingSettings', isSharingLocation: boolean, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } } | null };
+
+export type AddSharedUserMutationVariables = Exact<{
+  input: AddSharingUserInput;
+}>;
+
+
+export type AddSharedUserMutation = { __typename?: 'Mutation', addUserToSharing?: { __typename?: 'SharingUserPayload', location: { __typename?: 'Location', id: string, userId: string, latitude?: number | null, longitude?: number | null, isSharingLocation: boolean, timestamp: any, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } } | null };
+
+export type RemoveSharedUserMutationVariables = Exact<{
+  input: RemoveSharingUserInput;
+}>;
+
+
+export type RemoveSharedUserMutation = { __typename?: 'Mutation', removeUserFromSharing?: { __typename?: 'SharingUserPayload', location: { __typename?: 'Location', id: string, userId: string, latitude?: number | null, longitude?: number | null, isSharingLocation: boolean, timestamp: any, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } } | null };
 
 export type GetMyLocationQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -5350,6 +5461,25 @@ export type TrackDeliveryFailureMutationVariables = Exact<{
 
 
 export type TrackDeliveryFailureMutation = { __typename?: 'Mutation', trackDeliveryFailure?: { __typename?: 'TrackDeliveryFailurePayload', success: boolean } | null };
+
+export type GetNotificationSubscriptionStatusQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetNotificationSubscriptionStatusQuery = { __typename?: 'Query', myNotificationSubscriptions: { __typename?: 'MyNotificationSubscriptions', isSubscribed: boolean, subscriptions: Array<{ __typename?: 'PushNotificationSubscription', token: string, platform: string, createdAt: any }> } };
+
+export type SubscribeNotificationsMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+
+export type SubscribeNotificationsMutation = { __typename?: 'Mutation', subscribeToNotifications: { __typename?: 'SubscribeToNotificationsResult', success: boolean, subscription?: { __typename?: 'PushNotificationSubscription', token: string, platform: string } | null } };
+
+export type UnsubscribeNotificationsMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+
+export type UnsubscribeNotificationsMutation = { __typename?: 'Mutation', unsubscribeFromNotifications: { __typename?: 'UnsubscribeFromNotificationsResult', success: boolean } };
 
 export type GetRewardQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -7699,6 +7829,28 @@ export const RemoveCoinsDocument = gql`
 export function useRemoveCoinsMutation() {
   return Urql.useMutation<RemoveCoinsMutation, RemoveCoinsMutationVariables>(RemoveCoinsDocument);
 };
+export const CreateUploadUrlDocument = gql`
+    mutation CreateUploadUrl($input: CreateUploadUrlInput!) {
+  createUploadUrl(input: $input) {
+    ...UploadUrlResultFields
+  }
+}
+    ${UploadUrlResultFieldsFragmentDoc}`;
+
+export function useCreateUploadUrlMutation() {
+  return Urql.useMutation<CreateUploadUrlMutation, CreateUploadUrlMutationVariables>(CreateUploadUrlDocument);
+};
+export const CreateDownloadUrlDocument = gql`
+    query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+  createDownloadUrl(input: $input) {
+    ...DownloadUrlResultFields
+  }
+}
+    ${DownloadUrlResultFieldsFragmentDoc}`;
+
+export function useCreateDownloadUrlQuery(options: Omit<Urql.UseQueryArgs<CreateDownloadUrlQueryVariables>, 'query'>) {
+  return Urql.useQuery<CreateDownloadUrlQuery, CreateDownloadUrlQueryVariables>({ query: CreateDownloadUrlDocument, ...options });
+};
 export const GetGroupJoinRequestDocument = gql`
     query GetGroupJoinRequest($groupId: ID!) {
   groupsByTrip(tripId: $groupId, pagination: {limit: 1}) {
@@ -8009,6 +8161,125 @@ export const RemoveUserFromGroupDocument = gql`
 
 export function useRemoveUserFromGroupMutation() {
   return Urql.useMutation<RemoveUserFromGroupMutation, RemoveUserFromGroupMutationVariables>(RemoveUserFromGroupDocument);
+};
+export const GetLocationSharingSettingsDocument = gql`
+    """
+Get current user's location sharing settings.
+Returns: Sharing settings including enabled status and users to share with.
+"""
+query GetLocationSharingSettings {
+  mySharingSettings {
+    isSharingLocation
+    usersToShareWith {
+      ...SharingUserFields
+    }
+  }
+}
+    ${SharingUserFieldsFragmentDoc}`;
+
+export function useGetLocationSharingSettingsQuery(options?: Omit<Urql.UseQueryArgs<GetLocationSharingSettingsQueryVariables>, 'query'>) {
+  return Urql.useQuery<GetLocationSharingSettingsQuery, GetLocationSharingSettingsQueryVariables>({ query: GetLocationSharingSettingsDocument, ...options });
+};
+export const GetSharedFriendLocationsDocument = gql`
+    """
+Get friends' locations.
+Returns: Direct array of friend locations (not Relay-style connection).
+"""
+query GetSharedFriendLocations {
+  friendsLocations {
+    locations {
+      id
+      userId
+      latitude
+      longitude
+      accuracy
+      altitude
+      heading
+      speed
+      isSharingLocation
+      distanceKm
+      timestamp
+    }
+    total
+  }
+}
+    `;
+
+export function useGetSharedFriendLocationsQuery(options?: Omit<Urql.UseQueryArgs<GetSharedFriendLocationsQueryVariables>, 'query'>) {
+  return Urql.useQuery<GetSharedFriendLocationsQuery, GetSharedFriendLocationsQueryVariables>({ query: GetSharedFriendLocationsDocument, ...options });
+};
+export const SetLocationSharingSettingsDocument = gql`
+    """
+Update location sharing settings.
+Requires: isSharingLocation boolean. Optional: userIdsToShareWith list.
+Returns: Updated sharing settings.
+"""
+mutation SetLocationSharingSettings($input: UpdateSharingSettingsInput!) {
+  updateSharingSettings(input: $input) {
+    settings {
+      isSharingLocation
+      usersToShareWith {
+        ...SharingUserFields
+      }
+    }
+  }
+}
+    ${SharingUserFieldsFragmentDoc}`;
+
+export function useSetLocationSharingSettingsMutation() {
+  return Urql.useMutation<SetLocationSharingSettingsMutation, SetLocationSharingSettingsMutationVariables>(SetLocationSharingSettingsDocument);
+};
+export const AddSharedUserDocument = gql`
+    """
+Add a user to location sharing list.
+Requires: userId to add.
+Returns: Location with updated sharing list.
+"""
+mutation AddSharedUser($input: AddSharingUserInput!) {
+  addUserToSharing(input: $input) {
+    location {
+      id
+      userId
+      latitude
+      longitude
+      isSharingLocation
+      usersToShareWith {
+        ...SharingUserFields
+      }
+      timestamp
+    }
+  }
+}
+    ${SharingUserFieldsFragmentDoc}`;
+
+export function useAddSharedUserMutation() {
+  return Urql.useMutation<AddSharedUserMutation, AddSharedUserMutationVariables>(AddSharedUserDocument);
+};
+export const RemoveSharedUserDocument = gql`
+    """
+Remove a user from location sharing list.
+Requires: userId to remove.
+Returns: Location with updated sharing list.
+"""
+mutation RemoveSharedUser($input: RemoveSharingUserInput!) {
+  removeUserFromSharing(input: $input) {
+    location {
+      id
+      userId
+      latitude
+      longitude
+      isSharingLocation
+      usersToShareWith {
+        ...SharingUserFields
+      }
+      timestamp
+    }
+  }
+}
+    ${SharingUserFieldsFragmentDoc}`;
+
+export function useRemoveSharedUserMutation() {
+  return Urql.useMutation<RemoveSharedUserMutation, RemoveSharedUserMutationVariables>(RemoveSharedUserDocument);
 };
 export const GetMyLocationDocument = gql`
     """
@@ -8608,6 +8879,62 @@ mutation TrackDeliveryFailure($notificationId: ID!, $error: String!) {
 
 export function useTrackDeliveryFailureMutation() {
   return Urql.useMutation<TrackDeliveryFailureMutation, TrackDeliveryFailureMutationVariables>(TrackDeliveryFailureDocument);
+};
+export const GetNotificationSubscriptionStatusDocument = gql`
+    """
+Get the current user's push notification subscription status.
+Returns: Subscription status and list of active subscriptions.
+"""
+query GetNotificationSubscriptionStatus {
+  myNotificationSubscriptions {
+    isSubscribed
+    subscriptions {
+      token
+      platform
+      createdAt
+    }
+  }
+}
+    `;
+
+export function useGetNotificationSubscriptionStatusQuery(options?: Omit<Urql.UseQueryArgs<GetNotificationSubscriptionStatusQueryVariables>, 'query'>) {
+  return Urql.useQuery<GetNotificationSubscriptionStatusQuery, GetNotificationSubscriptionStatusQueryVariables>({ query: GetNotificationSubscriptionStatusDocument, ...options });
+};
+export const SubscribeNotificationsDocument = gql`
+    """
+Subscribe to push notifications with an Expo push token.
+Requires: token (Expo push token).
+Returns: Success status and subscription details.
+"""
+mutation SubscribeNotifications($token: String!) {
+  subscribeToNotifications(input: {token: $token}) {
+    success
+    subscription {
+      token
+      platform
+    }
+  }
+}
+    `;
+
+export function useSubscribeNotificationsMutation() {
+  return Urql.useMutation<SubscribeNotificationsMutation, SubscribeNotificationsMutationVariables>(SubscribeNotificationsDocument);
+};
+export const UnsubscribeNotificationsDocument = gql`
+    """
+Unsubscribe from push notifications by token.
+Requires: token (Expo push token to remove).
+Returns: Success status.
+"""
+mutation UnsubscribeNotifications($token: String!) {
+  unsubscribeFromNotifications(input: {token: $token}) {
+    success
+  }
+}
+    `;
+
+export function useUnsubscribeNotificationsMutation() {
+  return Urql.useMutation<UnsubscribeNotificationsMutation, UnsubscribeNotificationsMutationVariables>(UnsubscribeNotificationsDocument);
 };
 export const GetRewardDocument = gql`
     """

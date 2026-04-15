@@ -1,0 +1,286 @@
+# ============================================
+# Group Operations - Mirai App API
+# ============================================
+# This file contains GraphQL operations for group management.
+# These operations use inline field selections for source files.
+#
+# Source files:
+#   - apps/web/src/components/admin/notifications/CreateNotificationForm.tsx
+#   - apps/web/src/components/admin/coins/CoinsOverviewPage.tsx
+#   - apps/web/src/components/admin/groups/GroupAssignmentModal.tsx
+#   - apps/web/src/components/admin/groups/GroupsPage.tsx
+#   - apps/web/src/components/admin/coins/CoinOperationForm.tsx
+#   - apps/native/src/hooks/groups/useGroupEditor.ts
+#   - apps/native/src/hooks/challenges/useChallenges.ts
+#   - apps/native/src/hooks/groups/useCreateGroup.ts
+#   - apps/native/src/hooks/groups/useGroups.ts
+# ============================================
+
+"""
+Get groups by trip ID with pagination.
+Source: CreateNotificationForm.tsx, CoinsOverviewPage.tsx, GroupAssignmentModal.tsx, GroupsPage.tsx
+Returns: List of groups with pagination info.
+"""
+query GetGroupsByTrip($tripId: ID!, $pagination: GroupPaginationInput) {
+  groupsByTrip(tripId: $tripId, pagination: $pagination) {
+    groups {
+      id
+      name
+      description
+      code
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+      updatedAt
+    }
+    pagination {
+      total
+      hasMore
+      limit
+      offset
+    }
+  }
+}
+
+"""
+Get a single group by ID using groupsByTrip query.
+Note: Filters client-side from the groups list.
+"""
+query GetGroup($id: ID!, $tripId: ID!) {
+  groupsByTrip(tripId: $tripId, pagination: { limit: 100 }) {
+    groups {
+      id
+      name
+      description
+      code
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+"""
+Get a group by its unique code.
+Source: Group join flow
+Returns: Group details or null if not found.
+"""
+query GetGroupByCode($code: String!) {
+  groupByCode(code: $code) {
+    id
+    name
+    description
+    code
+    image
+    coins
+    isActive
+    status
+    tripId
+    organizerId
+    createdAt
+    updatedAt
+  }
+}
+
+"""
+Get all groups (admin only) with pagination.
+Returns: Paginated list of all groups.
+"""
+query GetGroups($pagination: GroupPaginationInput) {
+  groups(pagination: $pagination) {
+    groups {
+      id
+      name
+      description
+      code
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+      updatedAt
+    }
+    pagination {
+      total
+      hasMore
+      limit
+      offset
+    }
+  }
+}
+
+"""
+Get groups organized by a specific user.
+Returns: List of groups where the user is the organizer.
+"""
+query GetGroupsByOrganizer($organizerId: ID!) {
+  groupsByOrganizer(organizerId: $organizerId) {
+    id
+    name
+    description
+    code
+    image
+    coins
+    isActive
+    status
+    tripId
+    organizerId
+    createdAt
+    updatedAt
+  }
+}
+
+"""
+Get simplified group names by trip (moderator only).
+Returns: Minimal group info with just id and name.
+"""
+query GetGroupNamesByTrip($tripId: ID!) {
+  groupNamesByTrip(tripId: $tripId) {
+    id
+    name
+  }
+}
+
+"""
+Get group rankings for a trip.
+Returns: Ranking data for all groups in the trip.
+"""
+query GetGroupRanking($tripId: ID!) {
+  groupRanking(tripId: $tripId) {
+    currentDate
+    data {
+      id
+      name
+      description
+      code
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+    }
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+"""
+Create a new group.
+Source: Group creation flows
+Returns: Created group details.
+"""
+mutation CreateGroup($input: CreateGroupInput!) {
+  createGroup(input: $input) {
+    group {
+      id
+      name
+      description
+      code
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+"""
+Update an existing group.
+Source: Group edit flows
+Returns: Updated group details.
+"""
+mutation UpdateGroup($input: UpdateGroupInput!) {
+  updateGroup(input: $input) {
+    group {
+      id
+      name
+      description
+      code
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+"""
+Delete a group (admin only).
+Returns: Success status.
+"""
+mutation DeleteGroup($id: ID!) {
+  deleteGroup(id: $id) {
+    success
+  }
+}
+
+"""
+Assign a user to a group (idempotent).
+Source: Group assignment flows
+Returns: Updated group details.
+"""
+mutation AssignUserToGroup($input: AssignUserToGroupInput!) {
+  assignUserToGroup(input: $input) {
+    group {
+      id
+      name
+      description
+      code
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+"""
+Remove a user from a group.
+Source: Group management flows
+Returns: Updated group details.
+"""
+mutation RemoveUserFromGroup($input: RemoveUserFromGroupInput!) {
+  removeUserFromGroup(input: $input) {
+    group {
+      id
+      name
+      description
+      code
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+      updatedAt
+    }
+  }
+}
