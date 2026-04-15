@@ -3,13 +3,16 @@
 > **Interface Adapters layer of Clean Architecture - Bridge to external frameworks**
 >
 > Depends on @mirai-app/domain and @mirai-app/use-cases
+>
+> **Effect-based DI**: Uses Effect Layers for dependency injection (migrated from awilix-modular)
 
 ## Contents
 
-- **Controllers**: GraphQL resolvers, API endpoints (thin controllers)
-- **Gateways**: Repository implementations (Drizzle, etc.)
+- **Controllers**: GraphQL resolvers, API endpoints using Effect-based controller factory pattern
+- **Gateways**: Repository implementations (Drizzle ORM with Effect)
 - **Presenters**: Response formatters
 - **Mappers**: Data transformation between domain and external formats
+- **Utils**: Token extraction, Effect execution helpers, controller utilities
 
 ## Rules
 
@@ -24,70 +27,189 @@
 ```
 src/
 ├── index.ts              # Public exports
-├── api/                  # API utilities
-│   └── errors.ts        # Error handling utilities
 ├── controllers/          # GraphQL controllers/resolvers
+│   ├── factory.ts        # createControllers() - Effect Layer DI factory
+│   ├── index.ts          # Controller type exports
+│   ├── user.ts           # UserController with Layer DI
+│   ├── group.ts          # GroupController example
+│   └── [15 more...]      # All 17 controllers
 ├── utils/               # Utility functions
 │   ├── TokenExtractor.ts    # Extract Bearer tokens from headers
-│   ├── controller-helpers.ts # Auth helpers
-│   └── effect-executor.ts   # Effect execution utilities
+│   ├── controller-helpers.ts # Result handling, Effect utilities
+│   └── effect-executor.ts   # Effect execution with error mapping
 ├── gateways/            # Repository implementations
 │   ├── drizzle/         # Drizzle ORM implementations
-│   └── in-memory/       # In-memory test implementations
-├── modules/             # DI modules
-├── services/            # External service integrations
-├── errors/              # Adapter-specific errors
-└── mappers/             # Domain <-> DTO <-> DB mapping
+│   ├── in-memory/       # In-memory test implementations
+│   └── base/            # BaseDrizzleRepository for CRUD
+├── mappers/             # Domain <-> DTO <-> DB mapping
+│   └── drizzle/         # Drizzle-specific mappers
+├── test/                # Test helpers
+│   └── test-helpers.ts  # Effect-based test utilities
+└── api/                 # API utilities
+    └── errors.ts        # Error handling utilities
 ```
 
-## Examples
+## Controller Factory Pattern
 
-### Repository Implementation (Gateway)
+The adapters package uses a **controller factory pattern** with **Effect Layer-based dependency injection**. All 17 controllers are created via `createControllers()` which injects dependencies via Effect Layers.
 
-#### Option 1: BasePrismaRepository (Recommended)
-
-Extend the base class for standard CRUD operations:
+### Overview
 
 ```typescript
-// gateways/PrismaUserRepository.ts
-import type { UserRepository } from "@mirai-app/use-cases";
-import type { User, UserRole } from "@mirai-app/domain";
-import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
-import {
-  BasePrismaRepository,
-  type EntityMapper,
-} from "./BasePrismaRepository";
-import { UserMapper } from "../mappers/UserMapper";
+// 17 Controllers total
+const controllers = createControllers({
+  appLayer, // Effect Layer with all repos + services
+  supabase, // Supabase client (for StorageController)
+  onChallengeCompleted, // Event callback
+});
 
-// Adapter for static Mapper to interface
-const UserMapperAdapter: EntityMapper<
-  User,
-  PrismaUser,
-  CreateInput,
-  UpdateInput
-> = {
-  toDomain: UserMapper.toDomain,
-  toPrismaCreate: UserMapper.toPrismaCreate,
-  toPrismaUpdate: UserMapper.toPrismaUpdate,
+// Access via context.controllers.* in resolvers
+const user = await context.controllers.userController.getById({ id: "123" });
+```
+
+### Controller Types
+
+| Type                   | Description                 | Use Case           |
+| ---------------------- | --------------------------- | ------------------ |
+| `Controllers`          | All 17 controllers          | Full system access |
+| `BaseControllers`      | 16 controllers (no storage) | Most use cases     |
+| `ControllerFactory<K>` | Selective access            | Partial mocking    |
+
+### Creating Controllers
+
+```typescript
+import { createControllers } from "@mirai-app/adapters/controllers";
+import { makeAppLayer } from "@mirai-app/frameworks/layers";
+
+// 1. Create the Effect Layer (24 bindings: 19 repos + 5 services)
+const appLayer = makeAppLayer({ supabase, db });
+
+// 2. Create all 17 controllers
+const controllers = createControllers({
+  appLayer,
+  supabase,
+  onChallengeCompleted: async (event) => {
+    // Handle challenge completion event
+  },
+});
+```
+
+### Using Controllers in GraphQL Resolvers
+
+```typescript
+// GraphQL context includes controllers
+interface GraphQLContext {
+  controllers: Controllers;
+  // ... other context
+}
+
+// Resolver accesses controller via context
+export const resolvers = {
+  Query: {
+    user: async (_: unknown, args: { id: string }, context: GraphQLContext) => {
+      const result = await context.controllers.userController.getById(args);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+  },
 };
+```
 
-export class PrismaUserRepository
-  extends BasePrismaRepository<User, PrismaUser, CreateInput, UpdateInput>
+### Selective Controller Access
+
+Use `ControllerFactory<K>` for partial controller access:
+
+```typescript
+import type { ControllerFactory } from "@mirai-app/adapters/controllers";
+
+// Only user and group controllers
+type UserGroupOnly = ControllerFactory<"userController" | "groupController">;
+
+function processUserGroup(
+  controllers: UserGroupOnly,
+  userId: string,
+  groupId: string,
+) {
+  // Type-safe: only userController and groupController available
+  return {
+    user: controllers.userController.getById({ id: userId }),
+    group: controllers.groupController.getById({ id: groupId }),
+  };
+}
+```
+
+### Package Exports
+
+Controllers are available via subpath exports:
+
+```typescript
+// All controllers + factory
+import {
+  createControllers,
+  Controllers,
+} from "@mirai-app/adapters/controllers";
+
+// Individual controllers
+import { UserController } from "@mirai-app/adapters/controllers/user";
+import { GroupController } from "@mirai-app/adapters/controllers/group";
+```
+
+## Repository Implementation (Gateway)
+
+### BaseDrizzleRepository (Recommended)
+
+Extend the base class for standard CRUD operations with Effect:
+
+```typescript
+// gateways/drizzle/user.ts
+import { Effect } from "effect";
+import { BaseDrizzleRepository } from "../base/repository";
+import { UserDrizzleMapper } from "../../mappers/drizzle/user";
+import {
+  users,
+  type UserSelect,
+  type UserInsert,
+} from "@mirai-app/frameworks/drizzle/schema";
+import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
+import type { UserRepository } from "@mirai-app/use-cases";
+import { User } from "@mirai-app/domain";
+
+export class DrizzleUserRepository
+  extends BaseDrizzleRepository<User, UserSelect, UserInsert, typeof users>
   implements UserRepository
 {
-  constructor(prisma: PrismaClient) {
-    super(prisma.user, UserMapperAdapter);
+  constructor(db: DrizzleDb) {
+    super(db, {
+      table: users,
+      mapper: UserDrizzleMapper.instance,
+    });
   }
 
-  // Add custom query methods only
-  async findByAuthUserId(authUserId: string): Promise<User | null> {
-    const record = await this.model.findUnique({ where: { authUserId } });
-    return record ? this.mapper.toDomain(record) : null;
-  }
+  // Add custom query methods with Effect.tryPromise
+  findByAuthUserId(
+    authUserId: string,
+  ): Effect.Effect<User | null, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(eq(this.table.authUserId, authUserId))
+          .limit(1);
 
-  async findByRole(role: UserRole): Promise<User[]> {
-    const records = await this.model.findMany({ where: { role } });
-    return records.map((r) => this.mapper.toDomain(r));
+        return records[0] ? this.mapper.toDomain(records[0]) : null;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByAuthUserId",
+          message: "Failed to find user",
+          cause: error,
+        }),
+    });
   }
 }
 ```
@@ -95,45 +217,45 @@ export class PrismaUserRepository
 **Benefits:**
 
 - ~70% less code per repository
-- Consistent error handling
-- One place for bug fixes
+- Consistent Effect-based error handling
+- Automatic CRUD operations
+- Type-safe with Drizzle
 
-#### Option 2: Manual Implementation (Legacy/Complex Cases)
+### Manual Implementation (Complex Cases)
 
-Implement manually for highly custom needs:
+For highly custom needs, implement manually:
 
 ```typescript
-// gateways/PrismaCustomRepository.ts
+// gateways/drizzle/custom.ts
+import { Effect } from "effect";
 import type { CustomRepository } from "@mirai-app/use-cases";
-import type { Custom } from "@mirai-app/domain";
-import { CustomMapper } from "../mappers/CustomMapper";
 
-export class PrismaCustomRepository implements CustomRepository {
-  constructor(private prisma: PrismaClient) {}
+export class CustomDrizzleRepository implements CustomRepository {
+  constructor(private db: DrizzleDb) {}
 
-  async create(entity: Custom): Promise<Custom> {
-    const record = await this.prisma.custom.create({
-      data: CustomMapper.toPrismaCreate(entity),
+  customQuery(): Effect.Effect<Result, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        // Custom complex query
+        return result;
+      },
+      catch: (error) => new DatabaseError({ cause: error }),
     });
-    return CustomMapper.toDomain(record);
   }
-
-  // ... implement all methods manually
 }
 ```
 
-Use this only when the base class doesn't fit.
-
-### Mapper
+## Mapper
 
 ```typescript
-// mappers/UserMapper.ts
+// mappers/drizzle/user.ts
 import { User } from "@mirai-app/domain";
-import type { PrismaUser } from "@prisma/client";
+import type { UserSelect } from "@mirai-app/frameworks/drizzle/schema";
 
-export class UserMapper {
-  static toDomain(record: PrismaUser): User {
-    // Create domain entity from database record
+export class UserDrizzleMapper {
+  static instance = new UserDrizzleMapper();
+
+  toDomain(record: UserSelect): User {
     const result = User.create({
       id: record.id,
       email: record.email,
@@ -147,172 +269,232 @@ export class UserMapper {
     return result.value;
   }
 
-  static toDTO(user: User): UserDTO {
+  toDrizzleInsert(entity: User): UserInsert {
     return {
-      id: user.id,
-      email: user.email.value,
-      createdAt: user.createdAt.toISOString(),
+      id: entity.id,
+      email: entity.email.value,
+      createdAt: entity.createdAt,
+    };
+  }
+
+  toDrizzleUpdate(entity: User): Partial<UserInsert> {
+    return {
+      email: entity.email.value,
+      updatedAt: new Date(),
     };
   }
 }
 ```
 
-### Controller (GraphQL/Hono) - Auth Pattern
+## Controller Implementation
 
-Controllers handle authentication explicitly using Effect-based patterns.
+Controllers are thin layers that:
+
+1. Validate input
+2. Access repositories via `yield* RepositoryTag`
+3. Execute use cases
+4. Handle errors
 
 ```typescript
-// controllers/user.ts
-import { requireAuth, requireAdmin } from "../utils/controller-helpers";
-import type { CreateUserUseCase } from "@mirai-app/use-cases";
-import type { DIContext } from "@mirai-app/frameworks/di";
-import { Effect } from "effect";
+// controllers/group.ts
+import { Effect, type Layer } from "effect";
+import { GroupRepositoryTag, getGroupUseCase } from "@mirai-app/use-cases";
 
-export class UserController {
-  constructor(private createUserUseCase: CreateUserUseCase) {}
+export class GroupController {
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
-  // Public endpoint - no auth required
-  async getPublicData() {
-    return { data: "public" };
+  async getById(input: unknown) {
+    // 1. Validate input
+    const parsed = validateGetByIdInput(input);
+    if (!parsed.success) {
+      return { success: false, error: "Invalid input" };
+    }
+
+    // 2. Create Effect program
+    const effect = getGroupUseCase({ groupId: parsed.data.id });
+
+    // 3. Run with Layer DI
+    const provided = effect.pipe(Effect.provide(this.appLayer));
+    const result = await Effect.runPromise(Effect.either(provided));
+
+    // 4. Return controller result
+    if (result._tag === "Left") {
+      return { success: false, error: result.left.message };
+    }
+    return { success: true, data: result.right };
   }
 
-  // Protected endpoint - requires authentication
-  async getById(input: { id: string }, di: DIContext) {
-    // 1. Extract and validate auth at controller level
-    const authContext = await requireAuth(di.headers, di);
+  async assignUser(input: unknown) {
+    const parsed = validateAssignUserToGroupInput(input);
+    if (!parsed.success) {
+      return { success: false, error: "Invalid input" };
+    }
 
-    // 2. Execute use case with Effect
-    const effect = this.createUserUseCase.execute({
-      ...input,
-      authContext, // Pass auth downstream
+    // Access repository directly via Context.Tag
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
+      const input: AssignUserToGroupInput = {
+        groupId: parsed.data.groupId,
+        userId: UserId.create(parsed.data.userId),
+      };
+      return yield* assignUserToGroupUseCase(input);
     });
 
-    // 3. Run Effect and handle errors
-    return await Effect.runPromise(
-      effect.pipe(Effect.catchTag("NotFoundError", () => Effect.succeed(null))),
+    const result = await Effect.runPromise(
+      Effect.either(effect.pipe(Effect.provide(this.appLayer))),
     );
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("GroupNotFoundError")) {
+        return { success: false, error: "Group not found" };
+      }
+    }
+
+    return result;
   }
 }
 ```
 
-### Effect-Based Error Handling
+## Effect-Based Error Handling
 
 Controllers use Effect for composable error handling:
 
 ```typescript
 import { Effect } from "effect";
-import { requireAuth } from "../utils/controller-helpers";
+import { runEffect, runEffectGraphQL } from "../utils/effect-executor";
 
-async function handleRequest(input: Input, di: DIContext) {
-  const program = Effect.gen(function* () {
-    const authContext = yield* requireAuthEffect(di.headers, di);
-    const result = yield* useCase.execute({ ...input, authContext });
-    return result;
+// HTTP endpoint
+async function handleRequest(input: Input) {
+  const effect = useCase.execute(input);
+  return await runEffect(effect); // Throws HTTP errors
+}
+
+// GraphQL resolver
+async function resolveUser(parent: unknown, args: { id: string }) {
+  const effect = useCase.execute({ id: args.id });
+  return await runEffectGraphQL(effect); // Throws GraphQLError
+}
+
+// With custom handlers
+async function handleWithFallback(input: Input) {
+  return await runEffectWithHandler(useCase.execute(input), {
+    onNotFound: () => null, // Return null instead of throwing
+    onUnauthorized: (err) => ({ error: err.message }),
   });
-
-  return await Effect.runPromise(program);
 }
 ```
 
-// Admin-only endpoint
-adminAction: publicProcedure.mutation(async ({ ctx }) => {
-// Throws TRPCError FORBIDDEN if not admin
-const authContext = await requireAdmin(ctx.headers, ctx.di);
+### Error Mapping
 
-    // Execute admin-only logic...
-    return { success: true };
+| Domain Error        | HTTP Status | GraphQL Code      |
+| ------------------- | ----------- | ----------------- |
+| `ValidationError`   | 400         | `BAD_USER_INPUT`  |
+| `NotFoundError`     | 404         | `NOT_FOUND`       |
+| `UnauthorizedError` | 401         | `UNAUTHENTICATED` |
+| `ConflictError`     | 409         | `CONFLICT`        |
+| `InvariantError`    | 400         | `BAD_USER_INPUT`  |
 
-}),
-});
-
-````
-
-### TokenExtractor Utility
+## TokenExtractor Utility
 
 Extracts Bearer tokens from HTTP Authorization headers:
 
 ```typescript
-import { TokenExtractor } from "../utils/TokenExtractor";
+import { TokenExtractor } from "@mirai-app/adapters/utils/TokenExtractor";
 
 // In controller or helper:
-const authHeader = ctx.headers.get("authorization");
+const authHeader = request.headers.get("authorization");
 const token = TokenExtractor.extract(authHeader); // Returns string | null
 
 if (!token) {
-  throw new TRPCError({ code: "UNAUTHORIZED", message: "No token" });
+  throw new UnauthorizedError("No token provided");
 }
-````
+```
 
 The TokenExtractor validates the Bearer scheme and handles various header formats.
 
-### Controller Helpers (controller-helpers.ts)
+## Controller Helpers
 
-Standard functions for authentication and authorization:
+Standard functions for result handling and Effect integration:
 
 ```typescript
 import {
-  requireAuth, // Requires valid authentication
-  requireAdmin, // Requires ADMIN role
-  requireModerator, // Requires MODERATOR or ADMIN role
-  getOptionalAuth, // Returns null if not authenticated
-} from "../controller-helpers";
+  handleResult, // Convert ControllerResult to value or throw
+  handleEffect, // Run Effect and throw HTTP errors
+  handleEffectGraphQL, // Run Effect and throw GraphQLError
+  effectToControllerResult, // Effect → ControllerResult
+} from "@mirai-app/adapters/utils/controller-helpers";
 
 // Usage examples:
 
-// 1. Require authentication
-const authContext = await requireAuth(ctx.headers, ctx.di);
-// Throws TRPCError UNAUTHORIZED if missing/invalid
+// 1. Handle controller result
+const result = await controller.getById(input);
+const data = handleResult(result); // Throws if success: false
 
-// 2. Require admin role
-const authContext = await requireAdmin(ctx.headers, ctx.di);
-// Throws TRPCError FORBIDDEN if not admin
+// 2. Handle Effect directly
+const data = await handleEffect(useCase.execute(input));
 
-// 3. Require moderator (includes admins)
-const authContext = await requireModerator(ctx.headers, ctx.di);
-// Throws TRPCError FORBIDDEN if not moderator/admin
-
-// 4. Optional authentication
-const authContext = await getOptionalAuth(ctx.headers, ctx.di);
-// Returns AuthContext | null - doesn't throw
+// 3. Convert Effect to controller result
+const result = await effectToControllerResult(useCase.execute(input));
 ```
-
-All helpers return `AuthContext` with:
-
-- `userId`: Branded UserId type
-- `role`: UserRole (ADMIN, MODERATOR, USER)
-- `email`: User email
-- Helper methods: `isAdmin()`, `isModerator()`, `hasRoleAtLeast()`
 
 ## Testing
 
-Adapter tests use real dependencies (integration tests):
+Adapter tests use Effect Layer-based test utilities:
 
 ```typescript
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { PrismaUserRepository } from "./PrismaUserRepository";
+import { describe, it, expect } from "bun:test";
+import { Layer, Effect } from "effect";
+import { DrizzleUserRepository } from "../gateways/drizzle/user";
+import {
+  runWithTestLayer,
+  createServiceLayer,
+  mergeTestLayers,
+} from "@mirai-app/adapters/test";
 
-describe("PrismaUserRepository", () => {
-  let repo: PrismaUserRepository;
-  let testDb: TestPrismaClient;
+describe("DrizzleUserRepository", () => {
+  it("should find user by authUserId", async () => {
+    // Create test layer with mock database
+    const testDb = createTestDatabase();
+    const dbLayer = createServiceLayer(DrizzleDbTag, testDb);
 
-  beforeAll(async () => {
-    testDb = await createTestDatabase();
-    repo = new PrismaUserRepository(testDb);
+    const repo = new DrizzleUserRepository(testDb);
+
+    const user = await runWithTestLayer(
+      repo.findByAuthUserId("auth-123"),
+      dbLayer,
+    );
+
+    expect(user).not.toBeNull();
   });
+});
+```
 
-  it("should persist user", async () => {
-    const user = User.create({ email: "test@example.com" });
-    const saved = await repo.create(user.value);
+### Controller Testing
 
-    expect(saved.id).toBeDefined();
+```typescript
+import { makeAppLayer } from "@mirai-app/frameworks/layers";
+import { createControllers } from "@mirai-app/adapters/controllers";
 
-    // Verify in database
-    const fromDb = await testDb.user.findUnique({ where: { id: saved.id } });
-    expect(fromDb).not.toBeNull();
-  });
+describe("GroupController", () => {
+  it("should get group by id", async () => {
+    // Create test layer with in-memory repos
+    const testLayer = makeAppLayer({
+      supabase: mockSupabase,
+      db: testDb,
+    }).pipe(
+      Layer.merge(mockRepositoryLayer), // Override with mocks
+    );
 
-  afterAll(async () => {
-    await testDb.cleanUp();
+    const controllers = createControllers({
+      appLayer: testLayer,
+      supabase: mockSupabase,
+      onChallengeCompleted: jest.fn(),
+    });
+
+    const result = await controllers.groupController.getById({ id: "123" });
+
+    expect(result.success).toBe(true);
   });
 });
 ```
@@ -323,8 +505,8 @@ describe("PrismaUserRepository", () => {
 
 ```typescript
 // BAD: Business logic in controller
-export const badController = createTRPCRouter({
-  create: procedure.mutation(async ({ input }) => {
+export class BadController {
+  async create(input: CreateInput) {
     // ❌ Validation (should be in domain)
     if (!input.email.includes("@")) {
       throw new Error("Invalid email");
@@ -335,64 +517,88 @@ export const badController = createTRPCRouter({
       throw new Error("Domain blocked");
     }
 
-    // Direct database access mixed with logic
+    // ❌ Direct database access (should use repository)
     const user = await prisma.user.create({ data: input });
     return user;
-  }),
-});
+  }
+}
 ```
 
-### ❌ Auth Logic in tRPC Middleware
+### ❌ Manual Dependency Resolution
 
 ```typescript
-// BAD: Using deleted auth-aware procedures
-export const badController = createTRPCRouter({
+// BAD: Manual container resolution (old awilix pattern)
+async getById(input: GetByIdInput, container: DIContainer) {
+  // ❌ OLD: String-based resolution
+  const repo = container.resolve("userRepository");
+
+  // ✅ NEW: Use Effect Context.Tag
+  const effect = Effect.gen(function* () {
+    const repo = yield* UserRepositoryTag;
+    return yield* repo.findById(input.id);
+  });
+}
+```
+
+### ❌ Auth in Middleware
+
+```typescript
+// BAD: Using deleted auth-aware middleware
+export const badRouter = {
   action: protectedProcedure // ❌ DELETED - doesn't exist
     .mutation(async ({ ctx, input }) => {
       // ❌ Old pattern no longer works
       const userId = ctx.user.id; // ❌ ctx.user removed
     }),
-});
+};
 ```
 
 ### ✅ Clean Controller
 
 ```typescript
-// GOOD: Thin controller with DI
-export const goodController = createTRPCRouter({
-  create: publicProcedure
-    .input(createUserInput)
-    .mutation(async ({ ctx, input }) => {
-      // Only: Input validation (zod)
-      // Only: Auth extraction via helpers
-      const authContext = await requireAuth(ctx.headers, ctx.di);
+// GOOD: Thin controller with Effect Layer DI
+export class GoodController {
+  constructor(private appLayer: Layer.Layer<unknown>) {}
 
-      // Only: DI resolution
-      const controller = ctx.di.resolve("userController");
+  async create(input: CreateInput) {
+    // Only: Input validation (zod)
+    const parsed = createUserSchema.parse(input);
 
-      // Only: Execute and handle result
-      return controller.create(input, authContext);
-    }),
-});
+    // Only: Execute use case via Effect
+    const effect = createUserUseCase(parsed);
+
+    // Only: Run and handle result
+    return await runEffect(effect);
+  }
+}
 ```
 
 ### ✅ Auth in Controllers
 
 ```typescript
-// GOOD: Auth at controller level
-export const goodController = createTRPCRouter({
-  action: publicProcedure // ✅ Only publicProcedure exists
-    .mutation(async ({ ctx, input }) => {
-      // Controller handles auth
-      const authContext = await requireAuth(ctx.headers, ctx.di);
-      const controller = ctx.di.resolve("myController");
-      return controller.action(input, authContext);
-    }),
-});
+// GOOD: Auth at controller level using Effect
+export class GoodController {
+  async action(input: ActionInput, headers: Headers) {
+    // Extract token
+    const token = TokenExtractor.extract(headers.get("authorization"));
+    if (!token) throw new UnauthorizedError("No token");
+
+    // Auth happens via AuthPort in the Layer
+    const effect = Effect.gen(function* () {
+      const auth = yield* AuthPortTag;
+      const user = yield* auth.verifyToken(token);
+      return yield* useCase.execute({ ...input, userId: user.id });
+    });
+
+    return await runEffect(effect.pipe(Effect.provide(this.appLayer)));
+  }
+}
 ```
 
 ## References
 
-- [CLAUDE.md](../../CLAUDE.md) - CEK Five Pillars (DDD section)
+- [CLAUDE.md](../../CLAUDE.md) - CEK Five Pillars (Effect Edition)
+- [AGENTS.md](./AGENTS.md) - Adapter layer quick reference
+- [Effect Documentation](https://effect.website/) - Effect framework patterns
 - [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
 - [Data Mapper Pattern](https://martinfowler.com/eaaCatalog/dataMapper.html)

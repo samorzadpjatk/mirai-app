@@ -6,25 +6,30 @@
 
 ---
 
-## Dependency injection (awilix-modular)
+## Dependency injection (Effect-based)
 
-The monorepo uses **awilix-modular** for DI. **It is the only DI system.**
-**Resolution is string-token based only.**
+The monorepo uses **Effect-based DI** with controllers instantiated per-request. **Controllers are accessed via `ctx.controllers`.**
 
 ### Quick reference
 
 ```ts
-// In router: resolve controller from request-scoped container
-const controller = ctx.container.resolve("userController");
+// In router: access controller from context
+const controller = ctx.controllers.userController;
+const result = await controller.getById(input);
+if (!result.success) {
+  throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error });
+}
+return result.data;
 
-// In test: create isolated container and override providers
-const container = createTestContainer();
-container.register({
-  userRepository: asClass(InMemoryUserRepository).singleton(),
+// In test: create test context with mocked controllers
+const ctx = createTestContext({
+  controllers: {
+    userController: new MockUserController(),
+  },
 });
 ```
 
-### Container resolution in routers
+### Controller access in routers
 
 ```ts
 export const userRouter = createTRPCRouter({
@@ -32,29 +37,29 @@ export const userRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       // Auth happens in controller, not middleware
-      const controller = ctx.container.resolve("userController");
-      return controller.getById(input, ctx.container);
+      const controller = ctx.controllers.userController;
+      const result = await controller.getById(input);
+      if (!result.success) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: result.error,
+        });
+      }
+      return result.data;
     }),
 });
 ```
 
-### Module structure pattern
+### Effect Layer Composition
 
 ```ts
-import { createStaticModule } from "awilix-modular";
-import { Lifetime } from "awilix";
+import { Layer } from "effect";
 
-export const ControllerModule = createStaticModule({
-  name: "ControllerModule",
-  imports: [RepositoryModule],
-  providers: {
-    userController: {
-      factory: (cradle) => new UserController(cradle.userRepository),
-      lifetime: Lifetime.SCOPED,
-    },
-  },
-  exports: ["userController"],
-});
+// Compose layers for dependency injection
+export const AppLayer = Layer.mergeAll(RepositoryLive, ServiceLive, LoggerLive);
+
+// Controllers are instantiated with the appLayer
+export const controllers = createControllers({ appLayer });
 ```
 
 ### Scope strategy
