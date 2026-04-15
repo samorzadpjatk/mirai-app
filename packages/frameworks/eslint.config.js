@@ -3,13 +3,22 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["node_modules/**", "coverage/**", "src/graphql/native-client.tsx"],
+    ignores: [
+      "node_modules/**",
+      "coverage/**",
+      "src/graphql/native-client.tsx",
+    ],
   },
   {
     files: ["**/*.ts", "**/*.tsx"],
-    extends: [
-      ...tseslint.configs.recommended,
-    ],
+    extends: [...tseslint.configs.recommended],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-call": "off",

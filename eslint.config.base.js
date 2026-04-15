@@ -1,6 +1,5 @@
-
 import { defineConfig } from "eslint/config";
-import tseslint from 'typescript-eslint';
+import tseslint from "typescript-eslint";
 
 const config = defineConfig({
   files: ["**/*.ts", "**/*.tsx"],
@@ -9,15 +8,19 @@ const config = defineConfig({
     ...tseslint.configs.recommendedTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
   ],
+  languageOptions: {
+    parser: tseslint.parser,
+    parserOptions: {
+      project: true,
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
   rules: {
     "@typescript-eslint/consistent-type-imports": [
       "warn",
       { prefer: "type-imports", fixStyle: "inline-type-imports" },
     ],
-    "@typescript-eslint/no-unused-vars": [
-      "warn",
-      { argsIgnorePattern: "^_" },
-    ],
+    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
     "@typescript-eslint/no-misused-promises": [
       "error",
       { checksVoidReturn: { attributes: false } },
@@ -30,11 +33,5 @@ const config = defineConfig({
   linterOptions: {
     reportUnusedDisableDirectives: true,
   },
-  languageOptions: {
-    parserOptions: {
-      project: true,
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-export default config; 
+});
+export default config;

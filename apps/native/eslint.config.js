@@ -1,7 +1,7 @@
-import { defineConfig } from 'eslint/config';
-import tseslint from 'typescript-eslint';
-import reactHooks from 'eslint-plugin-react-hooks';
-import testingLibrary from 'eslint-plugin-testing-library';
+import { defineConfig } from "eslint/config";
+import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
+import testingLibrary from "eslint-plugin-testing-library";
 
 const config = defineConfig(
   {
@@ -9,16 +9,21 @@ const config = defineConfig(
   },
   {
     files: ["**/*.ts", "**/*.tsx"],
-    extends: [
-      ...tseslint.configs.recommended,
-    ],
+    extends: [...tseslint.configs.recommended],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     plugins: {
       "react-hooks": reactHooks,
-      "testing-library": testingLibrary
+      "testing-library": testingLibrary,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      ...testingLibrary.configs['flat/react'].rules
+      ...testingLibrary.configs["flat/react"].rules,
     },
   },
 );
