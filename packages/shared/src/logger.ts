@@ -175,7 +175,7 @@ class Logger {
     this.log("error", message, context, error);
   }
 
-  child(additionalContext: LogContext): Logger {
+  child(_additionalContext: LogContext): Logger {
     return new Logger(this.source, {
       ...this.config,
     });

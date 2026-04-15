@@ -25,7 +25,7 @@
  * ```
  */
 
-import { Effect, Logger } from "effect";
+import { Effect } from "effect";
 
 // ============================================================================
 // Import LogContext type from legacy logger (shared interface)

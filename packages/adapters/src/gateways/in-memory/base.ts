@@ -113,9 +113,8 @@ export abstract class InMemoryRepository<T extends { id: string }> {
   }
 
   protected updateGeneric(item: T): Effect.Effect<T, DatabaseError, never> {
-    const self = this;
-    return Effect.gen(function* () {
-      if (!self.storage.has(item.id)) {
+    return Effect.gen(this, function* () {
+      if (!this.storage.has(item.id)) {
         return yield* Effect.fail(
           new DatabaseError({
             operation: "updateGeneric",
@@ -123,7 +122,7 @@ export abstract class InMemoryRepository<T extends { id: string }> {
           }),
         );
       }
-      self.storage.set(item.id, item);
+      this.storage.set(item.id, item);
       return yield* Effect.succeed(item);
     });
   }
