@@ -1,6 +1,6 @@
-import { builder } from "../builder.js";
-import { CoinTransaction } from "../../../domain/src/entities/CoinTransaction.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { CoinTransaction } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 /**

@@ -1,6 +1,6 @@
-import { builder } from "../builder.js";
-import { Sponsor } from "../../../domain/src/entities/Sponsor.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { Sponsor } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 /**

@@ -152,8 +152,6 @@ export {
   makeStorageLayer,
   makeSupabaseClientLayer,
   type ServiceLayerConfig,
-  type SupabaseClient,
-  type DrizzleDb,
 } from "./layers";
 
 // =============================================================================

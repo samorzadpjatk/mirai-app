@@ -1,6 +1,6 @@
-import { builder } from "../builder.js";
-import { NotificationDelivery } from "../../../domain/src/entities/NotificationDelivery.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { NotificationDelivery } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 /**

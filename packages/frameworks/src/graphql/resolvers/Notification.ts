@@ -1,9 +1,6 @@
-import { builder } from "../builder.js";
-import {
-  Notification,
-  NotificationType,
-} from "../../../domain/src/entities/Notification.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { Notification } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 const NotificationTypeEnum = builder.enumType("NotificationType", {

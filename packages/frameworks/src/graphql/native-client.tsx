@@ -53,7 +53,7 @@ export type InfiniteProcedure<TInput, TOutput> = {
 // GraphQL Client Implementation
 // =============================================================================
 
-class GraphQLClientImpl {
+export class GraphQLClient {
   private endpoint: string;
   private getAuthToken: () => string | null;
 
@@ -3277,7 +3277,7 @@ class GraphQLClientImpl {
 // React Context & Provider
 // =============================================================================
 
-const GraphQLContext = createContext<GraphQLClientImpl | null>(null);
+const GraphQLContext = createContext<GraphQLClient | null>(null);
 
 export { GraphQLContext };
 
@@ -3293,7 +3293,7 @@ export function GraphQLProvider({
   getAuthToken,
 }: GraphQLProviderProps) {
   const client = useMemo(
-    () => new GraphQLClientImpl({ endpoint, getAuthToken }),
+    () => new GraphQLClient({ endpoint, getAuthToken }),
     [endpoint, getAuthToken],
   );
 
@@ -3312,7 +3312,7 @@ export function GraphQLProvider({
  * Returns the GraphQL client procedures for use with React Query.
  * API-compatible with the previous useTRPC hook.
  */
-export function useGraphQL(): GraphQLClientImpl {
+export function useGraphQL(): GraphQLClient {
   const context = useContext(GraphQLContext);
 
   if (!context) {
@@ -3328,7 +3328,7 @@ export function useGraphQL(): GraphQLClientImpl {
  * Returns the raw GraphQL client for imperative API calls.
  * API-compatible with the previous useTRPCClient hook.
  */
-export function useGraphQLClient(): GraphQLClientImpl {
+export function useGraphQLClient(): GraphQLClient {
   const context = useContext(GraphQLContext);
 
   if (!context) {
@@ -3366,14 +3366,14 @@ export function TRPCProvider({
 /**
  * @deprecated Use useGraphQL instead
  */
-export function useTRPC(): GraphQLClientImpl {
+export function useTRPC(): GraphQLClient {
   return useGraphQL();
 }
 
 /**
  * @deprecated Use useGraphQLClient instead
  */
-export function useTRPCClient(): GraphQLClientImpl {
+export function useTRPCClient(): GraphQLClient {
   return useGraphQLClient();
 }
 
@@ -3381,7 +3381,7 @@ export function useTRPCClient(): GraphQLClientImpl {
  * @deprecated Use direct GraphQL client instead
  */
 export function getTRPCClient(httpUrl: string, _wsUrl: string, token: string) {
-  const client = new GraphQLClientImpl({
+  const client = new GraphQLClient({
     endpoint: httpUrl,
     getAuthToken: () => token,
   });
@@ -3393,6 +3393,3 @@ export function getTRPCClient(httpUrl: string, _wsUrl: string, token: string) {
     },
   };
 }
-
-// Export types
-export type { GraphQLClientImpl as GraphQLClient };

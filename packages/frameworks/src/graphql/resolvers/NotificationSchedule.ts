@@ -1,6 +1,6 @@
-import { builder } from "../builder.js";
-import { NotificationSchedule } from "../../../domain/src/entities/NotificationSchedule.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { NotificationSchedule } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 /**

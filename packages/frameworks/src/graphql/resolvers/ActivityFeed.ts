@@ -1,7 +1,6 @@
-import { builder } from "../builder.js";
-import { ActivityFeed } from "../../../domain/src/entities/ActivityFeed.js";
-import { Notification } from "../../../domain/src/entities/Notification.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { ActivityFeed } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 const ActivityFeedItemType = builder.objectType("ActivityFeedItem", {

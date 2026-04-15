@@ -59,8 +59,7 @@ export {
   GraphQLProvider as TRPCProvider,
   useGraphQL as useTRPC,
   useGraphQLClient,
-  type GraphQLClient,
-  type GraphQLProcedures,
+  GraphQLClient as NativeGraphQLClient,
   type Procedure,
   type MutationProcedure,
 } from "./native-client";

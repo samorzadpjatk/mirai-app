@@ -1,6 +1,6 @@
-import { builder } from "../builder.js";
-import { SubmissionReport } from "../../../domain/src/entities/SubmissionReport.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { SubmissionReport } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 /**

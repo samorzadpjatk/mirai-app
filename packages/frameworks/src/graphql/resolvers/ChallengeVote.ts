@@ -1,6 +1,6 @@
-import { builder } from "../builder.js";
-import { ChallengeVote } from "../../../domain/src/entities/ChallengeVote.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { ChallengeVote } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 /**

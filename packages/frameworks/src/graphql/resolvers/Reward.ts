@@ -1,11 +1,6 @@
-import { builder } from "../builder.js";
-import {
-  Reward,
-  RewardType,
-  RewardRarity,
-} from "../../../domain/src/entities/Reward.js";
-import { RewardPurchase } from "../../../domain/src/entities/RewardPurchase.js";
-import type { GraphQLContext } from "../builder.js";
+import { builder } from "../builder";
+import { Reward, RewardPurchase } from "@mirai-app/domain";
+import type { GraphQLContext } from "../builder";
 import { GraphQLError } from "graphql";
 
 const RewardTypeEnum = builder.enumType("RewardType", {
