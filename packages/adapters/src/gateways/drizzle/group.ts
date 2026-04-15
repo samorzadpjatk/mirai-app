@@ -1,12 +1,19 @@
 import { sql, eq, and } from "drizzle-orm";
 import {
   groups,
+  tripParticipants,
   type GroupSelect,
   type GroupInsert,
+  type TripParticipantSelect,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { Effect } from "effect";
-import { Group, GroupStatus } from "@mirai-app/domain";
+import {
+  Group,
+  GroupStatus,
+  TripParticipant,
+  TripParticipantRole,
+} from "@mirai-app/domain";
 import type { GroupRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { GroupDrizzleMapper } from "../../mappers/drizzle/group";
@@ -204,5 +211,225 @@ export class DrizzleGroupRepository
           cause: error,
         }),
     });
+  }
+
+  /**
+   * Find trip participant by user ID and trip ID
+   */
+  findParticipantByUserIdAndTripId(
+    userId: string,
+    tripId: string,
+  ): Effect.Effect<TripParticipant | null, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(tripParticipants)
+          .where(
+            and(
+              eq(tripParticipants.userId, userId),
+              eq(tripParticipants.tripId, tripId),
+            ),
+          )
+          .limit(1);
+
+        const record = records[0];
+        return record ? this.mapTripParticipantFromDrizzle(record) : null;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findParticipantByUserIdAndTripId",
+          message: "Failed to find participant by user ID and trip ID",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find all participants assigned to a group
+   */
+  findParticipantsByGroupId(
+    groupId: string,
+  ): Effect.Effect<TripParticipant[], DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const records = await this.db
+          .select()
+          .from(tripParticipants)
+          .where(eq(tripParticipants.groupId, groupId));
+
+        return records.map((record) =>
+          this.mapTripParticipantFromDrizzle(record),
+        );
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findParticipantsByGroupId",
+          message: "Failed to find participants by group ID",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Assign a user to a group by updating their participant record
+   */
+  assignUserToGroup(
+    userId: string,
+    groupId: string,
+  ): Effect.Effect<TripParticipant, DatabaseError, never> {
+    return Effect.gen(this, function* () {
+      // First find the group to get the trip ID
+      const group = yield* this.findById(groupId);
+      if (!group) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "assignUserToGroup",
+            message: `Group not found: ${groupId}`,
+          }),
+        );
+      }
+
+      // Find the participant
+      const participant = yield* this.findParticipantByUserIdAndTripId(
+        userId,
+        group.tripId,
+      );
+      if (!participant) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "assignUserToGroup",
+            message: `Participant not found for user ${userId} in trip ${group.tripId}`,
+          }),
+        );
+      }
+
+      // Update the participant's groupId in the database
+      const updatedParticipant = yield* Effect.tryPromise({
+        try: async () => {
+          const records = await this.db
+            .update(tripParticipants)
+            .set({ groupId, updatedAt: new Date() })
+            .where(eq(tripParticipants.id, participant.id))
+            .returning();
+
+          const record = records[0];
+          if (!record) {
+            throw new Error("Failed to update participant");
+          }
+          return this.mapTripParticipantFromDrizzle(record);
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "assignUserToGroup",
+            message: "Failed to assign user to group",
+            cause: error,
+          }),
+      });
+
+      return updatedParticipant;
+    });
+  }
+
+  /**
+   * Remove a user from their assigned group
+   */
+  removeUserFromGroup(
+    userId: string,
+    groupId: string,
+  ): Effect.Effect<TripParticipant, DatabaseError, never> {
+    return Effect.gen(this, function* () {
+      // First find the group to get the trip ID
+      const group = yield* this.findById(groupId);
+      if (!group) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "removeUserFromGroup",
+            message: `Group not found: ${groupId}`,
+          }),
+        );
+      }
+
+      // Find the participant
+      const participant = yield* this.findParticipantByUserIdAndTripId(
+        userId,
+        group.tripId,
+      );
+      if (!participant) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "removeUserFromGroup",
+            message: `Participant not found for user ${userId} in trip ${group.tripId}`,
+          }),
+        );
+      }
+
+      // Remove the participant's groupId in the database
+      const updatedParticipant = yield* Effect.tryPromise({
+        try: async () => {
+          const records = await this.db
+            .update(tripParticipants)
+            .set({ groupId: null, updatedAt: new Date() })
+            .where(
+              and(
+                eq(tripParticipants.id, participant.id),
+                eq(tripParticipants.groupId, groupId),
+              ),
+            )
+            .returning();
+
+          const record = records[0];
+          if (!record) {
+            throw new Error(
+              "Failed to remove user from group - user not in group",
+            );
+          }
+          return this.mapTripParticipantFromDrizzle(record);
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "removeUserFromGroup",
+            message: "Failed to remove user from group",
+            cause: error,
+          }),
+      });
+
+      return updatedParticipant;
+    });
+  }
+
+  /**
+   * Map Drizzle TripParticipant record to domain TripParticipant entity
+   */
+  private mapTripParticipantFromDrizzle(
+    record: TripParticipantSelect,
+  ): TripParticipant {
+    const role =
+      record.role === "LEADER"
+        ? TripParticipantRole.LEADER
+        : TripParticipantRole.MEMBER;
+
+    const effect = TripParticipant.create({
+      id: record.id,
+      userId: record.userId,
+      tripId: record.tripId,
+      groupId: record.groupId,
+      wristNumber: record.wristNumber,
+      houseNumber: record.houseNumber,
+      role,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    });
+
+    // Run the Effect synchronously
+    const exit = Effect.runSyncExit(effect);
+
+    if (exit._tag === "Failure") {
+      throw new Error(
+        `Failed to map TripParticipant from Drizzle: ${exit.cause}`,
+      );
+    }
+
+    return exit.value;
   }
 }

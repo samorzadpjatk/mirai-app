@@ -1,4 +1,4 @@
-import { Group, type GroupStatus } from "@mirai-app/domain";
+import { Group, TripParticipant, type GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "@mirai-app/use-cases";
 import { Effect } from "effect";
 import { InMemoryRepository, DatabaseError } from "./base";
@@ -174,6 +174,60 @@ export class InMemoryGroupRepository
       this.getAllItems().filter(
         (g) => (g as unknown as Record<string, unknown>).tripId === tripId,
       ).length,
+    );
+  }
+
+  // Participant management methods - implemented as stubs since this is
+  // an in-memory group repository. Full implementation would be in a
+  // separate TripParticipantRepository or require participant storage.
+  findParticipantByUserIdAndTripId(
+    _userId: string,
+    _tripId: string,
+  ): Effect.Effect<TripParticipant | null, DatabaseError, never> {
+    return Effect.fail(
+      new DatabaseError({
+        operation: "findParticipantByUserIdAndTripId",
+        message:
+          "Not implemented in InMemoryGroupRepository. Use a TripParticipantRepository.",
+      }),
+    );
+  }
+
+  findParticipantsByGroupId(
+    _groupId: string,
+  ): Effect.Effect<TripParticipant[], DatabaseError, never> {
+    return Effect.fail(
+      new DatabaseError({
+        operation: "findParticipantsByGroupId",
+        message:
+          "Not implemented in InMemoryGroupRepository. Use a TripParticipantRepository.",
+      }),
+    );
+  }
+
+  assignUserToGroup(
+    _userId: string,
+    _groupId: string,
+  ): Effect.Effect<TripParticipant, DatabaseError, never> {
+    return Effect.fail(
+      new DatabaseError({
+        operation: "assignUserToGroup",
+        message:
+          "Not implemented in InMemoryGroupRepository. Use a TripParticipantRepository.",
+      }),
+    );
+  }
+
+  removeUserFromGroup(
+    _userId: string,
+    _groupId: string,
+  ): Effect.Effect<TripParticipant, DatabaseError, never> {
+    return Effect.fail(
+      new DatabaseError({
+        operation: "removeUserFromGroup",
+        message:
+          "Not implemented in InMemoryGroupRepository. Use a TripParticipantRepository.",
+      }),
     );
   }
 }

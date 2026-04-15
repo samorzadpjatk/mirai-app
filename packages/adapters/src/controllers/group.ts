@@ -4,13 +4,19 @@ import {
   createGroupUseCase,
   updateGroupUseCase,
   deleteGroupUseCase,
+  assignUserToGroupUseCase,
+  removeUserFromGroupUseCase,
   GroupRepositoryTag,
   type GetGroupOutput,
   type CreateGroupOutput,
   type UpdateGroupOutput,
   type DeleteGroupOutput,
+  type AssignUserToGroupOutput,
+  type RemoveUserFromGroupOutput,
+  type AssignUserToGroupInput,
+  type RemoveUserFromGroupInput,
 } from "@mirai-app/use-cases";
-import { GroupStatus } from "@mirai-app/domain";
+import { GroupStatus, UserId } from "@mirai-app/domain";
 import {
   validateGetByIdInput,
   validateGetByCodeInput,
@@ -20,6 +26,8 @@ import {
   validateAddCoinsInput,
   validateListInput,
   validateGetByOrganizerInput,
+  validateAssignUserToGroupInput,
+  validateRemoveUserFromGroupInput,
 } from "./validators/group-validators";
 
 export {
@@ -31,6 +39,8 @@ export {
   validateAddCoinsInput,
   validateListInput,
   validateGetByOrganizerInput,
+  validateAssignUserToGroupInput,
+  validateRemoveUserFromGroupInput,
 };
 
 /**
@@ -597,5 +607,111 @@ export class GroupController {
       success: true,
       data: { deleted: (result.data as { deleted: boolean }).deleted as true },
     };
+  }
+
+  /**
+   * Assign a user to a group
+   */
+  async assignUser(input: unknown): Promise<
+    | {
+        success: true;
+        data: AssignUserToGroupOutput;
+      }
+    | { success: false; error: string }
+  > {
+    const parsed = validateAssignUserToGroupInput(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
+    }
+
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
+      const input: AssignUserToGroupInput = {
+        groupId: parsed.data.groupId as AssignUserToGroupInput["groupId"],
+        userId: UserId.create(parsed.data.userId),
+      };
+      return yield* assignUserToGroupUseCase(input);
+    });
+
+    const result = await runWithLayer<AssignUserToGroupOutput>(
+      effect,
+      this.appLayer,
+    );
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("GroupNotFoundError")) {
+        return { success: false, error: "Group not found" };
+      }
+      if (result.error.includes("UserNotFoundError")) {
+        return { success: false, error: "User not found" };
+      }
+      if (result.error.includes("ParticipantNotFoundError")) {
+        return {
+          success: false,
+          error: "User is not a participant in this trip",
+        };
+      }
+    }
+
+    return result as
+      | { success: true; data: AssignUserToGroupOutput }
+      | { success: false; error: string };
+  }
+
+  /**
+   * Remove a user from a group
+   */
+  async removeUser(input: unknown): Promise<
+    | {
+        success: true;
+        data: RemoveUserFromGroupOutput;
+      }
+    | { success: false; error: string }
+  > {
+    const parsed = validateRemoveUserFromGroupInput(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
+    }
+
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupRepositoryTag;
+      const input: RemoveUserFromGroupInput = {
+        groupId: parsed.data.groupId as RemoveUserFromGroupInput["groupId"],
+        userId: UserId.create(parsed.data.userId),
+      };
+      return yield* removeUserFromGroupUseCase(input);
+    });
+
+    const result = await runWithLayer<RemoveUserFromGroupOutput>(
+      effect,
+      this.appLayer,
+    );
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("GroupNotFoundError")) {
+        return { success: false, error: "Group not found" };
+      }
+      if (result.error.includes("NotGroupMemberError")) {
+        return { success: false, error: "User is not a member of this group" };
+      }
+      if (result.error.includes("ParticipantNotFoundError")) {
+        return {
+          success: false,
+          error: "User is not a participant in this trip",
+        };
+      }
+    }
+
+    return result as
+      | { success: true; data: RemoveUserFromGroupOutput }
+      | { success: false; error: string };
   }
 }

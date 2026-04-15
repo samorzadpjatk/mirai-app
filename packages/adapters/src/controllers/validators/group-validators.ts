@@ -247,3 +247,43 @@ export type GetByOrganizerInput = Schema.Schema.Type<
 export function validateGetByOrganizerInput(input: unknown) {
   return safeParse(GetByOrganizerSchema, input);
 }
+
+/**
+ * AssignUserToGroup schema and validator
+ */
+const AssignUserToGroupSchema = Schema.Struct({
+  groupId: Schema.String.pipe(
+    Schema.pattern(UUID_REGEX, { message: () => "Invalid group ID format" }),
+  ),
+  userId: Schema.String.pipe(
+    Schema.pattern(UUID_REGEX, { message: () => "Invalid user ID format" }),
+  ),
+});
+
+export type AssignUserToGroupInput = Schema.Schema.Type<
+  typeof AssignUserToGroupSchema
+>;
+
+export function validateAssignUserToGroupInput(input: unknown) {
+  return safeParse(AssignUserToGroupSchema, input);
+}
+
+/**
+ * RemoveUserFromGroup schema and validator
+ */
+const RemoveUserFromGroupSchema = Schema.Struct({
+  groupId: Schema.String.pipe(
+    Schema.pattern(UUID_REGEX, { message: () => "Invalid group ID format" }),
+  ),
+  userId: Schema.String.pipe(
+    Schema.pattern(UUID_REGEX, { message: () => "Invalid user ID format" }),
+  ),
+});
+
+export type RemoveUserFromGroupInput = Schema.Schema.Type<
+  typeof RemoveUserFromGroupSchema
+>;
+
+export function validateRemoveUserFromGroupInput(input: unknown) {
+  return safeParse(RemoveUserFromGroupSchema, input);
+}

@@ -36,7 +36,7 @@ export {
 /**
  * Event payload for challenge completion callback
  */
-interface ChallengeCompletedEvent {
+export interface ChallengeCompletedEvent {
   challengeId: string;
   tripId: string;
   adminId: string;

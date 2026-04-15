@@ -1,4 +1,4 @@
-import type { Group, GroupStatus } from "@mirai-app/domain";
+import type { Group, GroupStatus, TripParticipant } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 import { DatabaseError } from "./errors";
 
@@ -82,6 +82,37 @@ export interface GroupRepository {
    * Count groups by trip ID
    */
   countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never>;
+
+  /**
+   * Find trip participant by user ID and trip ID
+   */
+  findParticipantByUserIdAndTripId(
+    userId: string,
+    tripId: string,
+  ): Effect.Effect<TripParticipant | null, DatabaseError, never>;
+
+  /**
+   * Find all participants assigned to a group
+   */
+  findParticipantsByGroupId(
+    groupId: string,
+  ): Effect.Effect<TripParticipant[], DatabaseError, never>;
+
+  /**
+   * Assign a user to a group by updating their participant record
+   */
+  assignUserToGroup(
+    userId: string,
+    groupId: string,
+  ): Effect.Effect<TripParticipant, DatabaseError, never>;
+
+  /**
+   * Remove a user from their assigned group
+   */
+  removeUserFromGroup(
+    userId: string,
+    groupId: string,
+  ): Effect.Effect<TripParticipant, DatabaseError, never>;
 }
 
 /**
