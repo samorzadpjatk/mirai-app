@@ -4,6 +4,7 @@ import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
 import { ChallengeStatus } from "@mirai-app/domain";
 import type { ChallengeVote, ChallengeSubmission } from "@mirai-app/domain";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for ForceEndVoting use case
@@ -81,6 +82,7 @@ export function forceEndVotingUseCase(
   deps: ForceEndVotingDeps = {},
 ): Effect.Effect<
   ForceEndVotingOutput,
+  | DatabaseError
   | ForceEndChallengeNotFoundError
   | ForceEndValidationError
   | ChallengeWrongTripError

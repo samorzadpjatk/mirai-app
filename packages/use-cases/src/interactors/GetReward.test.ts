@@ -73,7 +73,7 @@ describe("[UNIT] getRewardUseCase (Effect)", () => {
       Effect.runSync(rewardRepo.create(reward));
       rewardRepo.seedPurchases([]);
 
-      const input: GetRewardInput = { rewardId: "reward-123" as RewardId };
+      const input: GetRewardInput = { rewardId: RewardId.create("reward-123") };
 
       // Act
       const result = await runUseCase(input);

@@ -1,6 +1,7 @@
 import { Effect, Data } from "effect";
 import { ChallengeVote, ValidationError } from "@mirai-app/domain";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for SubmitVote use case (single vote)
@@ -73,6 +74,7 @@ export function submitVoteUseCase(
   input: SubmitVoteInput,
 ): Effect.Effect<
   SubmitVoteOutput,
+  | DatabaseError
   | SubmitVoteValidationError
   | VotePositionTakenError
   | AlreadyVotedError

@@ -1,6 +1,7 @@
 import type { Location } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for GetLocation use case
@@ -85,7 +86,7 @@ export function getLocationUseCase(
   input: GetLocationInput,
 ): Effect.Effect<
   GetLocationOutput,
-  LocationNotFoundError,
+  DatabaseError | LocationNotFoundError,
   LocationRepositoryTag
 > {
   return Effect.gen(function* () {

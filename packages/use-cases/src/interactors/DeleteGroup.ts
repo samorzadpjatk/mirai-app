@@ -1,6 +1,7 @@
 import { Group } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for DeleteGroup use case
@@ -55,7 +56,7 @@ export function deleteGroupUseCase(
   input: DeleteGroupInput,
 ): Effect.Effect<
   DeleteGroupOutput,
-  DeleteGroupNotFoundError | DeleteGroupError,
+  DatabaseError | DeleteGroupNotFoundError | DeleteGroupError,
   GroupRepositoryTag
 > {
   return Effect.gen(function* () {

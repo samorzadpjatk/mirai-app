@@ -1,6 +1,7 @@
 import { User, UserRole } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { UserRepositoryTag } from "../ports/UserRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for CreateUser use case
@@ -69,7 +70,7 @@ export function createUserUseCase(
   input: CreateUserInput,
 ): Effect.Effect<
   CreateUserOutput,
-  UserAlreadyExistsError | UserCreationError,
+  DatabaseError | UserAlreadyExistsError | UserCreationError,
   UserRepositoryTag
 > {
   return Effect.gen(function* () {

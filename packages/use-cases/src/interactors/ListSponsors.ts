@@ -1,6 +1,7 @@
 import type { Sponsor } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Sponsor list item DTO
@@ -69,7 +70,7 @@ function toListItem(sponsor: Sponsor): SponsorListItem {
  */
 export function listSponsorsUseCase(
   input: ListSponsorsInput = {},
-): Effect.Effect<ListSponsorsOutput, never, SponsorRepositoryTag> {
+): Effect.Effect<ListSponsorsOutput, DatabaseError, SponsorRepositoryTag> {
   return Effect.gen(function* () {
     const repo = yield* SponsorRepositoryTag;
 

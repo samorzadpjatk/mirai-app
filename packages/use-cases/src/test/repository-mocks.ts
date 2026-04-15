@@ -40,6 +40,7 @@ import type {
   Event,
   ActivityFeed,
   SubmissionReport,
+  TripParticipant,
 } from "@mirai-app/domain";
 import { DatabaseError } from "../ports/errors.js";
 import {
@@ -395,6 +396,30 @@ export function createGroupRepositoryMock(
             ).length;
             return yield* failIfConfigured(count);
           }),
+
+        findParticipantByUserIdAndTripId: (_userId, _tripId) =>
+          Effect.gen(function* () {
+            // Simplified mock implementation - returns null
+            return yield* failIfConfigured(null);
+          }),
+
+        findParticipantsByGroupId: (_groupId) =>
+          Effect.gen(function* () {
+            // Simplified mock implementation - returns empty array
+            return yield* failIfConfigured([]);
+          }),
+
+        assignUserToGroup: (_userId, _groupId) =>
+          Effect.gen(function* () {
+            // Simplified mock implementation - would update participant in real scenario
+            return yield* failIfConfigured(null as unknown as TripParticipant);
+          }),
+
+        removeUserFromGroup: (_userId, _groupId) =>
+          Effect.gen(function* () {
+            // Simplified mock implementation - would update participant in real scenario
+            return yield* failIfConfigured(null as unknown as TripParticipant);
+          }),
       };
 
       return implementation;
@@ -472,11 +497,42 @@ export function createChallengeRepositoryMock(
             return yield* failIfConfigured(challenges);
           }),
 
-        findByGroupId: (groupId) =>
+        findByStatus: (status) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
             const challenges = Array.from(s.values()).filter(
-              (c) => "groupId" in c && c.groupId === groupId,
+              (c) => "status" in c && c.status === status,
+            );
+            return yield* failIfConfigured(challenges);
+          }),
+
+        findByTripIdAndStatus: (tripId, status) =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const challenges = Array.from(s.values()).filter(
+              (c) =>
+                "tripId" in c &&
+                c.tripId === tripId &&
+                "status" in c &&
+                c.status === status,
+            );
+            return yield* failIfConfigured(challenges);
+          }),
+
+        findBySubmissionType: (type) =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const challenges = Array.from(s.values()).filter(
+              (c) => "submissionType" in c && c.submissionType === type,
+            );
+            return yield* failIfConfigured(challenges);
+          }),
+
+        findByScoringCategory: (category) =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const challenges = Array.from(s.values()).filter(
+              (c) => "scoringCategory" in c && c.scoringCategory === category,
             );
             return yield* failIfConfigured(challenges);
           }),
@@ -485,7 +541,34 @@ export function createChallengeRepositoryMock(
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
             const challenges = Array.from(s.values()).filter(
-              (c) => "isActive" in c && c.isActive,
+              (c) => "status" in c && c.status === "ACTIVE",
+            );
+            return yield* failIfConfigured(challenges);
+          }),
+
+        findOpenForSubmission: () =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const now = new Date();
+            const challenges = Array.from(s.values()).filter(
+              (c) =>
+                "status" in c &&
+                c.status === "ACTIVE" &&
+                "startTime" in c &&
+                c.startTime &&
+                c.startTime <= now &&
+                "endTime" in c &&
+                c.endTime &&
+                c.endTime >= now,
+            );
+            return yield* failIfConfigured(challenges);
+          }),
+
+        findRecurring: () =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const challenges = Array.from(s.values()).filter(
+              (c) => "isRecurring" in c && c.isRecurring === true,
             );
             return yield* failIfConfigured(challenges);
           }),
@@ -507,6 +590,26 @@ export function createChallengeRepositoryMock(
               new Map(s).set(challenge.id, challenge),
             );
             return yield* failIfConfigured(challenge);
+          }),
+
+        updateStatus: (id, status) =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const existing = s.get(id);
+            if (!existing) {
+              return yield* Effect.fail(
+                options.error ??
+                  new DatabaseError({
+                    operation: "updateStatus",
+                    message: `Challenge with id ${id} not found`,
+                  }),
+              );
+            }
+            const updated = { ...existing, status };
+            yield* Ref.update(state, (stateMap) =>
+              new Map(stateMap).set(id, updated),
+            );
+            return yield* failIfConfigured(updated);
           }),
 
         delete: (id) =>
@@ -601,6 +704,16 @@ export function createChallengeSubmissionRepositoryMock(
             return yield* failIfConfigured(s.get(id) ?? null);
           }),
 
+        findByChallengeAndGroup: (challengeId, groupId) =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const submission = Array.from(s.values()).find(
+              (sub) =>
+                sub.challengeId === challengeId && sub.groupId === groupId,
+            );
+            return yield* failIfConfigured(submission ?? null);
+          }),
+
         findByChallengeId: (challengeId) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
@@ -610,33 +723,50 @@ export function createChallengeSubmissionRepositoryMock(
             return yield* failIfConfigured(submissions);
           }),
 
-        findByUserId: (userId) =>
+        findByGroupId: (groupId) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
             const submissions = Array.from(s.values()).filter(
-              (sub) => sub.userId === userId,
+              (sub) => sub.groupId === groupId,
             );
             return yield* failIfConfigured(submissions);
           }),
 
-        findByChallengeAndUser: (challengeId, userId) =>
+        findByStatus: (status) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
-            const submission = Array.from(s.values()).find(
-              (sub) => sub.challengeId === challengeId && sub.userId === userId,
+            const submissions = Array.from(s.values()).filter(
+              (sub) => sub.status === status,
             );
-            return yield* failIfConfigured(submission ?? null);
+            return yield* failIfConfigured(submissions);
           }),
 
-        findAll: (opts) =>
+        findMany: (params) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
-            const allSubmissions = Array.from(s.values());
-            const offset = opts?.offset ?? 0;
-            const limit = opts?.limit ?? allSubmissions.length;
-            return yield* failIfConfigured(
-              allSubmissions.slice(offset, offset + limit),
-            );
+            let submissions = Array.from(s.values());
+
+            if (params.challengeId) {
+              submissions = submissions.filter(
+                (sub) => sub.challengeId === params.challengeId,
+              );
+            }
+            if (params.groupId) {
+              submissions = submissions.filter(
+                (sub) => sub.groupId === params.groupId,
+              );
+            }
+            if (params.status) {
+              submissions = submissions.filter(
+                (sub) => sub.status === params.status,
+              );
+            }
+
+            const offset = params.offset ?? 0;
+            const limit = params.limit ?? submissions.length;
+            submissions = submissions.slice(offset, offset + limit);
+
+            return yield* failIfConfigured(submissions);
           }),
 
         update: (submission) =>
@@ -657,10 +787,14 @@ export function createChallengeSubmissionRepositoryMock(
             return yield* failIfConfigured(undefined);
           }),
 
-        exists: (id) =>
+        existsForChallengeAndGroup: (challengeId, groupId) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
-            return yield* failIfConfigured(s.has(id));
+            const exists = Array.from(s.values()).some(
+              (sub) =>
+                sub.challengeId === challengeId && sub.groupId === groupId,
+            );
+            return yield* failIfConfigured(exists);
           }),
 
         countByChallengeId: (challengeId) =>
@@ -668,6 +802,15 @@ export function createChallengeSubmissionRepositoryMock(
             const s = yield* Ref.get(state);
             const count = Array.from(s.values()).filter(
               (sub) => sub.challengeId === challengeId,
+            ).length;
+            return yield* failIfConfigured(count);
+          }),
+
+        countByChallengeAndStatus: (challengeId, status) =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const count = Array.from(s.values()).filter(
+              (sub) => sub.challengeId === challengeId && sub.status === status,
             ).length;
             return yield* failIfConfigured(count);
           }),
@@ -731,13 +874,23 @@ export function createChallengeVoteRepositoryMock(
             return yield* failIfConfigured(vote);
           }),
 
-        findById: (id) =>
+        createMany: (votes) =>
+          Effect.gen(function* () {
+            yield* Ref.update(state, (s) => {
+              const newState = new Map(s);
+              votes.forEach((vote) => newState.set(vote.id, vote));
+              return newState;
+            });
+            return yield* failIfConfigured(votes);
+          }),
+
+        findById: (id: string) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
             return yield* failIfConfigured(s.get(id) ?? null);
           }),
 
-        findByChallengeId: (challengeId) =>
+        findByChallengeId: (challengeId: string) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
             const votes = Array.from(s.values()).filter(
@@ -746,7 +899,16 @@ export function createChallengeVoteRepositoryMock(
             return yield* failIfConfigured(votes);
           }),
 
-        findBySubmissionId: (submissionId) =>
+        findByChallengeAndVoter: (challengeId: string, voterId: string) =>
+          Effect.gen(function* () {
+            const s = yield* Ref.get(state);
+            const votes = Array.from(s.values()).filter(
+              (v) => v.challengeId === challengeId && v.voterId === voterId,
+            );
+            return yield* failIfConfigured(votes);
+          }),
+
+        findBySubmissionId: (submissionId: string) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
             const votes = Array.from(s.values()).filter(
@@ -755,42 +917,43 @@ export function createChallengeVoteRepositoryMock(
             return yield* failIfConfigured(votes);
           }),
 
-        findByUserId: (userId) =>
+        hasVoted: (challengeId: string, voterId: string) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
-            const votes = Array.from(s.values()).filter(
-              (v) => v.userId === userId,
+            const hasVoted = Array.from(s.values()).some(
+              (v) => v.challengeId === challengeId && v.voterId === voterId,
             );
-            return yield* failIfConfigured(votes);
+            return yield* failIfConfigured(hasVoted);
           }),
 
-        findByChallengeAndUser: (challengeId, userId) =>
+        hasVotedForPosition: (
+          challengeId: string,
+          voterId: string,
+          position: number,
+        ) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
-            const vote = Array.from(s.values()).find(
-              (v) => v.challengeId === challengeId && v.userId === userId,
+            const hasVoted = Array.from(s.values()).some(
+              (v) =>
+                v.challengeId === challengeId &&
+                v.voterId === voterId &&
+                v.position.value === position,
             );
-            return yield* failIfConfigured(vote ?? null);
+            return yield* failIfConfigured(hasVoted);
           }),
 
-        findAll: (opts) =>
+        getVotedPositions: (challengeId: string, voterId: string) =>
           Effect.gen(function* () {
             const s = yield* Ref.get(state);
-            const allVotes = Array.from(s.values());
-            const offset = opts?.offset ?? 0;
-            const limit = opts?.limit ?? allVotes.length;
-            return yield* failIfConfigured(
-              allVotes.slice(offset, offset + limit),
-            );
+            const positions = Array.from(s.values())
+              .filter(
+                (v) => v.challengeId === challengeId && v.voterId === voterId,
+              )
+              .map((v) => v.position.value);
+            return yield* failIfConfigured(positions);
           }),
 
-        update: (vote) =>
-          Effect.gen(function* () {
-            yield* Ref.update(state, (s) => new Map(s).set(vote.id, vote));
-            return yield* failIfConfigured(vote);
-          }),
-
-        delete: (id) =>
+        delete: (id: string) =>
           Effect.gen(function* () {
             yield* Ref.update(state, (s) => {
               const newState = new Map(s);
@@ -800,28 +963,16 @@ export function createChallengeVoteRepositoryMock(
             return yield* failIfConfigured(undefined);
           }),
 
-        exists: (id) =>
+        deleteByChallengeId: (challengeId: string) =>
           Effect.gen(function* () {
-            const s = yield* Ref.get(state);
-            return yield* failIfConfigured(s.has(id));
-          }),
-
-        countByChallengeId: (challengeId) =>
-          Effect.gen(function* () {
-            const s = yield* Ref.get(state);
-            const count = Array.from(s.values()).filter(
-              (v) => v.challengeId === challengeId,
-            ).length;
-            return yield* failIfConfigured(count);
-          }),
-
-        countBySubmissionId: (submissionId) =>
-          Effect.gen(function* () {
-            const s = yield* Ref.get(state);
-            const count = Array.from(s.values()).filter(
-              (v) => v.submissionId === submissionId,
-            ).length;
-            return yield* failIfConfigured(count);
+            yield* Ref.update(state, (s) => {
+              const newState = new Map(s);
+              Array.from(newState.values())
+                .filter((v) => v.challengeId === challengeId)
+                .forEach((v) => newState.delete(v.id));
+              return newState;
+            });
+            return yield* failIfConfigured(undefined);
           }),
       };
 

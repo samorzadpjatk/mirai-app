@@ -1,6 +1,7 @@
 import { Reward, type RewardId } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { RewardRepositoryTag } from "../ports/RewardRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for GetReward use case
@@ -73,7 +74,7 @@ export function getRewardUseCase(
   input: GetRewardInput,
 ): Effect.Effect<
   GetRewardOutput,
-  RewardNotFoundError | RewardRepositoryError,
+  DatabaseError | RewardNotFoundError | RewardRepositoryError,
   RewardRepositoryTag
 > {
   return Effect.gen(function* () {

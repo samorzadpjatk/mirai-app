@@ -1,6 +1,7 @@
 import { Trip } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for GetTripById use case
@@ -67,7 +68,7 @@ export function getTripByIdUseCase(
   input: GetTripByIdInput,
 ): Effect.Effect<
   GetTripByIdOutput,
-  GetTripByIdNotFoundError,
+  DatabaseError | GetTripByIdNotFoundError,
   TripRepositoryTag
 > {
   return Effect.gen(function* () {

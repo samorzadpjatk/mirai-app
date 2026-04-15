@@ -5,6 +5,7 @@ import {
 } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { ChallengeSubmissionRepositoryTag } from "../ports/ChallengeSubmissionRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for CreateSubmission use case
@@ -88,6 +89,7 @@ export function createSubmissionUseCase(
   input: CreateSubmissionInput,
 ): Effect.Effect<
   CreateSubmissionOutput,
+  | DatabaseError
   | SubmissionCreationError
   | DuplicateSubmissionError
   | SubmissionRepositoryError,

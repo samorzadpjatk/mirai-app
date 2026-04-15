@@ -2,6 +2,7 @@ import { Data, Effect } from "effect";
 import { ChallengeRepositoryTag } from "../ports/ChallengeRepository";
 import { ChallengeStatus } from "@mirai-app/domain";
 import type { Challenge } from "@mirai-app/domain";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for UpdateChallengeStatus use case
@@ -72,7 +73,10 @@ export function updateChallengeStatusUseCase(
   input: UpdateChallengeStatusInput,
 ): Effect.Effect<
   UpdateChallengeStatusOutput,
-  ChallengeNotFoundError | InvalidStatusTransitionError | ChallengeUpdateError,
+  | DatabaseError
+  | ChallengeNotFoundError
+  | InvalidStatusTransitionError
+  | ChallengeUpdateError,
   ChallengeRepositoryTag
 > {
   return Effect.gen(function* () {

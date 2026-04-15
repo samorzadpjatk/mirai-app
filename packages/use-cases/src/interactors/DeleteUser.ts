@@ -1,5 +1,6 @@
 import { Data, Effect } from "effect";
 import { UserRepositoryTag } from "../ports/UserRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for DeleteUser use case
@@ -54,7 +55,7 @@ export function deleteUserUseCase(
   input: DeleteUserInput,
 ): Effect.Effect<
   DeleteUserOutput,
-  DeleteUserNotFoundError | DeleteUserError,
+  DatabaseError | DeleteUserNotFoundError | DeleteUserError,
   UserRepositoryTag
 > {
   return Effect.gen(function* () {

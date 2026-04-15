@@ -1,5 +1,6 @@
 import { Effect, Data } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for DeleteSponsor use case
@@ -42,7 +43,7 @@ export function deleteSponsorUseCase(
   input: DeleteSponsorInput,
 ): Effect.Effect<
   DeleteSponsorOutput,
-  DeleteSponsorNotFoundError,
+  DatabaseError | DeleteSponsorNotFoundError,
   SponsorRepositoryTag
 > {
   return Effect.gen(function* () {

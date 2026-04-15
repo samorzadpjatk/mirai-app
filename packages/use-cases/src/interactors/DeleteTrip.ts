@@ -1,6 +1,7 @@
 import { Trip } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for DeleteTrip use case
@@ -49,7 +50,11 @@ export class DeleteTripNotFoundError extends Data.TaggedError(
  */
 export function deleteTripUseCase(
   input: DeleteTripInput,
-): Effect.Effect<DeleteTripOutput, DeleteTripNotFoundError, TripRepositoryTag> {
+): Effect.Effect<
+  DeleteTripOutput,
+  DatabaseError | DeleteTripNotFoundError,
+  TripRepositoryTag
+> {
   return Effect.gen(function* () {
     const tripRepo = yield* TripRepositoryTag;
 

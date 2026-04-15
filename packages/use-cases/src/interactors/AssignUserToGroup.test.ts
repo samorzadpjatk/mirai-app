@@ -11,6 +11,8 @@ import {
   GroupStatus,
   TripParticipant,
   TripParticipantRole,
+  UserId,
+  GroupId,
 } from "@mirai-app/domain";
 import {
   GroupRepositoryTag,
@@ -252,8 +254,8 @@ describe("[UNIT] assignUserToGroupUseCase - Pure Effect Pattern", () => {
       repo.addParticipant(mockParticipant);
 
       const input: AssignUserToGroupInput = {
-        groupId: "group-456",
-        userId: "user-789",
+        groupId: GroupId.create("group-456"),
+        userId: UserId.create("user-789"),
       };
 
       const program = assignUserToGroupUseCase(input).pipe(
@@ -283,8 +285,8 @@ describe("[UNIT] assignUserToGroupUseCase - Pure Effect Pattern", () => {
       repo.addParticipant(mockParticipant);
 
       const input: AssignUserToGroupInput = {
-        groupId: "group-456",
-        userId: "user-789",
+        groupId: GroupId.create("group-456"),
+        userId: UserId.create("user-789"),
       };
 
       const program = assignUserToGroupUseCase(input).pipe(
@@ -306,8 +308,8 @@ describe("[UNIT] assignUserToGroupUseCase - Pure Effect Pattern", () => {
       repo.addParticipant(mockParticipant);
 
       const input: AssignUserToGroupInput = {
-        groupId: "non-existent-group",
-        userId: "user-789",
+        groupId: GroupId.create("non-existent-group"),
+        userId: UserId.create("user-789"),
       };
 
       const program = assignUserToGroupUseCase(input).pipe(
@@ -333,8 +335,8 @@ describe("[UNIT] assignUserToGroupUseCase - Pure Effect Pattern", () => {
       Effect.runSync(repo.create(mockGroup));
 
       const input: AssignUserToGroupInput = {
-        groupId: "group-456",
-        userId: "user-789",
+        groupId: GroupId.create("group-456"),
+        userId: UserId.create("user-789"),
       };
 
       const program = assignUserToGroupUseCase(input).pipe(
@@ -375,8 +377,8 @@ describe("[UNIT] assignUserToGroupUseCase - Pure Effect Pattern", () => {
       repo.addParticipant(participant);
 
       const input: AssignUserToGroupInput = {
-        groupId: "group-2",
-        userId: "user-reassign",
+        groupId: GroupId.create("group-2"),
+        userId: UserId.create("user-reassign"),
       };
 
       const program = assignUserToGroupUseCase(input).pipe(

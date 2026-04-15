@@ -4,17 +4,17 @@ import {
   type GetSponsorInput,
   GetSponsorNotFoundError,
 } from "./GetSponsor";
-import { Sponsor } from "@mirai-app/domain";
+import { Sponsor, SponsorId } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
 
 describe("[UNIT] getSponsorUseCase (Effect)", () => {
   // Helper to create a valid sponsor using Effect
   const createValidSponsor = (
-    overrides?: Partial<{ id: string; name: string; isActive: boolean }>,
+    overrides?: Partial<{ id: SponsorId; name: string; isActive: boolean }>,
   ): Sponsor => {
     const effect = Sponsor.create({
-      id: overrides?.id ?? "sponsor-123",
+      id: overrides?.id ?? SponsorId.create("sponsor-123"),
       name: overrides?.name ?? "Test Sponsor",
       description: "A test sponsor description",
       logoPath: "/logos/test.png",
@@ -69,13 +69,13 @@ describe("[UNIT] getSponsorUseCase (Effect)", () => {
   describe("[UNIT] execute", () => {
     it("should return sponsor when found", async () => {
       const mockSponsor = createValidSponsor({
-        id: "sponsor-456",
+        id: SponsorId.create("sponsor-456"),
         name: "Acme Corp",
         isActive: true,
       });
 
       const result = await runUseCase(
-        { sponsorId: "sponsor-456" },
+        { sponsorId: SponsorId.create("sponsor-456") },
         { findById: () => Promise.resolve(mockSponsor) },
       );
 
@@ -109,7 +109,7 @@ describe("[UNIT] getSponsorUseCase (Effect)", () => {
 
     it("should return sponsor without logo adjustments", async () => {
       const sponsorResult = Sponsor.create({
-        id: "sponsor-simple",
+        id: SponsorId.create("sponsor-simple"),
         name: "Simple Sponsor",
         description: "Simple description",
         logoPath: "/logos/simple.png",
@@ -121,7 +121,7 @@ describe("[UNIT] getSponsorUseCase (Effect)", () => {
       const mockSponsor = Effect.runSync(sponsorResult);
 
       const result = await runUseCase(
-        { sponsorId: "sponsor-simple" },
+        { sponsorId: SponsorId.create("sponsor-simple") },
         { findById: () => Promise.resolve(mockSponsor) },
       );
 

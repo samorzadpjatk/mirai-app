@@ -4,7 +4,7 @@ import {
   type GetLocationInput,
   LocationNotFoundError,
 } from "./GetLocation";
-import { Location } from "@mirai-app/domain";
+import { Location, LocationId } from "@mirai-app/domain";
 import { Effect, Either, Layer } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 
@@ -52,7 +52,7 @@ describe("[UNIT] getLocationUseCase - Pure Effect Pattern", () => {
 
   const createValidLocation = (
     overrides?: Partial<{
-      id: string;
+      id: LocationId;
       userId: string;
       latitude: number | null;
       longitude: number | null;
@@ -60,7 +60,7 @@ describe("[UNIT] getLocationUseCase - Pure Effect Pattern", () => {
     }>,
   ): Location => {
     const effect = Location.create({
-      id: overrides?.id ?? "loc-123",
+      id: overrides?.id ?? LocationId.create("loc-123"),
       userId: overrides?.userId ?? "user-123",
       latitude: overrides?.latitude ?? 52.52,
       longitude: overrides?.longitude ?? 13.405,
@@ -79,7 +79,7 @@ describe("[UNIT] getLocationUseCase - Pure Effect Pattern", () => {
     it("should return location when found by userId", async () => {
       // Arrange
       const mockLocation = createValidLocation({
-        id: "loc-456",
+        id: LocationId.create("loc-456"),
         userId: "user-456",
         latitude: 48.8566,
         longitude: 2.3522,
@@ -121,7 +121,7 @@ describe("[UNIT] getLocationUseCase - Pure Effect Pattern", () => {
       // Arrange
       const mockLocation = Effect.runSync(
         Location.create({
-          id: "loc-789",
+          id: LocationId.create("loc-789"),
           userId: "user-789",
           latitude: null,
           longitude: null,
@@ -171,7 +171,7 @@ describe("[UNIT] getLocationUseCase - Pure Effect Pattern", () => {
       // Arrange
       const mockLocation = Effect.runSync(
         Location.create({
-          id: "loc-sharing",
+          id: LocationId.create("loc-sharing"),
           userId: "user-owner",
           latitude: 52.52,
           longitude: 13.405,

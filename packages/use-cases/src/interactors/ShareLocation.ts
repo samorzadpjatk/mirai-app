@@ -1,6 +1,7 @@
 import { Data, Effect } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import type { Location } from "@mirai-app/domain";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for ShareLocation use case
@@ -69,6 +70,7 @@ export function shareLocationUseCase(
   input: ShareLocationInput,
 ): Effect.Effect<
   ShareLocationOutput,
+  | DatabaseError
   | ShareLocationNotFoundError
   | ShareLocationValidationError
   | ShareLocationSelfShareError,

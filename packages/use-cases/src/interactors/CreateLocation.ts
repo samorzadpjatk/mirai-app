@@ -1,6 +1,7 @@
 import { Data, Effect } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import { Location } from "@mirai-app/domain";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for CreateLocation use case
@@ -81,7 +82,7 @@ export function createLocationUseCase(
   input: CreateLocationInput,
 ): Effect.Effect<
   CreateLocationOutput,
-  LocationCreationError | LocationUpdateError,
+  DatabaseError | LocationCreationError | LocationUpdateError,
   LocationRepositoryTag
 > {
   return Effect.gen(function* () {
@@ -104,7 +105,8 @@ export function createLocationUseCase(
       // Run validation effect and map errors
       const updated = yield* updateEffect.pipe(
         Effect.mapError(
-          (validationError) => new LocationUpdateError(validationError.message),
+          (validationError) =>
+            new LocationUpdateError({ message: validationError.message }),
         ),
       );
 
@@ -132,7 +134,8 @@ export function createLocationUseCase(
     // Run validation effect and map errors
     const location = yield* locationEffect.pipe(
       Effect.mapError(
-        (validationError) => new LocationCreationError(validationError.message),
+        (validationError) =>
+          new LocationCreationError({ message: validationError.message }),
       ),
     );
 

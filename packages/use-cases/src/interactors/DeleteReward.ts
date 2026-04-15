@@ -1,6 +1,7 @@
 import { Data, Effect } from "effect";
 import { RewardRepositoryTag } from "../ports/RewardRepository";
 import type { RewardId } from "@mirai-app/domain";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for DeleteReward use case
@@ -51,7 +52,7 @@ export function deleteRewardUseCase(
   input: DeleteRewardInput,
 ): Effect.Effect<
   DeleteRewardOutput,
-  RewardNotFoundError | RewardHasPurchasesError,
+  DatabaseError | RewardNotFoundError | RewardHasPurchasesError,
   RewardRepositoryTag
 > {
   return Effect.gen(function* () {

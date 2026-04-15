@@ -1,6 +1,7 @@
 import { Effect, Data } from "effect";
 import { NotificationRepositoryTag } from "../ports/NotificationRepository";
 import type { Notification } from "@mirai-app/domain";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for GetNotification use case
@@ -75,7 +76,7 @@ export function getNotificationUseCase(
   input: GetNotificationInput,
 ): Effect.Effect<
   GetNotificationOutput,
-  NotificationNotFoundError,
+  DatabaseError | NotificationNotFoundError,
   NotificationRepositoryTag
 > {
   return Effect.gen(function* () {

@@ -6,6 +6,7 @@ import {
 } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { NotificationRepositoryTag } from "../ports/NotificationRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for ScheduleNotification use case
@@ -80,6 +81,7 @@ export function scheduleNotificationUseCase(
   input: ScheduleNotificationInput,
 ): Effect.Effect<
   ScheduleNotificationOutput,
+  | DatabaseError
   | NotificationNotFoundError
   | NotificationValidationError
   | NotificationStateError

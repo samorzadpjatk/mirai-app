@@ -6,6 +6,7 @@ import {
 } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for UpdateTrip use case
@@ -83,7 +84,10 @@ export function updateTripUseCase(
   input: UpdateTripInput,
 ): Effect.Effect<
   UpdateTripOutput,
-  UpdateTripNotFoundError | UpdateTripValidationError | UpdateTripStateError,
+  | DatabaseError
+  | UpdateTripNotFoundError
+  | UpdateTripValidationError
+  | UpdateTripStateError,
   TripRepositoryTag
 > {
   return Effect.gen(function* () {

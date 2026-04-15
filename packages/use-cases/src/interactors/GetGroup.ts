@@ -1,6 +1,7 @@
 import { Group, type GroupId } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for GetGroup use case
@@ -60,7 +61,11 @@ export class GetGroupNotFoundError extends Data.TaggedError(
  */
 export function getGroupUseCase(
   input: GetGroupInput,
-): Effect.Effect<GetGroupOutput, GetGroupNotFoundError, GroupRepositoryTag> {
+): Effect.Effect<
+  GetGroupOutput,
+  DatabaseError | GetGroupNotFoundError,
+  GroupRepositoryTag
+> {
   return Effect.gen(function* () {
     const groupRepo = yield* GroupRepositoryTag;
 

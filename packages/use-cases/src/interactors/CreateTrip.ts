@@ -1,6 +1,7 @@
 import { Trip, TripStatus, ValidationError } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for CreateTrip use case
@@ -64,7 +65,11 @@ export class TripCreationError extends Data.TaggedError("TripCreationError")<{
  */
 export function createTripUseCase(
   input: CreateTripInput,
-): Effect.Effect<CreateTripOutput, TripCreationError, TripRepositoryTag> {
+): Effect.Effect<
+  CreateTripOutput,
+  DatabaseError | TripCreationError,
+  TripRepositoryTag
+> {
   return Effect.gen(function* () {
     const tripRepo = yield* TripRepositoryTag;
 

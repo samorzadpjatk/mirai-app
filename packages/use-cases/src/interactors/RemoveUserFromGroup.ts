@@ -6,6 +6,7 @@ import {
 } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for RemoveUserFromGroup use case
@@ -56,6 +57,7 @@ export class ParticipantNotFoundError extends Data.TaggedError(
 }> {}
 
 export type RemoveUserFromGroupError =
+  | DatabaseError
   | GroupNotFoundError
   | NotGroupMemberError
   | ParticipantNotFoundError;

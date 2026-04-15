@@ -3,13 +3,14 @@ import { getReportsUseCase, type GetReportsInput } from "./GetReports";
 import { Effect } from "effect";
 import { SubmissionReportRepositoryTag } from "../ports/SubmissionReportRepository";
 import type { SubmissionReport } from "@mirai-app/domain";
+import { ReportId } from "@mirai-app/domain";
 
 // Mock SubmissionReport domain object
 const createMockReport = (
   overrides?: Partial<SubmissionReport>,
 ): SubmissionReport =>
   ({
-    id: "report-123",
+    id: ReportId.create(overrides?.id ?? "report-123"),
     submissionId: "submission-123",
     reporterId: "reporter-123",
     reason: { value: "inappropriate" },
@@ -75,7 +76,7 @@ describe("[UNIT] getReportsUseCase (Effect)", () => {
   it("should return reports with reporter info", async () => {
     const mockReports = [
       createMockReport({
-        id: "report-1",
+        id: ReportId.create("report-1"),
         submissionId: "submission-123",
         reporterId: "reporter-1",
         reason: { value: "spam" },
@@ -90,7 +91,7 @@ describe("[UNIT] getReportsUseCase (Effect)", () => {
         },
       }),
       createMockReport({
-        id: "report-2",
+        id: ReportId.create("report-2"),
         submissionId: "submission-123",
         reporterId: "reporter-2",
         reason: { value: "inappropriate" },
@@ -138,7 +139,7 @@ describe("[UNIT] getReportsUseCase (Effect)", () => {
 
   it("should handle report without reporter info", async () => {
     const mockReport = createMockReport({
-      id: "report-1",
+      id: ReportId.create("report-1"),
       reporter: undefined,
     });
 
@@ -236,9 +237,9 @@ describe("[UNIT] getReportsUseCase (Effect)", () => {
 
   it("should handle multiple reports with correct total count", async () => {
     const mockReports = [
-      createMockReport({ id: "report-1" }),
-      createMockReport({ id: "report-2" }),
-      createMockReport({ id: "report-3" }),
+      createMockReport({ id: ReportId.create("report-1") }),
+      createMockReport({ id: ReportId.create("report-2") }),
+      createMockReport({ id: ReportId.create("report-3") }),
     ];
 
     const repoService = createMockRepoService({

@@ -1,6 +1,7 @@
 import { Group, GroupStatus, ValidationError } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for CreateGroup use case
@@ -73,7 +74,7 @@ export function createGroupUseCase(
   input: CreateGroupInput,
 ): Effect.Effect<
   CreateGroupOutput,
-  GroupCodeAlreadyExistsError | GroupCreationError,
+  DatabaseError | GroupCodeAlreadyExistsError | GroupCreationError,
   GroupRepositoryTag
 > {
   return Effect.gen(function* () {

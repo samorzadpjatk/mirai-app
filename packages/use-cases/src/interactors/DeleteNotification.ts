@@ -1,6 +1,7 @@
 import { Notification } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { NotificationRepositoryTag } from "../ports/NotificationRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for DeleteNotification use case
@@ -59,6 +60,7 @@ export function deleteNotificationUseCase(
   input: DeleteNotificationInput,
 ): Effect.Effect<
   DeleteNotificationOutput,
+  | DatabaseError
   | NotificationNotFoundError
   | NotificationAlreadySentError
   | NotificationDeleteError,

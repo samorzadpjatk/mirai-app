@@ -5,6 +5,7 @@ import {
   validateVoteSet,
 } from "@mirai-app/domain";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Single vote input for batch submission
@@ -103,6 +104,7 @@ export function submitVotesUseCase(
   input: SubmitVotesInput,
 ): Effect.Effect<
   SubmitVotesOutput,
+  | DatabaseError
   | SubmitVotesValidationError
   | BatchAlreadyVotedError
   | InvalidVoteSetError

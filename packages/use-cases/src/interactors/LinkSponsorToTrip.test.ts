@@ -7,14 +7,14 @@ import {
 } from "./LinkSponsorToTrip";
 import { Effect, Either } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
-import { Sponsor } from "@mirai-app/domain";
+import { Sponsor, SponsorId } from "@mirai-app/domain";
 
 // Helper to create a valid sponsor using Effect
 const createValidSponsor = (
-  overrides?: Partial<{ id: string; name: string }>,
+  overrides?: Partial<{ id: SponsorId; name: string }>,
 ): Sponsor => {
   const effect = Sponsor.create({
-    id: overrides?.id ?? "sponsor-123",
+    id: overrides?.id ?? SponsorId.create("sponsor-123"),
     name: overrides?.name ?? "Test Sponsor",
     description: "A test sponsor",
     logoPath: "/logos/test.png",
@@ -76,10 +76,12 @@ const runUseCase = async (
 describe("[UNIT] linkSponsorToTripUseCase", () => {
   describe("[UNIT] execute", () => {
     it("should link sponsor to trip successfully", async () => {
-      const mockSponsor = createValidSponsor({ id: "sponsor-456" });
+      const mockSponsor = createValidSponsor({
+        id: SponsorId.create("sponsor-456"),
+      });
 
       const result = await runUseCase(
-        { sponsorId: "sponsor-456", tripId: "trip-123" },
+        { sponsorId: SponsorId.create("sponsor-456"), tripId: "trip-123" },
         {
           findById: () => Promise.resolve(mockSponsor),
           isLinkedToTrip: () => Promise.resolve(false),
@@ -112,10 +114,12 @@ describe("[UNIT] linkSponsorToTripUseCase", () => {
     });
 
     it("should fail when sponsor already linked to trip", async () => {
-      const mockSponsor = createValidSponsor({ id: "sponsor-456" });
+      const mockSponsor = createValidSponsor({
+        id: SponsorId.create("sponsor-456"),
+      });
 
       const program = linkSponsorToTripUseCase({
-        sponsorId: "sponsor-456",
+        sponsorId: SponsorId.create("sponsor-456"),
         tripId: "trip-123",
       }).pipe(
         Effect.provideService(

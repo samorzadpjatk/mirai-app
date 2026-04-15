@@ -1,6 +1,7 @@
 import type { Sponsor } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { SponsorRepositoryTag } from "../ports/SponsorRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for GetSponsor use case
@@ -52,7 +53,7 @@ export function getSponsorUseCase(
   input: GetSponsorInput,
 ): Effect.Effect<
   GetSponsorOutput,
-  GetSponsorNotFoundError,
+  DatabaseError | GetSponsorNotFoundError,
   SponsorRepositoryTag
 > {
   return Effect.gen(function* () {

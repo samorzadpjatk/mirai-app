@@ -1,6 +1,7 @@
 import { Data, Effect } from "effect";
 import type { LocationId } from "@mirai-app/domain";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for DeleteLocation use case
@@ -57,7 +58,7 @@ export function deleteLocationUseCase(
   input: DeleteLocationInput,
 ): Effect.Effect<
   DeleteLocationOutput,
-  DeleteLocationNotFoundError | DeleteLocationError,
+  DatabaseError | DeleteLocationNotFoundError | DeleteLocationError,
   LocationRepositoryTag
 > {
   return Effect.gen(function* () {

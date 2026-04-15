@@ -1,6 +1,7 @@
 import type { User } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { UserRepositoryTag } from "../ports/UserRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for UpdateUser use case
@@ -62,7 +63,7 @@ export function updateUserUseCase(
   input: UpdateUserInput,
 ): Effect.Effect<
   UpdateUserOutput,
-  UserNotFoundError | UserUpdateError,
+  DatabaseError | UserNotFoundError | UserUpdateError,
   UserRepositoryTag
 > {
   return Effect.gen(function* () {

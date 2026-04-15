@@ -7,6 +7,7 @@ import {
 } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { NotificationRepositoryTag } from "../ports/NotificationRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for UpdateNotification use case
@@ -84,6 +85,7 @@ export function updateNotificationUseCase(
   input: UpdateNotificationInput,
 ): Effect.Effect<
   UpdateNotificationOutput,
+  | DatabaseError
   | NotificationNotFoundError
   | NotificationValidationError
   | NotificationStateError

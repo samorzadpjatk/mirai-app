@@ -4,7 +4,7 @@ import {
   type GetMyVotesInput,
   GetMyVotesValidationError,
 } from "./GetMyVotes";
-import { ChallengeVote } from "@mirai-app/domain";
+import { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
 import { InMemoryChallengeVoteRepository } from "@mirai-app/adapters/gateways/in-memory";
@@ -51,7 +51,7 @@ describe("[UNIT] getMyVotesUseCase (Effect)", () => {
       // Create votes for voter-456
       const vote1 = await Effect.runPromise(
         ChallengeVote.create({
-          id: "vote-1",
+          id: ChallengeVoteId.create("vote-1"),
           challengeId: "challenge-123",
           submissionId: "submission-1",
           voterId: "voter-456",
@@ -62,7 +62,7 @@ describe("[UNIT] getMyVotesUseCase (Effect)", () => {
       );
       const vote2 = await Effect.runPromise(
         ChallengeVote.create({
-          id: "vote-2",
+          id: ChallengeVoteId.create("vote-2"),
           challengeId: "challenge-123",
           submissionId: "submission-2",
           voterId: "voter-456",
@@ -73,7 +73,7 @@ describe("[UNIT] getMyVotesUseCase (Effect)", () => {
       );
       const vote3 = await Effect.runPromise(
         ChallengeVote.create({
-          id: "vote-3",
+          id: ChallengeVoteId.create("vote-3"),
           challengeId: "challenge-123",
           submissionId: "submission-3",
           voterId: "voter-456",

@@ -2,6 +2,7 @@ import type { Location } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
 import { calculateDistance } from "@mirai-app/domain";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for ListLocations use case
@@ -102,7 +103,7 @@ function toOutput(
  */
 export function listLocationsUseCase(
   input: ListLocationsInput,
-): Effect.Effect<ListLocationsOutput, never, LocationRepositoryTag> {
+): Effect.Effect<ListLocationsOutput, DatabaseError, LocationRepositoryTag> {
   return Effect.gen(function* () {
     const repo = yield* LocationRepositoryTag;
 

@@ -5,6 +5,7 @@ import {
 } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Input for UpdateGroup use case
@@ -78,6 +79,7 @@ export function updateGroupUseCase(
   input: UpdateGroupInput,
 ): Effect.Effect<
   UpdateGroupOutput,
+  | DatabaseError
   | UpdateGroupNotFoundError
   | UpdateGroupDeletedError
   | UpdateGroupValidationError,
