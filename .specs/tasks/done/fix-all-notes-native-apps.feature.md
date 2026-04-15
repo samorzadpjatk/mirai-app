@@ -369,7 +369,7 @@ All acceptance criteria pass and:
 
 ### Phase 2: Foundational Backend - User Email Verification (Total: 2 hours)
 
-#### Step 2: Add emailVerified Field to User GraphQL Type
+#### Step 2: Add emailVerified Field [DONE] to User GraphQL Type
 
 - **Agent:** sonnet
 - **Parallel with:** Step 1, Step 3, Step 4
@@ -405,7 +405,7 @@ All acceptance criteria pass and:
 
 ### Phase 3: Foundational Backend - Group Member Mutations (Total: 6 hours)
 
-#### Step 3: Create GraphQL Types for Group Member Mutations
+#### Step 3: Create GraphQL Types [DONE] for Group Member Mutations
 
 - **Agent:** sonnet
 - **Parallel with:** Step 1, Step 2, Step 4
@@ -439,7 +439,7 @@ All acceptance criteria pass and:
 
 ---
 
-#### Step 4: Create AssignUserToGroup Effect Use Case
+#### Step 4: Create AssignUserToGroup [DONE] Effect Use Case
 
 - **Agent:** sonnet
 - **Parallel with:** Step 1, Step 2, Step 3
@@ -477,7 +477,7 @@ All acceptance criteria pass and:
 
 ---
 
-#### Step 5: Create RemoveUserFromGroup Effect Use Case
+#### Step 5: Create RemoveUserFromGroup [DONE] Effect Use Case
 
 - **Agent:** sonnet
 - **Parallel with:** Step 1, Step 2, Step 3, Step 4
@@ -514,7 +514,7 @@ All acceptance criteria pass and:
 
 ---
 
-#### Step 6: Export New Use Cases
+#### Step 6: Export New Use Cases [DONE]
 
 - **Agent:** haiku
 - **Depends on:** Steps 4, 5
@@ -541,7 +541,7 @@ All acceptance criteria pass and:
 
 ### Phase 4: Backend Controllers & Wiring (Total: 3 hours)
 
-#### Step 7: Extend GroupController with Member Methods
+#### Step 7: Extend GroupController [DONE] with Member Methods
 
 - **Agent:** sonnet
 - **Depends on:** Steps 3, 6
@@ -578,7 +578,7 @@ All acceptance criteria pass and:
 
 ---
 
-#### Step 8: Add Group Member Mutations to GraphQL Resolvers
+#### Step 8: Add Group Member Mutations [DONE] to GraphQL Resolvers
 
 - **Agent:** sonnet
 - **Depends on:** Steps 3, 7
@@ -615,7 +615,7 @@ All acceptance criteria pass and:
 
 ---
 
-#### Step 9: Regenerate GraphQL Schema and Verify Types
+#### Step 9: Regenerate GraphQL Schema [DONE] and Verify Types
 
 - **Agent:** haiku
 - **Depends on:** Steps 2, 8
@@ -644,7 +644,7 @@ All acceptance criteria pass and:
 
 ### Phase 5: Frontend User Stories (Total: 5 hours)
 
-#### Step 10: Implement useGroupEditor Hook with Mutations
+#### Step 10: Implement useGroupEditor [DONE] Hook with Mutations
 
 - **Agent:** sonnet
 - **Depends on:** Step 9
@@ -683,7 +683,7 @@ All acceptance criteria pass and:
 
 ---
 
-#### Step 11: Refactor useChallengeDetails to Use Direct Challenge Query
+#### Step 11: Refactor useChallengeDetails [DONE] to Use Direct Challenge Query
 
 - **Agent:** haiku
 - **Depends on:** Step 9
@@ -719,7 +719,7 @@ All acceptance criteria pass and:
 
 ---
 
-#### Step 12: Add Pagination to useChallenges Hook
+#### Step 12: Add Pagination to useChallenges [DONE] Hook
 
 - **Agent:** haiku
 - **Depends on:** Step 9
@@ -791,7 +791,7 @@ All acceptance criteria pass and:
 
 ### Phase 6: Polish & Verification (Total: 3 hours)
 
-#### Step 14: Verify All Acceptance Criteria
+#### Step 14: Verify All Acceptance Criteria [DONE]
 
 - **Agent:** sonnet
 - **Depends on:** Steps 10, 11, 12, 13
@@ -831,7 +831,7 @@ All acceptance criteria pass and:
 
 ---
 
-#### Step 15: Cleanup NOTE Comments and Final Verification
+#### Step 15: Cleanup NOTE Comments [DONE] and Final Verification
 
 - **Agent:** haiku
 - **Depends on:** Step 14
