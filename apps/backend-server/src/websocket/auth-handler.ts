@@ -24,7 +24,6 @@
 
 import type { Context } from "hono";
 import { getCookie } from "hono/cookie";
-import type { AwilixContainer } from "awilix";
 import type { AuthPort, AuthContext } from "@mirai-app/use-cases";
 import { serverLogger } from "@mirai-app/shared";
 
@@ -227,7 +226,7 @@ export async function validateAuthToken(
  */
 export async function handleWebSocketAuth(
   request: Request,
-  container: AwilixContainer,
+  authPort: AuthPort,
 ): Promise<WebSocketAuthResult> {
   // Extract token from request
   const token = extractAuthToken(request);
@@ -239,9 +238,6 @@ export async function handleWebSocketAuth(
       statusCode: 401,
     };
   }
-
-  // Get auth port from container
-  const authPort = container.resolve<AuthPort>("authPort");
 
   // Validate token
   return validateAuthToken(token, authPort);
@@ -319,7 +315,7 @@ export function getAuthTokenFromContext(c: Context): string | null {
  */
 export async function requireAuthContext(
   c: Context,
-  container: AwilixContainer,
+  authPort: AuthPort,
 ): Promise<AuthContext> {
   const token = getAuthTokenFromContext(c);
 
@@ -329,7 +325,6 @@ export async function requireAuthContext(
     throw error;
   }
 
-  const authPort = container.resolve<AuthPort>("authPort");
   const result = await authPort.validateToken(token);
 
   if (result.kind === "err") {

@@ -1,17 +1,18 @@
 import SchemaBuilder from "@pothos/core";
 import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
-import type { AwilixContainer } from "awilix";
+import type { Controllers } from "@mirai-app/adapters";
 
 /**
  * GraphQL Context
  *
  * Context passed to all resolvers, containing:
- * - DI container for dependency injection
+ * - Controllers for type-safe dependency injection
  * - Auth context for authentication/authorization
  * - Request metadata
  */
 export interface GraphQLContext {
-  container: AwilixContainer;
+  /** All 17 controllers for type-safe access */
+  controllers: Controllers;
   authContext?: {
     userId: string;
     role: string;
@@ -29,7 +30,7 @@ export interface GraphQLContext {
  * - Code-first schema (no SDL maintenance)
  * - Type-safe resolvers
  * - Field-level authorization
- * - Integrates with existing DI container
+ * - Integrates with Effect-based controllers
  *
  * @example
  * ```typescript
@@ -39,9 +40,8 @@ export interface GraphQLContext {
  *       type: UserType,
  *       args: { id: t.arg.id({ required: true }) },
  *       resolve: async (_, args, ctx) => {
- *         const useCase = ctx.container.resolve("getUserUseCase");
- *         const result = await useCase.execute({ userId: args.id });
- *         return result;
+ *         const user = await ctx.controllers.userController.getById({ id: args.id });
+ *         return user;
  *       },
  *     }),
  *   }),

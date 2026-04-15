@@ -3,7 +3,7 @@ import { createYoga } from "graphql-yoga";
 import { serverLogger } from "@mirai-app/shared";
 import type { Schema } from "./schema";
 import type { GraphQLContext } from "./builder";
-import type { AwilixContainer } from "awilix";
+import type { Controllers } from "@mirai-app/adapters";
 import type { AuthPort } from "@mirai-app/use-cases";
 
 /**
@@ -14,7 +14,7 @@ import type { AuthPort } from "@mirai-app/use-cases";
  * - GraphQL Yoga for GraphQL server
  * - Pothos schema builder integration
  * - Auth middleware
- * - DI container integration
+ * - Effect DI integration via controllers
  *
  * Strangler Fig Pattern:
  * - Hono runs alongside tRPC (different ports)
@@ -25,14 +25,14 @@ import type { AuthPort } from "@mirai-app/use-cases";
  * @example
  * ```typescript
  * // Start the server
- * const app = createHonoApp(schema, { getContainer });
+ * const app = createHonoApp(schema, { getControllers });
  * app.fire(4000);
  * ```
  */
 export function createHonoApp(
   schema: Schema,
   options: {
-    getContainer: () => AwilixContainer;
+    getControllers: () => Controllers;
     authPort?: AuthPort;
   },
 ) {
@@ -43,7 +43,7 @@ export function createHonoApp(
     schema,
     // Custom context factory
     context: async ({ request }): Promise<GraphQLContext> => {
-      const container = options.getContainer();
+      const controllers = options.getControllers();
 
       // Extract and validate auth token
       let authContext: GraphQLContext["authContext"] = undefined;
@@ -64,7 +64,7 @@ export function createHonoApp(
       }
 
       return {
-        container,
+        controllers,
         authContext,
         requestId: crypto.randomUUID(),
       };
@@ -143,12 +143,12 @@ export async function startHonoServer(
   schema: Schema,
   options: {
     port: number;
-    getContainer: () => AwilixContainer;
+    getControllers: () => Controllers;
     authPort?: AuthPort;
   },
 ) {
   const app = createHonoApp(schema, {
-    getContainer: options.getContainer,
+    getControllers: options.getControllers,
     authPort: options.authPort,
   });
 

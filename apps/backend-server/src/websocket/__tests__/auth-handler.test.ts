@@ -21,7 +21,6 @@ import {
   type WebSocketAuthResult,
 } from "../auth-handler";
 import type { AuthPort, AuthContext } from "@mirai-app/use-cases";
-import type { AwilixContainer } from "awilix";
 
 // =============================================================================
 // Mock Request Factory
@@ -116,17 +115,6 @@ class MockAuthPort implements AuthPort {
   > {
     throw new Error("Method not implemented");
   }
-}
-
-function createMockContainer(authPort: AuthPort): AwilixContainer {
-  return {
-    resolve: <T>(name: string): T => {
-      if (name === "authPort") {
-        return authPort as unknown as T;
-      }
-      throw new Error(`Unknown dependency: ${name}`);
-    },
-  } as unknown as AwilixContainer;
 }
 
 // =============================================================================
@@ -275,9 +263,9 @@ describe("[UNIT] WebSocket Auth Handler", () => {
   describe("[UNIT] handleWebSocketAuth", () => {
     it("should return error when no token provided", async () => {
       const request = new Request("http://localhost:4000/graphql/ws");
-      const container = createMockContainer(new MockAuthPort());
+      const authPort = new MockAuthPort();
 
-      const result = await handleWebSocketAuth(request, container);
+      const result = await handleWebSocketAuth(request, authPort);
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(401);
@@ -293,11 +281,9 @@ describe("[UNIT] WebSocket Auth Handler", () => {
       const request = createMockRequest("http://localhost:4000/graphql/ws", {
         cookie: `${AUTH_TOKEN_COOKIE}=valid-token`,
       });
-      const container = createMockContainer(
-        new MockAuthPort(true, mockContext),
-      );
+      const authPort = new MockAuthPort(true, mockContext);
 
-      const result = await handleWebSocketAuth(request, container);
+      const result = await handleWebSocketAuth(request, authPort);
 
       expect(result.success).toBe(true);
       expect(result.authContext).toEqual(mockContext);
@@ -308,9 +294,9 @@ describe("[UNIT] WebSocket Auth Handler", () => {
       const request = createMockRequest("http://localhost:4000/graphql/ws", {
         cookie: `${AUTH_TOKEN_COOKIE}=invalid-token`,
       });
-      const container = createMockContainer(new MockAuthPort(false));
+      const authPort = new MockAuthPort(false);
 
-      const result = await handleWebSocketAuth(request, container);
+      const result = await handleWebSocketAuth(request, authPort);
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(401);
