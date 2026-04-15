@@ -33,6 +33,9 @@ fragment UserFields on User {
   hasAvatar
   role
 
+  # Email verification status
+  emailVerified
+
   # Activity timestamps
   createdAt
   lastSeenOn

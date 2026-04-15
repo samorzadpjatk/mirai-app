@@ -150,3 +150,21 @@ mutation UpdateSharingSettings($input: UpdateSharingSettingsInput!) {
     }
   }
 }
+
+# Assign a user to a group (idempotent)
+mutation AssignUserToGroup($input: AssignUserToGroupInput!) {
+  assignUserToGroup(input: $input) {
+    group {
+      ...GroupFields
+    }
+  }
+}
+
+# Remove a user from a group
+mutation RemoveUserFromGroup($input: RemoveUserFromGroupInput!) {
+  removeUserFromGroup(input: $input) {
+    group {
+      ...GroupFields
+    }
+  }
+}

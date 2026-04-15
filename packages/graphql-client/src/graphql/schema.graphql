@@ -146,6 +146,21 @@ type AllNotificationsResult {
   pagination: NotificationOffsetPaginationInfo!
 }
 
+"""Input for assigning a user to a group"""
+input AssignUserToGroupInput {
+  """ID of the group to assign the user to"""
+  groupId: ID!
+
+  """ID of the user to assign to the group"""
+  userId: ID!
+}
+
+"""Result of assigning a user to a group"""
+type AssignUserToGroupPayload {
+  """The updated group with the newly assigned member"""
+  group: Group!
+}
+
 """Result of bulk deleting notification schedules"""
 type BulkDeleteNotificationSchedulesPayload {
   """Number of schedules deleted"""
@@ -2095,6 +2110,12 @@ type Mutation {
     input: AddSharingUserInput!
   ): SharingUserPayload
 
+  """Assign a user to a group (idempotent)"""
+  assignUserToGroup(
+    """Group and user assignment data"""
+    input: AssignUserToGroupInput!
+  ): AssignUserToGroupPayload!
+
   """Bulk delete notification schedules (admin only)"""
   bulkDeleteNotificationSchedules(
     """IDs of the schedules to delete"""
@@ -2305,6 +2326,12 @@ type Mutation {
     """Input for removing coins"""
     input: RemoveCoinsInput!
   ): CoinTransactionResult
+
+  """Remove a user from a group"""
+  removeUserFromGroup(
+    """Group and user removal data"""
+    input: RemoveUserFromGroupInput!
+  ): RemoveUserFromGroupPayload!
 
   """Remove a user from location sharing list"""
   removeUserFromSharing(
@@ -3066,12 +3093,6 @@ type Query {
   """Get locations of friends sharing with current user"""
   friendsLocations: FriendsLocationsConnection
 
-  """Get a group by its ID"""
-  group(
-    """Group ID"""
-    id: ID!
-  ): Group
-
   """Get a group by its unique code"""
   groupByCode(
     """Group code"""
@@ -3361,6 +3382,21 @@ input RemoveCoinsInput {
 input RemoveSharingUserInput {
   """ID of the user to remove"""
   userId: ID!
+}
+
+"""Input for removing a user from a group"""
+input RemoveUserFromGroupInput {
+  """ID of the group to remove the user from"""
+  groupId: ID!
+
+  """ID of the user to remove from the group"""
+  userId: ID!
+}
+
+"""Result of removing a user from a group"""
+type RemoveUserFromGroupPayload {
+  """The updated group without the removed member"""
+  group: Group!
 }
 
 """Standard reasons for reporting a submission"""
@@ -4567,6 +4603,9 @@ type User {
 
   """When the user account was created"""
   createdAt: DateTime!
+
+  """When the user's email was verified (null if not verified)"""
+  emailVerified: DateTime
 
   """User's first name"""
   firstName: String!

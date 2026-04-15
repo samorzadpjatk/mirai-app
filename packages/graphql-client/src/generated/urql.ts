@@ -145,6 +145,21 @@ export type AllNotificationsResult = {
   pagination: NotificationOffsetPaginationInfo;
 };
 
+/** Input for assigning a user to a group */
+export type AssignUserToGroupInput = {
+  /** ID of the group to assign the user to */
+  groupId: Scalars['ID']['input'];
+  /** ID of the user to assign to the group */
+  userId: Scalars['ID']['input'];
+};
+
+/** Result of assigning a user to a group */
+export type AssignUserToGroupPayload = {
+  __typename?: 'AssignUserToGroupPayload';
+  /** The updated group with the newly assigned member */
+  group: Group;
+};
+
 /** Result of bulk deleting notification schedules */
 export type BulkDeleteNotificationSchedulesPayload = {
   __typename?: 'BulkDeleteNotificationSchedulesPayload';
@@ -1741,6 +1756,8 @@ export type Mutation = {
   addCoins?: Maybe<CoinTransactionResult>;
   /** Add a user to location sharing list */
   addUserToSharing?: Maybe<SharingUserPayload>;
+  /** Assign a user to a group (idempotent) */
+  assignUserToGroup: AssignUserToGroupPayload;
   /** Bulk delete notification schedules (admin only) */
   bulkDeleteNotificationSchedules?: Maybe<BulkDeleteNotificationSchedulesPayload>;
   /** Bulk toggle active status of notification schedules (admin only) */
@@ -1809,6 +1826,8 @@ export type Mutation = {
   purchaseReward?: Maybe<PurchaseRewardPayload>;
   /** Remove coins from a group. Requires moderator or admin privileges. */
   removeCoins?: Maybe<CoinTransactionResult>;
+  /** Remove a user from a group */
+  removeUserFromGroup: RemoveUserFromGroupPayload;
   /** Remove a user from location sharing list */
   removeUserFromSharing?: Maybe<SharingUserPayload>;
   /** Send mobile push notifications (admin only) */
@@ -1881,6 +1900,12 @@ export type MutationAddCoinsArgs = {
 /** Root mutation type for modifying data */
 export type MutationAddUserToSharingArgs = {
   input: AddSharingUserInput;
+};
+
+
+/** Root mutation type for modifying data */
+export type MutationAssignUserToGroupArgs = {
+  input: AssignUserToGroupInput;
 };
 
 
@@ -2081,6 +2106,12 @@ export type MutationPurchaseRewardArgs = {
 /** Root mutation type for modifying data */
 export type MutationRemoveCoinsArgs = {
   input: RemoveCoinsInput;
+};
+
+
+/** Root mutation type for modifying data */
+export type MutationRemoveUserFromGroupArgs = {
+  input: RemoveUserFromGroupInput;
 };
 
 
@@ -3128,6 +3159,21 @@ export type RemoveSharingUserInput = {
   userId: Scalars['ID']['input'];
 };
 
+/** Input for removing a user from a group */
+export type RemoveUserFromGroupInput = {
+  /** ID of the group to remove the user from */
+  groupId: Scalars['ID']['input'];
+  /** ID of the user to remove from the group */
+  userId: Scalars['ID']['input'];
+};
+
+/** Result of removing a user from a group */
+export type RemoveUserFromGroupPayload = {
+  __typename?: 'RemoveUserFromGroupPayload';
+  /** The updated group without the removed member */
+  group: Group;
+};
+
 /** Standard reasons for reporting a submission */
 export enum ReportReason {
   Cheating = 'CHEATING',
@@ -4165,6 +4211,8 @@ export type User = {
   authUserId: Scalars['String']['output'];
   /** When the user account was created */
   createdAt: Scalars['DateTime']['output'];
+  /** When the user's email was verified (null if not verified) */
+  emailVerified?: Maybe<Scalars['DateTime']['output']>;
   /** User's first name */
   firstName: Scalars['String']['output'];
   /** Computed full name (firstName + lastName) */
@@ -4948,6 +4996,20 @@ export type UpdateSharingSettingsMutationVariables = Exact<{
 
 
 export type UpdateSharingSettingsMutation = { __typename?: 'Mutation', updateSharingSettings?: { __typename?: 'UpdateSharingSettingsPayload', settings: { __typename?: 'LocationSharingSettings', isSharingLocation: boolean, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } } | null };
+
+export type AssignUserToGroupMutationVariables = Exact<{
+  input: AssignUserToGroupInput;
+}>;
+
+
+export type AssignUserToGroupMutation = { __typename?: 'Mutation', assignUserToGroup: { __typename?: 'AssignUserToGroupPayload', group: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } } };
+
+export type RemoveUserFromGroupMutationVariables = Exact<{
+  input: RemoveUserFromGroupInput;
+}>;
+
+
+export type RemoveUserFromGroupMutation = { __typename?: 'Mutation', removeUserFromGroup: { __typename?: 'RemoveUserFromGroupPayload', group: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } } };
 
 export type GetMyLocationQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -7786,6 +7848,32 @@ export const UpdateSharingSettingsDocument = gql`
 
 export function useUpdateSharingSettingsMutation() {
   return Urql.useMutation<UpdateSharingSettingsMutation, UpdateSharingSettingsMutationVariables>(UpdateSharingSettingsDocument);
+};
+export const AssignUserToGroupDocument = gql`
+    mutation AssignUserToGroup($input: AssignUserToGroupInput!) {
+  assignUserToGroup(input: $input) {
+    group {
+      ...GroupFields
+    }
+  }
+}
+    ${GroupFieldsFragmentDoc}`;
+
+export function useAssignUserToGroupMutation() {
+  return Urql.useMutation<AssignUserToGroupMutation, AssignUserToGroupMutationVariables>(AssignUserToGroupDocument);
+};
+export const RemoveUserFromGroupDocument = gql`
+    mutation RemoveUserFromGroup($input: RemoveUserFromGroupInput!) {
+  removeUserFromGroup(input: $input) {
+    group {
+      ...GroupFields
+    }
+  }
+}
+    ${GroupFieldsFragmentDoc}`;
+
+export function useRemoveUserFromGroupMutation() {
+  return Urql.useMutation<RemoveUserFromGroupMutation, RemoveUserFromGroupMutationVariables>(RemoveUserFromGroupDocument);
 };
 export const GetMyLocationDocument = gql`
     """
