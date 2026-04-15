@@ -1,6 +1,2 @@
 [test]
-# Use no-op preload instead of happy-dom for backend tests
-# Happy-dom replaces global fetch with browser fetch which causes CORS issues
-# when testing Bun/Node HTTP servers
-preload = ["./noop-preload.ts"]
 coverageThreshold = { lines = 0.80, branches = 0.75 }

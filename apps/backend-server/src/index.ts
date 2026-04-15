@@ -1,93 +1,187 @@
 /**
  * Backend Server Entry Point
  *
- * Entry point for the Mirai App backend server with Effect integration.
- *
- * ## Architecture
- *
- * The server now uses Effect framework for:
- * - Server lifecycle management (start/stop)
- * - Dependency injection through Effect Layers
- * - Graceful shutdown with composable error handling
- * - Async operation composition
- *
- * ## Migration Guide
- *
- * **Effect Integration (current):**
- * ```bash
- * npm run dev        # Port 4000 with Effect runtime
- * npm run start      # Port 4000 production with Effect
- * ```
- *
- * ## Environment Variables
- *
- * - `HONO_SERVER_PORT` - Server port (default: 4000)
- * - `HONO_SERVER_HOST` - Server host (default: 127.0.0.1)
- * - `SUPABASE_URL` - Supabase project URL
- * - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
- * - `DATABASE_URL` - PostgreSQL connection string
- *
- * ## API Endpoints
- *
- * - Health: `GET /health`
- * - GraphQL: `POST /graphql`
- * - GraphiQL Playground: `GET /graphql` (development only)
- * - GraphQL WebSocket: `ws://host:port/graphql/ws`
- *
- * ## Effect Integration
- *
- * The server lifecycle is now managed through Effect's Layer system:
- * - `HttpServerTag` - Provides server lifecycle methods
- * - `HttpServerConfigTag` - Provides server configuration
- * - AppLayer provides all repositories and services via Effect Context
- *
- * @module index
+ * Hono + GraphQL Yoga server using the frameworks layer.
+ * Leverages existing Effect DI, controllers, and GraphQL schema.
  */
+import { Hono } from "hono";
+import {
+  createYogaHandler,
+  createSimpleContextFactory,
+} from "@mirai-app/frameworks/graphql";
+import { makeAppLayer } from "@mirai-app/frameworks/layers";
+import { createControllers, type Controllers } from "@mirai-app/adapters";
+import {
+  createDrizzleClient,
+  type DrizzleDb,
+} from "@mirai-app/frameworks/drizzle";
+import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
+import type { Layer } from "effect";
 
-// Re-export the Effect-based server functions
-export {
-  /** Start the server with Effect runtime */
-  start as startServer,
-  /** Stop the server gracefully */
-  stop as stopServer,
-  /** Get the current server instance */
-  getServer,
-  /** Check if server is running */
-  isServerRunning,
-} from "./server-bootstrap";
+// =============================================================================
+// Environment Configuration
+// =============================================================================
 
-// Re-export Effect server types and utilities
-export {
-  /** Server service tag for Effect */
-  HttpServerTag,
-  /** Config service tag for Effect */
-  HttpServerConfigTag,
-  /** Server start error type */
-  ServerStartError,
-  /** Server stop error type */
-  ServerStopError,
-  /** Create Bun server layer */
-  createBunServerLayer,
-  /** Create server config layer */
-  createServerConfigLayer,
-  /** Create complete server layer */
-  createServerLayer,
-  /** Start server program */
-  startServerProgram,
-  /** Stop server program */
-  stopServerProgram,
-  /** Graceful shutdown program */
-  gracefulShutdownProgram,
-  /** Setup signal handlers */
-  setupSignalHandlers,
-  /** Type for HTTP server */
-  type HttpServer,
-  /** Layer creation options */
-  type CreateServerLayerOptions,
-} from "./effect-server";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://localhost:8000";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const DATABASE_URL = process.env.DATABASE_URL ?? "";
+const PORT = parseInt(process.env.PORT ?? "4000", 10);
+const NODE_ENV = process.env.NODE_ENV ?? "development";
 
-// Import and start the server with Effect
-import { start } from "./server-bootstrap";
+// =============================================================================
+// Types for Hono Context Variables
+// =============================================================================
 
-// Start the server (Effect runtime will handle the rest)
-void start();
+type HonoVariables = {
+  db: DrizzleDb;
+  appLayer: Layer.Layer<never>;
+  controllers: Controllers;
+};
+
+// =============================================================================
+// Server Initialization
+// =============================================================================
+
+async function main() {
+  console.log("Starting Mirai App Backend Server...");
+  console.log(`   Environment: ${NODE_ENV}`);
+  console.log(`   Port: ${PORT}`);
+
+  // Validate environment
+  if (!DATABASE_URL) {
+    console.error("ERROR: DATABASE_URL environment variable is required");
+    process.exit(1);
+  }
+
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    console.error(
+      "ERROR: SUPABASE_SERVICE_ROLE_KEY environment variable is required",
+    );
+    process.exit(1);
+  }
+
+  // Initialize database client
+  const db = createDrizzleClient(DATABASE_URL);
+  console.log("Database client initialized");
+
+  // Initialize Supabase client
+  const supabase = createSupabaseClient(
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+  );
+  console.log("Supabase client initialized");
+
+  // Create Effect DI layer
+  const appLayer = makeAppLayer({ supabase, db });
+  console.log("Effect DI layer created");
+
+  // Create controllers factory
+  const controllers = createControllers({ appLayer, supabase });
+  console.log("Controllers initialized");
+
+  // Create GraphQL Yoga handler
+  const yoga = createYogaHandler({
+    enableGraphiQL: NODE_ENV === "development",
+    contextFactory: createSimpleContextFactory(),
+  });
+  console.log("GraphQL Yoga handler created");
+
+  // Create Hono app with typed variables
+  const app = new Hono<{ Variables: HonoVariables }>();
+
+  // Simple logger middleware
+  app.use("*", async (c, next) => {
+    const start = Date.now();
+    await next();
+    const duration = Date.now() - start;
+    console.log(
+      `${c.req.method} ${c.req.url} - ${c.res.status} (${duration}ms)`,
+    );
+  });
+
+  // CORS headers middleware
+  app.use("*", async (c, next) => {
+    c.header("Access-Control-Allow-Origin", "*");
+    c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    c.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With",
+    );
+    c.header("Access-Control-Allow-Credentials", "true");
+
+    if (c.req.method === "OPTIONS") {
+      return new Response(null, { status: 204 });
+    }
+
+    await next();
+  });
+
+  // Database and DI middleware - injects db and appLayer into context
+  app.use("*", async (c, next) => {
+    c.set("db", db);
+    c.set("appLayer", appLayer);
+    c.set("controllers", controllers);
+    await next();
+  });
+
+  // Health check endpoint
+  app.get("/health", (c) => {
+    return c.json({
+      status: "healthy",
+      service: "mirai-backend",
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+    });
+  });
+
+  // GraphQL endpoint
+  app.all("/graphql", async (c) => {
+    return yoga.handle(c.req.raw, { context: c });
+  });
+
+  // Root endpoint - redirect to GraphiQL in dev, show info in prod
+  app.get("/", (c) => {
+    if (NODE_ENV === "development") {
+      return c.redirect("/graphql");
+    }
+    return c.json({
+      name: "Mirai App Backend API",
+      version: "1.0.0",
+      graphqlEndpoint: "/graphql",
+      healthEndpoint: "/health",
+    });
+  });
+
+  // Start server
+  console.log(`\nServer ready at http://localhost:${PORT}`);
+  console.log(`GraphQL endpoint: http://localhost:${PORT}/graphql`);
+  if (NODE_ENV === "development") {
+    console.log(`GraphiQL playground: http://localhost:${PORT}/graphql`);
+  }
+
+  const server = Bun.serve({
+    port: PORT,
+    fetch: app.fetch,
+  });
+
+  console.log("\nServer running! Press Ctrl+C to stop.\n");
+
+  // Graceful shutdown
+  process.on("SIGINT", () => {
+    console.log("\nShutting down server...");
+    server.stop();
+    process.exit(0);
+  });
+
+  process.on("SIGTERM", () => {
+    console.log("\nShutting down server...");
+    server.stop();
+    process.exit(0);
+  });
+}
+
+// Run server
+main().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});
