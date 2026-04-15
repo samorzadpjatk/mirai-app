@@ -117,6 +117,9 @@ interface WebSocketData {
 
   /** Connection timestamp */
   connectedAt: Date;
+
+  /** Auth token from upgrade request (for validation on ConnectionInit) */
+  token?: string;
 }
 
 // =============================================================================
@@ -224,10 +227,11 @@ function parseMessage(
 /**
  * Send message to WebSocket
  */
-function sendMessage(ws: WebSocket, message: Record<string, unknown>): void {
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(message));
-  }
+function sendMessage(
+  ws: Bun.ServerWebSocket<WebSocketData>,
+  message: Record<string, unknown>,
+): void {
+  ws.send(JSON.stringify(message));
 }
 
 // =============================================================================
@@ -370,10 +374,7 @@ export function createBunServer(
     hostname: config.host,
 
     // HTTP request handler
-    fetch: async (
-      request: Request,
-      server: { upgrade: (req: Request) => boolean },
-    ) => {
+    fetch: async (request: Request, server: Bun.Server<WebSocketData>) => {
       const url = new URL(request.url);
 
       // Check for WebSocket upgrade request
@@ -382,8 +383,19 @@ export function createBunServer(
           "upgrade",
         );
         if (upgrade === "websocket") {
+          // Extract auth token from the upgrade request
+          const token = extractAuthToken(request);
+
           // Let Bun handle the WebSocket upgrade
-          const upgraded = server.upgrade(request);
+          const upgraded = server.upgrade(request, {
+            data: {
+              connectionId: generateConnectionId(),
+              isAuthenticated: false,
+              subscriptions: new Set(),
+              connectedAt: new Date(),
+              token: token ?? undefined,
+            },
+          });
           if (upgraded) {
             return new Response("WebSocket upgrade successful", {
               status: 101,
@@ -403,7 +415,7 @@ export function createBunServer(
       /**
        * Handle new WebSocket connection
        */
-      open(ws: WebSocket): void {
+      open(ws: Bun.ServerWebSocket<WebSocketData>): void {
         const connectionId = generateConnectionId();
         const data: WebSocketData = {
           connectionId,
@@ -412,8 +424,8 @@ export function createBunServer(
           connectedAt: new Date(),
         };
 
-        // Store connection data
-        (ws as WebSocket & { data?: WebSocketData }).data = data;
+        // Store connection data - ServerWebSocket has typed data property
+        ws.data = data;
         activeConnections.set(connectionId, data);
 
         serverLogger.info(`[Bun] WebSocket connected: ${connectionId}`, {
@@ -425,11 +437,10 @@ export function createBunServer(
        * Handle WebSocket message
        */
       message: async (
-        ws: WebSocket,
+        ws: Bun.ServerWebSocket<WebSocketData>,
         message: string | Buffer,
       ): Promise<void> => {
-        const data = (ws as WebSocket & { data?: WebSocketData }).data;
-        if (!data) return;
+        const data = ws.data;
 
         const parsed = parseMessage(message);
         if (!parsed) {
@@ -443,12 +454,8 @@ export function createBunServer(
         // Handle message based on type
         switch (parsed.type) {
           case MessageType.ConnectionInit: {
-            // Extract and validate auth token from WebSocket connection params
-            const upgradeRequest = (ws as WebSocket & { request?: Request })
-              .request;
-            const token = upgradeRequest
-              ? extractAuthToken(upgradeRequest)
-              : null;
+            // Get auth token from WebSocket data (extracted during upgrade)
+            const token = data.token ?? null;
 
             if (!token) {
               sendMessage(ws, {
@@ -484,11 +491,6 @@ export function createBunServer(
               // Store auth context in WebSocket data
               data.isAuthenticated = true;
               data.userId = authResult.authContext?.userId;
-              (
-                ws as WebSocket & {
-                  authContext?: typeof authResult.authContext;
-                }
-              ).authContext = authResult.authContext;
 
               sendMessage(ws, { type: MessageType.ConnectionAck });
               serverLogger.info(
@@ -553,26 +555,28 @@ export function createBunServer(
       /**
        * Handle WebSocket close
        */
-      close(ws: WebSocket): void {
-        const data = (ws as WebSocket & { data?: WebSocketData }).data;
-        if (data) {
-          activeConnections.delete(data.connectionId);
-          serverLogger.info(
-            `[Bun] WebSocket disconnected: ${data.connectionId}`,
-            {
-              totalConnections: activeConnections.size,
-            },
-          );
-        }
+      close(
+        ws: Bun.ServerWebSocket<WebSocketData>,
+        code: number,
+        reason: string,
+      ): void {
+        const data = ws.data;
+        activeConnections.delete(data.connectionId);
+        serverLogger.info(
+          `[Bun] WebSocket disconnected: ${data.connectionId} (code: ${code}, reason: ${reason})`,
+          {
+            totalConnections: activeConnections.size,
+          },
+        );
       },
 
       /**
        * Handle WebSocket errors
        */
-      error(ws: WebSocket, error: Error): void {
-        const data = (ws as WebSocket & { data?: WebSocketData }).data;
+      error(ws: Bun.ServerWebSocket<WebSocketData>, error: Error): void {
+        const data = ws.data;
         serverLogger.error(
-          `[Bun] WebSocket error ${data?.connectionId ?? "unknown"}:`,
+          `[Bun] WebSocket error ${data.connectionId ?? "unknown"}:`,
           error,
         );
       },
