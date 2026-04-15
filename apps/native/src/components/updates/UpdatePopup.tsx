@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Animated } from "react-native";
-import { YStack, XStack, Text, Card, Button } from "@mirai-app/ui";
+import { YStack, Text } from "@mirai-app/ui";
 import { AppModalShell, AppModalFooter } from "~/components/common/ui";
 
 interface UpdatePopupProps {

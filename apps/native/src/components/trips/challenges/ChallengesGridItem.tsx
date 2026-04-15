@@ -1,17 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  TouchableOpacity,
-  useWindowDimensions,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from "react-native";
+import { TouchableOpacity } from "react-native";
 import { Card, Text, XStack, YStack, Image } from "@mirai-app/ui";
 import { Ionicons } from "@expo/vector-icons";
-import { useFileDownload } from "~/hooks/files";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ChallengeListItem } from "./types";
 
 interface ChallengesGridItemProps {

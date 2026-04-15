@@ -6,7 +6,7 @@ import {
   useGetNotificationSchedulesQuery,
 } from "@mirai-app/graphql-client";
 import { useTrips } from "~/hooks/trips";
-import { XStack, YStack, Text } from "@mirai-app/ui";
+import { XStack, Text } from "@mirai-app/ui";
 import { clientLogger } from "@mirai-app/shared";
 import {
   AppModalShell,

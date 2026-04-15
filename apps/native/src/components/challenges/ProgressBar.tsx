@@ -1,4 +1,4 @@
-import { YStack, XStack, styled } from "@mirai-app/ui";
+import { YStack, styled } from "@mirai-app/ui";
 import { View } from "react-native";
 import Animated, {
   useSharedValue,

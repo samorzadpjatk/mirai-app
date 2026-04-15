@@ -1,5 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
-import { ActivityIndicator } from "react-native";
+import { useMemo } from "react";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -203,13 +202,8 @@ const NewsImage = styled(Image, {
 export function TripNewsSection({ tripId }: TripNewsSectionProps) {
   const router = useRouter();
   const client = useClient();
-  const [isClientReady, setIsClientReady] = useState(false);
-
-  useEffect(() => {
-    if (client) {
-      setIsClientReady(true);
-    }
-  }, [client]);
+  // Client is always available when the component mounts, no need for effect
+  const isClientReady = Boolean(client);
 
   const [newsResult] = useQuery({
     query: useGetActivitiesByTripQuery.document,

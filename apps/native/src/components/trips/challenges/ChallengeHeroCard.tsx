@@ -1,4 +1,4 @@
-import { Image, ImageBackground } from "react-native";
+import { ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { styled, Text, YStack, XStack, Card } from "@mirai-app/ui";

@@ -1,5 +1,4 @@
-import { Card, Text, YStack, XStack } from "@mirai-app/ui";
-import { TouchableOpacity } from "react-native";
+import { Text, YStack, XStack } from "@mirai-app/ui";
 import type { ChallengeListItem } from "./types";
 import { ChallengesGridItem } from "./ChallengesGridItem";
 

@@ -1,6 +1,6 @@
 import { Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { styled, Text, XStack, YStack, Card } from "@mirai-app/ui";
+import { styled, Text, YStack, Card } from "@mirai-app/ui";
 import type { GroupListItem } from "./types";
 
 interface GroupCardProps {

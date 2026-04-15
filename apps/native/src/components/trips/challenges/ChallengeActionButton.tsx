@@ -1,4 +1,4 @@
-import { Button, XStack } from "@mirai-app/ui";
+import { Button } from "@mirai-app/ui";
 import { Ionicons } from "@expo/vector-icons";
 
 interface ChallengeActionButtonProps {

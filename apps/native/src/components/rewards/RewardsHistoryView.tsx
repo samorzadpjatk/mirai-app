@@ -12,7 +12,7 @@ import {
   useRewardPurchaseHistory,
   useUpdateMyRewardPurchaseStatus,
 } from "~/hooks/rewards";
-import { YStack, XStack, Text, Button, Card } from "@mirai-app/ui";
+import { YStack, XStack, Text, Card } from "@mirai-app/ui";
 
 interface Props {
   tripId: string;

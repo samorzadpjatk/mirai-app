@@ -1,4 +1,4 @@
-import { Card, Text, YStack, Image } from "@mirai-app/ui";
+import { Card, Text, Image } from "@mirai-app/ui";
 
 interface ChallengeDescriptionCardProps {
   description?: string | null;
