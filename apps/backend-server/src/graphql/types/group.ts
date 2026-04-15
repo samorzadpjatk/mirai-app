@@ -437,6 +437,92 @@ export const UpdateGroupInput = builder.inputType("UpdateGroupInput", {
   }),
 });
 
+/**
+ * Input for assigning a user to a group
+ */
+export const AssignUserToGroupInput = builder.inputType(
+  "AssignUserToGroupInput",
+  {
+    description: "Input for assigning a user to a group",
+    fields: (t) => ({
+      groupId: t.id({
+        description: "ID of the group to assign the user to",
+        required: true,
+      }),
+      userId: t.id({
+        description: "ID of the user to assign to the group",
+        required: true,
+      }),
+    }),
+  },
+);
+
+/**
+ * Input for removing a user from a group
+ */
+export const RemoveUserFromGroupInput = builder.inputType(
+  "RemoveUserFromGroupInput",
+  {
+    description: "Input for removing a user from a group",
+    fields: (t) => ({
+      groupId: t.id({
+        description: "ID of the group to remove the user from",
+        required: true,
+      }),
+      userId: t.id({
+        description: "ID of the user to remove from the group",
+        required: true,
+      }),
+    }),
+  },
+);
+
+// =============================================================================
+// Group Member Mutation Payload Types
+// =============================================================================
+
+/**
+ * Output type for assign user to group mutation
+ */
+export const AssignUserToGroupPayloadType = builder.objectType(
+  "AssignUserToGroupPayload",
+  {
+    description: "Result of assigning a user to a group",
+    authScopes: {
+      public: true,
+    },
+    fields: (t) => ({
+      group: t.field({
+        type: GroupType,
+        description: "The updated group with the newly assigned member",
+        nullable: false,
+        resolve: (payload) => (payload as { group: unknown }).group,
+      }),
+    }),
+  },
+);
+
+/**
+ * Output type for remove user from group mutation
+ */
+export const RemoveUserFromGroupPayloadType = builder.objectType(
+  "RemoveUserFromGroupPayload",
+  {
+    description: "Result of removing a user from a group",
+    authScopes: {
+      public: true,
+    },
+    fields: (t) => ({
+      group: t.field({
+        type: GroupType,
+        description: "The updated group without the removed member",
+        nullable: false,
+        resolve: (payload) => (payload as { group: unknown }).group,
+      }),
+    }),
+  },
+);
+
 // =============================================================================
 // Export
 // =============================================================================

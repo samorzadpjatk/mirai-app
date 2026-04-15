@@ -8,10 +8,6 @@
  */
 
 import { builder } from "../builder";
-import {
-  NotificationService,
-  DrizzleNotificationSenderService,
-} from "@mirai-app/adapters";
 import { requireAdmin } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 
@@ -20,35 +16,6 @@ import { mapErrorToGraphQL } from "../utils/error-mapper";
 // =============================================================================
 
 import "../types/notificationSender";
-
-// =============================================================================
-// Service Resolution Helpers
-// =============================================================================
-
-/**
- * Resolve NotificationService from DI container
- */
-function resolveNotificationService(
-  context: import("../builder").PothosTypes["Context"],
-): NotificationService {
-  return context.container.resolve<NotificationService>("notificationService");
-}
-
-/**
- * Resolve DrizzleNotificationSenderService from DI container
- * Note: This service uses Drizzle database client which is accessed via 'db' in the container
- */
-function resolveNotificationSenderService(
-  context: import("../builder").PothosTypes["Context"],
-): DrizzleNotificationSenderService {
-  // The DrizzleNotificationSenderService requires a database client
-  // In the DI container, the db is registered as 'db'
-  const db =
-    context.container.resolve<
-      import("@mirai-app/frameworks/drizzle").DrizzleClient
-    >("db");
-  return new DrizzleNotificationSenderService(db);
-}
 
 // =============================================================================
 // Mutation Fields
@@ -77,8 +44,8 @@ builder.mutationField("sendMobileNotifications", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get notification service from DI container
-      const notificationService = resolveNotificationService(context);
+      // Get notification service from context
+      const notificationService = context.controllers.notificationController;
 
       // Send notifications
       const result = await notificationService.sendMobileNotifications(
@@ -113,11 +80,12 @@ builder.mutationField("trackDeliveryStart", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get notification sender service
-      const senderService = resolveNotificationSenderService(context);
+      // Get notification delivery controller from context
+      const deliveryController =
+        context.controllers.notificationDeliveryController;
 
       // Track delivery start
-      const result = await senderService.trackDeliveryStart({
+      const result = await deliveryController.trackDeliveryStart({
         notificationId: args.input.notificationId,
       });
 
@@ -153,11 +121,12 @@ builder.mutationField("trackDeliveryComplete", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get notification sender service
-      const senderService = resolveNotificationSenderService(context);
+      // Get notification delivery controller from context
+      const deliveryController =
+        context.controllers.notificationDeliveryController;
 
       // Track delivery completion
-      const result = await senderService.trackDeliveryComplete({
+      const result = await deliveryController.trackDeliveryComplete({
         notificationId: args.input.notificationId,
         totalRecipients: args.input.totalRecipients,
         successCount: args.input.successCount,
@@ -197,11 +166,12 @@ builder.mutationField("trackDeliveryFailure", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get notification sender service
-      const senderService = resolveNotificationSenderService(context);
+      // Get notification delivery controller from context
+      const deliveryController =
+        context.controllers.notificationDeliveryController;
 
       // Track delivery failure
-      const result = await senderService.trackDeliveryFailure({
+      const result = await deliveryController.trackDeliveryFailure({
         notificationId: args.input.notificationId,
         error: args.input.error,
       });

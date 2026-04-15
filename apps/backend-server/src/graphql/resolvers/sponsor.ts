@@ -8,7 +8,6 @@
  */
 
 import { builder } from "../builder";
-import type { SponsorController } from "@mirai-app/adapters";
 import { requireAdmin } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 
@@ -35,9 +34,8 @@ builder.queryField("sponsors", (t) =>
       public: true,
     },
     resolve: async (_root, _args, context) => {
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<SponsorController>("sponsorController");
+      // Get controller from context
+      const controller = context.controllers.sponsorController;
 
       // List active sponsors
       const result = await controller.list({ activeOnly: true });
@@ -74,9 +72,8 @@ builder.queryField("sponsor", (t) =>
       public: true,
     },
     resolve: async (_root, args, context) => {
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<SponsorController>("sponsorController");
+      // Get controller from context
+      const controller = context.controllers.sponsorController;
 
       // Fetch sponsor
       const result = await controller.getById({ id: args.id });
@@ -113,9 +110,8 @@ builder.queryField("sponsorsByTrip", (t) =>
       }),
     },
     resolve: async (_root, args, context) => {
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<SponsorController>("sponsorController");
+      // Get controller from context
+      const controller = context.controllers.sponsorController;
 
       // Fetch sponsors by trip
       const result = await controller.getByTripId({ tripId: args.tripId });
@@ -160,9 +156,8 @@ builder.mutationField("createSponsor", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<SponsorController>("sponsorController");
+      // Get controller from context
+      const controller = context.controllers.sponsorController;
 
       // Create sponsor
       const result = await controller.create({
@@ -207,9 +202,8 @@ builder.mutationField("updateSponsor", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<SponsorController>("sponsorController");
+      // Get controller from context
+      const controller = context.controllers.sponsorController;
 
       // Build update input (only include defined fields)
       const updateInput: Record<string, unknown> = {
@@ -272,9 +266,8 @@ builder.mutationField("deleteSponsor", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<SponsorController>("sponsorController");
+      // Get controller from context
+      const controller = context.controllers.sponsorController;
 
       // Delete sponsor
       const result = await controller.delete({ id: args.id });
@@ -314,9 +307,8 @@ builder.mutationField("linkSponsorToTrip", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<SponsorController>("sponsorController");
+      // Get controller from context
+      const controller = context.controllers.sponsorController;
 
       // Link sponsor to trip
       const result = await controller.linkToTrip({
@@ -356,9 +348,8 @@ builder.mutationField("unlinkSponsorFromTrip", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<SponsorController>("sponsorController");
+      // Get controller from context
+      const controller = context.controllers.sponsorController;
 
       // Unlink sponsor from trip
       const result = await controller.unlinkFromTrip({

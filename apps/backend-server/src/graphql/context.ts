@@ -3,12 +3,12 @@
  *
  * Creates GraphQL context from Hono requests.
  * Extracts authentication tokens, resolves auth context,
- * and provides AppLayer for Effect-based dependency injection.
+ * and provides controllers via Effect-based dependency injection.
  *
  * ## Architecture
  *
  * Context is created per-request and includes:
- * - `appLayer`: Effect Layer with all repositories and services
+ * - `controllers`: All 17 controllers instantiated with Effect Layer DI
  * - `request`: Hono request object for header access
  * - `runtime`: Effect runtime for executing effects
  *
@@ -24,6 +24,9 @@
  *   schema,
  *   context: createContextFactory(),
  * });
+ *
+ * // In resolvers:
+ * const user = await context.controllers.userController.getById({ id });
  * ```
  *
  * @module context
@@ -39,7 +42,19 @@ import {
   AuthPortTag,
   type AuthPort,
 } from "@mirai-app/use-cases";
-import { TokenExtractor } from "@mirai-app/adapters";
+import {
+  TokenExtractor,
+  createControllers,
+  type Controllers,
+} from "@mirai-app/adapters";
+import {
+  makeAppLayer,
+  type AppLayerConfig,
+} from "@mirai-app/frameworks/layers";
+import {
+  createSupabaseClient,
+  type SupabaseClient,
+} from "@mirai-app/frameworks/supabase";
 
 // =============================================================================
 // Types
@@ -47,19 +62,39 @@ import { TokenExtractor } from "@mirai-app/adapters";
 
 /**
  * Effect runtime type for GraphQL context
- * Uses never for requirements since we build from the container
+ * Uses never for requirements since we build from layers
  */
 export type GraphQLRuntime = EffectRuntime<never>;
 
 /**
  * GraphQL context type
  *
- * Passed to all GraphQL resolvers. Contains the AppLayer for Effect DI,
+ * Passed to all GraphQL resolvers. Contains the controllers for Effect DI,
  * Hono request for accessing headers, and Effect runtime for
  * executing effects.
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * const controller = context.controllers.userController;
+ * ```
  */
 export interface GraphQLContext {
-  /** Effect Layer with all repositories and services */
+  /**
+   * All 17 controllers instantiated with Effect Layer DI.
+   * Use this for type-safe controller access.
+   *
+   * @example
+   * ```typescript
+   * const user = await context.controllers.userController.getById({ id });
+   * ```
+   */
+  controllers: Controllers;
+
+  /**
+   * Effect Layer with all repositories and services.
+   * Exposed for advanced use cases and direct Effect composition.
+   */
   appLayer: Layer.Layer<unknown>;
 
   /** Hono request object */
@@ -77,7 +112,7 @@ export interface GraphQLContext {
 // =============================================================================
 
 /**
- * Create a new Effect runtime from the container
+ * Create a new Effect runtime for GraphQL context
  *
  * This creates a fresh runtime per request using the default runtime.
  * For more advanced use cases, you can build a custom runtime from layers.
@@ -91,6 +126,53 @@ function createGraphQLRuntime(): GraphQLRuntime {
 }
 
 // =============================================================================
+// Supabase Client Factory
+// =============================================================================
+
+/**
+ * Create Supabase client from environment variables.
+ * Uses env from Hono context or falls back to process.env.
+ */
+function createSupabaseClientFromEnv(
+  env?: Record<string, string>,
+): SupabaseClient {
+  const supabaseUrl = env?.SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const supabaseKey =
+    env?.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase configuration missing. Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.",
+    );
+  }
+
+  return createSupabaseClient(supabaseUrl, supabaseKey);
+}
+
+// =============================================================================
+// Challenge Completion Handler
+// =============================================================================
+
+/**
+ * Handle challenge completion events from ChallengeVoteController.
+ * Called when a challenge is completed via voting.
+ *
+ * TODO: Implement challenge completion notifications or side effects.
+ */
+async function handleChallengeCompleted(event: {
+  challengeId: string;
+  tripId: string;
+  adminId: string;
+}): Promise<void> {
+  // TODO: Implement challenge completion side effects
+  // - Send notifications to group members
+  // - Update activity feed
+  // - Trigger reward distribution
+  // This is a placeholder for future implementation
+  console.log("Challenge completed:", event);
+}
+
+// =============================================================================
 // Context Factory
 // =============================================================================
 
@@ -98,8 +180,16 @@ function createGraphQLRuntime(): GraphQLRuntime {
  * Create GraphQL context factory for Hono requests
  *
  * Returns a function that creates context from Hono context.
- * The factory extracts the AppLayer from Hono context
+ * The factory composes Effect Layers, instantiates controllers,
  * and creates a standard GraphQL context with Effect runtime.
+ *
+ * ## Layer Composition
+ *
+ * The factory composes the following layers:
+ * 1. RepositoryLayer (19 repositories) - via makeRepositoryLayer
+ * 2. ServiceLayer (5 services) - via makeServiceLayer
+ *
+ * These are merged with Layer.mergeAll into a single appLayer.
  *
  * @returns Context factory function for Yoga
  *
@@ -124,15 +214,52 @@ export function createContextFactory(): (
   honoContext: HonoContext,
 ) => Promise<GraphQLContext> {
   return async (honoContext: HonoContext): Promise<GraphQLContext> => {
-    // Get AppLayer from Hono context
-    const appLayer = honoContext.get("appLayer") as Layer.Layer<unknown>;
+    // Get AppLayer from Hono context (if provided by middleware)
+    const existingAppLayer = honoContext.get("appLayer") as
+      | Layer.Layer<unknown>
+      | undefined;
 
-    if (!appLayer) {
-      throw new Error(
-        "AppLayer not found in Hono context. " +
-          "Ensure AppLayer middleware is registered before GraphQL routes.",
+    // Get database client from Hono context or env
+    const db = honoContext.get("db") as
+      | (typeof import("@mirai-app/frameworks/drizzle"))["drizzleDb"]
+      | undefined;
+
+    // Compose appLayer if not provided
+    let appLayer: Layer.Layer<unknown>;
+
+    if (existingAppLayer) {
+      appLayer = existingAppLayer;
+    } else {
+      // Create Supabase client from environment
+      const supabase = createSupabaseClientFromEnv(
+        honoContext.env as Record<string, string>,
       );
+
+      if (!db) {
+        throw new Error(
+          "Database client (db) not found in Hono context and AppLayer not provided. " +
+            "Ensure either database middleware is registered or appLayer is provided.",
+        );
+      }
+
+      // Create AppLayer using Layer.mergeAll with Repository and Service layers
+      const config: AppLayerConfig = {
+        supabase,
+        db,
+      };
+      appLayer = makeAppLayer(config);
     }
+
+    // Create all 17 controllers using the factory
+    const supabase = createSupabaseClientFromEnv(
+      honoContext.env as Record<string, string>,
+    );
+
+    const controllers = createControllers({
+      appLayer,
+      supabase,
+      onChallengeCompleted: handleChallengeCompleted,
+    });
 
     // Create Effect runtime for this request
     const runtime = createGraphQLRuntime();
@@ -169,6 +296,7 @@ export function createContextFactory(): (
     }
 
     return {
+      controllers,
       appLayer,
       request: honoContext.req.raw,
       runtime,
@@ -189,19 +317,9 @@ export function createSimpleContextFactory(): (
   honoContext: HonoContext,
 ) => Promise<GraphQLContext> {
   return async (honoContext: HonoContext): Promise<GraphQLContext> => {
-    // Get AppLayer from Hono context
-    const appLayer = honoContext.get("appLayer") as Layer.Layer<unknown>;
-
-    if (!appLayer) {
-      throw new Error(
-        "AppLayer not found in Hono context. " +
-          "Ensure AppLayer middleware is registered before GraphQL routes.",
-      );
-    }
-
-    // Get container from Hono context (if available - for test compatibility)
-    const container = honoContext.get("container") as
-      | import("@mirai-app/frameworks/di").AwilixContainer
+    // Get AppLayer from Hono context (if provided by middleware)
+    const existingAppLayer = honoContext.get("appLayer") as
+      | Layer.Layer<unknown>
       | undefined;
 
     // Get authContext from Hono context (if pre-resolved by middleware - for test compatibility)
@@ -209,14 +327,56 @@ export function createSimpleContextFactory(): (
       | AuthContext
       | undefined;
 
+    // Get database client from Hono context
+    const db = honoContext.get("db") as
+      | (typeof import("@mirai-app/frameworks/drizzle"))["drizzleDb"]
+      | undefined;
+
+    // Compose appLayer if not provided
+    let appLayer: Layer.Layer<unknown>;
+
+    if (existingAppLayer) {
+      appLayer = existingAppLayer;
+    } else {
+      // Create Supabase client from environment
+      const supabase = createSupabaseClientFromEnv(
+        honoContext.env as Record<string, string>,
+      );
+
+      if (!db) {
+        throw new Error(
+          "Database client (db) not found in Hono context and AppLayer not provided. " +
+            "Ensure either database middleware is registered or appLayer is provided.",
+        );
+      }
+
+      // Create AppLayer using Layer.mergeAll with Repository and Service layers
+      const config: AppLayerConfig = {
+        supabase,
+        db,
+      };
+      appLayer = makeAppLayer(config);
+    }
+
+    // Create all 17 controllers using the factory
+    const supabase = createSupabaseClientFromEnv(
+      honoContext.env as Record<string, string>,
+    );
+
+    const controllers = createControllers({
+      appLayer,
+      supabase,
+      onChallengeCompleted: handleChallengeCompleted,
+    });
+
     // Create Effect runtime for this request
     const runtime = createGraphQLRuntime();
 
     return {
+      controllers,
       appLayer,
       request: honoContext.req.raw,
       runtime,
-      ...(container ? { container } : {}),
       ...(authContext ? { authContext } : {}),
     };
   };

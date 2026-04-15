@@ -8,10 +8,10 @@
  */
 
 import { builder } from "../builder";
-import { LocationController } from "@mirai-app/adapters";
-import type { PubSubService } from "@mirai-app/use-cases";
+import { PubSubServiceTag } from "@mirai-app/use-cases";
 import { requireAuth } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
+import { Effect } from "effect";
 
 // =============================================================================
 // Import Types (for side effects - registers types with builder)
@@ -52,9 +52,8 @@ builder.queryField("myLocation", (t) =>
       // Get authenticated user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<LocationController>("locationController");
+      // Get controller from context
+      const controller = context.controllers.locationController;
 
       // Fetch location
       const result = await controller.getByUserId({
@@ -90,9 +89,8 @@ builder.queryField("friendsLocations", (t) =>
       // Get authenticated user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<LocationController>("locationController");
+      // Get controller from context
+      const controller = context.controllers.locationController;
 
       // Fetch friends' locations
       const result = await controller.list({
@@ -127,9 +125,8 @@ builder.queryField("mySharingSettings", (t) =>
       // Get authenticated user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<LocationController>("locationController");
+      // Get controller from context
+      const controller = context.controllers.locationController;
 
       // Fetch sharing settings
       const result = await controller.getSharingSettings({
@@ -172,9 +169,8 @@ builder.mutationField("updateLocation", (t) =>
       // Get authenticated user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<LocationController>("locationController");
+      // Get controller from context
+      const controller = context.controllers.locationController;
 
       // Update location
       const result = await controller.update({
@@ -193,20 +189,23 @@ builder.mutationField("updateLocation", (t) =>
       }
 
       // Publish location update to subscribers
-      const pubSubService =
-        context.container.resolve<PubSubService>("pubSubService");
-      pubSubService.publish(`location:${authContext.userId}`, {
-        id: result.data.id,
-        userId: authContext.userId as string,
-        latitude: args.input.latitude ?? null,
-        longitude: args.input.longitude ?? null,
-        accuracy: args.input.accuracy ?? null,
-        altitude: args.input.altitude ?? null,
-        heading: args.input.heading ?? null,
-        speed: args.input.speed ?? null,
-        isSharingLocation: result.data.isSharingLocation,
-        timestamp: new Date(),
-      });
+      const publishEffect = Effect.gen(function* () {
+        const pubSubService = yield* PubSubServiceTag;
+        pubSubService.publish(`location:${authContext.userId}`, {
+          id: result.data.id,
+          userId: authContext.userId as string,
+          latitude: args.input.latitude ?? null,
+          longitude: args.input.longitude ?? null,
+          accuracy: args.input.accuracy ?? null,
+          altitude: args.input.altitude ?? null,
+          heading: args.input.heading ?? null,
+          speed: args.input.speed ?? null,
+          isSharingLocation: result.data.isSharingLocation,
+          timestamp: new Date(),
+        });
+      }).pipe(Effect.provide(context.appLayer));
+
+      await Effect.runPromise(publishEffect);
 
       return { location: result.data };
     },
@@ -236,9 +235,8 @@ builder.mutationField("updateSharingSettings", (t) =>
       // Get authenticated user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<LocationController>("locationController");
+      // Get controller from context
+      const controller = context.controllers.locationController;
 
       // Build sharing user list from IDs
       const usersToShareWith = args.input.userIdsToShareWith?.map((id) => ({
@@ -286,9 +284,8 @@ builder.mutationField("addUserToSharing", (t) =>
       // Get authenticated user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<LocationController>("locationController");
+      // Get controller from context
+      const controller = context.controllers.locationController;
 
       // Add user to sharing
       const result = await controller.addSharingUser({
@@ -330,9 +327,8 @@ builder.mutationField("removeUserFromSharing", (t) =>
       // Get authenticated user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<LocationController>("locationController");
+      // Get controller from context
+      const controller = context.controllers.locationController;
 
       // Remove user from sharing
       const result = await controller.removeSharingUser({

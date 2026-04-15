@@ -8,7 +8,6 @@
  */
 
 import { builder } from "../builder";
-import { GroupController } from "@mirai-app/adapters";
 import {
   requireAuth,
   requireAdmin,
@@ -50,9 +49,8 @@ builder.queryField("groups", (t) =>
       // Require admin
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Fetch groups
       const result = await controller.list({
@@ -109,9 +107,8 @@ builder.queryField("groupsByTrip", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Fetch groups by trip
       const result = await controller.getByTripId({
@@ -143,49 +140,6 @@ builder.queryField("groupsByTrip", (t) =>
 );
 
 /**
- * Query: group - Get a single group by ID
- *
- * Requires authentication. Returns a single group or null if not found.
- */
-builder.queryField("group", (t) =>
-  t.field({
-    description: "Get a group by its ID",
-    type: "Group",
-    nullable: true,
-    args: {
-      id: t.arg.id({
-        description: "Group ID",
-        required: true,
-      }),
-    },
-    authScopes: {
-      authenticated: true,
-    },
-    resolve: async (_root, args, context) => {
-      // Require authentication
-      await requireAuth(context);
-
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
-
-      // Fetch group
-      const result = await controller.getById({ id: args.id });
-
-      if (!result.success) {
-        // Return null for not found
-        if (result.error.toLowerCase().includes("not found")) {
-          return null;
-        }
-        throw mapErrorToGraphQL(new Error(result.error));
-      }
-
-      return result.data;
-    },
-  }),
-);
-
-/**
  * Query: groupByCode - Get a group by its unique code
  *
  * Requires authentication. Returns a single group or null if not found.
@@ -208,9 +162,8 @@ builder.queryField("groupByCode", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Fetch group by code
       const result = await controller.getByCode({ code: args.code });
@@ -251,9 +204,8 @@ builder.queryField("groupsByOrganizer", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Fetch groups by organizer
       const result = await controller.getByOrganizer({
@@ -292,9 +244,8 @@ builder.queryField("groupNamesByTrip", (t) =>
       // Require moderator
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Fetch groups by trip and map to summary
       const result = await controller.getByTripId({
@@ -336,9 +287,8 @@ builder.queryField("groupRanking", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Fetch groups by trip
       const result = await controller.getByTripId({
@@ -388,9 +338,8 @@ builder.mutationField("createGroup", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Generate a unique code
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -439,9 +388,8 @@ builder.mutationField("updateGroup", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Update group
       const result = await controller.update({
@@ -483,9 +431,8 @@ builder.mutationField("deleteGroup", (t) =>
       // Require admin
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
+      // Get controller from context
+      const controller = context.controllers.groupController;
 
       // Delete group
       const result = await controller.delete({ id: args.id });
@@ -501,6 +448,118 @@ builder.mutationField("deleteGroup", (t) =>
       }
 
       return { success: true };
+    },
+  }),
+);
+
+/**
+ * Mutation: assignUserToGroup - Assign a user to a group
+ *
+ * Requires authentication. Adds a user as a member of the specified group.
+ * Idempotent - calling again for an existing member returns success without change.
+ */
+builder.mutationField("assignUserToGroup", (t) =>
+  t.field({
+    description: "Assign a user to a group (idempotent)",
+    type: "AssignUserToGroupPayload",
+    nullable: false,
+    args: {
+      input: t.arg({
+        type: "AssignUserToGroupInput",
+        description: "Group and user assignment data",
+        required: true,
+      }),
+    },
+    authScopes: {
+      authenticated: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require authentication
+      await requireAuth(context);
+
+      // Get controller from context
+      const controller = context.controllers.groupController;
+
+      // Validate and assign user to group
+      const result = await controller.assignUser({
+        groupId: args.input.groupId,
+        userId: args.input.userId,
+      });
+
+      if (!result.success) {
+        // Map specific errors to appropriate GraphQL errors
+        if (result.error.toLowerCase().includes("not found")) {
+          throw mapErrorToGraphQL(
+            Object.assign(new Error(result.error), { name: "NotFoundError" }),
+          );
+        }
+        if (result.error.toLowerCase().includes("not a member")) {
+          throw mapErrorToGraphQL(
+            Object.assign(new Error(result.error), {
+              name: "ForbiddenError",
+            }),
+          );
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return { group: result.data };
+    },
+  }),
+);
+
+/**
+ * Mutation: removeUserFromGroup - Remove a user from a group
+ *
+ * Requires authentication. Removes a user from the specified group's membership.
+ * Returns error if user is not a member of the group.
+ */
+builder.mutationField("removeUserFromGroup", (t) =>
+  t.field({
+    description: "Remove a user from a group",
+    type: "RemoveUserFromGroupPayload",
+    nullable: false,
+    args: {
+      input: t.arg({
+        type: "RemoveUserFromGroupInput",
+        description: "Group and user removal data",
+        required: true,
+      }),
+    },
+    authScopes: {
+      authenticated: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require authentication
+      await requireAuth(context);
+
+      // Get controller from context
+      const controller = context.controllers.groupController;
+
+      // Validate and remove user from group
+      const result = await controller.removeUser({
+        groupId: args.input.groupId,
+        userId: args.input.userId,
+      });
+
+      if (!result.success) {
+        // Map specific errors to appropriate GraphQL errors
+        if (result.error.toLowerCase().includes("not found")) {
+          throw mapErrorToGraphQL(
+            Object.assign(new Error(result.error), { name: "NotFoundError" }),
+          );
+        }
+        if (result.error.toLowerCase().includes("not a member")) {
+          throw mapErrorToGraphQL(
+            Object.assign(new Error(result.error), {
+              name: "ForbiddenError",
+            }),
+          );
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return { group: result.data };
     },
   }),
 );

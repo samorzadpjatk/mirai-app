@@ -12,7 +12,6 @@ import type {
   GetRewardOutput,
   RewardWithCalculations,
 } from "@mirai-app/use-cases";
-import type { RewardController } from "@mirai-app/adapters";
 import { requireAuth, requireModerator } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 
@@ -47,9 +46,8 @@ builder.queryField("rewardsByTrip", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Fetch rewards by trip
       const result = await controller.getByTrip({
@@ -105,9 +103,8 @@ builder.queryField("rewardsByTripAdmin", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Fetch all rewards (including hidden)
       const result = await controller.getByTripAdmin({
@@ -156,9 +153,8 @@ builder.queryField("reward", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Fetch reward
       const result = await controller.getById({ id: args.id });
@@ -203,9 +199,8 @@ builder.queryField("purchaseHistory", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Fetch purchase history
       const result = await controller.getPurchaseHistory({
@@ -256,9 +251,8 @@ builder.queryField("totalAvailablePoints", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Fetch total available points
       const result = await controller.getTotalAvailablePoints({
@@ -301,9 +295,8 @@ builder.mutationField("createReward", (t) =>
       // Require moderator authentication
       const authContext = await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Create reward
       const result = await controller.create({
@@ -348,9 +341,8 @@ builder.mutationField("updateReward", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Update reward
       const result = await controller.update({
@@ -392,9 +384,8 @@ builder.mutationField("setRewardHidden", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Get current reward to capture previous hidden status
       const currentReward = await controller.getById({ id: args.input.id });
@@ -440,9 +431,8 @@ builder.mutationField("deleteReward", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Delete reward
       const result = await controller.delete({
@@ -482,9 +472,8 @@ builder.mutationField("purchaseReward", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Purchase reward
       const result = await controller.purchase({
@@ -527,9 +516,8 @@ builder.mutationField("updatePurchaseStatus", (t) =>
       // Require moderator authentication
       const authContext = await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Update purchase status
       const result = await controller.updatePurchaseStatus({
@@ -575,9 +563,8 @@ builder.mutationField("updateMyPurchaseStatus", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<RewardController>("rewardController");
+      // Get controller from context
+      const controller = context.controllers.rewardController;
 
       // Update my purchase status
       const result = await controller.updateMyPurchaseStatus({

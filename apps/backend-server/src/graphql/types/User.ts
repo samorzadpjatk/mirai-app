@@ -108,6 +108,45 @@ export const UserType = builder.objectType("User", {
       resolve: (user) => user.lastSeenOn,
     }),
 
+    emailVerified: t.field({
+      type: "DateTime",
+      description: "When the user's email was verified (null if not verified)",
+      nullable: true,
+      resolve: async (user, _args, context): Promise<Date | null> => {
+        try {
+          // Access Supabase client from container
+          const container = context.container;
+          const supabase = container.resolve<{
+            auth: {
+              admin: {
+                getUserById: (id: string) => Promise<{
+                  data: { user: { email_confirmed_at?: string | null } | null };
+                  error: Error | null;
+                }>;
+              };
+            };
+          }>("supabase");
+
+          // Fetch user from Supabase Auth Admin API using authUserId
+          const { data, error } = await supabase.auth.admin.getUserById(
+            user.authUserId,
+          );
+
+          // Handle API errors gracefully - return null on failure
+          if (error || !data.user) {
+            return null;
+          }
+
+          // Return email_confirmed_at timestamp or null if not verified
+          const emailConfirmedAt = data.user.email_confirmed_at;
+          return emailConfirmedAt ? new Date(emailConfirmedAt) : null;
+        } catch {
+          // Handle any errors gracefully - return null on Auth API failure
+          return null;
+        }
+      },
+    }),
+
     // -------------------------------------------------------------------------
     // Computed Fields
     // -------------------------------------------------------------------------

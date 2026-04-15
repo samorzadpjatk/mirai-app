@@ -9,7 +9,6 @@
 
 import { builder } from "../builder";
 import type { NotificationScheduleOutput } from "@mirai-app/adapters";
-import { NotificationScheduleController } from "@mirai-app/adapters";
 import {
   requireAuth,
   requireAdmin,
@@ -49,11 +48,8 @@ builder.queryField("notificationSchedules", (t) =>
       // Require moderator or admin authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Fetch schedules
       const result = await controller.getAll({
@@ -111,11 +107,8 @@ builder.queryField("notificationSchedule", (t) =>
       // Require moderator or admin authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Fetch schedule
       const result = await controller.getById({ id: args.id });
@@ -160,11 +153,8 @@ builder.queryField("activeNotificationSchedules", (t) =>
       // Require moderator or admin authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Fetch active schedules
       const result = await controller.getActive();
@@ -222,11 +212,8 @@ builder.queryField("upcomingNotificationSchedules", (t) =>
       // Require moderator or admin authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Fetch upcoming schedules
       const result = await controller.getUpcoming({
@@ -271,11 +258,8 @@ builder.queryField("notificationScheduleExecutionHistory", (t) =>
       // Require moderator or admin authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Fetch execution history
       const result = await controller.getExecutionHistory({
@@ -319,11 +303,8 @@ builder.mutationField("createNotificationSchedule", (t) =>
       // Require admin authentication
       const authContext = await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Create schedule
       const result = await controller.create({
@@ -373,11 +354,8 @@ builder.mutationField("updateNotificationSchedule", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Update schedule
       const result = await controller.update({
@@ -425,11 +403,8 @@ builder.mutationField("toggleNotificationScheduleActive", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Toggle active status
       const result = await controller.toggleActive({ id: args.id });
@@ -471,11 +446,8 @@ builder.mutationField("duplicateNotificationSchedule", (t) =>
       // Require admin authentication
       const authContext = await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Duplicate schedule
       const result = await controller.duplicate({
@@ -520,11 +492,8 @@ builder.mutationField("deleteNotificationSchedule", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Delete schedule
       const result = await controller.delete({ id: args.id });
@@ -570,11 +539,8 @@ builder.mutationField("bulkDeleteNotificationSchedules", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Bulk delete schedules
       const result = await controller.bulkDelete({
@@ -622,11 +588,8 @@ builder.mutationField("bulkToggleNotificationScheduleActive", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Bulk toggle active status
       const result = await controller.bulkToggleActive({
@@ -669,11 +632,8 @@ builder.mutationField("updateNotificationScheduleLastRun", (t) =>
       // Require moderator or admin authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationScheduleController>(
-          "notificationScheduleController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
 
       // Update last run
       const result = await controller.updateLastRun({

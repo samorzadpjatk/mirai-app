@@ -16,7 +16,6 @@
  */
 
 import { builder } from "../builder";
-import { SubmissionReportController } from "@mirai-app/adapters";
 import type {
   CreateReportOutput,
   GetReportsOutput,
@@ -50,9 +49,7 @@ builder.queryField("submissionReports", (t) =>
       }),
     },
     resolve: async (_root, args, context): Promise<GetReportsOutput> => {
-      const controller = context.container.resolve<SubmissionReportController>(
-        "submissionReportController",
-      );
+      const controller = context.controllers.submissionReportController;
 
       const result = await controller.getBySubmission({
         submissionId: args.submissionId.toString(),
@@ -93,9 +90,7 @@ builder.mutationField("createSubmissionReport", (t) =>
       // Require authentication to get reporter ID
       const reporterId = await getCurrentUserId(context);
 
-      const controller = context.container.resolve<SubmissionReportController>(
-        "submissionReportController",
-      );
+      const controller = context.controllers.submissionReportController;
 
       const result = await controller.create(
         {

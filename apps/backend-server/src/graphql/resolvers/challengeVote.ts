@@ -21,7 +21,6 @@
  */
 
 import { builder } from "../builder";
-import { ChallengeVoteController } from "@mirai-app/adapters";
 import type {
   VoteDTO,
   ChallengeVoteDTO,
@@ -32,8 +31,9 @@ import type {
   SubmitVoteOutput,
   SubmitVotesOutput,
   ForceEndVotingOutput,
-  PubSubService,
 } from "@mirai-app/use-cases";
+import { PubSubServiceTag } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 import {
   requireAuth,
   requireModerator,
@@ -87,10 +87,8 @@ builder.queryField("myVotes", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeVoteController>(
-        "challengeVoteController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeVoteController;
 
       // Call controller - participant validation happens in use case layer
       const result = await controller.getMyVotes({
@@ -133,10 +131,8 @@ builder.queryField("votesByChallenge", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeVoteController>(
-        "challengeVoteController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeVoteController;
 
       const result = await controller.getByChallenge({
         challengeId: args.input.challengeId.toString(),
@@ -177,10 +173,8 @@ builder.queryField("votingProgress", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeVoteController>(
-        "challengeVoteController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeVoteController;
 
       const result = await controller.getVotingProgress({
         challengeId: args.input.challengeId.toString(),
@@ -221,10 +215,8 @@ builder.queryField("judgedStaffVotingProgress", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeVoteController>(
-        "challengeVoteController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeVoteController;
 
       const result = await controller.getJudgedStaffProgress({
         challengeId: args.input.challengeId.toString(),
@@ -271,10 +263,8 @@ builder.mutationField("submitVote", (t) =>
       // Require authentication and get user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeVoteController>(
-        "challengeVoteController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeVoteController;
 
       // Submit vote
       const result = await controller.submitVote({
@@ -303,12 +293,15 @@ builder.mutationField("submitVote", (t) =>
       });
 
       if (progressResult.success) {
-        const pubSubService =
-          context.container.resolve<PubSubService>("pubSubService");
-        pubSubService.publish(
-          `voting:${args.input.challengeId}`,
-          progressResult.data,
-        );
+        const publishEffect = Effect.gen(function* () {
+          const pubSubService = yield* PubSubServiceTag;
+          pubSubService.publish(
+            `voting:${args.input.challengeId}`,
+            progressResult.data,
+          );
+        }).pipe(Effect.provide(context.appLayer));
+
+        await Effect.runPromise(publishEffect);
       }
 
       return result.data;
@@ -338,10 +331,8 @@ builder.mutationField("submitVotes", (t) =>
       // Require authentication and get user context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeVoteController>(
-        "challengeVoteController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeVoteController;
 
       // Calculate required positions from vote count
       const voteCount = args.input.votes.length;
@@ -376,12 +367,15 @@ builder.mutationField("submitVotes", (t) =>
       });
 
       if (progressResult.success) {
-        const pubSubService =
-          context.container.resolve<PubSubService>("pubSubService");
-        pubSubService.publish(
-          `voting:${args.input.challengeId}`,
-          progressResult.data,
-        );
+        const publishEffect = Effect.gen(function* () {
+          const pubSubService = yield* PubSubServiceTag;
+          pubSubService.publish(
+            `voting:${args.input.challengeId}`,
+            progressResult.data,
+          );
+        }).pipe(Effect.provide(context.appLayer));
+
+        await Effect.runPromise(publishEffect);
       }
 
       return result.data;
@@ -412,10 +406,8 @@ builder.mutationField("forceEndVoting", (t) =>
       // Require admin authentication and get user context
       const authContext = await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeVoteController>(
-        "challengeVoteController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeVoteController;
 
       const result = await controller.forceEndVoting({
         challengeId: args.input.challengeId.toString(),

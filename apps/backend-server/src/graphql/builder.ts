@@ -73,7 +73,10 @@ import type {
 } from "@mirai-app/use-cases";
 import type { CoinTransaction } from "@mirai-app/use-cases";
 import type { UserRole, RewardPurchaseStatus } from "@mirai-app/domain";
-import type { NotificationScheduleOutput } from "@mirai-app/adapters";
+import type {
+  NotificationScheduleOutput,
+  Controllers,
+} from "@mirai-app/adapters";
 
 // =============================================================================
 // Type Definitions for Pothos
@@ -89,10 +92,15 @@ export interface PothosTypes {
   // Context type - available in all resolvers
   // Updated to include Effect runtime for GraphQL integration
   Context: {
-    container: import("@mirai-app/frameworks/di").AwilixContainer;
+    /** @deprecated Use controllers instead */
+    container?: unknown;
+    /** All 17 controllers via Effect-based DI */
+    controllers: Controllers;
     request: Request;
     authContext?: import("@mirai-app/domain").AuthContext;
-    runtime: import("effect").Runtime<never>;
+    runtime: import("effect/Runtime").Runtime<never>;
+    /** Effect Layer with all repositories and services */
+    appLayer: import("effect").Layer.Layer<unknown>;
   };
 
   // Auth scopes for @pothos/plugin-scope-auth
@@ -837,7 +845,6 @@ export interface PothosTypes {
  */
 export const builder = new SchemaBuilder<PothosTypes>({
   plugins: [ScopeAuthPlugin, DataLoaderPlugin, RelayPlugin],
-  notStrict: true,
 
   // Scope auth configuration
   scopeAuth: {

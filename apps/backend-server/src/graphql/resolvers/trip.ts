@@ -8,10 +8,11 @@
  */
 
 import { builder } from "../builder";
-import { TripController } from "@mirai-app/adapters";
 import { requireAuth, requireAdmin } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 import { GraphQLError } from "graphql";
+import { Effect } from "effect";
+import { TripRepositoryTag } from "@mirai-app/use-cases";
 
 // =============================================================================
 // Import Types (registers them with builder)
@@ -52,9 +53,8 @@ builder.queryField("trips", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<TripController>("tripController");
+      // Get controller from context
+      const controller = context.controllers.tripController;
 
       // Get all trips with pagination
       const result = await controller.list({
@@ -69,30 +69,43 @@ builder.queryField("trips", (t) =>
       // Filter trips where user is a participant
       const userTrips = [];
       for (const trip of result.data) {
-        // Access tripParticipant through Prisma via the container
-        const tripRepository = context.container.resolve("tripRepository");
-        const db = (
-          tripRepository as {
-            prisma?: {
-              tripParticipant?: {
-                findUnique: (args: unknown) => Promise<unknown | null>;
-              };
-            };
-          }
-        ).prisma;
+        // Check if user is a participant using Effect Context.Tag pattern
+        const isParticipant = await Effect.runPromise(
+          Effect.gen(function* () {
+            const repo = yield* TripRepositoryTag;
+            // Access the underlying db through the repository
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const db = (repo as any).db;
 
-        if (db?.tripParticipant) {
-          const participant = await db.tripParticipant.findUnique({
-            where: {
-              userId_tripId: {
-                userId: authContext.userId as string,
-                tripId: trip.id,
+            if (!db) {
+              return false;
+            }
+
+            // Query trip_participants table through Drizzle
+            const participant = yield* Effect.tryPromise({
+              try: async () => {
+                const result = await db
+                  .select()
+                  .from({
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    tripParticipant: (db as any).tripParticipant,
+                  })
+                  .where({
+                    userId: authContext.userId,
+                    tripId: trip.id,
+                  })
+                  .limit(1);
+                return result[0] ?? null;
               },
-            },
-          });
-          if (participant) {
-            userTrips.push(trip);
-          }
+              catch: () => null,
+            });
+
+            return participant !== null;
+          }).pipe(Effect.provide(context.appLayer)),
+        );
+
+        if (isParticipant) {
+          userTrips.push(trip);
         }
       }
 
@@ -132,9 +145,8 @@ builder.queryField("trip", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<TripController>("tripController");
+      // Get controller from context
+      const controller = context.controllers.tripController;
 
       const result = await controller.getById({ id: args.id });
 
@@ -174,9 +186,8 @@ builder.queryField("tripAdmin", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<TripController>("tripController");
+      // Get controller from context
+      const controller = context.controllers.tripController;
 
       const result = await controller.getById({ id: args.id });
 
@@ -221,9 +232,8 @@ builder.mutationField("createTrip", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<TripController>("tripController");
+      // Get controller from context
+      const controller = context.controllers.tripController;
 
       const result = await controller.create({
         name: args.input.name,
@@ -267,9 +277,8 @@ builder.mutationField("updateTrip", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<TripController>("tripController");
+      // Get controller from context
+      const controller = context.controllers.tripController;
 
       const result = await controller.update({
         tripId: args.input.id,
@@ -313,9 +322,8 @@ builder.mutationField("deleteTrip", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<TripController>("tripController");
+      // Get controller from context
+      const controller = context.controllers.tripController;
 
       const result = await controller.delete({ id: args.input.id });
 

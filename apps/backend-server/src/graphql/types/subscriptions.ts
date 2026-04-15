@@ -20,6 +20,8 @@
 
 import { builder } from "../builder";
 import type { GetChallengeVotingProgressOutput } from "@mirai-app/use-cases";
+import { PubSubServiceTag } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 
 // =============================================================================
 // Types
@@ -179,11 +181,12 @@ builder.subscriptionField("activityFeedUpdated", (t) =>
       authenticated: true,
     },
     subscribe: async function* (_root, args, context) {
-      // Get PubSub service from DI container
-      const pubSubService =
-        context.container.resolve<import("@mirai-app/use-cases").PubSubService>(
-          "pubSubService",
-        );
+      // Get PubSub service from Effect Layer
+      const pubSubService = await Effect.runPromise(
+        Effect.gen(function* () {
+          return yield* PubSubServiceTag;
+        }).pipe(Effect.provide(context.appLayer)),
+      );
 
       // Subscribe to the activity feed channel for this trip
       const channel = `activity:feed:${args.tripId}`;
@@ -236,11 +239,12 @@ builder.subscriptionField("locationUpdated", (t) =>
       authenticated: true,
     },
     subscribe: async function* (_root, args, context) {
-      // Get PubSub service from DI container
-      const pubSubService =
-        context.container.resolve<import("@mirai-app/use-cases").PubSubService>(
-          "pubSubService",
-        );
+      // Get PubSub service from Effect Layer
+      const pubSubService = await Effect.runPromise(
+        Effect.gen(function* () {
+          return yield* PubSubServiceTag;
+        }).pipe(Effect.provide(context.appLayer)),
+      );
 
       // Subscribe to location channels for all specified users
       const subscriptions = args.userIds.map((userId) => {
@@ -326,11 +330,12 @@ builder.subscriptionField("challengeVotingUpdated", (t) =>
       authenticated: true,
     },
     subscribe: async function* (_root, args, context) {
-      // Get PubSub service from DI container
-      const pubSubService =
-        context.container.resolve<import("@mirai-app/use-cases").PubSubService>(
-          "pubSubService",
-        );
+      // Get PubSub service from Effect Layer
+      const pubSubService = await Effect.runPromise(
+        Effect.gen(function* () {
+          return yield* PubSubServiceTag;
+        }).pipe(Effect.provide(context.appLayer)),
+      );
 
       // Subscribe to the voting channel for this challenge
       const channel = `voting:${args.challengeId}`;

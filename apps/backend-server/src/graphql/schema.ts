@@ -242,16 +242,16 @@ export function generateSDL(): string {
  * Get default SDL output path
  *
  * Returns the absolute path to the schema.graphql file
- * in the graphql-types package for GraphQL Code Generator.
+ * in the graphql-client package for GraphQL Code Generator.
  */
 function getDefaultOutputPath(): string {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
-  // Output to packages/graphql-types/src/graphql/schema.graphql
+  // Output to packages/graphql-client/src/graphql/schema.graphql
   // for use by GraphQL Code Generator
   return resolve(
     __dirname,
-    "../../../../packages/graphql-types/src/graphql/schema.graphql",
+    "../../../../packages/graphql-client/src/graphql/schema.graphql",
   );
 }
 

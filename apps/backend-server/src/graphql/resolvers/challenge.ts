@@ -9,7 +9,6 @@
 
 import { builder } from "../builder";
 import type { GetChallengeOutput } from "@mirai-app/use-cases";
-import type { ChallengeController } from "@mirai-app/adapters";
 import { requireAuth, requireAdmin } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 
@@ -33,10 +32,8 @@ builder.queryField("challenges", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeController>(
-        "challengeController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeController;
 
       // Fetch challenges and handle result
       const result = await controller.findActive();
@@ -101,10 +98,8 @@ builder.queryField("challengesByTrip", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeController>(
-        "challengeController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeController;
 
       // Fetch challenges by trip
       const result = await controller.getByTripId({
@@ -166,10 +161,8 @@ builder.queryField("challenge", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeController>(
-        "challengeController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeController;
 
       // Fetch challenge
       const result = await controller.getById({ id: args.id });
@@ -214,10 +207,8 @@ builder.mutationField("createChallenge", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeController>(
-        "challengeController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeController;
 
       // Create challenge
       const result = await controller.create({
@@ -275,10 +266,8 @@ builder.mutationField("updateChallenge", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeController>(
-        "challengeController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeController;
 
       // Update challenge
       const result = await controller.update({
@@ -330,10 +319,8 @@ builder.mutationField("updateChallengeStatus", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeController>(
-        "challengeController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeController;
 
       // Update status
       const result = await controller.updateStatus({
@@ -379,10 +366,8 @@ builder.mutationField("deleteChallenge", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ChallengeController>(
-        "challengeController",
-      );
+      // Get controller from context
+      const controller = context.controllers.challengeController;
 
       // Cancel (soft delete) the challenge
       const result = await controller.updateStatus({

@@ -17,7 +17,6 @@
  */
 
 import { builder } from "../builder";
-import { StorageController } from "@mirai-app/adapters";
 import { requireAuth } from "../utils/auth-helpers";
 import {
   UploadUrlResultType,
@@ -58,8 +57,7 @@ builder.queryField("createDownloadUrl", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      const controller =
-        context.container.resolve<StorageController>("storageController");
+      const controller = context.controllers.storageController;
 
       const result = await controller.createDownloadUrl({
         storagePath: args.input.storagePath,
@@ -102,8 +100,7 @@ builder.queryField("createPublicUrl", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      const controller =
-        context.container.resolve<StorageController>("storageController");
+      const controller = context.controllers.storageController;
 
       const result = await controller.createPublicUrl({
         storagePath: args.input.storagePath,
@@ -156,8 +153,7 @@ builder.mutationField("createUploadUrl", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      const controller =
-        context.container.resolve<StorageController>("storageController");
+      const controller = context.controllers.storageController;
 
       const result = await controller.createUploadUrl({
         storagePath: args.input.storagePath,

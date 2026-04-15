@@ -8,7 +8,6 @@
  */
 
 import { builder } from "../builder";
-import { ActivityFeedController } from "@mirai-app/adapters";
 import {
   requireAuth,
   requireAdmin,
@@ -17,7 +16,8 @@ import {
 import { handleResult, mapErrorToGraphQL } from "../utils/error-mapper";
 import { GraphQLError } from "graphql";
 import type { ReactionType } from "@mirai-app/domain";
-import type { PubSubService } from "@mirai-app/use-cases";
+import { PubSubServiceTag } from "@mirai-app/use-cases";
+import { Effect } from "effect";
 
 // =============================================================================
 // Import Types (registers them with builder)
@@ -54,10 +54,8 @@ builder.queryField("activitiesByTrip", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       // Call controller method
       const result = await controller.getByTrip({
@@ -106,10 +104,8 @@ builder.queryField("activitiesByTripModeration", (t) =>
       // Require moderator
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       // This query is handled differently in the tRPC controller
       // It uses the repository directly, so we need to replicate that behavior
@@ -163,10 +159,8 @@ builder.queryField("activity", (t) =>
       // Require moderator
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.getById({ id: args.id });
 
@@ -211,10 +205,8 @@ builder.mutationField("createCustomActivity", (t) =>
       // Require moderator
       const authContext = await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.createCustom({
         tripId: args.input.tripId,
@@ -230,9 +222,15 @@ builder.mutationField("createCustomActivity", (t) =>
       }
 
       // Publish to activity feed subscription
-      const pubSubService =
-        context.container.resolve<PubSubService>("pubSubService");
-      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
+      const publishEffect = Effect.gen(function* () {
+        const pubSubService = yield* PubSubServiceTag;
+        pubSubService.publish(
+          `activity:feed:${args.input.tripId}`,
+          result.data,
+        );
+      }).pipe(Effect.provide(context.appLayer));
+
+      await Effect.runPromise(publishEffect);
 
       return result.data;
     },
@@ -263,10 +261,8 @@ builder.mutationField("createUserPost", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       // The controller handles participant verification internally
       const result = await controller.createUserPost({
@@ -282,9 +278,15 @@ builder.mutationField("createUserPost", (t) =>
       }
 
       // Publish to activity feed subscription
-      const pubSubService =
-        context.container.resolve<PubSubService>("pubSubService");
-      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
+      const publishEffect = Effect.gen(function* () {
+        const pubSubService = yield* PubSubServiceTag;
+        pubSubService.publish(
+          `activity:feed:${args.input.tripId}`,
+          result.data,
+        );
+      }).pipe(Effect.provide(context.appLayer));
+
+      await Effect.runPromise(publishEffect);
 
       return result.data;
     },
@@ -315,10 +317,8 @@ builder.mutationField("createSubmissionActivity", (t) =>
       // Require moderator
       const authContext = await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.createSubmission({
         tripId: args.input.tripId,
@@ -341,9 +341,15 @@ builder.mutationField("createSubmissionActivity", (t) =>
       }
 
       // Publish to activity feed subscription
-      const pubSubService =
-        context.container.resolve<PubSubService>("pubSubService");
-      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
+      const publishEffect = Effect.gen(function* () {
+        const pubSubService = yield* PubSubServiceTag;
+        pubSubService.publish(
+          `activity:feed:${args.input.tripId}`,
+          result.data,
+        );
+      }).pipe(Effect.provide(context.appLayer));
+
+      await Effect.runPromise(publishEffect);
 
       return result.data;
     },
@@ -374,10 +380,8 @@ builder.mutationField("createChallengeActivity", (t) =>
       // Require moderator
       const authContext = await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.createChallengeEvent({
         tripId: args.input.tripId,
@@ -398,9 +402,15 @@ builder.mutationField("createChallengeActivity", (t) =>
       }
 
       // Publish to activity feed subscription
-      const pubSubService =
-        context.container.resolve<PubSubService>("pubSubService");
-      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
+      const publishEffect = Effect.gen(function* () {
+        const pubSubService = yield* PubSubServiceTag;
+        pubSubService.publish(
+          `activity:feed:${args.input.tripId}`,
+          result.data,
+        );
+      }).pipe(Effect.provide(context.appLayer));
+
+      await Effect.runPromise(publishEffect);
 
       return result.data;
     },
@@ -431,10 +441,8 @@ builder.mutationField("createRankChangeActivity", (t) =>
       // Require moderator
       const authContext = await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.createRankChange({
         tripId: args.input.tripId,
@@ -453,9 +461,15 @@ builder.mutationField("createRankChangeActivity", (t) =>
       }
 
       // Publish to activity feed subscription
-      const pubSubService =
-        context.container.resolve<PubSubService>("pubSubService");
-      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
+      const publishEffect = Effect.gen(function* () {
+        const pubSubService = yield* PubSubServiceTag;
+        pubSubService.publish(
+          `activity:feed:${args.input.tripId}`,
+          result.data,
+        );
+      }).pipe(Effect.provide(context.appLayer));
+
+      await Effect.runPromise(publishEffect);
 
       return result.data;
     },
@@ -486,10 +500,8 @@ builder.mutationField("updateActivity", (t) =>
       // Require moderator
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.update({
         activityId: args.input.activityId,
@@ -534,10 +546,8 @@ builder.mutationField("setActivityPinned", (t) =>
       // Require moderator
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.setPinned({
         activityId: args.input.activityId,
@@ -577,10 +587,8 @@ builder.mutationField("hideActivity", (t) =>
       // Require moderator
       const authContext = await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.hide({
         activityId: args.input.activityId,
@@ -621,10 +629,8 @@ builder.mutationField("unhideActivity", (t) =>
       // Require moderator
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.unhide({
         activityId: args.input.activityId,
@@ -663,10 +669,8 @@ builder.mutationField("toggleActivityReaction", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.toggleReaction({
         activityId: args.input.activityId,
@@ -719,10 +723,8 @@ builder.mutationField("deleteActivity", (t) =>
       // Require admin
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<ActivityFeedController>(
-        "activityFeedController",
-      );
+      // Get controller from context
+      const controller = context.controllers.activityFeedController;
 
       const result = await controller.delete({
         activityId: args.input.activityId,

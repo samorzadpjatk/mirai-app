@@ -25,7 +25,6 @@ import type {
   CreateUserOutput,
   UpdateUserOutput,
 } from "@mirai-app/use-cases";
-import { UserController } from "@mirai-app/adapters";
 import { requireAuth, requireAdmin } from "../utils/auth-helpers";
 import {
   handleControllerResult,
@@ -91,9 +90,8 @@ builder.queryField("user", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<UserController>("userController");
+      // Get controller from context controllers (Effect DI pattern)
+      const controller = context.controllers.userController;
 
       // Fetch user and handle result
       const result = await controller.getById({ id: args.id });
@@ -150,9 +148,8 @@ builder.queryField("users", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<UserController>("userController");
+      // Get controller from context controllers (Effect DI pattern)
+      const controller = context.controllers.userController;
 
       // Fetch users using controller result handler
       return handleControllerResult(
@@ -184,9 +181,8 @@ builder.queryField("me", (t) =>
       // Get current user's auth context
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<UserController>("userController");
+      // Get controller from context controllers (Effect DI pattern)
+      const controller = context.controllers.userController;
 
       // Fetch user by their own ID
       const result = await controller.getById({
@@ -234,9 +230,8 @@ builder.mutationField("createUser", (t) =>
       // Require admin authentication
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<UserController>("userController");
+      // Get controller from context controllers (Effect DI pattern)
+      const controller = context.controllers.userController;
 
       // Create user
       const result = await controller.create({
@@ -278,9 +273,8 @@ builder.mutationField("updateUser", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<UserController>("userController");
+      // Get controller from context controllers (Effect DI pattern)
+      const controller = context.controllers.userController;
 
       // Check authorization - users can update themselves, admins can update anyone
       const targetUserId = args.input.userId.toString();

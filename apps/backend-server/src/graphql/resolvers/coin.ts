@@ -15,7 +15,6 @@
  */
 
 import { builder } from "../builder";
-import { CoinController } from "@mirai-app/adapters";
 import { requireModerator } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 import {
@@ -67,9 +66,8 @@ builder.mutationField("addCoins", (t) =>
       // Require moderator authentication
       const authContext = await requireModerator(context);
 
-      // Get coin controller from DI container
-      const controller =
-        context.container.resolve<CoinController>("coinController");
+      // Get coin controller from context
+      const controller = context.controllers.coinController;
 
       // Execute coin operation
       const result = await controller.addCoins({
@@ -113,9 +111,8 @@ builder.mutationField("removeCoins", (t) =>
       // Require moderator authentication
       const authContext = await requireModerator(context);
 
-      // Get coin controller from DI container
-      const controller =
-        context.container.resolve<CoinController>("coinController");
+      // Get coin controller from context
+      const controller = context.controllers.coinController;
 
       // Execute coin operation
       const result = await controller.removeCoins({

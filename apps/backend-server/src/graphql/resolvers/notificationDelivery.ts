@@ -8,7 +8,6 @@
  */
 
 import { builder } from "../builder";
-import { NotificationDeliveryController } from "@mirai-app/adapters";
 import { requireAdmin } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 import { GraphQLError } from "graphql";
@@ -48,11 +47,8 @@ builder.queryField("notificationDeliveries", (t) =>
       // Require admin role
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationDeliveryController>(
-          "notificationDeliveryController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationDeliveryController;
 
       // Call controller method
       const result = await controller.getDeliveries({
@@ -99,11 +95,8 @@ builder.queryField("notificationDeliveryByNotificationId", (t) =>
       // Require admin role
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationDeliveryController>(
-          "notificationDeliveryController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationDeliveryController;
 
       // Call controller method
       const result = await controller.getDeliveryByNotificationId({
@@ -149,11 +142,8 @@ builder.queryField("deliveryStats", (t) =>
       // Require admin role
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationDeliveryController>(
-          "notificationDeliveryController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationDeliveryController;
 
       // Call controller method
       const result = await controller.getDeliveryStats({
@@ -197,11 +187,8 @@ builder.queryField("failedDeliveries", (t) =>
       // Require admin role
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<NotificationDeliveryController>(
-          "notificationDeliveryController",
-        );
+      // Get controller from context
+      const controller = context.controllers.notificationDeliveryController;
 
       // Call controller method
       const result = await controller.getFailedDeliveries({

@@ -8,7 +8,6 @@
  */
 
 import { builder } from "../builder";
-import { NotificationController } from "@mirai-app/adapters";
 import {
   requireAuth,
   requireAdmin,
@@ -52,10 +51,8 @@ builder.queryField("myNotifications", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<NotificationController>(
-        "notificationController",
-      );
+      // Get controller from context
+      const controller = context.controllers.notificationController;
 
       const page = args.input?.page ?? 1;
       const pageSize = args.input?.pageSize ?? 20;
@@ -108,10 +105,8 @@ builder.queryField("allNotifications", (t) =>
       // Require admin
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<NotificationController>(
-        "notificationController",
-      );
+      // Get controller from context
+      const controller = context.controllers.notificationController;
 
       const tripId = args.input?.tripId;
       const limit = args.input?.pagination?.limit ?? 50;
@@ -179,10 +174,8 @@ builder.queryField("notification", (t) =>
       // Require admin
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<NotificationController>(
-        "notificationController",
-      );
+      // Get controller from context
+      const controller = context.controllers.notificationController;
 
       const result = await controller.getById({ id: args.id });
 
@@ -227,10 +220,8 @@ builder.mutationField("createNotification", (t) =>
       // Require moderator
       const authContext = await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<NotificationController>(
-        "notificationController",
-      );
+      // Get controller from context
+      const controller = context.controllers.notificationController;
 
       const result = await controller.create({
         title: args.input.title,
@@ -275,10 +266,8 @@ builder.mutationField("updateNotification", (t) =>
       // Require admin
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<NotificationController>(
-        "notificationController",
-      );
+      // Get controller from context
+      const controller = context.controllers.notificationController;
 
       const result = await controller.update({
         notificationId: args.input.notificationId,
@@ -321,10 +310,8 @@ builder.mutationField("updateNotificationStatus", (t) =>
       // Require admin
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<NotificationController>(
-        "notificationController",
-      );
+      // Get controller from context
+      const controller = context.controllers.notificationController;
 
       const result = await controller.updateStatus({
         notificationId: args.input.notificationId,
@@ -364,10 +351,8 @@ builder.mutationField("deleteNotification", (t) =>
       // Require admin
       await requireAdmin(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<NotificationController>(
-        "notificationController",
-      );
+      // Get controller from context
+      const controller = context.controllers.notificationController;
 
       const result = await controller.delete({ id: args.input.notificationId });
 

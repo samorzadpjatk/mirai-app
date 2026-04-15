@@ -8,7 +8,6 @@
  */
 
 import { builder } from "../builder";
-import { CoinTransactionController } from "@mirai-app/adapters";
 import { requireAuth, requireModerator } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 import type {
@@ -74,10 +73,8 @@ builder.queryField("coinStatistics", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<CoinTransactionController>(
-        "coinTransactionController",
-      );
+      // Get controller from context
+      const controller = context.controllers.coinTransactionController;
 
       // Fetch statistics
       const result = await controller.getStatistics({
@@ -122,10 +119,8 @@ builder.queryField("mostActiveAdminStats", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<CoinTransactionController>(
-        "coinTransactionController",
-      );
+      // Get controller from context
+      const controller = context.controllers.coinTransactionController;
 
       // Fetch most active admin stats
       const result = await controller.getMostActiveAdminStats({
@@ -166,10 +161,8 @@ builder.queryField("coinTransactions", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<CoinTransactionController>(
-        "coinTransactionController",
-      );
+      // Get controller from context
+      const controller = context.controllers.coinTransactionController;
 
       // Fetch transactions
       const result = await controller.getAll({
@@ -196,7 +189,7 @@ builder.queryField("coinTransactions", (t) =>
  * Query: coinQuickStats - Get quick coin statistics for a trip
  *
  * Requires moderator or admin role. Returns total coins, group count,
- * average coins per group, and richest group info.
+ * average coins per group, and richest group info (with resolved name).
  */
 builder.queryField("coinQuickStats", (t) =>
   t.field({
@@ -217,18 +210,14 @@ builder.queryField("coinQuickStats", (t) =>
       _root,
       args,
       context,
-    ): Promise<
-      (GetCoinQuickStatsOutput & { richestGroupName?: string | null }) | null
-    > => {
+    ): Promise<GetCoinQuickStatsOutput | null> => {
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<CoinTransactionController>(
-        "coinTransactionController",
-      );
+      // Get controller from context
+      const controller = context.controllers.coinTransactionController;
 
-      // Fetch quick stats
+      // Fetch quick stats (with enriched group name from use case)
       const result = await controller.getQuickStats({
         tripId: args.input.tripId,
       });
@@ -237,38 +226,7 @@ builder.queryField("coinQuickStats", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      if (!result.data) {
-        return null;
-      }
-
-      const data = result.data;
-
-      // Resolve richest group name if group ID exists
-      if (data.richestGroupId) {
-        // Access database through container to get group name
-        const db = context.container.resolve("db") as {
-          group: {
-            findUnique: (args: {
-              where: { id: string };
-              select: { name: true };
-            }) => Promise<{ name: string } | null>;
-          };
-        };
-
-        const group = await db.group.findUnique({
-          where: { id: data.richestGroupId },
-          select: { name: true },
-        });
-
-        if (group) {
-          return {
-            ...data,
-            richestGroupName: group.name,
-          };
-        }
-      }
-
-      return data;
+      return result.data;
     },
   }),
 );
@@ -302,12 +260,10 @@ builder.queryField("coinAdditionalInsights", (t) =>
       // Require moderator authentication
       await requireModerator(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<CoinTransactionController>(
-        "coinTransactionController",
-      );
+      // Get controller from context
+      const controller = context.controllers.coinTransactionController;
 
-      // Fetch additional insights
+      // Fetch additional insights (with enriched admin name from use case)
       const result = await controller.getAdditionalInsights({
         tripId: args.input.tripId,
       });
@@ -316,47 +272,7 @@ builder.queryField("coinAdditionalInsights", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      if (!result.data) {
-        return null;
-      }
-
-      const data = result.data;
-
-      // Resolve most active admin name if present
-      if (data.mostActiveAdmin) {
-        // Access database through container to get admin name
-        const db = context.container.resolve("db") as {
-          user: {
-            findUnique: (args: {
-              where: { id: string };
-              select: { firstName: true; lastName: true };
-            }) => Promise<{
-              firstName: string | null;
-              lastName: string | null;
-            } | null>;
-          };
-        };
-
-        const admin = await db.user.findUnique({
-          where: { id: data.mostActiveAdmin.name },
-          select: { firstName: true, lastName: true },
-        });
-
-        if (admin) {
-          return {
-            mostActiveAdmin: {
-              name: formatUserFullName(admin.firstName, admin.lastName),
-              transactionCount: data.mostActiveAdmin.transactionCount,
-            },
-            recentTransactions: data.recentTransactions,
-          };
-        }
-      }
-
-      return {
-        mostActiveAdmin: null,
-        recentTransactions: data.recentTransactions,
-      };
+      return result.data;
     },
   }),
 );
@@ -386,10 +302,8 @@ builder.queryField("myCoinTransactions", (t) =>
       // Require authentication
       const authContext = await requireAuth(context);
 
-      // Get controller from DI container
-      const controller = context.container.resolve<CoinTransactionController>(
-        "coinTransactionController",
-      );
+      // Get controller from context
+      const controller = context.controllers.coinTransactionController;
 
       // Check if user is participant (this would ideally be in a use case,
       // but we need to check it here before calling the controller)

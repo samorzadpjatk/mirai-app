@@ -33,6 +33,7 @@ import {
   mapErrorToGraphQL,
   type GraphQLErrorCode,
 } from "./error-mapper";
+import { AuthPortTag } from "@mirai-app/use-cases";
 import { Effect, Data } from "effect";
 import { GraphQLError } from "graphql";
 
@@ -74,15 +75,12 @@ export async function requireAuth(
     );
   }
 
-  const authPort =
-    context.container.resolve<
-      import("@mirai-app/use-cases/ports/AuthPort").AuthPort
-    >("authPort");
-
-  // Use Effect to validate token
-  const effect = authPort.validateToken(token);
-  const result = await import("effect").then(({ Effect }) =>
-    Effect.runPromise(Effect.either(effect)),
+  // Use Effect Context.Tag pattern for auth service
+  const result = await Effect.runPromise(
+    Effect.gen(function* () {
+      const authPort = yield* AuthPortTag;
+      return yield* Effect.either(authPort.validateToken(token));
+    }).pipe(Effect.provide(context.appLayer)),
   );
 
   if (result._tag === "Left") {
@@ -138,20 +136,18 @@ export async function getOptionalAuth(
   }
 
   try {
-    const authPort =
-      context.container.resolve<
-        (
-          token: string,
-        ) => Promise<
-          | { kind: "ok"; value: DomainAuthContext }
-          | { kind: "err"; error: Error }
-        >
-      >("authPort");
-    const result = await authPort(token);
-    if (result.kind === "err") {
+    // Use Effect Context.Tag pattern for auth service
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const authPort = yield* AuthPortTag;
+        return yield* Effect.either(authPort.validateToken(token));
+      }).pipe(Effect.provide(context.appLayer)),
+    );
+
+    if (result._tag === "Left") {
       return null;
     }
-    return result.value;
+    return result.right;
   } catch {
     return null;
   }
@@ -193,7 +189,7 @@ export async function getCurrentUserId(context: Context): Promise<string> {
  */
 export function requireAuthEffect(
   context: GraphQLContext,
-): Effect.Effect<DomainAuthContext, AuthError, never> {
+): Effect.Effect<DomainAuthContext, AuthError, AuthPortTag> {
   return Effect.gen(function* () {
     const headers = context.request.headers;
     const authHeader =
@@ -210,28 +206,20 @@ export function requireAuthEffect(
       );
     }
 
-    const authPort =
-      context.container.resolve<
-        (
-          token: string,
-        ) => Promise<
-          | { kind: "ok"; value: DomainAuthContext }
-          | { kind: "err"; error: Error }
-        >
-      >("authPort");
+    // Use Effect Context.Tag pattern for auth service
+    const authPort = yield* AuthPortTag;
+    const result = yield* Effect.either(authPort.validateToken(token));
 
-    const result = yield* Effect.tryPromise(() => authPort(token));
-
-    if (result.kind === "err") {
+    if (result._tag === "Left") {
       return yield* Effect.fail(
         new AuthError({
-          message: result.error.message,
+          message: result.left.message,
           code: "UNAUTHENTICATED",
         }),
       );
     }
 
-    return result.value;
+    return result.right;
   });
 }
 
@@ -248,7 +236,7 @@ export function requireAuthEffect(
  */
 export function requireAdminEffect(
   context: GraphQLContext,
-): Effect.Effect<DomainAuthContext, AuthError | ForbiddenError, never> {
+): Effect.Effect<DomainAuthContext, AuthError | ForbiddenError, AuthPortTag> {
   return Effect.gen(function* () {
     const authContext = yield* requireAuthEffect(context);
 
@@ -278,7 +266,7 @@ export function requireAdminEffect(
  */
 export function requireModeratorEffect(
   context: GraphQLContext,
-): Effect.Effect<DomainAuthContext, AuthError | ForbiddenError, never> {
+): Effect.Effect<DomainAuthContext, AuthError | ForbiddenError, AuthPortTag> {
   return Effect.gen(function* () {
     const authContext = yield* requireAuthEffect(context);
 
@@ -317,7 +305,7 @@ export function requireModeratorEffect(
  */
 export function getOptionalAuthEffect(
   context: GraphQLContext,
-): Effect.Effect<DomainAuthContext | null, never, never> {
+): Effect.Effect<DomainAuthContext | null, never, AuthPortTag> {
   return Effect.gen(function* () {
     const headers = context.request.headers;
     const authHeader =
@@ -328,29 +316,15 @@ export function getOptionalAuthEffect(
       return null;
     }
 
-    const authPort =
-      context.container.resolve<
-        (
-          token: string,
-        ) => Promise<
-          | { kind: "ok"; value: DomainAuthContext }
-          | { kind: "err"; error: Error }
-        >
-      >("authPort");
-
-    const result = yield* Effect.tryPromise(() => authPort(token)).pipe(
-      Effect.either,
-    );
+    // Use Effect Context.Tag pattern for auth service
+    const authPort = yield* AuthPortTag;
+    const result = yield* Effect.either(authPort.validateToken(token));
 
     if (result._tag === "Left") {
       return null;
     }
 
-    if (result.right.kind === "err") {
-      return null;
-    }
-
-    return result.right.value;
+    return result.right;
   });
 }
 
@@ -367,7 +341,7 @@ export function getOptionalAuthEffect(
  */
 export function isAuthenticatedEffect(
   context: GraphQLContext,
-): Effect.Effect<boolean, never, never> {
+): Effect.Effect<boolean, never, AuthPortTag> {
   return Effect.gen(function* () {
     const authContext = yield* getOptionalAuthEffect(context);
     return authContext !== null;
@@ -387,7 +361,7 @@ export function isAuthenticatedEffect(
  */
 export function getCurrentUserIdEffect(
   context: GraphQLContext,
-): Effect.Effect<string, AuthError, never> {
+): Effect.Effect<string, AuthError, AuthPortTag> {
   return Effect.gen(function* () {
     const authContext = yield* requireAuthEffect(context);
     return authContext.userId as string;

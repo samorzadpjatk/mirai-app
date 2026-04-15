@@ -20,7 +20,6 @@
  */
 
 import { builder } from "../builder";
-import { ChallengeSubmissionController } from "@mirai-app/adapters";
 import type {
   GetSubmissionOutput,
   CreateSubmissionOutput,
@@ -65,10 +64,7 @@ builder.queryField("challengeSubmission", (t) =>
       args,
       context,
     ): Promise<GetSubmissionOutput | null> => {
-      const controller =
-        context.container.resolve<ChallengeSubmissionController>(
-          "challengeSubmissionController",
-        );
+      const controller = context.controllers.challengeSubmissionController;
 
       const result = await controller.getById({
         submissionId: args.id.toString(),
@@ -114,10 +110,7 @@ builder.queryField("challengeSubmissionByChallengeAndGroup", (t) =>
       args,
       context,
     ): Promise<GetSubmissionOutput | null> => {
-      const controller =
-        context.container.resolve<ChallengeSubmissionController>(
-          "challengeSubmissionController",
-        );
+      const controller = context.controllers.challengeSubmissionController;
 
       const result = await controller.getByChallengeAndGroup({
         challengeId: args.challengeId.toString(),
@@ -177,10 +170,7 @@ builder.queryField("challengeSubmissions", (t) =>
       args,
       context,
     ): Promise<ListSubmissionsByChallengeOutput> => {
-      const controller =
-        context.container.resolve<ChallengeSubmissionController>(
-          "challengeSubmissionController",
-        );
+      const controller = context.controllers.challengeSubmissionController;
 
       const result = await controller.listByChallenge({
         challengeId: args.challengeId.toString(),
@@ -224,10 +214,7 @@ builder.mutationField("createChallengeSubmission", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      const controller =
-        context.container.resolve<ChallengeSubmissionController>(
-          "challengeSubmissionController",
-        );
+      const controller = context.controllers.challengeSubmissionController;
 
       const result = await controller.create({
         challengeId: args.input.challengeId.toString(),
@@ -269,10 +256,7 @@ builder.mutationField("updateChallengeSubmission", (t) =>
       // Require at least authentication
       const authContext = await requireAuth(context);
 
-      const controller =
-        context.container.resolve<ChallengeSubmissionController>(
-          "challengeSubmissionController",
-        );
+      const controller = context.controllers.challengeSubmissionController;
 
       const result = await controller.update({
         submissionId: args.input.submissionId.toString(),
@@ -322,10 +306,7 @@ builder.mutationField("deleteChallengeSubmission", (t) =>
       // Require authentication
       await requireAuth(context);
 
-      const controller =
-        context.container.resolve<ChallengeSubmissionController>(
-          "challengeSubmissionController",
-        );
+      const controller = context.controllers.challengeSubmissionController;
 
       const result = await controller.delete({
         submissionId: args.submissionId.toString(),
