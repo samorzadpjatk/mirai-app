@@ -1,18 +1,5 @@
 import { builder } from "../builder";
-import {
-  UserType,
-  CreateUserInput,
-  UpdateUserInput,
-  ErrorType,
-} from "../types/User";
-import {
-  GetUserUseCase,
-  CreateUserUseCase,
-  UpdateUserUseCase,
-  type GetUserInput,
-  type CreateUserInput as CreateUserUseCaseInput,
-  type UpdateUserInput as UpdateUserUseCaseInput,
-} from "@mirai-app/use-cases";
+import { UserType, CreateUserInput, UpdateUserInput } from "../types/User";
 import { UserRole } from "@mirai-app/domain";
 
 /**
@@ -34,15 +21,14 @@ builder.queryFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<GetUserUseCase>("getUserUseCase");
-      const result = await useCase.execute({ userId: args.id });
+      const controller = context.controllers.userController;
+      const result = await controller.getById({ id: args.id });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -59,17 +45,16 @@ builder.queryFields((t) => ({
         return null;
       }
 
-      const useCase =
-        context.container.resolve<GetUserUseCase>("getUserUseCase");
-      const result = await useCase.execute({
-        userId: context.authContext.userId,
+      const controller = context.controllers.userController;
+      const result = await controller.getById({
+        id: context.authContext.userId,
       });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -85,14 +70,17 @@ builder.queryFields((t) => ({
     },
     authScopes: { admin: true },
     resolve: async (_, args, context) => {
-      // Note: This would need a ListUsersUseCase
-      // For now, we return an empty array
-      // In production, implement the use case in use-cases layer
-      const userRepository = context.container.resolve("userRepository");
-      return userRepository.findAll({
+      const controller = context.controllers.userController;
+      const result = await controller.list({
         limit: args.limit ?? 20,
         offset: args.offset ?? 0,
       });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
     },
   }),
 }));
@@ -114,8 +102,7 @@ builder.mutationFields((t) => ({
     },
     authScopes: { public: true }, // Allow public registration
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<CreateUserUseCase>("createUserUseCase");
+      const controller = context.controllers.userController;
 
       const roleMap: Record<string, UserRole> = {
         USER: UserRole.USER,
@@ -124,18 +111,18 @@ builder.mutationFields((t) => ({
         SERVICE: UserRole.SERVICE,
       };
 
-      const result = await useCase.execute({
+      const result = await controller.create({
         authUserId: args.input.authUserId,
         firstName: args.input.firstName,
         lastName: args.input.lastName,
         role: roleMap[args.input.role ?? "USER"] ?? UserRole.USER,
       });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -154,21 +141,20 @@ builder.mutationFields((t) => ({
         throw new Error("Not authenticated");
       }
 
-      const useCase =
-        context.container.resolve<UpdateUserUseCase>("updateUserUseCase");
+      const controller = context.controllers.userController;
 
-      const result = await useCase.execute({
+      const result = await controller.update({
         userId: context.authContext.userId,
         firstName: args.input.firstName ?? undefined,
         lastName: args.input.lastName ?? undefined,
         hasAvatar: args.input.hasAvatar ?? undefined,
       });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -184,21 +170,20 @@ builder.mutationFields((t) => ({
     },
     authScopes: { admin: true },
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<UpdateUserUseCase>("updateUserUseCase");
+      const controller = context.controllers.userController;
 
-      const result = await useCase.execute({
+      const result = await controller.update({
         userId: args.id,
         firstName: args.input.firstName ?? undefined,
         lastName: args.input.lastName ?? undefined,
         hasAvatar: args.input.hasAvatar ?? undefined,
       });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 }));
