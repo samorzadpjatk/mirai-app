@@ -138,10 +138,6 @@ export default function GroupDetailsScreen() {
       g.participants?.some((p) => p.user?.id === currentUser?.currentUser?.id),
     ),
   );
-  const currentUserGroupId =
-    rankingData?.groupRanking?.groups?.find((g) =>
-      g.participants?.some((p) => p.user?.id === currentUser?.currentUser?.id),
-    )?.id ?? null;
 
   const canRequestToJoin = !isGroupMember && !hasGroupInCurrentTrip;
   const hasPendingRequestToThisGroup = Boolean(myJoinRequest?.groupJoinRequest);

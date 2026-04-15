@@ -5,7 +5,6 @@ import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useClient } from "urql";
 import {
-  GetChallengeDocument,
   GetChallengeSubmissionsDocument,
   GetChallengeSubmissionByChallengeAndGroupDocument,
   CreateChallengeSubmissionDocument,

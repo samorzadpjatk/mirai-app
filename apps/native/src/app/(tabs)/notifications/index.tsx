@@ -27,14 +27,8 @@ export default function NotificationsScreen() {
   const currentUser = currentUserData?.me;
 
   // GraphQL query for notifications
-  const {
-    data: notificationsData,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useGetMyNotificationsQuery();
+  const { isLoading, isError, error, refetch, isFetching } =
+    useGetMyNotificationsQuery();
 
   // Redirect if user doesn't have access
   useEffect(() => {

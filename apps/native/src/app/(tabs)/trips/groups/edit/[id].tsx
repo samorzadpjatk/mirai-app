@@ -70,7 +70,6 @@ export default function EditGroupScreen() {
   }, [isTripPast, group?.trip?.id, groupId, router]);
 
   const [groupName, setGroupName] = useState("");
-  const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
   const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<
     string | null
   >(null);
@@ -95,7 +94,7 @@ export default function EditGroupScreen() {
     return () => clearTimeout(id);
   }, [group]);
 
-  const { updateGroup, removeUser, isUpdating } = useGroupEditor(groupId);
+  const { isUpdating } = useGroupEditor(groupId);
 
   // GraphQL mutation
   const [, deleteGroup] = useMutation(DeleteGroupDocument);
@@ -186,35 +185,6 @@ export default function EditGroupScreen() {
       next.delete(userId);
       return next;
     });
-  };
-
-  const handleDeleteGroup = () => {
-    if (!group) return;
-    Alert.alert(
-      "Delete Group",
-      "This will archive the group and remove all members. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                await deleteGroupMutation.mutateAsync({ groupId: group.id });
-                router.replace(`/trips/groups?tripId=${group.trip?.id}`);
-              } catch (error: unknown) {
-                const message =
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to delete group";
-                Alert.alert("Error", message);
-              }
-            })();
-          },
-        },
-      ],
-    );
   };
 
   const visibleMembers = useMemo(() => {

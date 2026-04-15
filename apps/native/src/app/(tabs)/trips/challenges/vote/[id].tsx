@@ -205,8 +205,6 @@ export default function ChallengePeerVotingScreen() {
     pause: !tripId,
   });
 
-  const submissionsData =
-    challengeSubmissionsData?.challengeSubmissions?.submissions ?? [];
   const myVotes = myVotesData?.myVotes ?? [];
 
   const { isTripPast } = useTripDetails(tripId);
@@ -248,6 +246,8 @@ export default function ChallengePeerVotingScreen() {
   }, [challenge, currentUser]);
 
   const votingSubmissions: VotingSubmission[] = useMemo(() => {
+    const submissionsData =
+      challengeSubmissionsData?.challengeSubmissions?.submissions ?? [];
     const raw = submissionsData ?? [];
     return raw
       .filter((submission) => Boolean(submission.imageIds?.[0]))
@@ -261,7 +261,7 @@ export default function ChallengePeerVotingScreen() {
         imagePath: submission.imageIds?.[0] ?? "",
         createdAt: submission.createdAt,
       }));
-  }, [submissionsData, ownGroupId]);
+  }, [challengeSubmissionsData, ownGroupId]);
 
   const submissionById = useMemo(
     () =>

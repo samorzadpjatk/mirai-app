@@ -9,10 +9,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import {
-  useGetGroupsByTripQuery,
-  useGetCurrentUserQuery,
-} from "@mirai-app/graphql-client";
+import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
 import { useMemo } from "react";
 import { colors, spacing } from "../../../../styles";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";

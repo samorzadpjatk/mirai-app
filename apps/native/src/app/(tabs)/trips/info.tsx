@@ -83,15 +83,8 @@ export default function TripInfoScreen() {
     }
   }, [getResource, heroImageDownload, isLoading, mapBgImageDownload]);
 
-  // Check if PDFs are downloaded on component mount
-  useEffect(() => {
-    if (!isLoading) {
-      const pdfMapResource = getResource("PDF_MAP");
-      const infopackResource = getResource("INFOPACK");
-
-      // Note: File existence checking will be handled by the download hook's cache mechanism
-    }
-  }, [isLoading, getResource]);
+  // PDF resources are checked by the download hook's cache mechanism
+  void getResource;
 
   if (isLoading) {
     return <LoadingScreen message="Loading trip info..." />;
