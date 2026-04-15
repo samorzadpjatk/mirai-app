@@ -9,7 +9,7 @@
  * - Uses Result type for explicit error handling (no exceptions for expected errors)
  * - Maps Supabase realtime errors to domain RealtimeError types
  * - Thin wrapper with no business logic (just mapping)
- * - Compatible with awilix-modular dependency injection
+ * - Compatible with Effect Layers for dependency injection
  *
  * @module gateways
  */
@@ -183,19 +183,15 @@ class SupabaseRealtimeSubscription implements RealtimeSubscription {
  * Implements RealtimePort using Supabase Realtime for WebSocket-based
  * real-time communication, subscriptions, and presence tracking.
  *
- * Compatible with awilix-modular dependency injection.
- * Registered in the DI module with scoped lifetime.
+ * Compatible with Effect Layers.
  *
  * @example
  * ```typescript
- * // With DI container (awilix-modular)
- * const realtimePort = container.resolve("realtimePort");
+ * // Direct instantiation
+ * const realtimePort = new SupabaseRealtimeAdapter(supabaseClient);
  * const result = realtimePort.subscribe("notifications:user-123", {
  *   onMessage: (event, payload) => logger.debug("Received realtime message", { event, payload })
  * });
- *
- * // Manual instantiation (backward-compatible)
- * const realtimePort = new SupabaseRealtimeAdapter(supabaseClient);
  * ```
  */
 export class SupabaseRealtimeAdapter implements RealtimePort {
@@ -205,7 +201,7 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
   /**
    * Creates a new SupabaseRealtimeAdapter
    *
-   * @param supabase - SupabaseClient instance (injected by awilix or passed manually)
+   * @param supabase - SupabaseClient instance
    */
   constructor(private readonly supabase: SupabaseClient) {}
 

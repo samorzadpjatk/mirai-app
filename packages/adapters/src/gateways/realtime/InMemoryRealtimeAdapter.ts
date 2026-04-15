@@ -10,7 +10,7 @@
  * - Synchronous operations where possible for faster tests
  * - Thread-safe for single-process tests (Bun test runner)
  * - Supports broadcast, subscribe, and presence operations
- * - Compatible with awilix-modular dependency injection
+ * - Compatible with Effect Layers for dependency injection
  *
  * @module gateways
  */
@@ -81,18 +81,12 @@ class InMemoryRealtimeSubscription implements RealtimeSubscription {
  * In-memory implementation of RealtimePort for testing purposes.
  * Simulates real-time communication without external dependencies.
  *
- * Compatible with awilix-modular dependency injection.
+ * Compatible with Effect Layers for dependency injection.
  *
  * @example
  * ```typescript
- * // In test setup
- * const container = createTestContainer();
- * container.register({
- *   realtimePort: asClass(InMemoryRealtimeAdapter).singleton(),
- * });
- *
- * // Use in tests
- * const realtimePort = container.resolve<InMemoryRealtimeAdapter>("realtimePort");
+ * // In test setup with Effect Layers
+ * const realtimePort = new InMemoryRealtimeAdapter();
  *
  * // Subscribe to channel
  * const program = realtimePort.subscribe("test-channel", {
