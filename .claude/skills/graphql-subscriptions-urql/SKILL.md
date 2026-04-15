@@ -6,6 +6,8 @@ tags: [graphql, subscriptions, urql, pothos, websockets, realtime]
 
 # GraphQL Subscriptions with urql and Pothos
 
+> **⚠️ CRITICAL RULE:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Only edit Pothos schema files, then sync schema, then regenerate client.
+
 ## Overview
 
 This skill covers implementing GraphQL subscriptions end-to-end: from Pothos schema definition through Bun WebSocket server to urql clients in React/React Native.
@@ -442,8 +444,8 @@ export function useActivityFeedSubscription(tripId: string) {
 import type { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
-  schema: "src/graphql/schema.graphql",
-  documents: "src/graphql/**/*.graphql",
+  schema: "src/generated/graphql/schema.graphql",
+  documents: "src/generated/graphql/**/*.graphql",
   generates: {
     // For frontend apps (urql hooks)
     "src/generated/urql.ts": {
@@ -474,7 +476,7 @@ export default config;
 ## GraphQL Subscription Operations
 
 ```graphql
-# packages/graphql-types/src/graphql/subscriptions/activity.subscriptions.graphql
+# packages/graphql-types/src/generated/graphql/subscriptions/activity.subscriptions.graphql
 subscription ActivityFeedUpdated($tripId: ID!) {
   activityFeedUpdated(tripId: $tripId) {
     id

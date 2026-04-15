@@ -1,5 +1,7 @@
 # GraphQL Schema Extensions
 
+> **⚠️ CRITICAL RULE:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Only edit Pothos schema files, then sync schema, then regenerate client.
+
 ## Overview
 
 Patterns and best practices for extending GraphQL schemas using Pothos builder in the Mirai App codebase.
