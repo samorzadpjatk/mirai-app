@@ -30,14 +30,16 @@ All error handling and async operations use **Effect**:
 
 ---
 
-# 6 Universal Rules
+# 8 Universal Rules
 
 1. **TDD first:** Write failing test before implementation
 2. **Effect-based:** Domain uses `Effect<T,E,never>`; orchestration uses `Effect.gen` + `Context.Tag`
 3. **Branded IDs:** Use branded types; never mix IDs across aggregates
 4. **Never modify lint/type config:** Fix the actual code error, never disable rules or change ESLint, tsc, or other lint/type configuration to bypass errors
 5. **No emojis in commits:** Use plain text for commit messages. No emoji prefixes (e.g., "fix:" not "🐛 fix:")
-6. **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Only edit Pothos schema files, then sync schema, then regenerate client
+6. **No emojis in source code:** Use plain text in console.log, console.error, and all source code. No emoji characters in .ts, .js, .tsx, .jsx files. This ensures clean diffs and avoids encoding issues.
+7. **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Never edit `packages/graphql-client/codegen.ts`. Only edit Pothos schema files, then sync schema, then regenerate client
+8. **TODO comments:** When fixing a TODO, implement the fix without rephrasing or removing the TODO comment. The TODO comment documents the original intent and should remain intact for reference
 
 ---
 
@@ -243,9 +245,11 @@ Is it pure business logic?
 - `Data.TaggedError` for all error types
 - **Never modify lint/type config:** Fix the actual code error, never disable rules or change ESLint, tsc, or other lint/type configuration to bypass errors
 - **No emojis in commits:** Use plain text for commit messages. No emoji prefixes
-- **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Only edit Pothos schema files, then sync schema, then regenerate client.
+- **No emojis in source code:** Use plain text in console.log, console.error, and all source code. No emoji characters in .ts, .js, .tsx, .jsx files
+- **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Never edit `packages/graphql-client/codegen.ts`. Only edit Pothos schema files, then sync schema, then regenerate client
+- **TODO comments:** When fixing a TODO, implement the fix without rephrasing or removing the TODO comment. The TODO comment documents the original intent and should remain intact for reference
 
 ---
 
-**Last Updated:** 2026-04-14  
-**Version:** 3.0.0 (Anthropic Best Practices Aligned)
+**Last Updated:** 2026-04-15  
+**Version:** 3.1.0 (Added no-emojis-in-source rule)
