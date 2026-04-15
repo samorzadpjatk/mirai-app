@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { CoinTransactionRepositoryTag } from "../ports/CoinTransactionRepository";
+import { GroupRepositoryTag } from "../ports/GroupRepository";
 
 /**
  * Input for GetCoinQuickStats use case
@@ -16,6 +17,7 @@ export interface GetCoinQuickStatsOutput {
   totalGroups: number;
   averageCoinsPerGroup: number;
   richestGroupId?: string;
+  richestGroupName?: string;
   time: Date;
 }
 
@@ -41,10 +43,11 @@ export function getCoinQuickStatsUseCase(
 ): Effect.Effect<
   GetCoinQuickStatsOutput | null,
   never,
-  CoinTransactionRepositoryTag
+  CoinTransactionRepositoryTag | GroupRepositoryTag
 > {
   return Effect.gen(function* () {
     const repo = yield* CoinTransactionRepositoryTag;
+    const groupRepo = yield* GroupRepositoryTag;
 
     const totalSum = yield* repo.sumAmount({ tripId: input.tripId });
 
@@ -88,6 +91,12 @@ export function getCoinQuickStatsUseCase(
 
     if (richest?.groupId) {
       output.richestGroupId = richest.groupId;
+
+      // Resolve group name through repository
+      const group = yield* groupRepo.findById(richest.groupId);
+      if (group) {
+        output.richestGroupName = group.name;
+      }
     }
 
     return output;

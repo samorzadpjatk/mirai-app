@@ -25,7 +25,11 @@ import { createYogaHandler } from "../../graphql/yoga-handler";
 import { honoConfig } from "../../config/hono-config";
 import { createTestLayer } from "@mirai-app/frameworks/di";
 import { Layer, Effect, Runtime } from "effect";
-import { InMemoryAuthAdapter, UserController } from "@mirai-app/adapters";
+import {
+  InMemoryAuthAdapter,
+  UserController,
+  createControllers,
+} from "@mirai-app/adapters";
 import { UserRepositoryTag } from "@mirai-app/use-cases";
 import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
 import { User, UserRole, UserId, type AuthContext } from "@mirai-app/domain";
@@ -186,13 +190,17 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
         }
       }
 
-      // Create container that resolves controllers
-      // UserController expects a Layer, not a repository directly
+      // Create controllers using the factory (Effect DI pattern)
+      const mockSupabase = {} as any;
+      const controllers = createControllers({
+        appLayer,
+        supabase: mockSupabase,
+        onChallengeCompleted: async () => {},
+      });
+
+      // Create container shim for backward compatibility
       const mockContainer = {
         resolve: (name: string) => {
-          if (name === "userController") {
-            return new UserController(appLayer);
-          }
           if (name === "authPort") {
             return {
               validateToken: (token: string) => {
@@ -214,6 +222,7 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
       };
 
       return {
+        controllers,
         appLayer,
         request: honoContext.req.raw,
         runtime: Runtime.defaultRuntime,

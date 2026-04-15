@@ -3,6 +3,7 @@ import {
   CoinTransactionRepositoryTag,
   type CoinTransaction,
 } from "../ports/CoinTransactionRepository";
+import { UserRepositoryTag } from "../ports/UserRepository";
 
 /**
  * Input for GetCoinAdditionalInsights use case
@@ -47,10 +48,11 @@ export function getCoinAdditionalInsightsUseCase(
 ): Effect.Effect<
   GetCoinAdditionalInsightsOutput | null,
   never,
-  CoinTransactionRepositoryTag
+  CoinTransactionRepositoryTag | UserRepositoryTag
 > {
   return Effect.gen(function* () {
     const repo = yield* CoinTransactionRepositoryTag;
+    const userRepo = yield* UserRepositoryTag;
 
     const limit = input.recentLimit ?? 5;
 
@@ -67,13 +69,31 @@ export function getCoinAdditionalInsightsUseCase(
     }
 
     const topAdmin = mostActiveAdminStats?.[0];
+
+    // Resolve admin name through repository if we have an admin
+    let resolvedAdmin: FormattedUser | null = null;
+    if (topAdmin?.adminId) {
+      const user = yield* userRepo.findById(topAdmin.adminId);
+      if (user) {
+        const fullName = [user.firstName, user.lastName]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        resolvedAdmin = {
+          name: fullName || "Unknown user",
+          transactionCount: topAdmin._count.id,
+        };
+      } else {
+        // User not found, use adminId as fallback
+        resolvedAdmin = {
+          name: topAdmin.adminId,
+          transactionCount: topAdmin._count.id,
+        };
+      }
+    }
+
     return {
-      mostActiveAdmin: topAdmin
-        ? {
-            name: topAdmin.adminId, // Name will be resolved by caller
-            transactionCount: topAdmin._count.id,
-          }
-        : null,
+      mostActiveAdmin: resolvedAdmin,
       recentTransactions: recentTransactions ?? [],
     };
   });

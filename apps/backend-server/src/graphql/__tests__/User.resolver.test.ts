@@ -10,12 +10,14 @@
 import { describe, it, expect, beforeEach, beforeAll } from "bun:test";
 import { graphql, printSchema } from "graphql";
 import { schema } from "../schema";
-import { createTestContainer, PORT_TOKENS } from "@mirai-app/frameworks/di";
-import { asClass, asValue } from "awilix";
-import { UserController, InMemoryAuthAdapter } from "@mirai-app/adapters";
+import {
+  UserController,
+  InMemoryAuthAdapter,
+  createControllers,
+  type Controllers,
+} from "@mirai-app/adapters";
 import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
 import { User, UserRole, UserId } from "@mirai-app/domain";
-import type { AwilixContainer } from "awilix";
 import { Runtime, Layer } from "effect";
 import type { AuthContext } from "@mirai-app/domain";
 import { UserRepositoryTag } from "@mirai-app/use-cases";
@@ -25,29 +27,43 @@ import { UserRepositoryTag } from "@mirai-app/use-cases";
 // =============================================================================
 
 /**
- * Test context with container
+ * Test context with controllers (Effect DI pattern)
  */
 interface TestContext {
-  container: AwilixContainer;
+  controllers: Controllers;
+  appLayer: Layer.Layer<unknown>;
   authAdapter: InMemoryAuthAdapter;
 }
 
 /**
  * Helper to create GraphQL context for tests
  * Includes the required runtime field for Effect integration
+ * Uses controllers (Effect DI pattern) with container shim for auth helpers
+ *
+ * ## Migration Note
+ * During migration, we provide a shim container that implements the minimal
+ * interface needed by auth-helpers.ts (authPort). This allows resolvers to use
+ * the new controllers property while auth helpers transition to Effect-based DI.
  */
 function createTestGraphQLContext(
-  container: AwilixContainer,
+  controllers: Controllers,
+  appLayer: Layer.Layer<unknown>,
+  authAdapter: InMemoryAuthAdapter,
   authToken?: string,
   authContext?: AuthContext,
 ): {
-  container: AwilixContainer;
+  controllers: Controllers;
+  appLayer: Layer.Layer<unknown>;
   request: Request;
   runtime: Runtime.Runtime<never>;
   authContext?: AuthContext;
+  container: {
+    resolve: <T>(name: string) => T;
+  };
 } {
   return {
-    container,
+    controllers,
+    appLayer,
     request: new Request("http://localhost/graphql", {
       headers: authToken
         ? {
@@ -57,6 +73,15 @@ function createTestGraphQLContext(
     }),
     runtime: Runtime.defaultRuntime,
     authContext,
+    // Container shim for backward compatibility with auth-helpers
+    container: {
+      resolve: <T>(name: string): T => {
+        if (name === "authPort") {
+          return authAdapter as T;
+        }
+        throw new Error(`Unknown container dependency: ${name}`);
+      },
+    },
   };
 }
 
@@ -96,32 +121,32 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
   let userAuthContext: AuthContext;
 
   beforeAll(async () => {
-    // Setup container
-    context = {
-      container: createTestContainer(),
-      authAdapter: new InMemoryAuthAdapter(),
-    };
+    // Setup auth adapter
+    const authAdapter = new InMemoryAuthAdapter();
 
-    // Register auth adapter, user repository, and user controller
-    // Using Effect Layer pattern for DI - controller now expects Layer<unknown>
+    // Create user repository for Effect Layer
     const userRepo = new InMemoryUserRepository();
 
-    // Create Layer with UserRepositoryTag for Effect-based DI
+    // Create Effect Layer with UserRepositoryTag
     const appLayer = Layer.succeed(
       UserRepositoryTag as any,
       userRepo,
     ) as unknown as import("effect").Layer.Layer<unknown>;
 
-    context.container.register({
-      [PORT_TOKENS.AuthPort]: asValue(context.authAdapter),
-      userRepository: asValue(userRepo),
-      userController: asValue(new UserController(appLayer)),
+    // Create controllers using the factory (Effect DI pattern)
+    const mockSupabase = {} as any;
+    const controllers = createControllers({
+      appLayer,
+      supabase: mockSupabase,
+      onChallengeCompleted: async () => {},
     });
 
-    // Get auth adapter (userRepo already declared above)
-    const authAdapter = context.container.resolve<InMemoryAuthAdapter>(
-      PORT_TOKENS.AuthPort,
-    );
+    // Setup test context with controllers (Effect DI pattern)
+    context = {
+      controllers,
+      appLayer,
+      authAdapter,
+    };
 
     // Import Effect for running Effects
     const { Effect } = await import("effect");
@@ -241,7 +266,7 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
   });
 
   beforeEach(() => {
-    // Reset container state if needed
+    // Reset state if needed
   });
 
   // =============================================================================
@@ -271,7 +296,9 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         source: USER_QUERY,
         variableValues: { id: TEST_USERS.regular.id },
         contextValue: createTestGraphQLContext(
-          context.container,
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
           userToken,
           userAuthContext,
         ),
@@ -296,7 +323,9 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         source: USER_QUERY,
         variableValues: { id: TEST_USERS.admin.id },
         contextValue: createTestGraphQLContext(
-          context.container,
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
           userToken,
           userAuthContext,
         ),
@@ -315,7 +344,9 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         source: USER_QUERY,
         variableValues: { id: "550e8400-e29b-41d4-a716-446655440999" },
         contextValue: createTestGraphQLContext(
-          context.container,
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
           userToken,
           userAuthContext,
         ),
@@ -330,7 +361,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USER_QUERY,
         variableValues: { id: TEST_USERS.regular.id },
-        contextValue: createTestGraphQLContext(context.container),
+        contextValue: createTestGraphQLContext(
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
+        ),
       });
 
       expect(result.errors).toBeDefined();
@@ -343,7 +378,12 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: USER_QUERY,
         variableValues: { id: TEST_USERS.regular.id },
-        contextValue: createTestGraphQLContext(context.container, "invalid"),
+        contextValue: createTestGraphQLContext(
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
+          "invalid",
+        ),
       });
 
       expect(result.errors).toBeDefined();
@@ -373,7 +413,9 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         source: USERS_QUERY,
         variableValues: {},
         contextValue: createTestGraphQLContext(
-          context.container,
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
           adminToken,
           adminAuthContext,
         ),
@@ -391,7 +433,9 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         source: USERS_QUERY,
         variableValues: {},
         contextValue: createTestGraphQLContext(
-          context.container,
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
           userToken,
           userAuthContext,
         ),
@@ -407,7 +451,9 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         source: USERS_QUERY,
         variableValues: { limit: 2, offset: 0 },
         contextValue: createTestGraphQLContext(
-          context.container,
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
           adminToken,
           adminAuthContext,
         ),
@@ -445,7 +491,9 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: ME_QUERY,
         contextValue: createTestGraphQLContext(
-          context.container,
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
           userToken,
           userAuthContext,
         ),
@@ -465,7 +513,9 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
         schema,
         source: ME_QUERY,
         contextValue: createTestGraphQLContext(
-          context.container,
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
           adminToken,
           adminAuthContext,
         ),
@@ -482,7 +532,11 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       const result = await graphql({
         schema,
         source: ME_QUERY,
-        contextValue: createTestGraphQLContext(context.container),
+        contextValue: createTestGraphQLContext(
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
+        ),
       });
 
       expect(result.errors).toBeDefined();
@@ -493,7 +547,12 @@ describe("[INTEGRATION] User GraphQL Resolvers", () => {
       const result = await graphql({
         schema,
         source: ME_QUERY,
-        contextValue: createTestGraphQLContext(context.container, "invalid"),
+        contextValue: createTestGraphQLContext(
+          context.controllers,
+          context.appLayer,
+          context.authAdapter,
+          "invalid",
+        ),
       });
 
       expect(result.errors).toBeDefined();
