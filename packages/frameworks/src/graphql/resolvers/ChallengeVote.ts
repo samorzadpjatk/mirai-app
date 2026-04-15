@@ -48,15 +48,16 @@ builder.queryFields((t) => ({
       challengeId: t.arg.string({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("challengeVoteController");
-      const result = await controller.getByChallengeId(
-        { challengeId: args.challengeId },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.challengeVoteController;
+      const result = await controller.getByChallengeId({
+        challengeId: args.challengeId,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -66,15 +67,16 @@ builder.queryFields((t) => ({
       challengeId: t.arg.string({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("challengeVoteController");
-      const result = await controller.getMyVotes(
-        { challengeId: args.challengeId },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.challengeVoteController;
+      const result = await controller.getMyVotes({
+        challengeId: args.challengeId,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -84,15 +86,16 @@ builder.queryFields((t) => ({
       challengeId: t.arg.string({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("challengeVoteController");
-      const result = await controller.hasVoted(
-        { challengeId: args.challengeId },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.challengeVoteController;
+      const result = await controller.hasVoted({
+        challengeId: args.challengeId,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -109,15 +112,16 @@ builder.queryFields((t) => ({
       challengeId: t.arg.string({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("challengeVoteController");
-      const result = await controller.getVotingProgress(
-        { challengeId: args.challengeId },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.challengeVoteController;
+      const result = await controller.getVotingProgress({
+        challengeId: args.challengeId,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 }));
@@ -132,12 +136,14 @@ builder.mutationFields((t) => ({
       position: t.arg({ type: VotePositionEnum, required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("challengeVoteController");
-      const result = await controller.submitVote(args, ctx.container);
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.challengeVoteController;
+      const result = await controller.submitVote(args);
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -156,21 +162,20 @@ builder.mutationFields((t) => ({
       ),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("challengeVoteController");
-      const result = await controller.submitVotes(
-        {
-          challengeId: args.challengeId,
-          votes: args.votes.map((v) => ({
-            submissionId: v.submissionId,
-            position: v.position as "UPVOTE" | "DOWNVOTE" | "NEUTRAL",
-          })),
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.challengeVoteController;
+      const result = await controller.submitVotes({
+        challengeId: args.challengeId,
+        votes: args.votes.map((v) => ({
+          submissionId: v.submissionId,
+          position: v.position as "UPVOTE" | "DOWNVOTE" | "NEUTRAL",
+        })),
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -180,15 +185,16 @@ builder.mutationFields((t) => ({
       challengeId: t.arg.string({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("challengeVoteController");
-      const result = await controller.forceEndVoting(
-        { challengeId: args.challengeId },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.challengeVoteController;
+      const result = await controller.forceEndVoting({
+        challengeId: args.challengeId,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 }));
