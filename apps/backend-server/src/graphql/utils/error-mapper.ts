@@ -463,12 +463,12 @@ export async function runEffectToGraphQL<T, E>(
  * @example
  * ```typescript
  * resolve: async (_root, args, ctx) => {
- *   const effect = Effect.gen(function* () {
- *     const auth = yield* requireAuthEffect(ctx);
- *     const controller = ctx.container.resolve("userController");
- *     return yield* Effect.tryPromise(() => controller.getById({ id: args.id }));
- *   });
- *   return runEffectWithGraphQL(ctx.runtime)(effect);
+ *   const controller = ctx.controllers.userController;
+ *   const result = await controller.getById({ id: args.id });
+ *   if (!result.success) {
+ *     throw mapErrorToGraphQL(new Error(result.error));
+ *   }
+ *   return result.data;
  * }
  * ```
  */

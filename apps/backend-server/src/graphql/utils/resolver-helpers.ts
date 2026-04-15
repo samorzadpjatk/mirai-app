@@ -8,23 +8,20 @@
  * These helpers support the migration from awilix container-based
  * resolution to direct Effect-based controller access.
  *
- * ## Migration Guide
+ * ## Usage Patterns
  *
- * ### Old (awilix container - deprecated):
+ * ### Direct access via controllers object (recommended):
  * ```typescript
- * const controller = context.container.resolve("userController");
- * // No type safety, runtime string resolution
+ * const controller = context.controllers.userController;
  * ```
  *
- * ### New (Effect-based - recommended):
+ * ### Using getController helper:
  * ```typescript
- * // Option 1: Direct access via controllers object
- * const controller = context.controllers.userController;
- *
- * // Option 2: Using getController helper
  * const controller = getController(context, "userController");
+ * ```
  *
- * // Option 3: Using ControllersFrom shortcuts
+ * ### Using ControllersFrom shortcuts:
+ * ```typescript
  * const controller = ControllersFrom.user(context);
  * ```
  *
