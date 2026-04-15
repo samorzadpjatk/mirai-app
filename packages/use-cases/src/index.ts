@@ -224,6 +224,24 @@ export {
 } from "./interactors/DeleteGroup";
 
 export {
+  assignUserToGroupUseCase,
+  type AssignUserToGroupInput,
+  type AssignUserToGroupOutput,
+  GroupNotFoundError,
+  AssignUserToGroupUserNotFoundError,
+  ParticipantNotFoundError,
+  type AssignUserToGroupError,
+} from "./interactors/AssignUserToGroup";
+
+export {
+  removeUserFromGroupUseCase,
+  type RemoveUserFromGroupInput,
+  type RemoveUserFromGroupOutput,
+  NotGroupMemberError,
+  type RemoveUserFromGroupError,
+} from "./interactors/RemoveUserFromGroup";
+
+export {
   getNotificationUseCase,
   type GetNotificationInput,
   type GetNotificationOutput,
@@ -833,16 +851,6 @@ export {
   createPaginationMeta,
   DEFAULT_PAGINATION,
 } from "./utils/pagination";
-
-// =============================================================================
-// Modules (Dependency Injection)
-// =============================================================================
-export {
-  UseCaseModule,
-  USE_CASE_TOKENS,
-  type UseCaseModuleDeps,
-  type UseCaseToken,
-} from "./modules/UseCaseModule";
 
 // =============================================================================
 // Context Tags (Effect Dependency Injection)

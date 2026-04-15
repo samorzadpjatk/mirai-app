@@ -203,6 +203,24 @@ export {
   DeleteGroupError,
 } from "./DeleteGroup";
 
+export {
+  assignUserToGroupUseCase,
+  type AssignUserToGroupInput,
+  type AssignUserToGroupOutput,
+  GroupNotFoundError,
+  UserNotFoundError,
+  ParticipantNotFoundError,
+  type AssignUserToGroupError,
+} from "./AssignUserToGroup";
+
+export {
+  removeUserFromGroupUseCase,
+  type RemoveUserFromGroupInput,
+  type RemoveUserFromGroupOutput,
+  NotGroupMemberError,
+  type RemoveUserFromGroupError,
+} from "./RemoveUserFromGroup";
+
 // =============================================================================
 // Sponsor Use Cases (Effect-based)
 // =============================================================================
