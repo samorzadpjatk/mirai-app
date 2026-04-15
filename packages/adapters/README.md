@@ -40,7 +40,7 @@ src/
 ├── gateways/            # Repository implementations
 │   ├── drizzle/         # Drizzle ORM implementations
 │   ├── in-memory/       # In-memory test implementations
-│   └── base/            # BaseDrizzleRepository for CRUD
+│   └── base/            # BaseDrizzleGateway for CRUD
 ├── mappers/             # Domain <-> DTO <-> DB mapping
 │   └── drizzle/         # Drizzle-specific mappers
 ├── test/                # Test helpers
@@ -160,14 +160,14 @@ import { GroupController } from "@mirai-app/adapters/controllers/group";
 
 ## Repository Implementation (Gateway)
 
-### BaseDrizzleRepository (Recommended)
+### BaseDrizzleGateway (Recommended)
 
 Extend the base class for standard CRUD operations with Effect:
 
 ```typescript
 // gateways/drizzle/user.ts
 import { Effect } from "effect";
-import { BaseDrizzleRepository } from "../base/repository";
+import { BaseDrizzleGateway } from "../base/repository";
 import { UserDrizzleMapper } from "../../mappers/drizzle/user";
 import {
   users,
@@ -178,8 +178,8 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import type { UserRepository } from "@mirai-app/use-cases";
 import { User } from "@mirai-app/domain";
 
-export class DrizzleUserRepository
-  extends BaseDrizzleRepository<User, UserSelect, UserInsert, typeof users>
+export class DrizzleUserGateway
+  extends BaseDrizzleGateway<User, UserSelect, UserInsert, typeof users>
   implements UserRepository
 {
   constructor(db: DrizzleDb) {
@@ -230,7 +230,7 @@ For highly custom needs, implement manually:
 import { Effect } from "effect";
 import type { CustomRepository } from "@mirai-app/use-cases";
 
-export class CustomDrizzleRepository implements CustomRepository {
+export class CustomDrizzleGateway implements CustomRepository {
   constructor(private db: DrizzleDb) {}
 
   customQuery(): Effect.Effect<Result, DatabaseError, never> {
@@ -445,20 +445,20 @@ Adapter tests use Effect Layer-based test utilities:
 ```typescript
 import { describe, it, expect } from "bun:test";
 import { Layer, Effect } from "effect";
-import { DrizzleUserRepository } from "../gateways/drizzle/user";
+import { DrizzleUserGateway } from "../gateways/drizzle/user";
 import {
   runWithTestLayer,
   createServiceLayer,
   mergeTestLayers,
 } from "@mirai-app/adapters/test";
 
-describe("DrizzleUserRepository", () => {
+describe("DrizzleUserGateway", () => {
   it("should find user by authUserId", async () => {
     // Create test layer with mock database
     const testDb = createTestDatabase();
     const dbLayer = createServiceLayer(DrizzleDbTag, testDb);
 
-    const repo = new DrizzleUserRepository(testDb);
+    const repo = new DrizzleUserGateway(testDb);
 
     const user = await runWithTestLayer(
       repo.findByAuthUserId("auth-123"),

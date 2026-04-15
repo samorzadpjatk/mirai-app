@@ -5,5 +5,5 @@
  * Part of Phase 0: Supabase-Agnostic Architecture
  */
 
-export { SupabaseRealtimeAdapter } from "./SupabaseRealtimeAdapter";
-export { InMemoryRealtimeAdapter } from "./InMemoryRealtimeAdapter";
+export { SupabaseRealtimeAdapter } from "./supabase/adapter";
+export { InMemoryRealtimeAdapter } from "./in-memory/adapter";

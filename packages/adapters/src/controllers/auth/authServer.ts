@@ -3,7 +3,6 @@ import type {
   SupabaseUser,
 } from "@mirai-app/frameworks/supabase";
 import type { AuthUser } from "@mirai-app/frameworks/stores";
-import { authLogger } from "@mirai-app/shared";
 
 // Inline type definitions to replace the removed Prisma dependency
 type Role = "ADMIN" | "MODERATOR" | "SERVICE" | "USER";
@@ -317,12 +316,8 @@ export class AuthServer {
     );
 
     if (adminLookup.error) {
-      authLogger.warn(
-        `[Auth] Failed to check ban status for ${session.authUserId}`,
-        {
-          error: adminLookup.error.message,
-        },
-      );
+     
+     
     } else {
       const adminUser = adminLookup.data.user as AdminUserWithBan | null;
       const bannedUntilRaw = adminUser?.banned_until ?? null;
@@ -454,60 +449,4 @@ export async function syncUserToDatabase(
     lastName: safeLastName,
     role,
   });
-}
-
-// Export standalone function versions for backward compatibility
-// These are deprecated and will be removed in a future version
-/**
- * @deprecated Use AuthServer.getSession method instead
- */
-export async function getSession(
-  db: PrismaClient,
-  supabase: SupabaseClient,
-  accessToken?: string,
-): Promise<{
-  user: AuthUser | null;
-  authUserId: string | null;
-} | null> {
-  const authServer = new AuthServer(db);
-  return authServer.getSession(supabase, accessToken);
-}
-
-/**
- * @deprecated Use AuthServer.requireAuth method instead
- */
-export async function requireAuth(
-  db: PrismaClient,
-  supabase: SupabaseClient,
-  accessToken?: string,
-): Promise<{
-  user: AuthUser;
-  dbUser: User;
-}> {
-  const authServer = new AuthServer(db);
-  return authServer.requireAuth(supabase, accessToken);
-}
-
-/**
- * @deprecated Use AuthServer.requireAdmin method instead
- */
-export async function requireAdmin(
-  db: PrismaClient,
-  supabase: SupabaseClient,
-  accessToken?: string,
-): Promise<User> {
-  const authServer = new AuthServer(db);
-  return authServer.requireAdmin(supabase, accessToken);
-}
-
-/**
- * @deprecated Use AuthServer.requireModerator method instead
- */
-export async function requireModerator(
-  db: PrismaClient,
-  supabase: SupabaseClient,
-  accessToken?: string,
-): Promise<User> {
-  const authServer = new AuthServer(db);
-  return authServer.requireModerator(supabase, accessToken);
 }

@@ -1,26 +1,85 @@
-// Export all controller classes
-export { UserController } from "./user";
-export { TripController } from "./trip";
-export { ChallengeController } from "./challenge";
-export { GroupController } from "./group";
-export { LocationController } from "./location";
-export { NotificationController } from "./notification";
-export { NotificationScheduleController } from "./notification-schedule";
-export { NotificationDeliveryController } from "./notification-delivery";
-export { ChallengeSubmissionController } from "./challenge-submission";
+/**
+ * Controllers Index
+ *
+ * Re-exports all controller classes organized by domain (DDD).
+ */
+
+// =============================================================================
+// User Domain
+// =============================================================================
+export { UserController } from "./user/controller";
+
+// =============================================================================
+// Trip Domain
+// =============================================================================
+export { TripController } from "./trip/controller";
+
+// =============================================================================
+// Group Domain
+// =============================================================================
+export { GroupController } from "./group/controller";
+
+// =============================================================================
+// Location Domain
+// =============================================================================
+export { LocationController } from "./location/controller";
+
+// =============================================================================
+// Event Domain
+// =============================================================================
+export { EventController } from "./event/controller";
+
+// =============================================================================
+// Challenge Domain
+// =============================================================================
+export { ChallengeController } from "./challenge/controller";
+export { ChallengeSubmissionController } from "./challenge/submission-controller";
 export {
   ChallengeVoteController,
   type ChallengeCompletedEvent,
-} from "./challenge-vote";
-export { ActivityFeedController } from "./activity-feed";
-export { RewardController } from "./reward";
-export { CoinController } from "./coin";
-export { CoinTransactionController } from "./coin-transaction";
-export { SponsorController } from "./sponsor";
-export { SubmissionReportController } from "./submission-report";
-export { StorageController } from "./storage";
+} from "./challenge/vote-controller";
 
-// Export controller factory and types
+// =============================================================================
+// Reward Domain
+// =============================================================================
+export { RewardController } from "./reward/controller";
+
+// =============================================================================
+// Sponsor Domain
+// =============================================================================
+export { SponsorController } from "./sponsor/controller";
+
+// =============================================================================
+// Notification Domain
+// =============================================================================
+export { NotificationController } from "./notification/controller";
+export { NotificationScheduleController } from "./notification/schedule-controller";
+export { NotificationDeliveryController } from "./notification/delivery-controller";
+
+// =============================================================================
+// Activity Feed Domain
+// =============================================================================
+export { ActivityFeedController } from "./activity-feed/controller";
+
+// =============================================================================
+// Coin Transaction Domain
+// =============================================================================
+export { CoinController } from "./coin-transaction/coin-controller";
+export { CoinTransactionController } from "./coin-transaction/transaction-controller";
+
+// =============================================================================
+// Submission Report Domain
+// =============================================================================
+export { SubmissionReportController } from "./submission-report/controller";
+
+// =============================================================================
+// Storage Domain
+// =============================================================================
+export { StorageController } from "./storage/controller";
+
+// =============================================================================
+// Controller Factory and Types
+// =============================================================================
 export {
   type Controllers,
   type BaseControllers,

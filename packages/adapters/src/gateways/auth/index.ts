@@ -4,5 +4,5 @@
  * Re-exports all authentication adapter implementations.
  */
 
-export { SupabaseAuthAdapter } from "./SupabaseAuthAdapter";
-export { InMemoryAuthAdapter } from "./InMemoryAuthAdapter";
+export { SupabaseAuthAdapter } from "./supabase/adapter";
+export { InMemoryAuthAdapter } from "./in-memory/adapter";

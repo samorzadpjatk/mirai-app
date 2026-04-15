@@ -1,83 +1,136 @@
 /**
  * Gateways Index
  *
- * Re-exports all repository implementations for convenient importing.
- * Organized by ORM library (Prisma and Drizzle).
+ * Re-exports all gateway implementations for convenient importing.
+ * Organized by domain (DDD) with framework subfolders.
  */
 
 // =============================================================================
-// Base Repository Classes
+// Base Gateway Classes (Shared Infrastructure)
 // =============================================================================
-export { BaseDrizzleRepository } from "./base/repository";
+export { BaseDrizzleGateway } from "./_shared/drizzle-base";
 export type {
   DrizzleEntityMapper,
-  DrizzleRepositoryConfig,
-} from "./base/repository";
+  DrizzleGatewayConfig,
+} from "./_shared/drizzle-base";
 
 // =============================================================================
-// Prisma ORM Repositories (Legacy)
+// User Domain
 // =============================================================================
-// NOTE: All Prisma repositories have been migrated to Drizzle and removed
-// Use the Drizzle equivalents in ./drizzle/
+export { DrizzleUserGateway } from "./user/drizzle/gateway";
+export { InMemoryUserGateway } from "./user/in-memory/gateway";
 
 // =============================================================================
-// Drizzle ORM Repositories (Phase 1 Migration)
+// Group Domain
 // =============================================================================
-export { DrizzleUserRepository } from "./drizzle/user";
-export { DrizzleTripRepository } from "./drizzle/trip";
-export { DrizzleGroupRepository } from "./drizzle/group";
-export { DrizzleChallengeRepository } from "./drizzle/challenge";
-export { DrizzleLocationRepository } from "./drizzle/location";
-export { DrizzleNotificationRepository } from "./drizzle/notification";
-export { DrizzleActivityFeedRepository } from "./drizzle/activity-feed";
-export { DrizzleRewardRepository } from "./drizzle/reward";
-export { DrizzleChallengeSubmissionRepository } from "./drizzle/challenge-submission";
-export { DrizzleChallengeVoteRepository } from "./drizzle/challenge-vote";
-export { DrizzleCoinTransactionRepository } from "./drizzle/coin-transaction";
-export { DrizzleNotificationDeliveryRepository } from "./drizzle/notification-delivery";
-export { DrizzleNotificationScheduleRepository } from "./drizzle/notification-schedule";
-export { DrizzleSponsorRepository } from "./drizzle/sponsor";
-export { DrizzleSubmissionReportRepository } from "./drizzle/submission-report";
-export { DrizzleTelemetryAdapter } from "./drizzle/telemetry";
-export { DrizzleEventRepository } from "./drizzle/event";
+export { DrizzleGroupGateway } from "./group/drizzle/gateway";
+export { InMemoryGroupGateway } from "./group/in-memory/gateway";
 
 // =============================================================================
-// In-Memory Repositories (Phase 2: Testing Infrastructure)
+// Trip Domain
 // =============================================================================
-export { InMemoryRepository } from "./in-memory/base";
-export { InMemoryUserRepository } from "./in-memory/user";
-export { InMemoryGroupRepository } from "./in-memory/group";
-export { InMemoryTripRepository } from "./in-memory/trip";
-export { InMemoryChallengeRepository } from "./in-memory/challenge";
-export { InMemoryChallengeSubmissionRepository } from "./in-memory/challenge-submission";
-export { InMemoryChallengeVoteRepository } from "./in-memory/challenge-vote";
-export { InMemoryLocationRepository } from "./in-memory/location";
-export { InMemoryNotificationRepository } from "./in-memory/notification";
-export { InMemoryNotificationScheduleRepository } from "./in-memory/notification-schedule";
-export { InMemoryNotificationDeliveryRepository } from "./in-memory/notification-delivery";
+export { DrizzleTripGateway } from "./trip/drizzle/gateway";
+export { InMemoryTripGateway } from "./trip/in-memory/gateway";
+
+// =============================================================================
+// Location Domain
+// =============================================================================
+export { DrizzleLocationGateway } from "./location/drizzle/gateway";
+export { InMemoryLocationGateway } from "./location/in-memory/gateway";
+
+// =============================================================================
+// Event Domain
+// =============================================================================
+export { DrizzleEventGateway } from "./event/drizzle/gateway";
+export { InMemoryEventGateway } from "./event/in-memory/gateway";
+
+// =============================================================================
+// Challenge Domain
+// =============================================================================
+export { DrizzleChallengeGateway } from "./challenge/drizzle/gateway";
+export { DrizzleChallengeSubmissionGateway } from "./challenge/drizzle/submission";
+export { DrizzleChallengeVoteGateway } from "./challenge/drizzle/vote";
+export { InMemoryChallengeGateway } from "./challenge/in-memory/gateway";
+export { InMemoryChallengeSubmissionGateway } from "./challenge/in-memory/submission";
+export { InMemoryChallengeVoteGateway } from "./challenge/in-memory/vote";
+
+// =============================================================================
+// Reward Domain
+// =============================================================================
+export { DrizzleRewardGateway } from "./reward/drizzle/gateway";
 export {
-  InMemoryRewardRepository,
-  InMemoryRewardPurchaseRepository,
-} from "./in-memory/reward";
-export { InMemorySponsorRepository } from "./in-memory/sponsor";
-export { InMemoryCoinTransactionRepository } from "./in-memory/coin-transaction";
-export { InMemoryActivityFeedRepository } from "./in-memory/activity-feed";
-export { InMemorySubmissionReportRepository } from "./in-memory/submission-report";
+  InMemoryRewardGateway,
+  InMemoryRewardPurchaseGateway,
+} from "./reward/in-memory/gateway";
 
 // =============================================================================
-// Auth Adapters (Phase 0: Supabase-Agnostic Architecture)
+// Sponsor Domain
 // =============================================================================
-export { SupabaseAuthAdapter } from "./auth/SupabaseAuthAdapter";
-export { InMemoryAuthAdapter } from "./auth/InMemoryAuthAdapter";
+export { DrizzleSponsorGateway } from "./sponsor/drizzle/gateway";
+export { InMemorySponsorGateway } from "./sponsor/in-memory/gateway";
 
 // =============================================================================
-// Realtime Adapters (Phase 0: Supabase-Agnostic Architecture)
+// Notification Domain
 // =============================================================================
-export { SupabaseRealtimeAdapter } from "./realtime/SupabaseRealtimeAdapter";
-export { InMemoryRealtimeAdapter } from "./realtime/InMemoryRealtimeAdapter";
+export { DrizzleNotificationGateway } from "./notification/drizzle/gateway";
+export { DrizzleNotificationDeliveryGateway } from "./notification/drizzle/delivery";
+export { DrizzleNotificationScheduleGateway } from "./notification/drizzle/schedule";
+export { InMemoryNotificationGateway } from "./notification/in-memory/gateway";
+export { InMemoryNotificationScheduleGateway } from "./notification/in-memory/schedule";
+export { InMemoryNotificationDeliveryGateway } from "./notification/in-memory/delivery";
 
 // =============================================================================
-// Storage Adapters (Phase 0: Supabase-Agnostic Architecture)
+// Activity Feed Domain
 // =============================================================================
-export { SupabaseStorageAdapter } from "./storage/SupabaseStorageAdapter";
-export { InMemoryStorageAdapter } from "./storage/InMemoryStorageAdapter";
+export { DrizzleActivityFeedGateway } from "./activity-feed/drizzle/gateway";
+export { InMemoryActivityFeedGateway } from "./activity-feed/in-memory/gateway";
+
+// =============================================================================
+// Coin Transaction Domain
+// =============================================================================
+export { DrizzleCoinTransactionGateway } from "./coin-transaction/drizzle/gateway";
+export { InMemoryCoinTransactionGateway } from "./coin-transaction/in-memory/gateway";
+
+// =============================================================================
+// Submission Report Domain
+// =============================================================================
+export { DrizzleSubmissionReportGateway } from "./submission-report/drizzle/gateway";
+export { InMemorySubmissionReportGateway } from "./submission-report/in-memory/gateway";
+
+// =============================================================================
+// Telemetry Domain
+// =============================================================================
+export { DrizzleTelemetryAdapter } from "./telemetry/drizzle/gateway";
+
+// =============================================================================
+// Auth Domain (User Authentication)
+// =============================================================================
+export { SupabaseAuthAdapter } from "./auth/supabase/adapter";
+export { InMemoryAuthAdapter } from "./auth/in-memory/adapter";
+
+// =============================================================================
+// Realtime Infrastructure
+// =============================================================================
+export { SupabaseRealtimeAdapter } from "./realtime/supabase/adapter";
+export { InMemoryRealtimeAdapter } from "./realtime/in-memory/adapter";
+
+// =============================================================================
+// Storage Infrastructure
+// =============================================================================
+export { SupabaseStorageAdapter } from "./storage/supabase/adapter";
+export { InMemoryStorageAdapter } from "./storage/in-memory/adapter";
+export { S3StorageAdapter } from "./storage/s3/adapter";
+
+// =============================================================================
+// In-Memory Testing Infrastructure (Convenience Re-exports)
+// =============================================================================
+export { InMemoryGateway } from "./_shared/in-memory-base";
+export {
+  createMockPrismaClient,
+  createMockContext,
+  type MockPrismaClient,
+  type MockContext,
+  type MockAuthUser,
+  type CreateMockPrismaClientOptions,
+  type CreateMockContextOptions,
+} from "./_shared/in-memory-mocks";

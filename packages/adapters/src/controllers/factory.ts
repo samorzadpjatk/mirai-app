@@ -1,7 +1,7 @@
 import type { Layer } from "effect";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 
-// Import all 17 controllers
+// Import all 18 controllers
 import { UserController } from "./user";
 import { TripController } from "./trip";
 import { ChallengeController } from "./challenge";
@@ -22,9 +22,10 @@ import { CoinTransactionController } from "./coin-transaction";
 import { SponsorController } from "./sponsor";
 import { SubmissionReportController } from "./submission-report";
 import { StorageController } from "./storage";
+import { EventController } from "./event";
 
 /**
- * Base Controllers interface containing 16 controller instances that use Effect Layer DI.
+ * Base Controllers interface containing 17 controller instances that use Effect Layer DI.
  * This provides type-safe access to Layer-based controllers via a typed object.
  *
  * Used in GraphQL context to provide direct controller access:
@@ -65,6 +66,8 @@ export interface BaseControllers {
   sponsorController: SponsorController;
   /** Submission report management controller */
   submissionReportController: SubmissionReportController;
+  /** Event management controller */
+  eventController: EventController;
 }
 
 /**
@@ -107,14 +110,14 @@ export interface CreateControllersOptions {
 }
 
 /**
- * Creates all 17 controllers with the provided Effect Layer and dependencies.
+ * Creates all 18 controllers with the provided Effect Layer and dependencies.
  *
  * This factory function instantiates every controller with the composed
  * application Layer, which provides all necessary dependencies (repositories,
  * services, ports) via Effect's compile-time dependency injection.
  *
  * @param options - Configuration options including appLayer and supabase client
- * @returns A Controllers object with all 17 controller instances
+ * @returns A Controllers object with all 18 controller instances
  *
  * @example
  * ```typescript
@@ -159,6 +162,7 @@ export function createControllers(
     coinTransactionController: new CoinTransactionController(appLayer),
     sponsorController: new SponsorController(appLayer),
     submissionReportController: new SubmissionReportController(appLayer),
+    eventController: new EventController(appLayer),
     storageController: new StorageController(supabase),
   };
 }

@@ -8,26 +8,26 @@
 // =============================================================================
 // Controllers (tRPC routers, API endpoints)
 // =============================================================================
-export { UserController } from "./controllers/user";
-export { CoinController } from "./controllers/coin";
-export { CoinTransactionController } from "./controllers/coin-transaction";
-export { NotificationDeliveryController } from "./controllers/notification-delivery";
-export { ChallengeController } from "./controllers/challenge";
-export { NotificationController } from "./controllers/notification";
-export { TripController } from "./controllers/trip";
-export { GroupController } from "./controllers/group";
-export { ActivityFeedController } from "./controllers/activity-feed";
-export { ChallengeSubmissionController } from "./controllers/challenge-submission";
-export { LocationController } from "./controllers/location";
-export { RewardController } from "./controllers/reward";
+export { UserController } from "./controllers/user/controller";
+export { CoinController } from "./controllers/coin-transaction/coin-controller";
+export { CoinTransactionController } from "./controllers/coin-transaction/transaction-controller";
+export { NotificationDeliveryController } from "./controllers/notification/delivery-controller";
+export { ChallengeController } from "./controllers/challenge/controller";
+export { NotificationController } from "./controllers/notification/controller";
+export { TripController } from "./controllers/trip/controller";
+export { GroupController } from "./controllers/group/controller";
+export { ActivityFeedController } from "./controllers/activity-feed/controller";
+export { ChallengeSubmissionController } from "./controllers/challenge/submission-controller";
+export { LocationController } from "./controllers/location/controller";
+export { RewardController } from "./controllers/reward/controller";
 export {
   NotificationScheduleController,
   type NotificationScheduleOutput,
-} from "./controllers/notification-schedule";
-export { ChallengeVoteController } from "./controllers/challenge-vote";
-export { StorageController } from "./controllers/storage";
-export { SubmissionReportController } from "./controllers/submission-report";
-export { SponsorController } from "./controllers/sponsor";
+} from "./controllers/notification/schedule-controller";
+export { ChallengeVoteController } from "./controllers/challenge/vote-controller";
+export { StorageController } from "./controllers/storage/controller";
+export { SubmissionReportController } from "./controllers/submission-report/controller";
+export { SponsorController } from "./controllers/sponsor/controller";
 
 // Controller Factory (Effect DI Migration)
 export {
@@ -38,9 +38,6 @@ export {
   type ChallengeCompletedEvent,
   createControllers,
 } from "./controllers";
-
-// Gateways (Repository implementations)
-// NOTE: Prisma repositories have been fully migrated to Drizzle equivalents
 
 // =============================================================================
 // Phase 0: Supabase-Agnostic Architecture Adapters
@@ -64,18 +61,18 @@ export {
 // =============================================================================
 // Phase 1: Drizzle ORM Services
 // =============================================================================
-export { DrizzleTripPointsCalculator } from "./services/trip-points";
-export { DrizzleGroupCoinsService } from "./services/group-coins";
-export { DrizzleTripAccessChecker } from "./services/trip-access";
-export type { GroupLeaderCheckResult as DrizzleGroupLeaderCheckResult } from "./services/trip-access";
-export { DrizzleCoinService } from "./services/coin";
-export { DrizzleCoinTransactionService } from "./services/coin-transaction";
-export { DrizzleNotificationSenderService } from "./services/notification-sender";
-export { DrizzleRewardService } from "./services/reward";
+export { DrizzleTripPointsCalculator } from "./services/trip/drizzle/points-calculator";
+export { DrizzleGroupCoinsService } from "./services/group/drizzle/coins-service";
+export { DrizzleTripAccessChecker } from "./services/trip/drizzle/access-checker";
+export type { GroupLeaderCheckResult as DrizzleGroupLeaderCheckResult } from "./services/trip/drizzle/access-checker";
+export { DrizzleCoinService } from "./services/coin/drizzle/service";
+export { DrizzleCoinTransactionService } from "./services/coin/drizzle/transaction-service";
+export { DrizzleNotificationSenderService } from "./services/notification/drizzle/sender-service";
+export { DrizzleRewardService } from "./services/reward/drizzle/service";
 export {
   DrizzleRankingActivityService,
   type RankSnapshot as DrizzleRankSnapshot,
-} from "./services/ranking-activity";
+} from "./services/ranking/drizzle/activity-service";
 
 // =============================================================================
 // Phase 2: Real-Time Architecture (In-Process Services)
@@ -87,17 +84,17 @@ export {
   globalEventBus,
   type EventHandler,
   type EventSubscription,
-} from "./services/EventBus";
+} from "./services/event-bus";
 
 // ConnectionManager for WebSocket connection tracking
 export {
   ConnectionManager,
   type ConnectionInfo,
   type BroadcastLocation,
-} from "./services/ConnectionManager";
+} from "./services/connection-manager";
 
 // LocationStreamingService for real-time location broadcasts
-export { LocationStreamingService } from "./services/LocationStreamingService";
+export { LocationStreamingService } from "./services/location-streaming";
 
 // NotificationDeliveryService for push notifications
 export {
@@ -105,122 +102,73 @@ export {
   type PushSubscription,
   type PushSubscriptionRepository,
   type DeliveryResult,
-} from "./services/NotificationDeliveryService";
+} from "./services/nofitication-delivery";
 
 // NotificationService for creating and sending notifications
 export {
   NotificationService,
   type RankingTemplateValues,
-} from "./services/notification-service";
+} from "./services/notification";
 
-// API Error Classes
-export {
-  ApiError,
-  UnauthorizedError,
-  ForbiddenError,
-  NotFoundError,
-  BadRequestError,
-  createErrorFromMessage,
-} from "./api/errors";
-
-// Utilities
-export {
-  mapErrorToCode,
-  type ErrorCode,
-  createControllerResult,
-  type ControllerResult,
-  // Effect-based handlers (Migration Phase 4.1+)
-  handleEffect,
-  effectToControllerResult,
-  handleEffectAsync,
-  handleEffectGraphQL,
-} from "./utils/controller-helpers";
-// TODO: Remove deprecated exports after migration to Effect-based factory is complete
-export {
-  createRepository,
-  createUseCases,
-  // createControllerFactory, // Deprecated - use createControllers from controllers/factory.ts
-  // type ControllerFactory,  // Deprecated - use ControllerFactory from controllers/factory.ts
-} from "./utils/repository-factory";
-export { TokenExtractor } from "./utils/TokenExtractor";
-
-// Effect Executor Utilities (Step 4.1)
-export {
-  // Effect execution
-  runEffect,
-  runEffectWithHandler,
-  runEffectGraphQL,
-  runEffectGraphQLWithHandler,
-  // HTTP error mapping
-  mapErrorToHttpStatus,
-  mapDomainErrorToHttpError,
-  // GraphQL error mapping
-  mapErrorToGraphQLCode,
-  mapErrorToGraphQL,
-  type GraphQLErrorCode,
-  // Type guards
-  isDomainError,
-  getErrorTag,
-} from "./utils/effect-executor";
+export { TokenExtractor } from "./utils/token-extractor";
 
 // =============================================================================
 // Mappers (Domain <-> DTO <-> Database) - Drizzle ORM
 // =============================================================================
-export { UserDrizzleMapper } from "./mappers/drizzle/user";
-export { TripDrizzleMapper } from "./mappers/drizzle/trip";
-export { GroupDrizzleMapper } from "./mappers/drizzle/group";
-export { ChallengeDrizzleMapper } from "./mappers/drizzle/challenge";
-export { LocationDrizzleMapper } from "./mappers/drizzle/location";
-export { NotificationDrizzleMapper } from "./mappers/drizzle/notification";
-export { ActivityFeedDrizzleMapper } from "./mappers/drizzle/activity-feed";
-export { RewardDrizzleMapper } from "./mappers/drizzle/reward";
+export { UserDrizzleMapper } from "./mappers/user/drizzle/mapper";
+export { TripDrizzleMapper } from "./mappers/trip/drizzle/mapper";
+export { GroupDrizzleMapper } from "./mappers/group/drizzle/mapper";
+export { ChallengeDrizzleMapper } from "./mappers/challenge/drizzle/mapper";
+export { LocationDrizzleMapper } from "./mappers/location/drizzle/mapper";
+export { NotificationDrizzleMapper } from "./mappers/notification/drizzle/mapper";
+export { ActivityFeedDrizzleMapper } from "./mappers/activity-feed/drizzle/mapper";
+export { RewardDrizzleMapper } from "./mappers/reward/drizzle/mapper";
 
 // Additional Drizzle mappers for complete migration
-export { ChallengeSubmissionDrizzleMapper } from "./mappers/drizzle/challenge-submission";
-export { ChallengeVoteDrizzleMapper } from "./mappers/drizzle/challenge-vote";
-export { CoinTransactionDTODrizzleMapper } from "./mappers/drizzle/coin-transaction";
-export { SponsorDrizzleMapper } from "./mappers/drizzle/sponsor";
-export { SubmissionReportDrizzleMapper } from "./mappers/drizzle/submission-report";
-export { NotificationScheduleDrizzleMapper } from "./mappers/drizzle/notification-schedule";
-export { NotificationDeliveryDrizzleMapper } from "./mappers/drizzle/notification-delivery";
-export { UserAgentDrizzleMapper } from "./mappers/drizzle/user-agent";
-export { EventDrizzleMapper } from "./mappers/drizzle/event";
+export { ChallengeSubmissionDrizzleMapper } from "./mappers/challenge/drizzle/submission-mapper";
+export { ChallengeVoteDrizzleMapper } from "./mappers/challenge/drizzle/vote-mapper";
+export { CoinTransactionDTODrizzleMapper } from "./mappers/coin-transaction/drizzle/mapper";
+export { SponsorDrizzleMapper } from "./mappers/sponsor/drizzle/mapper";
+export { SubmissionReportDrizzleMapper } from "./mappers/submission-report/drizzle/mapper";
+export { NotificationScheduleDrizzleMapper } from "./mappers/notification/drizzle/schedule-mapper";
+export { NotificationDeliveryDrizzleMapper } from "./mappers/notification/drizzle/delivery-mapper";
+export { UserAgentDrizzleMapper } from "./mappers/user/drizzle/agent-mapper";
+export { EventDrizzleMapper } from "./mappers/event/drizzle/mapper";
 
 // =============================================================================
-// Phase 1: Drizzle ORM Migration Repositories
+// Phase 1: Drizzle ORM Migration Gateways
 // =============================================================================
 export {
-  BaseDrizzleRepository,
+  BaseDrizzleGateway,
   type DrizzleEntityMapper,
-  type DrizzleRepositoryConfig,
-} from "./gateways/base/repository";
-export { DrizzleUserRepository } from "./gateways/drizzle/user";
-export { DrizzleTripRepository } from "./gateways/drizzle/trip";
-export { DrizzleGroupRepository } from "./gateways/drizzle/group";
-export { DrizzleChallengeRepository } from "./gateways/drizzle/challenge";
-export { DrizzleLocationRepository } from "./gateways/drizzle/location";
-export { DrizzleNotificationRepository } from "./gateways/drizzle/notification";
-export { DrizzleActivityFeedRepository } from "./gateways/drizzle/activity-feed";
-export { DrizzleRewardRepository } from "./gateways/drizzle/reward";
+  type DrizzleGatewayConfig,
+} from "./gateways/_shared/drizzle-base";
+export { DrizzleUserGateway } from "./gateways/user/drizzle/gateway";
+export { DrizzleTripGateway } from "./gateways/trip/drizzle/gateway";
+export { DrizzleGroupGateway } from "./gateways/group/drizzle/gateway";
+export { DrizzleChallengeGateway } from "./gateways/challenge/drizzle/gateway";
+export { DrizzleLocationGateway } from "./gateways/location/drizzle/gateway";
+export { DrizzleNotificationGateway } from "./gateways/notification/drizzle/gateway";
+export { DrizzleActivityFeedGateway } from "./gateways/activity-feed/drizzle/gateway";
+export { DrizzleRewardGateway } from "./gateways/reward/drizzle/gateway";
 
-// Additional Drizzle repositories for complete migration
-export { DrizzleChallengeSubmissionRepository } from "./gateways/drizzle/challenge-submission";
-export { DrizzleChallengeVoteRepository } from "./gateways/drizzle/challenge-vote";
-export { DrizzleCoinTransactionRepository } from "./gateways/drizzle/coin-transaction";
-export { DrizzleNotificationDeliveryRepository } from "./gateways/drizzle/notification-delivery";
-export { DrizzleNotificationScheduleRepository } from "./gateways/drizzle/notification-schedule";
-export { DrizzleSponsorRepository } from "./gateways/drizzle/sponsor";
-export { DrizzleSubmissionReportRepository } from "./gateways/drizzle/submission-report";
+// Additional Drizzle gateways for complete migration
+export { DrizzleChallengeSubmissionGateway } from "./gateways/challenge/drizzle/submission";
+export { DrizzleChallengeVoteGateway } from "./gateways/challenge/drizzle/vote";
+export { DrizzleCoinTransactionGateway } from "./gateways/coin-transaction/drizzle/gateway";
+export { DrizzleNotificationDeliveryGateway } from "./gateways/notification/drizzle/delivery";
+export { DrizzleNotificationScheduleGateway } from "./gateways/notification/drizzle/schedule";
+export { DrizzleSponsorGateway } from "./gateways/sponsor/drizzle/gateway";
+export { DrizzleSubmissionReportGateway } from "./gateways/submission-report/drizzle/gateway";
 
 // Drizzle telemetry adapter
-export { DrizzleTelemetryAdapter } from "./gateways/drizzle/telemetry";
+export { DrizzleTelemetryAdapter } from "./gateways/telemetry/drizzle/gateway";
 
-// Event repository
-export { DrizzleEventRepository } from "./gateways/drizzle/event";
+// Event gateway
+export { DrizzleEventGateway } from "./gateways/event/drizzle/gateway";
 
 // Re-export inner layers for convenience
 export type {
-  Result,
   User,
   UserRole,
   Challenge,
@@ -270,20 +218,3 @@ export type {
   SubmissionReportRepository,
   SponsorRepository,
 } from "@mirai-app/domain/ports";
-
-// NOTE: Use cases have been migrated to function-based Effect patterns.
-// Import them directly from @mirai-app/use-cases when needed:
-// - getUserUseCase, createUserUseCase, updateUserUseCase
-// - getChallengeUseCase, createChallengeUseCase, updateChallengeUseCase, updateChallengeStatusUseCase
-// - getNotificationUseCase
-// - getActivityFeedUseCase, createActivityUseCase, addReactionUseCase
-// - createSubmissionUseCase, getSubmissionUseCase, getSubmissionByChallengeAndGroupUseCase,
-//   updateSubmissionUseCase, deleteSubmissionUseCase, listSubmissionsByChallengeUseCase
-// - listLocationsUseCase, updateSharingSettingsUseCase, addSharingUserUseCase,
-//   removeSharingUserUseCase, getSharingSettingsUseCase
-// - setRewardHiddenUseCase, purchaseRewardUseCase, updatePurchaseStatusUseCase,
-//   updateMyPurchaseStatusUseCase, getPurchaseHistoryUseCase
-// - getMyVotesUseCase, getVotesByChallengeUseCase, getChallengeVotingProgressUseCase,
-//   getJudgedStaffVotingProgressUseCase, submitVoteUseCase, submitVotesUseCase, forceEndVotingUseCase
-// - createReportUseCase, getReportsUseCase
-// - listSponsorsUseCase, linkSponsorToTripUseCase, unlinkSponsorFromTripUseCase

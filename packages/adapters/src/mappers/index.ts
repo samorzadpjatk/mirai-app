@@ -2,23 +2,70 @@
  * Mappers Index
  *
  * Re-exports all entity mappers for convenient importing.
- * All mappers now use Drizzle ORM (Prisma migration complete).
+ * Organized by domain (DDD) with framework subfolders.
  */
 
-export { UserDrizzleMapper } from "./drizzle/user";
-export { TripDrizzleMapper } from "./drizzle/trip";
-export { GroupDrizzleMapper } from "./drizzle/group";
-export { ChallengeDrizzleMapper } from "./drizzle/challenge";
-export { LocationDrizzleMapper } from "./drizzle/location";
-export { NotificationDrizzleMapper } from "./drizzle/notification";
-export { ActivityFeedDrizzleMapper } from "./drizzle/activity-feed";
-export { RewardDrizzleMapper } from "./drizzle/reward";
-export { ChallengeSubmissionDrizzleMapper } from "./drizzle/challenge-submission";
-export { ChallengeVoteDrizzleMapper } from "./drizzle/challenge-vote";
-export { CoinTransactionDTODrizzleMapper } from "./drizzle/coin-transaction";
-export { SponsorDrizzleMapper } from "./drizzle/sponsor";
-export { SubmissionReportDrizzleMapper } from "./drizzle/submission-report";
-export { NotificationScheduleDrizzleMapper } from "./drizzle/notification-schedule";
-export { NotificationDeliveryDrizzleMapper } from "./drizzle/notification-delivery";
-export { UserAgentDrizzleMapper } from "./drizzle/user-agent";
-export { EventDrizzleMapper } from "./drizzle/event";
+// =============================================================================
+// User Domain
+// =============================================================================
+export { UserDrizzleMapper } from "./user/drizzle/mapper";
+export { UserAgentDrizzleMapper } from "./user/drizzle/agent-mapper";
+
+// =============================================================================
+// Trip Domain
+// =============================================================================
+export { TripDrizzleMapper } from "./trip/drizzle/mapper";
+
+// =============================================================================
+// Group Domain
+// =============================================================================
+export { GroupDrizzleMapper } from "./group/drizzle/mapper";
+
+// =============================================================================
+// Location Domain
+// =============================================================================
+export { LocationDrizzleMapper } from "./location/drizzle/mapper";
+
+// =============================================================================
+// Event Domain
+// =============================================================================
+export { EventDrizzleMapper } from "./event/drizzle/mapper";
+
+// =============================================================================
+// Challenge Domain
+// =============================================================================
+export { ChallengeDrizzleMapper } from "./challenge/drizzle/mapper";
+export { ChallengeSubmissionDrizzleMapper } from "./challenge/drizzle/submission-mapper";
+export { ChallengeVoteDrizzleMapper } from "./challenge/drizzle/vote-mapper";
+
+// =============================================================================
+// Reward Domain
+// =============================================================================
+export { RewardDrizzleMapper } from "./reward/drizzle/mapper";
+
+// =============================================================================
+// Sponsor Domain
+// =============================================================================
+export { SponsorDrizzleMapper } from "./sponsor/drizzle/mapper";
+
+// =============================================================================
+// Notification Domain
+// =============================================================================
+export { NotificationDrizzleMapper } from "./notification/drizzle/mapper";
+export { NotificationScheduleDrizzleMapper } from "./notification/drizzle/schedule-mapper";
+export { NotificationDeliveryDrizzleMapper } from "./notification/drizzle/delivery-mapper";
+
+// =============================================================================
+// Activity Feed Domain
+// =============================================================================
+export { ActivityFeedDrizzleMapper } from "./activity-feed/drizzle/mapper";
+
+// =============================================================================
+// Coin Transaction Domain
+// =============================================================================
+export { CoinTransactionDTODrizzleMapper } from "./coin-transaction/drizzle/mapper";
+
+// =============================================================================
+// Submission Report Domain
+// =============================================================================
+export { SubmissionReportDrizzleMapper } from "./submission-report/drizzle/mapper";
