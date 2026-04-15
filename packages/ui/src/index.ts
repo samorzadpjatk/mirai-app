@@ -37,8 +37,8 @@ export { config } from "../tamagui.config";
 // Export custom components (Phase 2: Tier 1 primitives)
 export * from "./components";
 
-// Export theme tokens
-// export * from "./theme";
+// Export theme tokens (colorTokens for native app compatibility)
+export { colorTokens } from "./theme";
 
 // Export hooks
 // export * from "./hooks";

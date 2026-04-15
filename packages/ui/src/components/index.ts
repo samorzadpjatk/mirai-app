@@ -17,6 +17,12 @@ export {
 // Card - Container primitive with theme background
 export { Card, type CardProps } from "./Card";
 
+// ErrorMessage - Error state display component
+export { ErrorMessage, type ErrorMessageProps } from "./ErrorMessage";
+
+// Image - Cross-platform image primitive
+export { Image, type ImageProps } from "./Image";
+
 // Input - Form input with label/error support
 export {
   Input,
@@ -28,6 +34,9 @@ export {
   type InputVariant,
 } from "./Input";
 
+// LoadingSpinner - Loading indicator with optional label
+export { LoadingSpinner, type LoadingSpinnerProps } from "./LoadingSpinner";
+
 // Select - Cross-platform dropdown/select primitive
 export {
   Select,
@@ -38,7 +47,7 @@ export {
 } from "./Select";
 
 // Sheet - Cross-platform modal/sheet primitive (replaces Modal)
-export { Sheet, SheetNamespace, type SheetProps } from "./Sheet";
+export { Sheet, type SheetProps } from "./Sheet";
 
 // Spinner - Loading indicator primitive
 export {

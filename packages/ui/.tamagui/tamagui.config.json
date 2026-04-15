@@ -36379,6 +36379,12 @@
     "onlyAllowShorthands": false,
     "fontLanguages": [],
     "animations": {
+      "View": "Component",
+      "Text": "Component",
+      "isReactNative": false,
+      "supportsCSS": true,
+      "needsWebStyles": true,
+      "avoidReRenders": true,
       "animations": {
         "fast": {
           "type": "spring",
@@ -36423,12 +36429,10 @@
       },
       "usePresence": "Function",
       "ResetPresence": "Function",
-      "supportsCSS": true,
-      "classNameAnimation": true,
+      "useAnimations": "Function",
       "useAnimatedNumber": "Function",
       "useAnimatedNumberReaction": "Function",
-      "useAnimatedNumberStyle": "Function",
-      "useAnimations": "Function"
+      "useAnimatedNumberStyle": "Function"
     },
     "media": {
       "xs": {
