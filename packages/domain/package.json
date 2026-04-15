@@ -9,7 +9,9 @@
     "./entities/*": "./src/entities/*.ts",
     "./value-objects/*": "./src/value-objects/*.ts",
     "./utils/*": "./src/utils/*.ts",
-    "./errors": "./src/errors/index.ts"
+    "./errors": "./src/errors/index.ts",
+    "./ports": "./src/ports/index.ts",
+    "./ports/*": "./src/ports/*.ts"
   },
   "scripts": {
     "test": "bun test",

@@ -4,12 +4,35 @@ import { timestamps } from "../utils/immutable";
 import { ValidationError } from "../errors";
 
 /**
+ * CoinTransaction DTO - plain data shape for mappers
+ */
+export interface CoinTransactionDTO {
+  id: string;
+  groupId: string;
+  amount: number;
+  reason: string | null;
+  adminId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  group?: {
+    id: string;
+    name: string;
+    coins: number;
+  };
+  admin?: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  };
+}
+
+/**
  * CoinTransaction entity - tracks coin balance changes for groups
  *
  * This is a pure domain entity with no external dependencies.
  * All operations return new instances (immutable).
  */
-export class CoinTransaction {
+export class CoinTransaction implements CoinTransactionDTO {
   private constructor(
     public readonly id: string,
     public readonly groupId: string,
@@ -18,6 +41,16 @@ export class CoinTransaction {
     public readonly adminId: string,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    public readonly group?: {
+      id: string;
+      name: string;
+      coins: number;
+    },
+    public readonly admin?: {
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+    },
   ) {}
 
   /**
@@ -34,6 +67,16 @@ export class CoinTransaction {
     adminId: string;
     createdAt?: Date;
     updatedAt?: Date;
+    group?: {
+      id: string;
+      name: string;
+      coins: number;
+    };
+    admin?: {
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+    };
   }): Effect.Effect<CoinTransaction, ValidationError, never> {
     return Effect.gen(function* () {
       // Validate groupId
@@ -72,6 +115,8 @@ export class CoinTransaction {
         adminId,
         ts.createdAt,
         ts.updatedAt,
+        props.group,
+        props.admin,
       );
     });
   }

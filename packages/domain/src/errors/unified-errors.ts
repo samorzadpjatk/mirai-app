@@ -157,6 +157,8 @@ export class QuotaExceededError extends Data.TaggedError("QuotaExceededError")<{
 }> {}
 
 export class DatabaseError extends Data.TaggedError("DatabaseError")<{
+  operation: string;
+  message: string;
   cause?: unknown;
 }> {}
 

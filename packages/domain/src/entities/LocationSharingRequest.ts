@@ -92,6 +92,28 @@ export class LocationSharingRequest {
   }
 
   /**
+   * Reconstitute a LocationSharingRequest from persistence (bypasses validation)
+   * Use this when loading from database - assumes data is already valid
+   */
+  static reconstitute(data: {
+    id: string;
+    senderId: string;
+    receiverId: string;
+    status: LocationSharingRequestStatus;
+    createdAt: Date;
+    updatedAt: Date;
+  }): LocationSharingRequest {
+    return new LocationSharingRequest(
+      data.id,
+      data.senderId,
+      data.receiverId,
+      data.status,
+      data.createdAt,
+      data.updatedAt,
+    );
+  }
+
+  /**
    * Accept the request
    * Returns a Effect with new LocationSharingRequest instance or StateTransitionError
    */

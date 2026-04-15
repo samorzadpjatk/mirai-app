@@ -156,10 +156,11 @@ export * from "./entities/CoinTransaction";
 export * from "./entities/RewardPurchase";
 
 // Notification Entities (updated - child entities now nested)
-// Note: NotificationScheduleExecution removed (becomes simple execution log)
 // Note: NotificationPush is now a nested interface within NotificationDelivery
 export * from "./entities/NotificationDelivery";
 export * from "./entities/PushSubscription";
+// NEW: NotificationScheduleExecutionRecord (moved from use-cases for domain purity)
+export * from "./entities/NotificationScheduleExecutionRecord";
 
 // Location Entity
 export * from "./entities/LocationSharingRequest";
@@ -179,6 +180,7 @@ export type { PushDeliveryRecord } from "./entities/NotificationDelivery";
 
 // Value Objects
 export * from "./value-objects/UserId";
+export * from "./value-objects/GroupId";
 export * from "./value-objects/ChallengeId";
 export * from "./value-objects/NotificationId";
 export * from "./value-objects/NotificationScheduleId";
