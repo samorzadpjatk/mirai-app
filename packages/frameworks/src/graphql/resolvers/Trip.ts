@@ -1,14 +1,12 @@
 import { builder } from "../builder";
 import { TripType, CreateTripInput, UpdateTripInput } from "../types/Trip";
 import {
-  GetTripUseCase,
-  CreateTripUseCase,
-  UpdateTripUseCase,
-  type GetTripInput,
+  TripRepositoryTag,
   type CreateTripInput as CreateTripUseCaseInput,
   type UpdateTripInput as UpdateTripUseCaseInput,
 } from "@mirai-app/use-cases";
 import { TripStatus } from "@mirai-app/domain";
+import { Effect } from "effect";
 
 /**
  * Trip Queries
@@ -23,15 +21,14 @@ builder.queryFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<GetTripUseCase>("getTripUseCase");
-      const result = await useCase.execute({ tripId: args.id });
+      const controller = context.controllers.tripController;
+      const result = await controller.getById({ id: args.id });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -45,11 +42,14 @@ builder.queryFields((t) => ({
     },
     authScopes: { admin: true },
     resolve: async (_, args, context) => {
-      const tripRepository = context.container.resolve("tripRepository");
-      return tripRepository.findAll({
-        limit: args.limit ?? 20,
-        offset: args.offset ?? 0,
-      });
+      const program = Effect.gen(function* () {
+        const tripRepository = yield* TripRepositoryTag;
+        return yield* tripRepository.findAll({
+          limit: args.limit ?? 20,
+          offset: args.offset ?? 0,
+        });
+      }).pipe(Effect.provide(context.appLayer));
+      return await Effect.runPromise(program);
     },
   }),
 
@@ -61,15 +61,18 @@ builder.queryFields((t) => ({
     },
     authScopes: { public: true },
     resolve: async (_, args, context) => {
-      const tripRepository = context.container.resolve("tripRepository");
-      const trips = await tripRepository.findAll({
-        limit: args.limit ?? 10,
-      });
-      const now = new Date();
-      return trips.filter(
-        (trip: { startDate: Date; endDate: Date }) =>
-          trip.startDate <= now && trip.endDate >= now,
-      );
+      const program = Effect.gen(function* () {
+        const tripRepository = yield* TripRepositoryTag;
+        const trips = yield* tripRepository.findAll({
+          limit: args.limit ?? 10,
+        });
+        const now = new Date();
+        return trips.filter(
+          (trip: { startDate: Date; endDate: Date }) =>
+            trip.startDate <= now && trip.endDate >= now,
+        );
+      }).pipe(Effect.provide(context.appLayer));
+      return await Effect.runPromise(program);
     },
   }),
 }));
@@ -86,8 +89,7 @@ builder.mutationFields((t) => ({
     },
     authScopes: { admin: true },
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<CreateTripUseCase>("createTripUseCase");
+      const controller = context.controllers.tripController;
 
       const statusMap: Record<string, TripStatus> = {
         DRAFT: TripStatus.DRAFT,
@@ -96,7 +98,7 @@ builder.mutationFields((t) => ({
         CANCELLED: TripStatus.CANCELLED,
       };
 
-      const result = await useCase.execute({
+      const result = await controller.create({
         name: args.input.name,
         description: args.input.description,
         startDate: args.input.startDate,
@@ -105,11 +107,11 @@ builder.mutationFields((t) => ({
         status: statusMap[args.input.status ?? "DRAFT"] ?? TripStatus.DRAFT,
       });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -122,8 +124,7 @@ builder.mutationFields((t) => ({
     },
     authScopes: { admin: true },
     resolve: async (_, args, context) => {
-      const useCase =
-        context.container.resolve<UpdateTripUseCase>("updateTripUseCase");
+      const controller = context.controllers.tripController;
 
       const statusMap: Record<string, TripStatus> = {
         DRAFT: TripStatus.DRAFT,
@@ -132,8 +133,8 @@ builder.mutationFields((t) => ({
         CANCELLED: TripStatus.CANCELLED,
       };
 
-      const result = await useCase.execute({
-        tripId: args.id,
+      const result = await controller.update({
+        id: args.id,
         name: args.input.name ?? undefined,
         description: args.input.description ?? undefined,
         startDate: args.input.startDate ?? undefined,
@@ -144,11 +145,11 @@ builder.mutationFields((t) => ({
           : undefined,
       });
 
-      if (result.kind === "err") {
+      if (!result.success) {
         throw new Error(result.error);
       }
 
-      return result.value;
+      return result.data;
     },
   }),
 }));
