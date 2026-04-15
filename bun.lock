@@ -46,7 +46,6 @@
         "@pothos/plugin-dataloader": "^4.4.3",
         "@pothos/plugin-relay": "^4.4.0",
         "@pothos/plugin-scope-auth": "^4.1.6",
-        "awilix": "^12.0.0",
         "effect": "^3.14.0",
         "graphql": "^16.10.0",
         "graphql-scalars": "^1.24.2",
@@ -63,7 +62,7 @@
     },
     "apps/native": {
       "name": "@mirai-app/native",
-      "version": "1.0.0",
+      "version": "15.2.3",
       "dependencies": {
         "@expo-google-fonts/ibm-plex-sans": "^0.4.1",
         "@expo/metro-runtime": "^6.1.2",
@@ -2228,8 +2227,6 @@
     "auto-bind": ["auto-bind@4.0.0", "", {}, "sha512-Hdw8qdNiqdJ8LqT0iK0sVzkFbzg6fhnQqqfWhBDxcHZvU75+B+ayzTy8x+k5Ix0Y92XOhOUlx74ps+bA6BeYMQ=="],
 
     "available-typed-arrays": ["available-typed-arrays@1.0.7", "", { "dependencies": { "possible-typed-array-names": "^1.0.0" } }, "sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ=="],
-
-    "awilix": ["awilix@12.1.1", "", { "dependencies": { "fast-glob": "^3.3.3" } }, "sha512-A93ak7Ypot8YlkfulCBL4GCkZozuwdfwOJs+4l8+svJYCfXKuokLxWe/usTiatN1dlPOdT5HO0MBpNNTzZSWug=="],
 
     "axobject-query": ["axobject-query@4.1.0", "", {}, "sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ=="],
 
