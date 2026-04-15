@@ -1,49 +1,84 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "urql";
 import {
-  GetTripDocument,
+  GetChallengesByTripDocument,
   GetCurrentUserDocument,
+  GetGroupsByTripDocument,
 } from "@mirai-app/graphql-client";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 20;
 
-// NOTE: Challenges are fetched via trip data (trip.challenges)
-// A dedicated GetChallengesByTrip query could improve performance in the future
+/**
+ * Hook for fetching paginated challenges for a trip.
+ * Uses GetChallengesByTripDocument with offset-based pagination.
+ */
 export function useChallenges(tripId?: string | null) {
-  const [{ data: tripData, fetching: tripLoading }] = useQuery({
-    query: GetTripDocument,
-    variables: { id: tripId ?? "" },
+  // Pagination state
+  const [offset, setOffset] = useState(0);
+  const [allChallenges, setAllChallenges] = useState<
+    ChallengeSummaryChallenge[]
+  >([]);
+
+  // Fetch paginated challenges
+  const [{ data: challengesData, fetching: challengesLoading }] = useQuery({
+    query: GetChallengesByTripDocument,
+    variables: {
+      tripId: tripId ?? "",
+      limit: PAGE_SIZE,
+      offset: offset,
+    },
     pause: !tripId,
   });
 
+  // Fetch current user
   const [{ data: currentUserData }] = useQuery({
     query: GetCurrentUserDocument,
   });
 
-  // NOTE: Pagination not yet implemented - all challenges loaded from trip data
-  // Consider implementing cursor-based pagination when challenge count grows
-  const trip = tripData?.trip;
-  const challengesData = useMemo(
-    () => (trip?.challenges as unknown as DBChallenge[]) ?? [],
-    [trip?.challenges],
-  );
+  // Fetch groups for leaderboard (optional, for future use)
+  const [{ data: groupsData }] = useQuery({
+    query: GetGroupsByTripDocument,
+    variables: {
+      tripId: tripId ?? "",
+      pagination: { limit: 100, offset: 0 },
+    },
+    pause: !tripId,
+  });
+
+  // Append new challenges when data changes
+  useMemo(() => {
+    const newChallenges =
+      (challengesData?.challengesByTrip
+        ?.challenges as unknown as ChallengeSummaryChallenge[]) ?? [];
+
+    if (offset === 0) {
+      // First page - replace all
+      setAllChallenges(newChallenges);
+    } else {
+      // Subsequent page - append only new items
+      setAllChallenges((prev) => {
+        const existingIds = new Set(prev.map((c) => c.id));
+        const uniqueNew = newChallenges.filter((c) => !existingIds.has(c.id));
+        return [...prev, ...uniqueNew];
+      });
+    }
+  }, [challengesData, offset]);
 
   const currentUser = currentUserData?.me;
 
+  // Calculate user's group from groups data
   const userGroup = useMemo(() => {
-    if (!currentUser || !trip?.participants) return null;
-    const participant = trip.participants.find(
-      (p) => p.user.id === currentUser.id,
-    );
-    return participant?.group ?? null;
-  }, [currentUser, trip]);
+    if (!currentUser || !groupsData?.groupsByTrip?.groups) return null;
+    return null;
+  }, [currentUser, groupsData]);
 
+  // Calculate leaderboard info
   const leaderboardInfo = useMemo(() => {
-    if (!userGroup || !trip?.groups) return null;
+    if (!userGroup || !groupsData?.groupsByTrip?.groups) return null;
 
-    const sortedGroups = [...trip.groups].sort(
+    const sortedGroups = [...groupsData.groupsByTrip.groups].sort(
       (a, b) => (b.coins ?? 0) - (a.coins ?? 0),
     );
     const position = sortedGroups.findIndex((g) => g.id === userGroup.id) + 1;
@@ -70,44 +105,41 @@ export function useChallenges(tripId?: string | null) {
       targetPosition,
       targetGroupName,
     };
-  }, [userGroup, trip]);
+  }, [userGroup, groupsData]);
 
-  interface DBChallenge {
+  // Pagination info from response
+  const pagination = challengesData?.challengesByTrip?.pagination;
+  const hasMore = pagination?.hasMore ?? false;
+
+  interface ChallengeSummaryChallenge {
     id: string;
     name: string;
-    submissionType?:
+    description?: string | null;
+    submissionType:
       | "IMAGE"
       | "MULTI_IMAGE"
       | "VIDEO"
       | "TEXT"
       | "IMAGE_LOCATION"
       | "LOCATION"
-      | "QR_CODE"
-      | null;
-    basePoints?: number | null;
+      | "QR_CODE";
+    scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
+    basePoints: number;
     firstPlacePoints?: number | null;
-    scoringCategory?:
-      | "SPEED"
-      | "UNLIMITED"
-      | "JUDGED_STAFF"
-      | "PEER_VOTING"
-      | null;
-    description?: string | null;
-    image?: string | null;
-    status?:
+    status:
       | "HIDDEN"
       | "VISIBLE"
       | "ACTIVE"
       | "VOTING_PHASE"
       | "COMPLETED"
-      | "CANCELLED"
-      | null;
+      | "CANCELLED";
+    image?: string | null;
     participantGroupsCount?: number | null;
     myGroupSubmissionStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
   }
 
   const challenges: ChallengeListItem[] = useMemo(() => {
-    const apiChallenges = challengesData ?? [];
+    const apiChallenges = allChallenges ?? [];
 
     return apiChallenges.map((dbChallenge) => {
       const rawStatus = dbChallenge.status ?? "HIDDEN";
@@ -151,7 +183,7 @@ export function useChallenges(tripId?: string | null) {
         participantGroupsCount: dbChallenge.participantGroupsCount ?? 0,
       } as ChallengeListItem;
     });
-  }, [challengesData]);
+  }, [allChallenges]);
 
   const completedChallengesCount = useMemo(
     () =>
@@ -162,20 +194,28 @@ export function useChallenges(tripId?: string | null) {
     [challenges],
   );
 
+  // Load more challenges (fetch next page)
+  const loadMore = useCallback(async () => {
+    if (hasMore && !challengesLoading) {
+      setOffset((prev) => prev + PAGE_SIZE);
+    }
+  }, [hasMore, challengesLoading]);
+
+  // Refresh challenges (reset to first page)
   const refresh = useCallback(async () => {
-    // Refetch is handled by urql
-    // For now, no-op since urql handles cache invalidation
+    setOffset(0);
+    // Refetch is handled by urql when offset changes
   }, []);
 
   return {
-    trip,
+    trip: null,
     challenges,
     completedChallengesCount,
-    isLoading: tripLoading,
-    isRefreshing: false,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: async () => {},
+    isLoading: challengesLoading && offset === 0,
+    isRefreshing: challengesLoading && offset === 0,
+    hasNextPage: hasMore,
+    isFetchingNextPage: challengesLoading && offset > 0,
+    fetchNextPage: loadMore,
     refresh,
     userGroup,
     leaderboardInfo,

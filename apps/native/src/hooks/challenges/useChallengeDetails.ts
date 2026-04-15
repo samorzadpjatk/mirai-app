@@ -1,37 +1,32 @@
 import { useMemo } from "react";
 import { useQuery } from "urql";
 import {
-  GetChallengeSubmissionByChallengeAndGroupDocument,
+  GetChallengeDocument,
   GetCurrentUserDocument,
 } from "@mirai-app/graphql-client";
 
-// NOTE: Challenge data retrieved via submission lookup (workaround)
-// A direct GetChallengeById query would simplify this in the future
 export function useChallengeDetails(
   challengeId?: string | null,
   tripId?: string | null,
-  groupId?: string | null,
 ) {
   const [{ data: currentUserData }] = useQuery({
     query: GetCurrentUserDocument,
   });
 
-  // Use challenge submission by challenge and group to get challenge data
-  const [{ data: submissionData, fetching }] = useQuery({
-    query: GetChallengeSubmissionByChallengeAndGroupDocument,
+  // Query challenge directly by ID
+  const [{ data: challengeData, fetching }] = useQuery({
+    query: GetChallengeDocument,
     variables: {
-      challengeId: challengeId ?? "",
-      groupId: groupId ?? "",
+      id: challengeId ?? "",
+      tripId: tripId ?? "",
     },
-    pause: !challengeId || !groupId,
+    pause: !challengeId || !tripId,
   });
 
-  // Extract challenge data from the submission response
+  // Challenge data comes directly from the query
   const challenge = useMemo(() => {
-    const submission = submissionData?.challengeSubmissionByChallengeAndGroup;
-    if (!submission?.challenge) return null;
-    return submission.challenge;
-  }, [submissionData]);
+    return challengeData?.challenge ?? null;
+  }, [challengeData]);
 
   const isAssignedToUser = useMemo(() => {
     if (!currentUserData?.me || !challenge) return false;

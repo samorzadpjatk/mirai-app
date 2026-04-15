@@ -4,6 +4,8 @@ import {
   GetGroupDocument,
   UpdateGroupDocument,
   GetGroupsByTripDocument,
+  AssignUserToGroupDocument,
+  RemoveUserFromGroupDocument,
 } from "@mirai-app/graphql-client";
 
 export function useGroupEditor(groupId?: string | null) {
@@ -16,16 +18,77 @@ export function useGroupEditor(groupId?: string | null) {
   });
 
   const [, updateMutation] = useMutation(UpdateGroupDocument);
+  const [{ fetching: isAssigning }, assignUserMutation] = useMutation(
+    AssignUserToGroupDocument,
+  );
+  const [{ fetching: isRemoving }, removeUserMutation] = useMutation(
+    RemoveUserFromGroupDocument,
+  );
 
-  // NOTE: Member assignment/removal mutations not yet implemented
-  // These operations will be enabled when backend mutations are available
-  const assignUser = async (_userId: string, _tripId: string) => {
-    throw new Error("assignUser not yet implemented with GraphQL");
-  };
+  const assignUser = useCallback(
+    async (userId: string, tripId: string) => {
+      if (!groupId) {
+        throw new Error("Cannot assign user: groupId is required");
+      }
 
-  const removeUser = async (_userId: string) => {
-    throw new Error("removeUser not yet implemented with GraphQL");
-  };
+      const result = await assignUserMutation({
+        input: {
+          groupId,
+          userId,
+        },
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate queries to refresh group data
+      client.invalidate(GetGroupDocument, { id: groupId });
+      client.invalidate(GetGroupsByTripDocument, {
+        tripId,
+        limit: 30,
+        offset: 0,
+      });
+
+      return result.data;
+    },
+    [groupId, assignUserMutation, client],
+  );
+
+  const removeUser = useCallback(
+    async (userId: string) => {
+      if (!groupId) {
+        throw new Error("Cannot remove user: groupId is required");
+      }
+
+      const tripId = groupData?.group?.trip?.id;
+      if (!tripId) {
+        throw new Error("Cannot remove user: tripId not available");
+      }
+
+      const result = await removeUserMutation({
+        input: {
+          groupId,
+          userId,
+        },
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate queries to refresh group data
+      client.invalidate(GetGroupDocument, { id: groupId });
+      client.invalidate(GetGroupsByTripDocument, {
+        tripId,
+        limit: 30,
+        offset: 0,
+      });
+
+      return result.data;
+    },
+    [groupId, groupData?.group?.trip?.id, removeUserMutation, client],
+  );
 
   const updateGroup = async (data: {
     id: string;
@@ -64,6 +127,8 @@ export function useGroupEditor(groupId?: string | null) {
     group: groupData?.group,
     isLoading,
     isUpdating: false, // Can track from mutation result if needed
+    isAssigning,
+    isRemoving,
     updateGroup,
     assignUser,
     removeUser,

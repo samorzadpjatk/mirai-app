@@ -166,7 +166,7 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
           user.firstName && user.lastName
             ? `${user.firstName} ${user.lastName}`
             : user.firstName || user.lastName || null,
-        emailVerified: null, // NOTE: Email verification not yet implemented in backend
+        emailVerified: user.emailVerified ?? null,
         role: user.role,
       };
     } catch (error) {
