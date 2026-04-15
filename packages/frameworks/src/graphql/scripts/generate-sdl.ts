@@ -17,11 +17,8 @@
 import { schema, generateSDL } from "../schema";
 import { writeFileSync } from "fs";
 import { join } from "path";
-import { serverLogger } from "@mirai-app/shared";
 
 const SDL_PATH = join(process.cwd(), "graphql-sdl", "schema.graphql");
-
-serverLogger.info("📝 Generating GraphQL SDL...");
 
 try {
   const sdl = generateSDL();
@@ -35,19 +32,6 @@ try {
   }
 
   writeFileSync(SDL_PATH, sdl, "utf-8");
-
-  serverLogger.info(`✅ SDL written to: ${SDL_PATH}`);
-  serverLogger.info(`📊 Schema stats:`, {
-    types: sdl.match(/type\s+\w+/g)?.length ?? 0,
-    inputs: sdl.match(/input\s+\w+/g)?.length ?? 0,
-    enums: sdl.match(/enum\s+\w+/g)?.length ?? 0,
-    queries: sdl.match(/\w+\(.*\):\s+\w+!?\s*$/gm)?.length ?? 0,
-    mutations: sdl.match(/\w+\(.*\):\s+\w+!?\s*$/gm)?.length ?? 0,
-  });
-} catch (error) {
-  serverLogger.error(
-    "❌ Failed to generate SDL:",
-    error instanceof Error ? error : new Error(String(error)),
-  );
+} catch {
   process.exit(1);
 }

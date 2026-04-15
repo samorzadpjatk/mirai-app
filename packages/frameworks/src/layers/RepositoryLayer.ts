@@ -2,7 +2,7 @@
  * RepositoryLayer - Effect Layer composition for all repository bindings
  *
  * This module provides factory functions that create Effect Layers binding
- * repository Context.Tags to their Drizzle implementations.
+ * repository Context.Tags to their Drizzle gateway implementations.
  *
  * Pattern follows CLAUDE.md §10.4 Layer composition guidelines:
  * - Layer.succeed for direct bindings (no async required)
@@ -50,35 +50,35 @@ import {
 // =============================================================================
 
 // User/Group Domain
-import { DrizzleUserRepository } from "@mirai-app/adapters/gateways/drizzle/user";
-import { DrizzleGroupRepository } from "@mirai-app/adapters/gateways/drizzle/group";
-import { DrizzleLocationRepository } from "@mirai-app/adapters/gateways/drizzle/location";
+import { DrizzleUserGateway } from "@mirai-app/adapters/gateways/user/drizzle/gateway";
+import { DrizzleGroupGateway } from "@mirai-app/adapters/gateways/group/drizzle/gateway";
+import { DrizzleLocationGateway } from "@mirai-app/adapters/gateways/location/drizzle/gateway";
 
 // Trip/Reward Domain
-import { DrizzleTripRepository } from "@mirai-app/adapters/gateways/drizzle/trip";
+import { DrizzleTripGateway } from "@mirai-app/adapters/gateways/trip/drizzle/gateway";
 import {
-  DrizzleRewardRepository,
-  DrizzleRewardPurchaseRepository,
-} from "@mirai-app/adapters/gateways/drizzle/reward";
+  DrizzleRewardGateway,
+  DrizzleRewardPurchaseGateway,
+} from "@mirai-app/adapters/gateways/reward/drizzle/gateway";
 
 // Challenge Domain
-import { DrizzleChallengeRepository } from "@mirai-app/adapters/gateways/drizzle/challenge";
-import { DrizzleChallengeSubmissionRepository } from "@mirai-app/adapters/gateways/drizzle/challenge-submission";
-import { DrizzleChallengeVoteRepository } from "@mirai-app/adapters/gateways/drizzle/challenge-vote";
+import { DrizzleChallengeGateway } from "@mirai-app/adapters/gateways/challenge/drizzle/gateway";
+import { DrizzleChallengeSubmissionGateway } from "@mirai-app/adapters/gateways/challenge/drizzle/submission";
+import { DrizzleChallengeVoteGateway } from "@mirai-app/adapters/gateways/challenge/drizzle/vote";
 
 // Notification Domain
-import { DrizzleNotificationRepository } from "@mirai-app/adapters/gateways/drizzle/notification";
-import { DrizzleNotificationDeliveryRepository } from "@mirai-app/adapters/gateways/drizzle/notification-delivery";
-import { DrizzleNotificationScheduleRepository } from "@mirai-app/adapters/gateways/drizzle/notification-schedule";
+import { DrizzleNotificationGateway } from "@mirai-app/adapters/gateways/notification/drizzle/gateway";
+import { DrizzleNotificationDeliveryGateway } from "@mirai-app/adapters/gateways/notification/drizzle/delivery";
+import { DrizzleNotificationScheduleGateway } from "@mirai-app/adapters/gateways/notification/drizzle/schedule";
 
 // Content/Activity Domain
-import { DrizzleActivityFeedRepository } from "@mirai-app/adapters/gateways/drizzle/activity-feed";
-import { DrizzleEventRepository } from "@mirai-app/adapters/gateways/drizzle/event";
-import { DrizzleSponsorRepository } from "@mirai-app/adapters/gateways/drizzle/sponsor";
+import { DrizzleActivityFeedGateway } from "@mirai-app/adapters/gateways/activity-feed/drizzle/gateway";
+import { DrizzleEventGateway } from "@mirai-app/adapters/gateways/event/drizzle/gateway";
+import { DrizzleSponsorGateway } from "@mirai-app/adapters/gateways/sponsor/drizzle/gateway";
 
 // Reporting/Admin Domain
-import { DrizzleSubmissionReportRepository } from "@mirai-app/adapters/gateways/drizzle/submission-report";
-import { DrizzleCoinTransactionRepository } from "@mirai-app/adapters/gateways/drizzle/coin-transaction";
+import { DrizzleSubmissionReportGateway } from "@mirai-app/adapters/gateways/submission-report/drizzle/gateway";
+import { DrizzleCoinTransactionGateway } from "@mirai-app/adapters/gateways/coin-transaction/drizzle/gateway";
 
 // =============================================================================
 // Domain-Grouped Repository Factories
@@ -92,9 +92,9 @@ import { DrizzleCoinTransactionRepository } from "@mirai-app/adapters/gateways/d
  */
 export const makeUserDomainLayer = (db: DrizzleDb) =>
   Layer.mergeAll(
-    Layer.succeed(UserRepositoryTag, new DrizzleUserRepository(db)),
-    Layer.succeed(GroupRepositoryTag, new DrizzleGroupRepository(db)),
-    Layer.succeed(LocationRepositoryTag, new DrizzleLocationRepository(db)),
+    Layer.succeed(UserRepositoryTag, new DrizzleUserGateway(db)),
+    Layer.succeed(GroupRepositoryTag, new DrizzleGroupGateway(db)),
+    Layer.succeed(LocationRepositoryTag, new DrizzleLocationGateway(db)),
   );
 
 /**
@@ -105,11 +105,11 @@ export const makeUserDomainLayer = (db: DrizzleDb) =>
  */
 export const makeTripRewardDomainLayer = (db: DrizzleDb) =>
   Layer.mergeAll(
-    Layer.succeed(TripRepositoryTag, new DrizzleTripRepository(db)),
-    Layer.succeed(RewardRepositoryTag, new DrizzleRewardRepository(db)),
+    Layer.succeed(TripRepositoryTag, new DrizzleTripGateway(db)),
+    Layer.succeed(RewardRepositoryTag, new DrizzleRewardGateway(db)),
     Layer.succeed(
       RewardPurchaseRepositoryTag,
-      new DrizzleRewardPurchaseRepository(db),
+      new DrizzleRewardPurchaseGateway(db),
     ),
   );
 
@@ -121,14 +121,14 @@ export const makeTripRewardDomainLayer = (db: DrizzleDb) =>
  */
 export const makeChallengeDomainLayer = (db: DrizzleDb) =>
   Layer.mergeAll(
-    Layer.succeed(ChallengeRepositoryTag, new DrizzleChallengeRepository(db)),
+    Layer.succeed(ChallengeRepositoryTag, new DrizzleChallengeGateway(db)),
     Layer.succeed(
       ChallengeSubmissionRepositoryTag,
-      new DrizzleChallengeSubmissionRepository(db),
+      new DrizzleChallengeSubmissionGateway(db),
     ),
     Layer.succeed(
       ChallengeVoteRepositoryTag,
-      new DrizzleChallengeVoteRepository(db),
+      new DrizzleChallengeVoteGateway(db),
     ),
   );
 
@@ -142,15 +142,15 @@ export const makeNotificationDomainLayer = (db: DrizzleDb) =>
   Layer.mergeAll(
     Layer.succeed(
       NotificationRepositoryTag,
-      new DrizzleNotificationRepository(db),
+      new DrizzleNotificationGateway(db),
     ),
     Layer.succeed(
       NotificationDeliveryRepositoryTag,
-      new DrizzleNotificationDeliveryRepository(db),
+      new DrizzleNotificationDeliveryGateway(db),
     ),
     Layer.succeed(
       NotificationScheduleRepositoryTag,
-      new DrizzleNotificationScheduleRepository(db),
+      new DrizzleNotificationScheduleGateway(db),
     ),
   );
 
@@ -164,10 +164,10 @@ export const makeContentDomainLayer = (db: DrizzleDb) =>
   Layer.mergeAll(
     Layer.succeed(
       ActivityFeedRepositoryTag,
-      new DrizzleActivityFeedRepository(db),
+      new DrizzleActivityFeedGateway(db),
     ),
-    Layer.succeed(EventRepositoryTag, new DrizzleEventRepository(db)),
-    Layer.succeed(SponsorRepositoryTag, new DrizzleSponsorRepository(db)),
+    Layer.succeed(EventRepositoryTag, new DrizzleEventGateway(db)),
+    Layer.succeed(SponsorRepositoryTag, new DrizzleSponsorGateway(db)),
   );
 
 /**
@@ -179,11 +179,11 @@ export const makeReportingDomainLayer = (db: DrizzleDb) =>
   Layer.mergeAll(
     Layer.succeed(
       SubmissionReportRepositoryTag,
-      new DrizzleSubmissionReportRepository(db),
+      new DrizzleSubmissionReportGateway(db),
     ),
     Layer.succeed(
       CoinTransactionRepositoryTag,
-      new DrizzleCoinTransactionRepository(db),
+      new DrizzleCoinTransactionGateway(db),
     ),
   );
 

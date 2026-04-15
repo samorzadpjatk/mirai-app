@@ -43,12 +43,12 @@ import {
 // =============================================================================
 
 // Supabase-based services
-import { SupabaseAuthAdapter } from "@mirai-app/adapters/gateways/auth";
-import { SupabaseRealtimeAdapter } from "@mirai-app/adapters/gateways/realtime";
-import { SupabaseStorageAdapter } from "@mirai-app/adapters/gateways/storage";
+import { SupabaseAuthAdapter } from "@mirai-app/adapters/gateways/auth/supabase/adapter";
+import { SupabaseRealtimeAdapter } from "@mirai-app/adapters/gateways/realtime/supabase/adapter";
+import { SupabaseStorageAdapter } from "@mirai-app/adapters/gateways/storage/supabase/adapter";
 
 // Database-based services
-import { DrizzleTelemetryAdapter } from "@mirai-app/adapters/gateways/drizzle/telemetry";
+import { DrizzleTelemetryAdapter } from "@mirai-app/adapters/gateways/telemetry/drizzle/gateway";
 
 // In-memory/event-based services
 import { EventEmitterPubSub } from "@mirai-app/adapters/services";
@@ -105,15 +105,6 @@ export interface ServiceLayerConfig {
   db: DrizzleDb;
 }
 
-/**
- * Supabase client direct access layer
- * - SupabaseClientTag (direct Supabase client access)
- *
- * Provides direct access to the Supabase client for admin operations
- * and other direct Supabase API usage.
- */
-export const makeSupabaseClientLayer = (supabase: SupabaseClient) =>
-  Layer.succeed(SupabaseClientTag, supabase);
 
 /**
  * Creates a complete Layer with all service bindings.
@@ -147,42 +138,4 @@ export const makeServiceLayer = (config: ServiceLayerConfig) =>
     makeSupabaseServicesLayer(config.supabase),
     makeTelemetryServiceLayer(config.db),
     makePubSubServiceLayer(),
-    makeSupabaseClientLayer(config.supabase),
   );
-
-// =============================================================================
-// Individual Service Factories (for selective composition)
-// =============================================================================
-
-/**
- * Create only the Auth service layer
- *
- * @param supabase - Supabase client
- * @returns Layer with AuthPortTag binding
- */
-export const makeAuthLayer = (supabase: SupabaseClient) =>
-  Layer.succeed(AuthPortTag, new SupabaseAuthAdapter(supabase));
-
-/**
- * Create only the Realtime service layer
- *
- * @param supabase - Supabase client
- * @returns Layer with RealtimePortTag binding
- */
-export const makeRealtimeLayer = (supabase: SupabaseClient) =>
-  Layer.succeed(RealtimePortTag, new SupabaseRealtimeAdapter(supabase));
-
-/**
- * Create only the Storage service layer
- *
- * @param supabase - Supabase client
- * @returns Layer with StoragePortTag binding
- */
-export const makeStorageLayer = (supabase: SupabaseClient) =>
-  Layer.succeed(StoragePortTag, new SupabaseStorageAdapter(supabase));
-
-// =============================================================================
-// Re-exports for convenience
-// =============================================================================
-
-export type { DrizzleDb, SupabaseClient, ServiceLayerConfig };

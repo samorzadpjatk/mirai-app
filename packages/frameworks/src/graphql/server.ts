@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { createYoga } from "graphql-yoga";
-import { serverLogger } from "@mirai-app/shared";
 import type { Schema } from "./schema";
 import type { GraphQLContext } from "./builder";
 import type { Controllers } from "@mirai-app/adapters";
@@ -162,16 +161,6 @@ export async function startHonoServer(
     port: options.port,
     fetch: app.fetch,
   });
-
-  serverLogger.info(
-    `🚀 GraphQL server ready at http://localhost:${options.port}/graphql`,
-  );
-
-  if (process.env.NODE_ENV !== "production") {
-    serverLogger.info(
-      `📊 GraphiQL available at http://localhost:${options.port}/graphiql`,
-    );
-  }
 
   return server;
 }

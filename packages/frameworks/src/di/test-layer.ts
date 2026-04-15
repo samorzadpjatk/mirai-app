@@ -41,10 +41,10 @@ import { Layer, Context } from "effect";
 // InMemory Adapter Imports
 // =============================================================================
 
-import { InMemoryAuthAdapter } from "@mirai-app/adapters/gateways/auth/InMemoryAuthAdapter";
-import { InMemoryRealtimeAdapter } from "@mirai-app/adapters/gateways/realtime/InMemoryRealtimeAdapter";
-import { InMemoryStorageAdapter } from "@mirai-app/adapters/gateways/storage/InMemoryStorageAdapter";
-import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryAuthAdapter } from "@mirai-app/adapters/gateways/auth/in-memory/adapter";
+import { InMemoryRealtimeAdapter } from "@mirai-app/adapters/gateways/realtime/in-memory/adapter";
+import { InMemoryStorageAdapter } from "@mirai-app/adapters/gateways/storage/in-memory/adapter";
+import { InMemoryUserGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 // =============================================================================
 // Port Tags
@@ -71,8 +71,8 @@ export interface TestLayerConfig {
   realtimeAdapter?: InMemoryRealtimeAdapter;
   /** Override the storage adapter (default: new InMemoryStorageAdapter()) */
   storageAdapter?: InMemoryStorageAdapter;
-  /** Override the user repository (default: new InMemoryUserRepository()) */
-  userRepository?: InMemoryUserRepository;
+  /** Override the user gateway (default: new InMemoryUserGateway()) */
+  userGateway?: InMemoryUserGateway;
   /** Additional Layer overrides to merge with the base test layer */
   overrides?: ReadonlyArray<Layer.Layer<any, never, never>>;
 }
@@ -131,10 +131,10 @@ export interface TestLayerResult<R> {
  *
  * @example
  * ```typescript
- * // With Layer overrides
- * const customLayer = Layer.succeed(CustomTag, customImplementation);
+ * // Custom test layer with overrides
  * const testLayer = createTestLayer({
- *   overrides: [customLayer]
+ *   userRepository: new InMemoryUserGateway(),
+ *   authAdapter: new InMemoryAuthAdapter(),
  * });
  * ```
  */
@@ -153,7 +153,7 @@ export function createTestLayer(
     ),
     Layer.succeed(
       UserRepositoryTag,
-      config.userRepository ?? new InMemoryUserRepository(),
+      config.userGateway ?? new InMemoryUserGateway(),
     ),
   );
 
@@ -177,7 +177,7 @@ export function createTestLayer(
  * @example
  * ```typescript
  * const minimalLayer = createMinimalTestLayer({
- *   userRepository: new InMemoryUserRepository(),
+ *   userGateway: new InMemoryUserGateway(),
  * });
  * ```
  */
@@ -235,13 +235,13 @@ export function createStorageTestLayer(
 /**
  * Create a layer with just the UserRepository
  *
- * @param repository - InMemoryUserRepository instance (default: new)
+ * @param gateway - InMemoryUserGateway instance (default: new)
  * @returns Layer with UserRepositoryTag bound
  */
 export function createUserRepositoryTestLayer(
-  repository: InMemoryUserRepository = new InMemoryUserRepository(),
+  gateway: InMemoryUserGateway = new InMemoryUserGateway(),
 ): Layer.Layer<typeof UserRepositoryTag, never, never> {
-  return Layer.succeed(UserRepositoryTag, repository);
+  return Layer.succeed(UserRepositoryTag, gateway);
 }
 
 // =============================================================================

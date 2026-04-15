@@ -1,189 +1,297 @@
+/**
+ * User GraphQL Resolvers
+ *
+ * Resolvers for User domain queries and mutations.
+ * Maps use case outputs to GraphQL responses with proper error handling.
+ *
+ * ## Queries
+ *
+ * - user(id: ID!): User - Get user by ID (authenticated)
+ * - users(limit: Int, offset: Int): [User!]! - List all users (admin only)
+ * - me: User - Get current authenticated user
+ *
+ * ## Mutations
+ *
+ * - createUser(input: CreateUserInput!): UserCreateResult - Create new user (admin only)
+ * - updateUser(input: UpdateUserInput!): UserUpdateResult - Update user (authenticated)
+ *
+ * @module User/resolvers
+ */
+
 import { builder } from "../builder";
-import { UserType, CreateUserInput, UpdateUserInput } from "../types/User";
-import { UserRole } from "@mirai-app/domain";
+import type {
+  GetUserOutput,
+  CreateUserOutput,
+  UpdateUserOutput,
+} from "@mirai-app/use-cases";
+import { requireAuth, requireAdmin } from "../utils/auth-helpers";
+import {
+  handleControllerResult,
+  mapErrorToGraphQL,
+} from "../utils/error-mapper";
+
+// Import User types for side effects (registers them with builder)
+import "../types/User";
+import {
+  UserCreateResultType,
+  UserUpdateResultType,
+  CreateUserInput,
+  UpdateUserInput,
+} from "../types/User";
+
+// =============================================================================
+// Types
+// =============================================================================
 
 /**
- * User Queries
- *
- * GraphQL query resolvers for User domain.
- * All resolvers use DI container to resolve use cases.
+ * Input type for user query
  */
-builder.queryFields((t) => ({
-  /**
-   * Get a user by ID
-   */
-  user: t.field({
-    type: UserType,
+const UserInput = builder.inputType("UserInput", {
+  description: "Input for fetching a user by ID",
+  fields: (t) => ({
+    id: t.id({
+      description: "Unique user ID",
+      required: true,
+    }),
+  }),
+});
+
+// =============================================================================
+// Query Fields
+// =============================================================================
+
+/**
+ * Query: user(id: ID!) - Get user by ID
+ *
+ * Requires authentication. Users can view any user's profile.
+ */
+builder.queryField("user", (t) =>
+  t.field({
+    description: "Get a user by their unique ID",
+    type: "User",
     nullable: true,
-    description: "Get a user by ID",
     args: {
-      id: t.arg.id({ required: true, description: "User ID" }),
+      id: t.arg.id({
+        description: "User ID to fetch",
+        required: true,
+      }),
     },
-    authScopes: { authenticated: true },
-    resolve: async (_, args, context) => {
+    authScopes: {
+      authenticated: true,
+    },
+    resolve: async (_root, args, context): Promise<GetUserOutput | null> => {
+      // Require authentication
+      await requireAuth(context);
+
+      // Get controller from context controllers (Effect DI pattern)
       const controller = context.controllers.userController;
+
+      // Fetch user and handle result
       const result = await controller.getById({ id: args.id });
 
-      if (!result.success) {
-        throw new Error(result.error);
+      // Handle errors manually to support "not found" -> null semantics
+      if (result.success === false) {
+        // Return null for not found, throw for other errors
+        if (result.error.toLowerCase().includes("not found")) {
+          return null;
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
       }
 
       return result.data;
     },
   }),
-
-  /**
-   * Get the current authenticated user
-   */
-  me: t.field({
-    type: UserType,
-    nullable: true,
-    description: "Get the currently authenticated user",
-    authScopes: { authenticated: true },
-    resolve: async (_, __, context) => {
-      if (!context.authContext) {
-        return null;
-      }
-
-      const controller = context.controllers.userController;
-      const result = await controller.getById({
-        id: context.authContext.userId,
-      });
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-  }),
-
-  /**
-   * List all users (admin only)
-   */
-  users: t.field({
-    type: [UserType],
-    description: "List all users (admin only)",
-    args: {
-      limit: t.arg.int({ required: false, defaultValue: 20 }),
-      offset: t.arg.int({ required: false, defaultValue: 0 }),
-    },
-    authScopes: { admin: true },
-    resolve: async (_, args, context) => {
-      const controller = context.controllers.userController;
-      const result = await controller.list({
-        limit: args.limit ?? 20,
-        offset: args.offset ?? 0,
-      });
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-  }),
-}));
+);
 
 /**
- * User Mutations
+ * Query: users - Get all users (admin only)
  *
- * GraphQL mutation resolvers for User domain.
+ * Requires admin role. Returns a list of all users.
  */
-builder.mutationFields((t) => ({
-  /**
-   * Create a new user
-   */
-  createUser: t.field({
-    type: UserType,
-    description: "Create a new user",
+builder.queryField("users", (t) =>
+  t.field({
+    description: "Get all users (admin only)",
+    type: ["User"],
     args: {
-      input: t.arg({ type: CreateUserInput, required: true }),
+      limit: t.arg.int({
+        description: "Maximum number of users to return",
+        required: false,
+        defaultValue: 20,
+      }),
+      offset: t.arg.int({
+        description: "Number of users to skip",
+        required: false,
+        defaultValue: 0,
+      }),
     },
-    authScopes: { public: true }, // Allow public registration
-    resolve: async (_, args, context) => {
+    authScopes: {
+      admin: true,
+    },
+    resolve: async (_root, args, context): Promise<GetUserOutput[]> => {
+      // Require admin authentication
+      await requireAdmin(context);
+
+      // Get controller from context controllers (Effect DI pattern)
       const controller = context.controllers.userController;
 
-      const roleMap: Record<string, UserRole> = {
-        USER: UserRole.USER,
-        ADMIN: UserRole.ADMIN,
-        MODERATOR: UserRole.MODERATOR,
-        SERVICE: UserRole.SERVICE,
-      };
+      // Fetch users using controller result handler
+      return handleControllerResult(
+        await controller.list({
+          limit: args.limit ?? 20,
+          offset: args.offset ?? 0,
+        }),
+      );
+    },
+  }),
+);
 
+/**
+ * Query: me - Get current authenticated user
+ *
+ * Returns the currently authenticated user's profile.
+ */
+builder.queryField("me", (t) =>
+  t.field({
+    description: "Get the currently authenticated user",
+    type: "User",
+    nullable: true,
+    authScopes: {
+      authenticated: true,
+    },
+    resolve: async (_root, _args, context): Promise<GetUserOutput | null> => {
+      // Get current user's auth context
+      const authContext = await requireAuth(context);
+
+      // Get controller from context controllers (Effect DI pattern)
+      const controller = context.controllers.userController;
+
+      // Fetch user by their own ID
+      const result = await controller.getById({
+        id: authContext.userId as string,
+      });
+
+      // Handle errors manually to support "not found" -> null semantics
+      if (result.success === false) {
+        // Return null for not found, throw for other errors
+        if (result.error.toLowerCase().includes("not found")) {
+          return null;
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return result.data;
+    },
+  }),
+);
+
+// =============================================================================
+// Mutation Fields
+// =============================================================================
+
+/**
+ * Mutation: createUser - Create a new user
+ *
+ * Requires admin role. Creates a user with specified details.
+ */
+builder.mutationField("createUser", (t) =>
+  t.field({
+    description: "Create a new user (admin only)",
+    type: UserCreateResultType,
+    authScopes: { admin: true },
+    args: {
+      input: t.arg({
+        type: CreateUserInput,
+        description: "User creation input",
+        required: true,
+      }),
+    },
+    resolve: async (_root, args, context): Promise<CreateUserOutput> => {
+      // Require admin authentication
+      await requireAdmin(context);
+
+      // Get controller from context controllers (Effect DI pattern)
+      const controller = context.controllers.userController;
+
+      // Create user
       const result = await controller.create({
         authUserId: args.input.authUserId,
         firstName: args.input.firstName,
         lastName: args.input.lastName,
-        role: roleMap[args.input.role ?? "USER"] ?? UserRole.USER,
+        role: args.input.role ?? undefined,
       });
 
-      if (!result.success) {
-        throw new Error(result.error);
+      // Handle errors
+      if (result.success === false) {
+        throw mapErrorToGraphQL(new Error(result.error));
       }
 
       return result.data;
     },
   }),
+);
 
-  /**
-   * Update the current user
-   */
-  updateMe: t.field({
-    type: UserType,
-    description: "Update the current user's profile",
-    args: {
-      input: t.arg({ type: UpdateUserInput, required: true }),
-    },
+/**
+ * Mutation: updateUser - Update an existing user
+ *
+ * Requires authentication. Users can update their own profile,
+ * admins can update any user.
+ */
+builder.mutationField("updateUser", (t) =>
+  t.field({
+    description: "Update a user's profile information",
+    type: UserUpdateResultType,
     authScopes: { authenticated: true },
-    resolve: async (_, args, context) => {
-      if (!context.authContext) {
-        throw new Error("Not authenticated");
-      }
-
-      const controller = context.controllers.userController;
-
-      const result = await controller.update({
-        userId: context.authContext.userId,
-        firstName: args.input.firstName ?? undefined,
-        lastName: args.input.lastName ?? undefined,
-        hasAvatar: args.input.hasAvatar ?? undefined,
-      });
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-  }),
-
-  /**
-   * Update a user (admin only)
-   */
-  updateUser: t.field({
-    type: UserType,
-    description: "Update any user (admin only)",
     args: {
-      id: t.arg.id({ required: true, description: "User ID to update" }),
-      input: t.arg({ type: UpdateUserInput, required: true }),
+      input: t.arg({
+        type: UpdateUserInput,
+        description: "User update input",
+        required: true,
+      }),
     },
-    authScopes: { admin: true },
-    resolve: async (_, args, context) => {
+    resolve: async (_root, args, context): Promise<UpdateUserOutput> => {
+      // Require authentication
+      const authContext = await requireAuth(context);
+
+      // Get controller from context controllers (Effect DI pattern)
       const controller = context.controllers.userController;
 
+      // Check authorization - users can update themselves, admins can update anyone
+      const targetUserId = args.input.userId.toString();
+      const isOwnProfile = authContext.userId === targetUserId;
+      const isAdmin =
+        authContext.role === "ADMIN" || authContext.role === "SERVICE";
+
+      if (!isOwnProfile && !isAdmin) {
+        throw mapErrorToGraphQL(
+          new Error("Forbidden: Can only update your own profile"),
+        );
+      }
+
+      // Update user
       const result = await controller.update({
-        userId: args.id,
+        userId: targetUserId,
         firstName: args.input.firstName ?? undefined,
         lastName: args.input.lastName ?? undefined,
         hasAvatar: args.input.hasAvatar ?? undefined,
       });
 
-      if (!result.success) {
-        throw new Error(result.error);
+      // Handle errors
+      if (result.success === false) {
+        // Return null for not found, throw for other errors
+        if (result.error.toLowerCase().includes("not found")) {
+          throw mapErrorToGraphQL(new Error("User not found"));
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
       }
 
       return result.data;
     },
   }),
-}));
+);
+
+// =============================================================================
+// Export
+// =============================================================================
+
+// Resolvers are registered automatically by importing this file
+export {};

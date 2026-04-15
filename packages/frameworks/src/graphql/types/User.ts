@@ -1,121 +1,327 @@
-import { builder } from "../builder";
-import type { User } from "@mirai-app/domain";
+/**
+ * User GraphQL Type
+ *
+ * Pothos type definition for the User domain entity.
+ * Maps from use case DTOs to GraphQL schema types.
+ *
+ * ## Types
+ *
+ * - User: Main user type (from GetUserOutput)
+ * - UserCreateResult: Result from createUser mutation
+ * - UserUpdateResult: Result from updateUser mutation
+ *
+ * ## Input Types
+ *
+ * - CreateUserInput: Input for creating a new user
+ * - UpdateUserInput: Input for updating a user
+ *
+ * @module User
+ */
+
+import { Effect } from "effect";
+import { builder, UserRoleEnum } from "../builder";
+import type { CreateUserOutput, UpdateUserOutput } from "@mirai-app/use-cases";
+import { SupabaseClientTag } from "@mirai-app/frameworks";
+
+// =============================================================================
+// User Object Type
+// =============================================================================
 
 /**
- * User Type (Pothos)
+ * User type for GraphQL schema
  *
- * GraphQL type definition for User entity.
- * Maps domain User entity to GraphQL schema.
- *
- * Phase 3: API Layer
- * - Code-first type definition
- * - Integrates with domain layer via DI container
- * - Field-level resolvers call use cases
+ * Derived from GetUserOutput DTO to maintain type safety
+ * between domain layer and API layer.
  */
-export const UserType = builder.objectType<"User">("User", {
-  description: "A user of the application",
+export const UserType = builder.objectType("User", {
+  description: "A user in the Mirai App system",
+  authScopes: {
+    public: true, // User profile is publicly viewable
+  },
   fields: (t) => ({
-    id: t.exposeID("id", { description: "Unique user identifier" }),
+    // -------------------------------------------------------------------------
+    // Identity Fields
+    // -------------------------------------------------------------------------
+
+    id: t.exposeID("id", {
+      description: "Unique identifier for the user (UUID)",
+      nullable: false,
+    }),
 
     authUserId: t.exposeString("authUserId", {
       description: "External authentication provider user ID",
-      authScopes: { authenticated: true }, // Only authenticated users can see this
+      nullable: false,
     }),
+
+    // -------------------------------------------------------------------------
+    // Name Fields
+    // -------------------------------------------------------------------------
 
     firstName: t.exposeString("firstName", {
       description: "User's first name",
+      nullable: false,
     }),
 
     lastName: t.exposeString("lastName", {
       description: "User's last name",
+      nullable: false,
     }),
 
-    fullName: t.string({
-      description: "Computed full name",
-      resolve: (user) => `${user.firstName} ${user.lastName}`,
+    fullName: t.exposeString("fullName", {
+      description: "Computed full name (firstName + lastName)",
+      nullable: false,
     }),
 
-    role: t.exposeString("role", {
-      description: "User role (USER, MODERATOR, ADMIN, SERVICE)",
+    // -------------------------------------------------------------------------
+    // Role & Permissions
+    // -------------------------------------------------------------------------
+
+    role: t.field({
+      type: UserRoleEnum,
+      description: "User's role in the system",
+      nullable: false,
+      resolve: (user) => user.role as import("@mirai-app/domain").UserRole,
     }),
+
+    // -------------------------------------------------------------------------
+    // Profile Fields
+    // -------------------------------------------------------------------------
 
     hasAvatar: t.exposeBoolean("hasAvatar", {
-      description: "Whether the user has uploaded an avatar",
+      description: "Whether the user has uploaded an avatar image",
+      nullable: false,
     }),
+
+    // -------------------------------------------------------------------------
+    // Timestamp Fields
+    // -------------------------------------------------------------------------
 
     createdAt: t.field({
       type: "DateTime",
       description: "When the user account was created",
+      nullable: false,
       resolve: (user) => user.createdAt,
-    }),
-
-    updatedAt: t.field({
-      type: "DateTime",
-      description: "When the user account was last updated",
-      resolve: (user) => user.updatedAt,
     }),
 
     lastSeenOn: t.field({
       type: "DateTime",
+      description: "When the user was last active (null if never seen)",
       nullable: true,
-      description: "When the user was last active",
       resolve: (user) => user.lastSeenOn,
+    }),
+
+    emailVerified: t.field({
+      type: "DateTime",
+      description: "When the user's email was verified (null if not verified)",
+      nullable: true,
+      resolve: async (user, _args, context): Promise<Date | null> => {
+        const program = Effect.gen(function* () {
+          // Access Supabase client via Effect Context.Tag
+          const supabaseClient = yield* SupabaseClientTag;
+
+          // Fetch user from Supabase Auth Admin API using authUserId
+          const { data, error } = yield* Effect.tryPromise(() =>
+            supabaseClient.auth.admin.getUserById(user.authUserId),
+          );
+
+          // Handle API errors gracefully - return null on failure
+          if (error || !data.user) {
+            return null;
+          }
+
+          // Return email_confirmed_at timestamp or null if not verified
+          const emailConfirmedAt = data.user.email_confirmed_at;
+          return emailConfirmedAt ? new Date(emailConfirmedAt) : null;
+        }).pipe(Effect.provide(context.appLayer));
+
+        // Execute the Effect program and handle errors gracefully
+        try {
+          return await Effect.runPromise(program);
+        } catch {
+          // Handle any errors gracefully - return null on Auth API failure
+          return null;
+        }
+      },
+    }),
+
+    // -------------------------------------------------------------------------
+    // Computed Fields
+    // -------------------------------------------------------------------------
+
+    isAdmin: t.boolean({
+      description: "Whether the user has admin privileges",
+      nullable: false,
+      resolve: (user) => user.role === "ADMIN" || user.role === "SERVICE",
+    }),
+
+    isModerator: t.boolean({
+      description: "Whether the user has moderator privileges or higher",
+      nullable: false,
+      resolve: (user) =>
+        user.role === "MODERATOR" ||
+        user.role === "ADMIN" ||
+        user.role === "SERVICE",
+    }),
+  }),
+});
+
+// =============================================================================
+// Result Types for Mutations
+// =============================================================================
+
+/**
+ * UserCreateResult type for createUser mutation response
+ *
+ * Contains the created user data without lastSeenOn (not available on creation).
+ */
+export const UserCreateResultType = builder.objectType("UserCreateResult", {
+  description: "Result of creating a new user",
+  authScopes: { public: true },
+  fields: (t) => ({
+    id: t.exposeID("id", {
+      description: "Unique identifier for the user (UUID)",
+      nullable: false,
+    }),
+    authUserId: t.exposeString("authUserId", {
+      description: "External authentication provider user ID",
+      nullable: false,
+    }),
+    firstName: t.exposeString("firstName", {
+      description: "User's first name",
+      nullable: false,
+    }),
+    lastName: t.exposeString("lastName", {
+      description: "User's last name",
+      nullable: false,
+    }),
+    fullName: t.exposeString("fullName", {
+      description: "Computed full name (firstName + lastName)",
+      nullable: false,
+    }),
+    role: t.field({
+      type: UserRoleEnum,
+      description: "User's role in the system",
+      nullable: false,
+      resolve: (user) => user.role as import("@mirai-app/domain").UserRole,
+    }),
+    hasAvatar: t.exposeBoolean("hasAvatar", {
+      description: "Whether the user has uploaded an avatar image",
+      nullable: false,
+    }),
+    createdAt: t.field({
+      type: "DateTime",
+      description: "When the user account was created",
+      nullable: false,
+      resolve: (user) => user.createdAt,
     }),
   }),
 });
 
 /**
- * User Input Types
+ * UserUpdateResult type for updateUser mutation response
+ *
+ * Contains the updated user data with updatedAt timestamp.
+ */
+export const UserUpdateResultType = builder.objectType("UserUpdateResult", {
+  description: "Result of updating a user",
+  authScopes: { public: true },
+  fields: (t) => ({
+    id: t.exposeID("id", {
+      description: "Unique identifier for the user (UUID)",
+      nullable: false,
+    }),
+    authUserId: t.exposeString("authUserId", {
+      description: "External authentication provider user ID",
+      nullable: false,
+    }),
+    firstName: t.exposeString("firstName", {
+      description: "User's first name",
+      nullable: false,
+    }),
+    lastName: t.exposeString("lastName", {
+      description: "User's last name",
+      nullable: false,
+    }),
+    fullName: t.exposeString("fullName", {
+      description: "Computed full name (firstName + lastName)",
+      nullable: false,
+    }),
+    role: t.field({
+      type: UserRoleEnum,
+      description: "User's role in the system",
+      nullable: false,
+      resolve: (user) => user.role as import("@mirai-app/domain").UserRole,
+    }),
+    hasAvatar: t.exposeBoolean("hasAvatar", {
+      description: "Whether the user has uploaded an avatar image",
+      nullable: false,
+    }),
+    updatedAt: t.field({
+      type: "DateTime",
+      description: "When the user was last updated",
+      nullable: false,
+      resolve: (user) => (user as UpdateUserOutput).updatedAt,
+    }),
+  }),
+});
+
+// =============================================================================
+// Input Types for Mutations
+// =============================================================================
+
+/**
+ * Input type for creating a new user
  */
 export const CreateUserInput = builder.inputType("CreateUserInput", {
   description: "Input for creating a new user",
   fields: (t) => ({
-    authUserId: t.string({ required: true }),
-    firstName: t.string({
+    authUserId: t.string({
+      description: "External authentication provider user ID (required)",
       required: true,
-      validate: { minLength: 2, maxLength: 100 },
+    }),
+    firstName: t.string({
+      description: "User's first name (2-100 characters, no digits)",
+      required: true,
     }),
     lastName: t.string({
+      description: "User's last name (2-100 characters, no digits)",
       required: true,
-      validate: { minLength: 2, maxLength: 100 },
     }),
-    role: t.string({ required: false, defaultValue: "USER" }),
-  }),
-});
-
-export const UpdateUserInput = builder.inputType("UpdateUserInput", {
-  description: "Input for updating a user",
-  fields: (t) => ({
-    firstName: t.string({
+    role: t.field({
+      type: UserRoleEnum,
+      description: "User's role (defaults to USER)",
       required: false,
-      validate: { minLength: 2, maxLength: 100 },
     }),
-    lastName: t.string({
-      required: false,
-      validate: { minLength: 2, maxLength: 100 },
-    }),
-    hasAvatar: t.boolean({ required: false }),
   }),
 });
 
 /**
- * User Result Types
- *
- * Used for mutations that return either a User or an error
+ * Input type for updating a user
  */
-export const UserResult = builder.unionType("UserResult", {
-  description: "Result of a user mutation",
-  types: [UserType, "Error"],
-  resolveType: (value) => {
-    if ("id" in value) return "User";
-    return "Error";
-  },
-});
-
-export const ErrorType = builder.objectType<"Error">("Error", {
-  description: "Error result",
+export const UpdateUserInput = builder.inputType("UpdateUserInput", {
+  description: "Input for updating an existing user",
   fields: (t) => ({
-    message: t.exposeString("message"),
-    code: t.exposeString("code", { nullable: true }),
+    userId: t.id({
+      description: "ID of the user to update",
+      required: true,
+    }),
+    firstName: t.string({
+      description: "User's first name (2-100 characters, no digits)",
+      required: false,
+    }),
+    lastName: t.string({
+      description: "User's last name (2-100 characters, no digits)",
+      required: false,
+    }),
+    hasAvatar: t.boolean({
+      description: "Whether the user has an avatar",
+      required: false,
+    }),
   }),
 });
+
+// =============================================================================
+// Export
+// =============================================================================
+
+export default UserType;

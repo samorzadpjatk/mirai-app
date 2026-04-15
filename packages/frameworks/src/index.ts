@@ -10,8 +10,8 @@
  * ┌─────────────────────────────────────────┐
  * │          Frameworks Layer               │
  * │  ┌─────────┐ ┌─────────┐ ┌─────────┐  │
- * │  │GraphQL  │ │ Drizzle │ │ Supabase│  │
- * │  │ Config  │ │ Client  │ │ Client  │  │
+ * │  │Drizzle  │ │ Effect │ │ Supabase│  │
+ * │  │ Client  │ │ Layers  │ │ Client  │  │
  * │  └─────────┘ └─────────┘ └─────────┘  │
  * └─────────────────────────────────────────┘
  *              │
@@ -23,20 +23,6 @@
  * ```
  *
  * ## Usage
- *
- * ### GraphQL Server Configuration
- * ```typescript
- * import { builder, schema } from "@mirai-app/frameworks/graphql";
- *
- * export const Query = builder.queryType({
- *   fields: (t) => ({
- *     users: t.field({
- *       type: [User],
- *       resolve: () => db.query.users.findMany(),
- *     }),
- *   }),
- * });
- * ```
  *
  * ### Drizzle ORM Client
  * ```typescript
@@ -63,21 +49,6 @@
 export { createDrizzleClient, type DrizzleDb } from "./drizzle/client";
 
 export * from "./drizzle/schema";
-
-// =============================================================================
-// Phase 3: GraphQL API Configuration
-// =============================================================================
-
-export { builder, schemaBuilder, type GraphQLContext } from "./graphql/builder";
-
-export {
-  schema,
-  type Schema,
-  generateSDL,
-  writeSDLToFile,
-} from "./graphql/schema";
-
-export { createHonoApp, startHonoServer } from "./graphql/server";
 
 // =============================================================================
 // Supabase Configuration

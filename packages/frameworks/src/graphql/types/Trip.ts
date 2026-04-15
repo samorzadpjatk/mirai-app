@@ -1,17 +1,166 @@
+/**
+ * Trip GraphQL Types
+ *
+ * Pothos type definitions for the Trip domain.
+ * Maps from TripController DTOs to GraphQL schema types.
+ *
+ * @module trip/types
+ */
+
 import { builder } from "../builder";
-import type { Trip, TripStatus } from "@mirai-app/domain";
+
+// =============================================================================
+// Enums
+// =============================================================================
 
 /**
- * Trip Type (Pothos)
- *
- * GraphQL type definition for Trip entity.
+ * Trip status enum for GraphQL
  */
-export const TripType = builder.objectType<"Trip">("Trip", {
+export const TripStatusEnum = builder.enumType("TripStatus", {
+  description: "Status of a trip",
+  values: {
+    PLANNING: { value: "PLANNING" },
+    ACTIVE: { value: "ACTIVE" },
+    COMPLETED: { value: "COMPLETED" },
+    CANCELLED: { value: "CANCELLED" },
+  },
+});
+
+// =============================================================================
+// Input Types
+// =============================================================================
+
+/**
+ * Input type for pagination
+ */
+export const TripPaginationInput = builder.inputType("TripPaginationInput", {
+  description: "Pagination input for trip queries",
+  fields: (t) => ({
+    limit: t.int({
+      description: "Maximum number of trips to return (1-100)",
+      required: false,
+      defaultValue: 30,
+    }),
+    offset: t.int({
+      description: "Number of trips to skip",
+      required: false,
+      defaultValue: 0,
+    }),
+  }),
+});
+
+/**
+ * Input type for trip query
+ */
+export const TripByIdInput = builder.inputType("TripByIdInput", {
+  description: "Input for fetching a trip by ID",
+  fields: (t) => ({
+    id: t.id({
+      description: "Trip ID to fetch",
+      required: true,
+    }),
+  }),
+});
+
+/**
+ * Input type for create trip mutation
+ */
+export const CreateTripInput = builder.inputType("CreateTripInput", {
+  description: "Input for creating a new trip",
+  fields: (t) => ({
+    name: t.string({
+      description: "Trip name",
+      required: true,
+    }),
+    description: t.string({
+      description: "Trip description",
+      required: false,
+    }),
+    startDate: t.field({
+      type: "DateTime",
+      description: "Trip start date",
+      required: true,
+    }),
+    endDate: t.field({
+      type: "DateTime",
+      description: "Trip end date",
+      required: true,
+    }),
+    backgroundImagePath: t.string({
+      description: "URL to background image",
+      required: false,
+    }),
+  }),
+});
+
+/**
+ * Input type for update trip mutation
+ */
+export const UpdateTripInput = builder.inputType("UpdateTripInput", {
+  description: "Input for updating a trip",
+  fields: (t) => ({
+    id: t.id({
+      description: "Trip ID to update",
+      required: true,
+    }),
+    name: t.string({
+      description: "Trip name",
+      required: false,
+    }),
+    description: t.string({
+      description: "Trip description",
+      required: false,
+    }),
+    startDate: t.field({
+      type: "DateTime",
+      description: "Trip start date",
+      required: false,
+    }),
+    endDate: t.field({
+      type: "DateTime",
+      description: "Trip end date",
+      required: false,
+    }),
+    backgroundImagePath: t.string({
+      description: "URL to background image",
+      required: false,
+    }),
+  }),
+});
+
+/**
+ * Input type for delete trip mutation
+ */
+export const DeleteTripInput = builder.inputType("DeleteTripInput", {
+  description: "Input for deleting a trip",
+  fields: (t) => ({
+    id: t.id({
+      description: "Trip ID to delete",
+      required: true,
+    }),
+  }),
+});
+
+// =============================================================================
+// Object Types
+// =============================================================================
+
+/**
+ * Trip output type
+ * Matches the data returned by TripController
+ */
+export const TripType = builder.objectType("Trip", {
   description: "A trip/event in the application",
   fields: (t) => ({
-    id: t.exposeID("id", { description: "Unique trip identifier" }),
+    id: t.exposeID("id", {
+      description: "Unique trip identifier",
+      nullable: false,
+    }),
 
-    name: t.exposeString("name", { description: "Trip name" }),
+    name: t.exposeString("name", {
+      description: "Trip name",
+      nullable: false,
+    }),
 
     description: t.exposeString("description", {
       description: "Trip description",
@@ -21,13 +170,15 @@ export const TripType = builder.objectType<"Trip">("Trip", {
     startDate: t.field({
       type: "DateTime",
       description: "When the trip starts",
-      resolve: (trip) => trip.startDate,
+      nullable: false,
+      resolve: (trip: { startDate: Date }) => trip.startDate,
     }),
 
     endDate: t.field({
       type: "DateTime",
       description: "When the trip ends",
-      resolve: (trip) => trip.endDate,
+      nullable: false,
+      resolve: (trip: { endDate: Date }) => trip.endDate,
     }),
 
     backgroundImagePath: t.exposeString("backgroundImagePath", {
@@ -35,78 +186,112 @@ export const TripType = builder.objectType<"Trip">("Trip", {
       nullable: true,
     }),
 
-    status: t.exposeString("status", {
-      description: "Trip status (DRAFT, ACTIVE, COMPLETED, CANCELLED)",
+    status: t.field({
+      type: TripStatusEnum,
+      description: "Trip status",
+      nullable: false,
+      resolve: (trip: { status: string }) =>
+        trip.status as "PLANNING" | "ACTIVE" | "COMPLETED" | "CANCELLED",
     }),
 
     createdAt: t.field({
       type: "DateTime",
       description: "When the trip was created",
-      resolve: (trip) => trip.createdAt,
+      nullable: false,
+      resolve: (trip: { createdAt: Date }) => trip.createdAt,
     }),
 
     updatedAt: t.field({
       type: "DateTime",
       description: "When the trip was last updated",
-      resolve: (trip) => trip.updatedAt,
+      nullable: false,
+      resolve: (trip: { updatedAt: Date }) => trip.updatedAt,
     }),
 
-    // Computed fields
-    isActive: t.boolean({
-      description: "Whether the trip is currently active",
-      resolve: (trip) => {
-        const now = new Date();
-        return trip.startDate <= now && trip.endDate >= now;
-      },
+    // Computed status fields from TripController
+    isPlanning: t.exposeBoolean("isPlanning", {
+      description: "Whether the trip is in planning status",
+      nullable: false,
     }),
 
-    isUpcoming: t.boolean({
-      description: "Whether the trip is in the future",
-      resolve: (trip) => {
-        const now = new Date();
-        return trip.startDate > now;
-      },
+    isActive: t.exposeBoolean("isActive", {
+      description: "Whether the trip is in active status",
+      nullable: false,
     }),
 
-    isPast: t.boolean({
-      description: "Whether the trip has ended",
-      resolve: (trip) => {
-        const now = new Date();
-        return trip.endDate < now;
-      },
+    isCompleted: t.exposeBoolean("isCompleted", {
+      description: "Whether the trip is completed",
+      nullable: false,
+    }),
+
+    isCancelled: t.exposeBoolean("isCancelled", {
+      description: "Whether the trip is cancelled",
+      nullable: false,
     }),
   }),
 });
 
 /**
- * Trip Input Types
+ * Pagination info for trip list
  */
-export const CreateTripInput = builder.inputType("CreateTripInput", {
-  description: "Input for creating a new trip",
+export const TripPaginationInfoType = builder.objectType("TripPaginationInfo", {
+  description: "Pagination information for trip list",
   fields: (t) => ({
-    name: t.string({
-      required: true,
-      validate: { minLength: 1, maxLength: 255 },
+    total: t.exposeInt("total", {
+      description: "Total number of trips",
+      nullable: false,
     }),
-    description: t.string({ required: false }),
-    startDate: t.field({ type: "DateTime", required: true }),
-    endDate: t.field({ type: "DateTime", required: true }),
-    backgroundImagePath: t.string({ required: false }),
-    status: t.string({ required: false, defaultValue: "DRAFT" }),
+    limit: t.exposeInt("limit", {
+      description: "Number of items per page",
+      nullable: false,
+    }),
+    offset: t.exposeInt("offset", {
+      description: "Number of items skipped",
+      nullable: false,
+    }),
+    hasMore: t.exposeBoolean("hasMore", {
+      description: "Whether there are more items",
+      nullable: false,
+    }),
   }),
 });
 
-export const UpdateTripInput = builder.inputType("UpdateTripInput", {
-  description: "Input for updating a trip",
+/**
+ * Trip list result type
+ */
+export const TripListResultType = builder.objectType("TripListResult", {
+  description: "Result of fetching a list of trips",
   fields: (t) => ({
-    name: t.string({
-      required: false,
-      validate: { minLength: 1, maxLength: 255 },
+    trips: t.field({
+      type: [TripType],
+      description: "List of trips",
+      nullable: false,
+      resolve: (result: { trips: unknown[] }) => result.trips,
     }),
-    description: t.string({ required: false }),
-    startDate: t.field({ type: "DateTime", required: false }),
-    endDate: t.field({ type: "DateTime", required: false }),
-    backgroundImagePath: t.string({ required: false }),
-    status: t.string({ required: false }),
+    pagination: t.field({
+      type: TripPaginationInfoType,
+      description: "Pagination information",
+      nullable: false,
+      resolve: (result: { pagination: unknown }) => result.pagination,
+    }),
   }),
 });
+
+/**
+ * Delete trip result type
+ */
+export const DeleteTripResultType = builder.objectType("DeleteTripResult", {
+  description: "Result of deleting a trip",
+  fields: (t) => ({
+    success: t.exposeBoolean("success", {
+      description: "Whether deletion was successful",
+      nullable: false,
+    }),
+  }),
+});
+
+// =============================================================================
+// Export
+// =============================================================================
+
+export default TripType;

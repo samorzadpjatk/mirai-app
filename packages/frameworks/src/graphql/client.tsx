@@ -26,7 +26,6 @@
  */
 
 import { createContext, useContext, useCallback, useMemo } from "react";
-import { apiLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Types
@@ -128,9 +127,6 @@ class GraphQLClientImpl implements GraphQLClient {
     onData?: (data: T) => void,
   ): () => void {
     if (!this.wsEndpoint) {
-      apiLogger.warn(
-        "WebSocket endpoint not configured, subscriptions disabled",
-      );
       return () => {};
     }
 
@@ -272,7 +268,7 @@ export function GraphQLProvider({
  *
  * // Subscription
  * const unsubscribe = subscribe(USER_UPDATES, { userId: "123" }, (data) => {
- *   clientLogger.debug("User updated", data);
+ *   // handle data
  * });
  * ```
  */
@@ -348,55 +344,3 @@ export function useGraphQLMutation<T>() {
   return { mutate, loading, error };
 }
 
-// =============================================================================
-// Backward Compatibility Exports
-// =============================================================================
-
-/**
- * @deprecated Use GraphQLProvider instead
- */
-export function APIProvider({
-  children,
-  httpUrl,
-  wsUrl,
-}: {
-  children: React.ReactNode;
-  httpUrl: string;
-  wsUrl: string;
-}) {
-  return (
-    <GraphQLProvider
-      endpoint={httpUrl}
-      wsEndpoint={wsUrl}
-      getAuthToken={() => localStorage.getItem("auth_token")}
-    >
-      {children}
-    </GraphQLProvider>
-  );
-}
-
-/**
- * @deprecated Use useGraphQL instead
- */
-export function useTRPCClient() {
-  return useGraphQL();
-}
-
-/**
- * @deprecated Use GraphQLProvider with getAuthToken prop instead
- */
-export function getTRPCClient(httpUrl: string, wsUrl: string, token: string) {
-  const client = new GraphQLClientImpl({
-    endpoint: httpUrl,
-    wsEndpoint: wsUrl,
-    getAuthToken: () => token,
-  });
-
-  return {
-    client,
-    cleanup: () => client.disconnect(),
-  };
-}
-
-// React import for hooks
-import * as React from "react";

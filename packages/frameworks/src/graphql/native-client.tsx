@@ -8,7 +8,6 @@
  */
 
 import { useMemo, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 
@@ -3336,60 +3335,4 @@ export function useGraphQLClient(): GraphQLClient {
   }
 
   return context;
-}
-
-// =============================================================================
-// Backward Compatibility Exports (tRPC API compatible)
-// =============================================================================
-
-/**
- * @deprecated Use GraphQLProvider instead
- */
-export function TRPCProvider({
-  children,
-  httpUrl,
-  wsUrl: _wsUrl,
-  getToken,
-}: {
-  children: ReactNode;
-  httpUrl: string;
-  wsUrl: string;
-  getToken: () => string | null;
-}) {
-  return (
-    <GraphQLProvider endpoint={httpUrl} getAuthToken={getToken}>
-      {children}
-    </GraphQLProvider>
-  );
-}
-
-/**
- * @deprecated Use useGraphQL instead
- */
-export function useTRPC(): GraphQLClient {
-  return useGraphQL();
-}
-
-/**
- * @deprecated Use useGraphQLClient instead
- */
-export function useTRPCClient(): GraphQLClient {
-  return useGraphQLClient();
-}
-
-/**
- * @deprecated Use direct GraphQL client instead
- */
-export function getTRPCClient(httpUrl: string, _wsUrl: string, token: string) {
-  const client = new GraphQLClient({
-    endpoint: httpUrl,
-    getAuthToken: () => token,
-  });
-
-  return {
-    client,
-    cleanup: () => {
-      // No-op for GraphQL
-    },
-  };
 }

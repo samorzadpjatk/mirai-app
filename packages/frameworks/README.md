@@ -302,7 +302,7 @@ const authProgram = Effect.gen(function* () {
 }).pipe(Effect.provide(authLayer));
 
 // Test with custom implementation
-const customRepo = new InMemoryUserRepository();
+const customRepo = new InMemoryUserGateway();
 customRepo.users.set("123", { id: "123", name: "John" });
 const userLayer = createUserRepositoryTestLayer(customRepo);
 ```

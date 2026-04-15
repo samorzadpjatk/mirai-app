@@ -1,47 +1,75 @@
 /**
  * GraphQL Module
  *
- * Phase 3: API Layer (Hono + GraphQL + Pothos)
+ * Framework Layer - GraphQL API Infrastructure
  *
- * This module provides GraphQL API alongside the existing tRPC API.
- * Uses the Strangler Fig pattern for gradual migration.
+ * This module provides GraphQL schema, resolvers, and server infrastructure.
+ * It is part of the Frameworks layer in Clean Architecture, providing the
+ * API adapter implementation that the application layer uses.
  *
  * Architecture:
  * - Pothos: Code-first schema builder with TypeScript type safety
  * - GraphQL Yoga: GraphQL server with subscriptions support
- * - Hono: Lightweight web framework
- * - Auth middleware: Validates tokens via AuthPort
- * - DI integration: Resolvers use existing use cases
+ * - Hono: Lightweight web framework integration
+ * - DI integration: Resolvers use Effect-based controllers
  *
- * Migration Strategy:
- * - tRPC and GraphQL run concurrently (different ports)
- * - Existing clients continue using tRPC (port 3000)
- * - New polyglot clients use GraphQL (port 4000)
- * - Domain-by-domain migration without breaking changes
+ * ## Usage
  *
- * @example
+ * ### In Application Layer (backend-server):
  * ```typescript
- * // Start GraphQL server
- * import { startHonoServer, schema } from "@mirai-app/frameworks/graphql";
+ * import {
+ *   schema,
+ *   createYogaHandler,
+ *   createSimpleContextFactory
+ * } from "@mirai-app/frameworks/graphql";
  *
- * await startHonoServer(schema, {
- *   port: 4000,
- *   getDIContext: () => container.createScope(),
- *   authPort: container.resolve("authPort"),
+ * const yoga = createYogaHandler({
+ *   enableGraphiQL: process.env.NODE_ENV === "development",
+ *   contextFactory: createSimpleContextFactory(),
  * });
+ * ```
+ *
+ * ### For Client Applications:
+ * ```typescript
+ * import { GraphQLProvider, useGraphQL } from "@mirai-app/frameworks/graphql";
  * ```
  */
 
-// Schema builder and types
-export { builder, schemaBuilder, type GraphQLContext } from "./builder";
+// =============================================================================
+// Schema Builder
+// =============================================================================
 
+export { builder, UserRoleEnum } from "./builder";
+export type { PothosTypes } from "./builder";
+
+// =============================================================================
 // Schema
-export { schema, type Schema, generateSDL, writeSDLToFile } from "./schema";
+// =============================================================================
 
-// Server
+export { schema } from "./schema";
+export type { Schema } from "./schema";
+export { generateSDL, saveSchemaToFile, generateAndSaveSchema } from "./schema";
+
+// =============================================================================
+// Context
+// =============================================================================
+
+export type { GraphQLContext } from "./context";
+export { createContextFactory, createSimpleContextFactory } from "./context";
+
+// =============================================================================
+// Server and Handlers
+// =============================================================================
+
+export { createYogaHandler, createDefaultYogaHandler } from "./yoga-handler";
+
+// Legacy server (deprecated - use yoga-handler instead)
 export { createHonoApp, startHonoServer } from "./server";
 
+// =============================================================================
 // Client (for web app)
+// =============================================================================
+
 export {
   GraphQLProvider,
   useGraphQL,
@@ -54,7 +82,10 @@ export {
   type GraphQLClientConfig,
 } from "./client";
 
+// =============================================================================
 // Native Client (for React Native with React Query integration)
+// =============================================================================
+
 export {
   GraphQLProvider as TRPCProvider,
   useGraphQL as useTRPC,
@@ -63,29 +94,3 @@ export {
   type Procedure,
   type MutationProcedure,
 } from "./native-client";
-
-// Example query:
-// ```graphql
-// query GetUser($id: ID!) {
-//   user(id: $id) {
-//     id
-//     firstName
-//     lastName
-//     fullName
-//     role
-//     createdAt
-//   }
-// }
-// ```
-//
-// Example mutation:
-// ```graphql
-// mutation CreateUser($input: CreateUserInput!) {
-//   createUser(input: $input) {
-//     id
-//     firstName
-//     lastName
-//     role
-//   }
-// }
-// ```

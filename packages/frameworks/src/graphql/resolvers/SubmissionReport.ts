@@ -1,153 +1,118 @@
-import { builder } from "../builder";
-import { SubmissionReport } from "@mirai-app/domain";
-import type { GraphQLContext } from "../builder";
-import { GraphQLError } from "graphql";
-
 /**
- * SubmissionReport Resolvers
+ * SubmissionReport GraphQL Resolvers
  *
- * GraphQL resolvers for SubmissionReport domain.
+ * Resolvers for SubmissionReport domain queries and mutations.
+ * Maps use case outputs to GraphQL responses with proper error handling.
+ *
+ * ## Queries
+ *
+ * - submissionReports(submissionId: ID!): SubmissionReportListResult
+ *
+ * ## Mutations
+ *
+ * - createSubmissionReport(input: CreateReportInput!): SubmissionReportCreateResult
+ *
+ * @module SubmissionReport/resolvers
  */
 
-// Enum for report reason
-const ReportReasonEnum = builder.enumType("ReportReason", {
-  values: [
-    "INAPPROPRIATE_CONTENT",
-    "SPAM",
-    "HARASSMENT",
-    "CHEATING",
-    "OTHER",
-  ] as const,
-});
+import { builder } from "../builder";
+import type {
+  CreateReportOutput,
+  GetReportsOutput,
+} from "@mirai-app/use-cases";
+import { requireAuth, getCurrentUserId } from "../utils/auth-helpers";
+import {
+  SubmissionReportType,
+  SubmissionReportListResultType,
+  SubmissionReportCreateResultType,
+  CreateReportInput,
+} from "../types/submissionReport";
 
-// SubmissionReport type
-builder.node(SubmissionReport, {
-  id: { resolve: (sr) => sr.id },
-  name: "SubmissionReport",
-  fields: (t) => ({
-    id: t.exposeID("id"),
-    submissionId: t.exposeString("submissionId"),
-    reporterId: t.exposeString("reporterId"),
-    reason: t.field({
-      type: ReportReasonEnum,
-      resolve: (sr) =>
-        sr.reason as
-          | "INAPPROPRIATE_CONTENT"
-          | "SPAM"
-          | "HARASSMENT"
-          | "CHEATING"
-          | "OTHER",
-    }),
-    details: t.exposeString("details", { nullable: true }),
-    createdAt: t.field({
-      type: "DateTime",
-      resolve: (sr) => sr.createdAt,
-    }),
-    reporter: t.field({
-      type: "User",
-      nullable: true,
-      resolve: async (sr, _, ctx: GraphQLContext) => {
-        const controller = ctx.controllers.userController;
-        const result = await controller.getById({ id: sr.reporterId });
-        if (!result.success) return null;
-        return result.data;
-      },
-    }),
-    submission: t.field({
-      type: "ChallengeSubmission",
-      nullable: true,
-      resolve: async (sr, _, ctx: GraphQLContext) => {
-        const controller = ctx.controllers.challengeSubmissionController;
-        const result = await controller.getById({ id: sr.submissionId });
-        if (!result.success) return null;
-        return result.data;
-      },
-    }),
-  }),
-});
+// =============================================================================
+// Query Fields
+// =============================================================================
 
-// Queries
-builder.queryFields((t) => ({
-  submissionReport: t.field({
-    type: SubmissionReport,
-    nullable: true,
+/**
+ * Query: submissionReports(submissionId: ID!) - Get reports for a submission
+ *
+ * Public access. Returns list of reports filed against a submission.
+ */
+builder.queryField("submissionReports", (t) =>
+  t.field({
+    description: "Get all reports filed against a specific submission",
+    type: SubmissionReportListResultType,
+    authScopes: { public: true },
     args: {
-      id: t.arg.id({ required: true }),
+      submissionId: t.arg.id({
+        description: "Submission ID to fetch reports for",
+        required: true,
+      }),
     },
-    resolve: async (_, _args, _ctx: GraphQLContext) => {
-      // TODO: Implement getById in SubmissionReportController
-      return null;
-    },
-  }),
+    resolve: async (_root, args, context): Promise<GetReportsOutput> => {
+      const controller = context.controllers.submissionReportController;
 
-  submissionReports: t.field({
-    type: [SubmissionReport],
-    args: {
-      submissionId: t.arg.string(),
-      reporterId: t.arg.string(),
-      reason: t.arg({ type: ReportReasonEnum }),
-      limit: t.arg.int({ defaultValue: 20 }),
-      offset: t.arg.int({ defaultValue: 0 }),
-    },
-    resolve: async (_, _args, _ctx: GraphQLContext) => {
-      // TODO: Implement getReports in SubmissionReportController
-      return [];
-    },
-  }),
+      const result = await controller.getBySubmission({
+        submissionId: args.submissionId.toString(),
+      });
 
-  reportsBySubmission: t.field({
-    type: [SubmissionReport],
-    args: {
-      submissionId: t.arg.string({ required: true }),
-    },
-    resolve: async (_, _args, _ctx: GraphQLContext) => {
-      // TODO: Implement getBySubmissionId in SubmissionReportController
-      return [];
-    },
-  }),
-
-  myReports: t.field({
-    type: [SubmissionReport],
-    args: {
-      limit: t.arg.int({ defaultValue: 20 }),
-      offset: t.arg.int({ defaultValue: 0 }),
-    },
-    resolve: async (_, _args, _ctx: GraphQLContext) => {
-      // TODO: Implement getByReporterId in SubmissionReportController
-      return [];
-    },
-  }),
-}));
-
-// Mutations
-builder.mutationFields((t) => ({
-  createSubmissionReport: t.field({
-    type: SubmissionReport,
-    args: {
-      submissionId: t.arg.string({ required: true }),
-      reason: t.arg({ type: ReportReasonEnum, required: true }),
-      details: t.arg.string(),
-    },
-    resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.submissionReportController;
-      const result = await controller.create(args);
-      if (!result.success) {
-        throw new GraphQLError(result.error, {
-          extensions: { code: "BAD_REQUEST" },
-        });
+      if (result.success === false) {
+        throw new Error(result.error);
       }
+
       return result.data;
     },
   }),
+);
 
-  deleteSubmissionReport: t.field({
-    type: "Boolean",
+// =============================================================================
+// Mutation Fields
+// =============================================================================
+
+/**
+ * Mutation: createSubmissionReport - Create a new report
+ *
+ * Requires authentication. Creates a report against a submission.
+ * Returns error if user has already reported this submission.
+ */
+builder.mutationField("createSubmissionReport", (t) =>
+  t.field({
+    description: "Create a new submission report",
+    type: SubmissionReportCreateResultType,
+    authScopes: { authenticated: true },
     args: {
-      id: t.arg.id({ required: true }),
+      input: t.arg({
+        type: CreateReportInput,
+        description: "Report creation input",
+        required: true,
+      }),
     },
-    resolve: async (_, _args, _ctx: GraphQLContext) => {
-      // TODO: Implement delete in SubmissionReportController
-      return true;
+    resolve: async (_root, args, context): Promise<CreateReportOutput> => {
+      // Require authentication to get reporter ID
+      const reporterId = await getCurrentUserId(context);
+
+      const controller = context.controllers.submissionReportController;
+
+      const result = await controller.create(
+        {
+          submissionId: args.input.submissionId.toString(),
+          reason: args.input.reason,
+          details: args.input.details ?? undefined,
+        },
+        reporterId,
+      );
+
+      if (result.success === false) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
     },
   }),
-}));
+);
+
+// =============================================================================
+// Export
+// =============================================================================
+
+// Resolvers are registered automatically by importing this file
+export {};

@@ -1,265 +1,664 @@
-import { builder } from "../builder";
-import { NotificationSchedule } from "@mirai-app/domain";
-import type { GraphQLContext } from "../builder";
-import { GraphQLError } from "graphql";
-
 /**
- * NotificationSchedule Resolvers
+ * NotificationSchedule GraphQL Resolvers
  *
- * GraphQL resolvers for NotificationSchedule domain.
+ * Resolvers for NotificationSchedule domain queries and mutations.
+ * Maps use case outputs to GraphQL responses with proper error handling.
+ *
+ * @module NotificationSchedule/resolvers
  */
 
-// Enum for notification schedule type
-const NotificationScheduleTypeEnum = builder.enumType(
-  "NotificationScheduleType",
-  {
-    values: [
-      "CHALLENGE",
-      "REMINDER",
-      "ANNOUNCEMENT",
-      "DAILY_RANKING",
-      "INFO",
-    ] as const,
-  },
+import { builder } from "../builder";
+import type { NotificationScheduleOutput } from "@mirai-app/adapters";
+import {
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+} from "../utils/auth-helpers";
+import { mapErrorToGraphQL } from "../utils/error-mapper";
+
+// =============================================================================
+// Query Fields
+// =============================================================================
+
+/**
+ * Query: notificationSchedules - Get all schedules with filtering (moderator+)
+ *
+ * Requires moderator or admin role. Returns paginated schedules with filtering.
+ */
+builder.queryField("notificationSchedules", (t) =>
+  t.field({
+    description: "Get all notification schedules with filtering (moderator+)",
+    type: "NotificationSchedulesConnection",
+    args: {
+      pagination: t.arg({
+        type: "PaginationInput",
+        description: "Pagination parameters",
+        required: false,
+      }),
+      filter: t.arg({
+        type: "NotificationScheduleFilterInput",
+        description: "Filter options",
+        required: false,
+      }),
+    },
+    authScopes: {
+      moderator: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require moderator or admin authentication
+      await requireModerator(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Fetch schedules
+      const result = await controller.getAll({
+        pagination: args.pagination
+          ? {
+              limit: args.pagination.limit ?? 30,
+              offset: args.pagination.offset ?? 0,
+            }
+          : undefined,
+        filter: args.filter
+          ? {
+              tripId: args.filter.tripId ?? null,
+              notificationType: args.filter.notificationType ?? undefined,
+              isActive: args.filter.isActive ?? undefined,
+              startDateFrom: args.filter.startDateFrom ?? undefined,
+              startDateTo: args.filter.startDateTo ?? undefined,
+              search: args.filter.search ?? undefined,
+            }
+          : undefined,
+      });
+
+      if (!result.success) {
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return result.data;
+    },
+  }),
 );
 
-// NotificationSchedule type
-builder.node(NotificationSchedule, {
-  id: { resolve: (ns) => ns.id },
-  name: "NotificationSchedule",
-  fields: (t) => ({
-    id: t.exposeID("id"),
-    name: t.exposeString("name"),
-    tripId: t.exposeString("tripId", { nullable: true }),
-    notificationType: t.field({
-      type: NotificationScheduleTypeEnum,
-      resolve: (ns) => ns.notificationType,
-    }),
-    notificationTitle: t.exposeString("notificationTitle", { nullable: true }),
-    notificationBody: t.exposeString("notificationBody", { nullable: true }),
-    notificationUrl: t.exposeString("notificationUrl", { nullable: true }),
-    startDate: t.field({
-      type: "DateTime",
-      resolve: (ns) => ns.startDate,
-    }),
-    endDate: t.field({
-      type: "DateTime",
-      resolve: (ns) => ns.endDate,
-    }),
-    hour: t.exposeInt("hour"),
-    minute: t.exposeInt("minute"),
-    isActive: t.exposeBoolean("isActive"),
-    createdById: t.exposeString("createdById"),
-    lastRun: t.field({
-      type: "DateTime",
-      nullable: true,
-      resolve: (ns) => ns.lastRun,
-    }),
-    createdAt: t.field({
-      type: "DateTime",
-      resolve: (ns) => ns.createdAt,
-    }),
-    updatedAt: t.field({
-      type: "DateTime",
-      resolve: (ns) => ns.updatedAt,
-    }),
-    trip: t.field({
-      type: "Trip",
-      nullable: true,
-      resolve: async (ns, _, ctx: GraphQLContext) => {
-        if (!ns.tripId) return null;
-        const controller = ctx.controllers.tripController;
-        const result = await controller.getById({ id: ns.tripId });
-        if (!result.success) return null;
-        return result.data;
-      },
-    }),
-    createdBy: t.field({
-      type: "User",
-      nullable: true,
-      resolve: async (ns, _, ctx: GraphQLContext) => {
-        const controller = ctx.controllers.userController;
-        const result = await controller.getById({ id: ns.createdById });
-        if (!result.success) return null;
-        return result.data;
-      },
-    }),
-  }),
-});
-
-// Queries
-builder.queryFields((t) => ({
-  notificationSchedule: t.field({
-    type: NotificationSchedule,
+/**
+ * Query: notificationSchedule - Get a single schedule by ID (moderator+)
+ *
+ * Requires moderator or admin role. Returns a single schedule or null if not found.
+ */
+builder.queryField("notificationSchedule", (t) =>
+  t.field({
+    description: "Get a notification schedule by its ID (moderator+)",
+    type: "NotificationSchedule",
     nullable: true,
     args: {
-      id: t.arg.id({ required: true }),
-    },
-    resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.notificationScheduleController;
-      const result = await controller.getById({ id: args.id.toString() });
-      if (!result.success) return null;
-      return result.data;
-    },
-  }),
-
-  notificationSchedules: t.field({
-    type: [NotificationSchedule],
-    args: {
-      tripId: t.arg.string(),
-      type: t.arg({ type: NotificationScheduleTypeEnum }),
-      isActive: t.arg.boolean(),
-      limit: t.arg.int({ defaultValue: 20 }),
-      offset: t.arg.int({ defaultValue: 0 }),
-    },
-    resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.notificationScheduleController;
-      const result = await controller.getAll({
-        tripId: args.tripId ?? undefined,
-        notificationType: args.type ?? undefined,
-        isActive: args.isActive ?? undefined,
-        limit: args.limit,
-        offset: args.offset,
-      });
-      if (!result.success) {
-        throw new GraphQLError(result.error, {
-          extensions: { code: "INTERNAL_SERVER_ERROR" },
-        });
-      }
-      return result.data;
-    },
-  }),
-
-  activeSchedules: t.field({
-    type: [NotificationSchedule],
-    resolve: async (_, __, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.notificationScheduleController;
-      const result = await controller.getAll({ isActive: true });
-      if (!result.success) {
-        throw new GraphQLError(result.error, {
-          extensions: { code: "INTERNAL_SERVER_ERROR" },
-        });
-      }
-      return result.data;
-    },
-  }),
-
-  upcomingSchedules: t.field({
-    type: [NotificationSchedule],
-    args: {
-      days: t.arg.int({ defaultValue: 7 }),
-    },
-    resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.notificationScheduleController;
-      // Get active schedules and filter by start date within days
-      const result = await controller.getAll({ isActive: true });
-      if (!result.success) {
-        throw new GraphQLError(result.error, {
-          extensions: { code: "INTERNAL_SERVER_ERROR" },
-        });
-      }
-      const now = new Date();
-      const cutoffDate = new Date(
-        now.getTime() + args.days * 24 * 60 * 60 * 1000,
-      );
-      return result.data.filter(
-        (s: any) => s.startDate <= cutoffDate && s.endDate >= now,
-      );
-    },
-  }),
-}));
-
-// Mutations
-builder.mutationFields((t) => ({
-  createNotificationSchedule: t.field({
-    type: NotificationSchedule,
-    args: {
-      name: t.arg.string({ required: true }),
-      tripId: t.arg.string(),
-      notificationType: t.arg({
-        type: NotificationScheduleTypeEnum,
+      id: t.arg.id({
+        description: "Schedule ID",
         required: true,
       }),
-      notificationTitle: t.arg.string(),
-      notificationBody: t.arg.string(),
-      notificationUrl: t.arg.string(),
-      startDate: t.arg({ type: "DateTime", required: true }),
-      endDate: t.arg({ type: "DateTime", required: true }),
-      hour: t.arg.int({ required: true }),
-      minute: t.arg.int({ required: true }),
     },
-    resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.notificationScheduleController;
-      const result = await controller.create(args);
+    authScopes: {
+      moderator: true,
+    },
+    resolve: async (
+      _root,
+      args,
+      context,
+    ): Promise<NotificationScheduleOutput | null> => {
+      // Require moderator or admin authentication
+      await requireModerator(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Fetch schedule
+      const result = await controller.getById({ id: args.id });
+
       if (!result.success) {
-        throw new GraphQLError(result.error, {
-          extensions: { code: "BAD_REQUEST" },
-        });
+        // Return null for not found
+        if (result.error.toLowerCase().includes("not found")) {
+          return null;
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
       }
+
       return result.data;
     },
   }),
+);
 
-  updateNotificationSchedule: t.field({
-    type: NotificationSchedule,
+/**
+ * Query: activeNotificationSchedules - Get all active schedules (moderator+)
+ *
+ * Returns schedules that are currently within their active time window.
+ */
+builder.queryField("activeNotificationSchedules", (t) =>
+  t.field({
+    description: "Get all currently active notification schedules (moderator+)",
+    type: ["NotificationSchedule"],
     args: {
-      id: t.arg.id({ required: true }),
-      name: t.arg.string(),
-      notificationTitle: t.arg.string(),
-      notificationBody: t.arg.string(),
-      notificationUrl: t.arg.string(),
-      startDate: t.arg({ type: "DateTime" }),
-      endDate: t.arg({ type: "DateTime" }),
-      hour: t.arg.int(),
-      minute: t.arg.int(),
-      isActive: t.arg.boolean(),
+      tripId: t.arg.id({
+        description: "Filter by trip ID",
+        required: false,
+      }),
+      notificationType: t.arg({
+        type: "NotificationScheduleType",
+        description: "Filter by notification type",
+        required: false,
+      }),
     },
-    resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.notificationScheduleController;
-      const result = await controller.update({
-        id: args.id.toString(),
-        ...args,
+    authScopes: {
+      moderator: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require moderator or admin authentication
+      await requireModerator(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Fetch active schedules
+      const result = await controller.getActive();
+
+      if (!result.success) {
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      // Apply optional filters
+      let schedules = result.data;
+
+      if (args.tripId !== undefined && args.tripId !== null) {
+        schedules = schedules.filter((s) => s.tripId === args.tripId);
+      }
+
+      if (
+        args.notificationType !== undefined &&
+        args.notificationType !== null
+      ) {
+        schedules = schedules.filter(
+          (s) => s.notificationType === args.notificationType,
+        );
+      }
+
+      return schedules;
+    },
+  }),
+);
+
+/**
+ * Query: upcomingNotificationSchedules - Get upcoming schedules (moderator+)
+ *
+ * Returns schedules that are scheduled to run soon.
+ */
+builder.queryField("upcomingNotificationSchedules", (t) =>
+  t.field({
+    description: "Get upcoming notification schedules (moderator+)",
+    type: ["NotificationSchedule"],
+    args: {
+      limit: t.arg.int({
+        description: "Maximum number of schedules to return",
+        required: false,
+        defaultValue: 50,
+      }),
+      withinMinutes: t.arg.int({
+        description: "How many minutes in the future to look",
+        required: false,
+        defaultValue: 30,
+      }),
+    },
+    authScopes: {
+      moderator: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require moderator or admin authentication
+      await requireModerator(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Fetch upcoming schedules
+      const result = await controller.getUpcoming({
+        days: Math.ceil((args.withinMinutes ?? 30) / (24 * 60)),
       });
-      if (!result.success) {
-        throw new GraphQLError(result.error, {
-          extensions: { code: "BAD_REQUEST" },
-        });
-      }
-      return result.data;
-    },
-  }),
 
-  toggleScheduleActive: t.field({
-    type: NotificationSchedule,
-    args: {
-      id: t.arg.id({ required: true }),
-    },
-    resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.notificationScheduleController;
-      const result = await controller.toggleActive({ id: args.id.toString() });
       if (!result.success) {
-        throw new GraphQLError(result.error, {
-          extensions: { code: "BAD_REQUEST" },
-        });
+        throw mapErrorToGraphQL(new Error(result.error));
       }
-      return result.data;
-    },
-  }),
 
-  deleteNotificationSchedule: t.field({
-    type: "Boolean",
-    args: {
-      id: t.arg.id({ required: true }),
-    },
-    resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.controllers.notificationScheduleController;
-      const result = await controller.delete({ id: args.id.toString() });
-      if (!result.success) {
-        throw new GraphQLError(result.error, {
-          extensions: { code: "INTERNAL_SERVER_ERROR" },
-        });
-      }
-      return true;
+      // Apply limit
+      return result.data.slice(0, args.limit ?? 50);
     },
   }),
-}));
+);
+
+/**
+ * Query: notificationScheduleExecutionHistory - Get execution history (moderator+)
+ *
+ * Returns the execution history for a specific schedule.
+ */
+builder.queryField("notificationScheduleExecutionHistory", (t) =>
+  t.field({
+    description:
+      "Get execution history for a notification schedule (moderator+)",
+    type: "ExecutionHistoryResult",
+    args: {
+      scheduleId: t.arg.id({
+        description: "ID of the schedule",
+        required: true,
+      }),
+      pagination: t.arg({
+        type: "PaginationInput",
+        description: "Pagination parameters",
+        required: false,
+      }),
+    },
+    authScopes: {
+      moderator: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require moderator or admin authentication
+      await requireModerator(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Fetch execution history
+      const result = await controller.getExecutionHistory({
+        scheduleId: args.scheduleId,
+        limit: args.pagination?.limit ?? 30,
+      });
+
+      if (!result.success) {
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return { executions: result.data.executions };
+    },
+  }),
+);
+
+// =============================================================================
+// Mutation Fields
+// =============================================================================
+
+/**
+ * Mutation: createNotificationSchedule - Create a new schedule (admin only)
+ *
+ * Requires admin role. Creates a new notification schedule.
+ */
+builder.mutationField("createNotificationSchedule", (t) =>
+  t.field({
+    description: "Create a new notification schedule (admin only)",
+    type: "CreateNotificationSchedulePayload",
+    args: {
+      input: t.arg({
+        type: "CreateNotificationScheduleInput",
+        description: "Schedule creation data",
+        required: true,
+      }),
+    },
+    authScopes: {
+      admin: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require admin authentication
+      const authContext = await requireAdmin(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Create schedule
+      const result = await controller.create({
+        name: args.input.name,
+        tripId: args.input.tripId ?? null,
+        notificationType: args.input.notificationType,
+        notificationTitle: args.input.notificationTitle ?? null,
+        notificationBody: args.input.notificationBody ?? null,
+        notificationUrl: args.input.notificationUrl ?? null,
+        startDate: args.input.startDate,
+        endDate: args.input.endDate,
+        hour: args.input.hour,
+        minute: args.input.minute,
+        isActive: args.input.isActive ?? true,
+        createdById: authContext.userId as string,
+      });
+
+      if (!result.success) {
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return { schedule: result.data };
+    },
+  }),
+);
+
+/**
+ * Mutation: updateNotificationSchedule - Update an existing schedule (admin only)
+ *
+ * Requires admin role. Updates schedule details.
+ */
+builder.mutationField("updateNotificationSchedule", (t) =>
+  t.field({
+    description: "Update an existing notification schedule (admin only)",
+    type: "UpdateNotificationSchedulePayload",
+    args: {
+      input: t.arg({
+        type: "UpdateNotificationScheduleInput",
+        description: "Schedule update data",
+        required: true,
+      }),
+    },
+    authScopes: {
+      admin: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require admin authentication
+      await requireAdmin(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Update schedule
+      const result = await controller.update({
+        id: args.input.id,
+        name: args.input.name ?? undefined,
+        notificationTitle: args.input.notificationTitle ?? null,
+        notificationBody: args.input.notificationBody ?? null,
+        notificationUrl: args.input.notificationUrl ?? null,
+        startDate: args.input.startDate ?? undefined,
+        endDate: args.input.endDate ?? undefined,
+        hour: args.input.hour ?? undefined,
+        minute: args.input.minute ?? undefined,
+        isActive: args.input.isActive ?? undefined,
+      });
+
+      if (!result.success) {
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return { schedule: result.data };
+    },
+  }),
+);
+
+/**
+ * Mutation: toggleNotificationScheduleActive - Toggle active status (admin only)
+ *
+ * Requires admin role. Toggles the isActive flag of a schedule.
+ */
+builder.mutationField("toggleNotificationScheduleActive", (t) =>
+  t.field({
+    description:
+      "Toggle the active status of a notification schedule (admin only)",
+    type: "ToggleScheduleActivePayload",
+    args: {
+      id: t.arg.id({
+        description: "ID of the schedule to toggle",
+        required: true,
+      }),
+    },
+    authScopes: {
+      admin: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require admin authentication
+      await requireAdmin(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Toggle active status
+      const result = await controller.toggleActive({ id: args.id });
+
+      if (!result.success) {
+        // Return specific error for not found
+        if (result.error.toLowerCase().includes("not found")) {
+          throw mapErrorToGraphQL(
+            Object.assign(new Error(result.error), { name: "NotFoundError" }),
+          );
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return { schedule: result.data };
+    },
+  }),
+);
+
+/**
+ * Mutation: duplicateNotificationSchedule - Duplicate a schedule (admin only)
+ *
+ * Requires admin role. Creates a copy of an existing schedule.
+ */
+builder.mutationField("duplicateNotificationSchedule", (t) =>
+  t.field({
+    description: "Duplicate a notification schedule (admin only)",
+    type: "DuplicateNotificationSchedulePayload",
+    args: {
+      id: t.arg.id({
+        description: "ID of the schedule to duplicate",
+        required: true,
+      }),
+    },
+    authScopes: {
+      admin: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require admin authentication
+      const authContext = await requireAdmin(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Duplicate schedule
+      const result = await controller.duplicate({
+        id: args.id,
+        newCreatedById: authContext.userId as string,
+      });
+
+      if (!result.success) {
+        // Return specific error for not found
+        if (result.error.toLowerCase().includes("not found")) {
+          throw mapErrorToGraphQL(
+            Object.assign(new Error(result.error), { name: "NotFoundError" }),
+          );
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return { schedule: result.data.schedule };
+    },
+  }),
+);
+
+/**
+ * Mutation: deleteNotificationSchedule - Delete a schedule (admin only)
+ *
+ * Requires admin role. Soft-deletes a schedule.
+ */
+builder.mutationField("deleteNotificationSchedule", (t) =>
+  t.field({
+    description: "Delete a notification schedule (admin only)",
+    type: "DeleteNotificationSchedulePayload",
+    args: {
+      id: t.arg.id({
+        description: "ID of the schedule to delete",
+        required: true,
+      }),
+    },
+    authScopes: {
+      admin: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require admin authentication
+      await requireAdmin(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Delete schedule
+      const result = await controller.delete({ id: args.id });
+
+      if (!result.success) {
+        // Return specific error for not found
+        if (result.error.toLowerCase().includes("not found")) {
+          throw mapErrorToGraphQL(
+            Object.assign(new Error(result.error), { name: "NotFoundError" }),
+          );
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return {
+        success: result.data.success,
+        message: result.data.message,
+        deletedExecutionCount: result.data.deletedExecutionCount,
+      };
+    },
+  }),
+);
+
+/**
+ * Mutation: bulkDeleteNotificationSchedules - Bulk delete schedules (admin only)
+ *
+ * Requires admin role. Deletes multiple schedules at once.
+ */
+builder.mutationField("bulkDeleteNotificationSchedules", (t) =>
+  t.field({
+    description: "Bulk delete notification schedules (admin only)",
+    type: "BulkDeleteNotificationSchedulesPayload",
+    args: {
+      ids: t.arg.idList({
+        description: "IDs of the schedules to delete",
+        required: true,
+      }),
+    },
+    authScopes: {
+      admin: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require admin authentication
+      await requireAdmin(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Bulk delete schedules
+      const result = await controller.bulkDelete({
+        ids: args.ids.map((id) => id.toString()),
+      });
+
+      if (!result.success) {
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return {
+        success: result.data.success,
+        deletedCount: result.data.deletedCount,
+        requestedCount: result.data.requestedCount,
+        notFoundIds: result.data.notFoundIds,
+      };
+    },
+  }),
+);
+
+/**
+ * Mutation: bulkToggleNotificationScheduleActive - Bulk toggle active (admin only)
+ *
+ * Requires admin role. Toggles active status for multiple schedules.
+ */
+builder.mutationField("bulkToggleNotificationScheduleActive", (t) =>
+  t.field({
+    description:
+      "Bulk toggle active status of notification schedules (admin only)",
+    type: "BulkToggleActivePayload",
+    args: {
+      ids: t.arg.idList({
+        description: "IDs of the schedules to toggle",
+        required: true,
+      }),
+      isActive: t.arg.boolean({
+        description: "Target active status (true=active, false=inactive)",
+        required: true,
+      }),
+    },
+    authScopes: {
+      admin: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require admin authentication
+      await requireAdmin(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Bulk toggle active status
+      const result = await controller.bulkToggleActive({
+        ids: args.ids.map((id) => id.toString()),
+        isActive: args.isActive,
+      });
+
+      if (!result.success) {
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return {
+        success: result.data.success,
+        updatedCount: result.data.updatedCount,
+      };
+    },
+  }),
+);
+
+/**
+ * Mutation: updateNotificationScheduleLastRun - Update last run timestamp (moderator+)
+ *
+ * Requires moderator or admin role. Updates when the schedule last ran.
+ */
+builder.mutationField("updateNotificationScheduleLastRun", (t) =>
+  t.field({
+    description: "Update the last run timestamp of a schedule (moderator+)",
+    type: "UpdateLastRunPayload",
+    args: {
+      input: t.arg({
+        type: "UpdateLastRunInput",
+        description: "Last run update data",
+        required: true,
+      }),
+    },
+    authScopes: {
+      moderator: true,
+    },
+    resolve: async (_root, args, context) => {
+      // Require moderator or admin authentication
+      await requireModerator(context);
+
+      // Get controller from context
+      const controller = context.controllers.notificationScheduleController;
+
+      // Update last run
+      const result = await controller.updateLastRun({
+        id: args.input.id,
+        lastRun: args.input.lastRunAt,
+      });
+
+      if (!result.success) {
+        // Return specific error for not found
+        if (result.error.toLowerCase().includes("not found")) {
+          throw mapErrorToGraphQL(
+            Object.assign(new Error(result.error), { name: "NotFoundError" }),
+          );
+        }
+        throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      return { schedule: result.data };
+    },
+  }),
+);
+
+// =============================================================================
+// Export
+// =============================================================================
+
+// Resolvers are registered automatically by importing this file
+export {};
