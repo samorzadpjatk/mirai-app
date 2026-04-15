@@ -178,7 +178,7 @@ export { RewardDrizzleMapper } from "./mappers/drizzle/reward";
 // Additional Drizzle mappers for complete migration
 export { ChallengeSubmissionDrizzleMapper } from "./mappers/drizzle/challenge-submission";
 export { ChallengeVoteDrizzleMapper } from "./mappers/drizzle/challenge-vote";
-export { CoinTransactionDrizzleMapper } from "./mappers/drizzle/coin-transaction";
+export { CoinTransactionDTODrizzleMapper } from "./mappers/drizzle/coin-transaction";
 export { SponsorDrizzleMapper } from "./mappers/drizzle/sponsor";
 export { SubmissionReportDrizzleMapper } from "./mappers/drizzle/submission-report";
 export { NotificationScheduleDrizzleMapper } from "./mappers/drizzle/notification-schedule";
@@ -269,7 +269,7 @@ export type {
   RewardPurchaseRepository,
   SubmissionReportRepository,
   SponsorRepository,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/domain/ports";
 
 // NOTE: Use cases have been migrated to function-based Effect patterns.
 // Import them directly from @mirai-app/use-cases when needed:
