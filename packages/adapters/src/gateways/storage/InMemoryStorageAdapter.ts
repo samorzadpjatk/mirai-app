@@ -11,7 +11,7 @@
  * - Synchronous metadata access, async operations for API compatibility
  * - Thread-safe for single-process tests (Bun test runner)
  * - Supports upload, download, delete, and signed URL operations
- * - Compatible with awilix-modular dependency injection
+ * - Compatible with Effect Layers for dependency injection
  * - Uses Effect for explicit error handling and composable operations
  *
  * @module gateways
@@ -57,18 +57,12 @@ interface InMemoryFile {
  * In-memory implementation of StoragePort for testing purposes.
  * Simulates file storage without external dependencies.
  *
- * Compatible with awilix-modular dependency injection.
+ * Compatible with Effect Layers.
  *
  * @example
  * ```typescript
- * // In test setup
- * const container = createTestContainer();
- * container.register({
- *   storagePort: asClass(InMemoryStorageAdapter).singleton(),
- * });
- *
- * // Use in tests
- * const storagePort = container.resolve<InMemoryStorageAdapter>("storagePort");
+ * // Direct instantiation for testing
+ * const storagePort = new InMemoryStorageAdapter();
  *
  * // Upload a file
  * const fileBuffer = Buffer.from("Hello World");

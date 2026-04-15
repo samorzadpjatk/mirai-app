@@ -9,7 +9,7 @@
  * - Uses Effect for explicit error handling and composable async operations
  * - Maps S3 errors to domain StorageError types (NoSuchKey -> FileNotFoundError, etc.)
  * - Thin wrapper with no business logic (just mapping)
- * - Compatible with awilix-modular dependency injection
+ * - Compatible with Effect Layers for dependency injection
  * - Uses presigned URLs for createSignedUrl
  *
  * @module gateways
@@ -279,22 +279,15 @@ function mapS3HeadToMetadata(
  * Implements StoragePort using AWS S3 for file upload, download,
  * delete, and signed URL operations.
  *
- * Compatible with awilix-modular dependency injection.
- * Registered in the DI module with scoped lifetime.
+ * Compatible with Effect Layers.
  *
  * @example
  * ```typescript
- * // With DI container (awilix-modular)
- * const storagePort = container.resolve("storagePort");
- * const metadata = await Effect.runPromise(
- *   storagePort.upload("my-bucket", "avatar.png", fileBuffer)
- * );
- *
- * // Manual instantiation (backward-compatible)
+ * // Direct instantiation
  * const s3Client = new S3Client({ region: "us-east-1" });
  * const storagePort = new S3StorageAdapter(s3Client);
- * const data = await Effect.runPromise(
- *   storagePort.download("my-bucket", "document.pdf")
+ * const metadata = await Effect.runPromise(
+ *   storagePort.upload("my-bucket", "avatar.png", fileBuffer)
  * );
  * ```
  */
@@ -302,7 +295,7 @@ export class S3StorageAdapter implements StoragePort {
   /**
    * Creates a new S3StorageAdapter
    *
-   * @param s3Client - S3Client instance (injected by awilix or passed manually)
+   * @param s3Client - S3Client instance
    */
   constructor(private readonly s3Client: S3Client) {}
 

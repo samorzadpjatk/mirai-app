@@ -9,7 +9,7 @@
  * - Uses Effect for explicit error handling and composable async operations
  * - Maps Supabase storage errors to domain StorageError types
  * - Thin wrapper with no business logic (just mapping)
- * - Compatible with awilix-modular dependency injection
+ * - Compatible with Effect Layers for dependency injection
  *
  * @module gateways
  */
@@ -232,21 +232,14 @@ function mapSupabaseFileToMetadata(
  * Implements StoragePort using Supabase Storage for file upload, download,
  * delete, and signed URL operations.
  *
- * Compatible with awilix-modular dependency injection.
- * Registered in the DI module with scoped lifetime.
+ * Compatible with Effect Layers.
  *
  * @example
  * ```typescript
- * // With DI container (awilix-modular)
- * const storagePort = container.resolve("storagePort");
+ * // Direct instantiation
+ * const storagePort = new SupabaseStorageAdapter(supabaseClient);
  * const metadata = await Effect.runPromise(
  *   storagePort.upload("files", "avatar.png", fileBuffer)
- * );
- *
- * // Manual instantiation (backward-compatible)
- * const storagePort = new SupabaseStorageAdapter(supabaseClient);
- * const data = await Effect.runPromise(
- *   storagePort.download("files", "document.pdf")
  * );
  * ```
  */
@@ -254,7 +247,7 @@ export class SupabaseStorageAdapter implements StoragePort {
   /**
    * Creates a new SupabaseStorageAdapter
    *
-   * @param supabase - SupabaseClient instance (injected by awilix or passed manually)
+   * @param supabase - SupabaseClient instance
    */
   constructor(private readonly supabase: SupabaseClient) {}
 
