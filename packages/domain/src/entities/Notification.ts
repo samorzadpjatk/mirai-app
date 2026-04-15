@@ -159,50 +159,51 @@ export class Notification {
     ValidationError | StateTransitionError,
     never
   > {
-    return Effect.gen(
-      function* () {
-        // Cannot update after sent
-        if (this.isSent()) {
-          return yield* Effect.fail(
-            new StateTransitionError({
-              from: this.status,
-              to: this.status,
-              entityType: "Notification",
-            }),
-          );
-        }
-
-        let title = this.title;
-        let body = this.body;
-        let url = this.url;
-
-        // Validate title if provided
-        if (props.title !== undefined) {
-          title = yield* validate.string(props.title, "title", {
-            required: true,
-            maxLength: 200,
-            trim: true,
-          });
-        }
-
-        // Validate body if provided
-        if (props.body !== undefined) {
-          body = yield* validate.string(props.body, "body", {
-            required: true,
-            maxLength: 2000,
-            trim: true,
-          });
-        }
-
-        if (props.url !== undefined) {
-          url = props.url;
-        }
-
-        return yield* Effect.succeed(
-          updateEntity(this, { title, body, url }, Notification),
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+    return Effect.gen(function* () {
+      // Cannot update after sent
+      if (self.isSent()) {
+        return yield* Effect.fail(
+          new StateTransitionError({
+            from: self.status,
+            to: self.status,
+            entityType: "Notification",
+            message: `Cannot update content: notification has already been sent and is in terminal state`,
+          }),
         );
-      }.bind(this),
-    );
+      }
+
+      let title = self.title;
+      let body = self.body;
+      let url = self.url;
+
+      // Validate title if provided
+      if (props.title !== undefined) {
+        title = yield* validate.string(props.title, "title", {
+          required: true,
+          maxLength: 200,
+          trim: true,
+        });
+      }
+
+      // Validate body if provided
+      if (props.body !== undefined) {
+        body = yield* validate.string(props.body, "body", {
+          required: true,
+          maxLength: 2000,
+          trim: true,
+        });
+      }
+
+      if (props.url !== undefined) {
+        url = props.url;
+      }
+
+      return yield* Effect.succeed(
+        updateEntity(self, { title, body, url }, Notification),
+      );
+    });
   }
 
   /**
@@ -218,6 +219,7 @@ export class Notification {
           from: this.status,
           to: newStatus,
           entityType: "Notification",
+          message: `Invalid status transition: cannot transition from ${this.status} to ${newStatus}`,
         }),
       );
     }
@@ -238,6 +240,7 @@ export class Notification {
           from: this.status,
           to: NotificationStatus.SENT,
           entityType: "Notification",
+          message: `Cannot mark as sent: notification in ${this.status} status cannot be marked as sent`,
         }),
       );
     }
@@ -268,6 +271,7 @@ export class Notification {
           from: this.status,
           to: NotificationStatus.FAILED,
           entityType: "Notification",
+          message: `Cannot mark as failed: notification in ${this.status} status cannot be marked as failed`,
         }),
       );
     }
@@ -292,6 +296,7 @@ export class Notification {
           from: this.status,
           to: NotificationStatus.CANCELLED,
           entityType: "Notification",
+          message: `Cannot cancel: sent notifications cannot be cancelled`,
         }),
       );
     }
@@ -304,6 +309,7 @@ export class Notification {
           from: this.status,
           to: NotificationStatus.CANCELLED,
           entityType: "Notification",
+          message: `Cannot cancel: notification in ${this.status} status cannot be cancelled`,
         }),
       );
     }

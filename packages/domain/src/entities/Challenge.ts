@@ -346,6 +346,7 @@ export class Challenge {
           from: this.status,
           to: newStatus,
           entityType: "Challenge",
+          message: `Cannot transition Challenge from ${this.status} to ${newStatus}`,
         }),
       );
     }

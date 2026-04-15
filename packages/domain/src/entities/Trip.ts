@@ -141,7 +141,7 @@ export class Trip {
     name?: string;
     description?: string | null;
     backgroundImagePath?: string | null;
-  }): Effect.Effect<Trip, ValidationError, never> => {
+  }): Effect.Effect<Trip, ValidationError | StateTransitionError, never> => {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return Effect.gen(function* () {
@@ -152,6 +152,7 @@ export class Trip {
             from: self.status,
             to: self.status,
             entityType: "Trip",
+            message: `Cannot update Trip in terminal state ${self.status}`,
           }),
         );
       }
@@ -198,6 +199,7 @@ export class Trip {
             from: self.status,
             to: self.status,
             entityType: "Trip",
+            message: `Cannot update Trip dates in terminal state ${self.status}`,
           }),
         );
       }
@@ -227,6 +229,7 @@ export class Trip {
           from: this.status,
           to: TripStatus.ACTIVE,
           entityType: "Trip",
+          message: `Cannot transition Trip from ${this.status} to ${TripStatus.ACTIVE}`,
         }),
       );
     }
@@ -247,6 +250,7 @@ export class Trip {
           from: this.status,
           to: TripStatus.COMPLETED,
           entityType: "Trip",
+          message: `Cannot transition Trip from ${this.status} to ${TripStatus.COMPLETED}`,
         }),
       );
     }
@@ -267,6 +271,7 @@ export class Trip {
           from: this.status,
           to: TripStatus.CANCELLED,
           entityType: "Trip",
+          message: `Cannot transition Trip from ${this.status} to ${TripStatus.CANCELLED}`,
         }),
       );
     }
@@ -372,6 +377,7 @@ export class Trip {
           from: this.status,
           to: newStatus,
           entityType: "Trip",
+          message: `Cannot transition Trip from ${this.status} to ${newStatus}`,
         }),
       );
     }

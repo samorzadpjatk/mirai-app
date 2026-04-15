@@ -154,31 +154,34 @@ export class RewardPurchase {
     ValidationError | StateTransitionError,
     never
   > {
-    return Effect.gen(
-      function* () {
-        if (!stateMachine.canTransition(this.status, newStatus)) {
-          return yield* Effect.fail(
-            new StateTransitionError({
-              from: this.status,
-              to: newStatus,
-              entityType: "RewardPurchase",
-            }),
-          );
-        }
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+    return Effect.gen(function* () {
+      if (!stateMachine.canTransition(self.status, newStatus)) {
+        return yield* Effect.fail(
+          new StateTransitionError({
+            from: self.status,
+            to: newStatus,
+            entityType: "RewardPurchase",
+            message: `Cannot transition RewardPurchase from ${self.status} to ${newStatus}`,
+          }),
+        );
+      }
 
-        const validated = yield* validate.id(updatedById, "updatedById");
+      const validated = yield* validate.id(updatedById, "updatedById");
 
-        return updateEntity(
-          this,
+      return yield* Effect.succeed(
+        updateEntity(
+          self,
           {
             status: newStatus,
             statusUpdatedById: validated,
             statusUpdatedAt: new Date(),
           },
           RewardPurchase,
-        );
-      }.bind(this),
-    );
+        ),
+      );
+    });
   }
 
   /**
@@ -240,23 +243,21 @@ export class RewardPurchase {
   updateCollectionMethod(
     method: string | null,
   ): Effect.Effect<RewardPurchase, ValidationError, never> {
-    return Effect.gen(
-      function* () {
-        let collectionMethod: string | null = method;
-        if (method !== null) {
-          collectionMethod = yield* validate.string(
-            method,
-            "collectionMethod",
-            {
-              required: false,
-              maxLength: 200,
-            },
-          );
-        }
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+    return Effect.gen(function* () {
+      let collectionMethod: string | null = method;
+      if (method !== null) {
+        collectionMethod = yield* validate.string(method, "collectionMethod", {
+          required: false,
+          maxLength: 200,
+        });
+      }
 
-        return updateEntity(this, { collectionMethod }, RewardPurchase);
-      }.bind(this),
-    );
+      return yield* Effect.succeed(
+        updateEntity(self, { collectionMethod }, RewardPurchase),
+      );
+    });
   }
 
   /**

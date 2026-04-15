@@ -230,72 +230,73 @@ export class ChallengeSubmission {
     ValidationError | StateTransitionError,
     never
   > {
-    if (this.status !== "PENDING") {
-      return Effect.fail(
-        new StateTransitionError({
-          from: this.status,
-          to: "PENDING_UPDATE",
-          entityType: "ChallengeSubmission",
-        }),
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+    return Effect.gen(function* () {
+      if (self.status !== "PENDING") {
+        return yield* Effect.fail(
+          new StateTransitionError({
+            from: self.status,
+            to: "PENDING_UPDATE",
+            entityType: "ChallengeSubmission",
+            message: `Cannot update content: submission must be in PENDING state, but is currently ${self.status}`,
+          }),
+        );
+      }
+
+      // Validate imageIds
+      const imageIds = props.imageIds ?? self.imageIds;
+      yield* validate.array(imageIds, "imageIds", {
+        maxItems: 10,
+      });
+
+      // Validate textContent length
+      let textContent =
+        props.textContent !== undefined ? props.textContent : self.textContent;
+      if (textContent !== null) {
+        yield* validate.string(textContent, "textContent", {
+          maxLength: 10000,
+        });
+      }
+
+      // Validate location coordinates
+      const latitude =
+        props.latitude !== undefined ? props.latitude : self.latitude;
+      const longitude =
+        props.longitude !== undefined ? props.longitude : self.longitude;
+
+      if (latitude !== null) {
+        yield* validate.number(latitude, "latitude", {
+          min: -90,
+          max: 90,
+        });
+      }
+
+      if (longitude !== null) {
+        yield* validate.number(longitude, "longitude", {
+          min: -180,
+          max: 180,
+        });
+      }
+
+      return yield* Effect.succeed(
+        updateEntity(
+          self,
+          {
+            imageIds,
+            videoId: props.videoId !== undefined ? props.videoId : self.videoId,
+            textContent,
+            latitude,
+            longitude,
+            reviewedById: null, // Reset reviewedById when editing
+            reviewedAt: null, // Reset reviewedAt when editing
+            rejectionReason: null, // Reset rejectionReason when editing
+            reviewedBy: null, // Reset reviewedBy when editing
+          },
+          ChallengeSubmission,
+        ),
       );
-    }
-
-    // Validate imageIds
-    const imageIds = props.imageIds ?? this.imageIds;
-    const imageIdsResult = validate.array(imageIds, "imageIds", {
-      maxItems: 10,
     });
-    if (imageIdsResult.kind === "err") return Effect.fail(imageIdsResult.error);
-
-    // Validate textContent length
-    let textContent =
-      props.textContent !== undefined ? props.textContent : this.textContent;
-    if (textContent !== null) {
-      const textResult = validate.string(textContent, "textContent", {
-        maxLength: 10000,
-      });
-      if (textResult.kind === "err") return Effect.fail(textResult.error);
-    }
-
-    // Validate location coordinates
-    const latitude =
-      props.latitude !== undefined ? props.latitude : this.latitude;
-    const longitude =
-      props.longitude !== undefined ? props.longitude : this.longitude;
-
-    if (latitude !== null) {
-      const latResult = validate.number(latitude, "latitude", {
-        min: -90,
-        max: 90,
-      });
-      if (latResult.kind === "err") return Effect.fail(latResult.error);
-    }
-
-    if (longitude !== null) {
-      const lngResult = validate.number(longitude, "longitude", {
-        min: -180,
-        max: 180,
-      });
-      if (lngResult.kind === "err") return Effect.fail(lngResult.error);
-    }
-
-    return Effect.succeed(
-      updateEntity(
-        this,
-        {
-          imageIds,
-          videoId: props.videoId !== undefined ? props.videoId : this.videoId,
-          textContent,
-          latitude,
-          longitude,
-          reviewedById: null, // Reset reviewedById when editing
-          reviewedAt: null, // Reset reviewedAt when editing
-          rejectionReason: null, // Reset rejectionReason when editing
-          reviewedBy: null, // Reset reviewedBy when editing
-        },
-        ChallengeSubmission,
-      ),
-    );
   }
 
   /**
@@ -312,53 +313,56 @@ export class ChallengeSubmission {
     ValidationError | StateTransitionError,
     never
   > {
-    if (!submissionStateMachine.canTransition(this.status, "APPROVED")) {
-      return Effect.fail(
-        new StateTransitionError({
-          from: this.status,
-          to: "APPROVED",
-          entityType: "ChallengeSubmission",
-        }),
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+    return Effect.gen(function* () {
+      if (!submissionStateMachine.canTransition(self.status, "APPROVED")) {
+        return yield* Effect.fail(
+          new StateTransitionError({
+            from: self.status,
+            to: "APPROVED",
+            entityType: "ChallengeSubmission",
+            message: `Cannot approve submission: invalid transition from ${self.status} to APPROVED`,
+          }),
+        );
+      }
+
+      const awardedPoints = props.awardedPoints ?? self.awardedPoints;
+      const bonusPoints = props.bonusPoints ?? self.bonusPoints;
+
+      if (awardedPoints < 0) {
+        return yield* Effect.fail(ValidationError.minValue("awardedPoints", 0));
+      }
+      if (bonusPoints < 0) {
+        return yield* Effect.fail(ValidationError.minValue("bonusPoints", 0));
+      }
+
+      let ranking: number | null = self.ranking;
+      if (props.ranking !== undefined && props.ranking !== null) {
+        ranking = yield* validate.number(props.ranking, "ranking", {
+          min: 1,
+          max: 3,
+          integer: true,
+        });
+      }
+
+      return yield* Effect.succeed(
+        updateEntity(
+          self,
+          {
+            status: "APPROVED",
+            reviewedById: props.reviewedById,
+            reviewedAt: new Date(),
+            rejectionReason: null, // Clear rejection reason on approval
+            awardedPoints,
+            bonusPoints,
+            ranking,
+            reviewedBy: null, // Will be populated by repository
+          },
+          ChallengeSubmission,
+        ),
       );
-    }
-
-    const awardedPoints = props.awardedPoints ?? this.awardedPoints;
-    const bonusPoints = props.bonusPoints ?? this.bonusPoints;
-
-    if (awardedPoints < 0) {
-      return Effect.fail(ValidationError.minValue("awardedPoints", 0));
-    }
-    if (bonusPoints < 0) {
-      return Effect.fail(ValidationError.minValue("bonusPoints", 0));
-    }
-
-    let ranking: number | null = this.ranking;
-    if (props.ranking !== undefined && props.ranking !== null) {
-      const rankingResult = validate.number(props.ranking, "ranking", {
-        min: 1,
-        max: 3,
-        integer: true,
-      });
-      if (rankingResult.kind === "err") return Effect.fail(rankingResult.error);
-      ranking = rankingResult.value;
-    }
-
-    return Effect.succeed(
-      updateEntity(
-        this,
-        {
-          status: "APPROVED",
-          reviewedById: props.reviewedById,
-          reviewedAt: new Date(),
-          rejectionReason: null, // Clear rejection reason on approval
-          awardedPoints,
-          bonusPoints,
-          ranking,
-          reviewedBy: null, // Will be populated by repository
-        },
-        ChallengeSubmission,
-      ),
-    );
+    });
   }
 
   /**
@@ -379,6 +383,7 @@ export class ChallengeSubmission {
           from: this.status,
           to: "REJECTED",
           entityType: "ChallengeSubmission",
+          message: `Cannot reject submission: invalid transition from ${this.status} to REJECTED`,
         }),
       );
     }

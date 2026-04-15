@@ -171,6 +171,7 @@ export class Group {
             from: self.status,
             to: self.status,
             entityType: "Group",
+            message: `Cannot update details: group is already deleted`,
           }),
         );
       }
@@ -284,6 +285,7 @@ export class Group {
           from: this.status,
           to: GroupStatus.DELETED,
           entityType: "Group",
+          message: `Cannot transition from ${this.status} to DELETED: invalid state transition`,
         }),
       );
     }

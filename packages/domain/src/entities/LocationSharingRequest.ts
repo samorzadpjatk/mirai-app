@@ -107,6 +107,7 @@ export class LocationSharingRequest {
           from: this.status,
           to: LocationSharingRequestStatus.ACCEPTED,
           entityType: "LocationSharingRequest",
+          message: `Cannot accept LocationSharingRequest in ${this.status} status`,
         }),
       );
     }
@@ -136,6 +137,7 @@ export class LocationSharingRequest {
           from: this.status,
           to: LocationSharingRequestStatus.REJECTED,
           entityType: "LocationSharingRequest",
+          message: `Cannot reject LocationSharingRequest in ${this.status} status`,
         }),
       );
     }

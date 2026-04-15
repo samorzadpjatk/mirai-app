@@ -220,7 +220,7 @@ export class Reward {
     return new Reward(
       data.id,
       data.name,
-      data.description,
+      data.description ?? "",
       data.availableQuantity,
       data.coinCostPercentage,
       data.images,
