@@ -42,13 +42,10 @@ builder.queryFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("sponsorController");
-      const result = await controller.getById(
-        { id: args.id.toString() },
-        ctx.container,
-      );
-      if (result.kind === "err") return null;
-      return result.value;
+      const controller = ctx.controllers.sponsorController;
+      const result = await controller.getById({ id: args.id.toString() });
+      if (!result.success) return null;
+      return result.data;
     },
   }),
 
@@ -58,15 +55,14 @@ builder.queryFields((t) => ({
       activeOnly: t.arg.boolean({ defaultValue: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("sponsorController");
-      const result = await controller.list(
-        { activeOnly: args.activeOnly },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.sponsorController;
+      const result = await controller.list({ activeOnly: args.activeOnly });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -76,15 +72,14 @@ builder.queryFields((t) => ({
       tripId: t.arg.string({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("sponsorController");
-      const result = await controller.getByTripId(
-        { tripId: args.tripId },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.sponsorController;
+      const result = await controller.getByTripId({ tripId: args.tripId });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 }));
@@ -102,12 +97,14 @@ builder.mutationFields((t) => ({
       offsetY: t.arg.int(),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("sponsorController");
-      const result = await controller.create(args, ctx.container);
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.sponsorController;
+      const result = await controller.create(args);
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -124,18 +121,17 @@ builder.mutationFields((t) => ({
       isActive: t.arg.boolean(),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("sponsorController");
-      const result = await controller.update(
-        {
-          id: args.id.toString(),
-          ...args,
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.sponsorController;
+      const result = await controller.update({
+        id: args.id.toString(),
+        ...args,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -146,18 +142,17 @@ builder.mutationFields((t) => ({
       tripId: t.arg.id({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("sponsorController");
-      const result = await controller.linkToTrip(
-        {
-          sponsorId: args.sponsorId.toString(),
-          tripId: args.tripId.toString(),
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.sponsorController;
+      const result = await controller.linkToTrip({
+        sponsorId: args.sponsorId.toString(),
+        tripId: args.tripId.toString(),
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return true;
     },
   }),
 
@@ -168,18 +163,17 @@ builder.mutationFields((t) => ({
       tripId: t.arg.id({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("sponsorController");
-      const result = await controller.unlinkFromTrip(
-        {
-          sponsorId: args.sponsorId.toString(),
-          tripId: args.tripId.toString(),
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.sponsorController;
+      const result = await controller.unlinkFromTrip({
+        sponsorId: args.sponsorId.toString(),
+        tripId: args.tripId.toString(),
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return true;
     },
   }),
 
@@ -189,15 +183,14 @@ builder.mutationFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve("sponsorController");
-      const result = await controller.delete(
-        { id: args.id.toString() },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.sponsorController;
+      const result = await controller.delete({ id: args.id.toString() });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return true;
     },
   }),
 }));

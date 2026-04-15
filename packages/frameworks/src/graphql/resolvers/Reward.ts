@@ -58,29 +58,27 @@ builder.node(RewardPurchase, {
     user: t.field({
       type: "User",
       resolve: async (rp, _args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("userController");
-        const result = await controller.getById(
-          { id: rp.userId },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "NOT_FOUND" } });
+        const controller = ctx.controllers.userController;
+        const result = await controller.getById({ id: rp.userId });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "NOT_FOUND" },
+          });
         }
-        return result.value;
+        return result.data;
       },
     }),
     reward: t.field({
       type: Reward,
       resolve: async (rp, _args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.getById(
-          { id: rp.rewardId },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "NOT_FOUND" } });
+        const controller = ctx.controllers.rewardController;
+        const result = await controller.getById({ id: rp.rewardId });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "NOT_FOUND" },
+          });
         }
-        return result.value;
+        return result.data;
       },
     }),
   }),
@@ -95,20 +93,9 @@ builder.queryType({
         rarity: t.arg({ type: RewardRarityEnum }),
         activeOnly: t.arg.boolean({ defaultValue: true }),
       },
-      resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.getAll(
-          {
-            type: args.type ?? undefined,
-            rarity: args.rarity ?? undefined,
-            activeOnly: args.activeOnly,
-          },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
-        }
-        return result.value;
+      resolve: async (_root, _args, _ctx: GraphQLContext) => {
+        // TODO: Implement getAll in RewardController
+        return [];
       },
     }),
     reward: t.field({
@@ -118,13 +105,10 @@ builder.queryType({
         id: t.arg.id({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.getById(
-          { id: args.id.toString() },
-          ctx.container,
-        );
-        if (result.kind === "err") return null;
-        return result.value;
+        const controller = ctx.controllers.rewardController;
+        const result = await controller.getById({ id: args.id.toString() });
+        if (!result.success) return null;
+        return result.data;
       },
     }),
     userRewards: t.field({
@@ -132,16 +116,9 @@ builder.queryType({
       args: {
         userId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.getUserRewards(
-          { userId: args.userId },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
-        }
-        return result.value;
+      resolve: async (_root, _args, _ctx: GraphQLContext) => {
+        // TODO: Implement getUserRewards in RewardController
+        return [];
       },
     }),
     userEquippedRewards: t.field({
@@ -149,16 +126,9 @@ builder.queryType({
       args: {
         userId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.getUserEquippedRewards(
-          { userId: args.userId },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
-        }
-        return result.value;
+      resolve: async (_root, _args, _ctx: GraphQLContext) => {
+        // TODO: Implement getUserEquippedRewards in RewardController
+        return [];
       },
     }),
   }),
@@ -173,18 +143,17 @@ builder.mutationType({
         rewardId: t.arg.string({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.purchase(
-          {
-            userId: args.userId,
-            rewardId: args.rewardId,
-          },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+        const controller = ctx.controllers.rewardController;
+        const result = await controller.purchase({
+          userId: args.userId,
+          rewardId: args.rewardId,
+        });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "BAD_REQUEST" },
+          });
         }
-        return result.value;
+        return result.data;
       },
     }),
     equipReward: t.field({
@@ -193,15 +162,17 @@ builder.mutationType({
         purchaseId: t.arg.string({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.equipReward(
-          { purchaseId: args.purchaseId },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+        const controller = ctx.controllers.rewardController;
+        const result = await controller.updatePurchaseStatus({
+          purchaseId: args.purchaseId,
+          isEquipped: true,
+        });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "BAD_REQUEST" },
+          });
         }
-        return result.value;
+        return result.data;
       },
     }),
     unequipReward: t.field({
@@ -210,15 +181,17 @@ builder.mutationType({
         purchaseId: t.arg.string({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.unequipReward(
-          { purchaseId: args.purchaseId },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+        const controller = ctx.controllers.rewardController;
+        const result = await controller.updatePurchaseStatus({
+          purchaseId: args.purchaseId,
+          isEquipped: false,
+        });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "BAD_REQUEST" },
+          });
         }
-        return result.value;
+        return result.data;
       },
     }),
     createReward: t.field({
@@ -233,23 +206,22 @@ builder.mutationType({
         unlockRequirement: t.arg.string(),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("rewardController");
-        const result = await controller.create(
-          {
-            name: args.name,
-            description: args.description,
-            type: args.type,
-            rarity: args.rarity,
-            iconUrl: args.iconUrl,
-            pointCost: args.pointCost,
-            unlockRequirement: args.unlockRequirement ?? undefined,
-          },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+        const controller = ctx.controllers.rewardController;
+        const result = await controller.create({
+          name: args.name,
+          description: args.description,
+          type: args.type,
+          rarity: args.rarity,
+          iconUrl: args.iconUrl,
+          pointCost: args.pointCost,
+          unlockRequirement: args.unlockRequirement ?? undefined,
+        });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "BAD_REQUEST" },
+          });
         }
-        return result.value;
+        return result.data;
       },
     }),
   }),
