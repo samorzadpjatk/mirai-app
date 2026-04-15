@@ -26,7 +26,7 @@ export function createErrorHandler(config: HonoConfig) {
       await next();
     } catch (error) {
       // Log the error
-      serverLogger.error("[Server] Error:", { error });
+      serverLogger.error("[Server] Error:", error as Error);
 
       // Prepare error response
       const status = 500;

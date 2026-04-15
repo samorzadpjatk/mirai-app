@@ -195,7 +195,7 @@ export async function validateAuthToken(
       };
     }
   } catch (error) {
-    serverLogger.error("[WebSocket Auth] Validation error:", { error });
+    serverLogger.error("[WebSocket Auth] Validation error:", error as Error);
     return {
       success: false,
       error: "Authentication failed",

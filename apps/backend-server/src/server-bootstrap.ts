@@ -230,7 +230,7 @@ function setupShutdownHandlers(): void {
     Effect.runPromise(shutdownProgram(signal)).then(
       () => process.exit(0),
       (error) => {
-        serverLogger.error("[Effect] Shutdown error:", { error });
+        serverLogger.error("[Effect] Shutdown error:", error as Error);
         process.exit(1);
       },
     );
@@ -241,12 +241,12 @@ function setupShutdownHandlers(): void {
 
   // Handle uncaught errors
   process.on("uncaughtException", (error) => {
-    serverLogger.error("[Effect] Uncaught exception:", { error });
+    serverLogger.error("[Effect] Uncaught exception:", error as Error);
     handleSignal("uncaughtException");
   });
 
   process.on("unhandledRejection", (reason) => {
-    serverLogger.error("[Effect] Unhandled rejection:", { error: reason });
+    serverLogger.error("[Effect] Unhandled rejection:", reason as Error);
     handleSignal("unhandledRejection");
   });
 }
@@ -276,7 +276,7 @@ export async function start(): Promise<BunServer> {
 
     return server;
   } catch (error) {
-    serverLogger.error("[Effect] Failed to start server:", { error });
+    serverLogger.error("[Effect] Failed to start server:", error as Error);
     process.exit(1);
   }
 }

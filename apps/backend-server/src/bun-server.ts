@@ -498,7 +498,7 @@ export function createBunServer(
                 },
               );
             } catch (error) {
-              serverLogger.error("[Bun] WebSocket auth error:", { error });
+              serverLogger.error("[Bun] WebSocket auth error:", error as Error);
               sendMessage(ws, {
                 type: MessageType.Error,
                 payload: { message: "Authentication failed" },
@@ -573,7 +573,7 @@ export function createBunServer(
         const data = (ws as WebSocket & { data?: WebSocketData }).data;
         serverLogger.error(
           `[Bun] WebSocket error ${data?.connectionId ?? "unknown"}:`,
-          { error },
+          error,
         );
       },
     },

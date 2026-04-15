@@ -28,7 +28,6 @@
   "private": true,
   "license": "AGPL-3.0",
   "dependencies": {
-    "@hono/node-server": "^1.14.1",
     "@mirai-app/adapters": "workspace:*",
     "@mirai-app/frameworks": "workspace:*",
     "@mirai-app/use-cases": "workspace:*",
@@ -44,7 +43,7 @@
     "hono": "^4.7.5"
   },
   "devDependencies": {
-    "@types/node": "^24.7.2",
+    "@types/bun":"^1.3.12",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.0.16",
     "typescript": "^5.9.3",

@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": ["node", "ws"]
+    "types": ["bun", "ws"]
   },
   "include": ["src/**/*"]
 }
