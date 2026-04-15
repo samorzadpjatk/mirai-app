@@ -6,6 +6,13 @@
 
 ---
 
+## Universal Rules
+
+- **TDD first:** Write the failing test before implementation
+- **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations. Only edit Pothos schema files, then sync schema, then regenerate client
+
+---
+
 ## Layer Composition (Effect)
 
 The Frameworks layer composes Effect Layers for dependency injection:

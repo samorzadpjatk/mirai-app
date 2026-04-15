@@ -7,6 +7,14 @@
 
 ---
 
+## GraphQL Workflow
+
+**GraphQL workflow:** Never edit generated GraphQL clients, types, or operations. Only edit Pothos schema files, then sync schema, then regenerate client.
+
+Note: The backend now uses GraphQL (Pothos schema-first). See `@mirai-app/api-graphql` for schema definitions.
+
+---
+
 ## tRPC Router Patterns
 
 ### Controller Resolution in Routers

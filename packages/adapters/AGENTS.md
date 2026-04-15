@@ -6,7 +6,14 @@
 
 ---
 
-## Dependency injection (Effect-based)
+## Universal Rules
+
+- **TDD first:** Write the failing test before implementation
+- **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations. Only edit Pothos schema files, then sync schema, then regenerate client
+
+---
+
+## Dependency Injection (Effect-based)
 
 The monorepo uses **Effect-based DI** with controllers instantiated per-request. **Controllers are accessed via `ctx.controllers`.**
 
@@ -101,7 +108,24 @@ AuthContext is passed explicitly to use cases. No auth in tRPC middleware.
 
 ---
 
-## Gateway patterns with Effect.tryPromise
+## Logging in Effect
+
+Use `EffectLogger` from `@mirai-app/shared` for all Effect-based logging:
+
+```ts
+import { EffectLogger } from "@mirai-app/shared";
+
+// In Effect.gen blocks
+const program = Effect.gen(function* () {
+  yield* EffectLogger.info("Operation started", { userId: "123" });
+  // ... logic
+  yield* EffectLogger.error("Failed", error, { operation: "save" });
+});
+```
+
+---
+
+## Gateway Patterns with Effect.tryPromise
 
 Wrap external calls (Prisma, Supabase, HTTP APIs) with `Effect.tryPromise`:
 

@@ -9,7 +9,7 @@
 - **Entities**: Business objects with identity (User, Challenge, etc.)
 - **Value Objects**: Immutable concepts without identity (Email, Money, DateRange)
 - **Domain Services**: Pure business operations
-- **Repository Interfaces**: Port definitions (implemented by adapters)
+- **Repository Ports**: Port definitions defining WHAT operations are needed
 - **Utilities**: Pure functions (Result<T,E>, validation, etc.)
 
 ## Rules
@@ -205,6 +205,100 @@ const challengeId = createChallengeId("uuid-456");
 ```
 
 AuthContext uses branded `UserId` to distinguish user identifiers from other IDs.
+
+## Repository Ports
+
+The domain layer defines repository **ports** - pure interfaces that specify what operations the application needs from any data storage implementation.
+
+### What are Ports?
+
+Ports are TypeScript interfaces that define the contract between the domain layer and external data sources. They follow the **Ports and Adapters pattern** (Hexagonal Architecture):
+
+- **Domain defines WHAT**: Repository interfaces specify required operations
+- **Adapters provide HOW**: Drizzle ORM, in-memory storage, or any other implementation
+- **Use Cases orchestrate**: The use-cases layer consumes ports with Effect dependency injection
+
+### Available Ports
+
+Import from `@mirai-app/domain/ports`:
+
+```typescript
+import type {
+  UserRepository,
+  TripRepository,
+  ChallengeRepository,
+  GroupRepository,
+  EventRepository,
+  LocationRepository,
+  NotificationRepository,
+  RewardRepository,
+  CoinTransactionRepository,
+  ActivityFeedRepository,
+  ChallengeSubmissionRepository,
+  ChallengeVoteRepository,
+  DatabaseError,
+} from "@mirai-app/domain/ports";
+```
+
+### Port Characteristics
+
+Domain ports are:
+
+- **Pure interfaces**: No implementation, no dependencies
+- **Effect-based**: All methods return `Effect<T, DatabaseError, never>`
+- **Framework-agnostic**: No imports from Drizzle, Prisma, or other ORMs
+- **Type-safe**: Branded IDs prevent mixing different entity types
+
+### Example: UserRepository Port
+
+```typescript
+// packages/domain/src/ports/UserRepository.ts
+import type { User, UserRole } from "../entities/User";
+import type { Effect } from "effect";
+import type { DatabaseError } from "./DatabaseError";
+
+export interface UserRepository {
+  findById(id: string): Effect.Effect<User | null, DatabaseError, never>;
+  findByAuthUserId(
+    authUserId: string,
+  ): Effect.Effect<User | null, DatabaseError, never>;
+  create(user: User): Effect.Effect<User, DatabaseError, never>;
+  update(user: User): Effect.Effect<User, DatabaseError, never>;
+  delete(id: string): Effect.Effect<void, DatabaseError, never>;
+  findByRole(role: UserRole): Effect.Effect<User[], DatabaseError, never>;
+}
+```
+
+### Port Pattern: Domain defines WHAT, Use Cases orchestrate HOW
+
+```
+Domain Layer:     UserRepository (interface - what operations exist)
+                        ↓ Port
+Use Cases Layer:  UserRepositoryTag (Context.Tag for Effect DI)
+                        ↓ Port (with DI capability)
+Adapters Layer:   DrizzleUserRepository (implementation - how it works)
+```
+
+### DatabaseError
+
+All repository ports use `DatabaseError` for consistent error handling:
+
+```typescript
+import { DatabaseError } from "@mirai-app/domain/ports";
+
+// Use in error handling
+Effect.catchTag("DatabaseError", (error) => {
+  logger.error("Database operation failed", error);
+  return Effect.fail(new ServiceUnavailableError());
+});
+```
+
+### Full Pattern Guide
+
+For comprehensive documentation on the Ports and Adapters pattern:
+
+- [Ports and Adapters Pattern Guide](../../docs/ports-and-adapters-pattern.md)
+- [CLAUDE.md §5](../../CLAUDE.md) - Clean Architecture layer conventions
 
 ## References
 

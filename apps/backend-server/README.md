@@ -353,11 +353,11 @@ curl http://localhost:4000/
 The GraphQL schema is generated from Pothos type definitions:
 
 ```bash
-# Generate and save SDL to packages/graphql-client/src/graphql/schema.graphql
+# Generate and save SDL to packages/graphql-client/src/generated/graphql/schema.graphql
 bun run generate:sdl
 ```
 
-This outputs the schema definition to `packages/graphql-client/src/graphql/schema.graphql` for:
+This outputs the schema definition to `packages/graphql-client/src/generated/graphql/schema.graphql` for:
 
 - GraphQL Code Generator (client SDK generation)
 - Documentation

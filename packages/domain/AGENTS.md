@@ -18,6 +18,19 @@ Before committing domain code, verify:
 
 ---
 
+## Universal Rules Reference
+
+The following rules apply across all layers:
+
+1. **TDD first:** Write the failing test before implementation
+2. **Effect-based:** Domain uses `Effect<T,E,never>`; orchestration uses `Effect.gen` + `Context.Tag`
+3. **Branded IDs:** Use branded types; never mix IDs across aggregates
+4. **Never modify lint/type config:** Fix the actual code error, never disable rules or change ESLint, tsc, or other lint/type configuration to bypass errors
+5. **No emojis in commits:** Use plain text for commit messages. No emoji prefixes
+6. **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations. Only edit Pothos schema files, then sync schema, then regenerate client
+
+---
+
 ## Effect&lt;T,E,never&gt; Pattern
 
 Domain layer uses pure Effects with **no dependencies** (`never` context):
@@ -163,6 +176,107 @@ describe("[UNIT] MyEntity", () => {
 
 ---
 
+## Repository Port Definition Template
+
+Define repository ports (interfaces) for domain entities:
+
+```ts
+// packages/domain/src/ports/MyEntityRepository.ts
+import type { MyEntity } from "../entities/MyEntity";
+import type { Effect } from "effect";
+import type { DatabaseError } from "./DatabaseError";
+
+/**
+ * MyEntityRepository Port
+ *
+ * This interface defines what operations the application needs
+ * from any MyEntity repository implementation.
+ */
+export interface MyEntityRepository {
+  /**
+   * Find entity by ID
+   * @returns Entity or null if not found
+   */
+  findById(id: string): Effect.Effect<MyEntity | null, DatabaseError, never>;
+
+  /**
+   * Find all entities for a parent/related entity
+   */
+  findByParentId(
+    parentId: string,
+  ): Effect.Effect<MyEntity[], DatabaseError, never>;
+
+  /**
+   * Create new entity
+   */
+  create(entity: MyEntity): Effect.Effect<MyEntity, DatabaseError, never>;
+
+  /**
+   * Update existing entity
+   */
+  update(entity: MyEntity): Effect.Effect<MyEntity, DatabaseError, never>;
+
+  /**
+   * Delete entity by ID
+   */
+  delete(id: string): Effect.Effect<void, DatabaseError, never>;
+
+  /**
+   * Check if entity exists
+   */
+  exists(id: string): Effect.Effect<boolean, DatabaseError, never>;
+}
+```
+
+**Naming conventions:**
+
+- Interface name: `*Repository` (e.g., `UserRepository`)
+- Methods: `findBy*`, `create`, `update`, `delete`, `exists`, `countBy*`
+- Return type: Always `Effect<T, DatabaseError, never>`
+- Find methods: Return `T | null` for single items, `T[]` for collections
+
+**Add to barrel export:**
+
+```ts
+// packages/domain/src/ports/index.ts
+export type { MyEntityRepository } from "./MyEntityRepository";
+```
+
+**Key rules:**
+
+- Import `Effect` as `type` only: `import type { Effect } from "effect"`
+- No implementation logic - pure interfaces only
+- No imports from adapters or frameworks
+- Use `DatabaseError` for all error returns
+
+---
+
+## DatabaseError Usage
+
+All repository ports use `DatabaseError` for consistent error handling:
+
+```ts
+import { DatabaseError } from "@mirai-app/domain/ports";
+
+// In adapter implementations (not in domain)
+import { Effect } from "effect";
+
+findById(id: string) {
+  return Effect.tryPromise({
+    try: () => db.query.entities.findFirst({ where: eq(entities.id, id) }),
+    catch: (error) => new DatabaseError({ operation: "findById", id, cause: error }),
+  });
+}
+```
+
+**Key points:**
+
+- `DatabaseError` is re-exported from `../errors/unified-errors`
+- Use for all database operation failures in adapters
+- Enables type-safe error matching with `Effect.catchTag`
+
+---
+
 ## Deep Reference
 
 For comprehensive domain patterns, see **CLAUDE.md**:
@@ -172,7 +286,15 @@ For comprehensive domain patterns, see **CLAUDE.md**:
 - **§10.5.1 Domain Testing:** Pure Effect testing patterns
 - **§10.7 Effect Pattern Quick Reference**
 
+### Ports and Adapters Pattern
+
+- [Ports and Adapters Pattern Guide](../../docs/ports-and-adapters-pattern.md)
+- **Pattern flow:** Domain (WHAT) → Use Cases (HOW + DI) → Adapters (IMPLEMENTATION)
+- **Domain ports:** Pure interfaces in `@mirai-app/domain/ports`
+- **Use cases ports:** Domain interface + Context.Tag for Effect DI
+- **Adapter implementations:** Drizzle-based in `@mirai-app/adapters`
+
 ---
 
-**Last Updated:** 2026-04-14  
-**Version:** 1.0.0
+**Last Updated:** 2026-04-15  
+**Version:** 1.1.0 (Ports documentation)

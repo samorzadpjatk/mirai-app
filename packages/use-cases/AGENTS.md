@@ -6,6 +6,30 @@
 
 ---
 
+## Universal Rules
+
+- **TDD first:** Write the failing test before implementation
+- **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations. Only edit Pothos schema files, then sync schema, then regenerate client
+
+---
+
+## Logging in Effect
+
+Use `EffectLogger` from `@mirai-app/shared` for all Effect-based logging:
+
+```ts
+import { EffectLogger } from "@mirai-app/shared";
+
+// In Effect.gen blocks
+const program = Effect.gen(function* () {
+  yield* EffectLogger.info("Operation started", { userId: "123" });
+  // ... logic
+  yield* EffectLogger.error("Failed", error, { operation: "save" });
+});
+```
+
+---
+
 ## Core Pattern: Effect.gen + yield\*
 
 Use `Effect.gen` for sequential operations that may fail:
@@ -59,6 +83,142 @@ export interface MyEntityRepository {
 export const MyEntityRepository =
   Context.Tag<MyEntityRepository>("MyEntityRepository");
 ```
+
+---
+
+## Domain Ports vs Use Cases Ports
+
+Mirai App uses a **two-layer port system** for Clean Architecture compliance with Effect DI.
+
+### The Two-Layer System
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Domain Layer: @mirai-app/domain/ports                        │
+│  ─────────────────────────────────────                      │
+│  - Pure TypeScript interfaces                                 │
+│  - No dependencies, no Context.Tags                           │
+│  - Defines WHAT operations exist                              │
+│  - Example: UserRepository (interface)                        │
+├─────────────────────────────────────────────────────────────┤
+│  Use Cases Layer: packages/use-cases/src/ports/               │
+│  ────────────────────────────────────────────────            │
+│  - Same interface as domain                                   │
+│  - Adds Context.Tag for Effect DI                             │
+│  - Enables `yield* UserRepositoryTag`                         │
+│  - Enables `Layer.succeed` for testing                        │
+│  - Example: UserRepository (interface) + UserRepositoryTag    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Why Both Layers Exist
+
+| Concern          | Domain Ports              | Use Cases Ports            |
+| ---------------- | ------------------------- | -------------------------- |
+| **Purpose**      | Define contract (WHAT)    | Enable orchestration (HOW) |
+| **Dependencies** | Zero external deps        | Effect Context only        |
+| **DI**           | None                      | Context.Tag for `yield*`   |
+| **Testing**      | Pure, no mocks            | Mock with `Layer.succeed`  |
+| **Import**       | `@mirai-app/domain/ports` | Relative `./ports/*`       |
+
+### Import Pattern
+
+**From domain (type-only):**
+
+```ts
+// In use-cases port files
+import type { UserRepository as DomainUserRepository } from "@mirai-app/domain/ports";
+```
+
+**From use-cases (interface + Tag):**
+
+```ts
+// In use case interactors
+import { UserRepositoryTag } from "../ports/UserRepository";
+
+// Usage in Effect.gen
+const repo = yield * UserRepositoryTag;
+const user = yield * repo.findById(id);
+```
+
+### Tag Pattern
+
+```ts
+// packages/use-cases/src/ports/UserRepository.ts
+import type { User } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
+import { DatabaseError } from "./errors";
+
+// Interface (matches domain port)
+export interface UserRepository {
+  findById(id: string): Effect.Effect<User | null, DatabaseError, never>;
+  create(user: User): Effect.Effect<User, DatabaseError, never>;
+  // ... other methods
+}
+
+// Context.Tag for dependency injection
+export class UserRepositoryTag extends Context.Tag("UserRepository")<
+  UserRepositoryTag,
+  UserRepository
+>() {}
+```
+
+### Clean Architecture Flow
+
+```
+Domain Port (interface)
+      ↓
+Use Cases Port (interface + Context.Tag)
+      ↓
+Adapter Implementation (DrizzleUserRepository)
+      ↓
+Framework Integration (DI container registration)
+```
+
+**Dependencies point inward:**
+
+- Domain knows nothing about use cases
+- Use cases know about Effect but nothing about Drizzle
+- Adapters depend on domain interfaces
+- Frameworks wire everything together
+
+### Full Example
+
+```ts
+// packages/use-cases/src/interactors/GetUserWithTrips.ts
+import { Effect, Data } from "effect";
+import { UserRepositoryTag } from "../ports/UserRepository";
+import { TripRepositoryTag } from "../ports/TripRepository";
+
+export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
+  userId: string;
+}>() {}
+
+export class GetUserWithTripsUseCase {
+  execute(userId: string) {
+    return Effect.gen(function* () {
+      // Get repositories from context
+      const userRepo = yield* UserRepositoryTag;
+      const tripRepo = yield* TripRepositoryTag;
+
+      // Orchestrate domain operations
+      const user = yield* userRepo.findById(userId);
+      if (!user) {
+        return yield* Effect.fail(new UserNotFoundError({ userId }));
+      }
+
+      const trips = yield* tripRepo.findByUserId(userId);
+
+      return { user, trips };
+    });
+  }
+}
+```
+
+### Reference
+
+- [Ports and Adapters Pattern Guide](../../docs/ports-and-adapters-pattern.md)
+- CLAUDE.md §5 - Clean Architecture layer conventions
 
 ---
 
@@ -193,4 +353,4 @@ For comprehensive use case patterns, see CLAUDE.md:
 
 ---
 
-**Last Updated:** 2026-04-14
+**Last Updated:** 2026-04-15
