@@ -97,6 +97,8 @@ export {
   createActivityFeedRepositoryMock,
   /** Creates an in-memory SubmissionReportRepository mock */
   createSubmissionReportRepositoryMock,
+  /** Creates an AuthPort mock for authentication testing */
+  createAuthPortMock,
   /** Options for UserRepository mock */
   type UserRepositoryMockOptions,
   /** Options for GroupRepository mock */
@@ -131,4 +133,6 @@ export {
   type ActivityFeedRepositoryMockOptions,
   /** Options for SubmissionReportRepository mock */
   type SubmissionReportRepositoryMockOptions,
+  /** Options for AuthPort mock */
+  type AuthPortMockOptions,
 } from "./repository-mocks.js";

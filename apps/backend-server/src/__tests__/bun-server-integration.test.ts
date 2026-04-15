@@ -43,7 +43,14 @@ describe("[INTEGRATION] Bun Server", () => {
   let currentPort: number;
   let testLayer: Layer.Layer<unknown>;
 
+  // Store original env values
+  const originalEnv = { ...process.env };
+
   beforeAll(async () => {
+    // Set required environment variables for tests
+    process.env.SUPABASE_URL = "http://localhost:54321";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
+
     const config = getTestConfig();
     testLayer = createTestLayer();
     server = createBunServer(config, testLayer);
@@ -57,6 +64,10 @@ describe("[INTEGRATION] Bun Server", () => {
     if (server?.isRunning()) {
       await server.stop();
     }
+    // Restore original env values
+    process.env.SUPABASE_URL = originalEnv.SUPABASE_URL;
+    process.env.SUPABASE_SERVICE_ROLE_KEY =
+      originalEnv.SUPABASE_SERVICE_ROLE_KEY;
     // Add delay to allow port cleanup between test files
     await new Promise((r) => setTimeout(r, 200));
   });

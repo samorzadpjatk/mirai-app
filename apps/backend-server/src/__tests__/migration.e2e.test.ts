@@ -19,30 +19,19 @@ import { createBunServer, type BunServer } from "../bun-server";
 import { honoConfig } from "../config/hono-config";
 import { schema } from "../graphql/schema";
 import { graphql } from "graphql";
-import {
-  createTestContainer,
-  initializeContainer,
-  AppModule,
-  getContainer,
-  isContainerInitialized,
-  createTestLayer,
-} from "@mirai-app/frameworks/di";
+import { createTestLayer } from "@mirai-app/frameworks/di";
 import { Layer } from "effect";
-import { asClass, asValue } from "awilix";
 import {
-  UserController,
   InMemoryAuthAdapter,
   InMemoryRealtimeAdapter,
   InMemoryStorageAdapter,
+  createControllers,
+  type Controllers,
 } from "@mirai-app/adapters";
-import {
-  InMemoryUserRepository,
-  InMemoryNotificationRepository,
-} from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
 import { EventBus } from "@mirai-app/adapters";
 import { User, UserRole, UserId } from "@mirai-app/domain";
 import { Effect, Either, Runtime } from "effect";
-import type { AwilixContainer } from "awilix";
 import type { AuthContext } from "@mirai-app/domain";
 
 // =============================================================================
@@ -51,7 +40,8 @@ import type { AuthContext } from "@mirai-app/domain";
 
 interface TestContext {
   server: BunServer;
-  container: AwilixContainer;
+  controllers: Controllers;
+  appLayer: Layer.Layer<unknown>;
   authAdapter: InMemoryAuthAdapter;
   eventBus: EventBus;
   userRepo: InMemoryUserRepository;
@@ -71,19 +61,27 @@ interface TestUser {
 /**
  * Helper to create GraphQL context for tests
  * Includes the required runtime field and authContext for authorization
+ * Uses controllers (Effect DI pattern) with container shim for auth helpers
  */
 function createTestGraphQLContext(
-  container: AwilixContainer,
+  controllers: Controllers,
+  appLayer: Layer.Layer<unknown>,
+  authAdapter: InMemoryAuthAdapter,
   authToken?: string,
   authContext?: AuthContext,
 ): {
-  container: AwilixContainer;
+  controllers: Controllers;
+  appLayer: Layer.Layer<unknown>;
   request: Request;
   runtime: Runtime.Runtime<never>;
   authContext?: AuthContext;
+  container: {
+    resolve: <T>(name: string) => T;
+  };
 } {
   return {
-    container,
+    controllers,
+    appLayer,
     request: new Request("http://localhost/graphql", {
       headers: authToken
         ? {
@@ -93,6 +91,15 @@ function createTestGraphQLContext(
     }),
     runtime: Runtime.defaultRuntime,
     authContext,
+    // Container shim for backward compatibility with auth-helpers
+    container: {
+      resolve: <T>(name: string): T => {
+        if (name === "authPort") {
+          return authAdapter as T;
+        }
+        throw new Error(`Unknown container dependency: ${name}`);
+      },
+    },
   };
 }
 
@@ -106,11 +113,6 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
 
   // Global setup for all phases
   beforeAll(async () => {
-    // Initialize container if not already done
-    if (!isContainerInitialized()) {
-      initializeContainer([AppModule]);
-    }
-
     // Create server with test configuration
     const testConfig = {
       ...honoConfig,
@@ -119,38 +121,34 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
       enableGraphiQL: false,
     };
 
-    const testLayer = createTestLayer();
-
     // Create shared adapter instances first
     const authAdapter = new InMemoryAuthAdapter();
     const eventBus = new EventBus();
     const userRepo = new InMemoryUserRepository();
 
+    // Create test layer for Effect DI with overrides
+    const testLayer = createTestLayer({
+      authAdapter,
+      userRepository: userRepo,
+    });
+
+    // Create controllers using the factory (Effect DI pattern)
+    const mockSupabase = {} as any;
+    const controllers = createControllers({
+      appLayer: testLayer,
+      supabase: mockSupabase,
+      onChallengeCompleted: async () => {},
+    });
+
     ctx = {
       server: createBunServer(testConfig, testLayer),
-      container: createTestContainer(),
+      controllers,
+      appLayer: testLayer,
       authAdapter,
       eventBus,
       userRepo,
       baseUrl: "", // Will be set after server starts
     };
-
-    // Create test layer for Effect DI
-    const testLayerForControllers = createTestLayer({
-      authAdapter,
-      userRepository: userRepo,
-    });
-
-    // Register InMemory adapters - use asValue to share the same instances
-    ctx.container.register({
-      authPort: asValue(authAdapter),
-      realtimePort: asClass(InMemoryRealtimeAdapter).singleton(),
-      storagePort: asClass(InMemoryStorageAdapter).singleton(),
-      eventBus: asValue(eventBus),
-      userRepository: asValue(userRepo),
-      appLayer: asValue(testLayerForControllers),
-      userController: asValue(new UserController(testLayerForControllers)),
-    });
 
     // Start server
     await ctx.server.start();
@@ -882,7 +880,9 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
           source: USER_QUERY,
           variableValues: { id: adminUser!.id },
           contextValue: createTestGraphQLContext(
-            ctx.container,
+            ctx.controllers,
+            ctx.appLayer,
+            ctx.authAdapter,
             adminUser!.token,
             adminUser!.authContext,
           ),
@@ -912,7 +912,9 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
           schema,
           source: USERS_QUERY,
           contextValue: createTestGraphQLContext(
-            ctx.container,
+            ctx.controllers,
+            ctx.appLayer,
+            ctx.authAdapter,
             adminUser!.token,
             adminUser!.authContext,
           ),
@@ -941,7 +943,9 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
           schema,
           source: ME_QUERY,
           contextValue: createTestGraphQLContext(
-            ctx.container,
+            ctx.controllers,
+            ctx.appLayer,
+            ctx.authAdapter,
             regularUser!.token,
             regularUser!.authContext,
           ),
@@ -965,7 +969,11 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
           schema,
           source: USER_QUERY,
           variableValues: { id: "550e8400-e29b-41d4-a716-446655440010" },
-          contextValue: createTestGraphQLContext(ctx.container), // No auth
+          contextValue: createTestGraphQLContext(
+            ctx.controllers,
+            ctx.appLayer,
+            ctx.authAdapter,
+          ), // No auth
         });
 
         expect(result.errors).toBeDefined();
@@ -988,7 +996,9 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
           schema,
           source: USERS_QUERY,
           contextValue: createTestGraphQLContext(
-            ctx.container,
+            ctx.controllers,
+            ctx.appLayer,
+            ctx.authAdapter,
             regularUser!.token,
             regularUser!.authContext,
           ),
@@ -1028,7 +1038,9 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
           source: USER_QUERY,
           variableValues: { id: adminUser!.id },
           contextValue: createTestGraphQLContext(
-            ctx.container,
+            ctx.controllers,
+            ctx.appLayer,
+            ctx.authAdapter,
             adminUser!.token,
             adminUser!.authContext,
           ),
@@ -1064,7 +1076,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
 
         const body = await response.json();
         expect(body.status).toBe("healthy");
-        expect(body.server).toBe("hono");
+        expect(body.server).toBe("bun");
       });
 
       it("responds to GraphQL health check", async () => {
@@ -1081,7 +1093,7 @@ describe("[INTEGRATION] Unified Migration - All Phases", () => {
         expect(response.status).toBe(200);
 
         const body = await response.json();
-        expect(body.name).toBe("Mirai App GraphQL API");
+        expect(body.name).toBe("Mirai App GraphQL API (Bun + WebSocket)");
         expect(body.endpoints).toBeDefined();
         expect(body.endpoints.graphql).toBe("/graphql");
       });

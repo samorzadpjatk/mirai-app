@@ -114,6 +114,12 @@ import {
   SubmissionReportRepositoryTag,
   type SubmissionReportRepository,
 } from "../ports/SubmissionReportRepository.js";
+import {
+  AuthPortTag,
+  type AuthError,
+  type InvalidTokenError,
+  type SessionExpiredError,
+} from "../ports/AuthPort.js";
 
 // =============================================================================
 // User Repository Mock
@@ -2334,4 +2340,123 @@ export function createSubmissionReportRepositoryMock(
       return implementation;
     }),
   );
+}
+
+// =============================================================================
+// AuthPort Mock
+// =============================================================================
+
+// Need to import AuthContext type at the top level - already imported in main imports
+
+/**
+ * Options for creating an AuthPort mock
+ */
+export interface AuthPortMockOptions {
+  /** Auth context to return on successful validation */
+  authContext?: AuthContext;
+  /** Simulate failures for all operations */
+  shouldFail?: boolean;
+  /** Error to throw when shouldFail is true */
+  error?: AuthError | InvalidTokenError | SessionExpiredError;
+  /** Custom validateToken implementation */
+  validateToken?: (
+    token: string,
+  ) => Effect.Effect<
+    AuthContext,
+    AuthError | InvalidTokenError | SessionExpiredError,
+    never
+  >;
+  /** Custom refreshSession implementation */
+  refreshSession?: (
+    sessionId: string,
+  ) => Effect.Effect<AuthContext, AuthError | SessionExpiredError, never>;
+}
+
+/**
+ * Default mock auth context
+ */
+const defaultAuthContext: AuthContext = {
+  userId: "mock-user-id",
+  role: "user",
+  authenticatedAt: new Date("2024-01-01"),
+  sessionId: "mock-session-id",
+};
+
+/**
+ * Creates an AuthPort mock as a Layer.
+ *
+ * @param options - Configuration options for the mock
+ * @returns Layer providing AuthPortTag
+ *
+ * @example
+ * ```typescript
+ * const mockLayer = createAuthPortMock({
+ *   authContext: { userId: "user-123", role: "admin", authenticatedAt: new Date(), sessionId: "session-123" },
+ * });
+ *
+ * const result = await runWithTestLayer(
+ *   authenticateUserUseCase({ token: "valid-token" }),
+ *   mockLayer
+ * );
+ * ```
+ */
+export function createAuthPortMock(
+  options: AuthPortMockOptions = {},
+): Layer.Layer<
+  {
+    validateToken: (
+      token: string,
+    ) => Effect.Effect<
+      AuthContext,
+      AuthError | InvalidTokenError | SessionExpiredError,
+      never
+    >;
+    refreshSession: (
+      sessionId: string,
+    ) => Effect.Effect<AuthContext, AuthError | SessionExpiredError, never>;
+  },
+  never,
+  never
+> {
+  return Layer.succeed(AuthPortTag, {
+    validateToken: options.validateToken
+      ? options.validateToken
+      : (_token: string) => {
+          if (options.shouldFail) {
+            return Effect.fail(
+              options.error ??
+                (new (class extends Error {
+                  readonly _tag = "AuthError" as const;
+                  readonly code = "AUTH_ERROR" as const;
+                  constructor() {
+                    super("Mock auth error");
+                  }
+                })() as AuthError),
+            );
+          }
+          return Effect.succeed(options.authContext ?? defaultAuthContext);
+        },
+    refreshSession: options.refreshSession
+      ? options.refreshSession
+      : (sessionId: string) => {
+          if (options.shouldFail) {
+            return Effect.fail(
+              options.error ??
+                (new (class extends Error {
+                  readonly _tag = "SessionExpiredError" as const;
+                  readonly code = "SESSION_EXPIRED" as const;
+                  readonly sessionId = sessionId;
+                  readonly expiredAt = new Date();
+                  constructor() {
+                    super(`Session '${sessionId}' has expired`);
+                  }
+                })() as SessionExpiredError),
+            );
+          }
+          return Effect.succeed({
+            ...(options.authContext ?? defaultAuthContext),
+            sessionId,
+          });
+        },
+  });
 }

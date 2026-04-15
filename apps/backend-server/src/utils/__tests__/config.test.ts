@@ -3,7 +3,7 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 // Store original env values
 const originalEnv = { ...process.env };
 
-describe("[UNIT] config.ts", () => {
+describe("[UNIT] hono-config.ts", () => {
   // Set env vars BEFORE any imports (modules read env at load time)
   beforeAll(() => {
     process.env.NODE_ENV = "development";
@@ -16,7 +16,6 @@ describe("[UNIT] config.ts", () => {
       // Clear the specific module paths from cache
       const modulePaths = [
         "/Users/rafalopilowski/Projekty/migration/pjapp/apps/backend-server/src/config/hono-config.ts",
-        "/Users/rafalopilowski/Projekty/migration/pjapp/apps/backend-server/src/config.ts",
       ];
       for (const path of modulePaths) {
         // @ts-ignore
@@ -32,28 +31,28 @@ describe("[UNIT] config.ts", () => {
     process.env.HONO_SERVER_HOST = originalEnv.HONO_SERVER_HOST;
   });
 
-  test("exports serverConfig with correct values", async () => {
+  test("exports honoConfig with correct values", async () => {
     // Import fresh to get env-specific config
-    const { serverConfig } = await import("../../config");
+    const { honoConfig } = await import("../../config/hono-config");
 
-    expect(serverConfig.port).toBe(3001);
-    expect(serverConfig.host).toBe("localhost");
-    expect(serverConfig.prefix).toBe("/graphql");
-    expect(serverConfig.dev).toBe(true);
+    expect(honoConfig.port).toBe(3001);
+    expect(honoConfig.host).toBe("localhost");
+    expect(honoConfig.graphqlPath).toBe("/graphql");
+    expect(honoConfig.isDevelopment).toBe(true);
   });
 
   test("port is a number", async () => {
-    const { serverConfig } = await import("../../config");
+    const { honoConfig } = await import("../../config/hono-config");
 
-    expect(typeof serverConfig.port).toBe("number");
+    expect(typeof honoConfig.port).toBe("number");
   });
 
-  test("serverConfig has all required properties", async () => {
-    const { serverConfig } = await import("../../config");
+  test("honoConfig has all required properties", async () => {
+    const { honoConfig } = await import("../../config/hono-config");
 
-    expect(serverConfig).toHaveProperty("dev");
-    expect(serverConfig).toHaveProperty("port");
-    expect(serverConfig).toHaveProperty("prefix");
-    expect(serverConfig).toHaveProperty("host");
+    expect(honoConfig).toHaveProperty("isDevelopment");
+    expect(honoConfig).toHaveProperty("port");
+    expect(honoConfig).toHaveProperty("graphqlPath");
+    expect(honoConfig).toHaveProperty("host");
   });
 });

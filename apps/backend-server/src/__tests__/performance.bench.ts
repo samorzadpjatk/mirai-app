@@ -18,10 +18,10 @@ import {
 import { User, UserRole, UserId } from "@mirai-app/domain";
 import { graphql } from "graphql";
 import { schema } from "../graphql/schema";
-import { createTestContainer, PORT_TOKENS } from "@mirai-app/frameworks/di";
-import { asClass } from "awilix";
+import { createTestLayer } from "@mirai-app/frameworks/di";
 import { InMemoryAuthAdapter } from "@mirai-app/adapters";
-import type { AwilixContainer } from "awilix";
+import { Layer } from "effect";
+import { AuthPortTag } from "@mirai-app/use-cases";
 
 // =============================================================================
 // Benchmark Utilities
@@ -122,17 +122,18 @@ function compareResults(
 describe("[BENCHMARK] Migration Performance", () => {
   let eventBus: EventBus;
   let userRepo: InMemoryUserRepository;
-  let container: AwilixContainer;
   let authAdapter: InMemoryAuthAdapter;
+  let testLayer: Layer.Layer<unknown>;
 
   beforeAll(() => {
     eventBus = new EventBus();
     userRepo = new InMemoryUserRepository();
-    container = createTestContainer();
-    container.register({
-      [PORT_TOKENS.AuthPort]: asClass(InMemoryAuthAdapter).singleton(),
+    authAdapter = new InMemoryAuthAdapter();
+    // Create test layer for Effect DI pattern
+    testLayer = createTestLayer({
+      authAdapter,
+      userRepository: userRepo,
     });
-    authAdapter = container.resolve<InMemoryAuthAdapter>(PORT_TOKENS.AuthPort);
   });
 
   beforeEach(() => {
@@ -451,10 +452,18 @@ describe("[BENCHMARK] Migration Performance", () => {
             source: USER_QUERY,
             variableValues: { id: "550e8400-e29b-41d4-a716-446655440100" },
             contextValue: {
-              container,
               request: new Request("http://localhost/graphql", {
                 headers: { Authorization: `Bearer ${session.token}` },
               }),
+              // Container shim for backward compatibility
+              container: {
+                resolve: <T>(name: string): T => {
+                  if (name === "authPort") {
+                    return authAdapter as T;
+                  }
+                  throw new Error(`Unknown container dependency: ${name}`);
+                },
+              },
             },
           });
         },
@@ -493,10 +502,18 @@ describe("[BENCHMARK] Migration Performance", () => {
             schema,
             source: ME_QUERY,
             contextValue: {
-              container,
               request: new Request("http://localhost/graphql", {
                 headers: { Authorization: `Bearer ${session.token}` },
               }),
+              // Container shim for backward compatibility
+              container: {
+                resolve: <T>(name: string): T => {
+                  if (name === "authPort") {
+                    return authAdapter as T;
+                  }
+                  throw new Error(`Unknown container dependency: ${name}`);
+                },
+              },
             },
           });
         },
@@ -530,7 +547,17 @@ describe("[BENCHMARK] Migration Performance", () => {
           await graphql({
             schema,
             source: INTROSPECTION_QUERY,
-            contextValue: { container },
+            contextValue: {
+              // Container shim for backward compatibility
+              container: {
+                resolve: <T>(name: string): T => {
+                  if (name === "authPort") {
+                    return authAdapter as T;
+                  }
+                  throw new Error(`Unknown container dependency: ${name}`);
+                },
+              },
+            },
           });
         },
         50,
