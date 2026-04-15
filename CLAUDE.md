@@ -30,11 +30,13 @@ All error handling and async operations use **Effect**:
 
 ---
 
-# 3 Universal Rules
+# 5 Universal Rules
 
 1. **TDD first:** Write failing test before implementation
 2. **Effect-based:** Domain uses `Effect<T,E,never>`; orchestration uses `Effect.gen` + `Context.Tag`
 3. **Branded IDs:** Use branded types; never mix IDs across aggregates
+4. **Never modify lint/type config:** Fix the actual code error, never disable rules or change ESLint, tsc, or other lint/type configuration to bypass errors
+5. **No emojis in commits:** Use plain text for commit messages. No emoji prefixes (e.g., "fix:" not "🐛 fix:").
 
 ---
 
@@ -239,6 +241,7 @@ Is it pure business logic?
 - `Effect<T,E,never>` for all domain operations
 - `Data.TaggedError` for all error types
 - **Never modify lint/type config:** Fix the actual code error, never disable rules or change ESLint, tsc, or other lint/type configuration to bypass errors
+- **No emojis in commits:** Use plain text for commit messages. No emoji prefixes.
 
 ---
 
