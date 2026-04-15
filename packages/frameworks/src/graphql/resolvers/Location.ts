@@ -1,6 +1,5 @@
 import { builder } from "../builder";
 import { Effect } from "effect";
-import type { LocationRepository } from "@mirai-app/use-cases";
 import type { LocationId } from "@mirai-app/domain";
 import {
   LocationType,
@@ -31,44 +30,17 @@ builder.queryFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const locationRepository =
-        context.container.resolve<LocationRepository>("locationRepository");
+      const controller = context.controllers.locationController;
+      const result = await controller.getByUserId({ userId: args.userId });
 
-      const program = getLocationUseCase({ userId: args.userId }).pipe(
-        Effect.provideService(LocationRepositoryTag, {
-          create: (location) =>
-            Effect.promise(() => locationRepository.create(location)),
-          findById: (id: LocationId) =>
-            Effect.promise(() => locationRepository.findById(id)),
-          findByUserId: (userId: string) =>
-            Effect.promise(() => locationRepository.findByUserId(userId)),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => locationRepository.findAll(options)),
-          findSharingWithUser: (userId: string) =>
-            Effect.promise(() =>
-              locationRepository.findSharingWithUser(userId),
-            ),
-          findByUserIds: (userIds: string[]) =>
-            Effect.promise(() => locationRepository.findByUserIds(userIds)),
-          save: (location) =>
-            Effect.promise(() => locationRepository.save(location)),
-          delete: (id: LocationId) =>
-            Effect.promise(() => locationRepository.delete(id)),
-          deleteByUserId: (userId: string) =>
-            Effect.promise(() => locationRepository.deleteByUserId(userId)),
-          existsForUser: (userId: string) =>
-            Effect.promise(() => locationRepository.existsForUser(userId)),
-        }),
-      );
-
-      try {
-        return await Effect.runPromise(program);
-      } catch (error) {
-        if (error instanceof LocationNotFoundError) {
+      if (!result.success) {
+        if (result.error.toLowerCase().includes("not found")) {
           return null;
         }
-        throw new Error(error instanceof Error ? error.message : String(error));
+        throw new Error(result.error);
       }
+
+      return result.data;
     },
   }),
 
@@ -82,46 +54,19 @@ builder.queryFields((t) => ({
         throw new Error("Not authenticated");
       }
 
-      const locationRepository =
-        context.container.resolve<LocationRepository>("locationRepository");
-
-      const program = getLocationUseCase({
+      const controller = context.controllers.locationController;
+      const result = await controller.getByUserId({
         userId: context.authContext.userId,
-      }).pipe(
-        Effect.provideService(LocationRepositoryTag, {
-          create: (location) =>
-            Effect.promise(() => locationRepository.create(location)),
-          findById: (id: LocationId) =>
-            Effect.promise(() => locationRepository.findById(id)),
-          findByUserId: (userId: string) =>
-            Effect.promise(() => locationRepository.findByUserId(userId)),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => locationRepository.findAll(options)),
-          findSharingWithUser: (userId: string) =>
-            Effect.promise(() =>
-              locationRepository.findSharingWithUser(userId),
-            ),
-          findByUserIds: (userIds: string[]) =>
-            Effect.promise(() => locationRepository.findByUserIds(userIds)),
-          save: (location) =>
-            Effect.promise(() => locationRepository.save(location)),
-          delete: (id: LocationId) =>
-            Effect.promise(() => locationRepository.delete(id)),
-          deleteByUserId: (userId: string) =>
-            Effect.promise(() => locationRepository.deleteByUserId(userId)),
-          existsForUser: (userId: string) =>
-            Effect.promise(() => locationRepository.existsForUser(userId)),
-        }),
-      );
+      });
 
-      try {
-        return await Effect.runPromise(program);
-      } catch (error) {
-        if (error instanceof LocationNotFoundError) {
+      if (!result.success) {
+        if (result.error.toLowerCase().includes("not found")) {
           return null;
         }
-        throw new Error(error instanceof Error ? error.message : String(error));
+        throw new Error(result.error);
       }
+
+      return result.data;
     },
   }),
 
@@ -134,9 +79,16 @@ builder.queryFields((t) => ({
         return [];
       }
 
-      const locationRepository =
-        context.container.resolve("locationRepository");
-      return locationRepository.findSharingWithUser(context.authContext.userId);
+      const controller = context.controllers.locationController;
+      const result = await controller.list({
+        viewerUserId: context.authContext.userId,
+      });
+
+      if (!result.success) {
+        return [];
+      }
+
+      return result.data.locations;
     },
   }),
 }));
@@ -157,10 +109,8 @@ builder.mutationFields((t) => ({
         throw new Error("Not authenticated");
       }
 
-      const locationRepository =
-        context.container.resolve<LocationRepository>("locationRepository");
-
-      const program = updateLocationUseCase({
+      const controller = context.controllers.locationController;
+      const result = await controller.update({
         userId: context.authContext.userId,
         latitude: args.input.latitude,
         longitude: args.input.longitude,
@@ -170,38 +120,13 @@ builder.mutationFields((t) => ({
         heading: args.input.heading,
         speed: args.input.speed,
         isSharingLocation: args.input.isSharingLocation ?? undefined,
-      }).pipe(
-        Effect.provideService(LocationRepositoryTag, {
-          create: (location) =>
-            Effect.promise(() => locationRepository.create(location)),
-          findById: (id: LocationId) =>
-            Effect.promise(() => locationRepository.findById(id)),
-          findByUserId: (userId: string) =>
-            Effect.promise(() => locationRepository.findByUserId(userId)),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => locationRepository.findAll(options)),
-          findSharingWithUser: (userId: string) =>
-            Effect.promise(() =>
-              locationRepository.findSharingWithUser(userId),
-            ),
-          findByUserIds: (userIds: string[]) =>
-            Effect.promise(() => locationRepository.findByUserIds(userIds)),
-          save: (location) =>
-            Effect.promise(() => locationRepository.save(location)),
-          delete: (id: LocationId) =>
-            Effect.promise(() => locationRepository.delete(id)),
-          deleteByUserId: (userId: string) =>
-            Effect.promise(() => locationRepository.deleteByUserId(userId)),
-          existsForUser: (userId: string) =>
-            Effect.promise(() => locationRepository.existsForUser(userId)),
-        }),
-      );
+      });
 
-      try {
-        return await Effect.runPromise(program);
-      } catch (error) {
-        throw new Error(error instanceof Error ? error.message : String(error));
+      if (!result.success) {
+        throw new Error(result.error);
       }
+
+      return result.data;
     },
   }),
 
@@ -217,44 +142,17 @@ builder.mutationFields((t) => ({
         throw new Error("Not authenticated");
       }
 
-      const locationRepository =
-        context.container.resolve<LocationRepository>("locationRepository");
-
-      const program = updateLocationUseCase({
+      const controller = context.controllers.locationController;
+      const result = await controller.updateSharingSettings({
         userId: context.authContext.userId,
         isSharingLocation: args.input.isSharingLocation,
-      }).pipe(
-        Effect.provideService(LocationRepositoryTag, {
-          create: (location) =>
-            Effect.promise(() => locationRepository.create(location)),
-          findById: (id: LocationId) =>
-            Effect.promise(() => locationRepository.findById(id)),
-          findByUserId: (userId: string) =>
-            Effect.promise(() => locationRepository.findByUserId(userId)),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            Effect.promise(() => locationRepository.findAll(options)),
-          findSharingWithUser: (userId: string) =>
-            Effect.promise(() =>
-              locationRepository.findSharingWithUser(userId),
-            ),
-          findByUserIds: (userIds: string[]) =>
-            Effect.promise(() => locationRepository.findByUserIds(userIds)),
-          save: (location) =>
-            Effect.promise(() => locationRepository.save(location)),
-          delete: (id: LocationId) =>
-            Effect.promise(() => locationRepository.delete(id)),
-          deleteByUserId: (userId: string) =>
-            Effect.promise(() => locationRepository.deleteByUserId(userId)),
-          existsForUser: (userId: string) =>
-            Effect.promise(() => locationRepository.existsForUser(userId)),
-        }),
-      );
+      });
 
-      try {
-        return await Effect.runPromise(program);
-      } catch (error) {
-        throw new Error(error instanceof Error ? error.message : String(error));
+      if (!result.success) {
+        throw new Error(result.error);
       }
+
+      return result.data;
     },
   }),
 
@@ -273,7 +171,7 @@ builder.mutationFields((t) => ({
         throw new Error("Not authenticated");
       }
 
-      // Logic to create location sharing request
+      // Logic to create location sharing request would go here
       return true;
     },
   }),

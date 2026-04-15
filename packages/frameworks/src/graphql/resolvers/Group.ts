@@ -19,40 +19,6 @@ import { Effect, Either } from "effect";
 import { GroupStatus } from "@mirai-app/domain";
 
 /**
- * Helper to create Effect repository from container repository
- */
-const createEffectRepository = (container: any) => ({
-  create: (group: any) =>
-    Effect.promise(() => container.groupRepository.create(group)),
-  findById: (id: string) =>
-    Effect.promise(() => container.groupRepository.findById(id)),
-  findByCode: (code: string) =>
-    Effect.promise(() => container.groupRepository.findByCode(code)),
-  findByTripId: (tripId: string) =>
-    Effect.promise(() => container.groupRepository.findByTripId(tripId)),
-  findByOrganizerId: (organizerId: string) =>
-    Effect.promise(() =>
-      container.groupRepository.findByOrganizerId(organizerId),
-    ),
-  findByStatus: (status: GroupStatus) =>
-    Effect.promise(() => container.groupRepository.findByStatus(status)),
-  findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-    Effect.promise(() =>
-      container.groupRepository.findByTripIdAndStatus(tripId, status),
-    ),
-  findAll: (options?: { limit?: number; offset?: number }) =>
-    Effect.promise(() => container.groupRepository.findAll(options)),
-  update: (group: any) =>
-    Effect.promise(() => container.groupRepository.update(group)),
-  delete: (id: string) =>
-    Effect.promise(() => container.groupRepository.delete(id)),
-  exists: (id: string) =>
-    Effect.promise(() => container.groupRepository.exists(id)),
-  countByTripId: (tripId: string) =>
-    Effect.promise(() => container.groupRepository.countByTripId(tripId)),
-});
-
-/**
  * Group Queries
  */
 builder.queryFields((t) => ({
@@ -65,23 +31,17 @@ builder.queryFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const input: GetGroupInput = { groupId: args.id };
-      const effectRepo = createEffectRepository(context.container);
+      const controller = context.controllers.groupController;
+      const result = await controller.getById({ id: args.id });
 
-      const program = getGroupUseCase(input).pipe(
-        Effect.provideService(GroupRepositoryTag, effectRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-
-      if (Either.isLeft(either)) {
-        if (either.left instanceof GetGroupNotFoundError) {
+      if (!result.success) {
+        if (result.error.toLowerCase().includes("not found")) {
           return null;
         }
-        throw new Error(either.left.message);
+        throw new Error(result.error);
       }
 
-      return either.right;
+      return result.data;
     },
   }),
 
@@ -93,8 +53,14 @@ builder.queryFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const groupRepository = context.container.resolve("groupRepository");
-      return groupRepository.findByTripId(args.tripId);
+      const controller = context.controllers.groupController;
+      const result = await controller.list({ tripId: args.tripId });
+
+      if (!result.success) {
+        return [];
+      }
+
+      return result.data;
     },
   }),
 
@@ -107,8 +73,17 @@ builder.queryFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const groupRepository = context.container.resolve("groupRepository");
-      return groupRepository.findByCode(args.code);
+      const controller = context.controllers.groupController;
+      const result = await controller.getByCode({ code: args.code });
+
+      if (!result.success) {
+        if (result.error.toLowerCase().includes("not found")) {
+          return null;
+        }
+        throw new Error(result.error);
+      }
+
+      return result.data;
     },
   }),
 }));
@@ -125,34 +100,21 @@ builder.mutationFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const input: CreateGroupUseCaseInput = {
+      const controller = context.controllers.groupController;
+      const result = await controller.create({
         tripId: args.input.tripId,
         name: args.input.name,
         description: args.input.description,
         image: args.input.image,
         organizerId: args.input.organizerId,
         code: args.input.code ?? args.input.tripId.slice(0, 8).toUpperCase(),
-      };
+      });
 
-      const effectRepo = createEffectRepository(context.container);
-
-      const program = createGroupUseCase(input).pipe(
-        Effect.provideService(GroupRepositoryTag, effectRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-
-      if (Either.isLeft(either)) {
-        if (either.left instanceof GroupCodeAlreadyExistsError) {
-          throw new Error("Group code already exists");
-        }
-        if (either.left instanceof GroupCreationError) {
-          throw new Error(`Failed to create group: ${either.left.message}`);
-        }
-        throw new Error(either.left.message);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
-      return either.right;
+      return result.data;
     },
   }),
 
@@ -165,35 +127,19 @@ builder.mutationFields((t) => ({
     },
     authScopes: { authenticated: true },
     resolve: async (_, args, context) => {
-      const input: UpdateGroupUseCaseInput = {
-        groupId: args.id,
+      const controller = context.controllers.groupController;
+      const result = await controller.update({
+        id: args.id,
         name: args.input.name,
         description: args.input.description,
         image: args.input.image,
-      };
+      });
 
-      const effectRepo = createEffectRepository(context.container);
-
-      const program = updateGroupUseCase(input).pipe(
-        Effect.provideService(GroupRepositoryTag, effectRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-
-      if (Either.isLeft(either)) {
-        if (either.left instanceof UpdateGroupNotFoundError) {
-          throw new Error("Group not found");
-        }
-        if (either.left instanceof UpdateGroupDeletedError) {
-          throw new Error("Cannot update a deleted group");
-        }
-        if (either.left instanceof UpdateGroupValidationError) {
-          throw new Error(`Validation error: ${either.left.message}`);
-        }
-        throw new Error(either.left.message);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
-      return either.right;
+      return result.data;
     },
   }),
 
@@ -209,15 +155,15 @@ builder.mutationFields((t) => ({
         throw new Error("Not authenticated");
       }
 
-      const groupRepository = context.container.resolve("groupRepository");
-      const group = await groupRepository.findByCode(args.code);
+      const controller = context.controllers.groupController;
+      const result = await controller.getByCode({ code: args.code });
 
-      if (!group) {
+      if (!result.success) {
         throw new Error("Group not found");
       }
 
       // Add user to group logic would go here
-      return group;
+      return result.data;
     },
   }),
 }));
