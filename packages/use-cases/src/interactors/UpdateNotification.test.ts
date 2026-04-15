@@ -13,13 +13,13 @@ import {
 } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { NotificationRepositoryTag } from "../ports/NotificationRepository";
-import { InMemoryNotificationRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] updateNotificationUseCase (Effect)", () => {
-  let repo: InMemoryNotificationRepository;
+  let gateway: InMemoryNotificationGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationRepository();
+    gateway = new InMemoryNotificationGateway();
   });
 
   // Helper to create and save a notification
@@ -42,34 +42,35 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
         priority: overrides?.priority ?? NotificationPriority.NORMAL,
       }),
     );
-    return Effect.runSync(repo.create(notification));
+    return Effect.runSync(gateway.create(notification));
   };
 
-  // Helper to run use case with repository
+  // Helper to run use case with gateway
   const runUseCase = async (input: UpdateNotificationInput) => {
     const program = updateNotificationUseCase(input).pipe(
       Effect.provideService(NotificationRepositoryTag, {
-        create: (notification: Notification) => repo.create(notification),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByStatus: (status: NotificationStatus) => repo.findByStatus(status),
+        create: (notification: Notification) => gateway.create(notification),
+        findById: (id: string) => gateway.findById(id),
+        findByTripId: (tripId: string) => gateway.findByTripId(tripId),
+        findByStatus: (status: NotificationStatus) =>
+          gateway.findByStatus(status),
         findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-          repo.findByTripIdAndStatus(tripId, status),
+          gateway.findByTripIdAndStatus(tripId, status),
         findByPriority: (priority: NotificationPriority) =>
-          repo.findByPriority(priority),
-        findReadyToSend: () => repo.findReadyToSend(),
-        findOverdue: () => repo.findOverdue(),
+          gateway.findByPriority(priority),
+        findReadyToSend: () => gateway.findReadyToSend(),
+        findOverdue: () => gateway.findOverdue(),
         findByCreatedById: (createdById: string) =>
-          repo.findByCreatedById(createdById),
+          gateway.findByCreatedById(createdById),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (notification: Notification) => repo.update(notification),
-        delete: (id: string) => repo.delete(id),
-        exists: (id: string) => repo.exists(id),
+          gateway.findAll(options),
+        update: (notification: Notification) => gateway.update(notification),
+        delete: (id: string) => gateway.delete(id),
+        exists: (id: string) => gateway.exists(id),
         countByStatus: (status: NotificationStatus) =>
-          repo.countByStatus(status),
+          gateway.countByStatus(status),
         countPendingByTripId: (tripId: string) =>
-          repo.countPendingByTripId(tripId),
+          gateway.countPendingByTripId(tripId),
       }),
     );
     return await Effect.runPromise(program);
@@ -92,7 +93,7 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
       expect(result.body).toBe("Original body content"); // Unchanged
 
       // Verify stored notification
-      const stored = Effect.runSync(repo.findById(notification.id));
+      const stored = Effect.runSync(gateway.findById(notification.id));
       expect(stored?.title).toBe("Updated Title");
     });
 
@@ -144,7 +145,7 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
       expect(result.priority).toBe("HIGH");
 
       // Verify stored notification
-      const stored = Effect.runSync(repo.findById(notification.id));
+      const stored = Effect.runSync(gateway.findById(notification.id));
       expect(stored?.priority).toBe(NotificationPriority.HIGH);
     });
 
@@ -165,7 +166,7 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
       expect(result.status).toBe("READY");
 
       // Verify stored notification
-      const stored = Effect.runSync(repo.findById(notification.id));
+      const stored = Effect.runSync(gateway.findById(notification.id));
       expect(stored?.status).toBe(NotificationStatus.READY);
     });
 
@@ -199,28 +200,28 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
       // Act
       const program = updateNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
+          create: (notification: Notification) => gateway.create(notification),
+          findById: (id: string) => gateway.findById(id),
+          findByTripId: (tripId: string) => gateway.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
+            gateway.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
+            gateway.findByTripIdAndStatus(tripId, status),
           findByPriority: (priority: NotificationPriority) =>
-            repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
+            gateway.findByPriority(priority),
+          findReadyToSend: () => gateway.findReadyToSend(),
+          findOverdue: () => gateway.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
+            gateway.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
+            gateway.findAll(options),
+          update: (notification: Notification) => gateway.update(notification),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
+            gateway.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
+            gateway.countPendingByTripId(tripId),
         }),
       );
 
@@ -243,28 +244,28 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
       // Act
       const program = updateNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
+          create: (notification: Notification) => gateway.create(notification),
+          findById: (id: string) => gateway.findById(id),
+          findByTripId: (tripId: string) => gateway.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
+            gateway.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
+            gateway.findByTripIdAndStatus(tripId, status),
           findByPriority: (priority: NotificationPriority) =>
-            repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
+            gateway.findByPriority(priority),
+          findReadyToSend: () => gateway.findReadyToSend(),
+          findOverdue: () => gateway.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
+            gateway.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
+            gateway.findAll(options),
+          update: (notification: Notification) => gateway.update(notification),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
+            gateway.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
+            gateway.countPendingByTripId(tripId),
         }),
       );
 
@@ -276,7 +277,7 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
       }
 
       // Verify notification was not changed
-      const stored = Effect.runSync(repo.findById(notification.id));
+      const stored = Effect.runSync(gateway.findById(notification.id));
       expect(stored?.title).toBe("Original Title");
     });
 
@@ -286,7 +287,7 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
         status: NotificationStatus.READY,
       });
       notification = await Effect.runPromise(notification.markAsSent());
-      Effect.runSync(repo.update(notification));
+      Effect.runSync(gateway.update(notification));
 
       const input: UpdateNotificationInput = {
         notificationId: notification.id,
@@ -296,28 +297,28 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
       // Act
       const program = updateNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
+          create: (notification: Notification) => gateway.create(notification),
+          findById: (id: string) => gateway.findById(id),
+          findByTripId: (tripId: string) => gateway.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
+            gateway.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
+            gateway.findByTripIdAndStatus(tripId, status),
           findByPriority: (priority: NotificationPriority) =>
-            repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
+            gateway.findByPriority(priority),
+          findReadyToSend: () => gateway.findReadyToSend(),
+          findOverdue: () => gateway.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
+            gateway.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
+            gateway.findAll(options),
+          update: (notification: Notification) => gateway.update(notification),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
+            gateway.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
+            gateway.countPendingByTripId(tripId),
         }),
       );
 
@@ -343,28 +344,28 @@ describe("[UNIT] updateNotificationUseCase (Effect)", () => {
       // Act
       const program = updateNotificationUseCase(input).pipe(
         Effect.provideService(NotificationRepositoryTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
+          create: (notification: Notification) => gateway.create(notification),
+          findById: (id: string) => gateway.findById(id),
+          findByTripId: (tripId: string) => gateway.findByTripId(tripId),
           findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
+            gateway.findByStatus(status),
           findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
+            gateway.findByTripIdAndStatus(tripId, status),
           findByPriority: (priority: NotificationPriority) =>
-            repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
+            gateway.findByPriority(priority),
+          findReadyToSend: () => gateway.findReadyToSend(),
+          findOverdue: () => gateway.findOverdue(),
           findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
+            gateway.findByCreatedById(createdById),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
+            gateway.findAll(options),
+          update: (notification: Notification) => gateway.update(notification),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
           countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
+            gateway.countByStatus(status),
           countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
+            gateway.countPendingByTripId(tripId),
         }),
       );
 

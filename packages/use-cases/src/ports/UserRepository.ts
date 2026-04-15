@@ -11,8 +11,8 @@ import { Context } from "effect";
  * Use Effect.runPromise at system boundaries (controllers/framework layer).
  *
  * Implementations (in adapters layer):
- * - PrismaUserRepository: Uses Prisma ORM
- * - InMemoryUserRepository: For testing
+ * - DrizzleUserGateway: Uses Drizzle ORM
+ * - InMemoryUserGateway: For testing
  *
  * NOTE: Interface imported from @mirai-app/domain/ports.
  * Context.Tag defined here for Effect dependency injection.

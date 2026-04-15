@@ -6,17 +6,17 @@ import {
   ScheduleNotFoundError,
 } from "./GetNotificationScheduleExecutionHistory";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
-import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 import type {
   NotificationSchedule,
   NotificationScheduleExecutionRecord,
 } from "@mirai-app/domain";
 
 describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleRepository;
+  let repo: InMemoryNotificationScheduleGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationScheduleRepository();
+    repo = new InMemoryNotificationScheduleGateway();
   });
 
   const createMockSchedule = (id: string): NotificationSchedule =>

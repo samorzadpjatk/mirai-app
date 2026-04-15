@@ -11,13 +11,13 @@ import {
   RewardRepositoryTag,
   TripAccessCheckerTag,
 } from "../ports/RewardRepository";
-import { InMemoryRewardRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryRewardGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] createRewardUseCase (Effect)", () => {
-  let rewardRepo: InMemoryRewardRepository;
+  let rewardRepo: InMemoryRewardGateway;
 
   beforeEach(() => {
-    rewardRepo = new InMemoryRewardRepository();
+    rewardRepo = new InMemoryRewardGateway();
   });
 
   // Helper to create a valid reward input

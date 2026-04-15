@@ -7,13 +7,13 @@ import {
 import { Trip, TripStatus } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
-import { InMemoryTripRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryTripGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] getTripByIdUseCase (Effect)", () => {
-  let repo: InMemoryTripRepository;
+  let repo: InMemoryTripGateway;
 
   beforeEach(() => {
-    repo = new InMemoryTripRepository();
+    repo = new InMemoryTripGateway();
   });
 
   // Helper to create a valid trip

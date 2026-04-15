@@ -6,14 +6,14 @@ import {
   BulkToggleValidationError,
 } from "./BulkToggleNotificationScheduleActive";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
-import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 import type { NotificationSchedule } from "@mirai-app/domain";
 
 describe("[UNIT] bulkToggleNotificationScheduleActiveUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleRepository;
+  let repo: InMemoryNotificationScheduleGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationScheduleRepository();
+    repo = new InMemoryNotificationScheduleGateway();
   });
 
   // Helper to create mock notification schedule

@@ -6,7 +6,7 @@ import {
 } from "./GetDeliveryByNotificationId";
 import { Effect } from "effect";
 import { NotificationDeliveryRepositoryTag } from "../ports/NotificationDeliveryRepository";
-import { InMemoryNotificationDeliveryRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationDeliveryGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 import type { NotificationDelivery } from "../ports/NotificationDeliveryRepository";
 
 // Mock NotificationDelivery
@@ -42,10 +42,10 @@ const createMockDelivery = (
   }) as NotificationDelivery;
 
 describe("[UNIT] getDeliveryByNotificationIdUseCase (Effect)", () => {
-  let repo: InMemoryNotificationDeliveryRepository;
+  let repo: InMemoryNotificationDeliveryGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationDeliveryRepository();
+    repo = new InMemoryNotificationDeliveryGateway();
   });
 
   // Helper to run use case with repository

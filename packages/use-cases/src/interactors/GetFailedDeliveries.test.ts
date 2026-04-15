@@ -5,7 +5,7 @@ import {
 } from "./GetFailedDeliveries";
 import { Effect } from "effect";
 import { NotificationDeliveryRepositoryTag } from "../ports/NotificationDeliveryRepository";
-import { InMemoryNotificationDeliveryRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationDeliveryGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 import type { NotificationDelivery } from "../ports/NotificationDeliveryRepository";
 
 // Mock NotificationDelivery
@@ -26,25 +26,25 @@ const createMockDelivery = (
   }) as NotificationDelivery;
 
 describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
-  let repo: InMemoryNotificationDeliveryRepository;
+  let gateway: InMemoryNotificationDeliveryGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationDeliveryRepository();
+    gateway = new InMemoryNotificationDeliveryGateway();
   });
 
-  // Helper to run use case with repository
+  // Helper to run use case with gateway
   const runUseCase = async (input: GetFailedDeliveriesInput) => {
     const program = getFailedDeliveriesUseCase(input).pipe(
       Effect.provideService(NotificationDeliveryRepositoryTag, {
         findMany: (filters, pagination) =>
-          repo.findMany(filters, pagination),
-        count: (filters) => repo.count(filters),
+          gateway.findMany(filters, pagination),
+        count: (filters) => gateway.count(filters),
         findByNotificationId: (notificationId) =>
-          repo.findByNotificationId(notificationId),
-        getStats: (filters) => repo.getStats(filters),
+          gateway.findByNotificationId(notificationId),
+        getStats: (filters) => gateway.getStats(filters),
         findFailed: (tripId, pagination) =>
-          repo.findFailed(tripId, pagination),
-        countFailed: (tripId) => repo.countFailed(tripId),
+          gateway.findFailed(tripId, pagination),
+        countFailed: (tripId) => gateway.countFailed(tripId),
       }),
     );
     return await Effect.runPromise(program);
@@ -53,7 +53,7 @@ describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
   describe("[UNIT] execute", () => {
     it("should return failed deliveries", async () => {
       // Arrange
-      repo.seed([
+      gateway.seed([
         createMockDelivery({
           id: "delivery-1",
           tripId: "trip-123",
@@ -86,7 +86,7 @@ describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
     });
 
     it("should use default pagination values", async () => {
-      repo.seed([
+      gateway.seed([
         createMockDelivery({
           id: "delivery-1",
           tripId: "trip-123",
@@ -107,7 +107,7 @@ describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
     it("should use custom pagination when provided", async () => {
       // Arrange - add more than limit
       for (let i = 1; i <= 10; i++) {
-        repo.seed([
+        gateway.seed([
           createMockDelivery({
             id: `delivery-${i}`,
             tripId: "trip-123",
@@ -131,7 +131,7 @@ describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
 
     it("should return empty array when no failed deliveries", async () => {
       // Arrange - only success deliveries
-      repo.seed([
+      gateway.seed([
         createMockDelivery({
           id: "delivery-1",
           tripId: "trip-123",
@@ -153,7 +153,7 @@ describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
 
     it("should only return deliveries for the specified trip", async () => {
       // Arrange
-      repo.seed([
+      gateway.seed([
         createMockDelivery({ id: "d1", tripId: "trip-123", status: "failure" }),
         createMockDelivery({ id: "d2", tripId: "trip-456", status: "failure" }),
       ]);
@@ -171,7 +171,7 @@ describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
     });
 
     it("should handle partial pagination options", async () => {
-      repo.seed([
+      gateway.seed([
         createMockDelivery({
           id: "delivery-1",
           tripId: "trip-123",
@@ -191,7 +191,7 @@ describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
     });
 
     it("should return delivery details", async () => {
-      repo.seed([
+      gateway.seed([
         createMockDelivery({
           id: "delivery-failed",
           notificationId: "notif-failed",

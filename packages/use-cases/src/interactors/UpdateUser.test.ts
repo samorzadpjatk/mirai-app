@@ -8,13 +8,13 @@ import {
 import { User, UserRole } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { UserRepositoryTag } from "../ports/UserRepository";
-import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryUserGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] updateUserUseCase (Effect)", () => {
-  let repo: InMemoryUserRepository;
+  let repo: InMemoryUserGateway;
 
   beforeEach(() => {
-    repo = new InMemoryUserRepository();
+    repo = new InMemoryUserGateway();
   });
 
   // Helper to create a valid user

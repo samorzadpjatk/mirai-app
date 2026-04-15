@@ -11,13 +11,13 @@ import {
 } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
-import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] createNotificationScheduleUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleRepository;
+  let repo: InMemoryNotificationScheduleGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationScheduleRepository();
+    repo = new InMemoryNotificationScheduleGateway();
   });
 
   const getFutureDate = (daysFromNow: number): Date => {

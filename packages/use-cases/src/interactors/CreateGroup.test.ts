@@ -8,13 +8,13 @@ import {
 import { Group, GroupStatus } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { GroupRepositoryTag } from "../ports/GroupRepository";
-import { InMemoryGroupRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryGroupGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] createGroupUseCase (Effect)", () => {
-  let repo: InMemoryGroupRepository;
+  let repo: InMemoryGroupGateway;
 
   beforeEach(() => {
-    repo = new InMemoryGroupRepository();
+    repo = new InMemoryGroupGateway();
   });
 
   const createValidGroup = (

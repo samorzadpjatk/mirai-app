@@ -9,13 +9,13 @@ import {
 } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
-import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleRepository;
+  let gateway: InMemoryNotificationScheduleGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationScheduleRepository();
+    gateway = new InMemoryNotificationScheduleGateway();
   });
 
   const getFutureDate = (daysFromNow: number): Date => {
@@ -59,36 +59,37 @@ describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
   const runUseCase = async (input: GetNotificationSchedulesInput) => {
     const program = getNotificationSchedulesUseCase(input).pipe(
       Effect.provideService(NotificationScheduleRepositoryTag, {
-        create: (schedule: NotificationSchedule) => repo.create(schedule),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByName: (name: string) => repo.findByName(name),
+        create: (schedule: NotificationSchedule) => gateway.create(schedule),
+        findById: (id: string) => gateway.findById(id),
+        findByTripId: (tripId: string) => gateway.findByTripId(tripId),
+        findByName: (name: string) => gateway.findByName(name),
         findByTripIdAndName: (tripId: string, name: string) =>
-          repo.findByTripIdAndName(tripId, name),
-        findByType: (type: NotificationScheduleType) => repo.findByType(type),
+          gateway.findByTripIdAndName(tripId, name),
+        findByType: (type: NotificationScheduleType) =>
+          gateway.findByType(type),
         findAllPaginated: (options?: {
           filter?: import("@mirai-app/domain").NotificationScheduleFilter;
           pagination?: import("@mirai-app/domain").PaginationOptions;
-        }) => repo.findAllPaginated(options),
-        findActive: (now?: Date) => repo.findActive(now),
+        }) => gateway.findAllPaginated(options),
+        findActive: (now?: Date) => gateway.findActive(now),
         findUpcoming: (days?: number, now?: Date) =>
-          repo.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => repo.update(schedule),
-        delete: (id: string) => repo.delete(id),
-        deleteMany: (ids: string[]) => repo.deleteMany(ids),
-        exists: (id: string) => repo.exists(id),
+          gateway.findUpcoming(days, now),
+        update: (schedule: NotificationSchedule) => gateway.update(schedule),
+        delete: (id: string) => gateway.delete(id),
+        deleteMany: (ids: string[]) => gateway.deleteMany(ids),
+        exists: (id: string) => gateway.exists(id),
         count: (
           filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-        ) => repo.count(filter),
+        ) => gateway.count(filter),
         updateLastRun: (id: string, lastRun: Date) =>
-          repo.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => repo.toggleActive(id),
+          gateway.updateLastRun(id, lastRun),
+        toggleActive: (id: string) => gateway.toggleActive(id),
         bulkToggleActive: (ids: string[], isActive: boolean) =>
-          repo.bulkToggleActive(ids, isActive),
+          gateway.bulkToggleActive(ids, isActive),
         getExecutionHistory: (scheduleId: string, limit: number) =>
-          repo.getExecutionHistory(scheduleId, limit),
+          gateway.getExecutionHistory(scheduleId, limit),
         countExecutions: (scheduleId: string) =>
-          repo.countExecutions(scheduleId),
+          gateway.countExecutions(scheduleId),
       }),
     );
     return await Effect.runPromise(program);
@@ -116,8 +117,8 @@ describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
         name: "Schedule Two",
         notificationType: NotificationScheduleType.REMINDER,
       });
-      await Effect.runPromise(repo.create(schedule1));
-      await Effect.runPromise(repo.create(schedule2));
+      await Effect.runPromise(gateway.create(schedule1));
+      await Effect.runPromise(gateway.create(schedule2));
 
       const input: GetNotificationSchedulesInput = {};
 
@@ -135,7 +136,7 @@ describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
           id: `schedule-${i}`,
           name: `Schedule ${i}`,
         });
-        await Effect.runPromise(repo.create(schedule));
+        await Effect.runPromise(gateway.create(schedule));
       }
 
       const input: GetNotificationSchedulesInput = {
@@ -154,7 +155,7 @@ describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
         id: "schedule-1",
         name: "Test Schedule",
       });
-      await Effect.runPromise(repo.create(schedule));
+      await Effect.runPromise(gateway.create(schedule));
 
       const input: GetNotificationSchedulesInput = {};
 

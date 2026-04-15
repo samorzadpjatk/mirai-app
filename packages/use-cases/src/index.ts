@@ -906,3 +906,26 @@ export {
   type DeleteTripOutput,
   DeleteTripNotFoundError,
 } from "./interactors/DeleteTrip";
+
+// Event Use Cases (Effect-based)
+export {
+  getEventUseCase,
+  type GetEventInput,
+  type GetEventOutput,
+  EventNotFoundError,
+  EventRepositoryError,
+} from "./interactors/GetEvent";
+export {
+  createEventUseCase,
+  type CreateEventInput,
+  type CreateEventOutput,
+  CreateEventValidationError,
+  CreateEventRepositoryError,
+} from "./interactors/CreateEvent";
+export {
+  listEventsUseCase,
+  type ListEventsInput,
+  type ListEventsOutput,
+  type EventListItem,
+  ListEventsRepositoryError,
+} from "./interactors/ListEvents";

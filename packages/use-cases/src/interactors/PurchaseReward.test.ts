@@ -25,9 +25,9 @@ import {
   type PaginatedResult,
 } from "../ports/RewardRepository";
 import {
-  InMemoryRewardRepository,
-  InMemoryRewardPurchaseRepository,
-} from "@mirai-app/adapters/gateways/in-memory";
+  InMemoryRewardGateway,
+  InMemoryRewardPurchaseGateway,
+} from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 // Simple in-memory implementations for testing
 class InMemoryTripPointsCalculator {
@@ -173,8 +173,8 @@ const createValidReward = (quantity: number = 10): Reward => {
 const buildPurchaseRewardProgram = (
   input: PurchaseRewardInput,
   deps: {
-    rewardRepo: InMemoryRewardRepository;
-    purchaseRepo: InMemoryRewardPurchaseRepository;
+    rewardGateway: InMemoryRewardGateway;
+    purchaseGateway: InMemoryRewardPurchaseGateway;
     pointsCalc: InMemoryTripPointsCalculator;
     coinsService: InMemoryGroupCoinsService;
     accessChecker: InMemoryTripAccessChecker;
@@ -182,44 +182,46 @@ const buildPurchaseRewardProgram = (
 ) => {
   return purchaseRewardUseCase(input).pipe(
     Effect.provideService(RewardRepositoryTag, {
-      create: (reward: Reward) => deps.rewardRepo.create(reward),
-      findById: (id: RewardId) => deps.rewardRepo.findById(id),
+      create: (reward: Reward) => deps.rewardGateway.create(reward),
+      findById: (id: RewardId) => deps.rewardGateway.findById(id),
       findByTripId: (tripId: string, options?) =>
-        deps.rewardRepo.findByTripId(tripId, options),
+        deps.rewardGateway.findByTripId(tripId, options),
       findVisibleByTripId: (tripId: string, options?) =>
-        deps.rewardRepo.findVisibleByTripId(tripId, options),
-      update: (reward: Reward) => deps.rewardRepo.update(reward),
-      delete: (id: RewardId) => deps.rewardRepo.delete(id),
-      hasPurchases: (id: RewardId) => deps.rewardRepo.hasPurchases(id),
-      getPurchaseCount: (id: RewardId) => deps.rewardRepo.getPurchaseCount(id),
+        deps.rewardGateway.findVisibleByTripId(tripId, options),
+      update: (reward: Reward) => deps.rewardGateway.update(reward),
+      delete: (id: RewardId) => deps.rewardGateway.delete(id),
+      hasPurchases: (id: RewardId) => deps.rewardGateway.hasPurchases(id),
+      getPurchaseCount: (id: RewardId) =>
+        deps.rewardGateway.getPurchaseCount(id),
       decrementQuantity: (id: RewardId, amount: number) =>
-        deps.rewardRepo.decrementQuantity(id, amount),
+        deps.rewardGateway.decrementQuantity(id, amount),
       incrementQuantity: (id: RewardId, amount: number) =>
-        deps.rewardRepo.incrementQuantity(id, amount),
+        deps.rewardGateway.incrementQuantity(id, amount),
     }),
     Effect.provideService(RewardPurchaseRepositoryTag, {
-      create: (purchase: RewardPurchase) => deps.purchaseRepo.create(purchase),
-      findById: (id: string) => deps.purchaseRepo.findById(id),
+      create: (purchase: RewardPurchase) =>
+        deps.purchaseGateway.create(purchase),
+      findById: (id: string) => deps.purchaseGateway.findById(id),
       findByRewardId: (rewardId: RewardId, options?) =>
-        deps.purchaseRepo.findByRewardId(rewardId, options),
+        deps.purchaseGateway.findByRewardId(rewardId, options),
       findByGroupId: (groupId: string, options?) =>
-        deps.purchaseRepo.findByGroupId(groupId, options),
+        deps.purchaseGateway.findByGroupId(groupId, options),
       findByTripId: (tripId: string, options?) =>
-        deps.purchaseRepo.findByTripId(tripId, options),
+        deps.purchaseGateway.findByTripId(tripId, options),
       updateStatus: (
         id: string,
         status: string,
         updatedById: string,
         collectionMethod?,
       ) =>
-        deps.purchaseRepo.updateStatus(
+        deps.purchaseGateway.updateStatus(
           id,
           status,
           updatedById,
           collectionMethod,
         ),
       countByRewardId: (rewardId: RewardId) =>
-        deps.purchaseRepo.countByRewardId(rewardId),
+        deps.purchaseGateway.countByRewardId(rewardId),
     }),
     Effect.provideService(TripPointsCalculatorTag, {
       calculateTotalAvailablePoints: (tripId: string) =>
@@ -253,8 +255,8 @@ const buildPurchaseRewardProgram = (
 const runPurchaseRewardUseCase = async (
   input: PurchaseRewardInput,
   deps: {
-    rewardRepo: InMemoryRewardRepository;
-    purchaseRepo: InMemoryRewardPurchaseRepository;
+    rewardGateway: InMemoryRewardGateway;
+    purchaseGateway: InMemoryRewardPurchaseGateway;
     pointsCalc: InMemoryTripPointsCalculator;
     coinsService: InMemoryGroupCoinsService;
     accessChecker: InMemoryTripAccessChecker;
@@ -262,44 +264,46 @@ const runPurchaseRewardUseCase = async (
 ) => {
   const program = purchaseRewardUseCase(input).pipe(
     Effect.provideService(RewardRepositoryTag, {
-      create: (reward: Reward) => deps.rewardRepo.create(reward),
-      findById: (id: RewardId) => deps.rewardRepo.findById(id),
+      create: (reward: Reward) => deps.rewardGateway.create(reward),
+      findById: (id: RewardId) => deps.rewardGateway.findById(id),
       findByTripId: (tripId: string, options?) =>
-        deps.rewardRepo.findByTripId(tripId, options),
+        deps.rewardGateway.findByTripId(tripId, options),
       findVisibleByTripId: (tripId: string, options?) =>
-        deps.rewardRepo.findVisibleByTripId(tripId, options),
-      update: (reward: Reward) => deps.rewardRepo.update(reward),
-      delete: (id: RewardId) => deps.rewardRepo.delete(id),
-      hasPurchases: (id: RewardId) => deps.rewardRepo.hasPurchases(id),
-      getPurchaseCount: (id: RewardId) => deps.rewardRepo.getPurchaseCount(id),
+        deps.rewardGateway.findVisibleByTripId(tripId, options),
+      update: (reward: Reward) => deps.rewardGateway.update(reward),
+      delete: (id: RewardId) => deps.rewardGateway.delete(id),
+      hasPurchases: (id: RewardId) => deps.rewardGateway.hasPurchases(id),
+      getPurchaseCount: (id: RewardId) =>
+        deps.rewardGateway.getPurchaseCount(id),
       decrementQuantity: (id: RewardId, amount: number) =>
-        deps.rewardRepo.decrementQuantity(id, amount),
+        deps.rewardGateway.decrementQuantity(id, amount),
       incrementQuantity: (id: RewardId, amount: number) =>
-        deps.rewardRepo.incrementQuantity(id, amount),
+        deps.rewardGateway.incrementQuantity(id, amount),
     }),
     Effect.provideService(RewardPurchaseRepositoryTag, {
-      create: (purchase: RewardPurchase) => deps.purchaseRepo.create(purchase),
-      findById: (id: string) => deps.purchaseRepo.findById(id),
+      create: (purchase: RewardPurchase) =>
+        deps.purchaseGateway.create(purchase),
+      findById: (id: string) => deps.purchaseGateway.findById(id),
       findByRewardId: (rewardId: RewardId, options?) =>
-        deps.purchaseRepo.findByRewardId(rewardId, options),
+        deps.purchaseGateway.findByRewardId(rewardId, options),
       findByGroupId: (groupId: string, options?) =>
-        deps.purchaseRepo.findByGroupId(groupId, options),
+        deps.purchaseGateway.findByGroupId(groupId, options),
       findByTripId: (tripId: string, options?) =>
-        deps.purchaseRepo.findByTripId(tripId, options),
+        deps.purchaseGateway.findByTripId(tripId, options),
       updateStatus: (
         id: string,
         status: string,
         updatedById: string,
         collectionMethod?,
       ) =>
-        deps.purchaseRepo.updateStatus(
+        deps.purchaseGateway.updateStatus(
           id,
           status,
           updatedById,
           collectionMethod,
         ),
       countByRewardId: (rewardId: RewardId) =>
-        deps.purchaseRepo.countByRewardId(rewardId),
+        deps.purchaseGateway.countByRewardId(rewardId),
     }),
     Effect.provideService(TripPointsCalculatorTag, {
       calculateTotalAvailablePoints: (tripId: string) =>
@@ -331,15 +335,15 @@ const runPurchaseRewardUseCase = async (
 };
 
 describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
-  let rewardRepo: InMemoryRewardRepository;
-  let purchaseRepo: InMemoryRewardPurchaseRepository;
+  let rewardGateway: InMemoryRewardGateway;
+  let purchaseGateway: InMemoryRewardPurchaseGateway;
   let pointsCalc: InMemoryTripPointsCalculator;
   let coinsService: InMemoryGroupCoinsService;
   let accessChecker: InMemoryTripAccessChecker;
 
   beforeEach(() => {
-    rewardRepo = new InMemoryRewardRepository();
-    purchaseRepo = new InMemoryRewardPurchaseRepository();
+    rewardGateway = new InMemoryRewardGateway();
+    purchaseGateway = new InMemoryRewardPurchaseGateway();
     pointsCalc = new InMemoryTripPointsCalculator();
     coinsService = new InMemoryGroupCoinsService();
     accessChecker = new InMemoryTripAccessChecker();
@@ -351,7 +355,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
       const mockReward = createValidReward(10);
 
       // Execute the Effect to actually store the reward
-      await Effect.runPromise(rewardRepo.create(mockReward));
+      await Effect.runPromise(rewardGateway.create(mockReward));
 
       // Set up test data
       pointsCalc.setPoints("trip-123", 1000); // Total points for cost calculation
@@ -366,8 +370,8 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Act
       const result = await runPurchaseRewardUseCase(input, {
-        rewardRepo,
-        purchaseRepo,
+        rewardGateway,
+        purchaseGateway,
         pointsCalc,
         coinsService,
         accessChecker,
@@ -382,7 +386,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Verify reward quantity was decremented
       const updatedReward = await Effect.runPromise(
-        rewardRepo.findById(mockReward.id),
+        rewardGateway.findById(mockReward.id),
       );
       expect(updatedReward?.availableQuantity).toBe(8); // 10 - 2
 
@@ -394,7 +398,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Verify purchase was recorded
       const purchases = await Effect.runPromise(
-        purchaseRepo.findByRewardId(mockReward.id),
+        purchaseGateway.findByRewardId(mockReward.id),
       );
       expect(purchases.total).toBe(1);
     });
@@ -408,8 +412,8 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Act - use Either to properly check error type
       const program = buildPurchaseRewardProgram(input, {
-        rewardRepo,
-        purchaseRepo,
+        rewardGateway,
+        purchaseGateway,
         pointsCalc,
         coinsService,
         accessChecker,
@@ -426,7 +430,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should reject purchase when user is not group leader", async () => {
       // Arrange
       const mockReward = createValidReward(10);
-      await Effect.runPromise(rewardRepo.create(mockReward));
+      await Effect.runPromise(rewardGateway.create(mockReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       // Don't set user as group leader
@@ -439,8 +443,8 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Act - use Either to properly check error type
       const program = buildPurchaseRewardProgram(input, {
-        rewardRepo,
-        purchaseRepo,
+        rewardGateway,
+        purchaseGateway,
         pointsCalc,
         coinsService,
         accessChecker,
@@ -457,7 +461,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should reject purchase when insufficient quantity", async () => {
       // Arrange
       const mockReward = createValidReward(5); // Only 5 available
-      await Effect.runPromise(rewardRepo.create(mockReward));
+      await Effect.runPromise(rewardGateway.create(mockReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       coinsService.setBalance("group-123", 500);
@@ -471,8 +475,8 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Act - use Either to properly check error type
       const program = buildPurchaseRewardProgram(input, {
-        rewardRepo,
-        purchaseRepo,
+        rewardGateway,
+        purchaseGateway,
         pointsCalc,
         coinsService,
         accessChecker,
@@ -489,7 +493,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should reject purchase when insufficient coins", async () => {
       // Arrange
       const mockReward = createValidReward(10);
-      await Effect.runPromise(rewardRepo.create(mockReward));
+      await Effect.runPromise(rewardGateway.create(mockReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       coinsService.setBalance("group-123", 50); // Only 50 coins
@@ -503,8 +507,8 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Act - use Either to properly check error type
       const program = buildPurchaseRewardProgram(input, {
-        rewardRepo,
-        purchaseRepo,
+        rewardGateway,
+        purchaseGateway,
         pointsCalc,
         coinsService,
         accessChecker,
@@ -521,7 +525,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
     it("should reject purchase when trip has ended", async () => {
       // Arrange
       const mockReward = createValidReward(10);
-      await Effect.runPromise(rewardRepo.create(mockReward));
+      await Effect.runPromise(rewardGateway.create(mockReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       coinsService.setBalance("group-123", 500);
@@ -536,8 +540,8 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Act - use Either to properly check error type
       const program = buildPurchaseRewardProgram(input, {
-        rewardRepo,
-        purchaseRepo,
+        rewardGateway,
+        purchaseGateway,
         pointsCalc,
         coinsService,
         accessChecker,
@@ -563,7 +567,7 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
         isHidden: true,
       });
       const hiddenReward = unwrap(hiddenRewardResult);
-      await Effect.runPromise(rewardRepo.create(hiddenReward));
+      await Effect.runPromise(rewardGateway.create(hiddenReward));
 
       pointsCalc.setPoints("trip-123", 1000);
       coinsService.setBalance("group-123", 500);
@@ -577,8 +581,8 @@ describe("[UNIT] purchaseRewardUseCase (Effect)", () => {
 
       // Act - use Either to properly check error type
       const program = buildPurchaseRewardProgram(input, {
-        rewardRepo,
-        purchaseRepo,
+        rewardGateway,
+        purchaseGateway,
         pointsCalc,
         coinsService,
         accessChecker,

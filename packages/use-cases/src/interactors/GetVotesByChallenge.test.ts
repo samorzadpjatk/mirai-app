@@ -7,40 +7,40 @@ import {
 import { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
-import { InMemoryChallengeVoteRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryChallengeVoteGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] getVotesByChallengeUseCase (Effect)", () => {
-  let repo: InMemoryChallengeVoteRepository;
+  let gateway: InMemoryChallengeVoteGateway;
 
   beforeEach(() => {
-    repo = new InMemoryChallengeVoteRepository();
+    gateway = new InMemoryChallengeVoteGateway();
   });
 
-  // Helper to run use case with repository
+  // Helper to run use case with gateway
   const runUseCase = async (input: GetVotesByChallengeInput) => {
     const program = getVotesByChallengeUseCase(input).pipe(
       Effect.provideService(ChallengeVoteRepositoryTag, {
-        create: (vote: ChallengeVote) => repo.create(vote),
-        createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
-        findById: (id: string) => repo.findById(id),
+        create: (vote: ChallengeVote) => gateway.create(vote),
+        createMany: (votes: ChallengeVote[]) => gateway.createMany(votes),
+        findById: (id: string) => gateway.findById(id),
         findByChallengeId: (challengeId: string) =>
-          repo.findByChallengeId(challengeId),
+          gateway.findByChallengeId(challengeId),
         findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-          repo.findByChallengeAndVoter(challengeId, voterId),
+          gateway.findByChallengeAndVoter(challengeId, voterId),
         findBySubmissionId: (submissionId: string) =>
-          repo.findBySubmissionId(submissionId),
+          gateway.findBySubmissionId(submissionId),
         hasVoted: (challengeId: string, voterId: string) =>
-          repo.hasVoted(challengeId, voterId),
+          gateway.hasVoted(challengeId, voterId),
         hasVotedForPosition: (
           challengeId: string,
           voterId: string,
           position: number,
-        ) => repo.hasVotedForPosition(challengeId, voterId, position),
+        ) => gateway.hasVotedForPosition(challengeId, voterId, position),
         getVotedPositions: (challengeId: string, voterId: string) =>
-          repo.getVotedPositions(challengeId, voterId),
-        delete: (id: string) => repo.delete(id),
+          gateway.getVotedPositions(challengeId, voterId),
+        delete: (id: string) => gateway.delete(id),
         deleteByChallengeId: (challengeId: string) =>
-          repo.deleteByChallengeId(challengeId),
+          gateway.deleteByChallengeId(challengeId),
       }),
     );
     return await Effect.runPromise(program);
@@ -83,9 +83,9 @@ describe("[UNIT] getVotesByChallengeUseCase (Effect)", () => {
         }),
       );
 
-      Effect.runSync(repo.create(vote1));
-      Effect.runSync(repo.create(vote2));
-      Effect.runSync(repo.create(vote3));
+      Effect.runSync(gateway.create(vote1));
+      Effect.runSync(gateway.create(vote2));
+      Effect.runSync(gateway.create(vote3));
 
       const input: GetVotesByChallengeInput = {
         challengeId: "challenge-123",
@@ -105,27 +105,27 @@ describe("[UNIT] getVotesByChallengeUseCase (Effect)", () => {
 
       const program = getVotesByChallengeUseCase(input).pipe(
         Effect.provideService(ChallengeVoteRepositoryTag, {
-          create: (vote: ChallengeVote) => repo.create(vote),
-          createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
-          findById: (id: string) => repo.findById(id),
+          create: (vote: ChallengeVote) => gateway.create(vote),
+          createMany: (votes: ChallengeVote[]) => gateway.createMany(votes),
+          findById: (id: string) => gateway.findById(id),
           findByChallengeId: (challengeId: string) =>
-            repo.findByChallengeId(challengeId),
+            gateway.findByChallengeId(challengeId),
           findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-            repo.findByChallengeAndVoter(challengeId, voterId),
+            gateway.findByChallengeAndVoter(challengeId, voterId),
           findBySubmissionId: (submissionId: string) =>
-            repo.findBySubmissionId(submissionId),
+            gateway.findBySubmissionId(submissionId),
           hasVoted: (challengeId: string, voterId: string) =>
-            repo.hasVoted(challengeId, voterId),
+            gateway.hasVoted(challengeId, voterId),
           hasVotedForPosition: (
             challengeId: string,
             voterId: string,
             position: number,
-          ) => repo.hasVotedForPosition(challengeId, voterId, position),
+          ) => gateway.hasVotedForPosition(challengeId, voterId, position),
           getVotedPositions: (challengeId: string, voterId: string) =>
-            repo.getVotedPositions(challengeId, voterId),
-          delete: (id: string) => repo.delete(id),
+            gateway.getVotedPositions(challengeId, voterId),
+          delete: (id: string) => gateway.delete(id),
           deleteByChallengeId: (challengeId: string) =>
-            repo.deleteByChallengeId(challengeId),
+            gateway.deleteByChallengeId(challengeId),
         }),
       );
 

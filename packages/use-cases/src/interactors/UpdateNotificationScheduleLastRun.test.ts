@@ -10,13 +10,13 @@ import {
   NotificationSchedule,
   NotificationScheduleType,
 } from "@mirai-app/domain";
-import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] updateNotificationScheduleLastRunUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleRepository;
+  let gateway: InMemoryNotificationScheduleGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationScheduleRepository();
+    gateway = new InMemoryNotificationScheduleGateway();
   });
 
   const getFutureDate = (daysFromNow: number): Date => {
@@ -47,40 +47,41 @@ describe("[UNIT] updateNotificationScheduleLastRunUseCase (Effect)", () => {
     );
   };
 
-  // Helper to run use case with repository
+  // Helper to run use case with gateway
   const runUseCase = async (input: UpdateNotificationScheduleLastRunInput) => {
     const program = updateNotificationScheduleLastRunUseCase(input).pipe(
       Effect.provideService(NotificationScheduleRepositoryTag, {
-        create: (schedule: NotificationSchedule) => repo.create(schedule),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByName: (name: string) => repo.findByName(name),
+        create: (schedule: NotificationSchedule) => gateway.create(schedule),
+        findById: (id: string) => gateway.findById(id),
+        findByTripId: (tripId: string) => gateway.findByTripId(tripId),
+        findByName: (name: string) => gateway.findByName(name),
         findByTripIdAndName: (tripId: string, name: string) =>
-          repo.findByTripIdAndName(tripId, name),
-        findByType: (type: NotificationScheduleType) => repo.findByType(type),
+          gateway.findByTripIdAndName(tripId, name),
+        findByType: (type: NotificationScheduleType) =>
+          gateway.findByType(type),
         findAll: (options?: {
           filter?: import("@mirai-app/domain").NotificationScheduleFilter;
           pagination?: import("@mirai-app/domain").PaginationOptions;
-        }) => repo.findAll(options),
-        findActive: (now?: Date) => repo.findActive(now),
+        }) => gateway.findAll(options),
+        findActive: (now?: Date) => gateway.findActive(now),
         findUpcoming: (days?: number, now?: Date) =>
-          repo.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => repo.update(schedule),
-        delete: (id: string) => repo.delete(id),
-        deleteMany: (ids: string[]) => repo.deleteMany(ids),
-        exists: (id: string) => repo.exists(id),
+          gateway.findUpcoming(days, now),
+        update: (schedule: NotificationSchedule) => gateway.update(schedule),
+        delete: (id: string) => gateway.delete(id),
+        deleteMany: (ids: string[]) => gateway.deleteMany(ids),
+        exists: (id: string) => gateway.exists(id),
         count: (
           filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-        ) => repo.count(filter),
+        ) => gateway.count(filter),
         updateLastRun: (id: string, lastRun: Date) =>
-          repo.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => repo.toggleActive(id),
+          gateway.updateLastRun(id, lastRun),
+        toggleActive: (id: string) => gateway.toggleActive(id),
         bulkToggleActive: (ids: string[], isActive: boolean) =>
-          repo.bulkToggleActive(ids, isActive),
+          gateway.bulkToggleActive(ids, isActive),
         getExecutionHistory: (scheduleId: string, limit: number) =>
-          repo.getExecutionHistory(scheduleId, limit),
+          gateway.getExecutionHistory(scheduleId, limit),
         countExecutions: (scheduleId: string) =>
-          repo.countExecutions(scheduleId),
+          gateway.countExecutions(scheduleId),
       }),
     );
     return await Effect.runPromise(program);
@@ -93,7 +94,7 @@ describe("[UNIT] updateNotificationScheduleLastRunUseCase (Effect)", () => {
         id: "schedule-123",
         name: "Test Schedule",
       });
-      Effect.runSync(repo.create(schedule));
+      Effect.runSync(gateway.create(schedule));
 
       const lastRun = new Date("2024-06-15T10:30:00Z");
       const input: UpdateNotificationScheduleLastRunInput = {
@@ -117,36 +118,37 @@ describe("[UNIT] updateNotificationScheduleLastRunUseCase (Effect)", () => {
 
       const program = updateNotificationScheduleLastRunUseCase(input).pipe(
         Effect.provideService(NotificationScheduleRepositoryTag, {
-          create: (schedule: NotificationSchedule) => repo.create(schedule),
+          create: (schedule: NotificationSchedule) => gateway.create(schedule),
           findById: () => Effect.succeed(null),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByName: (name: string) => repo.findByName(name),
+          findByTripId: (tripId: string) => gateway.findByTripId(tripId),
+          findByName: (name: string) => gateway.findByName(name),
           findByTripIdAndName: (tripId: string, name: string) =>
-            repo.findByTripIdAndName(tripId, name),
-          findByType: (type: NotificationScheduleType) => repo.findByType(type),
+            gateway.findByTripIdAndName(tripId, name),
+          findByType: (type: NotificationScheduleType) =>
+            gateway.findByType(type),
           findAll: (options?: {
             filter?: import("@mirai-app/domain").NotificationScheduleFilter;
             pagination?: import("@mirai-app/domain").PaginationOptions;
-          }) => repo.findAll(options),
-          findActive: (now?: Date) => repo.findActive(now),
+          }) => gateway.findAll(options),
+          findActive: (now?: Date) => gateway.findActive(now),
           findUpcoming: (days?: number, now?: Date) =>
-            repo.findUpcoming(days, now),
-          update: (schedule: NotificationSchedule) => repo.update(schedule),
-          delete: (id: string) => repo.delete(id),
-          deleteMany: (ids: string[]) => repo.deleteMany(ids),
-          exists: (id: string) => repo.exists(id),
+            gateway.findUpcoming(days, now),
+          update: (schedule: NotificationSchedule) => gateway.update(schedule),
+          delete: (id: string) => gateway.delete(id),
+          deleteMany: (ids: string[]) => gateway.deleteMany(ids),
+          exists: (id: string) => gateway.exists(id),
           count: (
             filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-          ) => repo.count(filter),
+          ) => gateway.count(filter),
           updateLastRun: (id: string, lastRun: Date) =>
-            repo.updateLastRun(id, lastRun),
-          toggleActive: (id: string) => repo.toggleActive(id),
+            gateway.updateLastRun(id, lastRun),
+          toggleActive: (id: string) => gateway.toggleActive(id),
           bulkToggleActive: (ids: string[], isActive: boolean) =>
-            repo.bulkToggleActive(ids, isActive),
+            gateway.bulkToggleActive(ids, isActive),
           getExecutionHistory: (scheduleId: string, limit: number) =>
-            repo.getExecutionHistory(scheduleId, limit),
+            gateway.getExecutionHistory(scheduleId, limit),
           countExecutions: (scheduleId: string) =>
-            repo.countExecutions(scheduleId),
+            gateway.countExecutions(scheduleId),
         }),
       );
 

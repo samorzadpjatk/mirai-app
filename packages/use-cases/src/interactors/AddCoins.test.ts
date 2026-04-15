@@ -8,13 +8,13 @@ import {
 } from "./AddCoins";
 import { Effect, Either } from "effect";
 import { CoinTransactionRepositoryTag } from "../ports/CoinTransactionRepository";
-import { InMemoryCoinTransactionRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryCoinTransactionGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] addCoinsUseCase (Effect)", () => {
-  let repo: InMemoryCoinTransactionRepository;
+  let repo: InMemoryCoinTransactionGateway;
 
   beforeEach(() => {
-    repo = new InMemoryCoinTransactionRepository();
+    repo = new InMemoryCoinTransactionGateway();
   });
 
   const runUseCase = async (input: AddCoinsInput) => {

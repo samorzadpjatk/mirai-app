@@ -6,15 +6,15 @@ import {
 } from "./GetUser";
 import { User, UserRole } from "@mirai-app/domain";
 import { Effect, Either, Layer } from "effect";
-import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryUserGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 import { UserRepositoryTag } from "@mirai-app/use-cases/ports/UserRepository";
 
 describe("[UNIT] GetUserUseCase (Effect.gen)", () => {
-  let repo: InMemoryUserRepository;
+  let repo: InMemoryUserGateway;
   let useCase: GetUserUseCase;
 
   beforeEach(() => {
-    repo = new InMemoryUserRepository();
+    repo = new InMemoryUserGateway();
     useCase = new GetUserUseCase();
   });
 

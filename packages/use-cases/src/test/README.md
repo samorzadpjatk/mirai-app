@@ -369,7 +369,7 @@ Before (awilix-modular):
 ```typescript
 const container = createTestContainer();
 container.register({
-  userRepository: asClass(InMemoryUserRepository).singleton(),
+  userRepository: asClass(InMemoryUserGateway).singleton(),
 });
 const useCase = container.resolve("getUserUseCase");
 const result = await useCase.execute({ id: "123" });

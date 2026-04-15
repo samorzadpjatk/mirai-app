@@ -170,7 +170,7 @@ Domain Port (interface)
       ↓
 Use Cases Port (interface + Context.Tag)
       ↓
-Adapter Implementation (DrizzleUserRepository)
+Adapter Implementation (DrizzleUserGateway)
       ↓
 Framework Integration (DI container registration)
 ```
@@ -327,7 +327,7 @@ describe("[UNIT] DoSomethingUseCase", () => {
   beforeEach(() => {
     container = createTestContainer();
     container.register({
-      myEntityRepository: asClass(InMemoryMyEntityRepository).singleton(),
+      myEntityRepository: asClass(InMemoryMyEntityGateway).singleton(),
       doSomethingUseCase: asClass(DoSomethingUseCase).scoped(),
     });
   });

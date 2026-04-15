@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { getDeliveriesUseCase, type GetDeliveriesInput } from "./GetDeliveries";
 import { Effect } from "effect";
 import { NotificationDeliveryRepositoryTag } from "../ports/NotificationDeliveryRepository";
-import { InMemoryNotificationDeliveryRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationDeliveryGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 import type { NotificationDelivery } from "../ports/NotificationDeliveryRepository";
 
 describe("[UNIT] getDeliveriesUseCase (Effect)", () => {
-  let repo: InMemoryNotificationDeliveryRepository;
+  let repo: InMemoryNotificationDeliveryGateway;
 
   const createMockDelivery = (
     overrides?: Partial<NotificationDelivery>,
@@ -28,21 +28,19 @@ describe("[UNIT] getDeliveriesUseCase (Effect)", () => {
     }) as NotificationDelivery;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationDeliveryRepository();
+    repo = new InMemoryNotificationDeliveryGateway();
   });
 
   // Helper to run use case with repository
   const runUseCase = async (input: GetDeliveriesInput) => {
     const program = getDeliveriesUseCase(input).pipe(
       Effect.provideService(NotificationDeliveryRepositoryTag, {
-        findMany: (filters, pagination) =>
-          repo.findMany(filters, pagination),
+        findMany: (filters, pagination) => repo.findMany(filters, pagination),
         count: (filters) => repo.count(filters),
         findByNotificationId: (notificationId) =>
           repo.findByNotificationId(notificationId),
         getStats: (filters) => repo.getStats(filters),
-        findFailed: (tripId, pagination) =>
-          repo.findFailed(tripId, pagination),
+        findFailed: (tripId, pagination) => repo.findFailed(tripId, pagination),
         countFailed: (tripId) => repo.countFailed(tripId),
       }),
     );

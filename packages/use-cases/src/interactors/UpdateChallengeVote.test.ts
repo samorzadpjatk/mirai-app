@@ -8,13 +8,13 @@ import {
 import { ChallengeVote } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { ChallengeVoteRepositoryTag } from "../ports/ChallengeVoteRepository";
-import { InMemoryChallengeVoteRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryChallengeVoteGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] updateChallengeVoteUseCase (Effect)", () => {
-  let repo: InMemoryChallengeVoteRepository;
+  let repo: InMemoryChallengeVoteGateway;
 
   beforeEach(() => {
-    repo = new InMemoryChallengeVoteRepository();
+    repo = new InMemoryChallengeVoteGateway();
   });
 
   // Helper to create a test vote

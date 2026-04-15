@@ -13,10 +13,10 @@ import {
   TripPointsCalculatorTag,
   type PaginatedResult,
 } from "../ports/RewardRepository";
-import { InMemoryRewardRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryRewardGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] listRewardsUseCase (Effect)", () => {
-  let rewardRepo: InMemoryRewardRepository;
+  let rewardRepo: InMemoryRewardGateway;
 
   // Helper to create a valid reward
   const createValidReward = (
@@ -75,7 +75,7 @@ describe("[UNIT] listRewardsUseCase (Effect)", () => {
   };
 
   beforeEach(() => {
-    rewardRepo = new InMemoryRewardRepository();
+    rewardRepo = new InMemoryRewardGateway();
   });
 
   describe("[UNIT] execute", () => {

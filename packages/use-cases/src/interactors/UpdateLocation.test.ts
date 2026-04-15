@@ -8,13 +8,13 @@ import {
 import { Location } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { LocationRepositoryTag } from "../ports/LocationRepository";
-import { InMemoryLocationRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryLocationGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] updateLocationUseCase (Effect)", () => {
-  let repo: InMemoryLocationRepository;
+  let repo: InMemoryLocationGateway;
 
   beforeEach(() => {
-    repo = new InMemoryLocationRepository();
+    repo = new InMemoryLocationGateway();
   });
 
   // Helper to create a valid location

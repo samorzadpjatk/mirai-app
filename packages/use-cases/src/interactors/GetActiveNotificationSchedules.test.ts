@@ -2,14 +2,14 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { Effect } from "effect";
 import { getActiveNotificationSchedulesUseCase } from "./GetActiveNotificationSchedules";
 import { NotificationScheduleRepositoryTag } from "../ports/NotificationScheduleRepository";
-import { InMemoryNotificationScheduleRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 import type { NotificationSchedule } from "@mirai-app/domain";
 
 describe("[UNIT] getActiveNotificationSchedulesUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleRepository;
+  let repo: InMemoryNotificationScheduleGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationScheduleRepository();
+    repo = new InMemoryNotificationScheduleGateway();
   });
 
   // Helper to create mock notification schedule

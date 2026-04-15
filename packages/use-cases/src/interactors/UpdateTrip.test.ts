@@ -9,13 +9,13 @@ import {
 import { Trip, TripStatus } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { TripRepositoryTag } from "../ports/TripRepository";
-import { InMemoryTripRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryTripGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] updateTripUseCase (Effect)", () => {
-  let repo: InMemoryTripRepository;
+  let gateway: InMemoryTripGateway;
 
   beforeEach(() => {
-    repo = new InMemoryTripRepository();
+    gateway = new InMemoryTripGateway();
   });
 
   const createValidTrip = (
@@ -48,18 +48,18 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
   const runUseCase = async (input: UpdateTripInput) => {
     const program = updateTripUseCase(input).pipe(
       Effect.provideService(TripRepositoryTag, {
-        create: (trip: Trip) => repo.create(trip),
-        findById: (id: string) => repo.findById(id),
-        findByStatus: (status: TripStatus) => repo.findByStatus(status),
-        findActive: () => repo.findActive(),
+        create: (trip: Trip) => gateway.create(trip),
+        findById: (id: string) => gateway.findById(id),
+        findByStatus: (status: TripStatus) => gateway.findByStatus(status),
+        findActive: () => gateway.findActive(),
         findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (trip: Trip) => repo.update(trip),
+          gateway.findAll(options),
+        update: (trip: Trip) => gateway.update(trip),
         updateStatus: (id: string, status: TripStatus) =>
-          repo.updateStatus(id, status),
-        delete: (id: string) => repo.delete(id),
-        exists: (id: string) => repo.exists(id),
-        countByStatus: (status: TripStatus) => repo.countByStatus(status),
+          gateway.updateStatus(id, status),
+        delete: (id: string) => gateway.delete(id),
+        exists: (id: string) => gateway.exists(id),
+        countByStatus: (status: TripStatus) => gateway.countByStatus(status),
       }),
     );
     return await Effect.runPromise(program);
@@ -68,7 +68,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
   describe("[UNIT] execute", () => {
     it("should update trip name", async () => {
       const existingTrip = createValidTrip({ id: "trip-456" });
-      await Effect.runPromise(repo.create(existingTrip));
+      await Effect.runPromise(gateway.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-456",
@@ -80,13 +80,13 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
       expect(result.name).toBe("Updated Trip Name");
       expect(result.id).toBe("trip-456");
 
-      const stored = await Effect.runPromise(repo.findById("trip-456"));
+      const stored = await Effect.runPromise(gateway.findById("trip-456"));
       expect(stored?.name).toBe("Updated Trip Name");
     });
 
     it("should update trip description", async () => {
       const existingTrip = createValidTrip({ id: "trip-789" });
-      await Effect.runPromise(repo.create(existingTrip));
+      await Effect.runPromise(gateway.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-789",
@@ -100,7 +100,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
     it("should update trip dates", async () => {
       const existingTrip = createValidTrip({ id: "trip-date" });
-      await Effect.runPromise(repo.create(existingTrip));
+      await Effect.runPromise(gateway.create(existingTrip));
 
       const newStartDate = new Date("2026-07-01");
       const newEndDate = new Date("2026-07-10");
@@ -123,7 +123,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         id: "trip-status",
         status: TripStatus.PLANNING,
       });
-      await Effect.runPromise(repo.create(existingTrip));
+      await Effect.runPromise(gateway.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-status",
@@ -142,7 +142,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         id: "trip-complete",
         status: TripStatus.ACTIVE,
       });
-      await Effect.runPromise(repo.create(existingTrip));
+      await Effect.runPromise(gateway.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-complete",
@@ -160,7 +160,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         id: "trip-cancel",
         status: TripStatus.PLANNING,
       });
-      await Effect.runPromise(repo.create(existingTrip));
+      await Effect.runPromise(gateway.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-cancel",
@@ -181,18 +181,18 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => repo.create(trip),
-          findById: (id: string) => repo.findById(id),
-          findByStatus: (status: TripStatus) => repo.findByStatus(status),
-          findActive: () => repo.findActive(),
+          create: (trip: Trip) => gateway.create(trip),
+          findById: (id: string) => gateway.findById(id),
+          findByStatus: (status: TripStatus) => gateway.findByStatus(status),
+          findActive: () => gateway.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (trip: Trip) => repo.update(trip),
+            gateway.findAll(options),
+          update: (trip: Trip) => gateway.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            repo.updateStatus(id, status),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: TripStatus) => repo.countByStatus(status),
+            gateway.updateStatus(id, status),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
+          countByStatus: (status: TripStatus) => gateway.countByStatus(status),
         }),
       );
 
@@ -208,7 +208,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         id: "trip-completed",
         status: TripStatus.COMPLETED,
       });
-      await Effect.runPromise(repo.create(completedTrip));
+      await Effect.runPromise(gateway.create(completedTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-completed",
@@ -217,18 +217,18 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => repo.create(trip),
-          findById: (id: string) => repo.findById(id),
-          findByStatus: (status: TripStatus) => repo.findByStatus(status),
-          findActive: () => repo.findActive(),
+          create: (trip: Trip) => gateway.create(trip),
+          findById: (id: string) => gateway.findById(id),
+          findByStatus: (status: TripStatus) => gateway.findByStatus(status),
+          findActive: () => gateway.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (trip: Trip) => repo.update(trip),
+            gateway.findAll(options),
+          update: (trip: Trip) => gateway.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            repo.updateStatus(id, status),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: TripStatus) => repo.countByStatus(status),
+            gateway.updateStatus(id, status),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
+          countByStatus: (status: TripStatus) => gateway.countByStatus(status),
         }),
       );
 
@@ -245,7 +245,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         id: "trip-cancelled",
         status: TripStatus.CANCELLED,
       });
-      await Effect.runPromise(repo.create(cancelledTrip));
+      await Effect.runPromise(gateway.create(cancelledTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-cancelled",
@@ -254,18 +254,18 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => repo.create(trip),
-          findById: (id: string) => repo.findById(id),
-          findByStatus: (status: TripStatus) => repo.findByStatus(status),
-          findActive: () => repo.findActive(),
+          create: (trip: Trip) => gateway.create(trip),
+          findById: (id: string) => gateway.findById(id),
+          findByStatus: (status: TripStatus) => gateway.findByStatus(status),
+          findActive: () => gateway.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (trip: Trip) => repo.update(trip),
+            gateway.findAll(options),
+          update: (trip: Trip) => gateway.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            repo.updateStatus(id, status),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: TripStatus) => repo.countByStatus(status),
+            gateway.updateStatus(id, status),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
+          countByStatus: (status: TripStatus) => gateway.countByStatus(status),
         }),
       );
 
@@ -282,7 +282,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
         id: "trip-bad-transition",
         status: TripStatus.COMPLETED,
       });
-      await Effect.runPromise(repo.create(completedTrip));
+      await Effect.runPromise(gateway.create(completedTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-bad-transition",
@@ -291,18 +291,18 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => repo.create(trip),
-          findById: (id: string) => repo.findById(id),
-          findByStatus: (status: TripStatus) => repo.findByStatus(status),
-          findActive: () => repo.findActive(),
+          create: (trip: Trip) => gateway.create(trip),
+          findById: (id: string) => gateway.findById(id),
+          findByStatus: (status: TripStatus) => gateway.findByStatus(status),
+          findActive: () => gateway.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (trip: Trip) => repo.update(trip),
+            gateway.findAll(options),
+          update: (trip: Trip) => gateway.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            repo.updateStatus(id, status),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: TripStatus) => repo.countByStatus(status),
+            gateway.updateStatus(id, status),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
+          countByStatus: (status: TripStatus) => gateway.countByStatus(status),
         }),
       );
 
@@ -315,7 +315,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
     it("should fail when name validation fails", async () => {
       const existingTrip = createValidTrip({ id: "trip-invalid" });
-      await Effect.runPromise(repo.create(existingTrip));
+      await Effect.runPromise(gateway.create(existingTrip));
 
       const input: UpdateTripInput = {
         tripId: "trip-invalid",
@@ -324,18 +324,18 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
       const program = updateTripUseCase(input).pipe(
         Effect.provideService(TripRepositoryTag, {
-          create: (trip: Trip) => repo.create(trip),
-          findById: (id: string) => repo.findById(id),
-          findByStatus: (status: TripStatus) => repo.findByStatus(status),
-          findActive: () => repo.findActive(),
+          create: (trip: Trip) => gateway.create(trip),
+          findById: (id: string) => gateway.findById(id),
+          findByStatus: (status: TripStatus) => gateway.findByStatus(status),
+          findActive: () => gateway.findActive(),
           findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (trip: Trip) => repo.update(trip),
+            gateway.findAll(options),
+          update: (trip: Trip) => gateway.update(trip),
           updateStatus: (id: string, status: TripStatus) =>
-            repo.updateStatus(id, status),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: TripStatus) => repo.countByStatus(status),
+            gateway.updateStatus(id, status),
+          delete: (id: string) => gateway.delete(id),
+          exists: (id: string) => gateway.exists(id),
+          countByStatus: (status: TripStatus) => gateway.countByStatus(status),
         }),
       );
 
@@ -349,7 +349,7 @@ describe("[UNIT] updateTripUseCase (Effect)", () => {
 
     it("should update multiple fields at once", async () => {
       const existingTrip = createValidTrip({ id: "trip-multi" });
-      await Effect.runPromise(repo.create(existingTrip));
+      await Effect.runPromise(gateway.create(existingTrip));
 
       const newStartDate = new Date("2026-08-01");
       const newEndDate = new Date("2026-08-10");

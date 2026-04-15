@@ -12,13 +12,13 @@ import {
 } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 import { NotificationRepositoryTag } from "../ports/NotificationRepository";
-import { InMemoryNotificationRepository } from "@mirai-app/adapters/gateways/in-memory";
+import { InMemoryNotificationGateway } from "@mirai-app/adapters/gateways/_shared/in-memory-exports";
 
 describe("[UNIT] createNotificationUseCase (Effect)", () => {
-  let repo: InMemoryNotificationRepository;
+  let repo: InMemoryNotificationGateway;
 
   beforeEach(() => {
-    repo = new InMemoryNotificationRepository();
+    repo = new InMemoryNotificationGateway();
   });
 
   // Helper to create a valid notification input
