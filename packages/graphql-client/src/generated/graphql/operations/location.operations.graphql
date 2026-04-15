@@ -1,0 +1,112 @@
+# ============================================
+# Location Operations - Mirai App API
+# ============================================
+# This file contains all GraphQL operations for location management,
+# sharing settings, and real-time location subscriptions.
+#
+# Import statement:
+#   #import "../fragments/common.graphql"
+#
+# Queries:
+#   - GetMyLocation: Get current user's location
+#   - GetMySharingSettings: Get current user's location sharing settings
+#   - FriendsLocations: Get friends' locations (for initial fetch)
+#
+# Mutations:
+#   - UpdateLocation: Update current user's location
+#   - UpdateSharingSettings: Update location sharing settings
+#   - AddUserToSharing: Add a user to sharing list
+#   - RemoveUserFromSharing: Remove a user from sharing list
+#
+# Subscriptions:
+#   - FriendsLocations: Real-time updates of friends' locations
+# ============================================
+
+#import "../fragments/common.graphql"
+
+# ============================================
+# LOCATION QUERIES
+# ============================================
+
+"""
+Get current user's location.
+Returns: Location object or null if not set.
+"""
+query GetMyLocation {
+  myLocation {
+    ...LocationFields
+  }
+}
+
+"""
+Get current user's location sharing settings.
+Returns: Sharing settings including enabled status and users to share with.
+"""
+query GetMySharingSettings {
+  mySharingSettings {
+    ...LocationSharingSettingsFields
+  }
+}
+
+"""
+Get friends' locations.
+Returns: Connection of friend locations for the current user.
+"""
+query GetFriendsLocations {
+  friendsLocations {
+    ...FriendsLocationsConnectionFields
+  }
+}
+
+# ============================================
+# LOCATION MUTATIONS
+# ============================================
+
+"""
+Update current user's location.
+Requires: latitude, longitude. Optional: accuracy, altitude, etc.
+Returns: Updated location.
+"""
+mutation UpdateLocation($input: UpdateLocationInput!) {
+  updateLocation(input: $input) {
+    ...UpdateLocationPayloadFields
+  }
+}
+
+"""
+Update location sharing settings.
+Requires: isSharingLocation boolean.
+Optional: userIdsToShareWith list.
+Returns: Updated sharing settings.
+"""
+mutation UpdateLocationSharingSettings($input: UpdateSharingSettingsInput!) {
+  updateSharingSettings(input: $input) {
+    ...UpdateSharingSettingsPayloadFields
+  }
+}
+
+"""
+Add a user to location sharing list.
+Requires: userId to add.
+Returns: Location with updated sharing list.
+"""
+mutation AddUserToLocationSharing($input: AddSharingUserInput!) {
+  addUserToSharing(input: $input) {
+    location {
+      ...LocationFields
+    }
+  }
+}
+
+"""
+Remove a user from location sharing list.
+Requires: userId to remove.
+Returns: Location with updated sharing list.
+"""
+mutation RemoveUserFromLocationSharing($input: RemoveSharingUserInput!) {
+  removeUserFromSharing(input: $input) {
+    location {
+      ...LocationFields
+    }
+  }
+}

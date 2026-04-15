@@ -2703,8 +2703,6 @@ export type Query = {
   failedDeliveries: NotificationDeliveryListResult;
   /** Get locations of friends sharing with current user */
   friendsLocations?: Maybe<FriendsLocationsConnection>;
-  /** Get a group by its ID */
-  group?: Maybe<Group>;
   /** Get a group by its unique code */
   groupByCode?: Maybe<Group>;
   /** Get group names for a trip (moderator only) */
@@ -2895,12 +2893,6 @@ export type QueryDeliveryStatsArgs = {
 /** Root query type for fetching data */
 export type QueryFailedDeliveriesArgs = {
   input?: InputMaybe<GetFailedDeliveriesInput>;
-};
-
-
-/** Root query type for fetching data */
-export type QueryGroupArgs = {
-  id: Scalars['ID']['input'];
 };
 
 
@@ -4344,7 +4336,7 @@ export type VotingProgressSubscription = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type UserFieldsFragment = { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean };
+export type UserFieldsFragment = { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, emailVerified?: any | null, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean };
 
 export type UserSummaryFieldsFragment = { __typename?: 'User', id: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean };
 
@@ -4903,12 +4895,58 @@ export type RemoveCoinsMutationVariables = Exact<{
 
 export type RemoveCoinsMutation = { __typename?: 'Mutation', removeCoins?: { __typename?: 'CoinTransactionResult', id: string, amount: number, groupId: string, adminId: string, createdAt: any, transaction: { __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null } } | null };
 
-export type GetGroupQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+export type GetGroupJoinRequestQueryVariables = Exact<{
+  groupId: Scalars['ID']['input'];
 }>;
 
 
-export type GetGroupQuery = { __typename?: 'Query', group?: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } | null };
+export type GetGroupJoinRequestQuery = { __typename?: 'Query', groupsByTrip: { __typename?: 'GroupsConnection', groups: Array<{ __typename?: 'Group', id: string, name: string, code: string }> } };
+
+export type GetPendingGroupJoinRequestsQueryVariables = Exact<{
+  groupId: Scalars['ID']['input'];
+}>;
+
+
+export type GetPendingGroupJoinRequestsQuery = { __typename?: 'Query', groupsByTrip: { __typename?: 'GroupsConnection', groups: Array<{ __typename?: 'Group', id: string, name: string, code: string }> } };
+
+export type LeaveGroupMutationVariables = Exact<{
+  input: RemoveUserFromGroupInput;
+}>;
+
+
+export type LeaveGroupMutation = { __typename?: 'Mutation', removeUserFromGroup: { __typename?: 'RemoveUserFromGroupPayload', group: { __typename?: 'Group', id: string, name: string, code: string, description?: string | null, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } } };
+
+export type RequestToJoinGroupMutationVariables = Exact<{
+  groupId: Scalars['ID']['input'];
+  userId: Scalars['ID']['input'];
+}>;
+
+
+export type RequestToJoinGroupMutation = { __typename?: 'Mutation', assignUserToGroup: { __typename?: 'AssignUserToGroupPayload', group: { __typename?: 'Group', id: string, name: string, code: string } } };
+
+export type CancelGroupJoinRequestMutationVariables = Exact<{
+  groupId: Scalars['ID']['input'];
+}>;
+
+
+export type CancelGroupJoinRequestMutation = { __typename?: 'Mutation', deleteGroup: { __typename?: 'DeleteGroupPayload', success: boolean } };
+
+export type RespondToGroupJoinRequestMutationVariables = Exact<{
+  requestId: Scalars['ID']['input'];
+  action: Scalars['String']['input'];
+  message?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type RespondToGroupJoinRequestMutation = { __typename?: 'Mutation', updateGroup: { __typename?: 'UpdateGroupPayload', group: { __typename?: 'Group', id: string, name: string } } };
+
+export type GetGroupQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+  tripId: Scalars['ID']['input'];
+}>;
+
+
+export type GetGroupQuery = { __typename?: 'Query', groupsByTrip: { __typename?: 'GroupsConnection', groups: Array<{ __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any }> } };
 
 export type GetGroupByCodeQueryVariables = Exact<{
   code: Scalars['String']['input'];
@@ -5549,12 +5587,12 @@ export type GetUserQueryVariables = Exact<{
 }>;
 
 
-export type GetUserQuery = { __typename?: 'Query', user?: { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean } | null };
+export type GetUserQuery = { __typename?: 'Query', user?: { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, emailVerified?: any | null, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean } | null };
 
 export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetCurrentUserQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean } | null };
+export type GetCurrentUserQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, emailVerified?: any | null, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean } | null };
 
 export type GetUsersQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -5562,7 +5600,7 @@ export type GetUsersQueryVariables = Exact<{
 }>;
 
 
-export type GetUsersQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean }> | null };
+export type GetUsersQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, emailVerified?: any | null, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean }> | null };
 
 export type CreateUserMutationVariables = Exact<{
   input: CreateUserInput;
@@ -5612,6 +5650,7 @@ fragment UserFields on User {
   fullName
   hasAvatar
   role
+  emailVerified
   createdAt
   lastSeenOn
   isAdmin
@@ -7660,10 +7699,106 @@ export const RemoveCoinsDocument = gql`
 export function useRemoveCoinsMutation() {
   return Urql.useMutation<RemoveCoinsMutation, RemoveCoinsMutationVariables>(RemoveCoinsDocument);
 };
+export const GetGroupJoinRequestDocument = gql`
+    query GetGroupJoinRequest($groupId: ID!) {
+  groupsByTrip(tripId: $groupId, pagination: {limit: 1}) {
+    groups {
+      id
+      name
+      code
+    }
+  }
+}
+    `;
+
+export function useGetGroupJoinRequestQuery(options: Omit<Urql.UseQueryArgs<GetGroupJoinRequestQueryVariables>, 'query'>) {
+  return Urql.useQuery<GetGroupJoinRequestQuery, GetGroupJoinRequestQueryVariables>({ query: GetGroupJoinRequestDocument, ...options });
+};
+export const GetPendingGroupJoinRequestsDocument = gql`
+    query GetPendingGroupJoinRequests($groupId: ID!) {
+  groupsByTrip(tripId: $groupId, pagination: {limit: 0}) {
+    groups {
+      id
+      name
+      code
+    }
+  }
+}
+    `;
+
+export function useGetPendingGroupJoinRequestsQuery(options: Omit<Urql.UseQueryArgs<GetPendingGroupJoinRequestsQueryVariables>, 'query'>) {
+  return Urql.useQuery<GetPendingGroupJoinRequestsQuery, GetPendingGroupJoinRequestsQueryVariables>({ query: GetPendingGroupJoinRequestsDocument, ...options });
+};
+export const LeaveGroupDocument = gql`
+    mutation LeaveGroup($input: RemoveUserFromGroupInput!) {
+  removeUserFromGroup(input: $input) {
+    group {
+      id
+      name
+      code
+      description
+      image
+      coins
+      isActive
+      status
+      tripId
+      organizerId
+      createdAt
+      updatedAt
+    }
+  }
+}
+    `;
+
+export function useLeaveGroupMutation() {
+  return Urql.useMutation<LeaveGroupMutation, LeaveGroupMutationVariables>(LeaveGroupDocument);
+};
+export const RequestToJoinGroupDocument = gql`
+    mutation RequestToJoinGroup($groupId: ID!, $userId: ID!) {
+  assignUserToGroup(input: {groupId: $groupId, userId: $userId}) {
+    group {
+      id
+      name
+      code
+    }
+  }
+}
+    `;
+
+export function useRequestToJoinGroupMutation() {
+  return Urql.useMutation<RequestToJoinGroupMutation, RequestToJoinGroupMutationVariables>(RequestToJoinGroupDocument);
+};
+export const CancelGroupJoinRequestDocument = gql`
+    mutation CancelGroupJoinRequest($groupId: ID!) {
+  deleteGroup(id: $groupId) {
+    success
+  }
+}
+    `;
+
+export function useCancelGroupJoinRequestMutation() {
+  return Urql.useMutation<CancelGroupJoinRequestMutation, CancelGroupJoinRequestMutationVariables>(CancelGroupJoinRequestDocument);
+};
+export const RespondToGroupJoinRequestDocument = gql`
+    mutation RespondToGroupJoinRequest($requestId: ID!, $action: String!, $message: String) {
+  updateGroup(input: {id: $requestId, tripId: $requestId}) {
+    group {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export function useRespondToGroupJoinRequestMutation() {
+  return Urql.useMutation<RespondToGroupJoinRequestMutation, RespondToGroupJoinRequestMutationVariables>(RespondToGroupJoinRequestDocument);
+};
 export const GetGroupDocument = gql`
-    query GetGroup($id: ID!) {
-  group(id: $id) {
-    ...GroupFields
+    query GetGroup($id: ID!, $tripId: ID!) {
+  groupsByTrip(tripId: $tripId, pagination: {limit: 100}) {
+    groups {
+      ...GroupFields
+    }
   }
 }
     ${GroupFieldsFragmentDoc}`;

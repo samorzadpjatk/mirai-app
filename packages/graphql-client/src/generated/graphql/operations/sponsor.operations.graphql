@@ -1,0 +1,103 @@
+#import "../fragments/common.graphql"
+
+# ============================================
+# Sponsor Operations - Mirai App API
+# ============================================
+# This file contains all GraphQL operations for managing sponsors.
+# Includes queries for fetching sponsors and mutations for CRUD operations
+# plus linking/unlinking sponsors to/from trips.
+#
+# Related types:
+#   - Sponsor (entity)
+#   - CreateSponsorInput, UpdateSponsorInput (inputs)
+#   - CreateSponsorPayload, UpdateSponsorPayload, DeleteSponsorPayload (outputs)
+#   - LinkSponsorToTripPayload, UnlinkSponsorFromTripPayload (linking outputs)
+#
+# All operations use the SponsorFields fragment for consistent data fetching.
+
+# ============================================
+# QUERIES
+# ============================================
+
+"""
+Get a single sponsor by its unique ID.
+Returns null if sponsor not found or is inactive (for non-admin users).
+"""
+query GetSponsor($id: ID!) {
+  sponsor(id: $id) {
+    ...SponsorFields
+  }
+}
+
+"""
+Get all sponsors linked to a specific trip.
+Returns an empty list if the trip has no sponsors or if trip not found.
+"""
+query GetSponsorsByTrip($tripId: ID!) {
+  sponsorsByTrip(tripId: $tripId) {
+    ...SponsorFields
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+"""
+Create a new sponsor.
+Requires admin privileges.
+Returns the created sponsor with full details.
+"""
+mutation CreateSponsor($input: CreateSponsorInput!) {
+  createSponsor(input: $input) {
+    ...CreateSponsorPayloadFields
+  }
+}
+
+"""
+Update an existing sponsor.
+Requires admin privileges.
+Only provided fields will be updated; null values clear optional fields.
+Returns the updated sponsor with full details.
+"""
+mutation UpdateSponsor($input: UpdateSponsorInput!) {
+  updateSponsor(input: $input) {
+    ...UpdateSponsorPayloadFields
+  }
+}
+
+"""
+Delete a sponsor.
+Requires admin privileges.
+Returns success flag and deleted sponsor ID.
+Note: This may fail if the sponsor is linked to active trips.
+"""
+mutation DeleteSponsor($id: ID!) {
+  deleteSponsor(id: $id) {
+    ...DeleteSponsorPayloadFields
+  }
+}
+
+"""
+Link a sponsor to a trip.
+Requires admin privileges.
+Associates an existing sponsor with a trip for display in the trip context.
+Returns success status and the IDs of the linked sponsor and trip.
+"""
+mutation LinkSponsorToTrip($sponsorId: ID!, $tripId: ID!) {
+  linkSponsorToTrip(input: { sponsorId: $sponsorId, tripId: $tripId }) {
+    ...LinkSponsorToTripPayloadFields
+  }
+}
+
+"""
+Unlink a sponsor from a trip.
+Requires admin privileges.
+Removes the association between a sponsor and a trip.
+Returns success status and the IDs of the unlinked sponsor and trip.
+"""
+mutation UnlinkSponsorFromTrip($sponsorId: ID!, $tripId: ID!) {
+  unlinkSponsorFromTrip(input: { sponsorId: $sponsorId, tripId: $tripId }) {
+    ...UnlinkSponsorFromTripPayloadFields
+  }
+}
