@@ -30,6 +30,7 @@ import { Layer } from "effect";
 
 import { makeRepositoryLayer, type DrizzleDb } from "./RepositoryLayer";
 import { makeServiceLayer, type ServiceLayerConfig } from "./ServiceLayer";
+import { AllUseCasesLayer } from "@mirai-app/use-cases";
 
 // =============================================================================
 // Configuration Interface
@@ -54,14 +55,15 @@ export interface AppLayerConfig {
 // =============================================================================
 
 /**
- * Creates a complete Layer with all repository and service bindings.
+ * Creates a complete Layer with all repository, service, and use case bindings.
  *
  * This is the PRIMARY factory for dependency injection in the application.
  * It merges:
  * - 19 repository Context.Tags → Drizzle implementations
  * - 5 service Context.Tags → adapter implementations
+ * - 8 use case Context.Tags → use case implementations
  *
- * Total: 24 Context.Tag bindings in a single Layer.
+ * Total: 32 Context.Tag bindings in a single Layer.
  *
  * @example
  * ```typescript
@@ -81,9 +83,10 @@ export interface AppLayerConfig {
  * const program = Effect.gen(function* () {
  *   const userRepo = yield* UserRepositoryTag;
  *   const auth = yield* AuthPortTag;
+ *   const getUser = yield* GetUserUseCaseTag;
  *
  *   const user = yield* userRepo.findById("123");
- *   // ... use services
+ *   // ... use services and use cases
  *   return user;
  * }).pipe(Effect.provide(appLayer));
  * ```
@@ -100,10 +103,14 @@ export interface AppLayerConfig {
  * ```
  *
  * @param config - App layer configuration with Supabase and Drizzle clients
- * @returns Layer containing all 24 (19 repos + 5 services) bindings
+ * @returns Layer containing all 32 (19 repos + 5 services + 8 use cases) bindings
  */
 export const makeAppLayer = (config: AppLayerConfig) =>
-  Layer.mergeAll(makeRepositoryLayer(config.db), makeServiceLayer(config));
+  Layer.mergeAll(
+    makeRepositoryLayer(config.db),
+    makeServiceLayer(config),
+    AllUseCasesLayer,
+  );
 
 // =============================================================================
 // Convenience Exports
@@ -136,7 +143,8 @@ export type {
   ServiceLayerConfig,
   SupabaseClient,
 } from "./ServiceLayer";
-export type { AppLayerConfig };
+
+// AppLayerConfig is already exported at line 45 (interface definition)
 
 // Re-export individual layer factories for advanced composition
 export {
@@ -157,4 +165,5 @@ export {
   makeAuthLayer,
   makeRealtimeLayer,
   makeStorageLayer,
+  makeSupabaseClientLayer,
 } from "./ServiceLayer";

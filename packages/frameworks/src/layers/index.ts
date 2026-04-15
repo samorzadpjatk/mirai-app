@@ -73,5 +73,6 @@ export {
   makeAuthLayer,
   makeRealtimeLayer,
   makeStorageLayer,
+  makeSupabaseClientLayer,
 } from "./ServiceLayer";
 export type { ServiceLayerConfig, SupabaseClient } from "./ServiceLayer";

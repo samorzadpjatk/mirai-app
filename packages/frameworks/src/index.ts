@@ -84,6 +84,7 @@ export { createHonoApp, startHonoServer } from "./graphql/server";
 // =============================================================================
 
 export { createSupabaseClient } from "./supabase/client";
+export { SupabaseClientTag } from "./supabase/index";
 export type {
   SupabaseClientOptions,
   SupabaseClient,
@@ -149,6 +150,7 @@ export {
   makeAuthLayer,
   makeRealtimeLayer,
   makeStorageLayer,
+  makeSupabaseClientLayer,
   type ServiceLayerConfig,
   type SupabaseClient,
   type DrizzleDb,

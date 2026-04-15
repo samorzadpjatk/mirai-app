@@ -21,7 +21,10 @@
 
 import { Layer } from "effect";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+import {
+  type SupabaseClient,
+  SupabaseClientTag,
+} from "@mirai-app/frameworks/supabase";
 
 // =============================================================================
 // Service Tags (Ports)
@@ -103,6 +106,16 @@ export interface ServiceLayerConfig {
 }
 
 /**
+ * Supabase client direct access layer
+ * - SupabaseClientTag (direct Supabase client access)
+ *
+ * Provides direct access to the Supabase client for admin operations
+ * and other direct Supabase API usage.
+ */
+export const makeSupabaseClientLayer = (supabase: SupabaseClient) =>
+  Layer.succeed(SupabaseClientTag, supabase);
+
+/**
  * Creates a complete Layer with all service bindings.
  *
  * This is the primary factory for external service dependency injection.
@@ -134,6 +147,7 @@ export const makeServiceLayer = (config: ServiceLayerConfig) =>
     makeSupabaseServicesLayer(config.supabase),
     makeTelemetryServiceLayer(config.db),
     makePubSubServiceLayer(),
+    makeSupabaseClientLayer(config.supabase),
   );
 
 // =============================================================================
