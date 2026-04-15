@@ -11,16 +11,23 @@
 
 ### Controller Resolution in Routers
 
-Routers resolve controllers from the request-scoped container. No auth in middleware.
+Routers use controllers from the context. No auth in middleware.
 
 ```ts
 export const userRouter = createTRPCRouter({
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Resolve controller from DI container
-      const controller = ctx.container.resolve("userController");
-      return controller.getById(input, ctx.container);
+      // Access controller from context
+      const controller = ctx.controllers.userController;
+      const result = await controller.getById(input);
+      if (!result.success) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: result.error,
+        });
+      }
+      return result.data;
     }),
 });
 ```
@@ -29,19 +36,31 @@ export const userRouter = createTRPCRouter({
 
 ```ts
 import { createTRPCRouter, publicProcedure } from "@mirai-app/frameworks/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const featureRouter = createTRPCRouter({
   list: publicProcedure.query(async ({ ctx }) => {
-    const controller = ctx.container.resolve("featureController");
-    return controller.list(ctx.container);
+    const controller = ctx.controllers.featureController;
+    const result = await controller.list();
+    if (!result.success) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: result.error,
+      });
+    }
+    return result.data;
   }),
 
   create: publicProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const controller = ctx.container.resolve("featureController");
-      return controller.create(input, ctx.container);
+      const controller = ctx.controllers.featureController;
+      const result = await controller.create(input);
+      if (!result.success) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: result.error });
+      }
+      return result.data;
     }),
 });
 ```
