@@ -116,57 +116,55 @@ export {
 // NEW: Entity helper functions (created in Phase 1)
 export { entityHelpers } from "./utils/entity-helpers";
 
-// Entities
-export * from "./entities/User";
-export * from "./entities/Challenge";
-export * from "./entities/Notification";
-export * from "./entities/NotificationSchedule";
-export * from "./entities/Group";
-export * from "./entities/Trip";
-export * from "./entities/ActivityFeed";
-export * from "./entities/ChallengeSubmission";
-// Reward - exclude RewardPurchaseStatus (exported from RewardPurchase instead)
-export { Reward, REWARD_PURCHASE_STATUSES } from "./entities/Reward";
-export * from "./entities/Location";
-export * from "./entities/ChallengeVote";
-export * from "./entities/Sponsor";
-export * from "./entities/SubmissionReport";
+// Entities - organized by domain/bounded context
 
-// Trip Management Entities
-export * from "./entities/TripResource";
-export * from "./entities/TripInsurance";
-// Note: TripInsuranceStep is now a nested interface within TripInsurance
-export * from "./entities/TripParticipant";
-export * from "./entities/TripSponsor";
+// User Domain
+export * from "./entities/user/user";
+export * from "./entities/user/user-agent";
 
-// Event Management Entities
-export * from "./entities/Event";
-export * from "./entities/UserEvent";
+// Challenge Domain
+export * from "./entities/challenge/challenge";
+export * from "./entities/challenge/challenge-submission";
+export * from "./entities/challenge/challenge-vote";
+export * from "./entities/challenge/submission-report";
 
-// Group Management Entity
-export * from "./entities/GroupJoinRequest";
+// Activity & Feed Domain
+export * from "./entities/activity/activity-feed";
+export * from "./entities/activity/activity-reaction";
 
-// Activity Feed Entities (updated - child entities now nested)
-export * from "./entities/ActivityReaction";
-// Note: ChallengeActivity, RankChangeActivity, SubmissionActivity, UserPost
-// are now nested interfaces within ActivityFeed
+// Group Domain
+export * from "./entities/group/group";
+export * from "./entities/group/group-join-request";
+export * from "./entities/group/coin-transaction";
 
-// Economy/Rewards Entities
-export * from "./entities/CoinTransaction";
-export * from "./entities/RewardPurchase";
+// Trip Domain
+export * from "./entities/trip/trip";
+export * from "./entities/trip/trip-participant";
+export * from "./entities/trip/trip-insurance";
+export * from "./entities/trip/trip-resource";
 
-// Notification Entities (updated - child entities now nested)
-// Note: NotificationPush is now a nested interface within NotificationDelivery
-export * from "./entities/NotificationDelivery";
-export * from "./entities/PushSubscription";
-// NEW: NotificationScheduleExecutionRecord (moved from use-cases for domain purity)
-export * from "./entities/NotificationScheduleExecutionRecord";
+// Event Domain
+export * from "./entities/event/event";
+export * from "./entities/event/user-event";
 
-// Location Entity
-export * from "./entities/LocationSharingRequest";
+// Location Domain
+export * from "./entities/location/location";
+export * from "./entities/location/location-sharing-request";
 
-// System Entity
-export * from "./entities/UserAgent";
+// Notification Domain
+export * from "./entities/notification/notification";
+export * from "./entities/notification/notification-delivery";
+export * from "./entities/notification/notification-schedule";
+export * from "./entities/notification/notification-schedule-execution-record";
+export * from "./entities/notification/push-subscription";
+
+// Reward Domain
+export * from "./entities/reward/reward";
+export * from "./entities/reward/reward-purchase";
+
+// Sponsor Domain
+export * from "./entities/sponsor/sponsor";
+export * from "./entities/sponsor/trip-sponsor";
 
 // Nested Interfaces (re-exported from parent entities)
 export type {
@@ -174,43 +172,80 @@ export type {
   RankChangeMetadata,
   SubmissionMetadata,
   PostMetadata,
-} from "./entities/ActivityFeed";
-export type { InsuranceStep } from "./entities/TripInsurance";
-export type { PushDeliveryRecord } from "./entities/NotificationDelivery";
+} from "./entities/activity/activity-feed";
+export type { InsuranceStep } from "./entities/trip/trip-insurance";
+export type { PushDeliveryRecord } from "./entities/notification/notification-delivery";
 
-// Value Objects
-export * from "./value-objects/UserId";
-export * from "./value-objects/GroupId";
-export * from "./value-objects/ChallengeId";
-export * from "./value-objects/NotificationId";
-export * from "./value-objects/NotificationScheduleId";
-export * from "./value-objects/TripId";
-export * from "./value-objects/ActivityId";
-export * from "./value-objects/SubmissionId";
-export * from "./value-objects/RewardId";
-export * from "./value-objects/CoinAmount";
-export * from "./value-objects/LocationId";
-export * from "./value-objects/ChallengeVoteId";
-export * from "./value-objects/VotePosition";
-export * from "./value-objects/VoteWeight";
-export * from "./value-objects/SponsorId";
-export * from "./value-objects/TripSponsorId";
-export * from "./value-objects/ReportId";
-export * from "./value-objects/ReportReason";
-export * from "./value-objects/AuthContext";
-// export * from "./value-objects/Email";
+// Value Objects - organized by domain (DDD pattern: folder indicates domain)
+// User domain
+export {
+  Id as UserId,
+  type Id as UserIdType,
+  AuthContext,
+} from "./value-objects/user";
+
+// Group domain
+export { Id as GroupId, type Id as GroupIdType } from "./value-objects/group";
+
+// Challenge domain
+export {
+  Id as ChallengeId,
+  type Id as ChallengeIdType,
+  VoteId as ChallengeVoteId,
+  type VoteId as ChallengeVoteIdType,
+  SubmissionId,
+  ReportId,
+  ReportReason,
+  VotePosition,
+  VoteWeight,
+} from "./value-objects/challenge";
+
+// Trip domain
+export {
+  Id as TripId,
+  type Id as TripIdType,
+  SponsorId as TripSponsorId,
+  type SponsorId as TripSponsorIdType,
+} from "./value-objects/trip";
+
+// Activity domain
+export {
+  Id as ActivityId,
+  type Id as ActivityIdType,
+} from "./value-objects/activity";
+
+// Notification domain
+export {
+  Id as NotificationId,
+  type Id as NotificationIdType,
+  ScheduleId as NotificationScheduleId,
+  type ScheduleId as NotificationScheduleIdType,
+} from "./value-objects/notification";
+
+// Reward domain
+export {
+  Id as RewardId,
+  type Id as RewardIdType,
+  CoinAmount,
+} from "./value-objects/reward";
+
+// Location domain
+export {
+  Id as LocationId,
+  type Id as LocationIdType,
+} from "./value-objects/location";
+
+// Sponsor domain
+export {
+  Id as SponsorId,
+  type Id as SponsorIdType,
+} from "./value-objects/sponsor";
 
 // Domain Events (Phase 2: Real-Time Architecture)
 export * from "./events";
 
-// Enums
-export {
-  UserRole,
-  isUserRole,
-  getAllUserRoles,
-  isAdminRole,
-  isModeratorRole,
-} from "./enums/UserRole";
+// Enums - All domain enums organized by area
+export * from "./enums";
 
 // ============================================================================
 // Effect Framework Integration (NEW - Step 1.1)

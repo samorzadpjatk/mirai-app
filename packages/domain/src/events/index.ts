@@ -24,4 +24,4 @@ export {
   ActivityReactionAdded,
   UserOnline,
   UserOffline,
-} from "./DomainEvents";
+} from "./domain-events";

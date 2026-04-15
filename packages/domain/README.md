@@ -276,7 +276,7 @@ Domain Layer:     UserRepository (interface - what operations exist)
                         ↓ Port
 Use Cases Layer:  UserRepositoryTag (Context.Tag for Effect DI)
                         ↓ Port (with DI capability)
-Adapters Layer:   DrizzleUserRepository (implementation - how it works)
+Adapters Layer:   DrizzleUserGateway (implementation - how it works)
 ```
 
 ### DatabaseError

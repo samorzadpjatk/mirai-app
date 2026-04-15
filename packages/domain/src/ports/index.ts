@@ -5,9 +5,7 @@
  * These interfaces define what operations the application needs from any
  * repository implementation, following the Ports and Adapters pattern.
  *
- * Implementations (in adapters layer):
- * - Drizzle*Repository: Uses Drizzle ORM
- * - InMemory*Repository: For testing
+ * Organized by domain/bounded context.
  *
  * Usage:
  * ```ts
@@ -19,54 +17,112 @@
 // Shared Errors
 // =============================================================================
 
-export { DatabaseError } from "./DatabaseError";
+export { DatabaseError } from "./database-error";
 
 // =============================================================================
-// Repository Interfaces
+// Activity & Feed Domain
 // =============================================================================
 
-export type { ActivityFeedRepository } from "./ActivityFeedRepository";
-export type { ChallengeRepository } from "./ChallengeRepository";
-export type { ChallengeSubmissionRepository } from "./ChallengeSubmissionRepository";
-export type { ChallengeVoteRepository } from "./ChallengeVoteRepository";
+export type { ActivityFeedRepository } from "./activity/activity-feed-repository";
+export type {
+  PaginationOptions,
+  PaginatedResult,
+} from "./activity/activity-feed-repository";
+
+// =============================================================================
+// Challenge Domain
+// =============================================================================
+
+export type { ChallengeRepository } from "./challenge/challenge-repository";
+export type { ChallengeSubmissionRepository } from "./challenge/challenge-submission-repository";
+export type { ChallengeVoteRepository } from "./challenge/challenge-vote-repository";
+export type { SubmissionReportRepository } from "./challenge/submission-report-repository";
+
+// =============================================================================
+// Event Domain
+// =============================================================================
+
+export type { EventRepository } from "./event/event-repository";
+
+// =============================================================================
+// Group Domain
+// =============================================================================
+
+export type { GroupRepository } from "./group/group-repository";
 export type {
   CoinTransactionRepository,
   CoinTransaction,
   CoinTransactionFilters,
   MostActiveAdminStat,
   CoinStatistics,
-} from "./CoinTransactionRepository";
-export type { EventRepository } from "./EventRepository";
-export type { GroupRepository } from "./GroupRepository";
-export type { LocationRepository } from "./LocationRepository";
-export type { NotificationDeliveryRepository } from "./NotificationDeliveryRepository";
-export type { NotificationRepository } from "./NotificationRepository";
+} from "./group/coin-transaction-repository";
+
+// =============================================================================
+// Location Domain
+// =============================================================================
+
+export type { LocationRepository } from "./location/location-repository";
+
+// =============================================================================
+// Notification Domain
+// =============================================================================
+
+export type { NotificationRepository } from "./notification/notification-repository";
+export type { NotificationDeliveryRepository } from "./notification/notification-delivery-repository";
 export type {
   NotificationScheduleExecutionRecord,
   NotificationScheduleRepository,
-} from "./NotificationScheduleRepository";
+} from "./notification/notification-schedule-repository";
+export type {
+  DeliveryStatus,
+  NotificationDelivery,
+  DeliveryFilters,
+  DeliveryStats,
+} from "./notification/notification-delivery-repository";
+
+// =============================================================================
+// Reward Domain
+// =============================================================================
+
 export type {
   RewardRepository,
   RewardPurchaseRepository,
-} from "./RewardRepository";
-export type { SponsorRepository } from "./SponsorRepository";
-export type { SubmissionReportRepository } from "./SubmissionReportRepository";
-export type { TripRepository } from "./TripRepository";
-export type { UserRepository } from "./UserRepository";
+} from "./reward/reward-repository";
 
 // =============================================================================
-// Service Interfaces (Ports for External Services)
+// Sponsor Domain
 // =============================================================================
 
-export type { AuthPort } from "./AuthPort";
-export type { PubSubService, SubscriptionHandle } from "./PubSubService";
+export type { SponsorRepository } from "./sponsor/sponsor-repository";
+
+// =============================================================================
+// Trip Domain
+// =============================================================================
+
+export type { TripRepository } from "./trip/trip-repository";
+
+// =============================================================================
+// User Domain
+// =============================================================================
+
+export type { UserRepository } from "./user/user-repository";
+export type { AuthPort } from "./user/auth-port";
+
+// =============================================================================
+// System/Service Interfaces (Ports for External Services)
+// =============================================================================
+
+export type {
+  PubSubService,
+  SubscriptionHandle,
+} from "./system/pub-sub-service";
 export type {
   RealtimePort,
   RealtimeSubscription,
   ChannelConfig,
   ConnectionState,
   PresenceState,
-} from "./RealtimePort";
+} from "./system/realtime-port";
 export type {
   StoragePort,
   FileMetadata,
@@ -74,24 +130,9 @@ export type {
   SignedUrlInfo,
   StorageConfig,
   DownloadResult,
-} from "./StoragePort";
+} from "./system/storage-port";
 export type {
   TelemetryPort,
   TelemetryEvent,
   TelemetrySeverity,
-} from "./TelemetryPort";
-
-// =============================================================================
-// Shared Types
-// =============================================================================
-
-export type {
-  PaginationOptions,
-  PaginatedResult,
-} from "./ActivityFeedRepository";
-export type {
-  DeliveryStatus,
-  NotificationDelivery,
-  DeliveryFilters,
-  DeliveryStats,
-} from "./NotificationDeliveryRepository";
+} from "./system/telemetry-port";
