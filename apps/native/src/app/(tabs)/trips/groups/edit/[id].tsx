@@ -1,14 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-} from "react-native";
+import { ScrollView, Alert, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useQuery, useMutation, useClient } from "urql";
+import { useQuery, useMutation } from "urql";
 import * as ImagePicker from "expo-image-picker";
 import {
   GetGroupDocument,
@@ -17,12 +10,6 @@ import {
 } from "@mirai-app/graphql-client";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
-import {
-  borderRadius as radius,
-  colors,
-  spacing,
-  typography,
-} from "../../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileUpload } from "~/hooks/files";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
@@ -33,6 +20,7 @@ import { GroupEditPermissionState } from "~/components/trips/groups/edit/GroupEd
 import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { getImageExtension, getImageContentType } from "~/utils/image";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 
 const getInitials = (firstName?: string | null, lastName?: string | null) => {
   const f = (firstName ?? "")[0] ?? "";
@@ -46,19 +34,19 @@ export default function EditGroupScreen() {
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
   const insets = useSafeAreaInsets();
-  const client = useClient();
 
-  // GraphQL queries
+  // GraphQL queries - using tuple destructuring with reexecute functions
   const [{ data: currentUserData }] = useQuery({
     query: GetCurrentUserDocument,
   });
   const currentUser = currentUserData?.currentUser;
 
-  const [{ data: groupData, fetching: groupLoading }] = useQuery({
-    query: GetGroupDocument,
-    variables: { id: groupId ?? "" },
-    pause: !groupId,
-  });
+  const [{ data: groupData, fetching: groupLoading }, reexecuteGroup] =
+    useQuery({
+      query: GetGroupDocument,
+      variables: { id: groupId ?? "" },
+      pause: !groupId,
+    });
   const group = groupData?.group;
 
   const { isTripPast } = useTripDetails(group?.trip?.id);
@@ -74,6 +62,7 @@ export default function EditGroupScreen() {
     string | null
   >(null);
   const [currentMembers, setCurrentMembers] = useState<Set<string>>(new Set());
+  const [groupImagePath, setGroupImagePath] = useState<string | null>(null);
   const {
     upload,
     status: uploadStatus,
@@ -94,7 +83,7 @@ export default function EditGroupScreen() {
     return () => clearTimeout(id);
   }, [group]);
 
-  const { isUpdating } = useGroupEditor(groupId);
+  const { isUpdating, handleSave } = useGroupEditor(groupId);
 
   // GraphQL mutation
   const [, deleteGroup] = useMutation(DeleteGroupDocument);
@@ -118,9 +107,8 @@ export default function EditGroupScreen() {
                 if (result.error) {
                   throw result.error;
                 }
-                // Invalidate related queries
-                await client.invalidate("GetGroup");
-                await client.invalidate("GetGroupsByTrip");
+                // Reexecute queries to refresh data
+                await reexecuteGroup({ requestPolicy: "network-only" });
                 router.replace(`/trips/groups?tripId=${group.trip?.id}`);
               } catch (error: unknown) {
                 setIsDeleting(false);
@@ -224,16 +212,14 @@ export default function EditGroupScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} bg="$backgroundDark">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxxl,
-          },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: 20,
+          paddingBottom: insets.bottom + 32,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <EditGroupFormFields
@@ -251,34 +237,71 @@ export default function EditGroupScreen() {
           }
         />
 
-        <View style={styles.memberSection}>
-          <Text style={styles.inputLabel}>Member Directory</Text>
+        <YStack mb="$xl">
+          <Text
+            fontSize={10}
+            fontWeight="700"
+            color="$textMuted"
+            textTransform="uppercase"
+            ls={1.5}
+            mb="$sm"
+            ml="$xs"
+          >
+            Member Directory
+          </Text>
 
-          <View style={styles.memberListContainer}>
+          <YStack
+            bg="$cardDark"
+            borderWidth={1}
+            bc="$borderZinc700"
+            br="$xl"
+            overflow="hidden"
+          >
             {visibleMembers.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>
+              <YStack py="$xxxl" ai="center">
+                <Text fontSize={16} color="$textMuted">
                   No members left in this group
                 </Text>
-              </View>
+              </YStack>
             ) : (
               visibleMembers.map((participant) => {
                 const userId = participant.user?.id ?? "";
                 const isLeader = userId === group.organizer?.id;
 
                 return (
-                  <View key={userId} style={styles.memberItem}>
-                    <View style={styles.memberAvatar}>
-                      <Text style={styles.memberAvatarText}>
+                  <XStack
+                    key={userId}
+                    ai="center"
+                    gap="$lg"
+                    p="$lg"
+                    borderBottomWidth={1}
+                    borderBottomColor="$whiteOpacity5"
+                  >
+                    <YStack
+                      w={44}
+                      h={44}
+                      br="$full"
+                      bg="$textMuted"
+                      borderWidth={1}
+                      bc="$whiteOpacity10"
+                      ai="center"
+                      jc="center"
+                    >
+                      <Text fontSize={14} fontWeight="700" color="$white">
                         {getInitials(
                           participant.user?.firstName,
                           participant.user?.lastName,
                         )}
                       </Text>
-                    </View>
+                    </YStack>
 
-                    <View style={styles.memberInfo}>
-                      <Text style={styles.memberName}>
+                    <YStack flex={1}>
+                      <Text
+                        fontSize={14}
+                        fontWeight="600"
+                        color="$white"
+                        mb={2}
+                      >
                         {[
                           participant.user?.firstName,
                           participant.user?.lastName,
@@ -286,36 +309,63 @@ export default function EditGroupScreen() {
                           .filter(Boolean)
                           .join(" ") || "Unknown user"}
                       </Text>
-                      <Text style={styles.memberMeta}>
+                      <Text fontSize={12} color="$textMuted">
                         {participant.user?.email ?? "No email"}
                         {isLeader ? " (Leader)" : ""}
                       </Text>
-                    </View>
+                    </YStack>
 
                     {isLeader ? (
-                      <View
-                        style={[
-                          styles.removeButton,
-                          styles.removeButtonDisabled,
-                        ]}
+                      <YStack
+                        bg="$whiteOpacity4"
+                        borderWidth={1}
+                        bc="$whiteOpacity12"
+                        br="$md"
+                        py="$sm"
+                        px="$md"
+                        opacity={0.7}
                       >
-                        <Text style={styles.removeButtonText}>Leader</Text>
-                      </View>
+                        <Text
+                          fontSize={11}
+                          fontWeight="700"
+                          color="$white"
+                          textTransform="uppercase"
+                          ls={0.6}
+                        >
+                          Leader
+                        </Text>
+                      </YStack>
                     ) : (
                       <TouchableOpacity
-                        style={styles.removeButton}
                         activeOpacity={0.8}
                         onPress={() => removeMember(userId)}
                       >
-                        <Text style={styles.removeButtonText}>Remove</Text>
+                        <YStack
+                          bg="$dangerOpacity12"
+                          borderWidth={1}
+                          bc="$dangerOpacity50"
+                          br="$md"
+                          py="$sm"
+                          px="$md"
+                        >
+                          <Text
+                            fontSize={11}
+                            fontWeight="700"
+                            color="$white"
+                            textTransform="uppercase"
+                            ls={0.6}
+                          >
+                            Remove
+                          </Text>
+                        </YStack>
                       </TouchableOpacity>
                     )}
-                  </View>
+                  </XStack>
                 );
               })
             )}
-          </View>
-        </View>
+          </YStack>
+        </YStack>
 
         <SaveGroupButton
           isSubmitting={isUpdating}
@@ -323,131 +373,33 @@ export default function EditGroupScreen() {
         />
 
         <TouchableOpacity
-          style={styles.deleteButton}
           activeOpacity={0.8}
           onPress={handleDeleteGroup}
           disabled={isDeleting}
         >
-          <Text style={styles.deleteButtonText}>
-            {isDeleting ? "Deleting..." : "Delete Group"}
-          </Text>
+          <YStack
+            mt="$lg"
+            bg="$redOpacity500Background"
+            borderWidth={1}
+            bc="$redOpacity500"
+            br="$lg"
+            py="$md"
+            px="$lg"
+            ai="center"
+            jc="center"
+          >
+            <Text
+              color="$white"
+              fontSize={14}
+              fontWeight="700"
+              textTransform="uppercase"
+              ls={0.8}
+            >
+              {isDeleting ? "Deleting..." : "Delete Group"}
+            </Text>
+          </YStack>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: 100,
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  memberSection: {
-    marginBottom: spacing.xl,
-  },
-  memberListContainer: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.borderZinc700,
-    borderRadius: radius.xl,
-    overflow: "hidden",
-  },
-  memberItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.whiteOpacity5,
-  },
-  memberAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    backgroundColor: colors.textMuted,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  memberAvatarText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.white,
-    marginBottom: 2,
-  },
-  memberMeta: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  removeButton: {
-    backgroundColor: colors.dangerOpacity12,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity50,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  removeButtonDisabled: {
-    opacity: 0.7,
-    borderColor: colors.whiteOpacity12,
-    backgroundColor: colors.whiteOpacity4,
-  },
-  removeButtonText: {
-    fontSize: 11,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  emptyState: {
-    paddingVertical: spacing.xxxl,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-  },
-  deleteButton: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.redOpacity500Background,
-    borderWidth: 1,
-    borderColor: colors.redOpacity500,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  deleteButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-});

@@ -1,6 +1,6 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography, shadows } from "~/styles";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 
 interface GroupDetailsHeroProps {
   name: string;
@@ -9,77 +9,69 @@ interface GroupDetailsHeroProps {
 
 export function GroupDetailsHero({ name, imageUrl }: GroupDetailsHeroProps) {
   return (
-    <View style={[styles.heroCard, shadows.primaryGlow]}>
+    <YStack
+      position="relative"
+      height={192}
+      borderRadius="$5"
+      backgroundColor="rgba(35, 38, 43, 1)"
+      borderWidth={1}
+      borderColor="rgba(0, 206, 209, 0.2)"
+      overflow="hidden"
+      marginBottom="$4"
+    >
       {imageUrl ? (
         <>
           <Image
             source={{ uri: imageUrl }}
-            style={styles.heroImage}
+            style={{ width: "100%", height: "100%" }}
             resizeMode="cover"
           />
-          <View style={styles.heroGradient} />
+          <YStack
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            backgroundColor="rgba(23, 24, 28, 0.45)"
+          />
         </>
       ) : (
-        <View style={styles.heroImagePlaceholder}>
-          <Ionicons name="images-outline" size={40} color={colors.primary} />
-          <Text style={styles.placeholderText}>No group image</Text>
-        </View>
+        <YStack
+          width="100%"
+          height="100%"
+          alignItems="center"
+          justifyContent="center"
+          gap="$2"
+          backgroundColor="rgba(39, 41, 53, 0.9)"
+        >
+          <Ionicons
+            name="images-outline"
+            size={40}
+            color="rgba(0, 206, 209, 1)"
+          />
+          <Text
+            fontSize="$sm"
+            fontWeight="500"
+            color="rgba(148, 163, 184, 1)"
+            textTransform="uppercase"
+            letterSpacing={1}
+          >
+            No group image
+          </Text>
+        </YStack>
       )}
 
-      <View style={styles.heroContent}>
-        <Text style={styles.groupName}>{name}</Text>
-      </View>
-    </View>
+      <YStack position="absolute" left="$5" right="$5" bottom="$4" zIndex={5}>
+        <Text
+          fontSize={28}
+          fontWeight="bold"
+          color="white"
+          letterSpacing={-0.4}
+          lineHeight={30}
+        >
+          {name}
+        </Text>
+      </YStack>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  heroCard: {
-    position: "relative",
-    height: 192,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.2)",
-    overflow: "hidden",
-    marginBottom: spacing.lg,
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  heroImagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: "rgba(39, 41, 53, 0.9)",
-  },
-  placeholderText: {
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  heroGradient: {
-    position: "absolute",
-    inset: 0,
-    backgroundColor: "rgba(23, 24, 28, 0.45)",
-  },
-  heroContent: {
-    position: "absolute",
-    left: spacing.xl,
-    right: spacing.xl,
-    bottom: spacing.lg,
-    zIndex: 5,
-  },
-  groupName: {
-    fontSize: 28,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.4,
-    lineHeight: 30,
-  },
-});

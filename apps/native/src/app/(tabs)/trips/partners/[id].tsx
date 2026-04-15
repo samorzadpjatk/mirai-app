@@ -1,13 +1,16 @@
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSponsorById } from "~/hooks/sponsors/useSponsors";
 import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 import LoadingScreen from "~/components/LoadingScreen";
+import { YStack, Text } from "@mirai-app/ui";
 
 export default function PartnerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: sponsor, isLoading, error } = useSponsorById(id ?? "");
+  const [{ data: sponsorData, fetching: isLoading, error }] = useSponsorById(
+    id ?? "",
+  );
+  const sponsor = sponsorData?.sponsor;
   const { imageUrl } = usePartnerImageDownload(sponsor?.logoPath);
 
   if (isLoading) {
@@ -16,85 +19,73 @@ export default function PartnerDetailScreen() {
 
   if (error || !sponsor) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.notFound}>Sponsor not found</Text>
-      </View>
+      <YStack flex={1} backgroundColor="$backgroundDark">
+        <Text
+          fontSize="$4"
+          color="$textTertiary"
+          textAlign="center"
+          marginTop="$8"
+        >
+          Sponsor not found
+        </Text>
+      </YStack>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.logoWrapper}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
+      <ScrollView
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: 128,
+          alignItems: "center",
+          gap: 24,
+        }}
+      >
+        <YStack
+          width={220}
+          height={220}
+          alignItems="center"
+          justifyContent="center"
+          marginTop="$4"
+        >
           <Image
             source={imageUrl ? { uri: imageUrl } : undefined}
-            style={styles.logo}
+            style={{
+              width: "100%",
+              height: "100%",
+              resizeMode: "contain",
+            }}
           />
-        </View>
+        </YStack>
 
-        <Text style={styles.name}>{sponsor.name}</Text>
+        <Text fontSize="$8" fontWeight="700" color="white" textAlign="center">
+          {sponsor.name}
+        </Text>
 
-        <View style={styles.descriptionCard}>
-          {sponsor.description.split("\n\n").map((paragraph) => (
-            <Text key={paragraph} style={styles.description}>
+        <YStack
+          backgroundColor="$cardDark"
+          borderRadius="$3"
+          borderWidth={1}
+          borderColor="$primaryOpacity10"
+          padding="$4"
+          width="100%"
+          gap="$3"
+          marginBottom="$8"
+        >
+          {sponsor.description.split("\n\n").map((paragraph: string) => (
+            <Text
+              key={paragraph}
+              fontSize="$4"
+              color="white"
+              textAlign="center"
+              lineHeight={28}
+            >
               {paragraph}
             </Text>
           ))}
-        </View>
+        </YStack>
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl * 4,
-    alignItems: "center",
-    gap: spacing.xxl,
-  },
-  logoWrapper: {
-    width: 220,
-    height: 220,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: spacing.lg,
-  },
-  logo: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
-  },
-  name: {
-    fontSize: typography.xxxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textAlign: "center",
-  },
-  descriptionCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-    width: "100%",
-    gap: spacing.md,
-    marginBottom: spacing.xxxl,
-  },
-  description: {
-    fontSize: typography.lg,
-    color: colors.white,
-    textAlign: "center",
-    lineHeight: typography.lg * typography.relaxed,
-  },
-  notFound: {
-    fontSize: typography.lg,
-    color: colors.textTertiary,
-    textAlign: "center",
-    marginTop: spacing.xxxl,
-  },
-});

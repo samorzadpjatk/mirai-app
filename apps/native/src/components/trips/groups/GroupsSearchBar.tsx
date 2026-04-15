@@ -1,6 +1,5 @@
-import { StyleSheet, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { YStack, Input } from "@mirai-app/ui";
 
 interface GroupsSearchBarProps {
   value: string;
@@ -9,49 +8,37 @@ interface GroupsSearchBarProps {
 
 export function GroupsSearchBar({ value, onChangeText }: GroupsSearchBarProps) {
   return (
-    <View style={styles.searchContainer}>
-      <View style={styles.searchIconContainer}>
+    <YStack position="relative" marginBottom="$4">
+      <YStack
+        position="absolute"
+        left="$4"
+        zIndex={1}
+        justifyContent="center"
+        style={{ top: 0, bottom: 0 }}
+      >
         <Ionicons
           name="search"
           size={20}
-          color={colors.primary}
+          color="#1EA2A0"
           style={{ opacity: 0.6 }}
         />
-      </View>
-      <TextInput
-        style={styles.searchInput}
+      </YStack>
+      <Input
+        backgroundColor="#111827"
+        borderWidth={1}
+        borderColor="rgba(255, 255, 255, 0.05)"
+        borderRadius="$6"
+        paddingVertical="$4"
+        paddingLeft={48}
+        paddingRight="$4"
+        color="white"
+        fontSize="$base"
+        fontWeight="500"
         placeholder="Search groups by name..."
         placeholderTextColor="rgba(148, 163, 184, 0.4)"
         value={value}
         onChangeText={onChangeText}
       />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  searchContainer: {
-    position: "relative",
-    marginBottom: spacing.lg,
-  },
-  searchIconContainer: {
-    position: "absolute",
-    left: spacing.lg,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    zIndex: 1,
-  },
-  searchInput: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: borderRadius.xl,
-    paddingVertical: spacing.lg,
-    paddingLeft: 48,
-    paddingRight: spacing.lg,
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-});

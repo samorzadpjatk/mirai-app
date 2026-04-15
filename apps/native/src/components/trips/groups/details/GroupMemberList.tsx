@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { useQuery } from "urql";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 
 interface GroupMember {
   id: string;
@@ -43,9 +43,17 @@ function MemberAvatar({ member }: { member: GroupMember }) {
 
   if (fetching) {
     return (
-      <View style={styles.avatarImage}>
-        <Text style={styles.avatarText}>...</Text>
-      </View>
+      <YStack
+        width="100%"
+        height="100%"
+        borderRadius="$full"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Text fontSize={12} fontWeight="bold" color="white">
+          ...
+        </Text>
+      </YStack>
     );
   }
 
@@ -53,13 +61,17 @@ function MemberAvatar({ member }: { member: GroupMember }) {
     return (
       <Image
         source={{ uri: signedUrl }}
-        style={styles.avatarImage}
+        style={{ width: "100%", height: "100%", borderRadius: 9999 }}
         contentFit="cover"
       />
     );
   }
 
-  return <Text style={styles.avatarText}>{member.initials}</Text>;
+  return (
+    <Text fontSize={12} fontWeight="bold" color="white">
+      {member.initials}
+    </Text>
+  );
 }
 
 export function GroupMemberList({ members }: GroupMemberListProps) {
@@ -71,128 +83,87 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
   );
 
   return (
-    <View style={styles.memberSection}>
-      <View style={styles.memberHeader}>
-        <Text style={styles.memberHeaderTitle}>Member Directory</Text>
+    <YStack marginBottom="$4">
+      <XStack
+        alignItems="center"
+        justifyContent="space-between"
+        paddingHorizontal="$1"
+        marginBottom="$3"
+      >
+        <Text
+          fontSize="$sm"
+          fontWeight="bold"
+          color="rgba(148, 163, 184, 1)"
+          textTransform="uppercase"
+          letterSpacing={1.5}
+        >
+          Member Directory
+        </Text>
         {hasMoreThanPreview ? (
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => setIsExpanded((prev) => !prev)}
           >
-            <Text style={styles.viewAllButton}>
+            <Text fontSize={12} fontWeight="bold" color="rgba(0, 206, 209, 1)">
               {isExpanded ? "Show Less" : "View All"}
             </Text>
           </TouchableOpacity>
         ) : null}
-      </View>
+      </XStack>
 
-      <View style={styles.memberList}>
+      <YStack gap="$2">
         {visibleMembers.map((member) => (
-          <View key={member.id} style={styles.memberCard}>
-            <View style={styles.memberInfo}>
-              <View
-                style={[styles.avatar, member.isLeader && styles.avatarLeader]}
+          <YStack
+            key={member.id}
+            backgroundColor="rgba(39, 41, 53, 0.5)"
+            borderWidth={1}
+            borderColor="rgba(255, 255, 255, 0.05)"
+            borderRadius="$5"
+            padding="$3"
+          >
+            <XStack alignItems="center" gap="$3">
+              <YStack
+                width={40}
+                height={40}
+                borderRadius="$full"
+                overflow="hidden"
+                backgroundColor="rgba(148, 163, 184, 1)"
+                borderWidth={2}
+                borderColor={
+                  member.isLeader ? "rgba(0, 206, 209, 1)" : "transparent"
+                }
+                alignItems="center"
+                justifyContent="center"
               >
                 <MemberAvatar member={member} />
-              </View>
-              <View style={styles.memberDetails}>
-                <Text style={styles.memberName}>{member.name}</Text>
+              </YStack>
+              <YStack flex={1}>
                 <Text
-                  style={[
-                    styles.memberRole,
-                    member.isLeader && styles.memberRoleLeader,
-                  ]}
+                  fontSize="$sm"
+                  fontWeight="bold"
+                  color="white"
+                  marginBottom={2}
+                >
+                  {member.name}
+                </Text>
+                <Text
+                  fontSize={10}
+                  fontWeight="bold"
+                  color={
+                    member.isLeader
+                      ? "rgba(0, 206, 209, 1)"
+                      : "rgba(148, 163, 184, 1)"
+                  }
+                  textTransform="uppercase"
+                  letterSpacing={-0.2}
                 >
                   {member.role.toUpperCase()}
                 </Text>
-              </View>
-            </View>
-          </View>
+              </YStack>
+            </XStack>
+          </YStack>
         ))}
-      </View>
-    </View>
+      </YStack>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  memberSection: {
-    marginBottom: spacing.lg,
-  },
-  memberHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  memberHeaderTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-  },
-  viewAllButton: {
-    fontSize: 12,
-    fontWeight: typography.bold,
-    color: colors.primary,
-  },
-  memberList: {
-    gap: spacing.sm,
-  },
-  memberCard: {
-    backgroundColor: "rgba(39, 41, 53, 0.5)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: borderRadius.xl,
-    padding: spacing.md,
-  },
-  memberInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    overflow: "hidden",
-    backgroundColor: colors.textMuted,
-    borderWidth: 2,
-    borderColor: "transparent",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: borderRadius.full,
-  },
-  avatarLeader: {
-    borderColor: colors.primary,
-  },
-  avatarText: {
-    fontSize: 12,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  memberDetails: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: 2,
-  },
-  memberRole: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: -0.2,
-  },
-  memberRoleLeader: {
-    color: colors.primary,
-  },
-});

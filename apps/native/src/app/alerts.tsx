@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  RefreshControl,
-} from "react-native";
+import { ScrollView, RefreshControl } from "react-native";
 import { useQuery } from "urql";
 import { GetMyNotificationsDocument } from "@mirai-app/graphql-client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,8 +7,17 @@ import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";
 import { AlertsPagination } from "~/components/alerts/AlertsPagination";
 import { NotificationCard } from "~/components/alerts/NotificationCard";
-import { colors, spacing, typography } from "../styles";
+import { YStack, Text } from "@mirai-app/ui";
 import type { NotificationItem } from "~/types/notifications";
+
+// Spacing values from Tamagui tokens for React Native styles
+const spacing = {
+  lg: 16,
+  md: 12,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+};
 
 export default function AlertsScreen() {
   const insets = useSafeAreaInsets();
@@ -47,22 +50,20 @@ export default function AlertsScreen() {
     "You don't have any notifications yet.\nCheck back later!";
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xxxl,
-          },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: spacing.lg,
+          paddingTop: insets.top + spacing.xl,
+          paddingBottom: insets.bottom + spacing.xxxl,
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={fetching}
             onRefresh={refetch}
-            tintColor={colors.primary}
+            tintColor="white"
           />
         }
       >
@@ -78,13 +79,13 @@ export default function AlertsScreen() {
 
         {/* Notifications List */}
         {fetching ? (
-          <View style={styles.loadingState}>
-            <Text style={styles.loadingStateText}>
+          <YStack alignItems="center" paddingVertical={spacing.xxl * 2}>
+            <Text fontSize="$base" color="$textMuted">
               Loading notifications...
             </Text>
-          </View>
+          </YStack>
         ) : notifications.length > 0 ? (
-          <View style={styles.notificationsList}>
+          <YStack gap="$md">
             {notifications.map((notification) => (
               <NotificationCard
                 key={notification.id}
@@ -92,7 +93,7 @@ export default function AlertsScreen() {
                 timeLabel={formatDate(notification.createdAt)}
               />
             ))}
-          </View>
+          </YStack>
         ) : (
           <AlertsEmptyState title="No Notifications" message={emptyMessage} />
         )}
@@ -105,31 +106,6 @@ export default function AlertsScreen() {
           onNext={() => setPage(page + 1)}
         />
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-  },
-  notificationsList: {
-    gap: spacing.md,
-  },
-  loadingState: {
-    alignItems: "center",
-    paddingVertical: spacing.xxl * 2,
-  },
-  loadingStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-  },
-});

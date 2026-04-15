@@ -3,13 +3,10 @@ import {
   ActivityIndicator,
   Image,
   ScrollView,
-  StyleSheet,
-  Text,
   TouchableOpacity,
-  View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery, useMutation, useClient } from "urql";
+import { useQuery, useMutation } from "urql";
 import {
   GetChallengeDocument,
   GetChallengeSubmissionsDocument,
@@ -17,12 +14,7 @@ import {
   SubmitVoteDocument,
   GetCurrentUserDocument,
 } from "@mirai-app/graphql-client";
-import {
-  borderRadius,
-  colors,
-  spacing,
-  typography,
-} from "../../../../../styles";
+import { View, Text } from "@mirai-app/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTripDetails } from "~/hooks/trips";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
@@ -128,32 +120,64 @@ function SubmissionImageCard({
   const [imageError, setImageError] = useState(false);
 
   const content = (
-    <View style={styles.voteCard}>
-      <View style={styles.voteImageWrap}>
+    <View
+      backgroundColor="$cardDark"
+      borderWidth={1}
+      borderColor="$whiteOpacity8"
+      borderRadius="$xl"
+      overflow="hidden"
+    >
+      <View
+        width="100%"
+        aspectRatio={16 / 10}
+        backgroundColor="$backgroundDarkOpacity45"
+      >
         {!imageLoaded && !imageError ? (
-          <View style={styles.voteImageFallback}>
-            <ActivityIndicator size="small" color={colors.primary} />
+          <View
+            width="100%"
+            height="100%"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <ActivityIndicator size="small" color="#2e9d8e" />
           </View>
         ) : imageError ? (
-          <View style={styles.voteImageFallback}>
-            <Text style={styles.voteImageFallbackText}>
+          <View
+            width="100%"
+            height="100%"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Text color="$textMuted" fontSize={20} fontWeight="bold">
               {submission.groupName.charAt(0).toUpperCase()}
             </Text>
           </View>
         ) : (
           <Image
             source={{ uri: submission.imagePath }}
-            style={styles.voteImage}
+            style={{ width: "100%", height: "100%" }}
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
         )}
       </View>
-      <View style={styles.voteCardBody}>
-        <Text style={styles.voteCardTitle}>{title}</Text>
-        <Text style={styles.voteCardGroup}>{submission.groupName}</Text>
+      <View padding="$md" gap={2}>
+        <Text
+          color="$primary"
+          fontSize="$sm"
+          fontWeight="bold"
+          textTransform="uppercase"
+          letterSpacing={0.8}
+        >
+          {title}
+        </Text>
+        <Text color="$white" fontSize="$base" fontWeight="bold">
+          {submission.groupName}
+        </Text>
         {subtitle ? (
-          <Text style={styles.voteCardSubtitle}>{subtitle}</Text>
+          <Text color="$textMuted" fontSize="$xs">
+            {subtitle}
+          </Text>
         ) : null}
       </View>
     </View>
@@ -175,7 +199,7 @@ function SubmissionImageCard({
 export default function ChallengePeerVotingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const client = useClient();
+
   const insets = useSafeAreaInsets();
 
   const challengeId =
@@ -183,23 +207,26 @@ export default function ChallengePeerVotingScreen() {
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
-  // GraphQL queries
+  // GraphQL queries - using tuple destructuring with reexecute functions
   const [{ data: challenge, fetching: isLoadingChallenge }] = useQuery({
     query: GetChallengeDocument,
     variables: { id: challengeId ?? "", tripId: tripId ?? "" },
     pause: !challengeId || !tripId,
   });
-  const [{ data: challengeSubmissionsData, fetching: isLoadingSubmissions }] =
-    useQuery({
-      query: GetChallengeSubmissionsDocument,
-      variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
-      pause: !challengeId || !tripId,
-    });
-  const [{ data: myVotesData, fetching: isLoadingVotes }] = useQuery({
-    query: GetMyVotesDocument,
+  const [
+    { data: challengeSubmissionsData, fetching: isLoadingSubmissions },
+    reexecuteSubmissions,
+  ] = useQuery({
+    query: GetChallengeSubmissionsDocument,
     variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
     pause: !challengeId || !tripId,
   });
+  const [{ data: myVotesData, fetching: isLoadingVotes }, reexecuteMyVotes] =
+    useQuery({
+      query: GetMyVotesDocument,
+      variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+      pause: !challengeId || !tripId,
+    });
   const [{ data: currentUser, fetching: isLoadingCurrentUser }] = useQuery({
     query: GetCurrentUserDocument,
     pause: !tripId,
@@ -491,9 +518,11 @@ export default function ChallengePeerVotingScreen() {
         ),
       );
 
-      // Invalidate related queries
-      await client.invalidate("GetMyVotes");
-      await client.invalidate("GetChallengeSubmissions");
+      // Reexecute queries to refresh data
+      await Promise.all([
+        reexecuteMyVotes({ requestPolicy: "network-only" }),
+        reexecuteSubmissions({ requestPolicy: "network-only" }),
+      ]);
       navigateBackToChallenge();
     } catch (error) {
       const message =
@@ -518,7 +547,7 @@ export default function ChallengePeerVotingScreen() {
 
   if (!challenge?.challenge) {
     return (
-      <View style={styles.container}>
+      <View flex={1} backgroundColor="$backgroundDark">
         <ChallengeNotFoundState onGoBack={() => router.back()} />
       </View>
     );
@@ -529,32 +558,55 @@ export default function ChallengePeerVotingScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + spacing.xxxl },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 16,
+          gap: 16,
+          paddingBottom: insets.bottom + 64,
+        }}
       >
-        <Text style={styles.title}>{challenge.challenge.name}</Text>
-        <Text style={styles.subtitle}>Peer voting</Text>
+        <Text fontSize="$xl" fontWeight="bold" color="$white">
+          {challenge.challenge.name}
+        </Text>
+        <Text
+          marginTop={-8}
+          color="$textMuted"
+          textTransform="uppercase"
+          letterSpacing={1}
+          fontSize="$xs"
+        >
+          Peer voting
+        </Text>
 
         {phase === "comparing" ? (
           <>
-            <View style={styles.progressWrap}>
-              <View style={styles.progressTrack}>
+            <View gap="$xs">
+              <View
+                height={8}
+                borderRadius={999}
+                backgroundColor="$whiteOpacity10"
+                overflow="hidden"
+              >
                 <View
-                  style={[styles.progressFill, { width: `${progress * 100}%` }]}
+                  height="100%"
+                  backgroundColor="$primary"
+                  width={`${progress * 100}%`}
                 />
               </View>
-              <Text style={styles.progressLabel}>
+              <Text
+                color="$textMuted"
+                fontSize="$xs"
+                textTransform="uppercase"
+                letterSpacing={0.8}
+              >
                 {comparisonCount}/{hardCap} comparisons
               </Text>
             </View>
 
             {currentLeft && currentRight ? (
-              <View style={styles.pairsWrap}>
+              <View gap="$md">
                 <SubmissionImageCard
                   submission={currentLeft}
                   title="Pick this"
@@ -569,13 +621,18 @@ export default function ChallengePeerVotingScreen() {
                 />
               </View>
             ) : (
-              <View style={styles.centerState}>
-                <ActivityIndicator size="small" color={colors.primary} />
+              <View paddingVertical="$xl" alignItems="center">
+                <ActivityIndicator size="small" color="#2e9d8e" />
               </View>
             )}
 
             {stableTop3Count > 0 ? (
-              <Text style={styles.hintText}>
+              <Text
+                color="$textMuted"
+                fontSize="$xs"
+                textTransform="uppercase"
+                letterSpacing={0.8}
+              >
                 Top 3 stable streak: {stableTop3Count}/{TOP3_STABILITY_REQUIRED}
               </Text>
             ) : null}
@@ -584,11 +641,21 @@ export default function ChallengePeerVotingScreen() {
 
         {phase === "confirming" ? (
           <>
-            <Text style={styles.sectionTitle}>Confirm your podium</Text>
+            <Text color="$white" fontSize="$lg" fontWeight="bold">
+              Confirm your podium
+            </Text>
             {comparisonCount < hardCap ? (
-              <Text style={styles.successHint}>Mamy Twoje TOP 3!</Text>
+              <Text
+                color="$emerald500"
+                fontSize="$xs"
+                textTransform="uppercase"
+                letterSpacing={0.8}
+                fontWeight="bold"
+              >
+                Mamy Twoje TOP 3!
+              </Text>
             ) : null}
-            <View style={styles.confirmList}>
+            <View gap="$sm">
               {finalTopThree.map((submission, index) => (
                 <SubmissionImageCard
                   key={`${submission.id}-${index + 1}`}
@@ -604,13 +671,26 @@ export default function ChallengePeerVotingScreen() {
                 />
               ))}
             </View>
-            <View style={styles.actions}>
+            <View gap="$sm">
               <TouchableOpacity
-                style={[styles.actionButton, styles.actionPrimary]}
+                style={{
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#2e9d8e",
+                }}
                 onPress={() => void handleSubmitPodium()}
                 disabled={isSubmitting}
               >
-                <Text style={styles.actionPrimaryText}>
+                <Text
+                  color="$backgroundDark"
+                  fontSize="$sm"
+                  fontWeight="bold"
+                  textTransform="uppercase"
+                  letterSpacing={0.8}
+                >
                   {isSubmitting ? "Submitting..." : "Confirm Podium"}
                 </Text>
               </TouchableOpacity>
@@ -619,21 +699,48 @@ export default function ChallengePeerVotingScreen() {
         ) : null}
 
         {phase === "blocked" ? (
-          <View style={styles.blockedCard}>
-            <Text style={styles.blockedTitle}>Voting unavailable</Text>
-            <Text style={styles.blockedText}>
+          <View
+            borderRadius="$xl"
+            borderWidth={1}
+            borderColor="rgba(255,107,107,0.35)"
+            backgroundColor="rgba(255,107,107,0.12)"
+            padding="$lg"
+            gap="$sm"
+          >
+            <Text
+              color="$danger"
+              fontSize="$lg"
+              fontWeight="bold"
+              textTransform="uppercase"
+              letterSpacing={0.8}
+            >
+              Voting unavailable
+            </Text>
+            <Text color="$white" fontSize="$sm">
               {blockedReason ??
                 "Voting is not available right now. It starts automatically after moderation and after the submission phase ends."}
             </Text>
             <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionPrimary,
-                styles.doneButton,
-              ]}
+              style={{
+                borderRadius: 12,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#2e9d8e",
+                marginTop: 8,
+              }}
               onPress={navigateBackToChallenge}
             >
-              <Text style={styles.actionPrimaryText}>Back</Text>
+              <Text
+                color="$backgroundDark"
+                fontSize="$sm"
+                fontWeight="bold"
+                textTransform="uppercase"
+                letterSpacing={0.8}
+              >
+                Back
+              </Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -641,196 +748,3 @@ export default function ChallengePeerVotingScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  subtitle: {
-    marginTop: -spacing.sm,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    fontSize: typography.xs,
-  },
-  progressWrap: {
-    gap: spacing.xs,
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: colors.whiteOpacity10,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: colors.primary,
-  },
-  progressLabel: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  pairsWrap: {
-    gap: spacing.md,
-  },
-  voteCard: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-  },
-  voteImageWrap: {
-    width: "100%",
-    aspectRatio: 16 / 10,
-    backgroundColor: colors.backgroundDarkOpacity45,
-  },
-  voteImage: {
-    width: "100%",
-    height: "100%",
-  },
-  voteImageFallback: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  voteImageFallbackText: {
-    color: colors.textMuted,
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-  },
-  voteCardBody: {
-    padding: spacing.md,
-    gap: 2,
-  },
-  voteCardTitle: {
-    color: colors.primary,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  voteCardGroup: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  voteCardSubtitle: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-  },
-  hintText: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  successHint: {
-    color: colors.emerald500,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: typography.bold,
-  },
-  sectionTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-  },
-  confirmList: {
-    gap: spacing.sm,
-  },
-  actions: {
-    gap: spacing.sm,
-  },
-  actionButton: {
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionPrimary: {
-    backgroundColor: colors.primary,
-  },
-  actionGhost: {
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity20,
-    backgroundColor: colors.whiteOpacity4,
-  },
-  actionPrimaryText: {
-    color: colors.backgroundDark,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  actionGhostText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  doneCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.successOpacity35,
-    backgroundColor: colors.successOpacity12,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  doneTitle: {
-    color: colors.emerald500,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  doneText: {
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-  doneButton: {
-    marginTop: spacing.sm,
-  },
-  blockedCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity35,
-    backgroundColor: colors.dangerOpacity12,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  blockedTitle: {
-    color: colors.danger,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  blockedText: {
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-  centerState: {
-    paddingVertical: spacing.xl,
-    alignItems: "center",
-  },
-});

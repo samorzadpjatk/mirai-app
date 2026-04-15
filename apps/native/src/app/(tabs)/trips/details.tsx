@@ -1,11 +1,10 @@
-import { View, ScrollView, StyleSheet } from "react-native";
+import { ScrollView } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import LoadingScreen from "../../../components/LoadingScreen";
-import { colors, spacing } from "../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
@@ -14,6 +13,7 @@ import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessG
 import { PartnersSection } from "~/components/trips/details/PartnersSection";
 import { TripBanner } from "~/components/trips/TripBanner";
 import { useTripSync } from "~/stores/tripStore";
+import { YStack } from "@mirai-app/ui";
 
 export default function TripDetailsScreen() {
   const { session, isLoading } = useAuth();
@@ -47,26 +47,23 @@ export default function TripDetailsScreen() {
 
   if (!trip) {
     return (
-      <View style={styles.container}>
+      <YStack flex={1} backgroundColor="$backgroundDark">
         <TripNotFoundState onGoBack={() => router.back()} />
-      </View>
+      </YStack>
     );
   }
 
   return (
     <>
       <StatusBar style="light" />
-      <View style={styles.container}>
+      <YStack flex={1} backgroundColor="$backgroundDark">
         {/* Main Content */}
         <ScrollView
-          style={styles.mainContent}
-          contentContainerStyle={[
-            styles.contentContainer,
-            {
-              paddingTop: insets.top + spacing.xs,
-              paddingBottom: insets.bottom + spacing.xxxl + spacing.xxl,
-            },
-          ]}
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            paddingTop: insets.top + 4,
+            paddingBottom: insets.bottom + 56,
+          }}
         >
           {/* Hero Image */}
           <TripHeroCard
@@ -107,20 +104,7 @@ export default function TripDetailsScreen() {
           {/* Latest News Section */}
           <TripNewsSection tripId={trip.id} />
         </ScrollView>
-      </View>
+      </YStack>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  mainContent: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingBottom: 0,
-  },
-});

@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { YStack, Text } from "@mirai-app/ui";
 import { GroupCard } from "./GroupCard";
 import type { GroupListItem } from "./types";
 
@@ -9,17 +8,23 @@ interface GroupsListProps {
   myGroupId?: string | null;
 }
 
-export function GroupsList({ groups, onSelectGroup, myGroupId }: GroupsListProps) {
+export function GroupsList({
+  groups,
+  onSelectGroup,
+  myGroupId,
+}: GroupsListProps) {
   if (groups.length === 0) {
     return (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyStateText}>No groups found</Text>
-      </View>
+      <YStack paddingVertical="$8" alignItems="center">
+        <Text fontSize="$base" color="$textMuted">
+          No groups found
+        </Text>
+      </YStack>
     );
   }
 
   return (
-    <View style={styles.groupsList}>
+    <YStack gap="$4">
       {groups.map((group) => (
         <GroupCard
           key={group.id}
@@ -28,20 +33,6 @@ export function GroupsList({ groups, onSelectGroup, myGroupId }: GroupsListProps
           isMyGroup={Boolean(myGroupId && group.id === myGroupId)}
         />
       ))}
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  groupsList: {
-    gap: spacing.lg,
-  },
-  emptyState: {
-    paddingVertical: spacing.xxxl,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-  },
-});

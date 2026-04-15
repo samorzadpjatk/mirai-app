@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { TouchableOpacity } from "react-native";
+import { YStack, Text } from "@mirai-app/ui";
 
 interface GroupEditPermissionStateProps {
   message: string;
@@ -11,29 +11,20 @@ export function GroupEditPermissionState({
   onGoBack,
 }: GroupEditPermissionStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.errorText}>{message}</Text>
+    <YStack
+      flex={1}
+      backgroundColor="rgba(23, 24, 28, 1)"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Text fontSize={18} color="#475569" marginBottom="$4">
+        {message}
+      </Text>
       <TouchableOpacity onPress={onGoBack}>
-        <Text style={styles.linkText}>Go Back</Text>
+        <Text color="#00ced1" fontWeight="700">
+          Go Back
+        </Text>
       </TouchableOpacity>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    fontSize: typography.lg,
-    color: colors.textMuted,
-    marginBottom: spacing.lg,
-  },
-  linkText: {
-    color: colors.primary,
-    fontWeight: typography.bold,
-  },
-});

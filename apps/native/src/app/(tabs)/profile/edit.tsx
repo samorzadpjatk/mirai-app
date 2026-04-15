@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, TextInput } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useCameraPermissions } from "expo-camera";
@@ -22,14 +13,54 @@ import {
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileDownload, useFileUpload } from "~/hooks/files";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 
 const sanitizeNameInput = (value: string) => value.replace(/\d+/g, "");
+
 interface UploadAsset {
   uri: string;
   fileName?: string | null;
   mimeType?: string | null;
 }
+
+// Color values for React Native styles
+const colors = {
+  backgroundDark: "#17181c",
+  white: "#ffffff",
+  primary: "#00ced1",
+  cardDark: "#1b2828",
+  textMuted: "#475569",
+  borderZinc700: "rgba(48, 54, 61, 1)",
+  backgroundDarkAlt: "rgba(39, 41, 53, 0.65)",
+};
+
+// Border radius values
+const borderRadius = {
+  xl: 20,
+  lg: 16,
+  md: 12,
+  full: 9999,
+};
+
+// Spacing values
+const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+};
+
+// Typography values
+const typography = {
+  base: 16,
+  sm: 14,
+  xs: 12,
+  bold: "700" as const,
+  medium: "500" as const,
+};
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -109,9 +140,18 @@ export default function EditProfileScreen() {
   // GraphQL mutation for updating profile
   const [, updateProfileMutation] = useMutation(UpdateUserDocument);
 
-  // Cache invalidation helper
-  const invalidateUserCache = useCallback(async () => {
-    await urqlClient.invalidate(GetCurrentUserDocument);
+  // Cache reexecution helper - urql doesn't have invalidate, use reexecuteOperation
+  const refreshUserCache = useCallback(async () => {
+    // Reexecute the query with network-only policy to refresh cache
+    await urqlClient.reexecuteOperation({
+      key: JSON.stringify(["GetCurrentUser", {}]),
+      query: GetCurrentUserDocument,
+      variables: {},
+      kind: "query",
+      context: {
+        requestPolicy: "network-only",
+      },
+    } as unknown as import("@urql/core").Operation);
   }, [urqlClient]);
 
   const isUploading = uploadStatus === "uploading";
@@ -152,13 +192,13 @@ export default function EditProfileScreen() {
         return;
       }
 
-      await invalidateUserCache();
+      await refreshUserCache();
       await refreshAvatar(true);
     },
     [
       avatarStoragePath,
       currentUser?.id,
-      invalidateUserCache,
+      refreshUserCache,
       refreshAvatar,
       resetUpload,
       updateProfileMutation,
@@ -295,7 +335,7 @@ export default function EditProfileScreen() {
         return;
       }
 
-      await invalidateUserCache();
+      await refreshUserCache();
       router.back();
     } catch (error) {
       const message =
@@ -308,53 +348,103 @@ export default function EditProfileScreen() {
     router,
     updateProfileMutation,
     currentUser?.id,
-    invalidateUserCache,
+    refreshUserCache,
   ]);
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxxl,
-          },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: spacing.xl,
+          paddingTop: spacing.lg,
+          paddingBottom: insets.bottom + spacing.xxxl,
+          gap: spacing.xl,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.imagePickerContainer}>
-          <Text style={styles.inputLabel}>Profile Photo</Text>
-          <TouchableOpacity
-            style={styles.imageCard}
-            activeOpacity={0.85}
+        <YStack gap={spacing.sm}>
+          <Text
+            fontSize={10}
+            fontWeight="bold"
+            color="$textMuted"
+            textTransform="uppercase"
+            letterSpacing={1.5}
+            marginLeft={spacing.xs}
+          >
+            Profile Photo
+          </Text>
+          <YStack
             onPress={handleChangePhoto}
-            disabled={isBusy}
+            style={{
+              borderRadius: borderRadius.xl,
+              overflow: "hidden",
+              borderWidth: 1,
+              borderColor: colors.borderZinc700,
+              backgroundColor: colors.cardDark,
+            }}
           >
             {avatarUri ? (
               <Image
                 source={{ uri: avatarUri }}
-                style={styles.image}
+                style={{
+                  width: "100%",
+                  height: 180,
+                }}
                 contentFit="cover"
                 cachePolicy="none"
               />
             ) : (
-              <View style={styles.placeholder}>
+              <YStack
+                height={160}
+                alignItems="center"
+                justifyContent="center"
+                gap={spacing.sm}
+                style={{ backgroundColor: colors.backgroundDarkAlt }}
+              >
                 <Ionicons
                   name="person-circle-outline"
                   size={32}
                   color={colors.primary}
                 />
-                <Text style={styles.placeholderText}>No photo selected</Text>
-              </View>
+                <Text
+                  style={{
+                    color: colors.textMuted,
+                    fontSize: typography.sm,
+                    fontWeight: typography.medium,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                  }}
+                >
+                  No photo selected
+                </Text>
+              </YStack>
             )}
 
-            <View style={styles.badge}>
+            <XStack
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: spacing.xs,
+                paddingVertical: spacing.md,
+                backgroundColor: "rgba(0, 0, 0, 0.45)",
+                borderTopWidth: 1,
+                borderTopColor: "rgba(255,255,255,0.08)",
+              }}
+            >
               {isUploading ? (
                 <>
                   <ActivityIndicator size="small" color={colors.white} />
-                  <Text style={styles.badgeText}>
+                  <Text
+                    style={{
+                      color: colors.white,
+                      fontSize: 12,
+                      fontWeight: typography.bold,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.6,
+                    }}
+                  >
                     {uploadProgress.percent != null
                       ? `Uploading ${Math.round(uploadProgress.percent * 100)}%`
                       : "Uploading..."}
@@ -367,19 +457,46 @@ export default function EditProfileScreen() {
                     size={16}
                     color={colors.white}
                   />
-                  <Text style={styles.badgeText}>
+                  <Text
+                    style={{
+                      color: colors.white,
+                      fontSize: 12,
+                      fontWeight: typography.bold,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.6,
+                    }}
+                  >
                     {avatarUri ? "Change Photo" : "Add Photo"}
                   </Text>
                 </>
               )}
-            </View>
-          </TouchableOpacity>
-        </View>
+            </XStack>
+          </YStack>
+        </YStack>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.inputLabel}>First Name</Text>
+        <YStack gap={spacing.sm}>
+          <Text
+            fontSize={10}
+            fontWeight="bold"
+            color="$textMuted"
+            textTransform="uppercase"
+            letterSpacing={1.5}
+            marginLeft={spacing.xs}
+          >
+            First Name
+          </Text>
           <TextInput
-            style={styles.input}
+            style={{
+              backgroundColor: colors.cardDark,
+              borderRadius: borderRadius.lg,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.08)",
+              paddingHorizontal: spacing.lg,
+              paddingVertical: spacing.md,
+              color: colors.white,
+              fontSize: typography.base,
+              fontWeight: typography.medium,
+            }}
             value={firstName}
             onChangeText={(value) => setFirstName(sanitizeNameInput(value))}
             placeholder="Enter first name"
@@ -389,12 +506,31 @@ export default function EditProfileScreen() {
             maxLength={100}
             editable={!isSaving}
           />
-        </View>
+        </YStack>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.inputLabel}>Last Name</Text>
+        <YStack gap={spacing.sm}>
+          <Text
+            fontSize={10}
+            fontWeight="bold"
+            color="$textMuted"
+            textTransform="uppercase"
+            letterSpacing={1.5}
+            marginLeft={spacing.xs}
+          >
+            Last Name
+          </Text>
           <TextInput
-            style={styles.input}
+            style={{
+              backgroundColor: colors.cardDark,
+              borderRadius: borderRadius.lg,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.08)",
+              paddingHorizontal: spacing.lg,
+              paddingVertical: spacing.md,
+              color: colors.white,
+              fontSize: typography.base,
+              fontWeight: typography.medium,
+            }}
             value={lastName}
             onChangeText={(value) => setLastName(sanitizeNameInput(value))}
             placeholder="Enter last name"
@@ -404,26 +540,40 @@ export default function EditProfileScreen() {
             maxLength={100}
             editable={!isSaving}
           />
-        </View>
+        </YStack>
 
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            (isSaving || isUploading) && styles.saveButtonDisabled,
-          ]}
+        <YStack
           onPress={() => {
             setIsSaving(true);
             void handleSave().finally(() => setIsSaving(false));
           }}
-          disabled={isSaving || isUploading}
-          activeOpacity={0.85}
+          style={{
+            backgroundColor: colors.primary,
+            borderRadius: borderRadius.lg,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: spacing.lg,
+            minHeight: 52,
+            marginTop: spacing.sm,
+            opacity: isSaving || isUploading ? 0.7 : 1,
+          }}
         >
           {isSaving ? (
             <ActivityIndicator size="small" color={colors.white} />
           ) : (
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+            <Text
+              style={{
+                color: colors.backgroundDark,
+                fontSize: typography.base,
+                fontWeight: typography.bold,
+                textTransform: "uppercase",
+                letterSpacing: 0.7,
+              }}
+            >
+              Save Changes
+            </Text>
           )}
-        </TouchableOpacity>
+        </YStack>
       </ScrollView>
       <PhotoCaptureModal
         visible={isCameraOpen}
@@ -433,120 +583,6 @@ export default function EditProfileScreen() {
         onClose={() => setIsCameraOpen(false)}
         onUsePhoto={handleUseCapturedPhoto}
       />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    gap: spacing.xl,
-  },
-  imagePickerContainer: {
-    gap: spacing.sm,
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginLeft: spacing.xs,
-  },
-  imageCard: {
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    backgroundColor: colors.cardDark,
-  },
-  image: {
-    width: "100%",
-    height: 180,
-  },
-  placeholder: {
-    height: 160,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: "rgba(39, 41, 53, 0.65)",
-  },
-  placeholderText: {
-    color: colors.textMuted,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
-  },
-  badgeText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  fieldGroup: {
-    gap: spacing.sm,
-  },
-  input: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.lg,
-    minHeight: 52,
-    marginTop: spacing.sm,
-  },
-  saveButtonDisabled: {
-    opacity: 0.7,
-  },
-  saveButtonText: {
-    color: colors.backgroundDark,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.7,
-  },
-});
-
-// Summary:
-// - File migrated: apps/native/src/app/(tabs)/profile/edit.tsx
-// - Key changes made:
-//   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
-//   2. Imported GraphQL documents from @mirai-app/graphql-client (GetCurrentUserDocument, UpdateUserDocument)
-//   3. Migrated useQueryClient() to useClient() from urql
-//   4. Changed from TanStack Query's useGetCurrentUserQuery() to urql's useQuery({ query: GetCurrentUserDocument })
-//   5. Changed from useUpdateUserMutation with callbacks to urql's useMutation(UpdateUserDocument) with manual error handling
-//   6. Replaced queryClient.invalidateQueries({ queryKey: ["me"] }) with urqlClient.invalidate(GetCurrentUserDocument)
-//   7. Added local state tracking for isSaving (urql doesn't expose isPending directly)
-//   8. Updated mutation error handling to check result.error from urql execute functions
-//   9. Updated loading state references: updateProfileMutation.isPending → isSaving
-// - Note: The file upload/download hooks (useFileUpload, useFileDownload) continue to work as they use graphqlClient.request directly

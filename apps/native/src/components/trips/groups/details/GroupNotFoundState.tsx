@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { TouchableOpacity } from "react-native";
+import { YStack, Text } from "@mirai-app/ui";
 
 interface GroupNotFoundStateProps {
   onGoBack: () => void;
@@ -7,36 +7,28 @@ interface GroupNotFoundStateProps {
 
 export function GroupNotFoundState({ onGoBack }: GroupNotFoundStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.errorText}>Group not found</Text>
-      <TouchableOpacity onPress={onGoBack} style={styles.backButton}>
-        <Text style={styles.backButtonText}>Go Back</Text>
+    <YStack
+      flex={1}
+      backgroundColor="#17181c"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Text fontSize="$lg" color="rgba(148, 163, 184, 1)" marginBottom="$4">
+        Group not found
+      </Text>
+      <TouchableOpacity
+        onPress={onGoBack}
+        style={{
+          backgroundColor: "rgba(0, 206, 209, 1)",
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+          borderRadius: 8,
+        }}
+      >
+        <Text fontSize="$base" fontWeight="bold" color="#17181c">
+          Go Back
+        </Text>
       </TouchableOpacity>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    fontSize: typography.lg,
-    color: colors.textMuted,
-    marginBottom: spacing.lg,
-  },
-  backButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-  },
-  backButtonText: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-  },
-});

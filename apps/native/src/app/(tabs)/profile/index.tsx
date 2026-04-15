@@ -1,38 +1,45 @@
-import { View, ScrollView, StyleSheet } from "react-native";
+import { ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "../../../styles";
+import { YStack } from "@mirai-app/ui";
 import { AccountInfoSection } from "~/components/profile/AccountInfoSection";
 import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
 import { ProfileActionsSection } from "~/components/profile/ProfileActionsSection";
 import { ProfileHeader } from "~/components/profile/ProfileHeader";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
-import { useClient } from "urql";
+import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
+
+// Spacing values from Tamagui tokens for React Native styles
+const spacing = {
+  lg: 16,
+  xl: 20,
+  xxxl: 32,
+};
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const client = useClient();
+
+  // Get the reexecute function from the query hook
+  const [, reexecuteCurrentUser] = useGetCurrentUserQuery();
 
   // Refresh profile data on focus
   useFocusEffect(
     useCallback(() => {
-      // Invalidate the current user query cache
-      void client.invalidate("GetCurrentUserQuery");
-    }, [client]),
+      // Reexecute the current user query with network-only policy
+      void reexecuteCurrentUser({ requestPolicy: "network-only" });
+    }, [reexecuteCurrentUser]),
   );
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xxxl,
-          },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: spacing.lg,
+          paddingTop: insets.top + spacing.xl,
+          paddingBottom: insets.bottom + spacing.xxxl,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Header */}
@@ -52,20 +59,6 @@ export default function ProfileScreen() {
           copyrightLabel="© 2025 PJATK"
         />
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-  },
-});

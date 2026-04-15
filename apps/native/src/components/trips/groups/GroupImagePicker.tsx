@@ -1,6 +1,6 @@
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 
 interface GroupImagePickerProps {
   imageUri: string | null;
@@ -16,98 +16,102 @@ export function GroupImagePicker({
   uploadPercent = null,
 }: GroupImagePickerProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Group Image</Text>
+    <YStack marginBottom="$xl">
+      <Text
+        fontSize="$2"
+        fontWeight="bold"
+        color="$colorMuted"
+        style={{
+          textTransform: "uppercase",
+          letterSpacing: 1.5,
+          marginBottom: 4,
+          marginLeft: 2,
+        }}
+      >
+        Group Image
+      </Text>
       <TouchableOpacity
-        style={styles.card}
+        style={{
+          borderRadius: 16,
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: "rgba(48, 54, 61, 1)",
+        }}
         activeOpacity={0.85}
         onPress={onPickImage}
         disabled={isUploading}
       >
         {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+          <Image
+            source={{ uri: imageUri }}
+            style={{ width: "100%", height: 180 }}
+            resizeMode="cover"
+          />
         ) : (
-          <View style={styles.placeholder}>
-            <Ionicons name="images-outline" size={28} color={colors.primary} />
-            <Text style={styles.placeholderText}>No image selected</Text>
-          </View>
+          <YStack
+            height={160}
+            alignItems="center"
+            justifyContent="center"
+            gap="$sm"
+            backgroundColor="rgba(39, 41, 53, 0.65)"
+          >
+            <Ionicons
+              name="images-outline"
+              size={28}
+              color="hsl(var(--color-primary))"
+            />
+            <Text
+              fontSize="$3"
+              fontWeight="500"
+              color="$colorMuted"
+              textTransform="uppercase"
+              letterSpacing={0.8}
+            >
+              No image selected
+            </Text>
+          </YStack>
         )}
 
-        <View style={styles.badge}>
+        <XStack
+          alignItems="center"
+          justifyContent="center"
+          gap="$xs"
+          paddingVertical="$md"
+          backgroundColor="rgba(0, 0, 0, 0.45)"
+          borderTopWidth={1}
+          borderTopColor="rgba(255, 255, 255, 0.08)"
+        >
           {isUploading ? (
             <>
-              <ActivityIndicator size="small" color={colors.white} />
-              <Text style={styles.badgeText}>
-                {uploadPercent != null ? `Uploading ${uploadPercent}%` : "Uploading..."}
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text
+                fontSize="$3"
+                fontWeight="bold"
+                color="$white"
+                textTransform="uppercase"
+                letterSpacing={0.6}
+              >
+                {uploadPercent != null
+                  ? `Uploading ${uploadPercent}%`
+                  : "Uploading..."}
               </Text>
             </>
           ) : (
             <>
-              <Ionicons name="camera-outline" size={16} color={colors.white} />
-              <Text style={styles.badgeText}>
+              <Ionicons name="camera-outline" size={16} color="#FFFFFF" />
+              <Text
+                fontSize="$3"
+                fontWeight="bold"
+                color="$white"
+                textTransform="uppercase"
+                letterSpacing={0.6}
+              >
                 {imageUri ? "Change Photo" : "Add Photo"}
               </Text>
             </>
           )}
-        </View>
+        </XStack>
       </TouchableOpacity>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.xl,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  card: {
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    backgroundColor: colors.cardDark,
-  },
-  image: {
-    width: "100%",
-    height: 180,
-  },
-  placeholder: {
-    height: 160,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: "rgba(39, 41, 53, 0.65)",
-  },
-  placeholderText: {
-    color: colors.textMuted,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
-  },
-  badgeText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-});

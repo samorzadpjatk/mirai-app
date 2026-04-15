@@ -1,20 +1,10 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
-import { colors, spacing, typography } from "../../styles";
 
 type ActivityType =
   | "submission"
@@ -119,7 +109,6 @@ interface CommunityActivityCardProps {
   avatarUri?: string | null;
 }
 
-
 const getActivityTypeLabel = (type: ActivityType) => {
   if (type === "challenge_event") return "challenge";
   if (type === "submission") return "submission";
@@ -193,7 +182,7 @@ const parseRankChangeDetails = (description?: string | null) => {
     match = movementRegex.exec(text);
   }
 
-  const podiumChunk = (/Podium:\s*([^|]+)/.exec(text))?.[1] ?? "";
+  const podiumChunk = /Podium:\s*([^|]+)/.exec(text)?.[1] ?? "";
   const podium = podiumChunk
     .split("•")
     .map((part) => part.replace(/[🥇🥈🥉]/g, "").trim())
@@ -322,9 +311,9 @@ export const CommunityActivityCard = React.memo(
     avatarUri,
   }: CommunityActivityCardProps) {
     const lastMediaTapAtRef = useRef(0);
-    const mediaSingleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-      null,
-    );
+    const mediaSingleTapTimeoutRef = useRef<ReturnType<
+      typeof setTimeout
+    > | null>(null);
 
     const owner = useMemo(() => resolveOwnerMeta(activity), [activity]);
     const cardImage = useMemo(() => resolveCardImage(activity), [activity]);
@@ -340,13 +329,15 @@ export const CommunityActivityCard = React.memo(
         return rankedGroups.slice(0, 3);
       }
 
-      const anchorGroupName = activity.rankChangeActivity?.group?.name ?? "Team";
+      const anchorGroupName =
+        activity.rankChangeActivity?.group?.name ?? "Team";
       const anchorRank = activity.rankChangeActivity?.newRank;
 
       return [1, 2, 3].map((rank) => {
         const parsedName = rankChangeDetails.podium[rank - 1];
         const name =
-          parsedName ?? (anchorRank === rank ? anchorGroupName : `Rank #${rank}`);
+          parsedName ??
+          (anchorRank === rank ? anchorGroupName : `Rank #${rank}`);
 
         const isAnchor = name === anchorGroupName || anchorRank === rank;
 
@@ -378,8 +369,8 @@ export const CommunityActivityCard = React.memo(
       activity.activityType === "rank_change"
         ? rankChangeMessage
         : activity.activityType === "challenge_event"
-          ? activity.challengeActivity?.challenge?.description?.trim() ??
-            activity.description
+          ? (activity.challengeActivity?.challenge?.description?.trim() ??
+            activity.description)
           : activity.description;
     const isHeartActive = Boolean(
       activity.reactionsSummary?.myReactions?.includes("heart"),
@@ -418,93 +409,163 @@ export const CommunityActivityCard = React.memo(
       };
     }, []);
 
+    // Calculate card border color based on state
+    const cardBorderColor = isFocused
+      ? "#00ced1"
+      : activity.activityType === "custom"
+        ? "rgba(239, 68, 68, 0.72)"
+        : "rgba(255, 255, 255, 0.1)";
+
     return (
       <TouchableOpacity
-        style={[
-          styles.card,
-          isFocused && styles.cardFocused,
-          activity.activityType === "custom" && styles.cardNews,
-        ]}
+        style={{
+          borderRadius: 18,
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: cardBorderColor,
+          backgroundColor: "rgba(16, 34, 34, 0.78)",
+        }}
         onPress={onPress}
         disabled={!onPress}
         activeOpacity={onPress ? 0.9 : 1}
       >
-        <View style={styles.cardHeader}>
+        <XStack
+          paddingHorizontal="$3"
+          paddingVertical="$3"
+          backgroundColor="rgba(12, 20, 24, 0.6)"
+          alignItems="center"
+          justifyContent="space-between"
+        >
           <TouchableOpacity
-            style={styles.ownerRow}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              flex: 1,
+              marginRight: 8,
+            }}
             onPress={onPressOwner}
             disabled={!onPressOwner}
             activeOpacity={onPressOwner ? 0.75 : 1}
           >
-            <View style={styles.avatarFrame}>
+            <YStack
+              width={40}
+              height={40}
+              borderRadius={20}
+              overflow="hidden"
+              borderWidth={1}
+              borderColor="rgba(0, 206, 209, 0.3)"
+              backgroundColor="#0f2627"
+            >
               {avatarUri ? (
                 <Image
                   source={{ uri: avatarUri }}
-                  style={styles.avatarImage}
+                  style={{ width: "100%", height: "100%" }}
                   contentFit="cover"
                 />
               ) : (
-                <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarFallbackText}>
+                <YStack
+                  flex={1}
+                  alignItems="center"
+                  justifyContent="center"
+                  backgroundColor="rgba(0, 206, 209, 0.2)"
+                >
+                  <Text color="#ffffff" fontSize="$base" fontWeight="bold">
                     {getInitials(owner.name)}
                   </Text>
-                </View>
+                </YStack>
               )}
-            </View>
+            </YStack>
 
-            <View style={styles.ownerMeta}>
-              <Text style={styles.ownerName} numberOfLines={1}>
+            <YStack flex={1} marginLeft="$2">
+              <Text
+                color="#ffffff"
+                fontSize="$base"
+                fontWeight="600"
+                numberOfLines={1}
+              >
                 {owner.name}
               </Text>
-              <Text style={styles.ownerSubtitle} numberOfLines={1}>
+              <Text
+                color="#9ca3af"
+                fontSize="$1"
+                marginTop={1}
+                numberOfLines={1}
+              >
                 {owner.subtitle}
               </Text>
-            </View>
+            </YStack>
           </TouchableOpacity>
 
-          <Text style={styles.cardTime}>
+          <Text
+            color="#475569"
+            fontSize="$1"
+            textTransform="uppercase"
+            letterSpacing={0.6}
+          >
             {formatRelativeTime(activity.createdAt)}
           </Text>
-        </View>
+        </XStack>
 
         {activity.activityType === "rank_change" ? (
-          <View style={styles.mediaWrap}>
-            <View style={styles.rankChangeWrap}>
-              <View style={styles.rankLeaderboardWrap}>
-                <View style={styles.rankLeaderboardScale}>
+          <YStack width="100%" aspectRatio={1} backgroundColor="#0f171a">
+            <YStack flex={1} justifyContent="center">
+              <YStack flex={1} justifyContent="center">
+                <YStack transform={[{ scale: 0.85 }]} marginVertical={-40}>
                   <LeaderboardPodium
                     topThree={rankChangeTopThree}
                     onPressGroup={() => onPress?.()}
                   />
-                </View>
-              </View>
-            </View>
-          </View>
+                </YStack>
+              </YStack>
+            </YStack>
+          </YStack>
         ) : cardImage ? (
-          <TouchableOpacity style={styles.mediaWrap} onPress={handleMediaPress}>
+          <TouchableOpacity
+            style={{
+              width: "100%",
+              aspectRatio: 1,
+              backgroundColor: "#0f171a",
+            }}
+            onPress={handleMediaPress}
+          >
             <Image
               source={{ uri: cardImage }}
-              style={styles.mediaImage}
+              style={{ width: "100%", height: "100%" }}
               contentFit="cover"
             />
           </TouchableOpacity>
         ) : null}
 
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>{activity.title}</Text>
+        <YStack paddingHorizontal="$3" paddingVertical="$3" gap="$2">
+          <Text color="#ffffff" fontSize="$lg" fontWeight="600">
+            {activity.title}
+          </Text>
           {resolvedDescription ? (
-            <Text style={styles.cardDescription}>{resolvedDescription}</Text>
+            <Text color="#9ca3af" fontSize="$base" lineHeight={20}>
+              {resolvedDescription}
+            </Text>
           ) : null}
 
-          <View style={styles.cardFooter}>
-            <View style={styles.activityTypePill}>
-              <Text style={styles.activityTypePillText}>
+          <XStack
+            alignItems="center"
+            justifyContent="space-between"
+            marginTop="$1"
+          >
+            <YStack
+              paddingHorizontal="$2"
+              paddingVertical={4}
+              borderRadius={999}
+              backgroundColor="rgba(0, 206, 209, 0.1)"
+              borderWidth={1}
+              borderColor="rgba(0, 206, 209, 0.3)"
+            >
+              <Text color="#00ced1" fontSize="$1" fontWeight="600">
                 {getActivityTypeLabel(activity.activityType)}
               </Text>
-            </View>
+            </YStack>
 
             <TouchableOpacity
-              style={styles.reactionRow}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
               activeOpacity={0.8}
               onPress={(event) => {
                 event.stopPropagation();
@@ -514,14 +575,14 @@ export const CommunityActivityCard = React.memo(
               <Ionicons
                 name={isHeartActive ? "heart" : "heart-outline"}
                 size={16}
-                color={isHeartActive ? "#ff5a6c" : colors.textSecondary}
+                color={isHeartActive ? "#ff5a6c" : "#9ca3af"}
               />
-              <Text style={styles.reactionCount}>
+              <Text fontSize="$1" color="#9ca3af" fontWeight="500">
                 {activity.reactionsSummary?.total ?? 0}
               </Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </XStack>
+        </YStack>
       </TouchableOpacity>
     );
   },
@@ -531,147 +592,3 @@ export const CommunityActivityCard = React.memo(
 );
 
 export type { CommunityFeedActivity, ActivityType, ActivityFilter };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 18,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: "rgba(16, 34, 34, 0.78)",
-  },
-  cardFocused: {
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
-  cardNews: {
-    borderColor: "rgba(239, 68, 68, 0.72)",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    backgroundColor: "rgba(12, 20, 24, 0.6)",
-  },
-  ownerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  avatarFrame: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    backgroundColor: "#0f2627",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primaryOpacity20,
-  },
-  avatarFallbackText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  ownerMeta: {
-    flex: 1,
-  },
-  ownerName: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-  },
-  ownerSubtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-    marginTop: 1,
-  },
-  cardTime: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  mediaWrap: {
-    width: "100%",
-    aspectRatio: 1,
-    backgroundColor: "#0f171a",
-  },
-  mediaImage: {
-    width: "100%",
-    height: "100%",
-  },
-  rankChangeWrap: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  rankLeaderboardWrap: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  rankLeaderboardScale: {
-    transform: [{ scale: 0.85 }],
-    marginVertical: -40,
-  },
-  cardBody: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  cardTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.semibold,
-  },
-  cardDescription: {
-    color: colors.textSecondary,
-    fontSize: typography.base,
-    lineHeight: 20,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: spacing.xs,
-  },
-  activityTypePill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: colors.primaryOpacity10,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-  },
-  activityTypePillText: {
-    color: colors.primary,
-    fontSize: typography.xs,
-    fontWeight: typography.semibold,
-  },
-  reactionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  reactionCount: {
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-});

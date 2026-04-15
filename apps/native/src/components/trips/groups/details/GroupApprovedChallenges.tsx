@@ -3,10 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
-  StyleSheet,
-  Text,
   TouchableOpacity,
-  View,
   useWindowDimensions,
 } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
@@ -14,7 +11,8 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { YStack, XStack, Text } from "@mirai-app/ui";
+import { useTheme } from "tamagui";
 
 interface ApprovedSubmissionItem {
   submissionId: string;
@@ -54,7 +52,10 @@ export function GroupApprovedChallenges({
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetX = event.nativeEvent.contentOffset.x;
       const nextIndex = Math.round(offsetX / Math.max(width, 1));
-      const boundedIndex = Math.max(0, Math.min(nextIndex, submissions.length - 1));
+      const boundedIndex = Math.max(
+        0,
+        Math.min(nextIndex, submissions.length - 1),
+      );
       setActiveIndex(boundedIndex);
     },
     [submissions.length, width],
@@ -66,7 +67,10 @@ export function GroupApprovedChallenges({
       return;
     }
     if (!isFullscreenOpen) return;
-    const boundedIndex = Math.max(0, Math.min(activeIndex, submissions.length - 1));
+    const boundedIndex = Math.max(
+      0,
+      Math.min(activeIndex, submissions.length - 1),
+    );
     const timeout = setTimeout(() => {
       listRef.current?.scrollToIndex({ index: boundedIndex, animated: true });
     }, 100);
@@ -78,20 +82,55 @@ export function GroupApprovedChallenges({
   }
 
   return (
-    <View style={styles.section}>
-      <View style={styles.header}>
-        <Text style={styles.sectionTitle}>Challenge Photos</Text>
+    <YStack marginBottom="$6">
+      <XStack
+        alignItems="center"
+        justifyContent="space-between"
+        marginBottom="$3"
+        gap="$2"
+      >
+        <Text
+          fontSize="$sm"
+          fontWeight="bold"
+          color="$colorMuted"
+          textTransform="uppercase"
+          letterSpacing={1.1}
+        >
+          Challenge Photos
+        </Text>
         <TouchableOpacity
-          style={styles.showAllButton}
+          style={{
+            borderWidth: 1,
+            borderColor: "rgba(0,206,209,0.38)",
+            backgroundColor: "rgba(0,206,209,0.12)",
+            borderRadius: 9999,
+            paddingHorizontal: 8,
+            paddingVertical: 6,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+          }}
           onPress={() => openFullscreen(0)}
           activeOpacity={0.8}
         >
-          <Text style={styles.showAllButtonText}>View all</Text>
-          <Ionicons name="expand-outline" size={14} color={colors.primary} />
+          <Text
+            color="rgba(0, 206, 209, 1)"
+            fontSize={11}
+            fontWeight="bold"
+            textTransform="uppercase"
+            letterSpacing={0.6}
+          >
+            View all
+          </Text>
+          <Ionicons
+            name="expand-outline"
+            size={14}
+            color="rgba(0, 206, 209, 1)"
+          />
         </TouchableOpacity>
-      </View>
+      </XStack>
 
-      <View style={styles.grid}>
+      <XStack flexWrap="wrap" gap="$3">
         {submissions.map((submission, index) => (
           <SubmissionCircle
             key={submission.submissionId}
@@ -99,7 +138,7 @@ export function GroupApprovedChallenges({
             onPress={() => openFullscreen(index)}
           />
         ))}
-      </View>
+      </XStack>
 
       <Modal
         visible={isFullscreenOpen}
@@ -107,32 +146,51 @@ export function GroupApprovedChallenges({
         onRequestClose={closeFullscreen}
         presentationStyle="fullScreen"
       >
-        <View style={styles.fullscreen}>
-          <View
-            style={[
-              styles.fullscreenHeader,
-              { paddingTop: insets.top + spacing.sm },
-            ]}
+        <YStack flex={1} backgroundColor="#17181c">
+          <XStack
+            paddingHorizontal="$3"
+            paddingBottom="$2"
+            paddingTop={insets.top + 8}
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="space-between"
+            borderBottomWidth={1}
+            borderBottomColor="rgba(255,255,255,0.08)"
           >
-            <Text style={styles.fullscreenTitle}>Challenge Photos</Text>
-            <View style={styles.fullscreenHeaderRight}>
-              <Text style={styles.fullscreenCounter}>
+            <Text fontSize="$base" fontWeight="bold" color="white">
+              Challenge Photos
+            </Text>
+            <XStack alignItems="center" gap="$2">
+              <Text
+                fontSize="$xs"
+                fontWeight="bold"
+                color="rgba(148, 163, 184, 1)"
+              >
                 {`${activeIndex + 1}/${submissions.length}`}
               </Text>
               <TouchableOpacity
-                style={styles.fullscreenClose}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 9999,
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.16)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                }}
                 onPress={closeFullscreen}
               >
-                <Ionicons name="close" size={20} color={colors.white} />
+                <Ionicons name="close" size={20} color="white" />
               </TouchableOpacity>
-            </View>
-          </View>
+            </XStack>
+          </XStack>
 
           <FlatList
             ref={listRef}
             data={submissions}
             keyExtractor={(item) => item.submissionId}
-            contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 12 }}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -163,9 +221,9 @@ export function GroupApprovedChallenges({
               />
             )}
           />
-        </View>
+        </YStack>
       </Modal>
-    </View>
+    </YStack>
   );
 }
 
@@ -195,21 +253,48 @@ function SubmissionCircle({
   }, [abort, download, reset, submission.imageStoragePath]);
 
   return (
-    <TouchableOpacity style={styles.item} activeOpacity={0.85} onPress={onPress}>
-      <View style={styles.imageWrap}>
+    <TouchableOpacity
+      style={{ width: "22%", alignItems: "center", gap: 4 }}
+      activeOpacity={0.85}
+      onPress={onPress}
+    >
+      <YStack
+        width={72}
+        height={72}
+        borderRadius="$full"
+        overflow="hidden"
+        borderWidth={1}
+        borderColor="rgba(255, 255, 255, 0.14)"
+        backgroundColor="rgba(255, 255, 255, 0.04)"
+      >
         {status === "loading" ? (
-          <View style={styles.imageFallback}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
+          <YStack flex={1} alignItems="center" justifyContent="center">
+            <ActivityIndicator size="small" color="rgba(0, 206, 209, 1)" />
+          </YStack>
         ) : file?.uri ? (
-          <Image source={{ uri: file.uri }} style={styles.image} contentFit="cover" />
+          <Image
+            source={{ uri: file.uri }}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+          />
         ) : (
-          <View style={styles.imageFallback}>
-            <Ionicons name="image-outline" size={18} color={colors.textMuted} />
-          </View>
+          <YStack flex={1} alignItems="center" justifyContent="center">
+            <Ionicons
+              name="image-outline"
+              size={18}
+              color="rgba(148, 163, 184, 1)"
+            />
+          </YStack>
         )}
-      </View>
-      <Text style={styles.title} numberOfLines={2}>
+      </YStack>
+      <Text
+        fontSize={11}
+        color="white"
+        textAlign="center"
+        fontWeight="500"
+        lineHeight={14}
+        numberOfLines={2}
+      >
         {submission.challengeTitle}
       </Text>
     </TouchableOpacity>
@@ -246,39 +331,52 @@ function FullscreenSubmissionSlide({
   }, [abort, download, reset, submission.imageStoragePath]);
 
   return (
-    <View
-      style={[
-        styles.fullscreenSlide,
-        { width, minHeight: height - (topInset + 92) },
-      ]}
+    <YStack
+      width={width}
+      minHeight={height - (topInset + 92)}
+      paddingHorizontal="$3"
+      paddingVertical="$3"
+      justifyContent="center"
     >
-      <View style={styles.fullscreenImageWrap}>
+      <YStack
+        width="100%"
+        aspectRatio={4 / 3}
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor="rgba(255,255,255,0.12)"
+        overflow="hidden"
+        backgroundColor="rgba(39, 41, 53, 1)"
+      >
         {status === "loading" ? (
-          <View style={styles.fullscreenFallback}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+          <YStack flex={1} alignItems="center" justifyContent="center">
+            <ActivityIndicator size="large" color="rgba(0, 206, 209, 1)" />
+          </YStack>
         ) : file?.uri ? (
           <Image
             source={{ uri: file.uri }}
-            style={styles.fullscreenImage}
+            style={{ width: "100%", height: "100%" }}
             contentFit="contain"
           />
         ) : (
-          <View style={styles.fullscreenFallback}>
-            <Ionicons name="image-outline" size={28} color={colors.textMuted} />
-          </View>
+          <YStack flex={1} alignItems="center" justifyContent="center">
+            <Ionicons
+              name="image-outline"
+              size={28}
+              color="rgba(148, 163, 184, 1)"
+            />
+          </YStack>
         )}
-      </View>
+      </YStack>
 
-      <View style={styles.fullscreenMeta}>
-        <Text style={styles.fullscreenChallengeTitle} numberOfLines={1}>
+      <YStack marginTop="$2" gap={2}>
+        <Text fontSize="$sm" fontWeight="bold" color="white" numberOfLines={1}>
           {submission.challengeTitle}
         </Text>
-        <Text style={styles.fullscreenDate}>
+        <Text fontSize="$xs" color="rgba(148, 163, 184, 1)">
           {formatDateTime(submission.approvedAt)}
         </Text>
-      </View>
-    </View>
+      </YStack>
+    </YStack>
   );
 }
 
@@ -287,150 +385,3 @@ const formatDateTime = (value: string | Date) => {
   if (Number.isNaN(date.getTime())) return "Unknown date";
   return date.toLocaleString();
 };
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: spacing.xxl,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-  },
-  showAllButton: {
-    borderWidth: 1,
-    borderColor: "rgba(0,206,209,0.38)",
-    backgroundColor: "rgba(0,206,209,0.12)",
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  showAllButtonText: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-  },
-  item: {
-    width: "22%",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  imageWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: borderRadius.full,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.14)",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  imageFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 11,
-    color: colors.white,
-    textAlign: "center",
-    fontWeight: typography.medium,
-    lineHeight: 14,
-  },
-  fullscreen: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  fullscreenHeader: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  fullscreenTitle: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  fullscreenHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  fullscreenCounter: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-  },
-  fullscreenClose: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  fullscreenSlide: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    justifyContent: "center",
-  },
-  fullscreenImageWrap: {
-    width: "100%",
-    aspectRatio: 4 / 3,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    overflow: "hidden",
-    backgroundColor: colors.surfaceDark,
-  },
-  fullscreenImage: {
-    width: "100%",
-    height: "100%",
-  },
-  fullscreenFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fullscreenMeta: {
-    marginTop: spacing.sm,
-    gap: 2,
-  },
-  fullscreenChallengeTitle: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  fullscreenDate: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-  },
-});

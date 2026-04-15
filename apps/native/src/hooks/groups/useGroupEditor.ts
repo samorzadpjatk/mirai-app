@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useQuery, useMutation, useClient } from "urql";
+import { useQuery, useMutation } from "urql";
 import {
   GetGroupDocument,
   UpdateGroupDocument,
@@ -9,7 +9,11 @@ import {
 } from "@mirai-app/graphql-client";
 
 export function useGroupEditor(groupId?: string | null) {
-  const client = useClient();
+  const [, reexecuteGroupQuery] = useQuery({
+    query: GetGroupDocument,
+    variables: { id: groupId ?? "" },
+    pause: true, // Never execute automatically - only for reexecution
+  });
 
   const [{ data: groupData, fetching: isLoading }] = useQuery({
     query: GetGroupDocument,
@@ -42,17 +46,12 @@ export function useGroupEditor(groupId?: string | null) {
         throw result.error;
       }
 
-      // Invalidate queries to refresh group data
-      client.invalidate(GetGroupDocument, { id: groupId });
-      client.invalidate(GetGroupsByTripDocument, {
-        tripId,
-        limit: 30,
-        offset: 0,
-      });
+      // Reexecute queries to refresh group data
+      void reexecuteGroupQuery({ requestPolicy: "network-only" });
 
       return result.data;
     },
-    [groupId, assignUserMutation, client],
+    [groupId, assignUserMutation, reexecuteGroupQuery],
   );
 
   const removeUser = useCallback(
@@ -77,17 +76,17 @@ export function useGroupEditor(groupId?: string | null) {
         throw result.error;
       }
 
-      // Invalidate queries to refresh group data
-      client.invalidate(GetGroupDocument, { id: groupId });
-      client.invalidate(GetGroupsByTripDocument, {
-        tripId,
-        limit: 30,
-        offset: 0,
-      });
+      // Reexecute query to refresh group data
+      void reexecuteGroupQuery({ requestPolicy: "network-only" });
 
       return result.data;
     },
-    [groupId, groupData?.group?.trip?.id, removeUserMutation, client],
+    [
+      groupId,
+      groupData?.group?.trip?.id,
+      removeUserMutation,
+      reexecuteGroupQuery,
+    ],
   );
 
   const updateGroup = async (data: {
@@ -112,13 +111,8 @@ export function useGroupEditor(groupId?: string | null) {
       throw result.error;
     }
 
-    // Invalidate queries
-    client.invalidate(GetGroupDocument, { id: data.id });
-    client.invalidate(GetGroupsByTripDocument, {
-      tripId,
-      limit: 30,
-      offset: 0,
-    });
+    // Reexecute query to refresh data
+    void reexecuteGroupQuery({ requestPolicy: "network-only" });
 
     return result.data;
   };
@@ -130,6 +124,7 @@ export function useGroupEditor(groupId?: string | null) {
     isAssigning,
     isRemoving,
     updateGroup,
+    handleSave: updateGroup, // Alias for compatibility
     assignUser,
     removeUser,
   } as const;

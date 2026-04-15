@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
+import { ActivityIndicator, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView } from "expo-camera";
@@ -181,14 +181,14 @@ export function PhotoCaptureModal({
           {capturedPhoto ? (
             <Image
               source={{ uri: capturedPhoto.uri }}
-              style={styles.preview}
+              style={nativeStyles.preview}
               contentFit="contain"
               cachePolicy="none"
             />
           ) : (
             <CameraView
               ref={cameraRef}
-              style={styles.preview}
+              style={nativeStyles.preview}
               facing={activeFacing}
               mirror={false}
               mode="picture"
@@ -224,17 +224,16 @@ export function PhotoCaptureModal({
                 <TouchableOpacity
                   key={lens}
                   style={[
-                    styles.lensChip,
-                    isSelected && styles.lensChipSelected,
+                    nativeStyles.lensChip,
+                    isSelected && nativeStyles.lensChipSelected,
                   ]}
                   onPress={() => setSelectedLens(lens)}
                   disabled={isCapturingPhoto || isUsingPhoto}
                 >
                   <Text
-                    style={[
-                      styles.lensChipText,
-                      isSelected && styles.lensChipTextSelected,
-                    ]}
+                    fontSize={12}
+                    fontWeight={isSelected ? "bold" : "500"}
+                    color={isSelected ? "$primary" : "white"}
                   >
                     {option.label}
                   </Text>
@@ -270,8 +269,8 @@ export function PhotoCaptureModal({
               <YStack width={44} height={44} />
               <TouchableOpacity
                 style={[
-                  styles.captureButton,
-                  isCapturingPhoto && styles.captureButtonDisabled,
+                  nativeStyles.captureButton,
+                  isCapturingPhoto && nativeStyles.captureButtonDisabled,
                 ]}
                 onPress={() => void handleCapture()}
                 disabled={isCapturingPhoto}
@@ -285,7 +284,7 @@ export function PhotoCaptureModal({
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleToggleFacing}
-                style={styles.captureSideButton}
+                style={nativeStyles.captureSideButton}
                 disabled={isCapturingPhoto || isUsingPhoto}
               >
                 <Ionicons
@@ -302,11 +301,12 @@ export function PhotoCaptureModal({
   );
 }
 
-const styles = StyleSheet.create({
+// Native styles for react-native components
+const nativeStyles = {
   preview: {
     flex: 1,
     borderRadius: 24,
-    overflow: "hidden",
+    overflow: "hidden" as const,
   },
   lensChip: {
     borderRadius: 999,
@@ -320,21 +320,12 @@ const styles = StyleSheet.create({
     borderColor: "#00ced1",
     backgroundColor: "rgba(255,193,7,0.2)",
   },
-  lensChipText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  lensChipTextSelected: {
-    color: "#00ced1",
-    fontWeight: "bold",
-  },
   captureButton: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     backgroundColor: "#00ced1",
     borderWidth: 3,
     borderColor: "rgba(255,255,255,0.24)",
@@ -346,10 +337,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
     backgroundColor: "rgba(255,255,255,0.04)",
   },
-});
+};

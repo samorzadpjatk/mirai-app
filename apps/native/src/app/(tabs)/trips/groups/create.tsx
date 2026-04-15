@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
+import { ScrollView, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useCreateGroup } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
-import { colors, spacing } from "../../../../styles";
+import { YStack } from "@mirai-app/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileUpload } from "~/hooks/files";
 import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupButton";
@@ -110,16 +110,14 @@ export default function CreateGroupScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxxl,
-          },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: 16,
+          paddingBottom: insets.bottom + 32,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <GroupFormFields groupName={groupName} onChangeName={setGroupName} />
@@ -139,20 +137,6 @@ export default function CreateGroupScreen() {
           onPress={handleCreateGroup}
         />
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-});

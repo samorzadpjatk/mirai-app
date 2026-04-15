@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  StyleSheet,
 } from "react-native";
+import { YStack, Text } from "@mirai-app/ui";
 import { useRouter } from "expo-router";
 import {
   useGetCurrentUserQuery,
@@ -21,14 +19,17 @@ import type { NotificationScheduleItem } from "~/types/notifications";
 export default function NotificationsScreen() {
   const router = useRouter();
 
-  // GraphQL query for current user (permission check)
-  const { data: currentUserData, isLoading: isLoadingUser } =
+  // GraphQL query for current user (permission check) - using urql tuple pattern
+  const [{ data: currentUserData, fetching: isLoadingUser }] =
     useGetCurrentUserQuery();
   const currentUser = currentUserData?.me;
 
-  // GraphQL query for notifications
-  const { isLoading, isError, error, refetch, isFetching } =
-    useGetMyNotificationsQuery();
+  // GraphQL query for notifications - using urql tuple pattern
+  const [
+    { fetching: isLoading, error, fetching: isFetching },
+    reexecuteNotifications,
+  ] = useGetMyNotificationsQuery();
+  const isError = !!error;
 
   // Redirect if user doesn't have access
   useEffect(() => {
@@ -56,10 +57,18 @@ export default function NotificationsScreen() {
 
   if (isLoading || isLoadingUser) {
     return (
-      <View style={styles.loadingContainer}>
+      <YStack
+        flex={1}
+        backgroundColor="#17181c"
+        justifyContent="center"
+        alignItems="center"
+        padding="$4"
+      >
         <ActivityIndicator size="large" color="#00ced1" />
-        <Text style={styles.loadingText}>Loading notifications...</Text>
-      </View>
+        <Text marginTop="$4" color="#9ca3af" fontSize={14}>
+          Loading notifications...
+        </Text>
+      </YStack>
     );
   }
 
@@ -74,43 +83,69 @@ export default function NotificationsScreen() {
 
   if (isError) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.errorTitle}>Error loading notifications</Text>
-        <Text style={styles.errorMessage}>
+      <YStack
+        flex={1}
+        backgroundColor="#17181c"
+        justifyContent="center"
+        alignItems="center"
+        padding="$4"
+      >
+        <Text color="#ef4444" fontSize={18} fontWeight="bold">
+          Error loading notifications
+        </Text>
+        <Text color="#9ca3af" marginTop="$2" textAlign="center">
           {error?.message ?? "Something went wrong"}
         </Text>
         <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => void refetch()}
+          style={{
+            marginTop: 16,
+            backgroundColor: "#23262b",
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            borderRadius: 8,
+          }}
+          onPress={() =>
+            void reexecuteNotifications({ requestPolicy: "network-only" })
+          }
         >
-          <Text style={styles.retryButtonText}>Try Again</Text>
+          <Text color="#ffffff" fontWeight="600">
+            Try Again
+          </Text>
         </TouchableOpacity>
-      </View>
+      </YStack>
     );
   }
 
   return (
-    <View style={[styles.container]}>
+    <YStack flex={1} backgroundColor="#17181c">
       <ScrollView
         refreshControl={
           <RefreshControl
             refreshing={isFetching}
-            onRefresh={() => void refetch()}
+            onRefresh={() =>
+              void reexecuteNotifications({ requestPolicy: "network-only" })
+            }
             tintColor="#00ced1"
           />
         }
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ padding: 16, gap: 16 }}
       >
         {/* Header */}
         <NotificationsHeader onCreate={handleOpenCreate} />
 
         {/* Empty State */}
         {schedules.length === 0 && (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
+          <YStack
+            backgroundColor="#23262b"
+            borderRadius={12}
+            padding="$6"
+            borderWidth={1}
+            borderColor="#374151"
+          >
+            <Text color="#9ca3af" textAlign="center">
               No notification schedules found. Create your first schedule!
             </Text>
-          </View>
+          </YStack>
         )}
 
         {/* Schedules List */}
@@ -123,65 +158,10 @@ export default function NotificationsScreen() {
       <CreateScheduleModal
         isOpen={isCreateDialogOpen}
         onClose={handleCloseModal}
-        onCreated={() => void refetch()}
+        onCreated={() =>
+          void reexecuteNotifications({ requestPolicy: "network-only" })
+        }
       />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#17181c",
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: "#17181c",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  loadingText: {
-    marginTop: 16,
-    color: "#9ca3af",
-    fontSize: 14,
-  },
-  errorTitle: {
-    color: "#ef4444",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  errorMessage: {
-    color: "#9ca3af",
-    marginTop: 8,
-    textAlign: "center",
-  },
-  retryButton: {
-    marginTop: 16,
-    backgroundColor: "#23262b",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: "#ffffff",
-    fontWeight: "600",
-  },
-
-  // Empty State
-  emptyCard: {
-    backgroundColor: "#23262b",
-    borderRadius: 12,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#374151",
-  },
-  emptyText: {
-    color: "#9ca3af",
-    textAlign: "center",
-  },
-});

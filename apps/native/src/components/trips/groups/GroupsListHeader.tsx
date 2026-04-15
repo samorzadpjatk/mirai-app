@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { Text, XStack } from "@mirai-app/ui";
 
 interface GroupsListHeaderProps {
   title: string;
@@ -8,32 +7,29 @@ interface GroupsListHeaderProps {
 
 export function GroupsListHeader({ title, count }: GroupsListHeaderProps) {
   return (
-    <View style={styles.listHeader}>
-      <Text style={styles.listHeaderTitle}>{title}</Text>
-      <Text style={styles.listHeaderCount}>{count} Results</Text>
-    </View>
+    <XStack
+      justifyContent="space-between"
+      alignItems="center"
+      paddingHorizontal="$xs"
+      marginBottom="$lg"
+    >
+      <Text
+        fontSize={10}
+        fontWeight="700"
+        color="$primary"
+        letterSpacing={2}
+        textTransform="uppercase"
+      >
+        {title}
+      </Text>
+      <Text
+        fontSize={10}
+        fontWeight="700"
+        color="$gray100"
+        textTransform="uppercase"
+      >
+        {count} Results
+      </Text>
+    </XStack>
   );
 }
-
-const styles = StyleSheet.create({
-  listHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  listHeaderTitle: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
-  listHeaderCount: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-  },
-});

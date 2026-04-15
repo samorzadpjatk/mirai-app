@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { ScrollView, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "urql";
 import {
@@ -7,8 +7,8 @@ import {
   GetCurrentUserDocument,
   GetGroupRankingDocument,
 } from "@mirai-app/graphql-client";
-import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { YStack } from "@mirai-app/ui";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import { LeaderboardRankingsSection } from "~/components/trips/leaderboard/LeaderboardRankingsSection";
@@ -68,16 +68,14 @@ export default function LeaderboardScreen() {
 
   if (!tripId || tripLoading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.backgroundDark,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
+      <YStack
+        flex={1}
+        backgroundColor="$backgroundDark"
+        justifyContent="center"
+        alignItems="center"
       >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+        <ActivityIndicator size="large" color="#00ced1" />
+      </YStack>
     );
   }
 
@@ -86,16 +84,14 @@ export default function LeaderboardScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xxxl,
-          },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 32,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Podium Section */}
@@ -110,20 +106,6 @@ export default function LeaderboardScreen() {
           onPressGroup={(group) => router.push(`/trips/groups/${group.id}`)}
         />
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-});

@@ -1,49 +1,38 @@
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { XStack, Text } from "@mirai-app/ui";
+import { colorTokens } from "@mirai-app/ui/theme";
 
 interface TripEndedBannerProps {
   visible?: boolean;
 }
 
-export const TripEndedBanner: React.FC<TripEndedBannerProps> = ({ 
-  visible = true 
+export const TripEndedBanner: React.FC<TripEndedBannerProps> = ({
+  visible = true,
 }) => {
   if (!visible) return null;
 
   return (
-    <View style={styles.container}>
-      <Ionicons 
-        name="information-circle-outline" 
-        size={16} 
-        color={colors.warning} 
+    <XStack
+      alignItems="center"
+      gap="$xs"
+      backgroundColor={colorTokens.backgroundDarkOpacity55}
+      borderWidth={1}
+      borderColor="$warning"
+      borderRadius="$md"
+      padding="$sm"
+      mx="$xl"
+      mt="$sm"
+      mb="$md"
+    >
+      <Ionicons
+        name="information-circle-outline"
+        size={16}
+        color={colorTokens.warning}
       />
-      <Text style={styles.text}>
+      <Text color="$warning" fontSize="$sm" fontWeight="500" flex={1}>
         This trip has ended — view only
       </Text>
-    </View>
+    </XStack>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    backgroundColor: colors.backgroundDarkOpacity55,
-    borderWidth: 1,
-    borderColor: colors.warning,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    marginHorizontal: spacing.xl,
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  text: {
-    color: colors.warning,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-    flex: 1,
-  },
-});

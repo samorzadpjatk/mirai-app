@@ -1,17 +1,10 @@
 import { useGroups } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Text,
-  RefreshControl,
-} from "react-native";
+import { ScrollView, ActivityIndicator, RefreshControl } from "react-native";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
 import { useMemo } from "react";
-import { colors, spacing } from "../../../../styles";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
 import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
 import { GroupsListHeader } from "~/components/trips/groups/GroupsListHeader";
@@ -96,10 +89,10 @@ export default function GroupsListScreen() {
   };
 
   return (
-    <View style={[styles.container]}>
+    <YStack flex={1} backgroundColor="$background">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
         onScroll={handleScrollLoadMore}
         scrollEventThrottle={16}
@@ -109,7 +102,7 @@ export default function GroupsListScreen() {
             onRefresh={() => {
               void refetch();
             }}
-            tintColor={colors.primary}
+            tintColor="#2B2B2B"
           />
         }
       >
@@ -131,10 +124,17 @@ export default function GroupsListScreen() {
         )}
 
         {isFetchingNextPage ? (
-          <View style={styles.listFooter}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.listFooterText}>Loading more groups...</Text>
-          </View>
+          <XStack
+            marginTop="$3"
+            alignItems="center"
+            justifyContent="center"
+            gap="$2"
+          >
+            <ActivityIndicator size="small" color="#2B2B2B" />
+            <Text fontSize={12} color="$color">
+              Loading more groups...
+            </Text>
+          </XStack>
         ) : null}
       </ScrollView>
 
@@ -143,41 +143,14 @@ export default function GroupsListScreen() {
           onPress={() => router.push(`/trips/groups/create?tripId=${tripId}`)}
           iconName="add"
           iconSize={32}
-          activeOpacity={0.7}
           accessibilityLabel="Add group"
-          style={styles.fab}
+          style={{
+            position: "absolute",
+            right: 20,
+            bottom: 96,
+          }}
         />
       ) : null}
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-  listFooter: {
-    marginTop: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  listFooterText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 96,
-  },
-});

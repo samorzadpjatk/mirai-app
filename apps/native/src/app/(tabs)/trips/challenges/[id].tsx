@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { View, ScrollView, StyleSheet, Alert, Text } from "react-native";
+import { Alert, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { colors, spacing } from "../../../../styles";
+import { View, Text, YStack } from "@mirai-app/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useClient } from "urql";
 import {
@@ -113,13 +113,13 @@ export default function ChallengeDetailScreen() {
       : "Uploading..."
     : undefined;
 
-  // GraphQL queries
-  const [{ data: mySubmission }] = useQuery({
+  // GraphQL queries - using tuple destructuring with reexecute functions
+  const [{ data: mySubmission }, reexecuteMySubmission] = useQuery({
     query: GetChallengeSubmissionByChallengeAndGroupDocument,
     variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
     pause: !challengeId || !tripId,
   });
-  const [{ data: challengeSubmissionsData }] = useQuery({
+  const [{ data: challengeSubmissionsData }, reexecuteSubmissions] = useQuery({
     query: GetChallengeSubmissionsDocument,
     variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
     pause: !challengeId || !tripId,
@@ -157,9 +157,12 @@ export default function ChallengeDetailScreen() {
   const [isSubmittingLocation, setIsSubmittingLocation] = useState(false);
   const [isSubmittingText, setIsSubmittingText] = useState(false);
 
-  const invalidateSubmissionQueries = async () => {
-    await client.invalidate("GetChallengeSubmissionByChallengeAndGroup");
-    await client.invalidate("GetChallengeSubmissions");
+  const refreshSubmissionQueries = async () => {
+    // Reexecute queries with network-only policy to refresh data
+    await Promise.all([
+      reexecuteMySubmission({ requestPolicy: "network-only" }),
+      reexecuteSubmissions({ requestPolicy: "network-only" }),
+    ]);
   };
 
   const handleWithdraw = async (submissionId: string) => {
@@ -170,7 +173,7 @@ export default function ChallengeDetailScreen() {
       if (result.error) {
         throw result.error;
       }
-      await invalidateSubmissionQueries();
+      await refreshSubmissionQueries();
       if (mySubmission?.challengeSubmissionByChallengeAndGroup?.imageIds?.[0]) {
         await deleteCachedDownload(
           mySubmission.challengeSubmissionByChallengeAndGroup.imageIds[0],
@@ -195,7 +198,7 @@ export default function ChallengeDetailScreen() {
 
   if (!challenge) {
     return (
-      <View style={styles.container}>
+      <View flex={1} backgroundColor="$backgroundDark">
         <ChallengeNotFoundState onGoBack={() => router.back()} />
       </View>
     );
@@ -303,7 +306,7 @@ export default function ChallengeDetailScreen() {
         throw result.error;
       }
       const submission = result.data?.createChallengeSubmission;
-      await invalidateSubmissionQueries();
+      await refreshSubmissionQueries();
       Alert.alert(
         "Location sent",
         submission?.status === "APPROVED"
@@ -337,7 +340,7 @@ export default function ChallengeDetailScreen() {
         throw result.error;
       }
       const submission = result.data?.createChallengeSubmission;
-      await invalidateSubmissionQueries();
+      await refreshSubmissionQueries();
       setIsTextInputOpen(false);
       setTextInputValue("");
       Alert.alert(
@@ -457,13 +460,13 @@ export default function ChallengeDetailScreen() {
       : challenge.status;
 
   return (
-    <View style={styles.container}>
+    <View flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + spacing.xxxl + 96 },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: insets.bottom + 96 + 64, // xxxl (64) + 96
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Challenge Icon & Status */}
@@ -582,10 +585,32 @@ export default function ChallengeDetailScreen() {
         ) : null}
 
         {shouldShowTargetLocationCard ? (
-          <View style={styles.targetLocationCard}>
-            <Text style={styles.targetLocationLabel}>Target location</Text>
-            <View style={styles.targetLocationMapWrap}>
-              <MapView mapStyle={MAP_STYLE} style={styles.targetLocationMap}>
+          <View
+            backgroundColor="$cardDark"
+            borderRadius={14}
+            borderWidth={1}
+            borderColor="$whiteOpacity8"
+            padding="$lg"
+            marginBottom="$lg"
+          >
+            <Text
+              color="$emerald500"
+              fontSize={12}
+              textTransform="uppercase"
+              marginBottom={8}
+              letterSpacing={0.8}
+              fontWeight="700"
+            >
+              Target location
+            </Text>
+            <View
+              height={180}
+              borderRadius={12}
+              overflow="hidden"
+              borderWidth={1}
+              borderColor="$whiteOpacity12"
+            >
+              <MapView mapStyle={MAP_STYLE} style={{ flex: 1 }}>
                 <Camera
                   defaultSettings={{
                     centerCoordinate: [
@@ -616,7 +641,14 @@ export default function ChallengeDetailScreen() {
                     challenge.targetLatitude!,
                   ]}
                 >
-                  <View style={styles.targetLocationMarker} />
+                  <View
+                    width={18}
+                    height={18}
+                    borderRadius={9}
+                    backgroundColor="$danger"
+                    borderWidth={2}
+                    borderColor="$whiteOpacity90"
+                  />
                 </PointAnnotation>
                 <MapLibreUserLocation
                   visible
@@ -635,7 +667,7 @@ export default function ChallengeDetailScreen() {
                 />
               </MapView>
             </View>
-            <Text style={styles.targetLocationCoords}>
+            <Text color="$emerald500" marginTop={8} fontSize={12}>
               {Number(challenge.targetLatitude).toFixed(5)},{" "}
               {Number(challenge.targetLongitude).toFixed(5)}
             </Text>
@@ -644,31 +676,79 @@ export default function ChallengeDetailScreen() {
 
         {shouldShowPendingReviewCounter &&
         !shouldHideStaffSubmissionsGallery ? (
-          <View style={styles.solvedCounterCard}>
-            <Text style={styles.solvedCounterLabel}>Groups submitted</Text>
-            <Text style={styles.solvedCounterValue}>
+          <View
+            backgroundColor="$cardDark"
+            borderRadius={14}
+            borderWidth={1}
+            borderColor="$whiteOpacity8"
+            padding="$lg"
+            marginBottom="$lg"
+          >
+            <Text
+              color="$emerald500"
+              fontSize={12}
+              textTransform="uppercase"
+              marginBottom={4}
+              letterSpacing={0.8}
+              fontWeight="700"
+            >
+              Groups submitted
+            </Text>
+            <Text color="$emerald500" fontSize={28} fontWeight="800">
               {submittedGroupsCount}/{totalGroupsCount}
             </Text>
-            <Text style={styles.solvedCounterHint}>
+            <Text color="$emerald500" fontSize={12} marginTop="$xs">
               Waiting for staff review: {pendingReviewGroupsCount}
             </Text>
           </View>
         ) : null}
 
         {shouldHideStaffSubmissionsGallery ? (
-          <View style={styles.solvedCounterCard}>
-            <Text style={styles.solvedCounterLabel}>Groups submissions</Text>
-            <Text style={styles.solvedCounterValue}>
+          <View
+            backgroundColor="$cardDark"
+            borderRadius={14}
+            borderWidth={1}
+            borderColor="$whiteOpacity8"
+            padding="$lg"
+            marginBottom="$lg"
+          >
+            <Text
+              color="$emerald500"
+              fontSize={12}
+              textTransform="uppercase"
+              marginBottom={4}
+              letterSpacing={0.8}
+              fontWeight="700"
+            >
+              Groups submissions
+            </Text>
+            <Text color="$emerald500" fontSize={28} fontWeight="800">
               {submittedGroupsCount}/{totalGroupsCount}
             </Text>
-            <Text style={styles.solvedCounterHint}>
+            <Text color="$emerald500" fontSize={12} marginTop="$xs">
               Photos will be visible after staff voting ends.
             </Text>
           </View>
         ) : shouldShowSolvedCounterOnly ? (
-          <View style={styles.solvedCounterCard}>
-            <Text style={styles.solvedCounterLabel}>Solved groups</Text>
-            <Text style={styles.solvedCounterValue}>
+          <View
+            backgroundColor="$cardDark"
+            borderRadius={14}
+            borderWidth={1}
+            borderColor="$whiteOpacity8"
+            padding="$lg"
+            marginBottom="$lg"
+          >
+            <Text
+              color="$emerald500"
+              fontSize={12}
+              textTransform="uppercase"
+              marginBottom={4}
+              letterSpacing={0.8}
+              fontWeight="700"
+            >
+              Solved groups
+            </Text>
+            <Text color="$emerald500" fontSize={28} fontWeight="800">
               {approvedGroupsCount}/{totalGroupsCount}
             </Text>
           </View>
@@ -717,7 +797,7 @@ export default function ChallengeDetailScreen() {
           multiline={false}
           returnKeyType="send"
           onSubmitEditing={() => handleSubmitText(textInputValue)}
-          style={{ marginBottom: spacing.lg }}
+          style={{ marginBottom: 16 }}
         />
         <AppModalFooter
           primaryLabel={isSubmittingText ? "Submitting..." : "Submit"}
@@ -763,7 +843,7 @@ export default function ChallengeDetailScreen() {
               throw result.error;
             }
             const submission = result.data?.createChallengeSubmission;
-            await invalidateSubmissionQueries();
+            await refreshSubmissionQueries();
             Alert.alert(
               "Challenge completed",
               submission?.status === "APPROVED"
@@ -782,127 +862,3 @@ export default function ChallengeDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-  },
-  solvedCounterCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  solvedCounterLabel: {
-    color: colors.emerald500,
-    fontSize: 12,
-    textTransform: "uppercase",
-    marginBottom: 4,
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  solvedCounterValue: {
-    color: colors.emerald500,
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  solvedCounterHint: {
-    color: colors.emerald500,
-    fontSize: 12,
-    marginTop: spacing.xs,
-  },
-  targetLocationCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  targetLocationLabel: {
-    color: colors.emerald500,
-    fontSize: 12,
-    textTransform: "uppercase",
-    marginBottom: 8,
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  targetLocationMapWrap: {
-    height: 180,
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-  },
-  targetLocationMap: {
-    flex: 1,
-  },
-  targetLocationMarker: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.danger,
-    borderWidth: 2,
-    borderColor: colors.whiteOpacity90,
-  },
-  targetLocationCoords: {
-    color: colors.emerald500,
-    marginTop: 8,
-    fontSize: 12,
-  },
-  qrModalContainer: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  qrModalHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  qrModalTitle: {
-    color: colors.emerald500,
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  qrModalCloseButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  qrModalCloseText: {
-    color: colors.emerald500,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  qrCameraContainer: {
-    flex: 1,
-    margin: spacing.lg,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-  },
-  qrCamera: {
-    flex: 1,
-  },
-  qrFooter: {
-    padding: spacing.lg,
-  },
-  qrFooterText: {
-    color: colors.emerald500,
-    fontSize: 14,
-    textAlign: "center",
-  },
-});

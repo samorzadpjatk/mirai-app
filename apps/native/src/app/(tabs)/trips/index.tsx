@@ -1,20 +1,13 @@
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView } from "react-native";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import TripDetailsScreen from "./details";
 import { TripCard } from "~/components/trips/list/TripCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography } from "~/styles";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 
 export default function TripsScreen() {
   const { session, isLoading } = useAuth();
@@ -29,7 +22,8 @@ export default function TripsScreen() {
     fetchNextPage,
     refetch,
   } = useTrips();
-  const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
+  const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } =
+    useSelectedTrip();
 
   const handleScrollLoadMore = (event: {
     nativeEvent: {
@@ -68,15 +62,14 @@ export default function TripsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: insets.top + spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxxl,
-          },
-        ]}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: insets.top + 16,
+          paddingBottom: insets.bottom + 32,
+          gap: 12,
+        }}
         onScroll={handleScrollLoadMore}
         scrollEventThrottle={16}
         refreshControl={
@@ -85,15 +78,17 @@ export default function TripsScreen() {
             onRefresh={() => {
               void refetch();
             }}
-            tintColor={colors.primary}
+            tintColor="#00ced1"
           />
         }
       >
-        <Text style={styles.title}>Choose your trip</Text>
-        <Text style={styles.subtitle}>
+        <Text fontSize="$5" fontWeight="700" color="white">
+          Choose your trip
+        </Text>
+        <Text fontSize="$3" color="$textSecondary" marginBottom="$3">
           Select a trip to access maps, groups, challenges, and rewards.
         </Text>
-        <View style={styles.list}>
+        <YStack gap="$3">
           {trips.map((trip) => (
             <TripCard
               key={trip.id}
@@ -101,59 +96,33 @@ export default function TripsScreen() {
               onPress={() => setSelectedTripId(trip.id)}
             />
           ))}
-        </View>
+        </YStack>
         {trips.length === 0 && (
-          <Text style={styles.emptyText}>No trips available.</Text>
+          <Text
+            color="$textSecondary"
+            fontSize="$3"
+            textAlign="center"
+            marginTop="$4"
+          >
+            No trips available.
+          </Text>
         )}
 
         {isFetchingNextPage ? (
-          <View style={styles.listFooter}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.listFooterText}>Loading more trips...</Text>
-          </View>
+          <XStack
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="center"
+            gap="$2"
+            marginTop="$3"
+          >
+            <ActivityIndicator size="small" color="#00ced1" />
+            <Text color="$textSecondary" fontSize="$2">
+              Loading more trips...
+            </Text>
+          </XStack>
         ) : null}
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  subtitle: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  list: {
-    gap: spacing.md,
-  },
-  emptyText: {
-    color: colors.textSecondary,
-    fontSize: typography.base,
-    textAlign: "center",
-    marginTop: spacing.lg,
-  },
-  listFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  listFooterText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-});

@@ -1,19 +1,14 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { colors } from "~/styles";
+import { YStack, Spinner } from "@mirai-app/ui";
 
 export function GroupEditLoadingState() {
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary} />
-    </View>
+    <YStack
+      flex={1}
+      backgroundColor="rgba(23, 24, 28, 1)"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Spinner size="large" color="primary" />
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

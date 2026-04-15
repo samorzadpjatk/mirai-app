@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
+import { YStack } from "@mirai-app/ui";
 import { UserAvatar } from "./ui/UserAvatar";
 import {
   MapView,
@@ -11,7 +12,6 @@ import {
   RasterLayer,
 } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
-import { YStack } from "@mirai-app/ui";
 import { useLocationContext } from "~/stores/location";
 
 export interface UserLocation {
@@ -346,8 +346,8 @@ export const UserMap: React.FC<UserMapProps> = ({
             coordinate={user.coordinate}
             onSelected={() => onUserPress?.(user)}
           >
-            <View style={styles.avatarShadow}>
-              <View style={styles.avatarBorder}>
+            <View style={nativeStyles.avatarShadow}>
+              <View style={nativeStyles.avatarBorder}>
                 <UserAvatar
                   name={user.name}
                   size={34}
@@ -360,28 +360,28 @@ export const UserMap: React.FC<UserMapProps> = ({
       </MapView>
 
       {/* Overlay container for UI elements */}
-      <View style={styles.overlayContainer}>{overlay}</View>
+      <View style={nativeStyles.overlayContainer}>{overlay}</View>
     </YStack>
   );
 };
 
-const styles = StyleSheet.create({
+// Native styles for react-native components inside PointAnnotation
+const nativeStyles = {
   overlayContainer: {
-    position: "absolute",
+    position: "absolute" as const,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    pointerEvents: "box-none",
+    pointerEvents: "box-none" as const,
   },
-
   avatarShadow: {
     width: 46,
     height: 46,
     borderRadius: 23,
     backgroundColor: "rgba(0,0,0,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     borderWidth: 2,
     borderColor: "#FFFFFF",
-    overflow: "hidden",
+    overflow: "hidden" as const,
     backgroundColor: "#0F172A",
   },
-});
+};

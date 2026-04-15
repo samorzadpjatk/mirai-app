@@ -2,14 +2,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
-import { getTRPCClient } from "@mirai-app/frameworks/graphql";
+import { NativeGraphQLClient } from "@mirai-app/frameworks/graphql";
 import { clientLogger } from "@mirai-app/shared";
 import { authStorage } from "~/services/storage/storage";
 import {
   SUPABASE_ANON_KEY,
   SUPABASE_URL,
   GRAPHQL_HTTP_URL,
-  GRAPHQL_WS_URL,
 } from "~/config/runtimeEnv";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
@@ -39,14 +38,6 @@ const toNonNegativeOrNull = (
 ): number | null => {
   const normalized = toFiniteNumberOrNull(value);
   if (normalized == null || normalized < 0) {
-    return null;
-  }
-  return normalized;
-};
-
-const toHeadingOrNull = (value: number | null | undefined): number | null => {
-  const normalized = toFiniteNumberOrNull(value);
-  if (normalized == null || normalized < 0 || normalized > 360) {
     return null;
   }
   return normalized;
@@ -96,24 +87,19 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
     return;
   }
 
-  const { client, cleanup } = getTRPCClient(
-    GRAPHQL_HTTP_URL,
-    GRAPHQL_WS_URL,
-    accessToken,
-  );
+  const client = new NativeGraphQLClient({
+    endpoint: GRAPHQL_HTTP_URL,
+    getAuthToken: () => accessToken,
+  });
 
   try {
-    await client.location.updateLocation.mutate({
+    await client.location.update.mutate({
       latitude,
       longitude,
-      accuracy: toNonNegativeOrNull(location.coords.accuracy),
-      altitude: toFiniteNumberOrNull(location.coords.altitude),
-      altitudeAccuracy: toNonNegativeOrNull(location.coords.altitudeAccuracy),
-      heading: toHeadingOrNull(location.coords.heading),
-      speed: toNonNegativeOrNull(location.coords.speed),
+      accuracy: toNonNegativeOrNull(location.coords.accuracy) ?? undefined,
     });
   } finally {
-    await cleanup();
+    // No cleanup needed for GraphQL client
   }
 }
 

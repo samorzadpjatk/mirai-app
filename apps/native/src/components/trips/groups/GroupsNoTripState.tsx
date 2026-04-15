@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { TouchableOpacity } from "react-native";
+import { YStack, Text } from "@mirai-app/ui";
 
 interface GroupsNoTripStateProps {
   onGoBack: () => void;
@@ -7,29 +7,20 @@ interface GroupsNoTripStateProps {
 
 export function GroupsNoTripState({ onGoBack }: GroupsNoTripStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.errorText}>No trip selected</Text>
+    <YStack
+      flex={1}
+      justifyContent="center"
+      alignItems="center"
+      backgroundColor="$backgroundDark"
+    >
+      <Text fontSize="$lg" color="$textMuted" marginBottom="$lg">
+        No trip selected
+      </Text>
       <TouchableOpacity onPress={onGoBack}>
-        <Text style={styles.linkText}>Go Back</Text>
+        <Text color="$primary" fontWeight="bold">
+          Go Back
+        </Text>
       </TouchableOpacity>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    justifyContent: "center",
-    alignItems: "center",
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  errorText: {
-    fontSize: typography.lg,
-    color: colors.textMuted,
-    marginBottom: spacing.lg,
-  },
-  linkText: {
-    color: colors.primary,
-    fontWeight: typography.bold,
-  },
-});

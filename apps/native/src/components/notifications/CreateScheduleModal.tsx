@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useMutation, useClient } from "urql";
+import { useMutation } from "urql";
 import {
-  useCreateNotificationScheduleMutation,
+  CreateNotificationScheduleDocument,
   useGetNotificationSchedulesQuery,
 } from "@mirai-app/graphql-client";
 import { useTrips } from "~/hooks/trips";
@@ -27,7 +27,6 @@ export function CreateScheduleModal({
   onClose,
   onCreated,
 }: CreateScheduleModalProps) {
-  const client = useClient();
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
 
   const [createName, setCreateName] = useState("");
@@ -60,9 +59,7 @@ export function CreateScheduleModal({
     return;
   }, [createTripId, createType, trips]);
 
-  const [, createSchedule] = useMutation(
-    useCreateNotificationScheduleMutation.document,
-  );
+  const [, createSchedule] = useMutation(CreateNotificationScheduleDocument);
 
   const isSubmitDisabled =
     !createName.trim() ||
@@ -93,8 +90,7 @@ export function CreateScheduleModal({
       });
 
       if (!result.error) {
-        // Invalidate schedules so list refreshes without parent needing to refetch
-        await client.invalidate(useGetNotificationSchedulesQuery.document);
+        // Parent component should handle refreshing the list via onCreated callback
         onCreated?.();
         onClose();
         setCreateName("");

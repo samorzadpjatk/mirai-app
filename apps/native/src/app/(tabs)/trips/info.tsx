@@ -1,20 +1,17 @@
 import {
-  View,
-  Text,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   ImageBackground,
   Linking,
   Alert,
   Dimensions,
+  View,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { WebView } from "react-native-webview";
 import Pdf from "react-native-pdf";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FullScreenModal } from "~/components/common/ui";
 import { useFileDownload } from "~/hooks/files";
@@ -22,6 +19,52 @@ import { useTripResources, useSelectedTrip } from "~/hooks/trips";
 import { useLocalSearchParams } from "expo-router";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { clientLogger } from "@mirai-app/shared";
+import { YStack, XStack, Text } from "@mirai-app/ui";
+
+// Color values for React Native styles
+const colors = {
+  backgroundDark: "#17181c",
+  primary: "#00ced1",
+  accentMagenta: "#E533FF",
+  white: "#ffffff",
+  slate400: "#94a3b8",
+  slate500: "#64748b",
+  cardDark: "#1b2828",
+  magentaOpacity10: "rgba(229, 51, 255, 0.1)",
+  magentaOpacity30: "rgba(229, 51, 255, 0.3)",
+  primaryOpacity20: "rgba(0, 206, 209, 0.2)",
+  primaryOpacity30: "rgba(0, 206, 209, 0.3)",
+  primaryOpacity80: "rgba(0, 206, 209, 0.8)",
+};
+
+// Spacing values
+const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+};
+
+// Border radius values
+const borderRadius = {
+  md: 12,
+  lg: 16,
+  xl: 20,
+  full: 9999,
+};
+
+// Typography values
+const typography = {
+  xs: 12,
+  sm: 14,
+  base: 16,
+  lg: 18,
+  bold: "700" as const,
+  medium: "500" as const,
+};
 
 // Type-safe icon name helper
 const getIconName = (
@@ -29,8 +72,6 @@ const getIconName = (
   fallback: keyof typeof Ionicons.glyphMap,
 ): keyof typeof Ionicons.glyphMap => {
   if (!iconName) return fallback;
-  // Basic validation - check if it's a reasonable icon name format
-  // This is a simple heuristic; in a real app you might want a more robust validation
   return iconName as keyof typeof Ionicons.glyphMap;
 };
 
@@ -83,7 +124,6 @@ export default function TripInfoScreen() {
     }
   }, [getResource, heroImageDownload, isLoading, mapBgImageDownload]);
 
-  // PDF resources are checked by the download hook's cache mechanism
   void getResource;
 
   if (isLoading) {
@@ -92,9 +132,16 @@ export default function TripInfoScreen() {
 
   if (isError || !tripId) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Failed to load trip information</Text>
-      </View>
+      <YStack
+        flex={1}
+        backgroundColor="$backgroundDark"
+        justifyContent="center"
+        alignItems="center"
+      >
+        <Text color="$white" fontSize="$base" textAlign="center">
+          Failed to load trip information
+        </Text>
+      </YStack>
     );
   }
 
@@ -178,49 +225,101 @@ export default function TripInfoScreen() {
   return (
     <>
       <StatusBar style="light" />
-      <View style={styles.container}>
+      <YStack flex={1} backgroundColor="$backgroundDark">
         <ScrollView
-          style={styles.mainContent}
-          contentContainerStyle={[
-            styles.contentContainer,
-            { paddingBottom: spacing.xxxl * 2 + insets.bottom },
-          ]}
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            paddingTop: spacing.lg,
+            paddingBottom: spacing.xxxl * 2 + insets.bottom,
+            paddingHorizontal: spacing.lg,
+            gap: spacing.lg,
+          }}
           showsVerticalScrollIndicator={false}
         >
           {/* Hero Header */}
-          <View style={styles.heroCard}>
+          <YStack height={192} borderRadius={borderRadius.xl} overflow="hidden">
             <ImageBackground
               source={{
                 uri:
                   heroImageDownload.file?.uri ??
                   "https://lh3.googleusercontent.com/aida-public/AB6AXuAHhLaOxCenvDHeXPGxGdnYhEumFOLH5A9Wh5fAb63uNUkITSveOg2w84W1Q72tKNnm3nhMAdZEyYc_wtTSqm7mjn2XpnVUwdc4O1eHaoLbQxVFProgk7Jnuc3k0sW4fg5BKzNzg56WwaR-MesVKcfLd3fOfPxZGRKaV_PLrsgOyhirvj2CqfkrxBZpmQNCwGq56LVrNMBKRUwNzDK0bd7ttYLsQDQlxhJ2mEsvE1Mx4HrVpg3u58_JdMp0ZOzRu_9PjH43rDEbQfY",
               }}
-              style={styles.heroImage}
+              style={{ width: "100%", height: "100%" }}
               imageStyle={{ borderRadius: borderRadius.xl }}
             >
-              <View style={styles.heroOverlay} />
-              <View style={styles.heroContent}>
-                <View style={styles.liveBadge}>
-                  <Text style={styles.liveBadgeText}>Live Now</Text>
-                </View>
-                <View style={styles.heroTextContainer}>
-                  <Text style={styles.heroTitle}>
+              <View
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(23, 24, 28, 0.4)",
+                }}
+              />
+              <YStack
+                flex={1}
+                padding={spacing.lg}
+                justifyContent="space-between"
+              >
+                <YStack
+                  style={{ backgroundColor: colors.primary }}
+                  paddingHorizontal={spacing.md}
+                  paddingVertical={spacing.xs}
+                  borderRadius={borderRadius.full}
+                  alignSelf="flex-start"
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: typography.bold,
+                      color: colors.backgroundDark,
+                      textTransform: "uppercase",
+                      letterSpacing: 2,
+                    }}
+                  >
+                    Live Now
+                  </Text>
+                </YStack>
+                <YStack gap={spacing.xs}>
+                  <Text
+                    style={{
+                      fontSize: 24,
+                      fontWeight: typography.bold,
+                      color: colors.white,
+                    }}
+                  >
                     {getResource("HERO_IMAGE")?.label ?? "Trip Info"}
                   </Text>
-                  <Text style={styles.heroSubtitle}>Feb 20 - Mar 01, 2026</Text>
-                </View>
-              </View>
+                  <Text
+                    style={{
+                      fontSize: typography.xs,
+                      fontWeight: typography.medium,
+                      color: colors.primaryOpacity80,
+                    }}
+                  >
+                    Feb 20 - Mar 01, 2026
+                  </Text>
+                </YStack>
+              </YStack>
             </ImageBackground>
-          </View>
+          </YStack>
 
           {/* Main Bento Grid */}
-          <View style={styles.bentoGrid}>
+          <YStack gap={spacing.lg}>
             {/* Map Tiles Row */}
-            <View style={styles.gridRow}>
+            <XStack gap={spacing.md}>
               {/* Interactive Ski Map */}
               {getResource("INTERACTIVE_MAP") && (
                 <TouchableOpacity
-                  style={styles.mapTile}
+                  style={{
+                    flex: 1,
+                    height: 176,
+                    borderRadius: borderRadius.xl,
+                    overflow: "hidden",
+                    borderWidth: 1,
+                    borderColor: colors.primaryOpacity20,
+                  }}
                   onPress={handleMapPress}
                   activeOpacity={0.8}
                 >
@@ -230,12 +329,32 @@ export default function TripInfoScreen() {
                         mapBgImageDownload.file?.uri ??
                         "https://lh3.googleusercontent.com/aida-public/AB6AXuCHzNKnjzWDXauSdVPNidYoUGd1qjJ403upT8jZBMcs9oyIqPM11hjsbBSIBs6u_5chLFgfVG4mejWXsgPfu_9y0N8bJxBpErgmUNG7fARqfhlQfGNLvemBM4ALBIIQtp1MG4TRaFWaGLDvqRFdhCmezlqGrCMgWMXBj7CGZDysg-TDAt24y1EddpxoxP890kL_wo4ggi8Pc5lqtBPHTTMhwkZH45PhexYqQ-Vy8-aF5Sl8kDbpffkx6-Kq0GdoDqOmvcskgXS7JxQ",
                     }}
-                    style={styles.mapBackground}
+                    style={{ width: "100%", height: "100%" }}
                     imageStyle={{ borderRadius: borderRadius.xl, opacity: 0.4 }}
                   >
-                    <View style={styles.mapGradient} />
-                    <View style={styles.mapContent}>
-                      <View style={styles.mapIconWrapper}>
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(39, 41, 53, 0.85)",
+                      }}
+                    />
+                    <YStack
+                      flex={1}
+                      padding={spacing.xl}
+                      justifyContent="space-between"
+                    >
+                      <YStack
+                        width={40}
+                        height={40}
+                        borderRadius={borderRadius.md}
+                        style={{ backgroundColor: colors.primaryOpacity20 }}
+                        alignItems="center"
+                        justifyContent="center"
+                      >
                         <Ionicons
                           name={getIconName(
                             getResource("INTERACTIVE_MAP")?.iconName ?? null,
@@ -244,23 +363,44 @@ export default function TripInfoScreen() {
                           size={24}
                           color={colors.primary}
                         />
-                      </View>
-                      <Text style={styles.mapTitle}>
+                      </YStack>
+                      <Text
+                        style={{
+                          fontSize: typography.lg,
+                          fontWeight: typography.bold,
+                          color: colors.white,
+                        }}
+                      >
                         {getResource("INTERACTIVE_MAP")?.label ??
                           "Interactive Map"}
                       </Text>
-                      <Text style={styles.mapSubtitle}>
+                      <Text
+                        style={{
+                          fontSize: typography.xs,
+                          color: colors.slate400,
+                        }}
+                      >
                         Navigate trails & lifts
                       </Text>
-                      <View style={styles.mapAction}>
-                        <Text style={styles.mapActionText}>Explore Map</Text>
+                      <XStack alignItems="center" gap={spacing.xs}>
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            fontWeight: typography.bold,
+                            color: colors.primary,
+                            textTransform: "uppercase",
+                            letterSpacing: 1,
+                          }}
+                        >
+                          Explore Map
+                        </Text>
                         <Ionicons
                           name="chevron-forward"
                           size={16}
                           color={colors.primary}
                         />
-                      </View>
-                    </View>
+                      </XStack>
+                    </YStack>
                   </ImageBackground>
                 </TouchableOpacity>
               )}
@@ -268,13 +408,32 @@ export default function TripInfoScreen() {
               {/* PDF Map */}
               {getResource("PDF_MAP") && (
                 <TouchableOpacity
-                  style={styles.mapTile}
+                  style={{
+                    flex: 1,
+                    height: 176,
+                    borderRadius: borderRadius.xl,
+                    overflow: "hidden",
+                    borderWidth: 1,
+                    borderColor: colors.primaryOpacity20,
+                  }}
                   onPress={() => void handlePdfMapPress()}
                   activeOpacity={0.8}
                   disabled={mapPdfDownload.status === "loading"}
                 >
-                  <View style={styles.pdfMapContent}>
-                    <View style={styles.pdfMapIconWrapper}>
+                  <YStack
+                    flex={1}
+                    style={{ backgroundColor: colors.cardDark }}
+                    padding={spacing.xl}
+                    justifyContent="space-between"
+                  >
+                    <YStack
+                      width={48}
+                      height={48}
+                      borderRadius={borderRadius.md}
+                      style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+                      alignItems="center"
+                      justifyContent="center"
+                    >
                       <Ionicons
                         name={getIconName(
                           getResource("PDF_MAP")?.iconName ?? null,
@@ -283,10 +442,16 @@ export default function TripInfoScreen() {
                         size={28}
                         color={colors.white}
                       />
-                    </View>
-                    <View style={styles.pdfMapTextContainer}>
-                      <View style={styles.pdfMapTitleRow}>
-                        <Text style={styles.mapTitle}>
+                    </YStack>
+                    <YStack gap={4}>
+                      <XStack alignItems="center" gap={spacing.xs}>
+                        <Text
+                          style={{
+                            fontSize: typography.lg,
+                            fontWeight: typography.bold,
+                            color: colors.white,
+                          }}
+                        >
                           {getResource("PDF_MAP")?.label ?? "PDF Map"}
                         </Text>
                         {mapPdfDownload.file ? (
@@ -302,31 +467,53 @@ export default function TripInfoScreen() {
                             color={colors.slate400}
                           />
                         )}
-                      </View>
-                      <Text style={styles.pdfMapSubtitle}>
+                      </XStack>
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          color: colors.slate400,
+                          lineHeight: 14,
+                        }}
+                      >
                         {mapPdfDownload.status === "loading"
                           ? "Downloading..."
                           : mapPdfDownload.file
                             ? "Downloaded"
                             : "Tap to Download"}
                       </Text>
-                    </View>
-                  </View>
+                    </YStack>
+                  </YStack>
                 </TouchableOpacity>
               )}
-            </View>
+            </XStack>
 
             {/* Grid Row */}
-            <View style={styles.gridRow}>
+            <XStack gap={spacing.md}>
               {/* Infopak Tile */}
               {getResource("INFOPACK") && (
                 <TouchableOpacity
-                  style={styles.bentoTile}
+                  style={{
+                    flex: 1,
+                    aspectRatio: 1,
+                    backgroundColor: colors.cardDark,
+                    borderRadius: borderRadius.xl,
+                    borderWidth: 1,
+                    borderColor: "rgba(255, 255, 255, 0.05)",
+                    padding: spacing.xl,
+                    justifyContent: "space-between",
+                  }}
                   onPress={() => void handleInfopakPress()}
                   activeOpacity={0.8}
                   disabled={infopackDownload.status === "loading"}
                 >
-                  <View style={styles.bentoIconWrapper}>
+                  <YStack
+                    width={48}
+                    height={48}
+                    borderRadius={borderRadius.md}
+                    style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
                     <Ionicons
                       name={getIconName(
                         getResource("INFOPACK")?.iconName ?? null,
@@ -335,10 +522,16 @@ export default function TripInfoScreen() {
                       size={28}
                       color={colors.white}
                     />
-                  </View>
-                  <View style={styles.bentoContent}>
-                    <View style={styles.bentoTitleRow}>
-                      <Text style={styles.bentoTitle}>
+                  </YStack>
+                  <YStack gap={4}>
+                    <XStack alignItems="center" gap={spacing.xs}>
+                      <Text
+                        style={{
+                          fontSize: typography.base,
+                          fontWeight: typography.bold,
+                          color: colors.white,
+                        }}
+                      >
                         {getResource("INFOPACK")?.label ?? "Infopack"}
                       </Text>
                       {infopackDownload.file ? (
@@ -354,26 +547,53 @@ export default function TripInfoScreen() {
                           color={colors.slate400}
                         />
                       )}
-                    </View>
-                    <Text style={styles.bentoSubtitle}>
+                    </XStack>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        color: colors.slate400,
+                        lineHeight: 14,
+                      }}
+                    >
                       {infopackDownload.status === "loading"
                         ? "Downloading..."
                         : infopackDownload.file
                           ? "Downloaded"
                           : "Tap to Download"}
                     </Text>
-                  </View>
+                  </YStack>
                 </TouchableOpacity>
               )}
 
               {/* WhatsApp Tile */}
               {getResource("WHATSAPP") && (
                 <TouchableOpacity
-                  style={styles.whatsappTile}
+                  style={{
+                    flex: 1,
+                    aspectRatio: 1,
+                    backgroundColor: colors.cardDark,
+                    borderRadius: borderRadius.xl,
+                    borderWidth: 1,
+                    borderColor: colors.magentaOpacity30,
+                    padding: spacing.xl,
+                    justifyContent: "space-between",
+                    shadowColor: colors.accentMagenta,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 20,
+                    elevation: 4,
+                  }}
                   onPress={handleWhatsAppPress}
                   activeOpacity={0.8}
                 >
-                  <View style={styles.whatsappIconWrapper}>
+                  <YStack
+                    width={48}
+                    height={48}
+                    borderRadius={borderRadius.md}
+                    style={{ backgroundColor: colors.magentaOpacity10 }}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
                     <Ionicons
                       name={getIconName(
                         getResource("WHATSAPP")?.iconName ?? null,
@@ -382,30 +602,71 @@ export default function TripInfoScreen() {
                       size={28}
                       color={colors.accentMagenta}
                     />
-                  </View>
-                  <View style={styles.bentoContent}>
-                    <Text style={styles.bentoTitle}>
+                  </YStack>
+                  <YStack gap={4}>
+                    <Text
+                      style={{
+                        fontSize: typography.base,
+                        fontWeight: typography.bold,
+                        color: colors.white,
+                      }}
+                    >
                       {getResource("WHATSAPP")?.label ?? "WhatsApp"}
                     </Text>
-                    <Text style={styles.whatsappSubtitle}>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        color: colors.accentMagenta,
+                        fontWeight: typography.medium,
+                        textTransform: "uppercase",
+                        letterSpacing: 1.5,
+                      }}
+                    >
                       Join Trip Community
                     </Text>
-                  </View>
+                  </YStack>
                 </TouchableOpacity>
               )}
-            </View>
+            </XStack>
 
             {/* Section Header */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Essential Resources</Text>
-              <View style={styles.sectionDivider} />
-            </View>
+            <XStack
+              alignItems="center"
+              gap={spacing.md}
+              paddingTop={spacing.lg}
+            >
+              <Text
+                style={{
+                  fontSize: typography.xs,
+                  fontWeight: typography.bold,
+                  color: colors.slate500,
+                  textTransform: "uppercase",
+                  letterSpacing: 2,
+                }}
+              >
+                Essential Resources
+              </Text>
+              <YStack
+                flex={1}
+                height={1}
+                style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+              />
+            </XStack>
 
             {/* Smaller Action Tiles */}
-            <View style={styles.resourceGrid}>
+            <XStack gap={spacing.md}>
               {getResource("SOS") && (
                 <TouchableOpacity
-                  style={styles.resourceTile}
+                  style={{
+                    flex: 1,
+                    backgroundColor: "rgba(39, 41, 53, 0.5)",
+                    borderRadius: borderRadius.lg,
+                    borderWidth: 1,
+                    borderColor: "rgba(255, 255, 255, 0.05)",
+                    padding: spacing.lg,
+                    alignItems: "center",
+                    gap: spacing.sm,
+                  }}
                   onPress={handleSosPress}
                   activeOpacity={0.8}
                 >
@@ -417,7 +678,14 @@ export default function TripInfoScreen() {
                     size={24}
                     color={colors.primary}
                   />
-                  <Text style={styles.resourceText}>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: typography.bold,
+                      color: colors.white,
+                      textTransform: "uppercase",
+                    }}
+                  >
                     {getResource("SOS")?.label ?? "SOS"}
                   </Text>
                 </TouchableOpacity>
@@ -425,18 +693,34 @@ export default function TripInfoScreen() {
 
               {insurance && (
                 <TouchableOpacity
-                  style={styles.resourceTile}
+                  style={{
+                    flex: 1,
+                    backgroundColor: "rgba(39, 41, 53, 0.5)",
+                    borderRadius: borderRadius.lg,
+                    borderWidth: 1,
+                    borderColor: "rgba(255, 255, 255, 0.05)",
+                    padding: spacing.lg,
+                    alignItems: "center",
+                    gap: spacing.sm,
+                  }}
                   onPress={handleInsurancePress}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="medkit" size={24} color={colors.primary} />
-                  <Text style={styles.resourceText}>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: typography.bold,
+                      color: colors.white,
+                      textTransform: "uppercase",
+                    }}
+                  >
                     {insurance.label ?? "Insurance"}
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
-          </View>
+            </XStack>
+          </YStack>
         </ScrollView>
 
         {/* Map Modal with WebView */}
@@ -451,7 +735,10 @@ export default function TripInfoScreen() {
                 getResource("INTERACTIVE_MAP")?.url ??
                 "https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv=",
             }}
-            style={styles.webView}
+            style={{
+              flex: 1,
+              backgroundColor: colors.backgroundDark,
+            }}
             startInLoadingState={true}
             scalesPageToFit={true}
             javaScriptEnabled={true}
@@ -468,12 +755,15 @@ export default function TripInfoScreen() {
             setPdfModalUri(null);
           }}
         >
-          {/* PDF Viewer */}
           {isPdfModalVisible && pdfModalUri && (
             <Pdf
               key={pdfModalUri}
               source={{ uri: pdfModalUri }}
-              style={styles.pdf}
+              style={{
+                flex: 1,
+                width: Dimensions.get("window").width,
+                backgroundColor: colors.backgroundDark,
+              }}
               trustAllCerts={false}
               minScale={1}
               maxScale={8}
@@ -497,13 +787,26 @@ export default function TripInfoScreen() {
             onClose={() => setIsInsuranceModalVisible(false)}
           >
             <ScrollView
-              style={styles.insuranceScroll}
-              contentContainerStyle={styles.insuranceContent}
+              style={{ flex: 1 }}
+              contentContainerStyle={{
+                padding: spacing.lg,
+                paddingBottom: spacing.xxxl,
+                gap: spacing.md,
+              }}
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.insuranceActions}>
+              <XStack gap={spacing.md}>
                 <TouchableOpacity
-                  style={styles.insuranceActionButton}
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    gap: spacing.sm,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: spacing.md,
+                    borderRadius: borderRadius.full,
+                    backgroundColor: colors.primary,
+                  }}
                   onPress={handleInsuranceCallPress}
                   activeOpacity={0.85}
                 >
@@ -512,10 +815,31 @@ export default function TripInfoScreen() {
                     size={18}
                     color={colors.backgroundDark}
                   />
-                  <Text style={styles.insuranceActionText}>Zadzwoń</Text>
+                  <Text
+                    style={{
+                      fontSize: typography.xs,
+                      fontWeight: typography.bold,
+                      color: colors.backgroundDark,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    Zadzwoń
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.insuranceActionSecondary}
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    gap: spacing.sm,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingVertical: spacing.md,
+                    borderRadius: borderRadius.full,
+                    borderWidth: 1,
+                    borderColor: colors.primaryOpacity30,
+                    backgroundColor: "rgba(39, 41, 53, 0.4)",
+                  }}
                   onPress={handleInsuranceCopyPress}
                   activeOpacity={0.85}
                 >
@@ -524,453 +848,170 @@ export default function TripInfoScreen() {
                     size={18}
                     color={colors.primary}
                   />
-                  <Text style={styles.insuranceActionSecondaryText}>
+                  <Text
+                    style={{
+                      fontSize: typography.xs,
+                      fontWeight: typography.bold,
+                      color: colors.primary,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                    }}
+                  >
                     Kopiuj numer
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </XStack>
 
-              {insurance.steps?.map((step) => (
-                <View key={step.id} style={styles.insuranceCard}>
-                  <Text style={styles.insuranceCardTitle}>{step.title}</Text>
-                  <Text style={styles.insuranceText}>{step.text}</Text>
-
-                  {step.requiredInfo && step.requiredInfo.length > 0 && (
-                    <>
-                      <Text style={styles.insuranceLabel}>
-                        Podczas rozmowy konieczne będzie podanie:
-                      </Text>
-                      {step.requiredInfo.map((info, index) => (
-                        <Text key={index} style={styles.insuranceListItem}>
-                          - {info}
-                        </Text>
-                      ))}
-                    </>
-                  )}
-
-                  {step.exampleCall && (
-                    <>
-                      <Text style={styles.insuranceLabel}>
-                        Następnie krótko opiszcie sytuację, np.:
-                      </Text>
-                      <Text style={styles.insuranceQuote}>
-                        "{step.exampleCall}"
-                      </Text>
-                    </>
-                  )}
-
-                  {step.additionalText && (
-                    <Text style={styles.insuranceText}>
-                      {step.additionalText}
+              {insurance.steps?.map(
+                (step: {
+                  id: string;
+                  title: string;
+                  text: string;
+                  requiredInfo?: string[];
+                  exampleCall?: string;
+                  additionalText?: string;
+                }) => (
+                  <YStack
+                    key={step.id}
+                    borderRadius={borderRadius.lg}
+                    borderWidth={1}
+                    borderColor="rgba(255, 255, 255, 0.06)"
+                    style={{ backgroundColor: "rgba(39, 41, 53, 0.5)" }}
+                    padding={spacing.lg}
+                    gap={spacing.sm}
+                  >
+                    <Text
+                      style={{
+                        fontSize: typography.xs,
+                        fontWeight: typography.bold,
+                        color: colors.primary,
+                        textTransform: "uppercase",
+                        letterSpacing: 1.5,
+                      }}
+                    >
+                      {step.title}
                     </Text>
-                  )}
-                </View>
-              ))}
+                    <Text
+                      style={{
+                        fontSize: typography.sm,
+                        color: colors.white,
+                        lineHeight: 22,
+                      }}
+                    >
+                      {step.text}
+                    </Text>
+
+                    {step.requiredInfo && step.requiredInfo.length > 0 && (
+                      <>
+                        <Text
+                          style={{
+                            fontSize: typography.xs,
+                            fontWeight: typography.bold,
+                            color: colors.slate400,
+                            textTransform: "uppercase",
+                            letterSpacing: 1,
+                          }}
+                        >
+                          Podczas rozmowy konieczne będzie podanie:
+                        </Text>
+                        {step.requiredInfo.map(
+                          (info: string, index: number) => (
+                            <Text
+                              key={index}
+                              style={{
+                                fontSize: typography.sm,
+                                color: colors.white,
+                                lineHeight: 22,
+                                paddingLeft: spacing.sm,
+                              }}
+                            >
+                              - {info}
+                            </Text>
+                          ),
+                        )}
+                      </>
+                    )}
+
+                    {step.exampleCall && (
+                      <>
+                        <Text
+                          style={{
+                            fontSize: typography.xs,
+                            fontWeight: typography.bold,
+                            color: colors.slate400,
+                            textTransform: "uppercase",
+                            letterSpacing: 1,
+                          }}
+                        >
+                          Następnie krótko opiszcie sytuację, np.:
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: typography.sm,
+                            color: colors.primaryOpacity80,
+                            lineHeight: 22,
+                            fontStyle: "italic",
+                          }}
+                        >
+                          "{step.exampleCall}"
+                        </Text>
+                      </>
+                    )}
+
+                    {step.additionalText && (
+                      <Text
+                        style={{
+                          fontSize: typography.sm,
+                          color: colors.white,
+                          lineHeight: 22,
+                        }}
+                      >
+                        {step.additionalText}
+                      </Text>
+                    )}
+                  </YStack>
+                ),
+              )}
 
               {insurance.hospitalName && (
-                <View style={styles.insuranceCard}>
-                  <Text style={styles.insuranceCardTitle}>Szpital</Text>
-                  <Text style={styles.insuranceText}>
+                <YStack
+                  borderRadius={borderRadius.lg}
+                  borderWidth={1}
+                  borderColor="rgba(255, 255, 255, 0.06)"
+                  style={{ backgroundColor: "rgba(39, 41, 53, 0.5)" }}
+                  padding={spacing.lg}
+                  gap={spacing.sm}
+                >
+                  <Text
+                    style={{
+                      fontSize: typography.xs,
+                      fontWeight: typography.bold,
+                      color: colors.primary,
+                      textTransform: "uppercase",
+                      letterSpacing: 1.5,
+                    }}
+                  >
+                    Szpital
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: typography.sm,
+                      color: colors.white,
+                      lineHeight: 22,
+                    }}
+                  >
                     Najbliższy szpital to {insurance.hospitalName}
                     {insurance.hospitalAddress &&
                       `, znajduje się w ${insurance.hospitalAddress}`}
                     {insurance.hospitalDistance &&
                       ` (${insurance.hospitalDistance})`}
                   </Text>
-                </View>
+                </YStack>
               )}
             </ScrollView>
           </FullScreenModal>
         )}
-      </View>
+      </YStack>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  errorText: {
-    fontSize: typography.base,
-    color: colors.white,
-    textAlign: "center",
-    marginTop: spacing.xl,
-  },
-  mainContent: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-
-  // Hero Header
-  heroCard: {
-    height: 192,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(23, 24, 28, 0.4)",
-  },
-  heroContent: {
-    flex: 1,
-    padding: spacing.lg,
-    justifyContent: "space-between",
-  },
-  liveBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    alignSelf: "flex-start",
-  },
-  liveBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  heroTextContainer: {
-    gap: spacing.xs,
-  },
-  heroTitle: {
-    fontSize: 24,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  heroSubtitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.medium,
-    color: colors.primaryOpacity80,
-  },
-
-  // Bento Grid
-  bentoGrid: {
-    gap: spacing.lg,
-  },
-
-  // Map Tile Large
-  mapTileLarge: {
-    height: 176,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity20,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 15,
-    elevation: 4,
-  },
-  mapBackground: {
-    width: "100%",
-    height: "100%",
-  },
-  mapGradient: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(39, 41, 53, 0.85)",
-  },
-  mapContent: {
-    flex: 1,
-    padding: spacing.xl,
-    justifyContent: "space-between",
-  },
-  mapIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryOpacity20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mapTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  mapSubtitle: {
-    fontSize: typography.xs,
-    color: colors.slate400,
-  },
-  mapAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  mapActionText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-
-  // Grid Row
-  gridRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-
-  // Map Tiles
-  mapTile: {
-    flex: 1,
-    height: 176,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity20,
-  },
-  pdfMapContent: {
-    flex: 1,
-    backgroundColor: colors.cardDark,
-    padding: spacing.xl,
-    justifyContent: "space-between",
-  },
-  pdfMapIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pdfMapTextContainer: {
-    gap: 4,
-  },
-  pdfMapTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  pdfMapSubtitle: {
-    fontSize: 10,
-    color: colors.slate400,
-    lineHeight: 14,
-  },
-
-  // Bento Tiles
-  bentoTile: {
-    flex: 1,
-    aspectRatio: 1,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    padding: spacing.xl,
-    justifyContent: "space-between",
-  },
-  whatsappTile: {
-    flex: 1,
-    aspectRatio: 1,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.magentaOpacity30,
-    padding: spacing.xl,
-    justifyContent: "space-between",
-    shadowColor: colors.accentMagenta,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 4,
-  },
-  bentoIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  whatsappIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.magentaOpacity10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bentoContent: {
-    gap: 4,
-  },
-  bentoTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  bentoTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  bentoSubtitle: {
-    fontSize: 10,
-    color: colors.slate400,
-    lineHeight: 14,
-  },
-  whatsappSubtitle: {
-    fontSize: 10,
-    color: colors.accentMagenta,
-    fontWeight: typography.medium,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-  },
-
-  // Section Header
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.slate500,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  sectionDivider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-  },
-
-  // Resource Grid
-  resourceGrid: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  resourceTile: {
-    flex: 1,
-    backgroundColor: "rgba(39, 41, 53, 0.5)",
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    padding: spacing.lg,
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  resourceText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textTransform: "uppercase",
-  },
-  resourceSubtext: {
-    fontSize: 10,
-    color: colors.slate400,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-
-  // Branding
-
-  webView: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  pdf: {
-    flex: 1,
-    width: Dimensions.get("window").width,
-    backgroundColor: colors.backgroundDark,
-  },
-  insuranceScroll: {
-    flex: 1,
-  },
-  insuranceContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    gap: spacing.md,
-  },
-  insuranceActions: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  insuranceActionButton: {
-    flex: 1,
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
-  },
-  insuranceActionText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  insuranceActionSecondary: {
-    flex: 1,
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    backgroundColor: "rgba(39, 41, 53, 0.4)",
-  },
-  insuranceActionSecondaryText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  insuranceCard: {
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
-    backgroundColor: "rgba(39, 41, 53, 0.5)",
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  insuranceCardTitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-  },
-  insuranceText: {
-    fontSize: typography.sm,
-    color: colors.white,
-    lineHeight: 22,
-  },
-  insuranceLabel: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.slate400,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  insuranceListItem: {
-    fontSize: typography.sm,
-    color: colors.white,
-    lineHeight: 22,
-    paddingLeft: spacing.sm,
-  },
-  insuranceQuote: {
-    fontSize: typography.sm,
-    color: colors.primaryOpacity80,
-    lineHeight: 22,
-    fontStyle: "italic",
-  },
-});

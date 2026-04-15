@@ -1,12 +1,5 @@
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 
 interface ParticipantUser {
   id: string;
@@ -34,16 +27,22 @@ export function MembersPicker({
 }: MembersPickerProps) {
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <YStack paddingVertical="$xxxl" alignItems="center">
+        <ActivityIndicator size="large" color="#00ced1" />
+      </YStack>
     );
   }
 
   return (
-    <View style={styles.memberListContainer}>
+    <YStack
+      backgroundColor="$cardDark"
+      borderWidth={1}
+      borderColor="$borderZinc700"
+      borderRadius="$xl"
+      overflow="hidden"
+    >
       <ScrollView
-        style={styles.memberListScroll}
+        style={{ maxHeight: 340 }}
         showsVerticalScrollIndicator={false}
       >
         {participants.length > 0 ? (
@@ -57,121 +56,78 @@ export function MembersPicker({
             return (
               <TouchableOpacity
                 key={participant.user.id}
-                style={styles.memberItem}
                 onPress={() => onToggleMember(participant.user.id)}
                 activeOpacity={0.7}
               >
-                <View style={styles.memberAvatar}>
-                  <Text style={styles.memberAvatarText}>{initials}</Text>
-                </View>
-                <View style={styles.memberInfo}>
-                  <Text style={styles.memberName}>
-                    {(participant.user.firstName ?? "") +
-                      " " +
-                      (participant.user.lastName ?? "")}
-                  </Text>
-                  <Text style={styles.memberEmail}>
-                    {participant.user.email}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.checkbox,
-                    isSelected && styles.checkboxSelected,
-                  ]}
+                <XStack
+                  alignItems="center"
+                  gap="$lg"
+                  padding="$lg"
+                  borderBottomWidth={1}
+                  borderBottomColor="$borderWhite5"
                 >
-                  {isSelected && <View style={styles.checkboxInner} />}
-                </View>
+                  <YStack
+                    width={44}
+                    height={44}
+                    borderRadius="$full"
+                    backgroundColor="$textMuted"
+                    borderWidth={1}
+                    borderColor="$borderWhite10"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Text fontSize="$sm" fontWeight="bold" color="$white">
+                      {initials}
+                    </Text>
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text
+                      fontSize="$sm"
+                      fontWeight="600"
+                      color="$white"
+                      marginBottom={2}
+                    >
+                      {(participant.user.firstName ?? "") +
+                        " " +
+                        (participant.user.lastName ?? "")}
+                    </Text>
+                    <Text fontSize={12} color="$textMuted">
+                      {participant.user.email}
+                    </Text>
+                  </YStack>
+                  <YStack
+                    width={20}
+                    height={20}
+                    borderRadius={6}
+                    borderWidth={1}
+                    borderColor={isSelected ? "$primary" : "$borderZinc700"}
+                    backgroundColor={
+                      isSelected ? "$primary" : "$backgroundDark"
+                    }
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    {isSelected && (
+                      <YStack
+                        width={10}
+                        height={10}
+                        borderRadius={3}
+                        backgroundColor="$backgroundDark"
+                      />
+                    )}
+                  </YStack>
+                </XStack>
               </TouchableOpacity>
             );
           })
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No participants found</Text>
-          </View>
+          <YStack paddingVertical="$xxxl" alignItems="center">
+            <Text fontSize="$base" color="$textMuted">
+              No participants found
+            </Text>
+          </YStack>
         )}
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  memberListContainer: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-  },
-  memberListScroll: {
-    maxHeight: 340,
-  },
-  loadingContainer: {
-    paddingVertical: spacing.xxxl,
-    alignItems: "center",
-  },
-  memberItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
-  },
-  memberAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.textMuted,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  memberAvatarText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.white,
-    marginBottom: 2,
-  },
-  memberEmail: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    backgroundColor: colors.backgroundDark,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-  checkboxInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 3,
-    backgroundColor: colors.backgroundDark,
-  },
-  emptyState: {
-    paddingVertical: spacing.xxxl,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-  },
-});

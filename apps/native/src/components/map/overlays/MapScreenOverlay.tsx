@@ -1,6 +1,6 @@
-import { StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
+import { YStack } from "@mirai-app/ui";
 import { MapActionButtons } from "~/components/map/MapActionButtons";
 import { ManageSharingModal } from "~/components/map/modals/ManageSharingModal";
 import { SelectedUserCard } from "~/components/map/ui/SelectedUserCard";
@@ -20,7 +20,7 @@ export function MapScreenOverlay() {
         <GestureDetector gesture={panGesture}>
           <Animated.View
             pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
-            style={[styles.detailCard, panelStyle]}
+            style={[animatedStyles.detailCard, panelStyle]}
           >
             {selectedUser ? (
               <SelectedUserCard />
@@ -37,9 +37,10 @@ export function MapScreenOverlay() {
   );
 }
 
-const styles = StyleSheet.create({
+// Animated styles must be objects for Animated.View
+const animatedStyles = {
   detailCard: {
-    position: "absolute",
+    position: "absolute" as const,
     left: 16,
     right: 16,
     bottom: 100,
@@ -56,4 +57,4 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     elevation: 8,
   },
-});
+};

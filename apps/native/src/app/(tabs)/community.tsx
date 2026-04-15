@@ -3,10 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
-  StyleSheet,
-  Text,
   TouchableOpacity,
-  View,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 
 import {
   CommunityActivityCard,
@@ -25,7 +23,6 @@ import LoadingScreen from "~/components/LoadingScreen";
 import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
 import { useCommunityActivityData } from "~/hooks/community/useCommunityActivityData";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
-import { colors, spacing, typography } from "~/styles";
 import {
   EmptyState,
   FilterChip,
@@ -35,6 +32,36 @@ import {
 import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { Logo } from "~/components";
+
+// Spacing values from Tamagui tokens for React Native styles
+const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+};
+
+// Typography values for React Native styles
+const typography = {
+  xs: 12,
+  sm: 14,
+  semibold: "600" as const,
+};
+
+// Color values for React Native styles
+const colors = {
+  backgroundDark: "#17181c",
+  backgroundDarkAlt: "#102222",
+  primary: "#00ced1",
+  white: "#ffffff",
+  whiteOpacity70: "rgba(255, 255, 255, 0.7)",
+  whiteOpacity12: "rgba(255, 255, 255, 0.12)",
+  primaryOpacity10: "rgba(0, 206, 209, 0.1)",
+  blackOpacity38: "rgba(0, 0, 0, 0.38)",
+  textSecondary: "#9ca3af",
+  cardDarkOpacity70: "rgba(27, 40, 40, 0.7)",
+};
 
 type ActivityFilter =
   | "all"
@@ -160,12 +187,11 @@ export default function CommunityScreen() {
     isTripsRefetching ||
     (feedQuery.isRefetching && !feedQuery.isFetchingNextPage);
 
-  const handleRefresh = useCallback(() => {
-    const requests: Promise<unknown>[] = [refetchTrips()];
+  const handleRefresh = useCallback((): void => {
+    void refetchTrips();
     if (selectedTrip?.id) {
-      requests.push(feedQuery.refetch());
+      void feedQuery.refetch();
     }
-    void Promise.all(requests);
   }, [feedQuery, selectedTrip?.id, refetchTrips]);
 
   const handleFeedEndReached = useCallback(() => {
@@ -301,55 +327,98 @@ export default function CommunityScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
       <StatusBar style="light" />
 
       <LinearGradient
         colors={[colors.backgroundDark, colors.backgroundDarkAlt]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+        }}
       />
 
-      <View
-        style={[
-          styles.headerWrap,
-          { paddingTop: Math.max(insets.top - spacing.md, 0) },
-        ]}
+      <YStack
+        gap="$xs"
+        marginBottom={0}
+        paddingHorizontal="$lg"
+        paddingBottom="$xs"
+        paddingTop={Math.max(insets.top - spacing.md, 0)}
       >
-        <View style={styles.headerTopRow}>
-          <View style={styles.brandRow}>
-            <View style={styles.logoWrap}>
+        <XStack alignItems="center" justifyContent="space-between" gap="$sm">
+          <XStack alignItems="center" gap="$sm" flexShrink={1}>
+            <YStack
+              width={96}
+              height={96}
+              alignItems="center"
+              justifyContent="center"
+            >
               <Logo size={96} />
-            </View>
-          </View>
+            </YStack>
+          </XStack>
 
-          <TouchableOpacity
-            style={styles.tripTile}
-            onPress={handleOpenTripPicker}
-            activeOpacity={0.8}
-          >
-            {tripImageUrl ? (
-              <Image
-                source={{ uri: tripImageUrl }}
-                style={styles.tripTileImage}
-                contentFit="cover"
-              />
-            ) : (
-              <View style={styles.tripTileImagePlaceholder} />
-            )}
-            <View style={styles.tripTileOverlay}>
-              <Text style={styles.tripTileName} numberOfLines={1}>
-                {selectedTrip?.name ?? "Select trip"}
-              </Text>
-              <Ionicons
-                name="swap-horizontal"
-                size={12}
-                color={colors.whiteOpacity70}
-              />
-            </View>
+          <TouchableOpacity onPress={handleOpenTripPicker} activeOpacity={0.8}>
+            <YStack
+              width={130}
+              height={52}
+              borderRadius={10}
+              overflow="hidden"
+              borderWidth={1}
+              borderColor="$whiteOpacity12"
+            >
+              {tripImageUrl ? (
+                <Image
+                  source={{ uri: tripImageUrl }}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                  }}
+                  contentFit="cover"
+                />
+              ) : (
+                <YStack
+                  position="absolute"
+                  left={0}
+                  right={0}
+                  top={0}
+                  bottom={0}
+                  backgroundColor="$primaryOpacity10"
+                />
+              )}
+              <XStack
+                flex={1}
+                backgroundColor="$blackOpacity38"
+                alignItems="center"
+                justifyContent="space-between"
+                paddingHorizontal={10}
+                gap={4}
+              >
+                <Text
+                  color="$white"
+                  fontSize="$xs"
+                  fontWeight="600"
+                  flex={1}
+                  numberOfLines={1}
+                >
+                  {selectedTrip?.name ?? "Select trip"}
+                </Text>
+                <Ionicons
+                  name="swap-horizontal"
+                  size={12}
+                  color={colors.whiteOpacity70}
+                />
+              </XStack>
+            </YStack>
           </TouchableOpacity>
-        </View>
+        </XStack>
 
         {selectedTrip ? (
           <FilterChipRow>
@@ -365,15 +434,17 @@ export default function CommunityScreen() {
         ) : null}
 
         {selectedTrip && feedQuery.isLoading ? (
-          <View style={styles.loadingState}>
+          <XStack alignItems="center" gap="$sm" marginTop="$xs">
             <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.loadingStateText}>Loading feed...</Text>
-          </View>
+            <Text color="$textSecondary" fontSize="$sm">
+              Loading feed...
+            </Text>
+          </XStack>
         ) : null}
-      </View>
+      </YStack>
 
       <FlatList
-        style={styles.feedList}
+        style={{ flex: 1 }}
         data={filteredActivities}
         keyExtractor={keyExtractor}
         getItemLayout={getItemLayout}
@@ -386,17 +457,15 @@ export default function CommunityScreen() {
         windowSize={10}
         removeClippedSubviews={true}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.listContent,
-          {
-            paddingTop: spacing.sm,
-            paddingBottom: insets.bottom + 120,
-          },
-        ]}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.sm,
+          paddingBottom: insets.bottom + 120,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={handleRefresh}
+            onRefresh={() => void handleRefresh()}
             tintColor={colors.white}
             colors={[colors.white]}
             progressBackgroundColor={colors.cardDarkOpacity70}
@@ -421,10 +490,17 @@ export default function CommunityScreen() {
         }
         ListFooterComponent={
           feedQuery.isFetchingNextPage ? (
-            <View style={styles.listFooterLoading}>
+            <XStack
+              alignItems="center"
+              justifyContent="center"
+              gap="$sm"
+              paddingVertical="$md"
+            >
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles.listFooterLoadingText}>Loading more...</Text>
-            </View>
+              <Text color="$textSecondary" fontSize="$sm">
+                Loading more...
+              </Text>
+            </XStack>
           ) : null
         }
       />
@@ -439,95 +515,6 @@ export default function CommunityScreen() {
         isFetchingMore={isFetchingMoreTrips}
         onLoadMore={handleTripPickerLoadMore}
       />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  feedList: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-  listFooterLoading: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  listFooterLoadingText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  headerWrap: {
-    gap: spacing.xs,
-    marginBottom: 0,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xs,
-  },
-  headerTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flexShrink: 1,
-  },
-  logoWrap: {
-    width: 96,
-    height: 96,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tripTile: {
-    width: 130,
-    height: 52,
-    borderRadius: 10,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-  },
-  tripTileImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  tripTileImagePlaceholder: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.primaryOpacity10,
-  },
-  tripTileOverlay: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity38,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    gap: 4,
-  },
-  tripTileName: {
-    color: colors.white,
-    fontSize: typography.xs,
-    fontWeight: typography.semibold,
-    flex: 1,
-  },
-  loadingState: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  loadingStateText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-});

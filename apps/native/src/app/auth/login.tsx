@@ -1,14 +1,4 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Dimensions,
-} from "react-native";
+import { ScrollView, Alert, Dimensions } from "react-native";
 import { useLoginForm } from "@mirai-app/frameworks/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -28,12 +18,37 @@ import Pdf from "react-native-pdf";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
 import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { colors } from "~/styles";
+import { YStack, XStack, Text } from "@mirai-app/ui";
 import { useFileDownload } from "~/hooks/files";
 import { clientLogger } from "@mirai-app/shared";
 
 const PRIVACY_POLICY_STORAGE_PATH =
   "files-public/legal/PJApp_Privacy_Policy_PL.pdf";
+
+// Color values for React Native styles
+const colors = {
+  backgroundDark: "#17181c",
+  white: "#ffffff",
+  primary: "#00ced1",
+  primaryOpacity80: "rgba(0, 206, 209, 0.8)",
+  textSecondary: "#9ca3af",
+  gray600: "#4b5563",
+  gray300: "#d1d5db",
+  gray200: "#e5e7eb",
+  gray700: "#374151",
+  danger: "#ef4444",
+  red400: "#f87171",
+  red700: "#b91c1c",
+  red900Opacity30: "rgba(127, 29, 29, 0.3)",
+  success: "#22c55e",
+  successOpacity08: "rgba(16, 185, 129, 0.08)",
+  successOpacity20: "rgba(16, 185, 129, 0.2)",
+  borderWhite5: "rgba(255, 255, 255, 0.05)",
+  borderWhite10: "rgba(255, 255, 255, 0.1)",
+  borderDark: "#395556",
+  cardDarkOpacity40: "rgba(27, 40, 40, 0.4)",
+  backgroundDarkOpacity50: "rgba(23, 24, 28, 0.5)",
+};
 
 export default function LoginScreen() {
   const { formState, setEmail, handleSubmit, clearSent, clearError } =
@@ -284,160 +299,288 @@ export default function LoginScreen() {
     <>
       <StatusBar style="light" />
       <ScrollView
-        style={styles.container}
+        style={{ flex: 1, backgroundColor: colors.backgroundDark }}
         contentContainerStyle={{ flexGrow: 1 }}
       >
         {/* Header Spacer */}
-        <View style={[styles.headerSpacer, { paddingTop: insets.top + 24 }]} />
+        <YStack padding={24} paddingBottom={8} paddingTop={insets.top + 24} />
 
         {/* Logo & Title */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoWrapper}>
+        <YStack
+          paddingHorizontal={24}
+          paddingTop={16}
+          paddingBottom={32}
+          alignItems="center"
+        >
+          <YStack
+            width={188}
+            height={188}
+            marginBottom={18}
+            alignItems="center"
+            justifyContent="center"
+          >
             <Logo size={188} />
-          </View>
-          <Text style={styles.title}>PJApp</Text>
-          <Text style={styles.subtitle}>
+          </YStack>
+          <Text
+            color="$white"
+            fontSize={36}
+            fontWeight="bold"
+            textAlign="center"
+            letterSpacing={-0.5}
+          >
+            PJApp
+          </Text>
+          <Text
+            color="$textSecondary"
+            fontSize={16}
+            textAlign="center"
+            marginTop={8}
+          >
             Unlock your next adventure with PJapp
           </Text>
-        </View>
+        </YStack>
 
         {/* Form Container */}
-        <View style={styles.formContainer}>
+        <YStack paddingHorizontal={24} flex={1}>
           {/* Error Message */}
           {(error ?? precheckError) && (
-            <View style={styles.errorContainer}>
+            <XStack
+              style={{
+                backgroundColor: colors.red900Opacity30,
+                borderWidth: 1,
+                borderColor: colors.red700,
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 24,
+              }}
+              alignItems="center"
+              gap={12}
+            >
               <Ionicons name="alert-circle" size={20} color={colors.danger} />
-              <Text style={styles.errorText}>{precheckError ?? error}</Text>
-            </View>
+              <Text color="$red400" fontSize={14} flex={1}>
+                {precheckError ?? error}
+              </Text>
+            </XStack>
           )}
 
           {/* Inputs Card */}
-          <View style={styles.inputsCard}>
+          <YStack
+            style={{
+              backgroundColor: colors.cardDarkOpacity40,
+              padding: 4,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.borderWhite5,
+              marginBottom: 24,
+            }}
+          >
             {/* Email Input */}
-            <View style={[styles.inputSection, styles.inputSectionBorder]}>
-              <Text style={styles.inputLabel}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <View style={styles.iconOpacity}>
+            <YStack
+              style={{
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.borderWhite5,
+              }}
+            >
+              <Text
+                color="$textSecondary"
+                fontSize={12}
+                fontWeight="bold"
+                textTransform="uppercase"
+                letterSpacing={1}
+                marginBottom={8}
+              >
+                Email
+              </Text>
+              <XStack
+                style={{
+                  alignItems: "center",
+                  gap: 12,
+                  backgroundColor: colors.backgroundDarkOpacity50,
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  borderWidth: 1,
+                  borderColor: colors.borderDark,
+                }}
+              >
+                <YStack style={{ opacity: 0.6 }}>
                   <Ionicons name="at" size={20} color={colors.primary} />
-                </View>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="s12345@pjwstk.edu.pl"
-                  placeholderTextColor={colors.gray600}
-                  value={email}
-                  onChangeText={onEmailChange}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  editable={!isBusy}
-                />
-              </View>
-            </View>
+                </YStack>
+                <Text
+                  style={{
+                    flex: 1,
+                    paddingVertical: 16,
+                    color: colors.white,
+                    fontWeight: "500",
+                  }}
+                >
+                  {email || "s12345@pjwstk.edu.pl"}
+                </Text>
+              </XStack>
+            </YStack>
 
             {/* Privacy Policy */}
-            <View style={[styles.inputSection, styles.inputSectionBorder]}>
-              <TouchableOpacity
-                style={[
-                  styles.policyCheckboxRow,
-                  !hasViewedPrivacyPolicy && { opacity: 0.55 },
-                ]}
-                onPress={() => {
-                  if (!hasViewedPrivacyPolicy) {
-                    setPrivacyPolicyError(
-                      "Najpierw otworz i przeczytaj polityke prywatnosci.",
-                    );
-                    return;
-                  }
-                  setHasAcceptedPrivacyPolicy((prev) => !prev);
-                  setPrivacyPolicyError(null);
+            <YStack
+              style={{
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.borderWhite5,
+              }}
+            >
+              <XStack
+                style={{
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  opacity: !hasViewedPrivacyPolicy ? 0.55 : 1,
                 }}
-                activeOpacity={0.8}
               >
-                <Ionicons
-                  name={
-                    hasAcceptedPrivacyPolicy ? "checkbox" : "square-outline"
-                  }
-                  size={22}
-                  color={
-                    hasAcceptedPrivacyPolicy
-                      ? colors.primary
-                      : colors.textSecondary
-                  }
-                />
-                <Text style={styles.policyCheckboxText}>
+                <YStack
+                  onPress={() => {
+                    if (!hasViewedPrivacyPolicy) {
+                      setPrivacyPolicyError(
+                        "Najpierw otworz i przeczytaj polityke prywatnosci.",
+                      );
+                      return;
+                    }
+                    setHasAcceptedPrivacyPolicy((prev) => !prev);
+                    setPrivacyPolicyError(null);
+                  }}
+                >
+                  <Ionicons
+                    name={
+                      hasAcceptedPrivacyPolicy ? "checkbox" : "square-outline"
+                    }
+                    size={22}
+                    color={
+                      hasAcceptedPrivacyPolicy
+                        ? colors.primary
+                        : colors.textSecondary
+                    }
+                  />
+                </YStack>
+                <Text color="$gray300" fontSize={14} lineHeight={20} flex={1}>
                   Akceptuj{" "}
                   <Text
-                    style={styles.policyLink}
+                    color="$primary"
+                    textDecorationLine="underline"
+                    fontSize={14}
+                    fontWeight="600"
                     onPress={() => void openPrivacyPolicy()}
                   >
                     politykę prywatności
                   </Text>
                 </Text>
-              </TouchableOpacity>
+              </XStack>
               {privacyPolicyError && (
-                <Text style={[styles.policyErrorText, { marginTop: 6 }]}>
+                <Text color="$red400" fontSize={13} marginTop={6}>
                   {privacyPolicyError}
                 </Text>
               )}
-            </View>
+            </YStack>
 
             {isGhostLogin ? (
-              <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>Verification Password</Text>
-                <View style={styles.inputWrapper}>
-                  <View style={styles.iconOpacity}>
+              <YStack padding={16}>
+                <Text
+                  color="$textSecondary"
+                  fontSize={12}
+                  fontWeight="bold"
+                  textTransform="uppercase"
+                  letterSpacing={1}
+                  marginBottom={8}
+                >
+                  Verification Password
+                </Text>
+                <XStack
+                  style={{
+                    alignItems: "center",
+                    gap: 12,
+                    backgroundColor: colors.backgroundDarkOpacity50,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    borderWidth: 1,
+                    borderColor: colors.borderDark,
+                  }}
+                >
+                  <YStack style={{ opacity: 0.6 }}>
                     <Ionicons name="key" size={20} color={colors.primary} />
-                  </View>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="Enter password"
-                    placeholderTextColor={colors.gray600}
-                    value={password}
-                    onChangeText={setPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    secureTextEntry
-                    editable={!isBusy}
-                  />
-                </View>
+                  </YStack>
+                  <Text
+                    style={{
+                      flex: 1,
+                      paddingVertical: 16,
+                      color: colors.white,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {password || "Enter password"}
+                  </Text>
+                </XStack>
                 {passwordError && (
-                  <Text style={styles.modalErrorText}>{passwordError}</Text>
+                  <Text
+                    color="$red400"
+                    textAlign="center"
+                    marginBottom={12}
+                    marginTop={12}
+                  >
+                    {passwordError}
+                  </Text>
                 )}
-              </View>
+              </YStack>
             ) : (
-              <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>How it works</Text>
-                <View style={[styles.inputWrapper, { paddingVertical: 16 }]}>
-                  <Text style={{ color: colors.textSecondary, flex: 1 }}>
+              <YStack padding={16}>
+                <Text
+                  color="$textSecondary"
+                  fontSize={12}
+                  fontWeight="bold"
+                  textTransform="uppercase"
+                  letterSpacing={1}
+                  marginBottom={8}
+                >
+                  How it works
+                </Text>
+                <YStack paddingVertical={16}>
+                  <Text color="$textSecondary" flex={1}>
                     We'll send a one-time login code to your email. Use the code
                     to sign in.
                   </Text>
-                </View>
-              </View>
+                </YStack>
+              </YStack>
             )}
-          </View>
+          </YStack>
 
           {!isGhostLogin && (
-            <View style={styles.forgotPasswordContainer}>
-              <Text style={styles.forgotPasswordText}>
+            <YStack marginBottom={24} alignItems="flex-end">
+              <Text color="$primaryOpacity80" fontSize={14} fontWeight="500">
                 Didn't receive the email? Check your spam folder or try again.
               </Text>
-            </View>
+            </YStack>
           )}
 
           {/* Sent Confirmation */}
           {!isGhostLogin && isSent && (
-            <View style={styles.successContainer}>
+            <XStack
+              style={{
+                backgroundColor: colors.successOpacity08,
+                borderWidth: 1,
+                borderColor: colors.successOpacity20,
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 24,
+              }}
+              alignItems="center"
+              gap={12}
+            >
               <Ionicons
                 name="checkmark-circle"
                 size={20}
                 color={colors.success}
               />
-              <Text style={styles.successText}>
+              <Text color="$success" fontSize={14} flex={1}>
                 Check your email — we sent a 6-digit code. Enter it below to
                 sign in.
               </Text>
-            </View>
+            </XStack>
           )}
 
           {/* OTP Verification Modal */}
@@ -446,39 +589,45 @@ export default function LoginScreen() {
             title="Enter verification code"
             onClose={closeModal}
           >
-            <Text style={styles.modalSubtitle}>
+            <Text color="$textSecondary" marginBottom={16}>
               Enter the 6-digit code we sent to{" "}
-              <Text style={{ fontWeight: "bold" }}>{email}</Text>
+              <Text fontWeight="bold">{email}</Text>
             </Text>
 
-            <TextInput
-              value={otp}
-              onChangeText={(t) => setOtp(t.replace(/[^0-9]/g, "").slice(0, 6))}
-              keyboardType="number-pad"
-              placeholder="123456"
-              placeholderTextColor={colors.textSecondary}
-              style={styles.otpInput}
-              editable={!verifyLoading}
-            />
+            <Text
+              style={{
+                backgroundColor: colors.backgroundDarkOpacity50,
+                color: colors.white,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.gray700,
+                fontSize: 18,
+                textAlign: "center",
+                marginBottom: 12,
+              }}
+            >
+              {otp || "123456"}
+            </Text>
 
             {verifyError && (
-              <Text style={styles.modalErrorText}>{verifyError}</Text>
+              <Text color="$red400" textAlign="center" marginBottom={12}>
+                {verifyError}
+              </Text>
             )}
 
             <PrimaryLoadingButton
               label="Verify & Sign In"
               isLoading={verifyLoading}
               onPress={onVerify}
-              style={styles.verifyButton}
             />
 
-            <TouchableOpacity style={{ marginTop: 12 }} onPress={closeModal}>
-              <Text
-                style={{ color: colors.textSecondary, textAlign: "center" }}
-              >
+            <YStack marginTop={12} onPress={closeModal}>
+              <Text color="$textSecondary" textAlign="center">
                 Cancel
               </Text>
-            </TouchableOpacity>
+            </YStack>
           </AppModalShell>
 
           {/* Login Button */}
@@ -492,12 +641,10 @@ export default function LoginScreen() {
             }
             isLoading={isBusy}
             onPress={onSubmit}
-            style={styles.loginButton}
-            textStyle={styles.loginButtonText}
           />
 
-          <View style={{ height: 32 }} />
-        </View>
+          <YStack height={32} />
+        </YStack>
       </ScrollView>
 
       <FullScreenModal
@@ -506,21 +653,27 @@ export default function LoginScreen() {
         onClose={closePrivacyPolicy}
       >
         {isPolicyLoading ? (
-          <View style={styles.policyModalLoading}>
-            <ActivityIndicator color={colors.primary} size="large" />
-            <Text
-              style={[
-                styles.policyText,
-                { marginTop: 12, color: colors.textSecondary },
-              ]}
-            >
+          <YStack
+            flex={1}
+            alignItems="center"
+            justifyContent="center"
+            padding={24}
+          >
+            <Text color="$primary" fontSize={32}>
+              *
+            </Text>
+            <Text color="$textSecondary" marginTop={12}>
               Pobieranie...
             </Text>
-          </View>
+          </YStack>
         ) : policyPdfUri ? (
           <Pdf
             source={{ uri: policyPdfUri }}
-            style={styles.policyPdf}
+            style={{
+              flex: 1,
+              width: Dimensions.get("window").width,
+              backgroundColor: colors.backgroundDark,
+            }}
             trustAllCerts={false}
             minScale={1}
             maxScale={8}
@@ -534,224 +687,3 @@ export default function LoginScreen() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  headerSpacer: {
-    padding: 24,
-    paddingBottom: 8,
-  },
-  logoContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 32,
-    alignItems: "center",
-  },
-  logoWrapper: {
-    width: 188,
-    height: 188,
-    marginBottom: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    color: colors.white,
-    fontSize: 36,
-    fontWeight: "bold",
-    textAlign: "center",
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  formContainer: {
-    paddingHorizontal: 24,
-    flex: 1,
-  },
-  errorContainer: {
-    backgroundColor: colors.red900Opacity30,
-    borderWidth: 1,
-    borderColor: colors.red700,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  errorText: {
-    color: colors.red400,
-    fontSize: 14,
-    flex: 1,
-  },
-  inputsCard: {
-    backgroundColor: colors.cardDarkOpacity40,
-    padding: 4,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-    marginBottom: 24,
-  },
-  inputSection: {
-    padding: 16,
-  },
-  inputSectionBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderWhite5,
-  },
-  inputLabel: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: colors.backgroundDarkOpacity50,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  iconOpacity: {
-    opacity: 0.6,
-  },
-  textInput: {
-    flex: 1,
-    paddingVertical: 16,
-    color: colors.white,
-    fontWeight: "500",
-  },
-  forgotPasswordContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    color: colors.primaryOpacity80,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  successContainer: {
-    backgroundColor: colors.successOpacity08,
-    borderWidth: 1,
-    borderColor: colors.successOpacity20,
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 24,
-  },
-  successText: {
-    color: colors.success,
-    fontSize: 14,
-    flex: 1,
-  },
-  loginButton: {
-    width: "100%",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  loginButtonText: {
-    color: colors.backgroundDark,
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    marginVertical: 32,
-  },
-  dividerLine: {
-    height: 1,
-    flex: 1,
-    backgroundColor: colors.borderWhite10,
-  },
-  dividerText: {
-    color: colors.gray600,
-    fontSize: 12,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  modalSubtitle: {
-    color: colors.textSecondary,
-    marginBottom: 16,
-  },
-  otpInput: {
-    backgroundColor: colors.backgroundDarkOpacity50,
-    color: colors.white,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.gray700,
-    fontSize: 18,
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  modalErrorText: {
-    color: colors.red400,
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  verifyButton: {
-    marginVertical: 8,
-  },
-  policyCheckboxRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  policyCheckboxText: {
-    color: colors.gray300,
-    fontSize: 14,
-    lineHeight: 20,
-    flex: 1,
-  },
-  policyErrorText: {
-    color: colors.red400,
-    fontSize: 13,
-  },
-  policyHintText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  policyLink: {
-    color: colors.primary,
-    textDecorationLine: "underline",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  policyText: {
-    color: colors.gray200,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  policyModalLoading: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  policyPdf: {
-    flex: 1,
-    width: Dimensions.get("window").width,
-    backgroundColor: colors.backgroundDark,
-  },
-});

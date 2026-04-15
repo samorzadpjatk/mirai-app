@@ -1,16 +1,9 @@
 import React, { useState } from "react";
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-  Text,
-} from "react-native";
+import { Alert, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery, useMutation, useClient } from "urql";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "../../../../styles";
+import { YStack, XStack, Text, View } from "@mirai-app/ui";
 import { clientLogger } from "@mirai-app/shared";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -42,22 +35,24 @@ export default function GroupDetailsScreen() {
   const insets = useSafeAreaInsets();
   const client = useClient();
 
-  // GraphQL queries
+  // GraphQL queries - using tuple destructuring with reexecute functions
   const [{ data: currentUser }] = useQuery({
     query: GetCurrentUserDocument,
   });
 
-  const [{ data: groupData, fetching: groupLoading }] = useQuery({
-    query: GetGroupDocument,
-    variables: { id: groupId ?? "" },
-    pause: !groupId,
-  });
+  const [{ data: groupData, fetching: groupLoading }, reexecuteGroup] =
+    useQuery({
+      query: GetGroupDocument,
+      variables: { id: groupId ?? "" },
+      pause: !groupId,
+    });
   const group = groupData?.group;
 
   const { isTripPast } = useTripDetails(group?.trip?.id);
   const isCurrentUserMemberInViewedGroup = Boolean(
     group?.participants?.some(
-      (participant) => participant.user?.id === currentUser?.currentUser?.id,
+      (participant: { user?: { id?: string } }) =>
+        participant.user?.id === currentUser?.currentUser?.id,
     ),
   );
   const isCurrentUserOrganizerOfViewedGroup = Boolean(
@@ -65,7 +60,7 @@ export default function GroupDetailsScreen() {
     group?.organizer?.id === currentUser.currentUser.id,
   );
 
-  const [{ data: rankingData }] = useQuery({
+  const [{ data: rankingData }, reexecuteRanking] = useQuery({
     query: GetGroupRankingDocument,
     variables: { tripId: group?.trip?.id ?? "" },
     pause: !group?.trip?.id,
@@ -82,17 +77,18 @@ export default function GroupDetailsScreen() {
   });
   const transactions = transactionsData?.coinTransactions?.transactions ?? [];
 
-  const [{ data: myJoinRequest }] = useQuery({
+  const [{ data: myJoinRequest }, reexecuteMyJoinRequest] = useQuery({
     query: GetGroupJoinRequestDocument,
     variables: { groupId: groupId ?? "" },
     pause: !groupId || !group?.trip?.id || isCurrentUserMemberInViewedGroup,
   });
 
-  const [{ data: pendingJoinRequestsData }] = useQuery({
-    query: GetPendingGroupJoinRequestsDocument,
-    variables: { groupId: groupId ?? "" },
-    pause: !groupId || !isCurrentUserOrganizerOfViewedGroup,
-  });
+  const [{ data: pendingJoinRequestsData }, reexecutePendingRequests] =
+    useQuery({
+      query: GetPendingGroupJoinRequestsDocument,
+      variables: { groupId: groupId ?? "" },
+      pause: !groupId || !isCurrentUserOrganizerOfViewedGroup,
+    });
   const pendingJoinRequests =
     pendingJoinRequestsData?.pendingGroupJoinRequests ?? [];
 
@@ -127,15 +123,20 @@ export default function GroupDetailsScreen() {
 
   const organizerId = group.organizer?.id;
   const isGroupMember = group.participants?.some(
-    (participant) => participant.user?.id === currentUser?.currentUser?.id,
+    (participant: { user?: { id?: string } }) =>
+      participant.user?.id === currentUser?.currentUser?.id,
   );
   const isOrganizer = currentUser?.currentUser?.id === organizerId;
   const canManageGroup = isGroupMember && isOrganizer;
 
   // Check if user has a group in current trip by looking at ranking data
   const hasGroupInCurrentTrip = Boolean(
-    rankingData?.groupRanking?.groups?.some((g) =>
-      g.participants?.some((p) => p.user?.id === currentUser?.currentUser?.id),
+    rankingData?.groupRanking?.groups?.some(
+      (g: { participants?: Array<{ user?: { id?: string } }> }) =>
+        g.participants?.some(
+          (p: { user?: { id?: string } }) =>
+            p.user?.id === currentUser?.currentUser?.id,
+        ),
     ),
   );
 
@@ -163,7 +164,7 @@ export default function GroupDetailsScreen() {
 
   const rankingPosition = (() => {
     const index = rankingData?.groupRanking?.groups?.findIndex(
-      (rankingGroup) => rankingGroup.id === group.id,
+      (rankingGroup: { id?: string }) => rankingGroup.id === group.id,
     );
     return typeof index === "number" && index >= 0 ? index + 1 : null;
   })();
@@ -182,10 +183,11 @@ export default function GroupDetailsScreen() {
               if (result.error) {
                 throw result.error;
               }
-              // Invalidate related queries
-              await client.invalidate("GetGroup");
-              await client.invalidate("GetGroupsByTrip");
-              await client.invalidate("GetGroupRanking");
+              // Reexecute queries to refresh data
+              await Promise.all([
+                reexecuteGroup({ requestPolicy: "network-only" }),
+                reexecuteRanking({ requestPolicy: "network-only" }),
+              ]);
               router.replace(`/trips/groups?tripId=${group.trip?.id}`);
             } catch (error) {
               clientLogger.error("Failed to leave group:", error as Error);
@@ -208,9 +210,11 @@ export default function GroupDetailsScreen() {
         if (result.error) {
           throw result.error;
         }
-        // Invalidate related queries
-        await client.invalidate("GetGroupJoinRequest");
-        await client.invalidate("GetPendingGroupJoinRequests");
+        // Reexecute queries to refresh data
+        await Promise.all([
+          reexecuteMyJoinRequest({ requestPolicy: "network-only" }),
+          reexecutePendingRequests({ requestPolicy: "network-only" }),
+        ]);
         Alert.alert("Success", "Join request sent");
       } catch (error: unknown) {
         const message =
@@ -235,11 +239,12 @@ export default function GroupDetailsScreen() {
         if (result.error) {
           throw result.error;
         }
-        // Invalidate related queries
-        await client.invalidate("GetGroup");
-        await client.invalidate("GetPendingGroupJoinRequests");
-        await client.invalidate("GetGroupsByTrip");
-        await client.invalidate("GetGroupRanking");
+        // Reexecute queries to refresh data
+        await Promise.all([
+          reexecuteGroup({ requestPolicy: "network-only" }),
+          reexecuteRanking({ requestPolicy: "network-only" }),
+          reexecutePendingRequests({ requestPolicy: "network-only" }),
+        ]);
       } catch (error: unknown) {
         const message =
           error instanceof Error
@@ -261,9 +266,11 @@ export default function GroupDetailsScreen() {
         if (result.error) {
           throw result.error;
         }
-        // Invalidate related queries
-        await client.invalidate("GetGroupJoinRequest");
-        await client.invalidate("GetPendingGroupJoinRequests");
+        // Reexecute queries to refresh data
+        await Promise.all([
+          reexecuteMyJoinRequest({ requestPolicy: "network-only" }),
+          reexecutePendingRequests({ requestPolicy: "network-only" }),
+        ]);
         Alert.alert("Success", "Join request canceled");
       } catch (error: unknown) {
         const message =
@@ -288,9 +295,16 @@ export default function GroupDetailsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <YStack flex={1} backgroundColor="$backgroundDark">
       {canManageGroup && !isTripPast && (
-        <View style={styles.editButtonContainer}>
+        <View
+          style={{
+            position: "absolute",
+            right: 20,
+            bottom: 96,
+            zIndex: 20,
+          }}
+        >
           <EditGroupButton
             onPress={() => router.push(`/trips/groups/edit/${groupId}`)}
           />
@@ -298,14 +312,12 @@ export default function GroupDetailsScreen() {
       )}
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxxl,
-          },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 16,
+          paddingTop: 16,
+          paddingBottom: insets.bottom + 48,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Card */}
@@ -313,136 +325,278 @@ export default function GroupDetailsScreen() {
 
         {canRequestToJoin && !hasPendingRequestToThisGroup && !isTripPast ? (
           <TouchableOpacity
-            style={styles.joinButton}
+            style={{
+              marginBottom: 16,
+              backgroundColor: "#10b981",
+              borderRadius: 12,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
             activeOpacity={0.8}
             onPress={handleRequestToJoin}
             disabled={isRequesting}
           >
-            <Ionicons name="log-in-outline" size={18} color={colors.white} />
-            <Text style={styles.joinButtonText}>
+            <Ionicons name="log-in-outline" size={18} color="white" />
+            <Text
+              color="white"
+              fontSize={14}
+              fontWeight="700"
+              textTransform="uppercase"
+              letterSpacing={0.8}
+            >
               {isRequesting ? "Sending..." : "Join Group"}
             </Text>
           </TouchableOpacity>
         ) : null}
 
         {canRequestToJoin && hasPendingRequestToThisGroup && !isTripPast ? (
-          <View style={styles.pendingRequestContainer}>
-            <View style={styles.pendingRequestBadge}>
-              <Ionicons name="time-outline" size={16} color={colors.primary} />
-              <Text style={styles.pendingRequestText}>
+          <YStack marginBottom={16} gap={8}>
+            <XStack
+              backgroundColor="rgba(16, 185, 129, 0.12)"
+              borderWidth={1}
+              borderColor="rgba(16, 185, 129, 0.30)"
+              borderRadius={12}
+              paddingVertical={12}
+              paddingHorizontal={16}
+              alignItems="center"
+              justifyContent="center"
+              gap={8}
+            >
+              <Ionicons name="time-outline" size={16} color="#10b981" />
+              <Text color="#10b981" fontSize={14} fontWeight="600">
                 Join request pending approval
               </Text>
-            </View>
+            </XStack>
             <TouchableOpacity
-              style={styles.cancelRequestButton}
+              style={{
+                backgroundColor: "rgba(239, 68, 68, 0.12)",
+                borderWidth: 1,
+                borderColor: "rgba(239, 68, 68, 0.45)",
+                borderRadius: 12,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
               activeOpacity={0.8}
               onPress={handleCancelJoinRequest}
               disabled={isCanceling}
             >
-              <Ionicons
-                name="close-circle-outline"
-                size={16}
-                color={colors.white}
-              />
-              <Text style={styles.cancelRequestButtonText}>
+              <Ionicons name="close-circle-outline" size={16} color="white" />
+              <Text
+                color="white"
+                fontSize={14}
+                fontWeight="700"
+                textTransform="uppercase"
+                letterSpacing={0.8}
+              >
                 {isCanceling ? "Canceling..." : "Cancel request"}
               </Text>
             </TouchableOpacity>
-          </View>
+          </YStack>
         ) : null}
 
         {!isGroupMember && hasGroupInCurrentTrip ? (
-          <View style={styles.groupLockedBadge}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={16}
-              color={colors.textMuted}
-            />
-            <Text style={styles.groupLockedText}>
+          <XStack
+            marginBottom={16}
+            backgroundColor="rgba(255, 255, 255, 0.04)"
+            borderWidth={1}
+            borderColor="rgba(255, 255, 255, 0.1)"
+            borderRadius={12}
+            paddingVertical={12}
+            paddingHorizontal={16}
+            alignItems="center"
+            justifyContent="center"
+            gap={8}
+          >
+            <Ionicons name="lock-closed-outline" size={16} color="#9ca3af" />
+            <Text color="#9ca3af" fontSize={14} fontWeight="500">
               Leave your current group first to join this one
             </Text>
-          </View>
+          </XStack>
         ) : null}
 
         {isGroupMember && !isTripPast ? (
           <TouchableOpacity
-            style={styles.leaveButton}
+            style={{
+              marginBottom: 16,
+              backgroundColor: "rgba(239, 68, 68, 0.15)",
+              borderWidth: 1,
+              borderColor: "rgba(239, 68, 68, 0.45)",
+              borderRadius: 12,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
             activeOpacity={0.8}
             onPress={handleLeaveGroup}
             disabled={isLeaving}
           >
-            <Ionicons name="exit-outline" size={18} color={colors.white} />
-            <Text style={styles.leaveButtonText}>
+            <Ionicons name="exit-outline" size={18} color="white" />
+            <Text
+              color="white"
+              fontSize={14}
+              fontWeight="700"
+              textTransform="uppercase"
+              letterSpacing={0.8}
+            >
               {isLeaving ? "Leaving..." : "Leave Group"}
             </Text>
           </TouchableOpacity>
         ) : null}
 
         {canManageGroup && !isTripPast ? (
-          <View style={styles.joinRequestsCard}>
-            <Text style={styles.joinRequestsTitle}>Pending join requests</Text>
+          <YStack
+            marginBottom={16}
+            backgroundColor="rgba(30, 30, 30, 0.45)"
+            borderWidth={1}
+            borderColor="rgba(255, 255, 255, 0.08)"
+            borderRadius={16}
+            padding={16}
+            gap={12}
+          >
+            <Text
+              fontSize={14}
+              fontWeight="700"
+              color="#9ca3af"
+              textTransform="uppercase"
+              letterSpacing={1.1}
+            >
+              Pending join requests
+            </Text>
             {(pendingJoinRequests ?? []).length === 0 ? (
-              <Text style={styles.joinRequestsEmpty}>No pending requests</Text>
+              <Text fontSize={14} color="#9ca3af">
+                No pending requests
+              </Text>
             ) : (
-              pendingJoinRequests?.map((request) => (
-                <View key={request.id} style={styles.joinRequestRow}>
-                  <View style={styles.joinRequestTop}>
-                    <View style={styles.joinRequestAvatar}>
-                      <Text style={styles.joinRequestAvatarText}>
-                        {`${request.user?.firstName?.[0] ?? ""}${request.user?.lastName?.[0] ?? ""}`.toUpperCase() ||
-                          "?"}
+              pendingJoinRequests?.map(
+                (request: {
+                  id: string;
+                  createdAt: string;
+                  user?: {
+                    firstName?: string | null;
+                    lastName?: string | null;
+                    email?: string | null;
+                  };
+                }) => (
+                  <YStack
+                    key={request.id}
+                    gap={12}
+                    padding={12}
+                    borderRadius={12}
+                    borderWidth={1}
+                    borderColor="rgba(255, 255, 255, 0.06)"
+                    backgroundColor="rgba(0, 0, 0, 0.12)"
+                  >
+                    <XStack alignItems="center" justifyContent="space-between">
+                      <YStack
+                        width={34}
+                        height={34}
+                        borderRadius={999}
+                        backgroundColor="rgba(255, 255, 255, 0.12)"
+                        borderWidth={1}
+                        borderColor="rgba(255, 255, 255, 0.18)"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <Text
+                          color="white"
+                          fontSize={12}
+                          fontWeight="700"
+                          textTransform="uppercase"
+                        >
+                          {`${request.user?.firstName?.[0] ?? ""}${request.user?.lastName?.[0] ?? ""}`.toUpperCase() ||
+                            "?"}
+                        </Text>
+                      </YStack>
+                      <Text color="#9ca3af" fontSize={11} fontWeight="500">
+                        {formatJoinRequestTime(request.createdAt)}
                       </Text>
-                    </View>
-                    <Text style={styles.joinRequestDate}>
-                      {formatJoinRequestTime(request.createdAt)}
-                    </Text>
-                  </View>
-                  <View style={styles.joinRequestUser}>
-                    <Text style={styles.joinRequestName}>
-                      {[request.user?.firstName, request.user?.lastName]
-                        .filter(Boolean)
-                        .join(" ") || "Unknown user"}
-                    </Text>
-                    <Text style={styles.joinRequestEmail}>
-                      {request.user?.email ?? "No email"}
-                    </Text>
-                  </View>
-                  <View style={styles.joinRequestActions}>
-                    <TouchableOpacity
-                      style={[
-                        styles.joinRequestButton,
-                        styles.joinRequestRejectButton,
-                      ]}
-                      onPress={() =>
-                        handleRespondToJoinRequest(request.id, "REJECT")
-                      }
-                      disabled={isResponding}
-                    >
-                      <Ionicons name="close" size={14} color={colors.white} />
-                      <Text style={styles.joinRequestButtonText}>Reject</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.joinRequestButton,
-                        styles.joinRequestAcceptButton,
-                      ]}
-                      onPress={() =>
-                        handleRespondToJoinRequest(request.id, "ACCEPT")
-                      }
-                      disabled={isResponding}
-                    >
-                      <Ionicons
-                        name="checkmark"
-                        size={14}
-                        color={colors.white}
-                      />
-                      <Text style={styles.joinRequestButtonText}>Accept</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))
+                    </XStack>
+                    <YStack gap={4}>
+                      <Text fontSize={16} fontWeight="600" color="white">
+                        {[request.user?.firstName, request.user?.lastName]
+                          .filter(Boolean)
+                          .join(" ") || "Unknown user"}
+                      </Text>
+                      <Text fontSize={12} color="#9ca3af">
+                        {request.user?.email ?? "No email"}
+                      </Text>
+                    </YStack>
+                    <XStack gap={8}>
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          borderRadius: 8,
+                          paddingVertical: 8,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderWidth: 1,
+                          flexDirection: "row",
+                          gap: 6,
+                          borderColor: "rgba(239, 68, 68, 0.5)",
+                          backgroundColor: "rgba(239, 68, 68, 0.12)",
+                        }}
+                        onPress={() =>
+                          handleRespondToJoinRequest(request.id, "REJECT")
+                        }
+                        disabled={isResponding}
+                      >
+                        <Ionicons name="close" size={14} color="white" />
+                        <Text
+                          color="white"
+                          fontSize={12}
+                          fontWeight="700"
+                          textTransform="uppercase"
+                          letterSpacing={0.6}
+                        >
+                          Reject
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          borderRadius: 8,
+                          paddingVertical: 8,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderWidth: 1,
+                          flexDirection: "row",
+                          gap: 6,
+                          borderColor: "rgba(34, 197, 94, 0.5)",
+                          backgroundColor: "rgba(34, 197, 94, 0.12)",
+                        }}
+                        onPress={() =>
+                          handleRespondToJoinRequest(request.id, "ACCEPT")
+                        }
+                        disabled={isResponding}
+                      >
+                        <Ionicons name="checkmark" size={14} color="white" />
+                        <Text
+                          color="white"
+                          fontSize={12}
+                          fontWeight="700"
+                          textTransform="uppercase"
+                          letterSpacing={0.6}
+                        >
+                          Accept
+                        </Text>
+                      </TouchableOpacity>
+                    </XStack>
+                  </YStack>
+                ),
+              )
             )}
-          </View>
+          </YStack>
         ) : null}
 
         {/* Stats Grid */}
@@ -456,228 +610,14 @@ export default function GroupDetailsScreen() {
         <GroupMemberList members={memberList} />
 
         {/* Transaction History */}
-        <View style={styles.transactionHistorySection}>
+        <YStack marginBottom={24}>
           <TransactionHistory transactions={transactions} />
-        </View>
+        </YStack>
 
         <GroupApprovedChallenges
           submissions={group.approvedSubmissions ?? []}
         />
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-  },
-  transactionHistorySection: {
-    marginBottom: spacing.xxl,
-  },
-  editButtonContainer: {
-    position: "absolute",
-    right: 20,
-    bottom: 96,
-    zIndex: 20,
-  },
-  joinButton: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  joinButtonText: {
-    color: colors.backgroundDark,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  pendingRequestBadge: {
-    backgroundColor: colors.primaryOpacity12,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  pendingRequestText: {
-    color: colors.primary,
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-  },
-  pendingRequestContainer: {
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  cancelRequestButton: {
-    backgroundColor: colors.dangerOpacity12,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity45,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  cancelRequestButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  groupLockedBadge: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.whiteOpacity4,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity10,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  groupLockedText: {
-    color: colors.textMuted,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  leaveButton: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.dangerOpacity15,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity45,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  leaveButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  joinRequestsCard: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.cardDarkOpacity45,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  joinRequestsTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-  },
-  joinRequestsEmpty: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-  },
-  joinRequestRow: {
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity6,
-    backgroundColor: colors.blackOpacity12,
-  },
-  joinRequestTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  joinRequestAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.whiteOpacity12,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  joinRequestAvatarText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-  },
-  joinRequestDate: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: typography.medium,
-  },
-  joinRequestUser: {
-    gap: 4,
-  },
-  joinRequestName: {
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-    color: colors.white,
-  },
-  joinRequestEmail: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  joinRequestActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  joinRequestButton: {
-    flex: 1,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-  },
-  joinRequestRejectButton: {
-    borderColor: colors.dangerOpacity50,
-    backgroundColor: colors.dangerOpacity12,
-  },
-  joinRequestAcceptButton: {
-    borderColor: colors.successOpacity50,
-    backgroundColor: colors.successOpacity12,
-  },
-  joinRequestButtonText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-});

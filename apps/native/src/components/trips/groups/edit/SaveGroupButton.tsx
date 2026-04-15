@@ -1,4 +1,4 @@
-import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
+import { PrimaryLoadingButton } from "../../../common/buttons/PrimaryLoadingButton";
 
 interface SaveGroupButtonProps {
   isSubmitting: boolean;

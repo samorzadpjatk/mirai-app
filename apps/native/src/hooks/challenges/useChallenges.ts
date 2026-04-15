@@ -5,7 +5,6 @@ import {
   GetCurrentUserDocument,
   GetGroupsByTripDocument,
 } from "@mirai-app/graphql-client";
-import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
 const PAGE_SIZE = 20;
@@ -183,7 +182,7 @@ export function useChallenges(tripId?: string | null) {
         title: dbChallenge.name,
         points: maxPoints,
         icon: "trophy",
-        iconColor: colors.primary,
+        iconColor: "#00ced1",
         status: cardStatus,
         submissionType: dbChallenge.submissionType ?? "IMAGE",
         scoringCategory: dbChallenge.scoringCategory ?? undefined,

@@ -2,15 +2,12 @@ import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
-  View,
   ScrollView,
-  StyleSheet,
-  Text,
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { colors, spacing } from "../../../../styles";
+import { View, Text } from "@mirai-app/ui";
 import { ChallengesGrid } from "~/components/trips/challenges/ChallengesGrid";
 import { ChallengesLoadingState } from "~/components/trips/challenges/ChallengesLoadingState";
 import { GroupInfoCard } from "~/components/trips/challenges/GroupInfoCard";
@@ -22,13 +19,13 @@ import type {
 } from "~/components/trips/challenges/types";
 
 const statusColors: Record<string, string> = {
-  HIDDEN: colors.statusHidden,
-  VISIBLE: colors.statusVisible,
-  ACTIVE: colors.statusActive,
-  VOTING_PHASE: colors.statusVotingPhase,
-  COMPLETED: colors.statusCompleted,
-  to_solve: colors.statusActive,
-  solved: colors.statusCompleted,
+  HIDDEN: "$statusHidden",
+  VISIBLE: "$statusVisible",
+  ACTIVE: "$statusActive",
+  VOTING_PHASE: "$statusVotingPhase",
+  COMPLETED: "$statusCompleted",
+  to_solve: "$statusActive",
+  solved: "$statusCompleted",
 };
 
 const statusFilters = [
@@ -208,10 +205,14 @@ export default function ChallengesScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View flex={1} backgroundColor="$backgroundDark">
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 16,
+          paddingTop: 16,
+          paddingBottom: 64,
+        }}
         showsVerticalScrollIndicator={false}
         onScroll={handleLoadMore}
         scrollEventThrottle={16}
@@ -219,9 +220,9 @@ export default function ChallengesScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.white}
-            colors={[colors.white]}
-            progressBackgroundColor={colors.cardDarkOpacity70}
+            tintColor="white"
+            colors={["white"]}
+            progressBackgroundColor="rgba(28, 28, 30, 0.7)"
           />
         }
       >
@@ -242,7 +243,11 @@ export default function ChallengesScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.typeFiltersRow}
+          contentContainerStyle={{
+            gap: 8,
+            marginBottom: 8,
+            paddingRight: 12,
+          }}
         >
           {typeFilters.map((filter) => {
             const selected = selectedTypeFilter === filter.value;
@@ -255,13 +260,27 @@ export default function ChallengesScreen() {
               <TouchableOpacity
                 key={filter.value}
                 onPress={() => setSelectedTypeFilter(filter.value)}
-                style={[styles.typeChip, selected && styles.typeChipActive]}
+                style={{
+                  minHeight: 34,
+                  paddingHorizontal: 4,
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor: selected ? "#2e9d8e" : "rgba(255,255,255,0.12)",
+                  backgroundColor: selected
+                    ? "rgba(46,157,142,0.2)"
+                    : "rgba(255,255,255,0.04)",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
-                <View style={styles.typeChipIcons}>
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                >
                   <Ionicons
                     name={filter.icon as keyof typeof Ionicons.glyphMap}
                     size={14}
-                    color={selected ? colors.primary : colors.textMuted}
+                    color={selected ? "#2e9d8e" : "rgba(255,255,255,0.55)"}
                   />
                   {"secondaryIcon" in filter && filter.secondaryIcon ? (
                     <Ionicons
@@ -269,21 +288,30 @@ export default function ChallengesScreen() {
                         filter.secondaryIcon as keyof typeof Ionicons.glyphMap
                       }
                       size={14}
-                      color={selected ? colors.primary : colors.textMuted}
+                      color={selected ? "#2e9d8e" : "rgba(255,255,255,0.55)"}
                     />
                   ) : null}
                 </View>
                 <View
-                  style={[
-                    styles.typeChipCount,
-                    selected && styles.typeChipCountActive,
-                  ]}
+                  style={{
+                    minWidth: 20,
+                    paddingHorizontal: 5,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: selected
+                      ? "rgba(46,157,142,0.3)"
+                      : "rgba(255,255,255,0.08)",
+                    backgroundColor: selected
+                      ? "rgba(46,157,142,0.2)"
+                      : "rgba(28,28,30,0.55)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
                   <Text
-                    style={[
-                      styles.typeChipCountText,
-                      selected && styles.typeChipCountTextActive,
-                    ]}
+                    color={selected ? "$primary" : "$white"}
+                    fontWeight="700"
+                    fontSize={10}
                   >
                     {count}
                   </Text>
@@ -296,34 +324,37 @@ export default function ChallengesScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersRow}
+          contentContainerStyle={{
+            gap: 8,
+            marginBottom: 16,
+            paddingRight: 12,
+          }}
         >
           {statusFilters.map((filter) => {
             const isAll = filter.value === "ALL";
-            const color = isAll
-              ? colors.primary
-              : (statusColors[filter.value] ?? colors.primary);
             const selected = selectedStatusFilter === filter.value;
 
             return (
               <TouchableOpacity
                 key={filter.value}
                 onPress={() => setSelectedStatusFilter(filter.value)}
-                style={[
-                  styles.filterChip,
-                  selected && styles.filterChipActive,
-                  selected && {
-                    borderColor: color,
-                    backgroundColor: `${color}20`,
-                  },
-                ]}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 4,
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor: selected ? "#2e9d8e" : "rgba(255,255,255,0.12)",
+                  backgroundColor: selected
+                    ? "rgba(46,157,142,0.2)"
+                    : "rgba(255,255,255,0.04)",
+                }}
               >
                 <Text
-                  style={[
-                    styles.filterChipText,
-                    selected && styles.filterChipTextActive,
-                    selected && { color: color },
-                  ]}
+                  color={selected ? "$primary" : "$textMuted"}
+                  fontWeight="700"
+                  fontSize={12}
+                  textTransform="uppercase"
+                  letterSpacing={0.8}
                 >
                   {filter.label}
                 </Text>
@@ -339,9 +370,15 @@ export default function ChallengesScreen() {
         />
 
         {isFetchingNextPage ? (
-          <View style={styles.loadingMoreWrap}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.loadingMoreText}>
+          <View
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="center"
+            gap="$sm"
+            marginBottom="$xl"
+          >
+            <ActivityIndicator size="small" color="#2e9d8e" />
+            <Text color="$textMuted" fontSize={12}>
               Loading more challenges...
             </Text>
           </View>
@@ -350,105 +387,3 @@ export default function ChallengesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingTop: spacing.lg, // Space for BackNavbar
-    paddingBottom: spacing.xxxl,
-  },
-  loadingMoreWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
-  },
-  loadingMoreText: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  filtersRow: {
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-    paddingRight: spacing.md,
-  },
-  typeFiltersRow: {
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-    paddingRight: spacing.md,
-  },
-  typeChip: {
-    minHeight: 34,
-    paddingHorizontal: spacing.xs,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-    backgroundColor: colors.whiteOpacity4,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  typeChipIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  typeChipActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  typeChipCount: {
-    minWidth: 20,
-    paddingHorizontal: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    backgroundColor: colors.backgroundDarkOpacity55,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  typeChipCountActive: {
-    borderColor: colors.primaryOpacity30,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  typeChipCountText: {
-    color: colors.white,
-    fontWeight: "700",
-    fontSize: 10,
-  },
-  typeChipCountTextActive: {
-    color: colors.primary,
-  },
-  filterChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-    backgroundColor: colors.whiteOpacity4,
-  },
-  filterChipActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  filterChipText: {
-    color: colors.textMuted,
-    fontWeight: "700",
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  filterChipTextActive: {
-    color: colors.primary,
-  },
-});
-
-// ...

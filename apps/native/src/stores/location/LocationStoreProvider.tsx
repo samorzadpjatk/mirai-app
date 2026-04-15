@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useQuery, useMutation, useClient } from "urql";
 import { Alert } from "react-native";
 import { locationStore, setLocationServerUpdater } from "./locationStore";
+import { clientLogger } from "@mirai-app/shared";
 
 // GraphQL documents (inline until location operations are generated)
 const GetMySharingSettingsDocument = `
@@ -76,9 +77,9 @@ export function LocationStoreProvider({
         const result = await executeUpdateSharing({ input });
         if (result.error) {
           const error = result.error;
-          clientLogger.error("Failed to update location sharing settings:", {
+          clientLogger.error("Failed to update location sharing settings:", 
             error,
-          });
+          );
           if (error?.message?.includes("UNAUTHORIZED")) {
             Alert.alert(
               "Authentication Required",

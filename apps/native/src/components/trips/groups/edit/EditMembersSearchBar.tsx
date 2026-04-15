@@ -1,6 +1,6 @@
-import { StyleSheet, TextInput, View } from "react-native";
+import { TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { YStack, XStack } from "@mirai-app/ui";
 
 interface EditMembersSearchBarProps {
   value: string;
@@ -12,43 +12,35 @@ export function EditMembersSearchBar({
   onChangeText,
 }: EditMembersSearchBarProps) {
   return (
-    <View style={styles.searchContainer}>
-      <View style={styles.searchIconContainer}>
-        <Ionicons name="search" size={20} color={colors.textMuted} />
-      </View>
+    <YStack position="relative" marginBottom="$4">
+      <XStack
+        position="absolute"
+        left="$4"
+        top={0}
+        bottom={0}
+        justifyContent="center"
+        zIndex={1}
+        alignItems="center"
+      >
+        <Ionicons name="search" size={20} color="#475569" />
+      </XStack>
       <TextInput
-        style={styles.searchInput}
         placeholder="Search by name"
         placeholderTextColor="rgba(148, 163, 184, 0.4)"
         value={value}
         onChangeText={onChangeText}
+        style={{
+          backgroundColor: "rgba(33, 38, 45, 1)",
+          borderWidth: 1,
+          borderColor: "rgba(48, 54, 61, 1)",
+          borderRadius: 12,
+          paddingVertical: 12,
+          paddingLeft: 48,
+          paddingRight: 16,
+          color: "white",
+          fontSize: 14,
+        }}
       />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  searchContainer: {
-    position: "relative",
-    marginBottom: spacing.lg,
-  },
-  searchIconContainer: {
-    position: "absolute",
-    left: spacing.lg,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    zIndex: 1,
-  },
-  searchInput: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    paddingLeft: 48,
-    paddingRight: spacing.lg,
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-});

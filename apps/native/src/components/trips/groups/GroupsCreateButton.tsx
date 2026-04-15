@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { YStack } from "@mirai-app/ui";
 import { PrimaryAddButton } from "~/components/common/buttons/PrimaryAddButton";
 
 interface GroupsCreateButtonProps {
@@ -6,11 +6,9 @@ interface GroupsCreateButtonProps {
 }
 
 export function GroupsCreateButton({ onPress }: GroupsCreateButtonProps) {
-  return <PrimaryAddButton onPress={onPress} style={styles.createButton} />;
+  return (
+    <YStack marginBottom="$4">
+      <PrimaryAddButton onPress={onPress} />
+    </YStack>
+  );
 }
-
-const styles = StyleSheet.create({
-  createButton: {
-    marginBottom: 16,
-  },
-});
