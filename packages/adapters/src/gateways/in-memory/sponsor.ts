@@ -1,5 +1,5 @@
 import type { Sponsor } from "@mirai-app/domain";
-import type { SponsorRepository } from "@mirai-app/use-cases";
+import type { SponsorRepository } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository, DatabaseError } from "./base";
 

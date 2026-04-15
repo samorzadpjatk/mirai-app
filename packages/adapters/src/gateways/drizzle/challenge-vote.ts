@@ -1,4 +1,4 @@
-import type { ChallengeVoteRepository } from "@mirai-app/use-cases";
+import type { ChallengeVoteRepository } from "@mirai-app/domain/ports";
 import type { ChallengeVote } from "@mirai-app/domain";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { challengeVotes } from "@mirai-app/frameworks/drizzle/schema";
@@ -6,7 +6,7 @@ import { eq, and, asc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { ChallengeVoteDrizzleMapper } from "../../mappers/drizzle/challenge-vote";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleChallengeVoteRepository

@@ -20,7 +20,7 @@ import {
   type TelemetryPort,
   type TelemetryEvent,
   TelemetryError,
-} from "@mirai-app/use-cases/ports/TelemetryPort";
+} from "@mirai-app/domain/ports/TelemetryPort";
 import { userAgents } from "@mirai-app/frameworks/drizzle/schema";
 
 /**

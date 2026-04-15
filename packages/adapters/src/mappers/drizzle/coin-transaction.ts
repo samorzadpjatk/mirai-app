@@ -1,22 +1,22 @@
-import type { CoinTransaction } from "@mirai-app/use-cases";
+import type { CoinTransactionDTO } from "@mirai-app/domain";
 import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type { coinTransactions } from "@mirai-app/frameworks/drizzle/schema";
 
 /**
- * CoinTransactionDrizzleMapper
+ * CoinTransactionDTODrizzleMapper
  *
- * Maps between Drizzle database records and CoinTransaction entities.
+ * Maps between Drizzle database records and CoinTransactionDTO entities.
  * Implements the DrizzleEntityMapper interface for standard repository operations.
  *
- * Note: CoinTransaction is a use-case level entity with optional relations.
+ * Note: CoinTransactionDTO is a use-case level entity with optional relations.
  */
-export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
-  CoinTransaction,
+export class CoinTransactionDTODrizzleMapper implements DrizzleEntityMapper<
+  CoinTransactionDTO,
   typeof coinTransactions.$inferSelect,
   Partial<typeof coinTransactions.$inferInsert>
 > {
   /**
-   * Convert a Drizzle CoinTransaction record to an entity
+   * Convert a Drizzle CoinTransactionDTO record to an entity
    *
    * Handles both raw records and records with included relations
    */
@@ -27,7 +27,7 @@ export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
       adminFirstName?: string | null;
       adminLastName?: string | null;
     },
-  ): CoinTransaction {
+  ): CoinTransactionDTO {
     return {
       id: record.id,
       groupId: record.groupId,
@@ -35,6 +35,7 @@ export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
       reason: record.reason,
       adminId: record.adminId,
       createdAt: record.createdAt,
+      updatedAt: record.createdAt, // Schema doesn't have updatedAt, use createdAt
       group: record.groupName
         ? {
             id: record.groupId,
@@ -54,10 +55,10 @@ export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
   }
 
   /**
-   * Convert a CoinTransaction entity to Drizzle insert input
+   * Convert a CoinTransactionDTO entity to Drizzle insert input
    */
   toDrizzleInsert(
-    entity: CoinTransaction,
+    entity: CoinTransactionDTO,
   ): Partial<typeof coinTransactions.$inferInsert> {
     return {
       id: entity.id,
@@ -71,10 +72,10 @@ export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
   }
 
   /**
-   * Convert a CoinTransaction entity to Drizzle update input
+   * Convert a CoinTransactionDTO entity to Drizzle update input
    */
   toDrizzleUpdate(
-    entity: CoinTransaction,
+    entity: CoinTransactionDTO,
   ): Partial<typeof coinTransactions.$inferInsert> {
     return {
       amount: entity.amount,
@@ -87,15 +88,15 @@ export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
    */
   fromPartial(
     record: Partial<typeof coinTransactions.$inferSelect>,
-  ): Partial<CoinTransaction> {
+  ): Partial<CoinTransactionDTO> {
     const partial: Record<string, unknown> = {};
     if (record.id) partial.id = record.id;
     if (record.groupId) partial.groupId = record.groupId;
     if (record.amount !== undefined) partial.amount = record.amount;
     if (record.reason !== undefined) partial.reason = record.reason;
     if (record.adminId) partial.adminId = record.adminId;
-    return partial as Partial<CoinTransaction>;
+    return partial as Partial<CoinTransactionDTO>;
   }
 
-  static readonly instance = new CoinTransactionDrizzleMapper();
+  static readonly instance = new CoinTransactionDTODrizzleMapper();
 }

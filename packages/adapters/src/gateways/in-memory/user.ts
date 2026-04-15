@@ -1,5 +1,5 @@
 import type { User, UserRole } from "@mirai-app/domain";
-import type { UserRepository } from "@mirai-app/use-cases";
+import type { UserRepository } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

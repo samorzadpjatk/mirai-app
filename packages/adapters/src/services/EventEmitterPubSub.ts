@@ -3,7 +3,7 @@ import {
   type PubSubService,
   type PubSubError,
   type SubscriptionHandle,
-} from "@mirai-app/use-cases/ports/PubSubService";
+} from "@mirai-app/domain/ports/PubSubService";
 import { Effect, Data, Queue, Option } from "effect";
 
 /**

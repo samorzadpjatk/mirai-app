@@ -23,7 +23,7 @@ import {
   type ConnectionState,
   RealtimeError,
   SubscriptionError,
-} from "@mirai-app/use-cases/ports/RealtimePort";
+} from "@mirai-app/domain/ports/RealtimePort";
 import { serverLogger } from "@mirai-app/shared";
 import { Effect } from "effect";
 

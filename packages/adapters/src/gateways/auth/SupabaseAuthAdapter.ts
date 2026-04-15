@@ -23,7 +23,7 @@ import {
   AuthError,
   InvalidTokenError,
   SessionExpiredError,
-} from "@mirai-app/use-cases/ports/AuthPort";
+} from "@mirai-app/domain/ports/AuthPort";
 import {
   AuthContext,
   type UserId,

@@ -4,7 +4,7 @@ import type {
   DeliveryFilters,
   PaginationOptions,
   DeliveryStats,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/domain/ports";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
   notificationDeliveries,

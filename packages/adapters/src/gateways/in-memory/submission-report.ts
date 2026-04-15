@@ -1,5 +1,5 @@
 import type { SubmissionReport } from "@mirai-app/domain";
-import type { SubmissionReportRepository } from "@mirai-app/use-cases";
+import type { SubmissionReportRepository } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

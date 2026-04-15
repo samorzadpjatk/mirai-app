@@ -111,7 +111,7 @@ import type {
   TripAccessChecker,
   TripRepository,
   GroupRepository,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/domain/ports";
 import type {
   User,
   UserRole,

@@ -5,7 +5,7 @@ import type {
   PaginationOptions,
   DeliveryStats,
   DeliveryStatus,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 
 /**

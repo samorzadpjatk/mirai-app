@@ -1,4 +1,4 @@
-import type { RealtimePort, ConnectionState } from "@mirai-app/use-cases";
+import type { RealtimePort, ConnectionState } from "@mirai-app/domain/ports";
 import { Effect, Data } from "effect";
 
 /**

@@ -5,7 +5,7 @@ import type {
   PaginationOptions,
   PaginatedResult,
 } from "@mirai-app/domain";
-import type { NotificationScheduleRepository } from "@mirai-app/use-cases";
+import type { NotificationScheduleRepository } from "@mirai-app/domain/ports";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
   notificationSchedules,
@@ -16,7 +16,7 @@ import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { NotificationScheduleDrizzleMapper } from "../../mappers/drizzle/notification-schedule";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleNotificationScheduleRepository

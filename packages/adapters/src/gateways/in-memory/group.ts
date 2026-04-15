@@ -1,5 +1,5 @@
 import { Group, TripParticipant, type GroupStatus } from "@mirai-app/domain";
-import type { GroupRepository } from "@mirai-app/use-cases";
+import type { GroupRepository } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository, DatabaseError } from "./base";
 

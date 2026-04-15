@@ -1,6 +1,6 @@
 import type { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
-import type { ChallengeVoteRepository } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import type { ChallengeVoteRepository } from "@mirai-app/domain/ports";
+import { DatabaseError } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

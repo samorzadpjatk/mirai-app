@@ -1,5 +1,5 @@
 import type { Event } from "@mirai-app/domain";
-import type { EventRepository } from "@mirai-app/use-cases";
+import type { EventRepository } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

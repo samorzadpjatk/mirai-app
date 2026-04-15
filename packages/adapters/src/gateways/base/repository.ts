@@ -2,7 +2,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { eq } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * Generic mapper interface for domain-drizzle conversions

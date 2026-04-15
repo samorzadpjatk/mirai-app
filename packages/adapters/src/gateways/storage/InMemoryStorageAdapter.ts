@@ -30,7 +30,7 @@ import {
   BucketNotFoundError,
   DownloadError,
   DeleteError,
-} from "@mirai-app/use-cases/ports/StoragePort";
+} from "@mirai-app/domain/ports/StoragePort";
 
 // =============================================================================
 // In-Memory File Storage

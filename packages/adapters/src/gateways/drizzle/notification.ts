@@ -11,10 +11,10 @@ import {
   NotificationStatus,
   type NotificationPriority,
 } from "@mirai-app/domain";
-import type { NotificationRepository } from "@mirai-app/use-cases";
+import type { NotificationRepository } from "@mirai-app/domain/ports";
 import { BaseDrizzleRepository } from "../base/repository";
 import { NotificationDrizzleMapper } from "../../mappers/drizzle/notification";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleNotificationRepository

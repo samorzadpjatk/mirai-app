@@ -15,7 +15,7 @@ export { ActivityFeedDrizzleMapper } from "./drizzle/activity-feed";
 export { RewardDrizzleMapper } from "./drizzle/reward";
 export { ChallengeSubmissionDrizzleMapper } from "./drizzle/challenge-submission";
 export { ChallengeVoteDrizzleMapper } from "./drizzle/challenge-vote";
-export { CoinTransactionDrizzleMapper } from "./drizzle/coin-transaction";
+export { CoinTransactionDTODrizzleMapper } from "./drizzle/coin-transaction";
 export { SponsorDrizzleMapper } from "./drizzle/sponsor";
 export { SubmissionReportDrizzleMapper } from "./drizzle/submission-report";
 export { NotificationScheduleDrizzleMapper } from "./drizzle/notification-schedule";

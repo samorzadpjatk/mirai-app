@@ -14,13 +14,13 @@ import {
   ActivityReaction,
   type ActivityId,
 } from "@mirai-app/domain";
-import type { ActivityFeedRepository } from "@mirai-app/use-cases";
+import type { ActivityFeedRepository } from "@mirai-app/domain/ports";
 import { BaseDrizzleRepository } from "../base/repository";
 import {
   ActivityFeedDrizzleMapper,
   ActivityReactionDrizzleMapper,
 } from "../../mappers/drizzle/activity-feed";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleActivityFeedRepository
@@ -76,13 +76,14 @@ export class DrizzleActivityFeedRepository
     tripId: string,
     options?: {
       limit?: number;
-      cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
-      includeHidden?: boolean;
+      offset?: number;
     },
   ): Effect.Effect<
     {
-      activities: ActivityFeed[];
-      nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
+      items: ActivityFeed[];
+      total: number;
+      limit: number;
+      offset: number;
       hasMore: boolean;
     },
     DatabaseError,
@@ -91,46 +92,38 @@ export class DrizzleActivityFeedRepository
     return Effect.tryPromise({
       try: async () => {
         const limit = options?.limit ?? 20;
-        const cursor = options?.cursor;
-        const includeHidden = options?.includeHidden ?? false;
+        const offset = options?.offset ?? 0;
 
-        let conditions = [eq(this.table.tripId, tripId)];
+        const conditions = [
+          eq(this.table.tripId, tripId),
+          eq(this.table.isHidden, false),
+        ];
 
-        if (!includeHidden) {
-          conditions.push(eq(this.table.isHidden, false));
-        }
+        // Get total count
+        const [countResult] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(and(...conditions));
 
-        if (cursor) {
-          conditions.push(
-            sql`(${this.table.isPinned}, ${this.table.createdAt}, ${this.table.id}) <= (${cursor.isPinned}, ${cursor.createdAt}, ${cursor.id})`,
-          );
-        }
+        const total = countResult?.count ?? 0;
 
+        // Get paginated results
         const records = await this.db
           .select()
           .from(this.table)
           .where(and(...conditions))
           .orderBy(desc(this.table.isPinned), desc(this.table.createdAt))
-          .limit(limit + 1);
+          .limit(limit)
+          .offset(offset);
 
-        const hasMore = records.length > limit;
-        const activities = records
-          .slice(0, limit)
-          .map((r) => this.mapper.toDomain(r));
-
-        const lastRecord = records[limit - 1];
-        const nextCursor =
-          hasMore && lastRecord
-            ? {
-                id: lastRecord.id,
-                createdAt: lastRecord.createdAt,
-                isPinned: lastRecord.isPinned,
-              }
-            : null;
+        const items = records.map((r) => this.mapper.toDomain(r));
+        const hasMore = offset + items.length < total;
 
         return {
-          activities,
-          nextCursor,
+          items,
+          total,
+          limit,
+          offset,
           hasMore,
         };
       },
@@ -566,5 +559,86 @@ export class DrizzleActivityFeedRepository
           cause: error,
         }),
     });
+  }
+
+  // ============================================================================
+  // Interface Methods - Required by ActivityFeedRepository
+  // ============================================================================
+
+  /**
+   * Find activities by user ID
+   * Note: Current schema doesn't have userId column on ActivityFeed.
+   * This returns empty results. Future schema migration may add userId column.
+   */
+  findByUserId(
+    _userId: string,
+    options?: { limit?: number; offset?: number },
+  ): Effect.Effect<
+    {
+      items: ActivityFeed[];
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    },
+    DatabaseError,
+    never
+  > {
+    // Schema doesn't support this query - return empty results
+    return Effect.succeed({
+      items: [],
+      total: 0,
+      limit: options?.limit ?? 20,
+      offset: options?.offset ?? 0,
+      hasMore: false,
+    });
+  }
+
+  /**
+   * Find activities by group ID
+   * Note: Current schema doesn't have groupId column on ActivityFeed.
+   * This returns empty results. Future schema migration may add groupId column.
+   */
+  findByGroupId(
+    _groupId: string,
+    options?: { limit?: number; offset?: number },
+  ): Effect.Effect<
+    {
+      items: ActivityFeed[];
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    },
+    DatabaseError,
+    never
+  > {
+    // Schema doesn't support this query - return empty results
+    return Effect.succeed({
+      items: [],
+      total: 0,
+      limit: options?.limit ?? 20,
+      offset: options?.offset ?? 0,
+      hasMore: false,
+    });
+  }
+
+  /**
+   * Soft delete activity (mark as hidden)
+   * Uses the existing isHidden/hiddenAt fields as equivalent to soft delete
+   */
+  softDelete(
+    id: string,
+    deletedById: string,
+  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
+    return this.hideActivity(id, deletedById, "Soft deleted");
+  }
+
+  /**
+   * Restore soft-deleted activity (mark as visible)
+   * Uses the existing isHidden field - unhiding restores the activity
+   */
+  restore(id: string): Effect.Effect<ActivityFeed, DatabaseError, never> {
+    return this.unhideActivity(id);
   }
 }

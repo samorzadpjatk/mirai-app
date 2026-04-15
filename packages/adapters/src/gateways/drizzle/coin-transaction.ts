@@ -1,249 +1,114 @@
+import type { CoinTransactionRepository } from "@mirai-app/domain/ports";
 import type {
-  CoinTransactionRepository,
   CoinTransaction,
   CoinTransactionFilters,
-  PaginationOptions,
   MostActiveAdminStat,
-} from "@mirai-app/use-cases";
+  CoinStatistics,
+  PaginationOptions,
+  PaginatedResult,
+} from "@mirai-app/domain/ports";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { coinTransactions, groups } from "@mirai-app/frameworks/drizzle/schema";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import {
+  coinTransactions,
+  groups,
+  users,
+} from "@mirai-app/frameworks/drizzle/schema";
+import { eq, and, desc, gte, lte, sql, isNull } from "drizzle-orm";
 import { Effect } from "effect";
-import { BaseDrizzleRepository } from "../base/repository";
-import { CoinTransactionDrizzleMapper } from "../../mappers/drizzle/coin-transaction";
-import { DatabaseError } from "@mirai-app/adapters/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleCoinTransactionRepository
  *
  * Implements the CoinTransactionRepository port using Drizzle ORM.
- * Uses BaseDrizzleRepository for standard CRUD operations.
  */
-export class DrizzleCoinTransactionRepository
-  extends BaseDrizzleRepository<
-    CoinTransaction,
-    typeof coinTransactions.$inferSelect,
-    Partial<typeof coinTransactions.$inferInsert>,
-    typeof coinTransactions
-  >
-  implements CoinTransactionRepository
-{
-  constructor(db: DrizzleDb) {
-    super(db, {
-      table: coinTransactions,
-      mapper: CoinTransactionDrizzleMapper.instance,
+export class DrizzleCoinTransactionRepository implements CoinTransactionRepository {
+  constructor(private db: DrizzleDb) {}
+
+  /**
+   * Find transaction by ID
+   */
+  findById(
+    id: string,
+  ): Effect.Effect<CoinTransaction | null, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const [result] = await this.db
+          .select({
+            id: coinTransactions.id,
+            groupId: coinTransactions.groupId,
+            amount: coinTransactions.amount,
+            reason: coinTransactions.reason,
+            adminId: coinTransactions.adminId,
+            createdAt: coinTransactions.createdAt,
+            groupName: groups.name,
+            adminFirstName: users.firstName,
+            adminLastName: users.lastName,
+          })
+          .from(coinTransactions)
+          .leftJoin(groups, eq(coinTransactions.groupId, groups.id))
+          .leftJoin(users, eq(coinTransactions.adminId, users.id))
+          .where(eq(coinTransactions.id, id))
+          .limit(1);
+
+        if (!result) return null;
+
+        // Cast to CoinTransaction - the plain object shape matches the interface
+        return {
+          id: result.id,
+          groupId: result.groupId,
+          amount: result.amount,
+          reason: result.reason,
+          adminId: result.adminId,
+          createdAt: result.createdAt,
+          updatedAt: result.createdAt,
+          group: result.groupName
+            ? {
+                id: result.groupId,
+                name: result.groupName,
+                coins: 0,
+              }
+            : undefined,
+          admin:
+            result.adminFirstName !== undefined
+              ? {
+                  id: result.adminId,
+                  firstName: result.adminFirstName,
+                  lastName: result.adminLastName ?? null,
+                }
+              : undefined,
+        } as CoinTransaction;
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findById",
+          message: "Failed to find coin transaction by ID",
+          cause: error,
+        }),
     });
   }
 
   /**
-   * Count transactions by filters
+   * Find transactions by group ID with pagination
    */
-  count(
-    filters?: Partial<CoinTransactionFilters>,
-  ): Effect.Effect<number, DatabaseError, never> {
+  findByGroupId(
+    groupId: string,
+    options?: PaginationOptions,
+  ): Effect.Effect<PaginatedResult<CoinTransaction>, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
-        const whereClause = this.buildWhereClause(filters);
+        const limit = options?.limit ?? 10;
+        const offset = options?.offset ?? 0;
 
-        const [result] = await this.db
+        // Get total count
+        const [countResult] = await this.db
           .select({ count: sql<number>`count(*)::int` })
           .from(coinTransactions)
-          .where(whereClause)
-          .limit(1);
+          .where(eq(coinTransactions.groupId, groupId));
 
-        return result?.count ?? 0;
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "count",
-          message: "Failed to count transactions",
-          cause: error,
-        }),
-    });
-  }
+        const total = countResult?.count ?? 0;
 
-  /**
-   * Sum amount by filters
-   */
-  sumAmount(
-    filters?: Partial<CoinTransactionFilters>,
-  ): Effect.Effect<number | null, DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const whereClause = this.buildWhereClause(filters);
-
-        const [result] = await this.db
-          .select({ sum: sql<number>`sum(${coinTransactions.amount})::int` })
-          .from(coinTransactions)
-          .where(whereClause)
-          .limit(1);
-
-        return result?.sum ?? null;
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "sumAmount",
-          message: "Failed to sum transaction amounts",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Sum added coins (positive amounts) for a trip
-   */
-  sumAddedCoins(
-    tripId: string,
-  ): Effect.Effect<number | null, DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const [result] = await this.db
-          .select({ sum: sql<number>`sum(${coinTransactions.amount})::int` })
-          .from(coinTransactions)
-          .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
-          .where(
-            and(eq(groups.tripId, tripId), gte(coinTransactions.amount, 0)),
-          )
-          .limit(1);
-
-        return result?.sum ?? null;
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "sumAddedCoins",
-          message: "Failed to sum added coins",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Sum removed coins (negative amounts) for a trip
-   */
-  sumRemovedCoins(
-    tripId: string,
-  ): Effect.Effect<number | null, DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const [result] = await this.db
-          .select({ sum: sql<number>`sum(${coinTransactions.amount})::int` })
-          .from(coinTransactions)
-          .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
-          .where(
-            and(eq(groups.tripId, tripId), lte(coinTransactions.amount, 0)),
-          )
-          .limit(1);
-
-        return result?.sum ?? null;
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "sumRemovedCoins",
-          message: "Failed to sum removed coins",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Get most active admin stats
-   */
-  getMostActiveAdmin(
-    tripId: string,
-  ): Effect.Effect<MostActiveAdminStat[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const results = await this.db
-          .select({
-            adminId: coinTransactions.adminId,
-            _sum: sql<number>`sum(${coinTransactions.amount})::int`,
-            _count: sql<number>`count(*)::int`,
-          })
-          .from(coinTransactions)
-          .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
-          .where(eq(groups.tripId, tripId))
-          .groupBy(coinTransactions.adminId)
-          .orderBy(desc(sql`sum(${coinTransactions.amount})`))
-          .limit(1);
-
-        return results.map((r) => ({
-          adminId: r.adminId,
-          _sum: { amount: r._sum ?? 0 },
-          _count: { id: r._count ?? 0 },
-        }));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "getMostActiveAdmin",
-          message: "Failed to get most active admin stats",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find many transactions with filters and pagination
-   */
-  findMany(
-    filters: Partial<CoinTransactionFilters>,
-    pagination: PaginationOptions,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const whereClause = this.buildWhereClause(filters);
-
-        const results = await this.db
-          .select({
-            id: coinTransactions.id,
-            amount: coinTransactions.amount,
-            reason: coinTransactions.reason,
-            createdAt: coinTransactions.createdAt,
-            groupId: coinTransactions.groupId,
-            adminId: coinTransactions.adminId,
-            groupName: groups.name,
-            groupCoins: groups.coins,
-          })
-          .from(coinTransactions)
-          .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
-          .where(whereClause)
-          .orderBy(desc(coinTransactions.createdAt))
-          .limit(pagination.limit ?? 10)
-          .offset(pagination.offset ?? 0);
-
-        return results.map((r) =>
-          this.mapper.toDomain({
-            id: r.id,
-            groupId: r.groupId,
-            amount: r.amount,
-            reason: r.reason,
-            adminId: r.adminId,
-            createdAt: r.createdAt,
-            tripId: "",
-            groupName: r.groupName,
-            groupCoins: r.groupCoins,
-          } as any),
-        );
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findMany",
-          message: "Failed to find transactions with filters",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find recent transactions
-   */
-  findRecent(
-    filters: Partial<CoinTransactionFilters>,
-    limit: number,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const whereClause = this.buildWhereClause(filters);
-
+        // Get paginated results
         const results = await this.db
           .select({
             id: coinTransactions.id,
@@ -253,15 +118,18 @@ export class DrizzleCoinTransactionRepository
             adminId: coinTransactions.adminId,
             createdAt: coinTransactions.createdAt,
             groupName: groups.name,
-            tripId: groups.tripId,
+            adminFirstName: users.firstName,
+            adminLastName: users.lastName,
           })
           .from(coinTransactions)
-          .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
-          .where(whereClause)
+          .leftJoin(groups, eq(coinTransactions.groupId, groups.id))
+          .leftJoin(users, eq(coinTransactions.adminId, users.id))
+          .where(eq(coinTransactions.groupId, groupId))
           .orderBy(desc(coinTransactions.createdAt))
-          .limit(limit);
+          .limit(limit)
+          .offset(offset);
 
-        return results.map(
+        const items: CoinTransaction[] = results.map(
           (r) =>
             ({
               id: r.id,
@@ -270,126 +138,159 @@ export class DrizzleCoinTransactionRepository
               reason: r.reason,
               adminId: r.adminId,
               createdAt: r.createdAt,
-              tripId: r.tripId,
-              group: { id: r.groupId, name: r.groupName ?? "", coins: 0 },
+              updatedAt: r.createdAt,
+              group: r.groupName
+                ? {
+                    id: r.groupId,
+                    name: r.groupName,
+                    coins: 0,
+                  }
+                : undefined,
+              admin:
+                r.adminFirstName !== undefined
+                  ? {
+                      id: r.adminId,
+                      firstName: r.adminFirstName,
+                      lastName: r.adminLastName ?? null,
+                    }
+                  : undefined,
             }) as CoinTransaction,
         );
+
+        return {
+          items,
+          total,
+          limit,
+          offset,
+          hasMore: offset + items.length < total,
+        };
       },
       catch: (error) =>
         new DatabaseError({
-          operation: "findRecent",
-          message: "Failed to find recent transactions",
+          operation: "findByGroupId",
+          message: "Failed to find coin transactions by group ID",
           cause: error,
         }),
     });
   }
 
   /**
-   * Get total coins by group
+   * Find transactions with filters and pagination
    */
-  getTotalCoinsByGroup(
-    tripId: string,
-  ): Effect.Effect<
-    Array<{ groupId: string; _sum: { amount: number | null } }>,
-    DatabaseError,
-    never
-  > {
+  findMany(
+    filters: CoinTransactionFilters,
+    options?: PaginationOptions,
+  ): Effect.Effect<PaginatedResult<CoinTransaction>, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
+        const limit = options?.limit ?? 10;
+        const offset = options?.offset ?? 0;
+
+        // Build where conditions
+        const conditions = [];
+        if (filters.groupId) {
+          conditions.push(eq(coinTransactions.groupId, filters.groupId));
+        }
+        if (filters.startDate) {
+          conditions.push(gte(coinTransactions.createdAt, filters.startDate));
+        }
+        if (filters.endDate) {
+          conditions.push(lte(coinTransactions.createdAt, filters.endDate));
+        }
+        const whereClause =
+          conditions.length > 0 ? and(...conditions) : undefined;
+
+        // Get total count
+        const [countResult] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(coinTransactions)
+          .where(whereClause);
+
+        const total = countResult?.count ?? 0;
+
+        // Get paginated results
         const results = await this.db
           .select({
+            id: coinTransactions.id,
             groupId: coinTransactions.groupId,
-            _sum: sql<number | null>`sum(${coinTransactions.amount})::int`,
-          })
-          .from(coinTransactions)
-          .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
-          .where(eq(groups.tripId, tripId))
-          .groupBy(coinTransactions.groupId)
-          .orderBy(desc(sql`sum(${coinTransactions.amount})`));
-
-        return results.map((r) => ({
-          groupId: r.groupId,
-          _sum: { amount: r._sum ?? null },
-        }));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "getTotalCoinsByGroup",
-          message: "Failed to get total coins by group",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Group by admin
-   */
-  groupByAdmin(
-    tripId: string,
-    limit: number,
-  ): Effect.Effect<
-    Array<{ adminId: string; _count: { id: number } }>,
-    DatabaseError,
-    never
-  > {
-    return Effect.tryPromise({
-      try: async () => {
-        const results = await this.db
-          .select({
+            amount: coinTransactions.amount,
+            reason: coinTransactions.reason,
             adminId: coinTransactions.adminId,
-            _count: sql<number>`count(*)::int`,
+            createdAt: coinTransactions.createdAt,
+            groupName: groups.name,
+            adminFirstName: users.firstName,
+            adminLastName: users.lastName,
           })
           .from(coinTransactions)
-          .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
-          .where(eq(groups.tripId, tripId))
-          .groupBy(coinTransactions.adminId)
-          .orderBy(desc(sql`count(*)`))
-          .limit(limit);
+          .leftJoin(groups, eq(coinTransactions.groupId, groups.id))
+          .leftJoin(users, eq(coinTransactions.adminId, users.id))
+          .where(whereClause)
+          .orderBy(desc(coinTransactions.createdAt))
+          .limit(limit)
+          .offset(offset);
 
-        return results.map((r) => ({
-          adminId: r.adminId,
-          _count: { id: r._count ?? 0 },
-        }));
+        const items: CoinTransaction[] = results.map(
+          (r) =>
+            ({
+              id: r.id,
+              groupId: r.groupId,
+              amount: r.amount,
+              reason: r.reason,
+              adminId: r.adminId,
+              createdAt: r.createdAt,
+              updatedAt: r.createdAt,
+              group: r.groupName
+                ? {
+                    id: r.groupId,
+                    name: r.groupName,
+                    coins: 0,
+                  }
+                : undefined,
+              admin:
+                r.adminFirstName !== undefined
+                  ? {
+                      id: r.adminId,
+                      firstName: r.adminFirstName,
+                      lastName: r.adminLastName ?? null,
+                    }
+                  : undefined,
+            }) as CoinTransaction,
+        );
+
+        return {
+          items,
+          total,
+          limit,
+          offset,
+          hasMore: offset + items.length < total,
+        };
       },
       catch: (error) =>
         new DatabaseError({
-          operation: "groupByAdmin",
-          message: "Failed to group transactions by admin",
+          operation: "findMany",
+          message: "Failed to find coin transactions",
           cause: error,
         }),
     });
   }
 
   /**
-   * Create a new transaction
+   * Create a new coin transaction
    */
-  override create(
-    data:
-      | CoinTransaction
-      | {
-          groupId: string;
-          amount: number;
-          reason?: string;
-          adminId: string;
-        },
+  create(
+    transaction: CoinTransaction,
   ): Effect.Effect<CoinTransaction, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
-        const input = data as {
-          groupId: string;
-          amount: number;
-          reason?: string;
-          adminId: string;
-        };
         const [result] = await this.db
           .insert(coinTransactions)
           .values({
-            tripId: "",
-            groupId: input.groupId,
-            amount: input.amount,
-            reason: input.reason ?? null,
-            adminId: input.adminId,
-            createdAt: new Date(),
+            tripId: "", // Required field in schema
+            groupId: transaction.groupId,
+            amount: transaction.amount,
+            reason: transaction.reason ?? null,
+            adminId: transaction.adminId,
+            createdAt: transaction.createdAt ?? new Date(),
           })
           .returning();
 
@@ -399,7 +300,10 @@ export class DrizzleCoinTransactionRepository
           );
         }
 
-        return this.mapper.toDomain(result);
+        return {
+          ...transaction,
+          id: result.id,
+        } as CoinTransaction;
       },
       catch: (error) =>
         new DatabaseError({
@@ -411,73 +315,83 @@ export class DrizzleCoinTransactionRepository
   }
 
   /**
-   * Increment group coins
+   * Get coin statistics for a group
    */
-  incrementGroupCoins(
+  getStatistics(
     groupId: string,
-    amount: number,
-  ): Effect.Effect<void, DatabaseError, never> {
+  ): Effect.Effect<CoinStatistics, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
-        await this.db
-          .update(groups)
-          .set({ coins: sql`${groups.coins} + ${amount}` })
-          .where(eq(groups.id, groupId));
+        const [result] = await this.db
+          .select({
+            totalEarned: sql<number>`sum(case when ${coinTransactions.amount} > 0 then ${coinTransactions.amount} else 0 end)::int`,
+            totalSpent: sql<number>`sum(case when ${coinTransactions.amount} < 0 then abs(${coinTransactions.amount}) else 0 end)::int`,
+          })
+          .from(coinTransactions)
+          .where(eq(coinTransactions.groupId, groupId));
+
+        const totalEarned = result?.totalEarned ?? 0;
+        const totalSpent = result?.totalSpent ?? 0;
+
+        return {
+          totalEarned,
+          totalSpent,
+          netBalance: totalEarned - totalSpent,
+        };
       },
       catch: (error) =>
         new DatabaseError({
-          operation: "incrementGroupCoins",
-          message: "Failed to increment group coins",
+          operation: "getStatistics",
+          message: "Failed to get coin statistics",
           cause: error,
         }),
     });
   }
 
   /**
-   * Decrement group coins with balance check
+   * Get most active admins for a trip
    */
-  decrementGroupCoins(
-    groupId: string,
-    amount: number,
-  ): Effect.Effect<
-    { success: boolean; currentBalance?: number },
-    DatabaseError,
-    never
-  > {
+  getMostActiveAdmins(
+    tripId: string,
+    limit: number = 5,
+  ): Effect.Effect<MostActiveAdminStat[], DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
-        const [group] = await this.db
-          .select({ coins: groups.coins })
-          .from(groups)
-          .where(eq(groups.id, groupId))
-          .limit(1);
+        const results = await this.db
+          .select({
+            adminId: coinTransactions.adminId,
+            adminName: sql<string>`coalesce(${users.firstName}, '') || ' ' || coalesce(${users.lastName}, '')`,
+            transactionCount: sql<number>`count(*)::int`,
+            coinsAwarded: sql<number>`sum(case when ${coinTransactions.amount} > 0 then ${coinTransactions.amount} else 0 end)::int`,
+          })
+          .from(coinTransactions)
+          .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
+          .innerJoin(users, eq(coinTransactions.adminId, users.id))
+          .where(eq(groups.tripId, tripId))
+          .groupBy(coinTransactions.adminId, users.firstName, users.lastName)
+          .orderBy(desc(sql`sum(${coinTransactions.amount})`))
+          .limit(limit);
 
-        const currentBalance = group?.coins ?? 0;
-
-        if (currentBalance < amount) {
-          return { success: false, currentBalance };
-        }
-
-        await this.db
-          .update(groups)
-          .set({ coins: sql`${groups.coins} - ${amount}` })
-          .where(eq(groups.id, groupId));
-
-        return { success: true, currentBalance: currentBalance - amount };
+        return results.map((r) => ({
+          adminId: r.adminId,
+          adminName: r.adminName.trim() || "Unknown",
+          transactionCount: r.transactionCount,
+          coinsAwarded: r.coinsAwarded,
+        }));
       },
       catch: (error) =>
         new DatabaseError({
-          operation: "decrementGroupCoins",
-          message: "Failed to decrement group coins",
+          operation: "getMostActiveAdmins",
+          message: "Failed to get most active admins",
           cause: error,
         }),
     });
   }
 
   /**
-   * Get group coins
+   * Get current balance for a group
    */
-  getGroupCoins(groupId: string): Effect.Effect<number, DatabaseError, never> {
+  getBalance(groupId: string): Effect.Effect<number, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
         const [group] = await this.db
@@ -490,76 +404,10 @@ export class DrizzleCoinTransactionRepository
       },
       catch: (error) =>
         new DatabaseError({
-          operation: "getGroupCoins",
-          message: "Failed to get group coins",
+          operation: "getBalance",
+          message: "Failed to get group balance",
           cause: error,
         }),
     });
-  }
-
-  /**
-   * Verify group in trip
-   */
-  verifyGroupInTrip(
-    groupId: string,
-    tripId: string,
-  ): Effect.Effect<
-    {
-      exists: boolean;
-      tripId?: string;
-      isDeleted?: boolean;
-      coins?: number;
-    },
-    DatabaseError,
-    never
-  > {
-    return Effect.tryPromise({
-      try: async () => {
-        const [group] = await this.db
-          .select({
-            tripId: groups.tripId,
-            isDeleted: groups.isDeleted,
-            coins: groups.coins,
-          })
-          .from(groups)
-          .where(eq(groups.id, groupId))
-          .limit(1);
-
-        if (!group) {
-          return { exists: false };
-        }
-
-        return {
-          exists: true,
-          tripId: group.tripId,
-          isDeleted: group.isDeleted,
-          coins: group.coins,
-        };
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "verifyGroupInTrip",
-          message: "Failed to verify group in trip",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Build where clause from filters
-   */
-  private buildWhereClause(
-    filters?: Partial<CoinTransactionFilters>,
-  ): ReturnType<typeof and> | undefined {
-    const conditions = [];
-
-    if (filters?.groupId) {
-      conditions.push(eq(coinTransactions.groupId, filters.groupId));
-    }
-
-    if (filters?.tripId) {
-    }
-
-    return conditions.length > 0 ? and(...conditions) : undefined;
   }
 }

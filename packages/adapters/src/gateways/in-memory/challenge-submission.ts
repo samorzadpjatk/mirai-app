@@ -3,8 +3,8 @@ import type {
   SubmissionId,
   SubmissionStatus,
 } from "@mirai-app/domain";
-import type { ChallengeSubmissionRepository } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import type { ChallengeSubmissionRepository } from "@mirai-app/domain/ports";
+import { DatabaseError } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

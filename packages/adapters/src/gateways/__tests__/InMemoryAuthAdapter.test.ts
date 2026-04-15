@@ -4,7 +4,7 @@ import {
   AuthError,
   InvalidTokenError,
   SessionExpiredError,
-} from "@mirai-app/use-cases/ports/AuthPort";
+} from "@mirai-app/domain/ports/AuthPort";
 import { AuthContext, UserRole, UserId } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 

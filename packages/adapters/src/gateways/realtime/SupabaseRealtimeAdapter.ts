@@ -28,7 +28,7 @@ import {
   RealtimeError,
   ConnectionError,
   SubscriptionError,
-} from "@mirai-app/use-cases/ports/RealtimePort";
+} from "@mirai-app/domain/ports/RealtimePort";
 import { Effect } from "effect";
 
 // =============================================================================

@@ -3,7 +3,7 @@ import type {
   ActivityReaction,
   ActivityId,
 } from "@mirai-app/domain";
-import type { ActivityFeedRepository } from "@mirai-app/use-cases";
+import type { ActivityFeedRepository } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 
@@ -55,55 +55,37 @@ export class InMemoryActivityFeedRepository
     tripId: string,
     options?: {
       limit?: number;
-      cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
-      includeHidden?: boolean;
+      offset?: number;
     },
   ): Effect.Effect<
     {
-      activities: ActivityFeed[];
-      nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
+      items: ActivityFeed[];
+      total: number;
+      limit: number;
+      offset: number;
       hasMore: boolean;
     },
     never,
     never
   > {
     const limit = options?.limit ?? 20;
-    const cursor = options?.cursor ?? null;
-    const includeHidden = options?.includeHidden ?? false;
+    const offset = options?.offset ?? 0;
 
     let activities = this.getAllItems().filter(
-      (a) => a.tripId === tripId && (includeHidden || !a.isHidden),
+      (a) => a.tripId === tripId && !a.isHidden,
     );
 
     activities.sort((a, b) => a.compareForSort(b));
 
-    if (cursor) {
-      const cursorIndex = activities.findIndex(
-        (a) =>
-          a.id === cursor.id &&
-          a.createdAt.getTime() === cursor.createdAt.getTime() &&
-          a.isPinned === cursor.isPinned,
-      );
-      if (cursorIndex !== -1) {
-        activities = activities.slice(cursorIndex + 1);
-      }
-    }
-
-    const hasMore = activities.length > limit;
-    const paginatedActivities = activities.slice(0, limit);
-
-    const lastActivity = paginatedActivities[paginatedActivities.length - 1];
-    const nextCursor = lastActivity
-      ? {
-          id: lastActivity.id,
-          createdAt: lastActivity.createdAt,
-          isPinned: lastActivity.isPinned,
-        }
-      : null;
+    const total = activities.length;
+    const paginatedActivities = activities.slice(offset, offset + limit);
+    const hasMore = offset + paginatedActivities.length < total;
 
     return Effect.succeed({
-      activities: paginatedActivities,
-      nextCursor,
+      items: paginatedActivities,
+      total,
+      limit,
+      offset,
       hasMore,
     });
   }

@@ -3,7 +3,7 @@ import {
   type SharingUserInfo,
   type LocationId,
 } from "@mirai-app/domain";
-import type { LocationRepository } from "@mirai-app/use-cases";
+import type { LocationRepository } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository, DatabaseError } from "./base";
 
@@ -85,25 +85,48 @@ export class InMemoryLocationRepository
     }
   }
 
-  create(location: Location): Effect.Effect<Location, never, never> {
+  create(
+    request: import("@mirai-app/domain").LocationSharingRequest,
+  ): Effect.Effect<
+    import("@mirai-app/domain").LocationSharingRequest,
+    never,
+    never
+  > {
     return Effect.sync(() => {
-      this.storage.set(location.id as string, location);
-      return location;
+      this.storage.set(request.id, request as unknown as Location);
+      return request;
     });
   }
 
-  findById(id: LocationId): Effect.Effect<Location | null, never, never> {
-    return Effect.sync(() => this.storage.get(id as string) ?? null);
+  findById(
+    id: LocationId,
+  ): Effect.Effect<
+    import("@mirai-app/domain").LocationSharingRequest | null,
+    never,
+    never
+  > {
+    return Effect.sync(() => {
+      const item = this.storage.get(id as string);
+      return item as unknown as
+        | import("@mirai-app/domain").LocationSharingRequest
+        | null;
+    });
   }
 
-  findByUserId(userId: string): Effect.Effect<Location | null, never, never> {
+  findByUserId(
+    userId: string,
+  ): Effect.Effect<
+    import("@mirai-app/domain").LocationSharingRequest[],
+    never,
+    never
+  > {
     return Effect.gen(this, function* () {
       const plains = this.getAllItems();
-      const plain = plains.find(
-        (loc) => (loc as unknown as Record<string, unknown>).userId === userId,
+      const filtered = plains.filter(
+        (loc) =>
+          (loc as unknown as Record<string, unknown>).senderId === userId,
       );
-      if (!plain) return null;
-      return yield* this.reconstruct(plain).pipe(Effect.orDie);
+      return filtered as unknown as import("@mirai-app/domain").LocationSharingRequest[];
     });
   }
 

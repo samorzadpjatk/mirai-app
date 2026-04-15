@@ -1,5 +1,5 @@
 import { Trip, type TripStatus } from "@mirai-app/domain";
-import type { TripRepository } from "@mirai-app/use-cases";
+import type { TripRepository } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository, DatabaseError } from "./base";
 

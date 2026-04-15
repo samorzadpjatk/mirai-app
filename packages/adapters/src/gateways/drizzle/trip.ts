@@ -7,10 +7,10 @@ import {
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { Effect } from "effect";
 import { Trip, type TripStatus } from "@mirai-app/domain";
-import type { TripRepository } from "@mirai-app/use-cases";
+import type { TripRepository } from "@mirai-app/domain/ports";
 import { BaseDrizzleRepository } from "../base/repository";
 import { TripDrizzleMapper } from "../../mappers/drizzle/trip";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleTripRepository

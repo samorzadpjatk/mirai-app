@@ -20,13 +20,13 @@ import type {
   RewardPurchaseRepository,
   PaginatedResult,
   PaginationOptions,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/domain/ports";
 import { BaseDrizzleRepository } from "../base/repository";
 import {
   RewardDrizzleMapper,
   RewardPurchaseDrizzleMapper,
 } from "../../mappers/drizzle/reward";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleRewardRepository

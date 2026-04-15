@@ -3,7 +3,7 @@ import type {
   RewardPurchaseRepository,
   PaginationOptions,
   PaginatedResult,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/domain/ports";
 import { Reward, type RewardPurchase, type RewardId } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { DatabaseError } from "./base";

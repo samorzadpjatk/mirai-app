@@ -2,7 +2,7 @@ import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { Effect, Layer, Context } from "effect";
 import { ConnectionManager } from "../ConnectionManager";
 import type { RealtimePort } from "@mirai-app/use-cases";
-import { RealtimeError } from "@mirai-app/use-cases/ports/RealtimePort";
+import { RealtimeError } from "@mirai-app/domain/ports/RealtimePort";
 import { runWithTestLayer, createServiceLayer } from "../../test/test-helpers";
 
 // =============================================================================

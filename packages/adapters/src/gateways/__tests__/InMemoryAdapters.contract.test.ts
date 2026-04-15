@@ -6,16 +6,16 @@ import {
   AuthError,
   InvalidTokenError,
   SessionExpiredError,
-} from "@mirai-app/use-cases/ports/AuthPort";
+} from "@mirai-app/domain/ports/AuthPort";
 import {
   RealtimeError,
   SubscriptionError,
-} from "@mirai-app/use-cases/ports/RealtimePort";
+} from "@mirai-app/domain/ports/RealtimePort";
 import {
   StorageError,
   FileNotFoundError,
   UploadError,
-} from "@mirai-app/use-cases/ports/StoragePort";
+} from "@mirai-app/domain/ports/StoragePort";
 import { AuthContext, UserRole, UserId } from "@mirai-app/domain";
 import { Effect, Either } from "effect";
 

@@ -6,7 +6,7 @@ import {
 } from "../ConnectionManager";
 import { InMemoryRealtimeAdapter } from "../../gateways/realtime/InMemoryRealtimeAdapter";
 import { isOk } from "@mirai-app/domain";
-import { RealtimeError } from "@mirai-app/use-cases/ports/RealtimePort";
+import { RealtimeError } from "@mirai-app/domain/ports/RealtimePort";
 import { runWithTestLayer, createServiceLayer } from "../../test/test-helpers";
 
 // =============================================================================

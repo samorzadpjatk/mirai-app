@@ -8,7 +8,7 @@ import type {
 import type {
   NotificationScheduleRepository,
   NotificationScheduleExecutionRecord,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

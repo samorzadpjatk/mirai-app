@@ -1,4 +1,4 @@
-import type { SubmissionReportRepository } from "@mirai-app/use-cases";
+import type { SubmissionReportRepository } from "@mirai-app/domain/ports";
 import type { SubmissionReport } from "@mirai-app/domain";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
@@ -12,7 +12,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { BaseDrizzleRepository } from "../base/repository";
 import { SubmissionReportDrizzleMapper } from "../../mappers/drizzle/submission-report";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 // Include config for reporter info
 const REPORTER_INCLUDE = {

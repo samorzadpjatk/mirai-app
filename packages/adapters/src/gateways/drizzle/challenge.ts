@@ -12,10 +12,10 @@ import {
   type SubmissionType,
   type ScoringCategory,
 } from "@mirai-app/domain";
-import type { ChallengeRepository } from "@mirai-app/use-cases";
+import type { ChallengeRepository } from "@mirai-app/domain/ports";
 import { BaseDrizzleRepository } from "../base/repository";
 import { ChallengeDrizzleMapper } from "../../mappers/drizzle/challenge";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleChallengeRepository

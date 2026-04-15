@@ -8,10 +8,10 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { eq, and, gt, lt, gte, lte, sql, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { Event } from "@mirai-app/domain";
-import type { EventRepository } from "@mirai-app/use-cases";
+import type { EventRepository } from "@mirai-app/domain/ports";
 import { BaseDrizzleRepository } from "../base/repository";
 import { EventDrizzleMapper } from "../../mappers/drizzle/event";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleEventRepository

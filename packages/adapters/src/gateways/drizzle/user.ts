@@ -7,11 +7,11 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { User, UserRole } from "@mirai-app/domain";
-import type { UserRepository } from "@mirai-app/use-cases";
+import type { UserRepository } from "@mirai-app/domain/ports";
 import { inArray } from "drizzle-orm";
 import { BaseDrizzleRepository } from "../base/repository";
 import { UserDrizzleMapper } from "../../mappers/drizzle/user";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import { DatabaseError } from "@mirai-app/domain/ports";
 
 /**
  * DrizzleUserRepository

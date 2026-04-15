@@ -4,8 +4,8 @@ import type {
   ScoringCategory,
   SubmissionType,
 } from "@mirai-app/domain";
-import type { ChallengeRepository } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
+import type { ChallengeRepository } from "@mirai-app/domain/ports";
+import { DatabaseError } from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 import { InMemoryRepository } from "./base";
 

@@ -5,7 +5,7 @@ import type {
   PaginationOptions,
   CoinStatistics,
   MostActiveAdminStat,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/domain/ports";
 import { Effect } from "effect";
 
 /**
@@ -95,14 +95,33 @@ export class InMemoryCoinTransactionRepository implements CoinTransactionReposit
   }
 
   findMany(
-    filters: Partial<CoinTransactionFilters>,
-    pagination: PaginationOptions,
-  ): Effect.Effect<CoinTransaction[], never, never> {
+    filters: CoinTransactionFilters,
+    options?: PaginationOptions,
+  ): Effect.Effect<
+    {
+      items: CoinTransaction[];
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    },
+    never,
+    never
+  > {
     let filtered = this.filterTransactions(filters);
-    const offset = pagination.offset ?? 0;
-    const limit = pagination.limit ?? 50;
-    filtered = filtered.slice(offset, offset + limit);
-    return Effect.succeed(filtered);
+    const offset = options?.offset ?? 0;
+    const limit = options?.limit ?? 50;
+    const total = filtered.length;
+    const items = filtered.slice(offset, offset + limit);
+    const hasMore = offset + items.length < total;
+
+    return Effect.succeed({
+      items,
+      total,
+      limit,
+      offset,
+      hasMore,
+    });
   }
 
   findRecent(
@@ -166,20 +185,9 @@ export class InMemoryCoinTransactionRepository implements CoinTransactionReposit
     );
   }
 
-  create(data: {
-    groupId: string;
-    amount: number;
-    reason?: string;
-    adminId: string;
-  }): Effect.Effect<CoinTransaction, never, never> {
-    const transaction: CoinTransaction = {
-      id: crypto.randomUUID(),
-      groupId: data.groupId,
-      amount: data.amount,
-      reason: data.reason ?? null,
-      adminId: data.adminId,
-      createdAt: new Date(),
-    };
+  create(
+    transaction: CoinTransaction,
+  ): Effect.Effect<CoinTransaction, never, never> {
     this.transactions.push(transaction);
     return Effect.succeed(transaction);
   }
