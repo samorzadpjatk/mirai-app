@@ -6,26 +6,8 @@
  */
 
 // =============================================================================
-// Modules (Dependency Injection)
-// =============================================================================
-
-export {
-  RepositoryModule,
-  REPOSITORY_TOKENS,
-  type RepositoryModuleDeps,
-  type RepositoryModuleDef,
-  type RepositoryToken,
-} from "./modules/RepositoryModule";
-
-export {
-  ControllerModule,
-  CONTROLLER_TOKENS,
-  type ControllerModuleDeps,
-  type ControllerModuleDef,
-  type ControllerToken,
-} from "./modules/ControllerModule";
-
 // Controllers (tRPC routers, API endpoints)
+// =============================================================================
 export { UserController } from "./controllers/user";
 export { CoinController } from "./controllers/coin";
 export { CoinTransactionController } from "./controllers/coin-transaction";
@@ -46,6 +28,16 @@ export { ChallengeVoteController } from "./controllers/challenge-vote";
 export { StorageController } from "./controllers/storage";
 export { SubmissionReportController } from "./controllers/submission-report";
 export { SponsorController } from "./controllers/sponsor";
+
+// Controller Factory (Effect DI Migration)
+export {
+  type Controllers,
+  type BaseControllers,
+  type ControllerFactory,
+  type CreateControllersOptions,
+  type ChallengeCompletedEvent,
+  createControllers,
+} from "./controllers";
 
 // Gateways (Repository implementations)
 // NOTE: Prisma repositories have been fully migrated to Drizzle equivalents
@@ -143,11 +135,12 @@ export {
   handleEffectAsync,
   handleEffectGraphQL,
 } from "./utils/controller-helpers";
+// TODO: Remove deprecated exports after migration to Effect-based factory is complete
 export {
   createRepository,
   createUseCases,
-  createControllerFactory,
-  type ControllerFactory,
+  // createControllerFactory, // Deprecated - use createControllers from controllers/factory.ts
+  // type ControllerFactory,  // Deprecated - use ControllerFactory from controllers/factory.ts
 } from "./utils/repository-factory";
 export { TokenExtractor } from "./utils/TokenExtractor";
 
