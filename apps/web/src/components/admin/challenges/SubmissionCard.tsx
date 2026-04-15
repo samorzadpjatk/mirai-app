@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { GraphQLClient } from "graphql-request";
-import { env } from "../../../lib/env";
+import { useState, useCallback } from "react";
+import { useClient } from "urql";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import { Modal } from "../../ui/Modal";
@@ -22,27 +21,6 @@ interface SubmissionCardProps {
     details?: string,
   ) => Promise<void>;
 }
-
-const getAuthToken = () => {
-  const cookies = document.cookie.split(";");
-  const tokenCookie = cookies.find((c) =>
-    c.trim().startsWith("sb-access-token="),
-  );
-  return tokenCookie ? tokenCookie.split("=")[1] : null;
-};
-
-const createGraphQLClient = () => {
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
 
 const formatDateTime = (value: string): string => {
   const date = new Date(value);
@@ -78,6 +56,15 @@ const formatReviewer = (submission: SubmissionItem): string => {
   return reviewedBy.email ?? "Unknown reviewer";
 };
 
+// GraphQL query for creating download URL
+const CREATE_DOWNLOAD_URL_QUERY = `
+  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+    createDownloadUrl(input: $input) {
+      signedUrl
+    }
+  }
+`;
+
 export function SubmissionCard({
   submission,
   isReviewing,
@@ -86,7 +73,7 @@ export function SubmissionCard({
   onReject,
   onFlag,
 }: SubmissionCardProps) {
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+  const urqlClient = useClient();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState(
@@ -97,7 +84,7 @@ export function SubmissionCard({
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isOpeningImage, setIsOpeningImage] = useState(false);
 
-  const openImage = async () => {
+  const openImage = useCallback(async () => {
     const storagePath = submission.imageIds[0];
     if (!storagePath) {
       return;
@@ -105,26 +92,15 @@ export function SubmissionCard({
 
     setIsOpeningImage(true);
     try {
-      const result = await graphqlClient.request<{
-        createDownloadUrl?: {
-          signedUrl?: string;
-        };
-      }>(
-        `
-        query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-          createDownloadUrl(input: $input) {
-            signedUrl
-          }
-        }
-        `,
-        {
-          input: {
-            storagePath,
-          },
-        },
-      );
+      const result = await urqlClient
+        .query(CREATE_DOWNLOAD_URL_QUERY, { input: { storagePath } })
+        .toPromise();
 
-      const signedUrl = result.createDownloadUrl?.signedUrl;
+      if (result.error) {
+        throw result.error;
+      }
+
+      const signedUrl = result.data?.createDownloadUrl?.signedUrl;
       if (!signedUrl) {
         throw new Error("Could not create download URL for image.");
       }
@@ -139,7 +115,7 @@ export function SubmissionCard({
     } finally {
       setIsOpeningImage(false);
     }
-  };
+  }, [submission.imageIds, urqlClient]);
 
   const handleApprove = async () => {
     await onApprove(submission.id);

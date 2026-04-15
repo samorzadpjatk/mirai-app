@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
-import { GraphQLClient } from "graphql-request";
+import { useClient } from "urql";
 import { authStore } from "@mirai-app/frameworks/auth/client";
-import { env } from "../lib/env";
 import {
   validateImageFile,
   type FileValidationOptions,
@@ -37,26 +36,90 @@ interface UploadTicket {
   storagePath: string;
 }
 
-const getAuthToken = () => {
-  const cookies = document.cookie.split(";");
-  const tokenCookie = cookies.find((c) =>
-    c.trim().startsWith("sb-access-token="),
-  );
-  return tokenCookie ? tokenCookie.split("=")[1] : null;
+const initialProgress: UploadProgress = {
+  loadedBytes: 0,
+  totalBytes: null,
+  percent: null,
 };
 
-const createGraphQLClient = () => {
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
+const encodePathSegments = (path: string): string =>
+  path
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+
+const buildSignedUploadUrl = (
+  baseUrl: string,
+  bucket: string,
+  objectPath: string,
+  token: string,
+): string => {
+  const base = baseUrl.replace(/\/$/, "");
+  const encodedBucket = encodeURIComponent(bucket);
+  const encodedPath = encodePathSegments(objectPath);
+
+  return `${base}/storage/v1/object/upload/sign/${encodedBucket}/${encodedPath}?token=${encodeURIComponent(token)}`;
 };
+
+const uploadWithProgress = (
+  url: string,
+  file: File,
+  options: {
+    upsert: boolean;
+    onProgress: (event: ProgressEvent<EventTarget>) => void;
+    accessToken: string | undefined;
+    supabaseAnonKey: string;
+  },
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url, true);
+    xhr.responseType = "json";
+
+    xhr.setRequestHeader("apikey", options.supabaseAnonKey);
+    xhr.setRequestHeader("x-upsert", options.upsert ? "true" : "false");
+    xhr.setRequestHeader(
+      "content-type",
+      file.type || "application/octet-stream",
+    );
+
+    if (options.accessToken) {
+      xhr.setRequestHeader("authorization", `Bearer ${options.accessToken}`);
+    }
+
+    xhr.upload.onprogress = options.onProgress;
+
+    xhr.onerror = () => {
+      reject(new Error("Upload failed due to a network error."));
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+        return;
+      }
+
+      const xhrResponse: unknown = xhr.response;
+      const responseMessage =
+        xhrResponse &&
+        typeof xhrResponse === "object" &&
+        xhrResponse !== null &&
+        "message" in xhrResponse &&
+        typeof xhrResponse.message === "string"
+          ? xhrResponse.message
+          : null;
+
+      reject(
+        new Error(
+          responseMessage ??
+            `Upload failed with status ${xhr.status}. Please try again.`,
+        ),
+      );
+    };
+
+    xhr.send(file);
+  });
 
 // GraphQL mutation for creating upload URL
 const CREATE_UPLOAD_URL_MUTATION = `
@@ -120,88 +183,8 @@ const parseSignedUrlResult = (value: unknown): string => {
   return value.signedUrl;
 };
 
-const initialProgress: UploadProgress = {
-  loadedBytes: 0,
-  totalBytes: null,
-  percent: null,
-};
-
-const encodePathSegments = (path: string): string =>
-  path
-    .split("/")
-    .filter(Boolean)
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-
-const buildSignedUploadUrl = (
-  baseUrl: string,
-  bucket: string,
-  objectPath: string,
-  token: string,
-): string => {
-  const base = baseUrl.replace(/\/$/, "");
-  const encodedBucket = encodeURIComponent(bucket);
-  const encodedPath = encodePathSegments(objectPath);
-
-  return `${base}/storage/v1/object/upload/sign/${encodedBucket}/${encodedPath}?token=${encodeURIComponent(token)}`;
-};
-
-const uploadWithProgress = (
-  url: string,
-  file: File,
-  options: {
-    upsert: boolean;
-    onProgress: (event: ProgressEvent<EventTarget>) => void;
-    accessToken: string | undefined;
-  },
-): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url, true);
-    xhr.responseType = "json";
-
-    xhr.setRequestHeader("apikey", env.supabaseAnonKey);
-    xhr.setRequestHeader("x-upsert", options.upsert ? "true" : "false");
-    xhr.setRequestHeader(
-      "content-type",
-      file.type || "application/octet-stream",
-    );
-
-    if (options.accessToken) {
-      xhr.setRequestHeader("authorization", `Bearer ${options.accessToken}`);
-    }
-
-    xhr.upload.onprogress = options.onProgress;
-
-    xhr.onerror = () => {
-      reject(new Error("Upload failed due to a network error."));
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-        return;
-      }
-
-      const xhrResponse: unknown = xhr.response;
-      const responseMessage =
-        isObject(xhrResponse) && typeof xhrResponse.message === "string"
-          ? xhrResponse.message
-          : null;
-
-      reject(
-        new Error(
-          responseMessage ??
-            `Upload failed with status ${xhr.status}. Please try again.`,
-        ),
-      );
-    };
-
-    xhr.send(file);
-  });
-
 export function useWebFileUpload(validationOptions?: FileValidationOptions) {
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+  const urqlClient = useClient();
 
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [progress, setProgress] = useState<UploadProgress>(initialProgress);
@@ -293,39 +276,49 @@ export function useWebFileUpload(validationOptions?: FileValidationOptions) {
       setResult(null);
 
       try {
-        // Use GraphQL mutation to get upload URL
-        const uploadUrlResult = await graphqlClient.request<{
-          createUploadUrl?: {
-            token: string;
-            bucket: string;
-            objectPath: string;
-            storagePath: string;
-          };
-        }>(CREATE_UPLOAD_URL_MUTATION, {
-          input: {
-            storagePath: input.storagePath,
-            upsert: input.upsert ?? true,
-          },
-        });
+        // Use urql to get upload URL
+        const uploadResult = await urqlClient
+          .mutation(CREATE_UPLOAD_URL_MUTATION, {
+            input: {
+              storagePath: input.storagePath,
+              upsert: input.upsert ?? true,
+            },
+          })
+          .toPromise();
 
-        if (!uploadUrlResult.createUploadUrl) {
+        if (uploadResult.error) {
+          throw uploadResult.error;
+        }
+
+        if (!uploadResult.data?.createUploadUrl) {
           throw new Error("Failed to get upload URL.");
         }
 
-        const ticket = parseUploadTicket(uploadUrlResult.createUploadUrl);
+        const ticket = parseUploadTicket(uploadResult.data.createUploadUrl);
+
+        // Get supabase URL from env
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        if (!supabaseUrl) {
+          throw new Error("Supabase URL not configured.");
+        }
 
         const signedUploadUrl = buildSignedUploadUrl(
-          env.supabaseUrl,
+          supabaseUrl,
           ticket.bucket,
           ticket.objectPath,
           ticket.token,
         );
 
         const accessToken = authStore.getState().session?.access_token;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (!supabaseAnonKey) {
+          throw new Error("Supabase anon key not configured.");
+        }
 
         await uploadWithProgress(signedUploadUrl, fileToUpload, {
           upsert: input.upsert ?? true,
           accessToken,
+          supabaseAnonKey,
           onProgress: (event) => {
             const totalBytes = event.lengthComputable ? event.total : null;
             const loadedBytes = event.loaded;
@@ -358,28 +351,30 @@ export function useWebFileUpload(validationOptions?: FileValidationOptions) {
         throw new Error(message);
       }
     },
-    [selectedFile, graphqlClient],
+    [selectedFile, urqlClient],
   );
 
   const verifyFileAccessible = useCallback(
     async (storagePath: string): Promise<string> => {
-      const response = await graphqlClient.request<{
-        createDownloadUrl?: {
-          signedUrl: string;
-        };
-      }>(CREATE_DOWNLOAD_URL_QUERY, {
-        input: {
-          storagePath,
-        },
-      });
+      const response = await urqlClient
+        .query(CREATE_DOWNLOAD_URL_QUERY, {
+          input: {
+            storagePath,
+          },
+        })
+        .toPromise();
 
-      if (!response.createDownloadUrl?.signedUrl) {
+      if (response.error) {
+        throw response.error;
+      }
+
+      if (!response.data?.createDownloadUrl?.signedUrl) {
         throw new Error("Failed to get download URL.");
       }
 
-      return parseSignedUrlResult(response.createDownloadUrl);
+      return parseSignedUrlResult(response.data.createDownloadUrl);
     },
-    [graphqlClient],
+    [urqlClient],
   );
 
   return {

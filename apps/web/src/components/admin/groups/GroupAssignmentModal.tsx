@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GraphQLClient } from "graphql-request";
 import { Modal } from "../../ui/Modal";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
@@ -9,9 +8,8 @@ import {
   useGetGroupsByTripQuery,
   useGetUsersQuery,
   type GetGroupsByTripQuery,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/graphql-client/urql";
 import { appToast } from "../../../lib/toast";
-import { env } from "../../../lib/env";
 
 type Group = GetGroupsByTripQuery["groupsByTrip"]["groups"][number];
 
@@ -22,23 +20,6 @@ interface GroupAssignmentModalProps {
   group: Group | null;
 }
 
-const createGraphQLClient = (): GraphQLClient => {
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    },
-  });
-};
-
 export function GroupAssignmentModal({
   isOpen,
   onClose,
@@ -46,31 +27,24 @@ export function GroupAssignmentModal({
   group,
 }: GroupAssignmentModalProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
 
   // Fetch all groups to get participant information
-  const { data: groupsData } = useGetGroupsByTripQuery(
-    graphqlClient,
-    {
+  const [{ data: groupsData }] = useGetGroupsByTripQuery({
+    variables: {
       tripId,
       pagination: { limit: 100, offset: 0 },
     },
-    {
-      enabled: Boolean(tripId) && isOpen,
-    },
-  );
+    pause: !tripId || !isOpen,
+  });
 
   // Fetch all users in the trip
-  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery(
-    graphqlClient,
-    {
+  const [{ data: usersData, fetching: usersLoading }] = useGetUsersQuery({
+    variables: {
       limit: 100,
       offset: 0,
     },
-    {
-      enabled: isOpen,
-    },
-  );
+    pause: !isOpen,
+  });
 
   const users = useMemo(() => {
     return usersData?.users ?? [];

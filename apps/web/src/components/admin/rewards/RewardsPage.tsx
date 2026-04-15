@@ -1,38 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GraphQLClient } from "graphql-request";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useGetRewardsByTripAdminQuery } from "@mirai-app/graphql-client";
+import { useGetRewardsByTripAdminQuery } from "@mirai-app/graphql-client/urql";
 import { RewardCard } from "./RewardCard";
 import { useTrip } from "../../../contexts/TripContext";
-import { env } from "../../../lib/env";
 
 const PAGE_SIZE = 30;
-
-const createGraphQLClient = (): GraphQLClient => {
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
 
 export function RewardsPage() {
   const { selectedTrip } = useTrip();
@@ -40,20 +17,15 @@ export function RewardsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentOffset, setCurrentOffset] = useState(0);
 
-  const client = useMemo(() => createGraphQLClient(), []);
-
-  const { data, isLoading, error, isFetching } = useGetRewardsByTripAdminQuery(
-    client,
-    {
+  const [{ data, fetching, error }] = useGetRewardsByTripAdminQuery({
+    variables: {
       tripId,
       limit: PAGE_SIZE,
       offset: currentOffset,
     },
-    {
-      enabled: Boolean(tripId),
-      staleTime: 30000,
-    },
-  );
+    pause: !tripId,
+    requestPolicy: "cache-and-network",
+  });
 
   const rewards = useMemo(() => {
     const allRewards = data?.rewardsByTripAdmin?.rewards ?? [];
@@ -113,13 +85,13 @@ export function RewardsPage() {
         />
       </div>
 
-      {isLoading ? <LoadingSpinner label="Loading rewards..." /> : null}
+      {fetching && !data ? <LoadingSpinner label="Loading rewards..." /> : null}
 
-      {!isLoading && error ? (
+      {!fetching && error ? (
         <ErrorMessage message="Could not load rewards. Please try again." />
       ) : null}
 
-      {!isLoading && !error && rewards.length === 0 ? (
+      {!fetching && !error && rewards.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-card p-6 text-sm text-text-secondary">
           No rewards found for this trip.
         </p>
@@ -143,10 +115,10 @@ export function RewardsPage() {
         <div>
           <Button
             variant="secondary"
-            disabled={isFetching}
+            disabled={fetching}
             onClick={() => void fetchMoreRewards()}
           >
-            {isFetching ? "Loading more..." : "Load more"}
+            {fetching ? "Loading more..." : "Load more"}
           </Button>
         </div>
       ) : null}

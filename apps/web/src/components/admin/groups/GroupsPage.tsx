@@ -1,35 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GraphQLClient } from "graphql-request";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { GroupCard } from "./GroupCard";
 import { GroupAssignmentModal } from "./GroupAssignmentModal";
-import { useGetGroupsByTripQuery } from "@mirai-app/graphql-client";
+import { useGetGroupsByTripQuery } from "@mirai-app/graphql-client/urql";
 import { useTrip } from "../../../contexts/TripContext";
-import { env } from "../../../lib/env";
 
 const DEFAULT_PAGE_SIZE = 20;
-
-const createGraphQLClient = (): GraphQLClient => {
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    },
-  });
-};
 
 export function GroupsPage() {
   const { selectedTrip } = useTrip();
@@ -39,27 +20,17 @@ export function GroupsPage() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [pageOffset, setPageOffset] = useState(0);
 
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
-
-  const {
-    data: groupsData,
-    isLoading: groupsLoading,
-    error: groupsError,
-    isFetching,
-  } = useGetGroupsByTripQuery(
-    graphqlClient,
-    {
+  const [{ data: groupsData, fetching }] = useGetGroupsByTripQuery({
+    variables: {
       tripId,
       pagination: {
         limit: DEFAULT_PAGE_SIZE,
         offset: pageOffset,
       },
     },
-    {
-      enabled: Boolean(tripId),
-      staleTime: 30000,
-    },
-  );
+    pause: !tripId,
+    requestPolicy: "cache-and-network",
+  });
 
   const groups = useMemo(() => {
     return groupsData?.groupsByTrip?.groups ?? [];
@@ -70,7 +41,7 @@ export function GroupsPage() {
   }, [groupsData]);
 
   const groupsHasNextPage = pagination?.hasMore ?? false;
-  const groupsFetchingNextPage = isFetching && pageOffset > 0;
+  const groupsFetchingNextPage = fetching && pageOffset > 0;
 
   const totalCountLabel = useMemo(() => {
     const total = pagination?.total;
@@ -115,13 +86,11 @@ export function GroupsPage() {
         />
       </div>
 
-      {groupsLoading ? <LoadingSpinner label="Loading groups..." /> : null}
-
-      {!groupsLoading && groupsError ? (
-        <ErrorMessage message="Could not load groups. Please try again." />
+      {fetching && !groupsData ? (
+        <LoadingSpinner label="Loading groups..." />
       ) : null}
 
-      {!groupsLoading && !groupsError && groups.length === 0 ? (
+      {!fetching && groupsData && groups.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border-subtle bg-card p-6 text-sm text-text-secondary">
           No groups found for this filter.
         </p>

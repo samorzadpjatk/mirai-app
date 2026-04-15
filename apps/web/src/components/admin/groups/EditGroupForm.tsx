@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { GraphQLClient } from "graphql-request";
 import type { FormEvent } from "react";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
@@ -15,33 +14,11 @@ import {
   useDeleteGroupMutation,
   useGetUsersQuery,
   type GetGroupQuery,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/graphql-client/urql";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
-import { env } from "../../../lib/env";
 
-const createGraphQLClient = (): GraphQLClient => {
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    },
-  });
-};
-
-interface EditGroupFormProps {
-  groupId: string;
-}
-
-export function EditGroupForm({ groupId }: EditGroupFormProps) {
+export function EditGroupForm({ groupId }: { groupId: string }) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
   const [groupName, setGroupName] = useState("");
@@ -49,30 +26,22 @@ export function EditGroupForm({ groupId }: EditGroupFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+  const [{ data: groupData, fetching: isLoadingGroup, error: groupError }] =
+    useGetGroupQuery({
+      variables: { id: groupId },
+      pause: !groupId,
+    });
 
-  const {
-    data: groupData,
-    isLoading: isLoadingGroup,
-    error: groupError,
-  } = useGetGroupQuery(
-    graphqlClient,
-    { id: groupId },
-    {
-      enabled: Boolean(groupId),
-    },
-  );
-
-  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery(
-    graphqlClient,
-    {
+  const [{ data: usersData, fetching: usersLoading }] = useGetUsersQuery({
+    variables: {
       limit: 100,
       offset: 0,
     },
-    {
-      enabled: Boolean(tripId),
-    },
-  );
+    pause: !tripId,
+  });
+
+  const [, updateGroup] = useUpdateGroupMutation();
+  const [, deleteGroup] = useDeleteGroupMutation();
 
   const group = useMemo(() => groupData?.group ?? null, [groupData]);
   const users = useMemo(() => usersData?.users ?? [], [usersData]);
@@ -83,31 +52,6 @@ export function EditGroupForm({ groupId }: EditGroupFormProps) {
       setSelectedOrganizerId(group.organizer?.id ?? "");
     }
   }, [group]);
-
-  const updateGroupMutation = useUpdateGroupMutation(graphqlClient, {
-    onSuccess: () => {
-      appToast.success("Group updated successfully.");
-      window.location.href = "/groups";
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : "Failed to update group.";
-      appToast.error(message);
-      setFormError(message);
-    },
-  });
-
-  const deleteGroupMutation = useDeleteGroupMutation(graphqlClient, {
-    onSuccess: () => {
-      appToast.success("Group deleted successfully.");
-      window.location.href = "/groups";
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete group.";
-      appToast.error(message);
-    },
-  });
 
   const organizerOptions = useMemo(() => {
     const options = [{ value: "", label: "Select organizer (optional)" }];
@@ -140,16 +84,27 @@ export function EditGroupForm({ groupId }: EditGroupFormProps) {
     const toastId = appToast.loading("Updating group...");
 
     try {
-      await updateGroupMutation.mutateAsync({
+      const result = await updateGroup({
         input: {
           id: groupId,
           name,
           organizerId: selectedOrganizerId || undefined,
         },
       });
+
+      if (result.error) {
+        throw result.error;
+      }
+
       appToast.dismiss(toastId);
-    } catch {
+      appToast.success("Group updated successfully.");
+      window.location.href = "/groups";
+    } catch (error) {
       appToast.dismiss(toastId);
+      const message =
+        error instanceof Error ? error.message : "Failed to update group.";
+      appToast.error(message);
+      setFormError(message);
     }
   };
 
@@ -157,10 +112,20 @@ export function EditGroupForm({ groupId }: EditGroupFormProps) {
     const toastId = appToast.loading("Deleting group...");
 
     try {
-      await deleteGroupMutation.mutateAsync({ id: groupId });
+      const result = await deleteGroup({ id: groupId });
+
+      if (result.error) {
+        throw result.error;
+      }
+
       appToast.dismiss(toastId);
-    } catch {
+      appToast.success("Group deleted successfully.");
+      window.location.href = "/groups";
+    } catch (error) {
       appToast.dismiss(toastId);
+      const message =
+        error instanceof Error ? error.message : "Failed to delete group.";
+      appToast.error(message);
     }
   };
 
@@ -196,11 +161,8 @@ export function EditGroupForm({ groupId }: EditGroupFormProps) {
         {formError ? <ErrorMessage message={formError} /> : null}
 
         <div className="flex items-center gap-3">
-          <Button
-            type="submit"
-            disabled={!canSubmit || updateGroupMutation.isPending}
-          >
-            {updateGroupMutation.isPending ? "Updating..." : "Update group"}
+          <Button type="submit" disabled={!canSubmit}>
+            Update group
           </Button>
           <a
             href="/groups"
@@ -238,12 +200,8 @@ export function EditGroupForm({ groupId }: EditGroupFormProps) {
             >
               Cancel
             </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              disabled={deleteGroupMutation.isPending}
-            >
-              {deleteGroupMutation.isPending ? "Deleting..." : "Delete"}
+            <Button variant="danger" onClick={handleDelete}>
+              Delete
             </Button>
           </div>
         </div>

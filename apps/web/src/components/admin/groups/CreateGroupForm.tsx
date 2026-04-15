@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GraphQLClient } from "graphql-request";
 import type { FormEvent } from "react";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
@@ -10,27 +9,9 @@ import { ErrorMessage } from "../../ui/ErrorMessage";
 import {
   useCreateGroupMutation,
   useGetUsersQuery,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/graphql-client/urql";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
-import { env } from "../../../lib/env";
-
-const createGraphQLClient = (): GraphQLClient => {
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    },
-  });
-};
 
 export function CreateGroupForm() {
   const { selectedTrip } = useTrip();
@@ -39,33 +20,17 @@ export function CreateGroupForm() {
   const [selectedOrganizerId, setSelectedOrganizerId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
-
-  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery(
-    graphqlClient,
-    {
+  const [{ data: usersData, fetching: usersLoading }] = useGetUsersQuery({
+    variables: {
       limit: 100,
       offset: 0,
     },
-    {
-      enabled: Boolean(tripId),
-    },
-  );
+    pause: !tripId,
+  });
+
+  const [, createGroup] = useCreateGroupMutation();
 
   const users = useMemo(() => usersData?.users ?? [], [usersData]);
-
-  const createGroupMutation = useCreateGroupMutation(graphqlClient, {
-    onSuccess: () => {
-      appToast.success("Group created successfully.");
-      window.location.href = "/groups";
-    },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : "Failed to create group.";
-      appToast.error(message);
-      setFormError(message);
-    },
-  });
 
   const organizerOptions = useMemo(() => {
     const options = [{ value: "", label: "Select organizer (optional)" }];
@@ -98,16 +63,27 @@ export function CreateGroupForm() {
     const toastId = appToast.loading("Creating group...");
 
     try {
-      await createGroupMutation.mutateAsync({
+      const result = await createGroup({
         input: {
           tripId,
           name,
           organizerId: selectedOrganizerId || undefined,
         },
       });
+
+      if (result.error) {
+        throw result.error;
+      }
+
       appToast.dismiss(toastId);
-    } catch {
+      appToast.success("Group created successfully.");
+      window.location.href = "/groups";
+    } catch (error) {
       appToast.dismiss(toastId);
+      const message =
+        error instanceof Error ? error.message : "Failed to create group.";
+      appToast.error(message);
+      setFormError(message);
     }
   };
 
@@ -134,11 +110,8 @@ export function CreateGroupForm() {
       {formError ? <ErrorMessage message={formError} /> : null}
 
       <div className="flex items-center gap-3">
-        <Button
-          type="submit"
-          disabled={!canSubmit || createGroupMutation.isPending}
-        >
-          {createGroupMutation.isPending ? "Creating..." : "Create group"}
+        <Button type="submit" disabled={!canSubmit || usersLoading}>
+          {usersLoading ? "Creating..." : "Create group"}
         </Button>
         <a
           href="/groups"

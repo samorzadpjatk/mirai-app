@@ -37,7 +37,8 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
   const [, createCustom] = useCreateCustomActivityMutation();
   const [, updateActivity] = useUpdateActivityMutation();
 
-  const isBusy = createCustom.fetching || updateActivity.fetching;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isBusy = isSubmitting || isActivityLoading;
 
   const {
     selectedFile,

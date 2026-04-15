@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery, useMutation, useClient } from "urql";
+import { useQuery, useMutation } from "urql";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
@@ -20,14 +20,15 @@ import {
 import { AdminActivityCard } from "./AdminActivityCard";
 import { useTrip } from "../../../contexts/TripContext";
 
-const activityTypeFilters: { label: string; value: "all" | ActivityType }[] = [
+// Activity type filter options with proper enum values
+const ACTIVITY_TYPE_OPTIONS = [
   { label: "All", value: "all" },
-  { label: "Submission", value: "Submission" },
-  { label: "Challenge", value: "ChallengeEvent" },
-  { label: "Rank", value: "RankChange" },
-  { label: "Custom", value: "Custom" },
-  { label: "User Post", value: "UserPost" },
-];
+  { label: "Submission", value: "SUBMISSION" },
+  { label: "Challenge", value: "CHALLENGE_EVENT" },
+  { label: "Rank", value: "RANK_CHANGE" },
+  { label: "Custom", value: "CUSTOM" },
+  { label: "User Post", value: "USER_POST" },
+] as const;
 
 // GraphQL Activity type doesn't include nested group info, so we return empty
 // This maintains backward compatibility with AdminActivityCard interface
@@ -87,11 +88,8 @@ export function ActivityPage() {
         throw result.error;
       }
 
-      // Invalidate the query to refresh
-      await urqlClient.invalidate(GetActivitiesByTripDocument, {
-        tripId,
-        limit: 100,
-      });
+      // Refetch to update the cache
+      await refetch({ requestPolicy: "network-only" });
     } catch (error) {
       appToast.error(
         error instanceof Error ? error.message : "Pin update failed.",
@@ -112,11 +110,8 @@ export function ActivityPage() {
         throw result.error;
       }
 
-      // Invalidate the query to refresh
-      await urqlClient.invalidate(GetActivitiesByTripDocument, {
-        tripId,
-        limit: 100,
-      });
+      // Refetch to update the cache
+      await refetch({ requestPolicy: "network-only" });
     } catch (error) {
       appToast.error(
         error instanceof Error ? error.message : "Hide/unhide failed.",
@@ -140,11 +135,8 @@ export function ActivityPage() {
         throw result.error;
       }
 
-      // Invalidate the query to refresh
-      await urqlClient.invalidate(GetActivitiesByTripDocument, {
-        tripId,
-        limit: 100,
-      });
+      // Refetch to update the cache
+      await refetch({ requestPolicy: "network-only" });
       appToast.success("Activity deleted.");
     } catch (error) {
       appToast.error(error instanceof Error ? error.message : "Delete failed.");
@@ -191,7 +183,7 @@ export function ActivityPage() {
           onChange={(event) =>
             setSelectedType(event.target.value as "all" | ActivityType)
           }
-          options={activityTypeFilters.map((item) => ({
+          options={ACTIVITY_TYPE_OPTIONS.map((item) => ({
             value: item.value,
             label: item.label,
           }))}

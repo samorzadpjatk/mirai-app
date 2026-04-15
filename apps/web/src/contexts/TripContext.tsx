@@ -8,9 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import type { ReactNode } from "react";
-import { GraphQLClient } from "graphql-request";
-import { useGetTripsQuery } from "@mirai-app/graphql-client";
-import { env } from "../lib/env";
+import { useGetTripsQuery } from "@mirai-app/graphql-client/urql";
 import { ACTIVE_TRIP_STORAGE_KEY } from "../hooks/useActiveTripId";
 
 interface Trip {
@@ -32,45 +30,14 @@ interface TripProviderProps {
   children: ReactNode;
 }
 
-/**
- * Create a GraphQL client instance for use with generated hooks
- *
- * The generated hooks from @mirai-app/graphql-client require a GraphQLClient
- * instance from graphql-request as their first parameter.
- */
-const createGraphQLClient = (): GraphQLClient => {
-  // Get auth token from cookies
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    },
-  });
-};
-
 export function TripProvider({ children }: TripProviderProps) {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
 
-  // Create GraphQL client for use with generated hooks
-  const client = useMemo(() => createGraphQLClient(), []);
-
-  // Use the generated GraphQL hook to fetch trips
+  // Use urql hook to fetch trips
   // The hook returns data in a nested structure: data?.trips?.trips
-  const { data, isLoading, error } = useGetTripsQuery(
-    client,
-    undefined, // No variables needed for basic trip list
-    {
-      staleTime: 30000, // 30 seconds
-    },
-  );
+  const [{ data, fetching, error }] = useGetTripsQuery({
+    requestPolicy: "cache-and-network",
+  });
 
   // Extract trips array from the GraphQL response structure
   // GraphQL returns: data.trips.trips (the nested trips array inside a pagination wrapper)
@@ -99,7 +66,7 @@ export function TripProvider({ children }: TripProviderProps) {
     selectedTrip,
     setSelectedTrip,
     trips,
-    isLoading,
+    isLoading: fetching,
     error: error ?? null,
   };
 

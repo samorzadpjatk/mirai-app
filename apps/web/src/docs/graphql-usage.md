@@ -1,40 +1,24 @@
 # GraphQL Hooks Usage Guide
 
-This guide explains how to use the generated GraphQL hooks in the Mirai web application.
+This guide explains how to use the generated GraphQL hooks with urql in the Mirai web application.
 
 ## Overview
 
-The `@mirai-app/graphql-client` package provides TypeScript types and React Query hooks generated from the GraphQL schema. These hooks integrate seamlessly with TanStack Query for data fetching, caching, and state management.
+The `@mirai-app/graphql-client` package provides TypeScript types and urql hooks generated from the GraphQL schema. These hooks integrate seamlessly with urql for data fetching, caching, and state management.
 
 ## Setup
 
 ### 1. Provider Setup
 
-First, ensure your application is wrapped with the `QueryProvider` component:
+First, ensure your application is wrapped with the `QueryProvider` component (which uses urql's Provider internally):
 
 ```tsx
 // src/components/QueryProvider.tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { Provider as UrqlProvider } from "urql";
+import { urqlClient } from "../lib/urql-client";
 
-const createQueryClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        refetchOnWindowFocus: false, // Don't refetch on window focus
-        refetchOnReconnect: true, // Refetch on network reconnect
-        retry: 1, // Retry once on failure
-        gcTime: 10 * 60 * 1000, // Cache for 10 minutes
-      },
-    },
-  });
-
-export function QueryProvider({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(createQueryClient);
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+export function QueryProvider({ children }: { children: React.ReactNode }) {
+  return <UrqlProvider value={urqlClient}>{children}</UrqlProvider>;
 }
 ```
 
@@ -53,24 +37,20 @@ function App() {
 }
 ```
 
-### 2. GraphQL Client Setup
+### 2. Urql Client Setup
 
-The generated hooks require a `GraphQLClient` instance from `graphql-request`:
+The urql client is pre-configured in `src/lib/urql-client.ts` with:
 
-```tsx
-import { GraphQLClient } from "graphql-request";
+- Automatic authentication via cookies
+- Cache normalization with graphcache
+- WebSocket subscription support
+- Retry logic for failed requests
 
-const client = new GraphQLClient("https://your-api.com/graphql", {
-  headers: () => {
-    const token = getAuthToken(); // Your auth logic
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  },
-});
-```
+No manual client setup is needed - just import and use the hooks!
 
 ## Importing Hooks
 
-Import hooks from the `@mirai-app/graphql-client` package:
+Import hooks from the `@mirai-app/graphql-client/urql` subpath:
 
 ```typescript
 import {
@@ -89,43 +69,35 @@ import {
   type GetUserQuery,
   type GetTripsQuery,
   type CreateTripMutation,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/graphql-client/urql";
 ```
 
 ## Using Query Hooks
 
 ### Basic Usage
 
-All query hooks follow this pattern:
+All query hooks follow urql's standard pattern:
 
 ```typescript
-const { data, isLoading, error, refetch } = useGetUserQuery(
-  client, // GraphQLClient instance (required)
-  variables, // Query variables (required if query has parameters)
-  options, // TanStack Query options (optional)
-  headers, // Additional headers (optional)
-);
+const [{ data, fetching, error }, reexecute] = useGetUserQuery({
+  variables, // Query variables
+  pause, // Disable the query (optional)
+  requestPolicy, // Cache policy: 'cache-first', 'cache-and-network', etc.
+});
 ```
 
 ### Example: Fetching a User
 
 ```tsx
-import { useGetUserQuery } from "@mirai-app/graphql-client";
-import { GraphQLClient } from "graphql-request";
+import { useGetUserQuery } from "@mirai-app/graphql-client/urql";
 
 function UserProfile({ userId }: { userId: string }) {
-  const client = new GraphQLClient("/graphql");
+  const [{ data, fetching, error }] = useGetUserQuery({
+    variables: { id: userId },
+    pause: !userId, // Only run when userId exists
+  });
 
-  const { data, isLoading, error } = useGetUserQuery(
-    client,
-    { id: userId },
-    {
-      staleTime: 60000, // Override default stale time
-      enabled: !!userId, // Only run when userId exists
-    },
-  );
-
-  if (isLoading) return <p>Loading...</p>;
+  if (fetching) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
   return (
@@ -140,23 +112,19 @@ function UserProfile({ userId }: { userId: string }) {
 ### Example: Fetching Trips with Pagination
 
 ```tsx
-import { useGetTripsQuery } from "@mirai-app/graphql-client";
+import { useGetTripsQuery } from "@mirai-app/graphql-client/urql";
+import { useState } from "react";
 
 function TripList() {
-  const client = new GraphQLClient("/graphql");
-
   const [pagination, setPagination] = useState({
     limit: 10,
     offset: 0,
   });
 
-  const { data, isLoading, isFetching } = useGetTripsQuery(
-    client,
-    { pagination },
-    {
-      placeholderData: (previousData) => previousData, // Keep old data while fetching
-    },
-  );
+  const [{ data, fetching }] = useGetTripsQuery({
+    variables: { pagination },
+    requestPolicy: "cache-and-network",
+  });
 
   const trips = data?.trips?.trips ?? [];
   const hasMore = data?.trips?.pagination?.hasMore;
@@ -167,7 +135,7 @@ function TripList() {
         <TripCard key={trip.id} trip={trip} />
       ))}
 
-      {isFetching && <p>Loading more...</p>}
+      {fetching && <p>Loading more...</p>}
 
       {hasMore && (
         <button
@@ -186,16 +154,12 @@ function TripList() {
 ### Example: Current User (No Variables)
 
 ```tsx
-import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
+import { useGetCurrentUserQuery } from "@mirai-app/graphql-client/urql";
 
 function UserMenu() {
-  const client = new GraphQLClient("/graphql");
-
-  const { data } = useGetCurrentUserQuery(
-    client,
-    undefined, // No variables required
-    { staleTime: 30000 },
-  );
+  const [{ data }] = useGetCurrentUserQuery({
+    requestPolicy: "cache-and-network",
+  });
 
   if (!data?.me) return <p>Not logged in</p>;
 
@@ -205,71 +169,69 @@ function UserMenu() {
 
 ## Using Mutation Hooks
 
-Mutation hooks follow a similar pattern:
+Mutation hooks follow urql's pattern:
 
 ```typescript
-const { mutate, mutateAsync, isPending, error } = useCreateTripMutation(
-  client, // GraphQLClient instance (required)
-  options, // TanStack Query mutation options (optional)
-);
+const [{ data, fetching, error }, execute] = useCreateTripMutation();
 ```
 
 ### Example: Creating a Trip
 
 ```tsx
-import { useCreateTripMutation } from "@mirai-app/graphql-client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCreateTripMutation } from "@mirai-app/graphql-client/urql";
+import { useClient } from "urql";
 
 function CreateTripForm() {
-  const client = new GraphQLClient("/graphql");
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
+  const [{ fetching }, createTrip] = useCreateTripMutation();
 
-  const { mutate, isPending } = useCreateTripMutation(client, {
-    onSuccess: () => {
-      // Invalidate and refetch trips list
-      queryClient.invalidateQueries({ queryKey: ["GetTrips"] });
-    },
-  });
+  const handleSubmit = async (formData: CreateTripInput) => {
+    const result = await createTrip({ input: formData });
 
-  const handleSubmit = (formData: CreateTripInput) => {
-    mutate(
-      { input: formData },
-      {
-        onSuccess: (data) => {
-          console.log("Created trip:", data.createTrip.id);
-        },
-        onError: (error) => {
-          console.error("Failed to create trip:", error);
-        },
-      },
-    );
+    if (result.error) {
+      console.error("Failed to create trip:", result.error);
+      return;
+    }
+
+    console.log("Created trip:", result.data?.createTrip.id);
+
+    // Invalidate cache to refresh trips list
+    await urqlClient.invalidate("GetTrips");
   };
 
   return (
     <form onSubmit={handleSubmit}>
       {/* Form fields */}
-      <button disabled={isPending}>
-        {isPending ? "Creating..." : "Create Trip"}
+      <button disabled={fetching}>
+        {fetching ? "Creating..." : "Create Trip"}
       </button>
     </form>
   );
 }
 ```
 
-## Query Keys
+## Cache Invalidation
 
-Each generated hook provides a `getKey` function for cache management:
+Urql provides cache invalidation methods on the client:
 
 ```typescript
-// Get the query key for a specific user
-const userQueryKey = useGetUserQuery.getKey({ id: "user-123" });
-// Result: ['GetUser', { id: 'user-123' }]
+import { useClient } from "urql";
 
-// Invalidate specific user cache
-queryClient.invalidateQueries({ queryKey: userQueryKey });
+function MyComponent() {
+  const client = useClient();
 
-// Or invalidate all user queries
-queryClient.invalidateQueries({ queryKey: ["GetUser"] });
+  // Invalidate specific query
+  const refreshTrips = () => {
+    client.invalidate("GetTrips");
+  };
+
+  // Invalidate with variables
+  const refreshUser = (userId: string) => {
+    client.invalidate("GetUser", { id: userId });
+  };
+
+  return <button onClick={refreshTrips}>Refresh</button>;
+}
 ```
 
 ## Common Patterns
@@ -277,59 +239,54 @@ queryClient.invalidateQueries({ queryKey: ["GetUser"] });
 ### Conditional Queries
 
 ```tsx
-const { data } = useGetUserQuery(
-  client,
-  { id: userId },
-  { enabled: !!userId }, // Only fetch when userId exists
-);
+const [{ data }] = useGetUserQuery({
+  variables: { id: userId },
+  pause: !userId, // Only fetch when userId exists
+});
 ```
 
 ### Polling/Refetching
 
 ```tsx
-const { data } = useGetTripsQuery(client, variables, {
-  refetchInterval: 30000, // Refetch every 30 seconds
-  refetchIntervalInBackground: true,
+const [{ data }, reexecute] = useGetTripsQuery({
+  variables,
+  requestPolicy: "cache-and-network",
 });
+
+// Manual refetch
+const refresh = () => reexecute({ requestPolicy: "network-only" });
 ```
 
-### Optimistic Updates
+### Imperative Queries (Outside of Components)
+
+For raw GraphQL queries outside of React hooks:
 
 ```tsx
-const { mutate } = useUpdateTripMutation(client, {
-  onMutate: async (newTrip) => {
-    // Cancel outgoing refetches
-    await queryClient.cancelQueries({ queryKey: ["GetTrips"] });
+import { urqlClient } from "../lib/urql-client";
 
-    // Snapshot previous value
-    const previousTrips = queryClient.getQueryData(["GetTrips"]);
-
-    // Optimistically update
-    queryClient.setQueryData(["GetTrips"], (old) => ({
-      ...old,
-      trips: old.trips.map((t) =>
-        t.id === newTrip.id ? { ...t, ...newTrip } : t,
-      ),
-    }));
-
-    // Return context for rollback
-    return { previousTrips };
-  },
-  onError: (err, newTrip, context) => {
-    // Rollback on error
-    queryClient.setQueryData(["GetTrips"], context?.previousTrips);
-  },
-});
+const result = await urqlClient
+  .query(
+    `
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      id
+      name
+    }
+  }
+`,
+    { id: "user-123" },
+  )
+  .toPromise();
 ```
 
 ## Adding New GraphQL Operations
 
 ### 1. Define the Operation
 
-Add your GraphQL operation to the appropriate file in `packages/graphql-client/src/graphql/operations/`:
+Add your GraphQL operation to the appropriate file in `packages/graphql-client/src/generated/graphql/operations/`:
 
 ```graphql
-# packages/graphql-client/src/graphql/operations/my-feature.queries.graphql
+# packages/graphql-client/src/generated/graphql/operations/my-feature.queries.graphql
 
 fragment MyFeatureFields on MyFeature {
   id
@@ -362,7 +319,7 @@ bun run generate
 ### 3. Use the Generated Hook
 
 ```tsx
-import { useGetMyFeaturesQuery } from "@mirai-app/graphql-client";
+import { useGetMyFeaturesQuery } from "@mirai-app/graphql-client/urql";
 ```
 
 ## Available Hooks
@@ -383,7 +340,7 @@ import { useGetMyFeaturesQuery } from "@mirai-app/graphql-client";
 - `useUpdateTripMutation` - Update an existing trip
 - `useDeleteTripMutation` - Delete a trip
 
-> **Note:** More hooks are generated as GraphQL operations are added. Check the generated file at `packages/graphql-client/src/generated/graphql.ts` for the complete list.
+> **Note:** More hooks are generated as GraphQL operations are added. Check the generated file at `packages/graphql-client/src/generated/urql.ts` for the complete list.
 
 ## Troubleshooting
 
@@ -391,9 +348,9 @@ import { useGetMyFeaturesQuery } from "@mirai-app/graphql-client";
 
 Ensure:
 
-1. The `QueryProvider` is properly set up
-2. The GraphQL client has the correct endpoint
-3. Authentication headers are properly configured
+1. The `QueryProvider` is properly set up with urql's Provider
+2. The urql client has the correct endpoint configured
+3. Authentication is handled via cookies (automatic)
 
 ### Type errors
 
@@ -401,25 +358,25 @@ If you see type errors:
 
 1. Run `bun run generate` in `packages/graphql-client`
 2. Restart your TypeScript server
-3. Check that you're importing from `@mirai-app/graphql-client`
+3. Check that you're importing from `@mirai-app/graphql-client/urql`
 
 ### Caching issues
 
 To debug cache issues:
 
 ```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+// Enable urql devtools in urql-client.ts
+import { devtoolsExchange } from "@urql/devtools";
 
-<QueryClientProvider client={queryClient}>
-  <YourApp />
-  <ReactQueryDevtools initialIsOpen={false} />
-</QueryClientProvider>;
+// Add to exchanges array
+exchanges: [devtoolsExchange, cacheExchange, fetchExchange];
 ```
 
 ## Best Practices
 
-1. **Use Query Keys Wisely**: Leverage `getKey` functions for cache invalidation
-2. **Set Appropriate staleTime**: Balance between fresh data and network requests
-3. **Handle Loading States**: Always show loading indicators for better UX
+1. **Use requestPolicy Wisely**: Use `cache-and-network` for fresh data, `cache-first` for performance
+2. **Use pause for Conditional Queries**: Instead of `enabled`, use urql's `pause` option
+3. **Handle Loading States**: Use `fetching` state for loading indicators
 4. **Error Boundaries**: Wrap components in error boundaries for graceful failures
-5. **Pagination**: Use `placeholderData` for smooth pagination experiences
+5. **Cache Invalidation**: Use `client.invalidate()` for manual cache invalidation
+6. **Subscriptions**: Use `useSubscription` for real-time updates via WebSocket

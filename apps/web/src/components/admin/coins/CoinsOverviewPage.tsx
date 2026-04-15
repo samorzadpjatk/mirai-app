@@ -1,53 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GraphQLClient } from "graphql-request";
 import { Input } from "../../ui/Input";
 import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { useTrip } from "../../../contexts/TripContext";
-import { useGetGroupsByTripQuery } from "@mirai-app/graphql-client";
-import { env } from "../../../lib/env";
-
-const createGraphQLClient = (): GraphQLClient => {
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
+import { useGetGroupsByTripQuery } from "@mirai-app/graphql-client/urql";
 
 export function CoinsOverviewPage() {
   const { selectedTrip, isLoading: tripsLoading } = useTrip();
   const selectedTripId = selectedTrip?.id ?? "";
   const [searchTerm, setSearchTerm] = useState("");
 
-  const client = useMemo(() => createGraphQLClient(), []);
-
-  const { data, isLoading: groupsLoading } = useGetGroupsByTripQuery(
-    client,
-    {
+  const [{ data, fetching: groupsLoading }] = useGetGroupsByTripQuery({
+    variables: {
       tripId: selectedTripId,
     },
-    {
-      enabled: Boolean(selectedTripId),
-      staleTime: 30000,
-    },
-  );
+    pause: !selectedTripId,
+    requestPolicy: "cache-and-network",
+  });
 
   const groups = useMemo(() => {
     return data?.groupsByTrip?.groups ?? [];
