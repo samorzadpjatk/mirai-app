@@ -1,6 +1,6 @@
-# @mirai-app/use-cases - Use Cases Layer
+# @mirai-app/use-cases - Effect-based Use Cases Layer
 
-> **Application layer of Clean Architecture - Orchestrates domain entities**
+> **Application layer of Clean Architecture - Orchestrates domain entities with Effect**
 >
 > Depends only on @mirai-app/domain (innermost layer)
 
@@ -8,10 +8,12 @@
 
 The use cases layer contains:
 
-- **Interactors**: Use case implementations (application workflows)
-- **Ports**: Repository interfaces and external service interfaces
+- **Interactors**: Use case implementations using `Effect.gen` for composable workflows
+- **Ports**: Repository interfaces as `Context.Tag` for dependency injection
 - **DTOs**: Input/output data transfer objects
-- **Errors**: Use case specific error types
+- **Errors**: Use case specific errors using `Data.TaggedError`
+
+This layer has migrated from class-based `Result<T,E>` to functional **Effect** patterns for better composability, type safety, and testability.
 
 ## Rules
 
@@ -19,264 +21,406 @@ The use cases layer contains:
 2. **No Framework Knowledge**: No knowledge of UI, database, or frameworks
 3. **Orchestration Only**: Coordinates domain entities, doesn't contain business rules
 4. **Repository Interfaces**: Defines what repositories must do (adapters implement)
-5. **Result<T,E>**: All operations return Result for error handling
+5. **Effect<T,E,R>**: All operations return `Effect<T,E,R>` for composable error handling
 
 ## Directory Structure
 
 ```
 src/
 ├── index.ts              # Public exports
-├── ports/                # Repository & service interfaces
-│   ├── UserRepository.ts # Data access ports
-│   ├── AuthPort.ts       # 🔴 NEW: Authentication port
-│   └── TelemetryPort.ts  # 🔴 NEW: Telemetry port
+├── ports/                # Repository & service interfaces (Context.Tag)
+│   ├── UserRepository.ts # Data access ports with Effect signatures
+│   ├── GroupRepository.ts # Group management with member operations
+│   ├── AuthPort.ts       # Authentication port
+│   ├── TelemetryPort.ts  # Observability port
+│   └── errors.ts         # Common port errors (DatabaseError, etc.)
 ├── interactors/          # Use case implementations
 │   ├── CreateUser.ts     # Business workflow use cases
-│   ├── AuthenticateUser.ts   # 🔴 NEW: Authentication use case
-│   ├── AuthorizeAdmin.ts     # 🔴 NEW: Authorization use case
-│   ├── AuthorizeModerator.ts # 🔴 NEW: Authorization use case
-│   └── LogTelemetry.ts       # 🔴 NEW: Telemetry use case
+│   ├── AssignUserToGroup.ts    # Effect.gen pattern example
+│   ├── RemoveUserFromGroup.ts  # Another Effect pattern
+│   ├── AuthenticateUser.ts     # Authentication use case
+│   └── LogTelemetry.ts         # Telemetry use case
 ├── dto/                  # Data Transfer Objects
 │   ├── input/            # Input DTOs
 │   └── output/           # Output DTOs
-└── errors/               # Use case specific errors
+├── errors/               # Use case specific errors
+└── test/                 # Test utilities (runWithTestLayer, etc.)
+    ├── index.ts          # Public test exports
+    ├── test-helpers.ts   # Layer-based test utilities
+    └── repository-mocks.ts # Pre-built repository mocks
 ```
 
-## Example Usage
+## Effect-Based Use Cases
 
-### Defining a Repository Port (Interface)
+Use cases are implemented as **functional Effect programs** using `Effect.gen` for sequential operations.
+
+### Core Pattern: Effect.gen + yield\*
 
 ```typescript
-// ports/UserRepository.ts
-import type { User } from "@mirai-app/domain";
+import { Effect, Data } from "effect";
 
-export interface UserRepository {
-  create(user: User): Promise<User>;
-  findById(id: string): Promise<User | null>;
-  findByEmail(email: string): Promise<User | null>;
-  update(user: User): Promise<User>;
-  delete(id: string): Promise<void>;
-}
+// 1. Define tagged errors
+export class EntityNotFoundError extends Data.TaggedError(
+  "EntityNotFoundError",
+)<{ entityId: string }>() {}
+
+// 2. Use Effect.gen for orchestration
+export const doSomethingUseCase = (input: DoSomethingInput) =>
+  Effect.gen(function* () {
+    // yield* extracts the value from Effect
+    const repo = yield* MyEntityRepository;
+    const entity = yield* repo.findById(input.entityId);
+
+    if (!entity) {
+      return yield* Effect.fail(
+        new EntityNotFoundError({ entityId: input.entityId }),
+      );
+    }
+
+    return entity;
+  });
 ```
 
-### Cross-Cutting Concern Ports
+**Key rules:**
 
-Unlike repository ports that handle data access, these ports abstract
-infrastructure concerns (authentication, logging, metrics):
+- Always use `function* ()` (generator function)
+- Use `yield*` (with asterisk) to extract Effect values
+- Return `Effect.fail()` for errors, never throw
 
-```typescript
-// ports/AuthPort.ts - Authentication abstraction
-export interface AuthPort {
-  validateToken(token: string): Promise<Result<AuthContext, AuthError>>;
-  getUserById(userId: UserId): Promise<Result<AuthUser, AuthError>>;
-}
+### Complete Use Case Example
 
-// ports/TelemetryPort.ts - Observability abstraction
-export interface TelemetryPort {
-  log(event: TelemetryEvent): Promise<Result<void, TelemetryError>>;
-  trackMetric(name: string, value: number): Promise<void>;
-}
-```
-
-**Key Differences from Repository Ports:**
-
-- Repository ports: Data persistence (CRUD operations)
-- Cross-cutting ports: Infrastructure services (auth, logging, external APIs)
-- Cross-cutting ports often have framework-specific implementations (Supabase, Sentry, etc.)
-
-### Creating an Input DTO
+From `src/interactors/AssignUserToGroup.ts`:
 
 ```typescript
-// dto/input/CreateUserInput.ts
-export class CreateUserInput {
-  constructor(public readonly email: string) {}
+import { Group, TripParticipant } from "@mirai-app/domain";
+import { Data, Effect } from "effect";
+import { GroupRepositoryTag } from "../ports/GroupRepository";
 
-  // Validation using zod or similar
-  static schema = z.object({
-    email: z.string().email(),
+// Input/Output DTOs
+export interface AssignUserToGroupInput {
+  groupId: GroupId;
+  userId: UserId;
+}
+
+export interface AssignUserToGroupOutput {
+  id: string;
+  tripId: string;
+  name: string;
+  // ... other fields
+}
+
+// Tagged errors for type-safe error handling
+export class GroupNotFoundError extends Data.TaggedError("GroupNotFoundError")<{
+  groupId: string;
+}>() {}
+
+export class ParticipantNotFoundError extends Data.TaggedError(
+  "ParticipantNotFoundError",
+)<{
+  userId: string;
+  tripId: string;
+}>() {}
+
+// The use case function returns Effect<T, E, R>
+export function assignUserToGroupUseCase(
+  input: AssignUserToGroupInput,
+): Effect.Effect<
+  AssignUserToGroupOutput,
+  GroupNotFoundError | ParticipantNotFoundError,
+  GroupRepositoryTag
+> {
+  return Effect.gen(function* () {
+    // Access repository via Context.Tag (DI)
+    const groupRepo = yield* GroupRepositoryTag;
+
+    // Find the group
+    const group = yield* groupRepo.findById(input.groupId);
+    if (!group) {
+      return yield* Effect.fail(
+        new GroupNotFoundError({ groupId: input.groupId }),
+      );
+    }
+
+    // Find participant
+    const participant = yield* groupRepo.findParticipantByUserIdAndTripId(
+      input.userId,
+      group.tripId,
+    );
+    if (!participant) {
+      return yield* Effect.fail(
+        new ParticipantNotFoundError({
+          userId: input.userId,
+          tripId: group.tripId,
+        }),
+      );
+    }
+
+    // Idempotency check
+    if (participant.groupId === input.groupId) {
+      return toOutput(group);
+    }
+
+    // Perform the assignment
+    yield* groupRepo.assignUserToGroup(input.userId, input.groupId);
+
+    return toOutput(group);
   });
 }
 ```
 
-### Creating an Output DTO
+## Context.Tag Dependency Injection
+
+Repositories and services are accessed via `yield* RepositoryTag` rather than constructor injection.
+
+### Defining a Repository Port
+
+```typescript
+// ports/GroupRepository.ts
+import { Context, Effect } from "effect";
+import type { Group, GroupStatus, TripParticipant } from "@mirai-app/domain";
+import { DatabaseError } from "./errors";
+
+// Service interface with Effect signatures
+export interface GroupRepository {
+  findById(id: string): Effect.Effect<Group | null, DatabaseError, never>;
+  create(group: Group): Effect.Effect<Group, DatabaseError, never>;
+  update(group: Group): Effect.Effect<Group, DatabaseError, never>;
+  delete(id: string): Effect.Effect<void, DatabaseError, never>;
+  assignUserToGroup(
+    userId: string,
+    groupId: string,
+  ): Effect.Effect<TripParticipant, DatabaseError, never>;
+  // ... other methods
+}
+
+// Context.Tag for dependency injection
+export class GroupRepositoryTag extends Context.Tag("GroupRepository")<
+  GroupRepositoryTag,
+  GroupRepository
+>() {}
+```
+
+### Cross-Cutting Concern Ports
+
+```typescript
+// ports/AuthPort.ts - Authentication abstraction
+export interface AuthPort {
+  validateToken(token: string): Effect.Effect<AuthContext, AuthError, never>;
+  getUserById(userId: UserId): Effect.Effect<AuthUser, AuthError, never>;
+}
+
+export const AuthPortTag = Context.Tag<AuthPort>("AuthPort");
+
+// ports/TelemetryPort.ts - Observability abstraction
+export interface TelemetryPort {
+  log(event: TelemetryEvent): Effect.Effect<void, TelemetryError, never>;
+  trackMetric(name: string, value: number): Effect.Effect<void, never, never>;
+}
+
+export const TelemetryPortTag = Context.Tag<TelemetryPort>("TelemetryPort");
+```
+
+**Key Differences from Repository Ports:**
+
+- Repository ports: Data persistence (CRUD operations with Effect)
+- Cross-cutting ports: Infrastructure services (auth, logging, external APIs)
+- Cross-cutting ports often have framework-specific implementations (Supabase, Sentry, etc.)
+
+## Error Handling with Data.TaggedError
+
+Use `Data.TaggedError` for type-safe, discriminated union errors:
+
+```typescript
+import { Data } from "effect";
+
+// Define tagged error classes
+export class GroupNotFoundError extends Data.TaggedError("GroupNotFoundError")<{
+  groupId: string;
+}>() {}
+
+export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
+  userId: string;
+}>() {}
+
+export class PermissionDeniedError extends Data.TaggedError(
+  "PermissionDeniedError",
+)<{
+  requiredRole: string;
+  actualRole: string;
+}>() {}
+
+// Use case combines errors into union type
+export type MyUseCaseError =
+  | GroupNotFoundError
+  | UserNotFoundError
+  | PermissionDeniedError;
+
+// The Effect signature shows all possible errors
+export const myUseCase = (
+  input: Input,
+): Effect.Effect<Output, MyUseCaseError, MyRepositoryTag> => {
+  return Effect.gen(function* () {
+    // ... operations
+    if (someCondition) {
+      return yield* Effect.fail(
+        new PermissionDeniedError({
+          requiredRole: "ADMIN",
+          actualRole: "USER",
+        }),
+      );
+    }
+    return output;
+  });
+};
+```
+
+## Testing with Effect
+
+Tests use `Layer.succeed` to provide mock implementations and `Effect.provide` to inject dependencies.
+
+### Basic Test Pattern
+
+```typescript
+import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect, Layer } from "effect";
+import {
+  assignUserToGroupUseCase,
+  GroupNotFoundError,
+  ParticipantNotFoundError,
+} from "./AssignUserToGroup";
+import { GroupRepositoryTag } from "../ports/GroupRepository";
+
+describe("[UNIT] assignUserToGroupUseCase", () => {
+  let mockLayer: Layer.Layer<GroupRepositoryTag>;
+
+  beforeEach(() => {
+    // Create mock repository
+    const mockRepo = {
+      findById: (id: string) => Effect.succeed(mockGroup),
+      findParticipantByUserIdAndTripId: () => Effect.succeed(mockParticipant),
+      assignUserToGroup: () => Effect.succeed(updatedParticipant),
+      // ... other methods
+    };
+
+    // Create layer that provides the mock
+    mockLayer = Layer.succeed(GroupRepositoryTag, mockRepo);
+  });
+
+  it("should assign user to group successfully", async () => {
+    const program = assignUserToGroupUseCase({
+      groupId: "group-123",
+      userId: "user-456",
+    }).pipe(Effect.provide(mockLayer));
+
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBe("group-123");
+    expect(result.name).toBe("Test Group");
+  });
+
+  it("should fail with GroupNotFoundError when group does not exist", async () => {
+    const failingRepo = {
+      findById: () => Effect.succeed(null), // Returns null
+      // ... other methods
+    };
+    const failingLayer = Layer.succeed(GroupRepositoryTag, failingRepo);
+
+    const program = assignUserToGroupUseCase({
+      groupId: "non-existent",
+      userId: "user-456",
+    }).pipe(Effect.provide(failingLayer));
+
+    // Use Effect.either to capture the error
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GroupNotFoundError);
+      expect(either.left.groupId).toBe("non-existent");
+    }
+  });
+});
+```
+
+### Using Test Utilities
+
+The `@mirai-app/use-cases/test` package provides pre-built helpers:
+
+```typescript
+import {
+  runWithTestLayer,
+  createGroupRepositoryMock,
+  createUserRepositoryMock,
+} from "@mirai-app/use-cases/test";
+import { Layer, Effect } from "effect";
+
+// Create combined test layer
+const testLayer = Layer.mergeAll(
+  createGroupRepositoryMock({ groups: [mockGroup] }),
+  createUserRepositoryMock(),
+);
+
+// Run test with layer
+const result = await runWithTestLayer(
+  assignUserToGroupUseCase({ groupId: "g1", userId: "u1" }),
+  testLayer,
+);
+
+// For error assertions, use Effect.either
+const either = await runWithTestLayer(
+  Effect.either(assignUserToGroupUseCase({ groupId: "bad", userId: "u1" })),
+  testLayer,
+);
+```
+
+### Test Utilities Reference
+
+| Helper                                   | Description                               |
+| ---------------------------------------- | ----------------------------------------- |
+| `runWithTestLayer(program, layer)`       | Run Effect with layer, returns Promise<A> |
+| `runWithTestLayerExit(program, layer)`   | Returns Exit<A,E> for inspection          |
+| `runWithTestLayerEither(program, layer)` | Returns Either for error assertions       |
+| `createTestLayer(tag, implementation)`   | Create Layer from tag + impl              |
+| `createFailingLayer(tag, error)`         | Create layer that always fails            |
+| `mergeTestLayers(...layers)`             | Combine multiple layers                   |
+| `assertSuccess(exit)`                    | Type-narrow Exit to success               |
+| `assertFailure(exit)`                    | Type-narrow Exit to failure               |
+| `isFailureWithTag(exit, errorTag)`       | Check error type                          |
+
+## Creating DTOs
+
+### Input DTOs
+
+```typescript
+// dto/input/CreateUserInput.ts
+import { z } from "zod";
+
+export const CreateUserInputSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+});
+
+export type CreateUserInput = z.infer<typeof CreateUserInputSchema>;
+```
+
+### Output DTOs
 
 ```typescript
 // dto/output/UserDTO.ts
 import type { User } from "@mirai-app/domain";
 
-export class UserDTO {
-  constructor(
-    public readonly id: string,
-    public readonly email: string,
-  ) {}
-
-  static fromDomain(user: User): UserDTO {
-    return new UserDTO(user.id, user.email.value);
-  }
-}
-```
-
-### Implementing a Use Case
-
-```typescript
-// interactors/CreateUser.ts
-import { ok, err, type Result } from "@mirai-app/domain";
-import type { UserRepository } from "../ports/UserRepository";
-import { CreateUserInput } from "../dto/input/CreateUserInput";
-import { UserDTO } from "../dto/output/UserDTO";
-
-export class CreateUserUseCase {
-  constructor(private userRepo: UserRepository) {}
-
-  async execute(input: CreateUserInput): Promise<Result<UserDTO, string>> {
-    // Check if user already exists
-    const existing = await this.userRepo.findByEmail(input.email);
-    if (existing) {
-      return err("User already exists");
-    }
-
-    // Create domain entity
-    const userResult = User.create({ email: input.email });
-    if (userResult.isError()) {
-      return err(userResult.error);
-    }
-
-    // Persist
-    const saved = await this.userRepo.create(userResult.value);
-
-    // Return DTO
-    return ok(UserDTO.fromDomain(saved));
-  }
-}
-```
-
-## Authentication & Authorization Use Cases
-
-### Authentication Use Case
-
-Delegates token validation to AuthPort:
-
-```typescript
-// interactors/AuthenticateUser.ts
-import type { AuthPort } from "../ports/AuthPort";
-import type { Result } from "@mirai-app/domain";
-import { AuthContext } from "@mirai-app/domain";
-
-export interface AuthenticateUserInput {
-  token: string;
+export interface UserDTO {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
 }
 
-export class AuthenticateUserUseCase {
-  constructor(private readonly authPort: AuthPort) {}
-
-  async execute(
-    input: AuthenticateUserInput,
-  ): Promise<Result<AuthContext, AuthError>> {
-    // Delegate to port - no business logic, just orchestration
-    return this.authPort.validateToken(input.token);
-  }
-}
-```
-
-### Authorization Use Cases
-
-Check roles and return `Result<void, PermissionDeniedError>`:
-
-```typescript
-// interactors/AuthorizeAdmin.ts
-import { AuthContext, isErr, ok, err } from "@mirai-app/domain";
-import { PermissionDeniedError } from "../errors/PermissionDeniedError";
-import type { Result } from "@mirai-app/domain";
-
-export interface AuthorizeAdminInput {
-  authContext: AuthContext;
-}
-
-export class AuthorizeAdminUseCase {
-  execute(input: AuthorizeAdminInput): Result<void, PermissionDeniedError> {
-    if (input.authContext.role !== UserRole.ADMIN) {
-      return err(new PermissionDeniedError("Admin role required"));
-    }
-    return ok(undefined);
-  }
-}
-
-// Usage in controller:
-const result = authorizeAdminUseCase.execute({ authContext });
-if (isErr(result)) {
-  // Handle: User is not admin
-}
-```
-
-### Role Hierarchy
-
-- **ADMIN**: Full system access
-- **MODERATOR**: Moderation capabilities (includes all USER permissions)
-- **USER**: Basic user access
-
-Hierarchy: ADMIN > MODERATOR > USER
-
-### Telemetry Use Case
-
-Fire-and-forget logging that shouldn't block the main request:
-
-```typescript
-// interactors/LogTelemetry.ts
-import type { TelemetryPort } from "../ports/TelemetryPort";
-import type { Result } from "@mirai-app/domain";
-
-export interface LogTelemetryInput {
-  userId: UserId;
-  event: string;
-  metadata?: Record<string, unknown>;
-}
-
-export class LogTelemetryUseCase {
-  constructor(private readonly telemetryPort: TelemetryPort) {}
-
-  async execute(
-    input: LogTelemetryInput,
-  ): Promise<Result<void, TelemetryError>> {
-    return this.telemetryPort.log({
-      userId: input.userId,
-      event: input.event,
-      timestamp: new Date(),
-      metadata: input.metadata,
-    });
-  }
-}
-
-// Usage in controller (errors are non-blocking):
-const result = await logTelemetryUseCase.execute(input);
-if (isErr(result)) {
-  // Log locally but don't fail the request
-  console.warn("Telemetry failed:", result.error);
-}
-```
-
-## Testing
-
-Use case tests mock repositories:
-
-```typescript
-import { describe, it, expect, mock } from "bun:test";
-import { CreateUserUseCase } from "./CreateUser";
-
-describe("CreateUser", () => {
-  it("should create user when email not exists", async () => {
-    const mockRepo = {
-      findByEmail: mock(() => Promise.resolve(null)),
-      create: mock(() =>
-        Promise.resolve({ id: "1", email: "test@example.com" }),
-      ),
-    };
-
-    const useCase = new CreateUserUseCase(mockRepo as any);
-    const result = await useCase.execute({ email: "test@example.com" });
-
-    expect(result.isSuccess()).toBe(true);
-    expect(mockRepo.create).toHaveBeenCalled();
-  });
+export const toUserDTO = (user: User): UserDTO => ({
+  id: user.id,
+  email: user.email.value,
+  name: user.name,
+  createdAt: user.createdAt.toISOString(),
 });
 ```
 
@@ -284,31 +428,35 @@ describe("CreateUser", () => {
 
 ### Ports vs Adapters
 
-- **Ports** (in this layer): Interfaces that define WHAT the application needs
-- **Adapters** (in adapters layer): Implementations that provide HOW
+- **Ports** (in this layer): Interfaces as `Context.Tag` that define WHAT the application needs
+- **Adapters** (in adapters layer): Layer implementations that provide HOW
 
 ```typescript
-// Port (interface) - in use-cases layer
+// Port (Context.Tag) - in use-cases layer
 export interface UserRepository {
-  findById(id: string): Promise<User | null>;
+  findById(id: string): Effect.Effect<User | null, DatabaseError, never>;
 }
+export const UserRepositoryTag = Context.Tag<UserRepository>("UserRepository");
 
-// Adapter (implementation) - in adapters layer
-export class PrismaUserRepository implements UserRepository {
-  constructor(private prisma: PrismaClient) {}
-  async findById(id: string): Promise<User | null> { ... }
-}
+// Adapter (Layer) - in adapters layer
+const UserRepositoryLive = Layer.succeed(UserRepositoryTag, {
+  findById: (id) =>
+    Effect.tryPromise({
+      try: () => prisma.user.findUnique({ where: { id } }),
+      catch: (error) =>
+        new DatabaseError({ operation: "findById", cause: error }),
+    }),
+});
 ```
 
 ### Cross-Cutting vs Repository Ports
 
-- **Repository Ports**: Define data persistence contracts
-  - Example: `UserRepository.create(user: User)`
-  - Implemented by: Prisma repositories in adapters layer
+- **Repository Ports**: Define data persistence contracts with Effect signatures
+  - Example: `findById(id: string): Effect.Effect<User | null, DatabaseError, never>`
+  - Implemented by: Prisma/SQLite repositories in adapters layer
 
 - **Cross-Cutting Ports**: Define infrastructure service contracts
-  - Example: `AuthPort.validateToken(token: string)`
-  - Example: `TelemetryPort.log(event: TelemetryEvent)`
+  - Example: `validateToken(token: string): Effect.Effect<AuthContext, AuthError, never>`
   - Implemented by: Framework-specific adapters (Supabase, Sentry, etc.)
 
 ### DTOs Separate Layers
@@ -321,7 +469,43 @@ Request → Input DTO → Use Case → Domain Entity → Repository
 Response ← Output DTO ← Use Case ← Domain Entity ← Database
 ```
 
+### Effect at System Boundaries
+
+Use cases return `Effect<T,E,R>` which is executed at framework boundaries:
+
+```typescript
+// In controller (adapter layer)
+const program = assignUserToGroupUseCase({ groupId, userId }).pipe(
+  Effect.provide(repoLayer),
+);
+
+const result = await Effect.runPromise(program);
+```
+
+## Effect Pattern Quick Reference
+
+| Pattern           | Syntax                              | Use Case                 |
+| ----------------- | ----------------------------------- | ------------------------ |
+| Generator         | `Effect.gen(function* () { ... })`  | Sequential orchestration |
+| Extract value     | `yield* someEffect`                 | Unwrap Effect value      |
+| Access dependency | `yield* RepositoryTag`              | DI via Context.Tag       |
+| Fail              | `yield* Effect.fail(error)`         | Short-circuit on error   |
+| Succeed           | `Effect.succeed(value)`             | Wrap success             |
+| Map               | `Effect.map(effect, f)`             | Transform success        |
+| FlatMap           | `Effect.flatMap(effect, f)`         | Chain Effects            |
+| Parallel          | `Effect.all([e1, e2, e3])`          | Concurrent execution     |
+| Error recovery    | `Effect.catchTag("Error", handler)` | Handle specific errors   |
+| Provide           | `Effect.provide(Layer)`             | Inject dependencies      |
+| Run               | `Effect.runPromise(effect)`         | Execute at boundaries    |
+| Either            | `Effect.either(effect)`             | Capture success/failure  |
+
 ## References
 
-- [CLAUDE.md](../../CLAUDE.md) - CEK Five Pillars (DDD section)
+- [CLAUDE.md](../../CLAUDE.md) - CEK Five Pillars (Effect patterns §10)
+- [AGENTS.md](./AGENTS.md) - Quick reference for AI agents
+- [Effect Documentation](https://effect.website/) - Official Effect docs
 - [Ports and Adapters Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
+
+---
+
+**Migration Note**: This package has migrated from class-based `Result<T,E>` to functional Effect patterns. All new use cases should use `Effect.gen` with `Context.Tag` DI. Legacy use cases using `Result` are being migrated incrementally.

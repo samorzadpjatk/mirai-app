@@ -3,6 +3,8 @@
 > **Frameworks & Drivers layer of Clean Architecture - Technical configuration**
 >
 > Outermost layer - can depend on all inner layers
+>
+> **Effect Layer Composition:** Centralized dependency injection via Effect `Layer.mergeAll`
 
 ## Purpose
 
@@ -12,8 +14,8 @@ The frameworks layer contains:
 - **Hono Configuration**: HTTP server setup
 - **Drizzle Configuration**: Database ORM configuration
 - **Supabase Configuration**: Supabase client setup
-- **Effect Runtime**: Effect framework integration
-- **DI Container**: awilix-modular dependency injection
+- **Effect Runtime**: Effect framework integration and Layer composition
+- **Effect Layer Composition**: Dependency injection via `Layer.succeed` and `Layer.mergeAll`
 
 ## Rules
 
@@ -21,6 +23,7 @@ The frameworks layer contains:
 2. **Can Use All Inner Layers**: Depends on domain, use-cases, and adapters
 3. **Framework-Specific Code**: Contains code specific to GraphQL, Hono, Drizzle, etc.
 4. **Reusable Setup**: Configuration that can be reused across apps
+5. **Layer Composition**: All DI via Effect Layers, no awilix-modular
 
 ## Directory Structure
 
@@ -41,12 +44,15 @@ src/
 │   ├── react.tsx         # React integration
 │   ├── server.ts         # Server-side client
 │   └── store/            # Zustand auth store
-├── di/                   # Dependency injection
-│   ├── index.ts          # Container creation
+├── layers/               # Effect Layer compositions (DI)
+│   ├── AppLayer.ts       # Merges Repository + Service layers
+│   ├── RepositoryLayer.ts # 17 repositories by domain
+│   ├── ServiceLayer.ts   # 5 external services
+│   └── index.ts          # Barrel exports with factories
+├── di/                   # Legacy DI utilities
+│   ├── index.ts          # Container creation (deprecated)
 │   ├── types.ts          # DI type definitions
-│   └── modules/          # DI modules
-├── layers/               # Effect Layer configurations
-│   └── index.ts          # Layer compositions
+│   └── test-layer.ts     # Effect test utilities ⭐
 ├── auth/                 # Auth configuration
 │   ├── client.ts         # Client auth setup
 │   ├── server.ts         # Server auth setup
@@ -54,15 +60,308 @@ src/
 └── stores/               # Zustand stores
 ```
 
-## Example Usage
+## Effect Layer Configuration
 
-### GraphQL Client Configuration
+The frameworks layer provides **Effect Layer composition** for dependency injection, replacing the legacy awilix-modular approach.
+
+### Layer Hierarchy
+
+```
+AppLayer (mergeAll)
+├── RepositoryLayer (17 repositories)
+│   ├── UserDomainLayer (User, Group, Location)
+│   ├── TripRewardDomainLayer (Trip, Reward, RewardPurchase)
+│   ├── ChallengeDomainLayer (Challenge, Submission, Vote)
+│   ├── NotificationDomainLayer (Notification, Delivery, Schedule)
+│   ├── ContentDomainLayer (ActivityFeed, Event, Sponsor)
+│   └── ReportingDomainLayer (SubmissionReport, CoinTransaction)
+│
+└── ServiceLayer (5 services)
+    ├── SupabaseServicesLayer (Auth, Realtime, Storage)
+    ├── TelemetryServiceLayer (Telemetry)
+    └── PubSubServiceLayer (PubSub)
+```
+
+### Complete App Layer
+
+Use `makeAppLayer()` for the complete dependency injection setup:
+
+```typescript
+// In application entry point or request handler
+import {
+  makeAppLayer,
+  type AppLayerConfig,
+} from "@mirai-app/frameworks/layers";
+import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
+import { createSupabaseClient } from "@mirai-app/frameworks/supabase/client";
+import { Effect } from "effect";
+
+// Configuration
+const config: AppLayerConfig = {
+  supabase: createSupabaseClient(supabaseUrl, supabaseKey),
+  db: createDrizzleClient(databaseUrl),
+};
+
+// Create the complete layer (22 bindings: 17 repos + 5 services)
+const appLayer = makeAppLayer(config);
+
+// Use in Effect program
+const program = Effect.gen(function* () {
+  const userRepo = yield* UserRepositoryTag;
+  const auth = yield* AuthPortTag;
+  const storage = yield* StoragePortTag;
+
+  const user = yield* userRepo.findById("123");
+  // ... orchestration logic
+  return user;
+}).pipe(Effect.provide(appLayer));
+
+// Execute
+const result = await Effect.runPromise(program);
+```
+
+### Repository Layer
+
+The `RepositoryLayer` binds 17 repository Context.Tags to their Drizzle implementations:
+
+```typescript
+import {
+  makeRepositoryLayer,
+  makeUserDomainLayer,
+} from "@mirai-app/frameworks/layers";
+import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
+
+const db = createDrizzleClient(databaseUrl);
+
+// All 17 repositories
+const fullRepoLayer = makeRepositoryLayer(db);
+
+// Domain-specific layers (selective composition)
+const userLayer = makeUserDomainLayer(db); // 3 repos
+const tripLayer = makeTripRewardDomainLayer(db); // 3 repos
+const challengeLayer = makeChallengeDomainLayer(db); // 3 repos
+
+// Use in Effect
+const program = Effect.gen(function* () {
+  const userRepo = yield* UserRepositoryTag;
+  return yield* userRepo.findById("123");
+}).pipe(Effect.provide(userLayer));
+```
+
+**Domain Groups:**
+
+| Factory                       | Repositories                                             | Count |
+| ----------------------------- | -------------------------------------------------------- | ----- |
+| `makeUserDomainLayer`         | User, Group, Location                                    | 3     |
+| `makeTripRewardDomainLayer`   | Trip, Reward, RewardPurchase                             | 3     |
+| `makeChallengeDomainLayer`    | Challenge, ChallengeSubmission, ChallengeVote            | 3     |
+| `makeNotificationDomainLayer` | Notification, NotificationDelivery, NotificationSchedule | 3     |
+| `makeContentDomainLayer`      | ActivityFeed, Event, Sponsor                             | 3     |
+| `makeReportingDomainLayer`    | SubmissionReport, CoinTransaction                        | 2     |
+
+### Service Layer
+
+The `ServiceLayer` binds 5 service Context.Tags to their adapter implementations:
+
+```typescript
+import {
+  makeServiceLayer,
+  makeSupabaseServicesLayer,
+} from "@mirai-app/frameworks/layers";
+import { createSupabaseClient } from "@mirai-app/frameworks/supabase/client";
+import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
+
+const supabase = createSupabaseClient(url, key);
+const db = createDrizzleClient(databaseUrl);
+
+// All 5 services
+const serviceLayer = makeServiceLayer({ supabase, db });
+
+// Individual service groups
+const supabaseLayer = makeSupabaseServicesLayer(supabase); // Auth, Realtime, Storage
+const telemetryLayer = makeTelemetryServiceLayer(db); // Telemetry
+const pubSubLayer = makePubSubServiceLayer(); // PubSub (no deps)
+
+// Use in Effect
+const program = Effect.gen(function* () {
+  const auth = yield* AuthPortTag;
+  const user = yield* auth.getCurrentUser();
+  return user;
+}).pipe(Effect.provide(supabaseLayer));
+```
+
+**Service Groups:**
+
+| Factory                     | Services                | Dependencies   |
+| --------------------------- | ----------------------- | -------------- |
+| `makeSupabaseServicesLayer` | Auth, Realtime, Storage | SupabaseClient |
+| `makeTelemetryServiceLayer` | Telemetry               | DrizzleDb      |
+| `makePubSubServiceLayer`    | PubSub                  | None           |
+| `makeAuthLayer`             | Auth only               | SupabaseClient |
+| `makeRealtimeLayer`         | Realtime only           | SupabaseClient |
+| `makeStorageLayer`          | Storage only            | SupabaseClient |
+
+### Factory Functions Reference
+
+All layer factories are exported from `@mirai-app/frameworks/layers`:
+
+```typescript
+// Complete application layer
+makeAppLayer(config: AppLayerConfig): Layer<...>
+makeRepositoriesOnlyLayer(db: DrizzleDb): Layer<...>
+makeServicesOnlyLayer(config: ServiceLayerConfig): Layer<...>
+
+// Domain-specific repository layers
+makeUserDomainLayer(db: DrizzleDb): Layer<...>
+makeTripRewardDomainLayer(db: DrizzleDb): Layer<...>
+makeChallengeDomainLayer(db: DrizzleDb): Layer<...>
+makeNotificationDomainLayer(db: DrizzleDb): Layer<...>
+makeContentDomainLayer(db: DrizzleDb): Layer<...>
+makeReportingDomainLayer(db: DrizzleDb): Layer<...>
+
+// Service layers
+makeSupabaseServicesLayer(supabase: SupabaseClient): Layer<...>
+makeTelemetryServiceLayer(db: DrizzleDb): Layer<...>
+makePubSubServiceLayer(): Layer<...>
+makeAuthLayer(supabase: SupabaseClient): Layer<...>
+makeRealtimeLayer(supabase: SupabaseClient): Layer<...>
+makeStorageLayer(supabase: SupabaseClient): Layer<...>
+```
+
+## Testing with Effect
+
+The frameworks layer provides comprehensive test utilities for Effect-based dependency injection.
+
+### Quick Start
+
+```typescript
+import { createTestLayer, runWithTestLayer } from "@mirai-app/frameworks/di";
+import { Effect } from "effect";
+import { describe, it, expect } from "bun:test";
+
+// Create test layer with all InMemory adapters
+const testLayer = createTestLayer();
+
+// Write your test
+const program = Effect.gen(function* () {
+  const userRepo = yield* UserRepositoryTag;
+  const auth = yield* AuthPortTag;
+
+  const user = yield* userRepo.findById("123");
+  return user;
+}).pipe(Effect.provide(testLayer));
+
+// Run and assert
+const result = await Effect.runPromise(program);
+expect(result).toBeDefined();
+```
+
+### Test Layer with Overrides
+
+```typescript
+import { createTestLayer, mockLayerOf } from "@mirai-app/frameworks/di";
+import { Layer } from "effect";
+
+// Custom user repository
+const customUserRepo = {
+  findById: (id: string) => Effect.succeed({ id, name: "Test User" }),
+  // ... other methods
+};
+
+// Create layer with override
+const testLayer = createTestLayer({
+  overrides: [mockLayerOf(UserRepositoryTag, customUserRepo)],
+});
+
+// Or use helper for multiple mocks
+const { run } = createTestLayerWithHelpers({
+  mocks: [
+    { tag: UserRepositoryTag, implementation: customUserRepo },
+    { tag: AuthPortTag, implementation: mockAuth },
+  ],
+});
+
+const result = await run(program);
+```
+
+### Individual Service Test Layers
+
+```typescript
+import {
+  createAuthTestLayer,
+  createUserRepositoryTestLayer,
+  createStorageTestLayer,
+  createRealtimeTestLayer,
+} from "@mirai-app/frameworks/di";
+
+// Test only auth
+const authLayer = createAuthTestLayer();
+const authProgram = Effect.gen(function* () {
+  const auth = yield* AuthPortTag;
+  return yield* auth.verifyToken("token");
+}).pipe(Effect.provide(authLayer));
+
+// Test with custom implementation
+const customRepo = new InMemoryUserRepository();
+customRepo.users.set("123", { id: "123", name: "John" });
+const userLayer = createUserRepositoryTestLayer(customRepo);
+```
+
+### Mock Helper Functions
+
+```typescript
+import {
+  mockLayerOf,
+  mockLayers,
+  createMockAuthLayer,
+  createMockRepositoryLayer,
+  createMockPortLayer,
+} from "@mirai-app/frameworks/di";
+
+// Single mock layer
+const mockLayer = mockLayerOf(UserRepositoryTag, {
+  findById: (id) => Effect.succeed({ id, name: "Mock" }),
+});
+
+// Multiple mocks
+const combinedLayer = mockLayers({
+  userRepo: { tag: UserRepositoryTag, implementation: mockUserRepo },
+  auth: { tag: AuthPortTag, implementation: mockAuth },
+});
+
+// Auth layer with overrides
+const authLayer = createMockAuthLayer({
+  verifyToken: () =>
+    Effect.succeed({ userId: "123", email: "test@example.com" }),
+});
+
+// Repository layer with proxy
+const repoLayer = createMockRepositoryLayer(UserRepositoryTag, {
+  findById: (id) => Effect.succeed({ id, name: "Test" }),
+  // Other methods will fail with "not mocked" error
+});
+```
+
+### Test Layer Patterns Reference
+
+| Pattern         | Function                                | Use Case                           |
+| --------------- | --------------------------------------- | ---------------------------------- |
+| Full test layer | `createTestLayer()`                     | Most tests - all InMemory adapters |
+| With overrides  | `createTestLayer({ overrides })`        | Custom implementations             |
+| Single service  | `createAuthTestLayer()`                 | Isolated service testing           |
+| Minimal layer   | `createMinimalTestLayer({ services })`  | Subset of services                 |
+| Mock layer      | `mockLayerOf(tag, impl)`                | Single mock binding                |
+| Multiple mocks  | `mockLayers({ ... })`                   | Multiple mock bindings             |
+| With helpers    | `createTestLayerWithHelpers({ mocks })` | Fluent API with run/provide        |
+| Run helper      | `runWithTestLayer(layer, effect)`       | Clean execution                    |
+
+## GraphQL Client Configuration
 
 ```typescript
 // graphql/client.tsx
 import { createClient, fetchExchange } from "@urql/core";
 
-export const createGraphQLClient(baseUrl: string) {
+export function createGraphQLClient(baseUrl: string) {
   return createClient({
     url: `${baseUrl}/graphql`,
     exchanges: [fetchExchange],
@@ -70,25 +369,27 @@ export const createGraphQLClient(baseUrl: string) {
 }
 ```
 
-### GraphQL Server Configuration
+## GraphQL Server Configuration
 
 ```typescript
 // graphql/server.ts
 import { createYoga } from "graphql-yoga";
 import { createSchema } from "./schema";
+import { makeAppLayer } from "../layers";
 
-export function createGraphQLServer() {
+export function createGraphQLServer(config: AppLayerConfig) {
+  const appLayer = makeAppLayer(config);
+
   return createYoga({
     schema: createSchema(),
     context: async ({ request }) => {
-      // Create context with DI container
-      return { container: await createRequestContainer(request) };
+      return { layer: appLayer };
     },
   });
 }
 ```
 
-### Drizzle Client Configuration
+## Drizzle Client Configuration
 
 ```typescript
 // drizzle/client.ts
@@ -101,27 +402,34 @@ const pool = new Pool({
 
 export const db = drizzle(pool, { schema });
 export type Database = typeof db;
+export type DrizzleDb = typeof db;
 ```
 
-### Effect Runtime Configuration
+## Effect Runtime Configuration
 
 ```typescript
-// layers/index.ts
-import { Layer } from "effect";
+// Running Effects with the complete layer
+import { makeAppLayer } from "./layers";
+import { Effect, Runtime } from "effect";
 
-export const AppLayer = Layer.mergeAll(
-  RepositoryLayer,
-  ServiceLayer,
-  ConfigLayer,
-);
+// Build the runtime once
+const appLayer = makeAppLayer(config);
+const runtime = await Effect.runPromise(Layer.toRuntime(appLayer));
 
-// Usage in application entry point
-const program = Effect.gen(function* () {
-  const server = yield* HttpServer;
-  yield* server.start();
-});
+// Use runtime for multiple operations
+const runWithRuntime = <E, A>(effect: Effect.Effect<A, E, Requirements>) => {
+  return Runtime.runPromise(runtime)(effect);
+};
 
-Effect.runPromise(program.pipe(Effect.provide(AppLayer)));
+// In request handler
+async function handleRequest(input: Input) {
+  const program = Effect.gen(function* () {
+    const userRepo = yield* UserRepositoryTag;
+    return yield* userRepo.findById(input.userId);
+  });
+
+  return await runWithRuntime(program);
+}
 ```
 
 ## Testing
@@ -130,20 +438,84 @@ Framework tests verify configuration works:
 
 ```typescript
 import { describe, it, expect } from "bun:test";
-import { prisma } from "./prisma/client";
+import { createTestLayer } from "./di/test-layer";
+import { Effect } from "effect";
 
-describe("Prisma Configuration", () => {
-  it("should create client", () => {
-    expect(prisma).toBeDefined();
-  });
+describe("RepositoryLayer", () => {
+  it("should provide all repositories", async () => {
+    const testLayer = createTestLayer();
 
-  it("should connect to database", async () => {
-    const result = await prisma.$queryRaw`SELECT 1`;
-    expect(result).toBeDefined();
+    const program = Effect.gen(function* () {
+      const userRepo = yield* UserRepositoryTag;
+      const groupRepo = yield* GroupRepositoryTag;
+      return { userRepo, groupRepo };
+    }).pipe(Effect.provide(testLayer));
+
+    const result = await Effect.runPromise(program);
+    expect(result.userRepo).toBeDefined();
+    expect(result.groupRepo).toBeDefined();
   });
 });
 ```
 
+## Layer Composition Patterns
+
+### Pattern 1: Complete App Layer (Recommended)
+
+```typescript
+// For full application use
+const appLayer = makeAppLayer({ supabase, db });
+```
+
+### Pattern 2: Selective Composition
+
+```typescript
+// For testing or specific domains
+const repoLayer = makeRepositoryLayer(db);
+const serviceLayer = makeServiceLayer({ supabase, db });
+const combined = Layer.mergeAll(repoLayer, serviceLayer);
+```
+
+### Pattern 3: Domain-Specific
+
+```typescript
+// For domain-specific workflows
+const userLayer = makeUserDomainLayer(db);
+const challengeLayer = makeChallengeDomainLayer(db);
+const domainLayer = Layer.mergeAll(userLayer, challengeLayer);
+```
+
+### Pattern 4: Test Layer Override
+
+```typescript
+// Override specific implementations in tests
+const baseLayer = makeAppLayer(config);
+const testLayer = baseLayer.pipe(
+  Layer.merge(mockRepositoryLayer),
+  Layer.merge(mockServiceLayer),
+);
+```
+
 ## References
 
-- [CLAUDE.md](../../CLAUDE.md) - CEK Five Pillars (DDD section)
+- [CLAUDE.md](../../CLAUDE.md) - CEK Five Pillars (Effect Framework Patterns)
+- [AGENTS.md](../../AGENTS.md) - Quick reference for Effect patterns
+- [docs/effect-decision-tree.md](../../docs/effect-decision-tree.md) - When to use Effect vs async/await
+- [packages/frameworks/AGENTS.md](./AGENTS.md) - Framework layer quick reference
+- [packages/use-cases/AGENTS.md](../use-cases/AGENTS.md) - Use case Effect patterns
+- [packages/adapters/AGENTS.md](../adapters/AGENTS.md) - Adapter DI patterns
+
+### Effect Framework Resources
+
+| Pattern             | Location                    | Reference         |
+| ------------------- | --------------------------- | ----------------- |
+| Layer composition   | `layers/AppLayer.ts`        | `Layer.mergeAll`  |
+| Repository bindings | `layers/RepositoryLayer.ts` | `Layer.succeed`   |
+| Service bindings    | `layers/ServiceLayer.ts`    | `Layer.succeed`   |
+| Test utilities      | `di/test-layer.ts`          | `createTestLayer` |
+| Barrel exports      | `layers/index.ts`           | Factory functions |
+
+---
+
+**Last Updated:** 2026-04-15  
+**Version:** 2.0.0 (Effect Layer Composition)

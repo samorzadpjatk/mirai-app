@@ -27,27 +27,24 @@ export const AppLayer = RepositoryLive.pipe(
 
 ---
 
-## awilix-modular Module Structure
+## Controller Factory Pattern
 
-The monorepo uses **awilix-modular** for framework-level DI. **Resolution is string-token based only.**
+Controllers are instantiated with Effect Layers. **Access controllers via `ctx.controllers`.**
 
 ```ts
-// packages/frameworks/src/modules/controller-module.ts
-import { createStaticModule } from "awilix-modular";
-import { Lifetime } from "awilix";
-import { RepositoryModule } from "./repository-module";
+// packages/frameworks/src/context.ts
+import { createControllers } from "@mirai-app/adapters";
 
-export const ControllerModule = createStaticModule({
-  name: "ControllerModule",
-  imports: [RepositoryModule],
-  providers: {
-    userController: {
-      factory: (cradle) => new UserController(cradle.userRepository),
-      lifetime: Lifetime.SCOPED,
-    },
-  },
-  exports: ["userController"],
-});
+export interface GraphQLContext {
+  controllers: Controllers;
+  appLayer: Layer.Layer<unknown>;
+  request: Request;
+  authContext?: AuthContext;
+  runtime: GraphQLRuntime;
+}
+
+// Create controllers with the appLayer
+const controllers = createControllers({ appLayer, supabase });
 ```
 
 ---
@@ -64,30 +61,37 @@ export const ControllerModule = createStaticModule({
 
 ## DI Wiring Examples
 
-### Container Resolution (routers)
+### Controller Access (routers)
 
 ```ts
-// In tRPC router: resolve from request-scoped container
+// In tRPC router: access controller from context
 export const userRouter = createTRPCRouter({
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const controller = ctx.container.resolve("userController");
-      return controller.getById(input, ctx.container);
+      const controller = ctx.controllers.userController;
+      const result = await controller.getById(input);
+      if (!result.success) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: result.error,
+        });
+      }
+      return result.data;
     }),
 });
 ```
 
-### Test Container Setup
+### Test Context Setup
 
 ```ts
-// In tests: create isolated container with overrides
-import { createTestContainer } from "@mirai-app/frameworks/di";
-import { asClass } from "awilix";
+// In tests: create test context with mocked controllers
+import { createTestContext } from "@mirai-app/frameworks/testing";
 
-const container = createTestContainer();
-container.register({
-  userRepository: asClass(InMemoryUserRepository).singleton(),
+const ctx = createTestContext({
+  controllers: {
+    userController: new MockUserController(),
+  },
 });
 ```
 
@@ -100,15 +104,15 @@ container.register({
 - **Validate:** Ensure all Layers are provided before calling `Effect.runPromise`
 - **Fix:** Add missing `Layer.provide()` calls in composition chain
 
-### DI resolution failures
+### Controller access failures
 
-- **Validate:** Check token string matches registered provider name exactly
-- **Fix:** Verify module exports include the token being resolved
+- **Validate:** Check controller is accessed via `ctx.controllers.controllerName`
+- **Fix:** Ensure context factory properly instantiates all controllers
 
 ### Scope violations
 
 - **Validate:** Repositories are SINGLETON, Controllers are SCOPED
-- **Fix:** Adjust Lifetime in module provider definitions
+- **Fix:** Adjust Lifetime in Layer definitions
 
 ---
 
