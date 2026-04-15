@@ -71,7 +71,7 @@ mock.module("@mirai-app/frameworks/auth/client", () => ({
 // Store reference to the hook (loaded dynamically)
 let useWebFileUpload: typeof useWebFileUploadType;
 
-describe("[UNIT] useWebFileUpload () => {
+describe("[UNIT] useWebFileUpload", () => {
   // Load the hook module inside describe but outside tests
   // This runs after mocks are set up but before tests run
   beforeEach(async () => {

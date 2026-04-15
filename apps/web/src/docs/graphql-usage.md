@@ -326,10 +326,10 @@ const { mutate } = useUpdateTripMutation(client, {
 
 ### 1. Define the Operation
 
-Add your GraphQL operation to the appropriate file in `packages/graphql-types/src/graphql/operations/`:
+Add your GraphQL operation to the appropriate file in `packages/graphql-client/src/graphql/operations/`:
 
 ```graphql
-# packages/graphql-types/src/graphql/operations/my-feature.queries.graphql
+# packages/graphql-client/src/graphql/operations/my-feature.queries.graphql
 
 fragment MyFeatureFields on MyFeature {
   id
@@ -355,7 +355,7 @@ mutation CreateMyFeature($input: CreateMyFeatureInput!) {
 Run the codegen command:
 
 ```bash
-cd packages/graphql-types
+cd packages/graphql-client
 bun run generate
 ```
 
@@ -383,7 +383,7 @@ import { useGetMyFeaturesQuery } from "@mirai-app/graphql-client";
 - `useUpdateTripMutation` - Update an existing trip
 - `useDeleteTripMutation` - Delete a trip
 
-> **Note:** More hooks are generated as GraphQL operations are added. Check the generated file at `packages/graphql-types/src/generated/graphql.ts` for the complete list.
+> **Note:** More hooks are generated as GraphQL operations are added. Check the generated file at `packages/graphql-client/src/generated/graphql.ts` for the complete list.
 
 ## Troubleshooting
 
@@ -399,7 +399,7 @@ Ensure:
 
 If you see type errors:
 
-1. Run `bun run generate` in `packages/graphql-types`
+1. Run `bun run generate` in `packages/graphql-client`
 2. Restart your TypeScript server
 3. Check that you're importing from `@mirai-app/graphql-client`
 
