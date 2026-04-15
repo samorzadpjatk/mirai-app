@@ -151,10 +151,8 @@ class MockGroupRepository implements GroupRepository {
         }),
       );
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.participants.set(participant.id, Effect.runSync(updated)!!);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return Effect.succeed(Effect.runSync(updated)!!);
+    this.participants.set(participant.id, Effect.runSync(updated)!);
+    return Effect.succeed(Effect.runSync(updated)!);
   }
 
   removeUserFromGroup(

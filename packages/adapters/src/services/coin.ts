@@ -352,9 +352,7 @@ import type {
   CoinTransactionRepository,
 } from "@mirai-app/use-cases";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DrizzleCoinTransactionRepository = CoinTransactionRepository & {
   // Additional implementation-specific properties if needed
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };

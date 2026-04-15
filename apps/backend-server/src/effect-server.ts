@@ -312,7 +312,6 @@ export function setupSignalHandlers(
     void runEffect(gracefulShutdownProgram(signal)).then(
       () => process.exit(0),
       (error) => {
-        // eslint-disable-next-line no-console
         console.error("[Effect] Shutdown failed:", error);
         process.exit(1);
       },

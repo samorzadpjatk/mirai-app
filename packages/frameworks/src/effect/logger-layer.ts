@@ -54,7 +54,6 @@ export const LoggerLayer = {
       Logger.make(({ date, logLevel, message }) => {
         const timestamp = date.toISOString();
         const level = logLevel.label.toUpperCase().padStart(5);
-        // eslint-disable-next-line no-console
         console.log(`[${timestamp}] [${level}] ${message}`);
       }),
     ),

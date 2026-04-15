@@ -74,8 +74,7 @@ builder.queryField("trips", (t) =>
           Effect.gen(function* () {
             const repo = yield* TripRepositoryTag;
             // Access the underlying db through the repository
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const db = (repo as any).db;
+            const db = (repo as { db: unknown }).db;
 
             if (!db) {
               return false;
@@ -84,11 +83,11 @@ builder.queryField("trips", (t) =>
             // Query trip_participants table through Drizzle
             const participant = yield* Effect.tryPromise({
               try: async () => {
-                const result = await db
+                const typedDb = db as { tripParticipant: unknown };
+                const result = await typedDb
                   .select()
                   .from({
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    tripParticipant: (db as any).tripParticipant,
+                    tripParticipant: typedDb.tripParticipant,
                   })
                   .where({
                     userId: authContext.userId,

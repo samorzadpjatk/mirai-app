@@ -115,7 +115,7 @@ const createUrqlClientEffect = (endpoint: string, apiKey: string) =>
 // Types
 // =============================================================================
 
-interface NotificationRow {
+export interface NotificationRow {
   id: string;
 }
 

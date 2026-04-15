@@ -315,27 +315,6 @@ export function Sheet({
  * </Sheet>
  * ```
  */
-export namespace SheetNamespace {
-  /**
-   * Sheet Overlay component - dimmed background behind the sheet
-   */
-  export const Overlay = TamaguiSheet.Overlay;
-
-  /**
-   * Sheet Frame component - main container for sheet content
-   */
-  export const Frame = TamaguiSheet.Frame;
-
-  /**
-   * Sheet Handle component - drag handle indicator
-   */
-  export const Handle = TamaguiSheet.Handle;
-
-  /**
-   * Sheet ScrollView component - scrollable content container
-   */
-  export const ScrollView = TamaguiSheet.ScrollView;
-}
 
 // Attach sub-components to main export
 Sheet.Overlay = TamaguiSheet.Overlay;

@@ -11,5 +11,5 @@
       "@mirai-app/ui/*": ["../../packages/ui/src/*"]
     }
   },
-  "include": ["src/**/*", ".astro/types.d.ts"]
+  "include": ["src/**/*", ".astro/types.d.ts", "test-setup.ts", "*.ts"]
 }

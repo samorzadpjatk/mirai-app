@@ -9,6 +9,8 @@ import {
 } from "bun:test";
 import { Effect, Either } from "effect";
 import { serverLogger } from "@mirai-app/shared";
+import type { RealtimePostgresInsertPayload } from "@mirai-app/frameworks/supabase";
+import type { createClient } from "@urql/core";
 
 // Import Effect-based functions
 import {
@@ -17,7 +19,19 @@ import {
   handleNotificationInsert,
   MissingEnvError,
   NotificationServiceError,
+  type NotificationRow,
 } from "../index";
+
+// Mock types for testing
+interface MockMutationResult {
+  data: Record<string, unknown>;
+  error: null;
+}
+type UrqlClient = ReturnType<typeof createClient>;
+
+interface MockUrqlClient {
+  mutation: () => Promise<MockMutationResult>;
+}
 
 // Track subscription handlers for testing
 let postgresChangeHandler: ((payload: { new: { id: string } }) => void) | null =
@@ -290,10 +304,14 @@ describe("[UNIT] notification-sender index - Legacy", () => {
 
   test("NotificationService methods exist", async () => {
     const { NotificationService } = await import("../index");
-    const mockUrqlClient = {
+    const mockUrqlClient: MockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new NotificationService(mockUrqlClient as any);
+    const service = new NotificationService(
+      mockUrqlClient as unknown as ReturnType<
+        typeof import("@urql/core").createClient
+      >,
+    );
 
     expect(typeof service.trackDeliveryStart).toBe("function");
     expect(typeof service.sendMobileNotifications).toBe("function");
@@ -398,7 +416,9 @@ describe("[UNIT] Delivery Tracking Flow", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
     await service.trackDeliveryStart("test-notification-1");
     expect(trackDeliveryStartMock).toHaveBeenCalled();
@@ -409,7 +429,9 @@ describe("[UNIT] Delivery Tracking Flow", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
     await service.sendMobileNotifications("test-notification-2");
     expect(sendMobileNotificationsMock).toHaveBeenCalled();
@@ -420,7 +442,9 @@ describe("[UNIT] Delivery Tracking Flow", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
     await service.trackDeliveryComplete("test-notification-3", 1, 1, 0, null);
     expect(trackDeliveryCompleteMock).toHaveBeenCalled();
@@ -443,7 +467,9 @@ describe("[UNIT] Delivery Failure Handling", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
     try {
       await service.sendMobileNotifications("test-notification-fail");
@@ -467,7 +493,9 @@ describe("[UNIT] Delivery Failure Handling", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
     const error = new Error("Network error");
     serverLogger.error("Failed handling Notification INSERT", error);
@@ -481,7 +509,9 @@ describe("[UNIT] Delivery Failure Handling", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
     await service.trackDeliveryFailure("test-notification-error", errorMessage);
 
@@ -544,7 +574,9 @@ describe("[UNIT] Partial Failures", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
     const result = await service.sendMobileNotifications("test-partial-fail");
 
@@ -579,9 +611,13 @@ describe("[UNIT] handleNotificationInsert Effect", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
-    const payload = { new: { id: "test-id" } } as any;
+    const payload = {
+      new: { id: "test-id" },
+    } as unknown as RealtimePostgresInsertPayload<NotificationRow>;
 
     const result = await Effect.runPromise(
       Effect.either(index.handleNotificationInsert(service, payload)),
@@ -595,9 +631,13 @@ describe("[UNIT] handleNotificationInsert Effect", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
-    const payload = { new: { id: "" } } as any;
+    const payload = {
+      new: { id: "" },
+    } as unknown as RealtimePostgresInsertPayload<NotificationRow>;
 
     const result = await Effect.runPromise(
       Effect.either(index.handleNotificationInsert(service, payload)),
@@ -615,9 +655,13 @@ describe("[UNIT] handleNotificationInsert Effect", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
-    const payload = { new: { id: "test-fail-start" } } as any;
+    const payload = {
+      new: { id: "test-fail-start" },
+    } as unknown as RealtimePostgresInsertPayload<NotificationRow>;
 
     const result = await Effect.runPromise(
       Effect.either(index.handleNotificationInsert(service, payload)),
@@ -648,9 +692,13 @@ describe("[UNIT] handleNotificationInsert Effect", () => {
     const mockUrqlClient = {
       mutation: mock(() => Promise.resolve({ data: {}, error: null })),
     };
-    const service = new index.NotificationService(mockUrqlClient as any);
+    const service = new index.NotificationService(
+      mockUrqlClient as unknown as UrqlClient,
+    );
 
-    const payload = { new: { id: "test-mobile-fail" } } as any;
+    const payload = {
+      new: { id: "test-mobile-fail" },
+    } as unknown as RealtimePostgresInsertPayload<NotificationRow>;
 
     const result = await Effect.runPromise(
       Effect.either(index.handleNotificationInsert(service, payload)),

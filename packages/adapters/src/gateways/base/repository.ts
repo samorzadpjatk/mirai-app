@@ -4,8 +4,6 @@ import type { PgTable } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { DatabaseError } from "@mirai-app/use-cases/ports/errors";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * Generic mapper interface for domain-drizzle conversions
  */
