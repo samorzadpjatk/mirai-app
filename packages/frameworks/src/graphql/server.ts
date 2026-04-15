@@ -5,6 +5,7 @@ import type { Schema } from "./schema";
 import type { GraphQLContext } from "./builder";
 import type { Controllers } from "@mirai-app/adapters";
 import type { AuthPort } from "@mirai-app/use-cases";
+import type { Layer } from "effect";
 
 /**
  * Create Hono App with GraphQL endpoint
@@ -34,6 +35,7 @@ export function createHonoApp(
   options: {
     getControllers: () => Controllers;
     authPort?: AuthPort;
+    appLayer: Layer.Layer<unknown>;
   },
 ) {
   const app = new Hono();
@@ -66,6 +68,7 @@ export function createHonoApp(
       return {
         controllers,
         authContext,
+        appLayer: options.appLayer,
         requestId: crypto.randomUUID(),
       };
     },
@@ -145,11 +148,13 @@ export async function startHonoServer(
     port: number;
     getControllers: () => Controllers;
     authPort?: AuthPort;
+    appLayer: Layer.Layer<unknown>;
   },
 ) {
   const app = createHonoApp(schema, {
     getControllers: options.getControllers,
     authPort: options.authPort,
+    appLayer: options.appLayer,
   });
 
   // Bun-specific server start

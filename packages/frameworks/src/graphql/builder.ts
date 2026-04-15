@@ -1,6 +1,7 @@
 import SchemaBuilder from "@pothos/core";
 import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
 import type { Controllers } from "@mirai-app/adapters";
+import type { Layer } from "effect";
 
 /**
  * GraphQL Context
@@ -8,6 +9,7 @@ import type { Controllers } from "@mirai-app/adapters";
  * Context passed to all resolvers, containing:
  * - Controllers for type-safe dependency injection
  * - Auth context for authentication/authorization
+ * - Effect AppLayer for Context.Tag dependency injection
  * - Request metadata
  */
 export interface GraphQLContext {
@@ -17,6 +19,8 @@ export interface GraphQLContext {
     userId: string;
     role: string;
   };
+  /** Effect AppLayer for Context.Tag DI */
+  appLayer: Layer.Layer<unknown>;
   requestId: string;
 }
 
