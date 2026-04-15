@@ -92,11 +92,12 @@ Is it pure business logic?
 
 ---
 
-## 3 Universal rules
+## 4 Universal rules
 
 1. **TDD first:** Write the failing test before implementation.
 2. **Effect-based:** Domain uses `Effect<T,E,never>`; orchestration uses `Effect.gen` + `Context.Tag`.
 3. **Branded IDs:** Use branded types; never mix IDs across aggregates.
+4. **Never modify lint/type config:** Fix the actual code error, never disable rules or change ESLint, tsc, or other lint/type configuration to bypass errors.
 
 ---
 

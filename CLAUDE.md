@@ -238,6 +238,7 @@ Is it pure business logic?
 - No DI in domain layer
 - `Effect<T,E,never>` for all domain operations
 - `Data.TaggedError` for all error types
+- **Never modify lint/type config:** Fix the actual code error, never disable rules or change ESLint, tsc, or other lint/type configuration to bypass errors
 
 ---
 
