@@ -112,6 +112,7 @@ export class StateTransitionError extends Data.TaggedError(
 )<{
   from: string;
   to: string;
+  entityType: string;
   message: string;
 }> {}
 
