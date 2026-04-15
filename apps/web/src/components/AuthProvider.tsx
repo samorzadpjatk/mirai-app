@@ -44,7 +44,7 @@ const scheduleTokenRefresh = (accessToken: string): (() => void) | null => {
       .getState()
       .refreshSession()
       .catch((err) =>
-        clientLogger.error("Token refresh failed:", { error: err }),
+        clientLogger.error("Token refresh failed:", err as Error),
       );
     return null;
   }
@@ -54,7 +54,7 @@ const scheduleTokenRefresh = (accessToken: string): (() => void) | null => {
       .getState()
       .refreshSession()
       .catch((err) =>
-        clientLogger.error("Token refresh failed:", { error: err }),
+        clientLogger.error("Token refresh failed:", err as Error),
       );
   }, delay);
 

@@ -11,7 +11,7 @@ export const logout = async (): Promise<void> => {
     // Clear the auth store state
     await authStore.getState().signOut();
   } catch (error) {
-    clientLogger.error("[web] Error during logout:", { error });
+    clientLogger.error("[web] Error during logout:", error as Error);
   } finally {
     // Always clear cookies and redirect, even if there's an error
     clearAuthCookies();

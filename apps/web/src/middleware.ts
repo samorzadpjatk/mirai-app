@@ -55,7 +55,7 @@ const getDbRole = async (accessToken: string): Promise<string | null> => {
 
     return null;
   } catch (err) {
-    clientLogger.error("[Middleware] getDbRole failed:", { error: err });
+    clientLogger.error("[Middleware] getDbRole failed:", err as Error);
     return null;
   }
 };
