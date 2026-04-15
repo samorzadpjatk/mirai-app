@@ -11,7 +11,7 @@
  * - Deterministic token generation for reproducible tests
  * - Thread-safe for single-process tests (Bun test runner)
  * - Supports validateToken and refreshSession methods
- * - Compatible with awilix-modular dependency injection
+ * - Compatible with Effect Layers for dependency injection
  *
  * Token Format:
  * - Format: `test-token-{counter}`
@@ -70,18 +70,12 @@ interface InMemorySession {
  * In-memory implementation of AuthPort for testing purposes.
  * Simulates authentication without external dependencies.
  *
- * Compatible with awilix-modular dependency injection.
+ * Compatible with Effect Layers.
  *
  * @example
  * ```typescript
- * // In test setup
- * const container = createTestContainer();
- * container.register({
- *   authPort: asClass(InMemoryAuthAdapter).singleton(),
- * });
- *
- * // Use in tests
- * const authPort = container.resolve<InMemoryAuthAdapter>("authPort");
+ * // Direct instantiation for testing
+ * const authPort = new InMemoryAuthAdapter();
  *
  * // Create a test user
  * const userId = UserId.create("550e8400-e29b-41d4-a716-446655440000");

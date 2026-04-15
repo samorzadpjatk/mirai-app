@@ -9,7 +9,7 @@
  * - Uses Effect type for composable error handling and structured concurrency
  * - Maps Supabase errors to domain AuthError types
  * - Thin wrapper with no business logic (just mapping)
- * - Compatible with awilix-modular dependency injection
+ * - Compatible with Effect Layers for dependency injection
  *
  * @module gateways
  */
@@ -217,16 +217,11 @@ function mapSupabaseUserToAuthContext(
  * Implements AuthPort using Supabase Auth to validate tokens and
  * manage authentication sessions.
  *
- * Compatible with awilix-modular dependency injection.
- * Registered in the DI module with scoped lifetime.
+ * Compatible with Effect Layers.
  *
  * @example
  * ```typescript
- * // With DI container (awilix-modular)
- * const authPort = container.resolve("authPort");
- * const result = await Effect.runPromise(authPort.validateToken("jwt-token-string"));
- *
- * // Manual instantiation (backward-compatible)
+ * // Direct instantiation
  * const authPort = new SupabaseAuthAdapter(supabaseClient);
  * const result = await Effect.runPromise(authPort.validateToken("jwt-token-string"));
  *
@@ -243,7 +238,7 @@ export class SupabaseAuthAdapter implements AuthPort {
   /**
    * Creates a new SupabaseAuthAdapter
    *
-   * @param supabase - SupabaseClient instance (injected by awilix or passed manually)
+   * @param supabase - SupabaseClient instance
    */
   constructor(private readonly supabase: SupabaseClient) {}
 

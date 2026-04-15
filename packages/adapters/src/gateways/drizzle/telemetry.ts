@@ -9,7 +9,7 @@
  * - Uses Effect.Effect for composable error handling (no exceptions for expected errors)
  * - Maps Drizzle errors to domain TelemetryError
  * - Thin wrapper with no business logic (just persistence)
- * - Compatible with awilix-modular dependency injection and Effect Layers
+ * - Compatible with Effect Layers for dependency injection
  *
  * @module gateways
  */
@@ -198,16 +198,11 @@ function extractEndpoint(event: TelemetryEvent): string | undefined {
  * Implements TelemetryPort using Drizzle ORM to persist telemetry
  * events to the UserAgent table in the database.
  *
- * Compatible with awilix-modular dependency injection and Effect Layers.
+ * Compatible with Effect Layers for dependency injection.
  * Registered in RepositoryModule with singleton lifetime.
  *
  * @example
  * ```typescript
- * // With DI container (awilix-modular)
- * const telemetry = container.resolve("telemetryPort");
- * const effect = telemetry.log(event);
- * const result = await Effect.runPromise(effect);
- *
  * // With Effect Layers
  * const program = Effect.gen(function* () {
  *   const telemetry = yield* TelemetryPortTag;
