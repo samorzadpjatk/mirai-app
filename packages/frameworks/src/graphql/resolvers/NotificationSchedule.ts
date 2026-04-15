@@ -68,26 +68,20 @@ builder.node(NotificationSchedule, {
       nullable: true,
       resolve: async (ns, _, ctx: GraphQLContext) => {
         if (!ns.tripId) return null;
-        const controller = ctx.container.resolve("tripController");
-        const result = await controller.getById(
-          { id: ns.tripId },
-          ctx.container,
-        );
-        if (result.kind === "err") return null;
-        return result.value;
+        const controller = ctx.controllers.tripController;
+        const result = await controller.getById({ id: ns.tripId });
+        if (!result.success) return null;
+        return result.data;
       },
     }),
     createdBy: t.field({
       type: "User",
       nullable: true,
       resolve: async (ns, _, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("userController");
-        const result = await controller.getById(
-          { id: ns.createdById },
-          ctx.container,
-        );
-        if (result.kind === "err") return null;
-        return result.value;
+        const controller = ctx.controllers.userController;
+        const result = await controller.getById({ id: ns.createdById });
+        if (!result.success) return null;
+        return result.data;
       },
     }),
   }),
@@ -102,15 +96,10 @@ builder.queryFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationScheduleController",
-      );
-      const result = await controller.getById(
-        { id: args.id.toString() },
-        ctx.container,
-      );
-      if (result.kind === "err") return null;
-      return result.value;
+      const controller = ctx.controllers.notificationScheduleController;
+      const result = await controller.getById({ id: args.id.toString() });
+      if (!result.success) return null;
+      return result.data;
     },
   }),
 
@@ -124,37 +113,34 @@ builder.queryFields((t) => ({
       offset: t.arg.int({ defaultValue: 0 }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationScheduleController",
-      );
-      const result = await controller.getAll(
-        {
-          tripId: args.tripId ?? undefined,
-          notificationType: args.type ?? undefined,
-          isActive: args.isActive ?? undefined,
-          limit: args.limit,
-          offset: args.offset,
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.notificationScheduleController;
+      const result = await controller.getAll({
+        tripId: args.tripId ?? undefined,
+        notificationType: args.type ?? undefined,
+        isActive: args.isActive ?? undefined,
+        limit: args.limit,
+        offset: args.offset,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
   activeSchedules: t.field({
     type: [NotificationSchedule],
     resolve: async (_, __, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationScheduleController",
-      );
-      const result = await controller.findActive({}, ctx.container);
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.notificationScheduleController;
+      const result = await controller.getAll({ isActive: true });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -164,17 +150,21 @@ builder.queryFields((t) => ({
       days: t.arg.int({ defaultValue: 7 }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationScheduleController",
-      );
-      const result = await controller.findUpcoming(
-        { days: args.days },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.notificationScheduleController;
+      // Get active schedules and filter by start date within days
+      const result = await controller.getAll({ isActive: true });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      const now = new Date();
+      const cutoffDate = new Date(
+        now.getTime() + args.days * 24 * 60 * 60 * 1000,
+      );
+      return result.data.filter(
+        (s: any) => s.startDate <= cutoffDate && s.endDate >= now,
+      );
     },
   }),
 }));
@@ -199,14 +189,14 @@ builder.mutationFields((t) => ({
       minute: t.arg.int({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationScheduleController",
-      );
-      const result = await controller.create(args, ctx.container);
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.notificationScheduleController;
+      const result = await controller.create(args);
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -225,20 +215,17 @@ builder.mutationFields((t) => ({
       isActive: t.arg.boolean(),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationScheduleController",
-      );
-      const result = await controller.update(
-        {
-          id: args.id.toString(),
-          ...args,
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.notificationScheduleController;
+      const result = await controller.update({
+        id: args.id.toString(),
+        ...args,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -248,17 +235,14 @@ builder.mutationFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationScheduleController",
-      );
-      const result = await controller.toggleActive(
-        { id: args.id.toString() },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+      const controller = ctx.controllers.notificationScheduleController;
+      const result = await controller.toggleActive({ id: args.id.toString() });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -268,17 +252,14 @@ builder.mutationFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationScheduleController",
-      );
-      const result = await controller.delete(
-        { id: args.id.toString() },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.notificationScheduleController;
+      const result = await controller.delete({ id: args.id.toString() });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return true;
     },
   }),
 }));

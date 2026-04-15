@@ -38,13 +38,10 @@ builder.node(Notification, {
       nullable: true,
       resolve: async (n, _args, ctx: GraphQLContext) => {
         if (!n.senderId) return null;
-        const controller = ctx.container.resolve("userController");
-        const result = await controller.getById(
-          { id: n.senderId },
-          ctx.container,
-        );
-        if (result.kind === "err") return null;
-        return result.value;
+        const controller = ctx.controllers.userController;
+        const result = await controller.getById({ id: n.senderId });
+        if (!result.success) return null;
+        return result.data;
       },
     }),
   }),
@@ -60,19 +57,21 @@ builder.queryType({
         limit: t.arg.int({ defaultValue: 20 }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("notificationController");
-        const result = await controller.getByUserId(
-          {
-            userId: args.userId,
-            unreadOnly: args.unreadOnly,
-            limit: args.limit,
-          },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+        const controller = ctx.controllers.notificationController;
+        const result = await controller.list({
+          userId: args.userId,
+          limit: args.limit,
+        });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "INTERNAL_SERVER_ERROR" },
+          });
         }
-        return result.value;
+        // Filter by unread if requested
+        if (args.unreadOnly) {
+          return result.data.filter((n: any) => !n.isRead);
+        }
+        return result.data;
       },
     }),
     notification: t.field({
@@ -82,13 +81,10 @@ builder.queryType({
         id: t.arg.id({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("notificationController");
-        const result = await controller.getById(
-          { id: args.id.toString() },
-          ctx.container,
-        );
-        if (result.kind === "err") return null;
-        return result.value;
+        const controller = ctx.controllers.notificationController;
+        const result = await controller.getById({ id: args.id.toString() });
+        if (!result.success) return null;
+        return result.data;
       },
     }),
     unreadCount: t.field({
@@ -97,15 +93,14 @@ builder.queryType({
         userId: t.arg.string({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("notificationController");
-        const result = await controller.getUnreadCount(
-          { userId: args.userId },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+        const controller = ctx.controllers.notificationController;
+        const result = await controller.list({ userId: args.userId });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "INTERNAL_SERVER_ERROR" },
+          });
         }
-        return result.value;
+        return result.data.filter((n: any) => !n.isRead).length;
       },
     }),
   }),
@@ -119,15 +114,17 @@ builder.mutationType({
         id: t.arg.id({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("notificationController");
-        const result = await controller.markAsRead(
-          { id: args.id.toString() },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+        const controller = ctx.controllers.notificationController;
+        const result = await controller.updateStatus({
+          id: args.id.toString(),
+          isRead: true,
+        });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "INTERNAL_SERVER_ERROR" },
+          });
         }
-        return result.value;
+        return result.data;
       },
     }),
     markAllNotificationsAsRead: t.field({
@@ -136,15 +133,29 @@ builder.mutationType({
         userId: t.arg.string({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("notificationController");
-        const result = await controller.markAllAsRead(
-          { userId: args.userId },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+        const controller = ctx.controllers.notificationController;
+        // Get all unread notifications for user
+        const listResult = await controller.list({ userId: args.userId });
+        if (!listResult.success) {
+          throw new GraphQLError(listResult.error, {
+            extensions: { code: "INTERNAL_SERVER_ERROR" },
+          });
         }
-        return result.value;
+        const unreadNotifications = listResult.data.filter(
+          (n: any) => !n.isRead,
+        );
+        // Mark each as read
+        let updatedCount = 0;
+        for (const notification of unreadNotifications) {
+          const updateResult = await controller.updateStatus({
+            id: notification.id,
+            isRead: true,
+          });
+          if (updateResult.success) {
+            updatedCount++;
+          }
+        }
+        return updatedCount;
       },
     }),
     createNotification: t.field({
@@ -157,21 +168,20 @@ builder.mutationType({
         referenceId: t.arg.string(),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("notificationController");
-        const result = await controller.create(
-          {
-            userId: args.userId,
-            type: args.type,
-            content: args.content,
-            senderId: args.senderId ?? undefined,
-            referenceId: args.referenceId ?? undefined,
-          },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
+        const controller = ctx.controllers.notificationController;
+        const result = await controller.create({
+          userId: args.userId,
+          type: args.type,
+          content: args.content,
+          senderId: args.senderId ?? undefined,
+          referenceId: args.referenceId ?? undefined,
+        });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "BAD_REQUEST" },
+          });
         }
-        return result.value;
+        return result.data;
       },
     }),
     deleteNotification: t.field({
@@ -180,15 +190,14 @@ builder.mutationType({
         id: t.arg.id({ required: true }),
       },
       resolve: async (_root, args, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("notificationController");
-        const result = await controller.delete(
-          { id: args.id.toString() },
-          ctx.container,
-        );
-        if (result.kind === "err") {
-          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+        const controller = ctx.controllers.notificationController;
+        const result = await controller.delete({ id: args.id.toString() });
+        if (!result.success) {
+          throw new GraphQLError(result.error, {
+            extensions: { code: "INTERNAL_SERVER_ERROR" },
+          });
         }
-        return result.value;
+        return true;
       },
     }),
   }),

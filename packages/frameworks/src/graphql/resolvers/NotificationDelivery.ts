@@ -52,13 +52,10 @@ builder.node(NotificationDelivery, {
       type: "Notification",
       nullable: true,
       resolve: async (nd, _, ctx: GraphQLContext) => {
-        const controller = ctx.container.resolve("notificationController");
-        const result = await controller.getById(
-          { id: nd.notificationId },
-          ctx.container,
-        );
-        if (result.kind === "err") return null;
-        return result.value;
+        const controller = ctx.controllers.notificationController;
+        const result = await controller.getById({ id: nd.notificationId });
+        if (!result.success) return null;
+        return result.data;
       },
     }),
     trip: t.field({
@@ -66,13 +63,10 @@ builder.node(NotificationDelivery, {
       nullable: true,
       resolve: async (nd, _, ctx: GraphQLContext) => {
         if (!nd.tripId) return null;
-        const controller = ctx.container.resolve("tripController");
-        const result = await controller.getById(
-          { id: nd.tripId },
-          ctx.container,
-        );
-        if (result.kind === "err") return null;
-        return result.value;
+        const controller = ctx.controllers.tripController;
+        const result = await controller.getById({ id: nd.tripId });
+        if (!result.success) return null;
+        return result.data;
       },
     }),
   }),
@@ -87,15 +81,14 @@ builder.queryFields((t) => ({
       id: t.arg.id({ required: true }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationDeliveryController",
+      // TODO: Implement getById in NotificationDeliveryController
+      const controller = ctx.controllers.notificationDeliveryController;
+      const result = await controller.getDeliveries({ limit: 1000 });
+      if (!result.success) return null;
+      const delivery = result.data.find(
+        (d: any) => d.id === args.id.toString(),
       );
-      const result = await controller.getById(
-        { id: args.id.toString() },
-        ctx.container,
-      );
-      if (result.kind === "err") return null;
-      return result.value;
+      return delivery || null;
     },
   }),
 
@@ -111,25 +104,19 @@ builder.queryFields((t) => ({
       offset: t.arg.int({ defaultValue: 0 }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationDeliveryController",
-      );
-      const result = await controller.getDeliveries(
-        {
-          tripId: args.tripId ?? undefined,
-          status: args.status ?? undefined,
-          scheduleId: args.scheduleId ?? undefined,
-          startDate: args.startDate ?? undefined,
-          endDate: args.endDate ?? undefined,
-          limit: args.limit,
-          offset: args.offset,
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.notificationDeliveryController;
+      const result = await controller.getDeliveries({
+        tripId: args.tripId ?? undefined,
+        status: args.status ?? undefined,
+        limit: args.limit,
+        offset: args.offset,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 
@@ -152,22 +139,41 @@ builder.queryFields((t) => ({
       endDate: t.arg({ type: "DateTime" }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationDeliveryController",
-      );
-      const result = await controller.getStats(
-        {
-          tripId: args.tripId ?? undefined,
-          status: args.status ?? undefined,
-          startDate: args.startDate ?? undefined,
-          endDate: args.endDate ?? undefined,
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.notificationDeliveryController;
+      const result = await controller.getDeliveries({
+        tripId: args.tripId ?? undefined,
+        status: args.status ?? undefined,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      // Calculate stats from deliveries
+      const deliveries = result.data;
+      const totalRecipients = deliveries.reduce(
+        (sum: number, d: any) => sum + d.totalRecipients,
+        0,
+      );
+      const totalSuccess = deliveries.reduce(
+        (sum: number, d: any) => sum + d.successCount,
+        0,
+      );
+      const totalFailures = deliveries.reduce(
+        (sum: number, d: any) => sum + d.failureCount,
+        0,
+      );
+      return {
+        totalDeliveries: deliveries.length,
+        totalRecipients,
+        totalSuccess,
+        totalFailures,
+        avgSuccessPerDelivery:
+          deliveries.length > 0 ? totalSuccess / deliveries.length : 0,
+        avgFailuresPerDelivery:
+          deliveries.length > 0 ? totalFailures / deliveries.length : 0,
+        successRate: totalRecipients > 0 ? totalSuccess / totalRecipients : 0,
+      };
     },
   }),
 
@@ -179,21 +185,19 @@ builder.queryFields((t) => ({
       offset: t.arg.int({ defaultValue: 0 }),
     },
     resolve: async (_, args, ctx: GraphQLContext) => {
-      const controller = ctx.container.resolve(
-        "notificationDeliveryController",
-      );
-      const result = await controller.findFailed(
-        {
-          tripId: args.tripId,
-          limit: args.limit,
-          offset: args.offset,
-        },
-        ctx.container,
-      );
-      if (result.kind === "err") {
-        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      const controller = ctx.controllers.notificationDeliveryController;
+      const result = await controller.getDeliveries({
+        tripId: args.tripId,
+        status: "failure",
+        limit: args.limit,
+        offset: args.offset,
+      });
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
-      return result.value;
+      return result.data;
     },
   }),
 }));
