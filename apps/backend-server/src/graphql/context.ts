@@ -34,9 +34,10 @@
 
 import type { Context as HonoContext } from "hono";
 import type { Layer } from "effect";
-import type { AuthContext } from "@mirai-app/domain";
+import type { AuthContext, UserId } from "@mirai-app/domain";
+import { AuthContext as AuthContextClass } from "@mirai-app/domain";
 import { Effect, Runtime } from "effect";
-import type { Runtime as EffectRuntime } from "effect";
+import type { Runtime as EffectRuntimeType } from "effect/Runtime";
 import {
   authenticateUserUseCase,
   AuthPortTag,
@@ -64,7 +65,7 @@ import {
  * Effect runtime type for GraphQL context
  * Uses never for requirements since we build from layers
  */
-export type GraphQLRuntime = EffectRuntime<never>;
+export type GraphQLRuntime = EffectRuntimeType<never>;
 
 /**
  * GraphQL context type
@@ -221,7 +222,7 @@ export function createContextFactory(): (
 
     // Get database client from Hono context or env
     const db = honoContext.get("db") as
-      | (typeof import("@mirai-app/frameworks/drizzle"))["drizzleDb"]
+      | import("@mirai-app/frameworks/drizzle").DrizzleDb
       | undefined;
 
     // Compose appLayer if not provided
@@ -282,12 +283,16 @@ export function createContextFactory(): (
         const authEither = await Effect.runPromise(Effect.either(authEffect));
 
         if (authEither._tag === "Right") {
-          authContext = {
-            userId: authEither.right.userId,
+          const authEffect = AuthContextClass.create({
+            userId: authEither.right.userId as unknown as UserId,
             role: authEither.right.role as AuthContext["role"],
             authenticatedAt: authEither.right.authenticatedAt,
             sessionId: authEither.right.sessionId,
-          };
+          });
+          const authResult = await Effect.runPromise(Effect.either(authEffect));
+          if (authResult._tag === "Right") {
+            authContext = authResult.right;
+          }
         }
       } catch {
         // Auth failed - resolver will handle authentication requirements
@@ -329,7 +334,7 @@ export function createSimpleContextFactory(): (
 
     // Get database client from Hono context
     const db = honoContext.get("db") as
-      | (typeof import("@mirai-app/frameworks/drizzle"))["drizzleDb"]
+      | import("@mirai-app/frameworks/drizzle").DrizzleDb
       | undefined;
 
     // Compose appLayer if not provided

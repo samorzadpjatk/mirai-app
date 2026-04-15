@@ -13,7 +13,7 @@ import {
   requireAdmin,
   requireModerator,
 } from "../utils/auth-helpers";
-import { handleResult, mapErrorToGraphQL } from "../utils/error-mapper";
+import { mapErrorToGraphQL } from "../utils/error-mapper";
 import { GraphQLError } from "graphql";
 import type { ReactionType } from "@mirai-app/domain";
 import { PubSubServiceTag } from "@mirai-app/use-cases";
@@ -23,7 +23,38 @@ import { Effect } from "effect";
 // Import Types (registers them with builder)
 // =============================================================================
 
-import "../types/activityFeed";
+import {
+  ActivityCursorInput,
+  GetByTripInput,
+  GetByTripModerationInput,
+  GetByIdInput,
+  CreateCustomActivityInput,
+  CreateUserPostInput,
+  CreateSubmissionActivityInput,
+  CreateChallengeActivityInput,
+  CreateRankChangeActivityInput,
+  UpdateActivityInput,
+  SetPinnedInput,
+  HideActivityInput,
+  UnhideActivityInput,
+  ToggleReactionInput,
+  DeleteActivityInput,
+  ActivityType,
+  ActivityFeedResultType,
+  ActivityFeedModerationResultType,
+  ToggleReactionResultType,
+  DeleteActivityResultType,
+  HiddenActivityResultType,
+} from "../types/activityFeed";
+import type {
+  GetActivityFeedOutput,
+  GetActivityByIdOutput,
+  CreateActivityOutput,
+  UpdateActivityOutput,
+  HideActivityOutput,
+  UnhideActivityOutput,
+  AddReactionOutput,
+} from "@mirai-app/use-cases";
 
 // =============================================================================
 // Query Fields
@@ -38,11 +69,11 @@ import "../types/activityFeed";
 builder.queryField("activitiesByTrip", (t) =>
   t.field({
     description: "Get activities for a trip (cursor pagination)",
-    type: "ActivityFeedResult",
+    type: ActivityFeedResultType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "GetByTripInput",
+        type: GetByTripInput,
         description: "Input for fetching activities",
         required: true,
       }),
@@ -52,20 +83,25 @@ builder.queryField("activitiesByTrip", (t) =>
     },
     resolve: async (_root, args, context) => {
       // Require authentication
-      const authContext = await requireAuth(context);
+      await requireAuth(context);
 
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
       // Call controller method
+      const input = args.input as {
+        tripId: string;
+        pageSize?: number;
+        cursor?: { id: string; createdAt: string; isPinned: boolean } | null;
+      };
       const result = await controller.getByTrip({
-        tripId: args.input.tripId,
-        pageSize: args.input.pageSize ?? 30,
-        cursor: args.input.cursor
+        tripId: input.tripId,
+        pageSize: input.pageSize ?? 30,
+        cursor: input.cursor
           ? {
-              id: args.input.cursor.id,
-              createdAt: new Date(args.input.cursor.createdAt),
-              isPinned: args.input.cursor.isPinned,
+              id: input.cursor.id,
+              createdAt: new Date(input.cursor.createdAt),
+              isPinned: input.cursor.isPinned,
             }
           : null,
       });
@@ -74,7 +110,7 @@ builder.queryField("activitiesByTrip", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      return result.data;
+      return result.data as GetActivityFeedOutput;
     },
   }),
 );
@@ -88,11 +124,11 @@ builder.queryField("activitiesByTrip", (t) =>
 builder.queryField("activitiesByTripModeration", (t) =>
   t.field({
     description: "Get activities for moderation (includes hidden)",
-    type: "ActivityFeedModerationResult",
+    type: ActivityFeedModerationResultType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "GetByTripModerationInput",
+        type: GetByTripModerationInput,
         description: "Input for fetching activities",
         required: true,
       }),
@@ -107,29 +143,37 @@ builder.queryField("activitiesByTripModeration", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        tripId: string;
+        page?: number;
+        pageSize?: number;
+      };
+
       // This query is handled differently in the tRPC controller
       // It uses the repository directly, so we need to replicate that behavior
       // For now, we use the controller's getByTrip but with a flag
       // In a real implementation, you'd add a specific method to the controller
       const result = await controller.getByTrip({
-        tripId: args.input.tripId,
-        pageSize: args.input.pageSize ?? 20,
+        tripId: input.tripId,
+        pageSize: input.pageSize ?? 20,
       });
 
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      const data = result.data as GetActivityFeedOutput;
+
       // Transform to moderation result format
       // Note: The actual implementation may need to fetch more data for moderation
       return {
-        activities: result.data.activities,
+        activities: data.activities,
         pagination: {
-          total: result.data.activities.length,
-          page: args.input.page ?? 1,
-          pageSize: args.input.pageSize ?? 20,
+          total: data.activities.length,
+          page: input.page ?? 1,
+          pageSize: input.pageSize ?? 20,
           totalPages: 1,
-          hasMore: result.data.pagination.hasMore,
+          hasMore: data.pagination.hasMore,
         },
       };
     },
@@ -144,7 +188,7 @@ builder.queryField("activitiesByTripModeration", (t) =>
 builder.queryField("activity", (t) =>
   t.field({
     description: "Get a single activity by ID",
-    type: "Activity",
+    type: ActivityType,
     nullable: true,
     args: {
       id: t.arg.id({
@@ -172,7 +216,7 @@ builder.queryField("activity", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      return result.data;
+      return result.data as GetActivityByIdOutput;
     },
   }),
 );
@@ -189,11 +233,11 @@ builder.queryField("activity", (t) =>
 builder.mutationField("createCustomActivity", (t) =>
   t.field({
     description: "Create a custom activity (admin only)",
-    type: "Activity",
+    type: ActivityType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "CreateCustomActivityInput",
+        type: CreateCustomActivityInput,
         description: "Input for creating activity",
         required: true,
       }),
@@ -208,12 +252,20 @@ builder.mutationField("createCustomActivity", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        tripId: string;
+        title: string;
+        description?: string | null;
+        imageUrl?: string | null;
+        isPinned?: boolean;
+      };
+
       const result = await controller.createCustom({
-        tripId: args.input.tripId,
-        title: args.input.title,
-        description: args.input.description ?? undefined,
-        imageUrl: args.input.imageUrl ?? undefined,
-        isPinned: args.input.isPinned ?? undefined,
+        tripId: input.tripId,
+        title: input.title,
+        description: input.description ?? undefined,
+        imageUrl: input.imageUrl ?? undefined,
+        isPinned: input.isPinned ?? undefined,
         createdByAdmin: authContext.userId as string,
       });
 
@@ -221,18 +273,17 @@ builder.mutationField("createCustomActivity", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      const data = result.data as CreateActivityOutput;
+
       // Publish to activity feed subscription
       const publishEffect = Effect.gen(function* () {
         const pubSubService = yield* PubSubServiceTag;
-        pubSubService.publish(
-          `activity:feed:${args.input.tripId}`,
-          result.data,
-        );
+        pubSubService.publish(`activity:feed:${input.tripId}`, data);
       }).pipe(Effect.provide(context.appLayer));
 
       await Effect.runPromise(publishEffect);
 
-      return result.data;
+      return data;
     },
   }),
 );
@@ -245,11 +296,11 @@ builder.mutationField("createCustomActivity", (t) =>
 builder.mutationField("createUserPost", (t) =>
   t.field({
     description: "Create a user post activity",
-    type: "Activity",
+    type: ActivityType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "CreateUserPostInput",
+        type: CreateUserPostInput,
         description: "Input for creating user post",
         required: true,
       }),
@@ -259,36 +310,43 @@ builder.mutationField("createUserPost", (t) =>
     },
     resolve: async (_root, args, context) => {
       // Require authentication
-      const authContext = await requireAuth(context);
+      await requireAuth(context);
 
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        tripId: string;
+        title: string;
+        description?: string | null;
+        imageUrl?: string | null;
+        additionalImages?: string[] | null;
+      };
+
       // The controller handles participant verification internally
       const result = await controller.createUserPost({
-        tripId: args.input.tripId,
-        title: args.input.title,
-        description: args.input.description ?? undefined,
-        imageUrl: args.input.imageUrl ?? undefined,
-        additionalImages: args.input.additionalImages ?? undefined,
+        tripId: input.tripId,
+        title: input.title,
+        description: input.description ?? undefined,
+        imageUrl: input.imageUrl ?? undefined,
+        additionalImages: input.additionalImages ?? undefined,
       });
 
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      const data = result.data as CreateActivityOutput;
+
       // Publish to activity feed subscription
       const publishEffect = Effect.gen(function* () {
         const pubSubService = yield* PubSubServiceTag;
-        pubSubService.publish(
-          `activity:feed:${args.input.tripId}`,
-          result.data,
-        );
+        pubSubService.publish(`activity:feed:${input.tripId}`, data);
       }).pipe(Effect.provide(context.appLayer));
 
       await Effect.runPromise(publishEffect);
 
-      return result.data;
+      return data;
     },
   }),
 );
@@ -301,11 +359,11 @@ builder.mutationField("createUserPost", (t) =>
 builder.mutationField("createSubmissionActivity", (t) =>
   t.field({
     description: "Create a submission activity",
-    type: "Activity",
+    type: ActivityType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "CreateSubmissionActivityInput",
+        type: CreateSubmissionActivityInput,
         description: "Input for creating submission activity",
         required: true,
       }),
@@ -320,19 +378,34 @@ builder.mutationField("createSubmissionActivity", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        tripId: string;
+        submissionId: string;
+        challengeId: string;
+        groupId: string;
+        title: string;
+        description?: string | null;
+        imageUrl?: string | null;
+        hasVideo?: boolean;
+        isWinner?: boolean;
+        ranking?: number;
+        pointsAwarded?: number;
+        isPinned?: boolean;
+      };
+
       const result = await controller.createSubmission({
-        tripId: args.input.tripId,
-        submissionId: args.input.submissionId,
-        challengeId: args.input.challengeId,
-        groupId: args.input.groupId,
-        title: args.input.title,
-        description: args.input.description ?? undefined,
-        imageUrl: args.input.imageUrl ?? undefined,
-        hasVideo: args.input.hasVideo ?? undefined,
-        isWinner: args.input.isWinner ?? undefined,
-        ranking: args.input.ranking ?? undefined,
-        pointsAwarded: args.input.pointsAwarded ?? undefined,
-        isPinned: args.input.isPinned ?? undefined,
+        tripId: input.tripId,
+        submissionId: input.submissionId,
+        challengeId: input.challengeId,
+        groupId: input.groupId,
+        title: input.title,
+        description: input.description ?? undefined,
+        imageUrl: input.imageUrl ?? undefined,
+        hasVideo: input.hasVideo ?? undefined,
+        isWinner: input.isWinner ?? undefined,
+        ranking: input.ranking ?? undefined,
+        pointsAwarded: input.pointsAwarded ?? undefined,
+        isPinned: input.isPinned ?? undefined,
         createdByAdmin: authContext.userId as string,
       });
 
@@ -340,18 +413,17 @@ builder.mutationField("createSubmissionActivity", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      const data = result.data as CreateActivityOutput;
+
       // Publish to activity feed subscription
       const publishEffect = Effect.gen(function* () {
         const pubSubService = yield* PubSubServiceTag;
-        pubSubService.publish(
-          `activity:feed:${args.input.tripId}`,
-          result.data,
-        );
+        pubSubService.publish(`activity:feed:${input.tripId}`, data);
       }).pipe(Effect.provide(context.appLayer));
 
       await Effect.runPromise(publishEffect);
 
-      return result.data;
+      return data;
     },
   }),
 );
@@ -364,11 +436,11 @@ builder.mutationField("createSubmissionActivity", (t) =>
 builder.mutationField("createChallengeActivity", (t) =>
   t.field({
     description: "Create a challenge event activity",
-    type: "Activity",
+    type: ActivityType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "CreateChallengeActivityInput",
+        type: CreateChallengeActivityInput,
         description: "Input for creating challenge activity",
         required: true,
       }),
@@ -383,17 +455,30 @@ builder.mutationField("createChallengeActivity", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        tripId: string;
+        challengeId: string;
+        eventType: string;
+        title: string;
+        description?: string | null;
+        endTime?: string | null;
+        submissionType?: string | null;
+        basePoints?: number | null;
+        submissionCount?: number | null;
+        isPinned?: boolean;
+      };
+
       const result = await controller.createChallengeEvent({
-        tripId: args.input.tripId,
-        challengeId: args.input.challengeId,
-        eventType: args.input.eventType,
-        title: args.input.title,
-        description: args.input.description ?? undefined,
-        endTime: args.input.endTime ?? undefined,
-        submissionType: args.input.submissionType ?? undefined,
-        basePoints: args.input.basePoints ?? undefined,
-        submissionCount: args.input.submissionCount ?? undefined,
-        isPinned: args.input.isPinned ?? undefined,
+        tripId: input.tripId,
+        challengeId: input.challengeId,
+        eventType: input.eventType,
+        title: input.title,
+        description: input.description ?? undefined,
+        endTime: input.endTime ?? undefined,
+        submissionType: input.submissionType ?? undefined,
+        basePoints: input.basePoints ?? undefined,
+        submissionCount: input.submissionCount ?? undefined,
+        isPinned: input.isPinned ?? undefined,
         createdByAdmin: authContext.userId as string,
       });
 
@@ -401,18 +486,17 @@ builder.mutationField("createChallengeActivity", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      const data = result.data as CreateActivityOutput;
+
       // Publish to activity feed subscription
       const publishEffect = Effect.gen(function* () {
         const pubSubService = yield* PubSubServiceTag;
-        pubSubService.publish(
-          `activity:feed:${args.input.tripId}`,
-          result.data,
-        );
+        pubSubService.publish(`activity:feed:${input.tripId}`, data);
       }).pipe(Effect.provide(context.appLayer));
 
       await Effect.runPromise(publishEffect);
 
-      return result.data;
+      return data;
     },
   }),
 );
@@ -425,11 +509,11 @@ builder.mutationField("createChallengeActivity", (t) =>
 builder.mutationField("createRankChangeActivity", (t) =>
   t.field({
     description: "Create a rank change activity",
-    type: "Activity",
+    type: ActivityType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "CreateRankChangeActivityInput",
+        type: CreateRankChangeActivityInput,
         description: "Input for creating rank change activity",
         required: true,
       }),
@@ -444,15 +528,26 @@ builder.mutationField("createRankChangeActivity", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        tripId: string;
+        groupId: string;
+        newRank: number;
+        totalCoins: number;
+        coinsGained: number;
+        title: string;
+        description?: string | null;
+        isPinned?: boolean;
+      };
+
       const result = await controller.createRankChange({
-        tripId: args.input.tripId,
-        groupId: args.input.groupId,
-        newRank: args.input.newRank,
-        totalCoins: args.input.totalCoins,
-        coinsGained: args.input.coinsGained,
-        title: args.input.title,
-        description: args.input.description ?? undefined,
-        isPinned: args.input.isPinned ?? undefined,
+        tripId: input.tripId,
+        groupId: input.groupId,
+        newRank: input.newRank,
+        totalCoins: input.totalCoins,
+        coinsGained: input.coinsGained,
+        title: input.title,
+        description: input.description ?? undefined,
+        isPinned: input.isPinned ?? undefined,
         createdByAdmin: authContext.userId as string,
       });
 
@@ -460,18 +555,17 @@ builder.mutationField("createRankChangeActivity", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      const data = result.data as CreateActivityOutput;
+
       // Publish to activity feed subscription
       const publishEffect = Effect.gen(function* () {
         const pubSubService = yield* PubSubServiceTag;
-        pubSubService.publish(
-          `activity:feed:${args.input.tripId}`,
-          result.data,
-        );
+        pubSubService.publish(`activity:feed:${input.tripId}`, data);
       }).pipe(Effect.provide(context.appLayer));
 
       await Effect.runPromise(publishEffect);
 
-      return result.data;
+      return data;
     },
   }),
 );
@@ -484,11 +578,11 @@ builder.mutationField("createRankChangeActivity", (t) =>
 builder.mutationField("updateActivity", (t) =>
   t.field({
     description: "Update an activity",
-    type: "Activity",
+    type: ActivityType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "UpdateActivityInput",
+        type: UpdateActivityInput,
         description: "Input for updating activity",
         required: true,
       }),
@@ -503,21 +597,26 @@ builder.mutationField("updateActivity", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        activityId: string;
+        title?: string;
+        description?: string | null;
+        isPinned?: boolean;
+      };
+
       const result = await controller.update({
-        activityId: args.input.activityId,
-        title: args.input.title ?? undefined,
+        activityId: input.activityId,
+        title: input.title ?? undefined,
         description:
-          args.input.description === null
-            ? null
-            : (args.input.description ?? undefined),
-        isPinned: args.input.isPinned ?? undefined,
+          input.description === null ? null : (input.description ?? undefined),
+        isPinned: input.isPinned ?? undefined,
       });
 
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      return result.data;
+      return result.data as UpdateActivityOutput;
     },
   }),
 );
@@ -530,11 +629,11 @@ builder.mutationField("updateActivity", (t) =>
 builder.mutationField("setActivityPinned", (t) =>
   t.field({
     description: "Pin or unpin an activity",
-    type: "Activity",
+    type: ActivityType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "SetPinnedInput",
+        type: SetPinnedInput,
         description: "Input for pinning/unpinning",
         required: true,
       }),
@@ -549,16 +648,21 @@ builder.mutationField("setActivityPinned", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        activityId: string;
+        isPinned: boolean;
+      };
+
       const result = await controller.setPinned({
-        activityId: args.input.activityId,
-        isPinned: args.input.isPinned,
+        activityId: input.activityId,
+        isPinned: input.isPinned,
       });
 
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      return result.data;
+      return result.data as UpdateActivityOutput;
     },
   }),
 );
@@ -571,11 +675,11 @@ builder.mutationField("setActivityPinned", (t) =>
 builder.mutationField("hideActivity", (t) =>
   t.field({
     description: "Hide an activity",
-    type: "HiddenActivityResult",
+    type: HiddenActivityResultType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "HideActivityInput",
+        type: HideActivityInput,
         description: "Input for hiding activity",
         required: true,
       }),
@@ -590,17 +694,22 @@ builder.mutationField("hideActivity", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        activityId: string;
+        reason?: string | null;
+      };
+
       const result = await controller.hide({
-        activityId: args.input.activityId,
+        activityId: input.activityId,
         hiddenByAdmin: authContext.userId as string,
-        reason: args.input.reason ?? undefined,
+        reason: input.reason ?? undefined,
       });
 
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      return result.data;
+      return result.data as HideActivityOutput;
     },
   }),
 );
@@ -613,11 +722,11 @@ builder.mutationField("hideActivity", (t) =>
 builder.mutationField("unhideActivity", (t) =>
   t.field({
     description: "Unhide an activity",
-    type: "Activity",
+    type: ActivityType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "UnhideActivityInput",
+        type: UnhideActivityInput,
         description: "Input for unhiding activity",
         required: true,
       }),
@@ -632,15 +741,19 @@ builder.mutationField("unhideActivity", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        activityId: string;
+      };
+
       const result = await controller.unhide({
-        activityId: args.input.activityId,
+        activityId: input.activityId,
       });
 
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
-      return result.data;
+      return result.data as UnhideActivityOutput;
     },
   }),
 );
@@ -653,11 +766,11 @@ builder.mutationField("unhideActivity", (t) =>
 builder.mutationField("toggleActivityReaction", (t) =>
   t.field({
     description: "Toggle a reaction on an activity",
-    type: "ToggleReactionResult",
+    type: ToggleReactionResultType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "ToggleReactionInput",
+        type: ToggleReactionInput,
         description: "Input for toggling reaction",
         required: true,
       }),
@@ -672,10 +785,15 @@ builder.mutationField("toggleActivityReaction", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        activityId: string;
+        reactionType: string;
+      };
+
       const result = await controller.toggleReaction({
-        activityId: args.input.activityId,
+        activityId: input.activityId,
         userId: authContext.userId as string,
-        reactionType: args.input.reactionType,
+        reactionType: input.reactionType as ReactionType,
       });
 
       if (!result.success) {
@@ -694,7 +812,7 @@ builder.mutationField("toggleActivityReaction", (t) =>
         throw mapErrorToGraphQL(error);
       }
 
-      return result.data;
+      return result.data as AddReactionOutput;
     },
   }),
 );
@@ -707,11 +825,11 @@ builder.mutationField("toggleActivityReaction", (t) =>
 builder.mutationField("deleteActivity", (t) =>
   t.field({
     description: "Delete an activity (admin only)",
-    type: "DeleteActivityResult",
+    type: DeleteActivityResultType,
     nullable: false,
     args: {
       input: t.arg({
-        type: "DeleteActivityInput",
+        type: DeleteActivityInput,
         description: "Input for deleting activity",
         required: true,
       }),
@@ -726,8 +844,12 @@ builder.mutationField("deleteActivity", (t) =>
       // Get controller from context
       const controller = context.controllers.activityFeedController;
 
+      const input = args.input as {
+        activityId: string;
+      };
+
       const result = await controller.delete({
-        activityId: args.input.activityId,
+        activityId: input.activityId,
       });
 
       if (!result.success) {
@@ -740,7 +862,7 @@ builder.mutationField("deleteActivity", (t) =>
         throw mapErrorToGraphQL(error);
       }
 
-      return result.data;
+      return result.data as { success: boolean };
     },
   }),
 );

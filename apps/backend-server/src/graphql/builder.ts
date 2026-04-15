@@ -470,6 +470,115 @@ export interface PothosTypes {
       success: boolean;
     };
 
+    // Activity Feed domain - mapped from ActivityFeedController outputs
+    Activity: {
+      id: string;
+      tripId: string;
+      activityType: string;
+      title: string;
+      description: string | null;
+      imageUrl: string | null;
+      isPinned: boolean;
+      isHidden: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+      admin: {
+        id: string;
+        firstName: string;
+        lastName: string;
+      } | null;
+    };
+    ActivityAdmin: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+    ActivityFeedResult: {
+      activities: unknown[];
+      nextCursor: {
+        id: string;
+        createdAt: Date;
+        isPinned: boolean;
+      } | null;
+      pagination: {
+        pageSize: number;
+        hasMore: boolean;
+      };
+    };
+    ActivityFeedModerationResult: {
+      activities: unknown[];
+      pagination: {
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+        hasMore: boolean;
+      };
+    };
+    PaginationInfo: {
+      pageSize: number;
+      hasMore: boolean;
+    };
+    ActivityCursor: {
+      id: string;
+      createdAt: Date;
+      isPinned: boolean;
+    };
+    ModerationPaginationInfo: {
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+      hasMore: boolean;
+    };
+    ReactionCounts: {
+      heart: number;
+      fire: number;
+      clap: number;
+      star: number;
+    };
+    ReactionsSummary: {
+      total: number;
+      counts: {
+        heart: number;
+        fire: number;
+        clap: number;
+        star: number;
+      };
+      myReactions: string[];
+    };
+    ToggleReactionResult: {
+      activityId: string;
+      reactionType: string;
+      isActive: boolean;
+      reactionsSummary: {
+        total: number;
+        counts: {
+          heart: number;
+          fire: number;
+          clap: number;
+          star: number;
+        };
+        myReactions: string[];
+      };
+    };
+    DeleteActivityResult: {
+      success: boolean;
+    };
+    HiddenActivityResult: {
+      id: string;
+      tripId: string;
+      activityType: string;
+      title: string;
+      description: string | null;
+      imageUrl: string | null;
+      isPinned: boolean;
+      isHidden: boolean;
+      hiddenAt: Date;
+      hiddenReason: string | null;
+      updatedAt: Date;
+    };
+
     // Storage domain - mapped from StorageController outputs
     UploadUrlResult: {
       resumableUrl: string;
@@ -873,16 +982,19 @@ export const builder = new SchemaBuilder<PothosTypes>({
         const failures = result.failure.failures || [];
         // Check if any failure is for authenticated scope
         const authFailure = failures.find(
-          (f: { kind: string; scope: string }) =>
-            f.kind === "AuthScope" && f.scope === "authenticated",
+          (f) =>
+            f.kind === "AuthScope" &&
+            "scope" in f &&
+            f.scope === "authenticated",
         );
         if (authFailure) {
           code = "UNAUTHENTICATED";
         } else {
           // Check for admin/moderator failures
           const adminFailure = failures.find(
-            (f: { kind: string; scope: string }) =>
+            (f) =>
               f.kind === "AuthScope" &&
+              "scope" in f &&
               (f.scope === "admin" || f.scope === "moderator"),
           );
           if (adminFailure) {
