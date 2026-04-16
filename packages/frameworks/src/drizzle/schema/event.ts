@@ -6,6 +6,7 @@ import {
   timestamp,
   boolean,
   real,
+  index,
 } from "drizzle-orm/pg-core";
 import { groups } from "./group";
 import { trips } from "./trip";
@@ -13,19 +14,26 @@ import { trips } from "./trip";
 /**
  * Events table - matches Prisma Event model
  */
-export const events = pgTable("Event", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  creatorId: uuid("creatorId").notNull(),
-  organizerGroupId: uuid("organizerGroupId").references(() => groups.id),
-  title: varchar("title", { length: 255 }).notNull(),
-  startTime: timestamp("startTime", { mode: "date" }).notNull(),
-  endTime: timestamp("endTime", { mode: "date" }).notNull(),
-  location: text("location").notNull(),
-  description: text("description").notNull(),
-  files: text("files").array().default([]),
-  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
-});
+export const events = pgTable(
+  "Event",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    creatorId: uuid("creatorId").notNull(),
+    organizerGroupId: uuid("organizerGroupId").references(() => groups.id),
+    title: varchar("title", { length: 255 }).notNull(),
+    startTime: timestamp("startTime", { mode: "date" }).notNull(),
+    endTime: timestamp("endTime", { mode: "date" }).notNull(),
+    location: text("location").notNull(),
+    description: text("description").notNull(),
+    files: text("files").array().default([]),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Composite index for cursor pagination on startTime
+    index("events_start_time_id_idx").on(table.startTime, table.id),
+  ],
+);
 
 export type EventInsert = typeof events.$inferInsert;
 export type EventSelect = typeof events.$inferSelect;
