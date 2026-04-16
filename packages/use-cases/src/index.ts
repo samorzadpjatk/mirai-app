@@ -251,13 +251,13 @@ export type {
 // =============================================================================
 // Auth & Telemetry Ports (for DDD architecture)
 // =============================================================================
-export type {
-  AuthPort,
+export type { AuthPort } from "./auth/ports/port";
+export {
   AuthError,
   InvalidTokenError,
   SessionExpiredError,
+  AuthPortTag,
 } from "./auth/ports/port";
-export { AuthPortTag } from "./auth/ports/port";
 // =============================================================================
 // Realtime & Storage Ports (Phase 0: Supabase-Agnostic Architecture)
 // =============================================================================
@@ -269,11 +269,13 @@ export type {
   ChannelConfig,
   PresenceState,
   ConnectionState,
+} from "./system/shared/realtime/port";
+export {
+  RealtimePortTag,
   RealtimeError,
   ConnectionError,
   SubscriptionError,
 } from "./system/shared/realtime/port";
-export { RealtimePortTag } from "./system/shared/realtime/port";
 
 // PubSubService exports (GraphQL Subscriptions Migration)
 export type {
@@ -292,10 +294,15 @@ export type {
   FileMetadata,
   UploadOptions,
   SignedUrlInfo,
+  DownloadResult,
+} from "./system/shared/storage/port";
+export {
   StorageError,
   FileNotFoundError,
   UploadError,
   BucketNotFoundError,
+  DownloadError,
+  DeleteError,
 } from "./system/shared/storage/port";
 
 export {
