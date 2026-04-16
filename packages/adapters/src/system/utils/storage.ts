@@ -59,6 +59,9 @@ const inferBucketFromPath = (
   }
 
   if (!normalized.includes("/")) {
+    // Single segment must have a file extension to be a valid file path
+    const hasExtension = normalized.includes(".");
+    if (!hasExtension) return null;
     return { bucket: STANDARD_BUCKETS.PUBLIC, path: normalized };
   }
 
@@ -82,12 +85,17 @@ export const parseSupabaseStorageObject = (
   }
 
   const normalizedPath = rawPath.split("?")[0] ?? "";
-  const objectPrefix = "/storage/v1/object/";
-  const objectIndex = normalizedPath.indexOf(objectPrefix);
-  let objectPath =
-    objectIndex >= 0
-      ? normalizedPath.slice(objectIndex + objectPrefix.length)
-      : normalizedPath;
+  const objectPrefixWithSlash = "/storage/v1/object/";
+  const objectPrefixWithoutSlash = "storage/v1/object/";
+
+  let objectPath: string;
+  if (normalizedPath.startsWith(objectPrefixWithSlash)) {
+    objectPath = normalizedPath.slice(objectPrefixWithSlash.length);
+  } else if (normalizedPath.startsWith(objectPrefixWithoutSlash)) {
+    objectPath = normalizedPath.slice(objectPrefixWithoutSlash.length);
+  } else {
+    objectPath = normalizedPath;
+  }
 
   objectPath = objectPath.replace(/^\/+/, "");
   if (!objectPath) return null;
@@ -101,9 +109,11 @@ export const parseSupabaseStorageObject = (
 
   if (segments.length < 2) return null;
 
-  const bucket = normalizeBucketName(segments.shift());
+  const bucketSegment = segments.shift();
+  if (!bucketSegment) return null;
+  const bucket = bucketSegment.toLowerCase();
   const path = normalizeStoragePath(segments.join("/"));
-  if (!bucket || !path) return null;
+  if (!path) return null;
 
   return { bucket, path };
 };
@@ -120,6 +130,7 @@ export const parseSupabaseStoragePath = (
 
   const normalizedPath = trimmed.replace(/^\/+/, "");
   const segments = normalizedPath.split("/").filter(Boolean);
+
   if (segments.length >= 2) {
     const firstSegment = segments[0] ?? "";
     if (KNOWN_BUCKETS.has(firstSegment)) {

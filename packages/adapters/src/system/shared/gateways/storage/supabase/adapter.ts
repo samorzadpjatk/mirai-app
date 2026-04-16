@@ -52,6 +52,17 @@ function mapSupabaseErrorToStorageError(
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
 
+    // Bucket not found errors - check before file not found to prioritize bucket-level errors
+    if (
+      message.includes("bucket") &&
+      (message.includes("not found") || message.includes("does not exist"))
+    ) {
+      return new BucketNotFoundError({
+        message: `Bucket not found during ${operation}: ${error.message}`,
+        bucket,
+      });
+    }
+
     // File not found errors
     if (
       message.includes("not found") ||
@@ -66,19 +77,17 @@ function mapSupabaseErrorToStorageError(
       });
     }
 
-    // Bucket not found errors
+    // Upload-specific errors (only for specific upload failure patterns)
     if (
-      message.includes("bucket") &&
-      (message.includes("not found") || message.includes("does not exist"))
+      operation === "upload" &&
+      (message.includes("upload") ||
+        message.includes("size") ||
+        message.includes("limit") ||
+        message.includes("network") ||
+        message.includes("timeout") ||
+        message.includes("mime") ||
+        message.includes("content"))
     ) {
-      return new BucketNotFoundError({
-        message: `Bucket not found during ${operation}: ${error.message}`,
-        bucket,
-      });
-    }
-
-    // Upload-specific errors
-    if (operation === "upload") {
       return new UploadError({
         message: `Upload failed: ${error.message}`,
         bucket,

@@ -81,6 +81,18 @@ function mapS3ErrorToStorageError(
     const message = error.message.toLowerCase();
     const errorName = error.name?.toLowerCase() ?? "";
 
+    // Bucket not found errors - check BEFORE file not found to avoid misclassification
+    if (
+      errorName.includes("nosuchbucket") ||
+      (message.includes("bucket") &&
+        (message.includes("not found") || message.includes("does not exist")))
+    ) {
+      return new BucketNotFoundError({
+        message: `Bucket not found during ${operation}: ${error.message}`,
+        bucket,
+      });
+    }
+
     // File not found errors
     if (
       errorName.includes("nosuchkey") ||
@@ -93,18 +105,6 @@ function mapS3ErrorToStorageError(
         message: `File not found during ${operation}: ${error.message}`,
         bucket,
         path: path ?? "unknown",
-      });
-    }
-
-    // Bucket not found errors
-    if (
-      errorName.includes("nosuchbucket") ||
-      (message.includes("bucket") &&
-        (message.includes("not found") || message.includes("does not exist")))
-    ) {
-      return new BucketNotFoundError({
-        message: `Bucket not found during ${operation}: ${error.message}`,
-        bucket,
       });
     }
 
