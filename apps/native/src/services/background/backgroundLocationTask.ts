@@ -6,7 +6,7 @@ import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import {
   UpdateLocationDocument,
   type UpdateLocationInput,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { urqlClient } from "~/lib/urql-client";
 import { authStorage } from "~/services/storage/storage";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";
@@ -54,7 +54,7 @@ async function shouldSendBackgroundLocation(): Promise<boolean> {
 
 /**
  * Execute GraphQL mutation to update location using urql
- * Uses generated UpdateLocationDocument from @mirai-app/graphql-client
+ * Uses generated UpdateLocationDocument from @mirai-app/frameworks
  */
 async function executeLocationUpdate(params: {
   latitude: number;

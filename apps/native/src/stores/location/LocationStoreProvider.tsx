@@ -6,7 +6,7 @@ import {
   useGetLocationSharingSettingsQuery,
   useSetLocationSharingSettingsMutation,
   GetLocationSharingSettingsDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 
 interface LocationStoreProviderProps {
   children: ReactNode;

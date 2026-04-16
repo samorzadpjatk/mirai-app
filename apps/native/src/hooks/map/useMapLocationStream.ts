@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useGetFriendsLocationsQuery } from "@mirai-app/graphql-client";
+import { useGetFriendsLocationsQuery } from "@mirai-app/frameworks";
 import { useLocationContext } from "~/stores/location";
 
 export function useMapLocationStream(enabled: boolean) {

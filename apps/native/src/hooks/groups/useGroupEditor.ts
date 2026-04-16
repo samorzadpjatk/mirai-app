@@ -6,7 +6,7 @@ import {
   GetGroupsByTripDocument,
   AssignUserToGroupDocument,
   RemoveUserFromGroupDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 
 export function useGroupEditor(groupId?: string | null) {
   const [, reexecuteGroupQuery] = useQuery({

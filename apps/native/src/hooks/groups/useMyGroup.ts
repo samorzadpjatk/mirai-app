@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "urql";
-import { GetCurrentUserDocument } from "@mirai-app/graphql-client";
+import { GetCurrentUserDocument } from "@mirai-app/frameworks";
 
 export function useMyGroup(tripId?: string | null) {
   // Get current user and extract their group from the trip

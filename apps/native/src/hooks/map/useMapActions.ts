@@ -1,5 +1,5 @@
 import { useMutation } from "urql";
-import { UpdateLocationDocument } from "@mirai-app/graphql-client";
+import { UpdateLocationDocument } from "@mirai-app/frameworks";
 
 export function useMapActions() {
   const [, updateLocation] = useMutation(UpdateLocationDocument);

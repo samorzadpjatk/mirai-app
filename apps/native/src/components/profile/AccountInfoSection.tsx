@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "urql";
 import { YStack, XStack, Text, Card } from "@mirai-app/ui";
-import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
+import { useGetCurrentUserQuery } from "@mirai-app/frameworks";
 
 export function AccountInfoSection() {
   const [result] = useQuery({

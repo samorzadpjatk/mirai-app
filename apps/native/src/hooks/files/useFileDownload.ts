@@ -6,7 +6,7 @@ import {
   CreateDownloadUrlDocument,
   type CreateDownloadUrlQuery,
   type CreateDownloadUrlQueryVariables,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 

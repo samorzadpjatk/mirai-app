@@ -3,7 +3,7 @@ import { useQuery } from "urql";
 import {
   GetCurrentUserDocument,
   GetTripDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import {
   getCachedTripById,
   setCachedTripById,

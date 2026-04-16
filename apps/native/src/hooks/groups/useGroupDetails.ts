@@ -2,7 +2,7 @@ import { useQuery } from "urql";
 import {
   GetCurrentUserDocument,
   GetGroupDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 
 export function useGroupDetails(groupId?: string | null) {
   const [{ data: currentUserData, fetching: isLoadingUser }] = useQuery({

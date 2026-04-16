@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "urql";
-import { GetGroupsByTripDocument } from "@mirai-app/graphql-client";
+import { GetGroupsByTripDocument } from "@mirai-app/frameworks";
 import type { GroupListItem } from "~/components/trips/groups/types";
 
 const PAGE_SIZE = 30;

@@ -3,7 +3,7 @@ import { useTripDetails } from "~/hooks/trips";
 import { ScrollView, ActivityIndicator, RefreshControl } from "react-native";
 import { YStack, XStack, Text } from "@mirai-app/ui";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
+import { useGetCurrentUserQuery } from "@mirai-app/frameworks";
 import { useMemo } from "react";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
 import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";

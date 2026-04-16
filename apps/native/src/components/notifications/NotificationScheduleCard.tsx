@@ -5,7 +5,7 @@ import {
   useDeleteNotificationScheduleMutation,
   useToggleNotificationScheduleActiveMutation,
   useGetNotificationSchedulesQuery,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { Card, XStack, YStack, Text, Button } from "@mirai-app/ui";
 import { formatRelativeTime, formatDate } from "~/utils/format";
 import type { NotificationScheduleItem } from "~/types/notifications";

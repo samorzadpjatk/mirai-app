@@ -13,7 +13,7 @@ import {
   GetMyVotesDocument,
   SubmitVoteDocument,
   GetCurrentUserDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { View, Text } from "@mirai-app/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTripDetails } from "~/hooks/trips";

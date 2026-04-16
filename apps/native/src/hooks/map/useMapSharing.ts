@@ -6,7 +6,7 @@ import {
   GetAllUsersForSharingDocument,
   UpdateLocationSharingDocument,
   RemoveUserFromSharingDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 
 // Type definitions for sharing user info
 type SharingUserInfo = {

@@ -7,7 +7,7 @@ import { ProfileActionsSection } from "~/components/profile/ProfileActionsSectio
 import { ProfileHeader } from "~/components/profile/ProfileHeader";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
-import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
+import { useGetCurrentUserQuery } from "@mirai-app/frameworks";
 
 // Spacing values from Tamagui tokens for React Native styles
 const spacing = {

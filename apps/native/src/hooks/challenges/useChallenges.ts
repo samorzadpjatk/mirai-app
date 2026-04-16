@@ -4,7 +4,7 @@ import {
   GetChallengesByTripDocument,
   GetCurrentUserDocument,
   GetGroupsByTripDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
 const PAGE_SIZE = 20;

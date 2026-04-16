@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useQuery } from "urql";
 import { useFocusEffect } from "expo-router";
 import { YStack, XStack, Text } from "@mirai-app/ui";
-import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
+import { useGetCurrentUserQuery } from "@mirai-app/frameworks";
 import { useFileDownload } from "~/hooks/files";
 
 const getRoleColor = (role: string): string => {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useQuery } from "urql";
-import { GetMyNotificationsDocument } from "@mirai-app/graphql-client";
+import { GetMyNotificationsDocument } from "@mirai-app/frameworks";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";

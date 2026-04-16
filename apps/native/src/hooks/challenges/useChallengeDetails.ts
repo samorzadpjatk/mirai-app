@@ -3,7 +3,7 @@ import { useQuery } from "urql";
 import {
   GetChallengeDocument,
   GetCurrentUserDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 
 export function useChallengeDetails(
   challengeId?: string | null,

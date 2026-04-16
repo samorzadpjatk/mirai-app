@@ -10,7 +10,7 @@ import { useRouter } from "expo-router";
 import {
   useGetCurrentUserQuery,
   useGetMyNotificationsQuery,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";
 import { NotificationsHeader } from "~/components/notifications/NotificationsHeader";

@@ -6,7 +6,7 @@ import { useAuth } from "@mirai-app/frameworks/auth/client";
 import {
   useSubscribeNotificationsMutation,
   GetNotificationSubscriptionStatusDocument,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 
 function resolveProjectId(): string | undefined {
   const expoConfigExtra = (Constants.expoConfig?.extra ?? null) as unknown;

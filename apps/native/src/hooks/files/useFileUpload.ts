@@ -8,7 +8,7 @@ import {
   CreateUploadUrlDocument,
   type CreateUploadUrlMutation,
   type CreateUploadUrlMutationVariables,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 

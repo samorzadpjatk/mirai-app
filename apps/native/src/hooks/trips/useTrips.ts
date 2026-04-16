@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useQuery } from "urql";
-import { GetTripsDocument } from "@mirai-app/graphql-client";
+import { GetTripsDocument } from "@mirai-app/frameworks";
 import type { TripListItem } from "~/components/trips/list/types";
 import {
   getCachedTrips,

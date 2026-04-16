@@ -9,7 +9,7 @@ import {
 } from "~/stores/map";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
-import { GetCurrentUserDocument } from "@mirai-app/graphql-client";
+import { GetCurrentUserDocument } from "@mirai-app/frameworks";
 import { useQuery } from "urql";
 import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";

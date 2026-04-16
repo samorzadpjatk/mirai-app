@@ -3,7 +3,7 @@ import { TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { useQuery } from "urql";
 import { YStack, XStack, Text } from "@mirai-app/ui";
-import { CreateDownloadUrlDocument } from "@mirai-app/graphql-client";
+import { CreateDownloadUrlDocument } from "@mirai-app/frameworks";
 
 interface GroupMember {
   id: string;

@@ -8,7 +8,7 @@ import {
   useSubscribeNotificationsMutation,
   useUnsubscribeNotificationsMutation,
   GetNotificationSubscriptionStatusDocument,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;

@@ -5,7 +5,7 @@ import {
   useGetActivitiesByTripQuery,
   useToggleActivityReactionMutation,
   ReactionType,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import type {
   CommunityFeedActivity,
   ActivityFilter,

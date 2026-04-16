@@ -5,7 +5,7 @@ import {
   UpdateChallengeSubmissionDocument,
   useGetChallengeQuery,
   type ChallengeSubmission,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { useStore } from "zustand";
 import { judgementStore } from "./judgementStores";
 import type { ReviewStatus, Submission } from "./judgementStores";

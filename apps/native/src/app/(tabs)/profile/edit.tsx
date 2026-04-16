@@ -9,7 +9,7 @@ import { useQuery, useMutation, useClient } from "urql";
 import {
   GetCurrentUserDocument,
   UpdateUserDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileDownload, useFileUpload } from "~/hooks/files";

@@ -7,7 +7,7 @@ import {
   GetGroupDocument,
   GetCurrentUserDocument,
   DeleteGroupDocument,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

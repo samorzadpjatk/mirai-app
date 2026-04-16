@@ -4,7 +4,7 @@ import { useMutation } from "urql";
 import {
   CreateNotificationScheduleDocument,
   useGetNotificationSchedulesQuery,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { useTrips } from "~/hooks/trips";
 import { XStack, Text } from "@mirai-app/ui";
 import {
