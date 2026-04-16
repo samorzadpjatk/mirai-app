@@ -1,0 +1,287 @@
+# Reusable Controller Test Evaluation Specification
+# For packages/adapters controller unit tests
+# Version: 1.0.0
+
+metadata:
+  name: adapter-controller-test-spec
+  description: Evaluation specification for controller unit tests in packages/adapters
+  scope: packages/adapters/src/**/controllers/*.test.ts
+  framework: bun:test with Effect
+
+artifact_context:
+  type: test_files
+  location: packages/adapters/src/{domain}/controllers/
+  pattern: "{controller}.test.ts"
+
+  # Controller files that need test coverage
+  target_controllers:
+    - auth/controllers/authServer.ts
+    - auth/controllers/index.ts
+    - user/controllers/controller.ts
+    - group/controllers/controller.ts
+    - notification/controllers/controller.ts
+    - notification/controllers/schedule-controller.ts
+    - notification/controllers/delivery-controller.ts
+    - coin/controllers/coin-controller.ts
+    - coin/controllers/transaction-controller.ts
+    - activity/controllers/controller.ts
+    - trip/controllers/controller.ts
+    - sponsor/controllers/controller.ts
+    - storage/controllers/controller.ts
+    - location/controllers/controller.ts
+
+rubrics:
+  structure:
+    weight: 1.0
+    criteria:
+      - name: unit_tag
+        description: "Tests use [UNIT] prefix in describe blocks"
+        points: 1
+      - name: describe_blocks
+        description: "Proper nested describe blocks per method being tested"
+        points: 1
+      - name: beforeEach_setup
+        description: "Uses beforeEach for consistent test setup (mocks, layers)"
+        points: 1
+
+  mocking:
+    weight: 2.0
+    criteria:
+      - name: layer_mocking
+        description: "Creates mock Effect Layer for appLayer injection"
+        points: 2
+      - name: gateway_mocking
+        description: "Mocks gateway dependencies using in-memory implementations"
+        points: 2
+      - name: auth_mocking
+        description: "Mocks AuthServer for authenticated controllers (if applicable)"
+        points: 1
+
+  coverage:
+    weight: 3.0
+    criteria:
+      - name: success_path
+        description: "Tests successful execution path for each public method"
+        points: 2
+      - name: error_handling
+        description: "Tests error handling paths (use case failures, validation errors)"
+        points: 2
+      - name: input_validation
+        description: "Tests input validation failure scenarios (invalid schemas)"
+        points: 1
+      - name: not_found_cases
+        description: "Tests 'not found' scenarios for getById type methods"
+        points: 1
+      - name: edge_cases
+        description: "Tests edge cases specific to each controller (e.g., pagination limits)"
+        points: 1
+
+  effect_patterns:
+    weight: 2.0
+    criteria:
+      - name: effect_runPromise
+        description: "Uses Effect.runPromise for executing controller methods"
+        points: 1
+      - name: effect_either
+        description: "Uses Effect.either where appropriate for error testing"
+        points: 1
+      - name: layer_provide
+        description: "Properly provides mock layers to controller"
+        points: 1
+      - name: async_await
+        description: "Proper async/await usage with Effect"
+        points: 1
+
+  assertions:
+    weight: 1.5
+    criteria:
+      - name: success_assertions
+        description: "Asserts success: true and correct data structure"
+        points: 1
+      - name: error_assertions
+        description: "Asserts success: false and error message content"
+        points: 1
+      - name: specific_assertions
+        description: "Specific assertions on returned data fields (not just existence)"
+        points: 1
+
+  code_quality:
+    weight: 0.5
+    criteria:
+      - name: no_comments
+        description: "No explanatory comments - code is self-explanatory"
+        points: 0.5
+      - name: consistent_naming
+        description: "Consistent naming conventions matching existing tests"
+        points: 0.5
+
+checklists:
+  must_have:
+    - "File follows naming convention {controller}.test.ts"
+    - "Uses bun:test imports (describe, it, expect, beforeEach)"
+    - "Imports Effect from effect package"
+    - "Imports controller under test"
+    - "Creates mock appLayer using Layer.succeed"
+    - "Tests each public method of the controller"
+    - "Tests return { success: true, data: ... } structure"
+    - "Tests return { success: false, error: ... } structure"
+    - "Validates input rejection for invalid schemas"
+    - "All tests pass with bun test"
+
+  must_not_have:
+    - "Comments explaining what the code does (why comments only)"
+    - "Real database or external API calls"
+    - "Tests that depend on test execution order"
+    - "Shared mutable state between tests"
+    - "console.log statements"
+    - "Emojis in source code"
+
+  should_have:
+    - "Mock factories for creating test data"
+    - "Separate describe block per controller method"
+    - "beforeEach for fresh mock initialization"
+    - "Effect.either testing for error cases"
+
+scoring:
+  max_score: 10.0
+  passing_threshold: 7.0
+  excellent_threshold: 9.0
+
+  grade_scale:
+    fail:
+      range: "0-4.9"
+      description: "Major deficiencies, does not meet requirements"
+    needs_work:
+      range: "5.0-6.9"
+      description: "Partial coverage, significant gaps remain"
+    pass:
+      range: "7.0-8.9"
+      description: "Meets requirements, minor improvements possible"
+    excellent:
+      range: "9.0-10.0"
+      description: "Comprehensive coverage, exemplary implementation"
+
+verification_steps:
+  step_1:
+    name: validate_file_structure
+    description: "Verify test file exists and follows conventions"
+    checks:
+      - "File path ends with .test.ts"
+      - "File is in /controllers/ directory"
+
+  step_2:
+    name: verify_imports
+    description: "Check required imports are present"
+    checks:
+      - "Imports bun:test (describe, it, expect, beforeEach)"
+      - "Imports Effect from effect"
+      - "Imports Layer from effect"
+
+  step_3:
+    name: validate_test_structure
+    description: "Verify test structure and organization"
+    checks:
+      - "Has [UNIT] tag in describe block"
+      - "Uses beforeEach for setup"
+      - "Has at least 3 async test cases"
+
+  step_4:
+    name: verify_mock_implementation
+    description: "Verify proper mocking of dependencies"
+    checks:
+      - "Uses Layer.succeed for mock layer creation"
+      - "Uses InMemory*Gateway implementations for mocking"
+
+  step_5:
+    name: analyze_coverage
+    description: "Analyze test coverage of controller methods"
+    checks:
+      - "Each public controller method has at least one test"
+      - "Success and error paths are both tested"
+
+  step_6:
+    name: execute_tests
+    description: "Run the test file and verify all pass"
+    command: "bun test packages/adapters/src/{domain}/controllers/{controller}.test.ts"
+    expected_exit_code: 0
+
+  step_7:
+    name: verify_effect_patterns
+    description: "Verify Effect patterns are correctly used"
+    checks:
+      - "Uses Effect.runPromise for execution"
+      - "Has at least 3 controller method invocations"
+
+examples:
+  minimal_pass: |
+    import { describe, it, expect, beforeEach } from "bun:test";
+    import { Effect, Layer } from "effect";
+    import { UserController } from "./controller";
+    import { InMemoryUserGateway } from "../gateways/in-memory/gateway";
+    import { UserGatewayTag } from "@mirai-app/use-cases";
+
+    describe("[UNIT] UserController", () => {
+      let controller: UserController;
+      let mockLayer: Layer.Layer<unknown>;
+
+      beforeEach(() => {
+        const mockGateway = new InMemoryUserGateway();
+        mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
+        controller = new UserController(mockLayer);
+      });
+
+      describe("getById", () => {
+        it("returns success with user data when found", async () => {
+          const result = await Effect.runPromise(
+            controller.getById({ id: "user-123" })
+          );
+
+          expect(result.success).toBe(true);
+          if (result.success) {
+            expect(result.data.id).toBe("user-123");
+          }
+        });
+
+        it("returns error when user not found", async () => {
+          const result = await Effect.runPromise(
+            controller.getById({ id: "nonexistent" })
+          );
+
+          expect(result.success).toBe(false);
+          expect(result.error).toContain("not found");
+        });
+
+        it("returns error for invalid input", async () => {
+          const result = await Effect.runPromise(
+            controller.getById({ id: "" })
+          );
+
+          expect(result.success).toBe(false);
+          expect(result.error).toContain("Invalid input");
+        });
+      });
+    });
+
+  anti_pattern: |
+    // BAD: Missing [UNIT] tag
+    describe("UserController", () => {
+      // BAD: No beforeEach, shared mutable state
+      const controller = new UserController(realLayer);
+
+      it("works", async () => {
+        // BAD: Vague test name
+        // BAD: Real external calls
+        const result = await controller.getById({ id: "123" });
+        // BAD: Not using Effect.runPromise
+        console.log(result); // BAD: console.log in test
+      });
+    });
+
+notes_for_judges:
+  - "Controllers are thin wrappers around use cases - test the orchestration, not business logic"
+  - "Use InMemory*Gateway implementations from packages/adapters for mocking"
+  - "All controller methods return { success: boolean, data/error } - assert both paths"
+  - "Effect.runPromise is required for executing controller methods (they're async)"
+  - "Input validation failures should return { success: false, error: 'Invalid input: ...' }"
+  - "Follow existing test patterns in packages/adapters/src/**/gateways/**/*.test.ts"
+  - "Test file location MUST mirror source file location: src/{domain}/controllers/{name}.test.ts"

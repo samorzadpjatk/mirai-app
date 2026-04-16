@@ -1,0 +1,456 @@
+# Reusable Evaluation Specification: Mapper Unit Tests
+# For: packages/adapters mappers (group, notification, activity, location, coin, trip, sponsor)
+# Meta-judge reusable specification
+
+evaluation:
+  name: mapper_unit_tests
+  version: 1.0.0
+  scope: unit_tests_for_adapter_mappers
+  applicable_targets:
+    - group-mapper.test.ts
+    - notification-mapper.test.ts
+    - activity-mapper.test.ts
+    - location-mapper.test.ts
+    - coin-mapper.test.ts
+    - trip-mapper.test.ts
+    - sponsor-mapper.test.ts
+
+rubrics:
+  - id: test_structure
+    name: Test File Structure
+    weight: 15
+    description: Proper test file organization and bun:test usage
+    criteria:
+      - name: imports_correct
+        points: 3
+        description: Imports bun:test (describe, it, expect), mapper under test, necessary types
+      - name: unit_tag_present
+        points: 3
+        description: All test descriptions prefixed with [UNIT]
+      - name: singleton_pattern_used
+        points: 3
+        description: Uses MapperName.instance for accessing mapper methods
+      - name: mock_factories_defined
+        points: 3
+        description: Mock record factories defined with sensible defaults
+      - name: file_organization
+        points: 3
+        description: describe blocks organized by method (toDTO, toDrizzleInsert, toDrizzleUpdate)
+
+  - id: coverage_completeness
+    name: Method Coverage
+    weight: 25
+    description: All mapper conversion methods tested
+    criteria:
+      - name: to_dto_tested
+        points: 8
+        description: toDTO() method has comprehensive tests
+      - name: to_drizzle_insert_tested
+        points: 8
+        description: toDrizzleInsert() method has comprehensive tests
+      - name: to_drizzle_update_tested
+        points: 8
+        description: toDrizzleUpdate() method has comprehensive tests (when applicable)
+      - name: all_overloads_covered
+        points: 1
+        description: All method overloads/signatures tested
+
+  - id: test_categories
+    name: Test Category Coverage
+    weight: 30
+    description: Essential test scenarios covered
+    criteria:
+      - name: happy_path
+        points: 8
+        description: Happy path tests for all methods with complete data
+      - name: null_handling
+        points: 8
+        description: Proper null/undefined field handling tested
+      - name: enum_mapping
+        points: 6
+        description: Enum conversions tested (both directions)
+      - name: default_values
+        points: 4
+        description: Default value application verified
+      - name: derived_fields
+        points: 4
+        description: Computed/derived fields correctly calculated
+
+  - id: assertions_quality
+    name: Assertion Quality
+    weight: 15
+    description: Assertions are specific and meaningful
+    criteria:
+      - name: explicit_field_assertions
+        points: 5
+        description: Individual field assertions, not just object matching
+      - name: type_safety
+        points: 5
+        description: Proper type assertions and TypeScript compliance
+      - name: edge_case_assertions
+        points: 5
+        description: Edge cases have specific expected value assertions
+
+  - id: mock_quality
+    name: Mock Data Quality
+    weight: 10
+    description: Mock factories are realistic and flexible
+    criteria:
+      - name: factory_pattern
+        points: 4
+        description: Uses factory pattern with override capability
+      - name: realistic_data
+        points: 3
+        description: Mock data resembles real domain data
+      - name: sensible_defaults
+        points: 3
+        description: Sensible defaults for optional fields
+
+  - id: code_quality
+    name: Code Quality
+    weight: 5
+    description: Clean, maintainable test code
+    criteria:
+      - name: naming_clarity
+        points: 2
+        description: Test names clearly describe what's being tested
+      - name: no_redundancy
+        points: 2
+        description: No duplicate test logic or unnecessary repetition
+      - name: follows_project_patterns
+        points: 1
+        description: Follows established project testing conventions
+
+scoring:
+  total_points: 100
+  passing_threshold: 85
+  warning_threshold: 70
+  grade_scale:
+    excellent: 95-100
+    good: 85-94
+    acceptable: 70-84
+    needs_improvement: 50-69
+    insufficient: 0-49
+
+checklists:
+  structure_checklist:
+    - "[ ] File imports { describe, it, expect } from 'bun:test'"
+    - "[ ] File imports the mapper being tested"
+    - "[ ] File imports necessary domain types and DTOs"
+    - "[ ] Mock record factory function(s) defined at top level"
+    - "[ ] Factory accepts partial override parameter"
+    - "[ ] All test descriptions start with '[UNIT]'"
+    - "[ ] Uses MapperName.instance pattern consistently"
+    - "[ ] describe blocks organized by mapper method"
+
+  to_dto_checklist:
+    - "[ ] toDTO converts domain record to DTO correctly"
+    - "[ ] Happy path: all fields mapped correctly"
+    - "[ ] Null handling: nullable fields preserved"
+    - "[ ] Enum mapping: enums converted correctly"
+    - "[ ] Date handling: dates formatted/converted correctly"
+    - "[ ] Array handling: nested arrays processed correctly"
+    - "[ ] Individual field assertions (not deepEqual only)"
+
+  to_drizzle_insert_checklist:
+    - "[ ] toDrizzleInsert converts DTO to insert record"
+    - "[ ] Happy path: all required fields present"
+    - "[ ] Default values applied where appropriate"
+    - "[ ] Enum mapping: enums stored as correct values"
+    - "[ ] ID generation handled correctly"
+    - "[ ] Timestamps set appropriately"
+    - "[ ] Sensitive fields excluded if applicable"
+
+  to_drizzle_update_checklist:
+    - "[ ] toDrizzleUpdate converts DTO to update record"
+    - "[ ] Only updateable fields included"
+    - "[ ] Immutable fields excluded (id, created_at, etc.)"
+    - "[ ] Partial updates handled correctly"
+    - "[ ] Null values handled (set vs omit)"
+    - "[ ] Update timestamp handled"
+
+  quality_checklist:
+    - "[ ] No commented-out tests or dead code"
+    - "[ ] No console.log statements"
+    - "[ ] Test descriptions are clear and specific"
+    - "[ ] One assertion per logical test (or grouped logically)"
+    - "[ ] Follows AAA pattern (Arrange, Act, Assert)"
+    - "[ ] No test interdependencies"
+    - "[ ] Mock data is realistic (valid UUIDs, dates, etc.)"
+
+verification_steps:
+  automated:
+    - step: syntax_check
+      command: "bun tsc --noEmit packages/adapters/src/mappers/__tests__/{target}.test.ts"
+      must_pass: true
+      description: TypeScript compilation without errors
+
+    - step: test_execution
+      command: "bun test packages/adapters/src/mappers/__tests__/{target}.test.ts"
+      must_pass: true
+      description: All tests pass
+
+    - step: unit_tag_verification
+      command: "grep -c '\\[UNIT\\]' packages/adapters/src/mappers/__tests__/{target}.test.ts"
+      expected_result: ">= 3"
+      description: At least 3 tests tagged with [UNIT]
+
+    - step: singleton_usage
+      command: "grep -c '\\.instance\\.' packages/adapters/src/mappers/__tests__/{target}.test.ts"
+      expected_result: ">= 3"
+      description: Uses singleton instance pattern
+
+    - step: method_coverage
+      command: "grep -cE 'toDTO|toDrizzleInsert|toDrizzleUpdate' packages/adapters/src/mappers/__tests__/{target}.test.ts"
+      expected_result: ">= 3"
+      description: All three methods referenced
+
+  manual:
+    - step: review_factory_pattern
+      description: "Verify mock factory uses pattern: createMockRecord(overrides = {})"
+      checklist:
+        - Factory returns complete record object
+        - Overrides parameter spreads over defaults
+        - Sensible defaults for all fields
+        - Realistic values (valid UUIDs, proper dates)
+
+    - step: review_assertion_quality
+      description: "Verify assertions are specific and meaningful"
+      checklist:
+        - Individual field assertions exist
+        - Not just deepEqual on entire objects
+        - Enum values explicitly checked
+        - Null/undefined explicitly asserted
+
+    - step: review_test_organization
+      description: "Verify logical organization of tests"
+      checklist:
+        - describe('toDTO') block exists
+        - describe('toDrizzleInsert') block exists
+        - describe('toDrizzleUpdate') block exists (if applicable)
+        - Tests within blocks cover happy path and edge cases
+
+  scoring_verification:
+    - step: calculate_structure_score
+      description: "Score based on structure checklist (max 15 points)"
+      method: count_matching_items * points_per_item
+
+    - step: calculate_coverage_score
+      description: "Score based on method coverage (max 25 points)"
+      method: each_method_tested * points_per_method
+
+    - step: calculate_category_score
+      description: "Score based on test categories (max 30 points)"
+      method: sum of category sub-scores
+
+    - step: calculate_assertion_score
+      description: "Score based on assertion quality (max 15 points)"
+      method: evaluate assertion patterns
+
+    - step: calculate_mock_score
+      description: "Score based on mock quality (max 10 points)"
+      method: evaluate factory implementation
+
+    - step: calculate_quality_score
+      description: "Score based on code quality (max 5 points)"
+      method: deduct for violations
+
+example_patterns:
+  factory_template: |
+    const createMock{Entity}Record = (overrides: Partial<{Entity}Record> = {}) => ({
+      id: '550e8400-e29b-41d4-a716-446655440001',
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+      updatedAt: new Date('2024-01-02T00:00:00Z'),
+      // ... other fields with sensible defaults
+      ...overrides,
+    });
+
+  test_template: |
+    describe('{MapperName}', () => {
+      const mapper = {MapperName}.instance;
+
+      describe('toDTO', () => {
+        it('[UNIT] should convert complete record to DTO', () => {
+          // Arrange
+          const record = createMock{Entity}Record();
+
+          // Act
+          const dto = mapper.toDTO(record);
+
+          // Assert
+          expect(dto.id).toBe(record.id);
+          expect(dto.createdAt).toEqual(record.createdAt);
+          // ... additional field assertions
+        });
+
+        it('[UNIT] should handle null optional fields', () => {
+          // Arrange
+          const record = createMock{Entity}Record({ optionalField: null });
+
+          // Act
+          const dto = mapper.toDTO(record);
+
+          // Assert
+          expect(dto.optionalField).toBeNull();
+        });
+
+        it('[UNIT] should map enum values correctly', () => {
+          // Arrange
+          const record = createMock{Entity}Record({ status: 'ACTIVE' });
+
+          // Act
+          const dto = mapper.toDTO(record);
+
+          // Assert
+          expect(dto.status).toBe(Status.ACTIVE);
+        });
+      });
+
+      describe('toDrizzleInsert', () => {
+        it('[UNIT] should convert DTO to insert record', () => {
+          // Arrange
+          const dto = { /* valid DTO */ };
+
+          // Act
+          const record = mapper.toDrizzleInsert(dto);
+
+          // Assert
+          expect(record.id).toBeDefined();
+          expect(record.createdAt).toBeDefined();
+          // ... field assertions
+        });
+      });
+
+      describe('toDrizzleUpdate', () => {
+        it('[UNIT] should convert DTO to update record', () => {
+          // Arrange
+          const dto = { /* valid DTO */ };
+
+          // Act
+          const record = mapper.toDrizzleUpdate(dto);
+
+          // Assert
+          expect(record.id).toBeUndefined(); // immutable
+          expect(record.updatedAt).toBeDefined();
+          // ... field assertions
+        });
+      });
+    });
+
+special_cases:
+  optional_toDrizzleUpdate:
+    condition: Mapper does not support updates
+    action: Deduct toDrizzleUpdate coverage points (8 points) from total
+    note: Document which mappers lack update functionality
+
+  enum_heavy_mappers:
+    condition: Mapper handles 3+ enum types
+    action: Increase enum_mapping weight to 10 points
+    note: Adjust other category weights proportionally
+
+  nested_entity_mappers:
+    condition: Mapper handles nested objects/arrays
+    additional_tests:
+      - "[UNIT] should correctly map nested entity arrays"
+      - "[UNIT] should handle empty nested arrays"
+      - "[UNIT] should handle null nested objects"
+
+failure_modes:
+  critical_failures:
+    - name: no_tests_written
+      condition: Test file does not exist or is empty
+      action: automatic_failure
+      score: 0
+
+    - name: tests_do_not_run
+      condition: bun test fails to execute
+      action: automatic_failure
+      score: 0
+
+    - name: no_unit_tag
+      condition: No tests use [UNIT] prefix
+      action: automatic_failure
+      score: max(10)
+
+  major_deficiencies:
+    - name: missing_method_coverage
+      condition: One or more mapper methods not tested
+      deduction: 15
+
+    - name: no_mock_factory
+      condition: No mock record factory defined
+      deduction: 10
+
+    - name: singleton_not_used
+      condition: Tests instantiate mapper directly instead of using .instance
+      deduction: 10
+
+    - name: no_null_handling
+      condition: No tests for nullable field handling
+      deduction: 8
+
+  minor_deficiencies:
+    - name: vague_assertions
+      condition: Only deepEqual assertions, no field-level checks
+      deduction: 5
+
+    - name: unrealistic_mock_data
+      condition: Mock data uses invalid formats (e.g., 'string' instead of valid UUID)
+      deduction: 3
+
+    - name: poor_naming
+      condition: Test names don't describe behavior being tested
+      deduction: 2
+
+output_format:
+  summary: |
+    === Evaluation Summary: {target}.test.ts ===
+    Overall Score: {total_score}/100 ({grade})
+    Passing: {pass/fail}
+
+  detailed_breakdown: |
+    ## Rubric Scores
+    - Test Structure: {score}/15 {status}
+    - Method Coverage: {score}/25 {status}
+    - Test Categories: {score}/30 {status}
+    - Assertion Quality: {score}/15 {status}
+    - Mock Quality: {score}/10 {status}
+    - Code Quality: {score}/5 {status}
+
+  checklist_summary: |
+    ## Checklist Completion
+    - Structure: {completed}/{total} items
+    - toDTO Tests: {completed}/{total} items
+    - toDrizzleInsert Tests: {completed}/{total} items
+    - toDrizzleUpdate Tests: {completed}/{total} items
+    - Quality: {completed}/{total} items
+
+  recommendations: |
+    ## Recommendations
+    {list_of_improvements_based_on_deficiencies}
+
+  next_steps: |
+    ## Next Steps
+    {conditional_next_actions_based_on_score}
+
+usage_notes: |
+  ## Meta-Judge Usage Instructions
+
+  1. Replace {target} with actual mapper filename (e.g., 'group-mapper')
+  2. Replace {Entity} with entity name (e.g., 'Group')
+  3. Replace {MapperName} with mapper class name (e.g., 'GroupMapper')
+  4. Run all automated verification steps first
+  5. Perform manual review for qualitative rubrics
+  6. Calculate final score and grade
+  7. Generate output report with specific deficiencies
+
+  ## Per-Mapper Customization
+
+  For each mapper, verify these specifics:
+  - Unique fields the mapper handles
+  - Enum types specific to that entity
+  - Nullable vs required fields
+  - Derived/calculated fields
+  - Nested relationships
+
+  Document any special handling in the mapper-specific notes section.
