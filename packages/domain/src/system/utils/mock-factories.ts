@@ -21,19 +21,24 @@
  * ```
  */
 
+// Import branded ID factories directly from source files to avoid circular dependency
+// with the domain index barrel export
+import { Id as UserId } from "../../user/value-objects";
 import {
-  UserId,
-  TripId,
-  ChallengeId,
-  ActivityId,
-  LocationId,
-  NotificationId,
-  SponsorId,
-  TripSponsorId,
-  ReportId,
+  Id as TripId,
+  SponsorId as TripSponsorId,
+} from "../../trip/value-objects";
+import {
+  Id as ChallengeId,
+  VoteId,
   SubmissionId,
-  RewardId,
-} from "../../index";
+  ReportId,
+} from "../../challenge/value-objects";
+import { Id as ActivityId } from "../../activity/value-objects";
+import { Id as LocationId } from "../../location/value-objects";
+import { Id as NotificationId } from "../../notification/value-objects";
+import { Id as SponsorId } from "../../sponsor/value-objects";
+import { Id as RewardId } from "../../reward/value-objects";
 import { TestIds } from "./test-ids";
 
 // Note: GroupId uses generic branded ID pattern
