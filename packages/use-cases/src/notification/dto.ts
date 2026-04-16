@@ -7,9 +7,9 @@
 
 import type { PaginatedResult } from "../system/shared/dto";
 import type {
+  NotificationScheduleType,
   NotificationStatus,
   NotificationPriority,
-  NotificationType,
 } from "@mirai-app/domain";
 
 /**
@@ -20,7 +20,7 @@ export interface NotificationDTO {
   tripId: string | null;
   title: string;
   content: string;
-  type: NotificationType;
+  type: string;
   status: NotificationStatus;
   priority: NotificationPriority;
   scheduledAt: Date | null;
@@ -53,7 +53,7 @@ export interface NotificationScheduleDTO {
   id: string;
   name: string;
   tripId: string | null;
-  notificationType: NotificationType;
+  notificationType: NotificationScheduleType;
   notificationTitle: string | null;
   notificationBody: string | null;
   notificationUrl: string | null;
