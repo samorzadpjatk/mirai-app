@@ -1,6 +1,6 @@
 import { Effect, Data } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
-import type { Location } from "@mirai-app/domain";
+import { LocationGatewayTag } from "../../ports/gateway";
+import type { LocationDTO } from "../../dto";
 
 /**
  * Input for GetSharingSettings use case
@@ -75,7 +75,7 @@ export function getSharingSettingsUseCase(
     }
 
     return {
-      isSharingLocation: location.isSharingLocation(),
+      isSharingLocation: location.isSharingLocation,
       usersToShareWith: location.usersToShareWith,
     };
   });

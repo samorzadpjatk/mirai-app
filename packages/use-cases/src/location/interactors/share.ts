@@ -1,5 +1,5 @@
 import { Data, Effect } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
+import { LocationGatewayTag } from "../ports/gateway";
 import type { Location } from "@mirai-app/domain";
 import { DatabaseError } from "@mirai-app/domain";
 
@@ -110,7 +110,7 @@ export function shareLocationUseCase(
     );
 
     // Ensure sharing is enabled
-    if (!updatedLocation.isSharingLocation()) {
+    if (!updatedLocation.isSharing()) {
       updatedLocation = updatedLocation.startSharing();
     }
 
@@ -125,7 +125,7 @@ function toOutput(location: Location): ShareLocationOutput {
   return {
     id: location.id,
     userId: location.userId,
-    isSharingLocation: location.isSharingLocation(),
+    isSharingLocation: location.isSharing(),
     usersToShareWith: location.usersToShareWith,
   };
 }

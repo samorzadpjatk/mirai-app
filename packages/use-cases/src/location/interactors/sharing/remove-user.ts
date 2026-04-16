@@ -1,5 +1,5 @@
 import { Effect, Data } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
+import { LocationGatewayTag } from "../../ports/gateway";
 import type { Location } from "@mirai-app/domain";
 
 /**
@@ -85,17 +85,15 @@ export function removeSharingUserUseCase(
     const updated = location.removeSharingUser(input.userToRemoveId);
 
     // Persist changes
-    const saved = yield* locationRepo
-      .save(updated)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new RemoveSharingUserRepositoryError({
-              operation: "save location",
-              cause,
-            }),
-        ),
-      );
+    const saved = yield* locationRepo.save(updated).pipe(
+      Effect.mapError(
+        (cause) =>
+          new RemoveSharingUserRepositoryError({
+            operation: "save location",
+            cause,
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });
@@ -105,7 +103,7 @@ function toOutput(location: Location): RemoveSharingUserOutput {
   return {
     id: location.id,
     userId: location.userId,
-    isSharingLocation: location.isSharingLocation(),
+    isSharingLocation: location.isSharing(),
     usersToShareWith: location.usersToShareWith,
   };
 }

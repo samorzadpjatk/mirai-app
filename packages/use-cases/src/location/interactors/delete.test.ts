@@ -1,165 +1,393 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   deleteLocationUseCase,
   type DeleteLocationInput,
   DeleteLocationNotFoundError,
+  DeleteLocationError,
 } from "./delete";
-import { Location, type LocationId } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
-import { InMemoryLocationGateway } from "@mirai-app/adapters";
+import { LocationGatewayTag, type LocationGateway } from "../ports/gateway";
+import type { LocationDTO } from "../dto";
+import { DatabaseError } from "@mirai-app/domain";
+import type { Location, LocationId } from "@mirai-app/domain";
 
-describe("[UNIT] deleteLocationUseCase (Effect)", () => {
-  let repo: InMemoryLocationGateway;
-
-  beforeEach(() => {
-    repo = new InMemoryLocationGateway();
-  });
-
-  // Helper to create a valid location
-  const createValidLocation = (
-    overrides?: Partial<{
-      id: LocationId;
-      userId: string;
-    }>,
-  ): Location => {
-    const effect = Location.create({
-      id: overrides?.id ?? ("loc-123" as LocationId),
-      userId: overrides?.userId ?? "user-123",
-      latitude: 52.52,
-      longitude: 13.405,
-      accuracy: 10,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
-      isSharingLocation: false,
-      usersToShareWith: [],
-    });
-    try {
-      return Effect.runSync(effect);
-    } catch (e) {
-      throw new Error(`Failed to create test location: ${e}`);
-    }
-  };
-
-  // Helper to run use case with repository
-  const runUseCase = async (input: DeleteLocationInput) => {
-    const program = deleteLocationUseCase(input).pipe(
-      Effect.provideService(LocationGatewayTag, {
-        create: (location: Location) => repo.create(location),
-        findById: (id: string) => repo.findById(id as LocationId),
-        findByUserId: (userId: string) => repo.findByUserId(userId),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        findSharingWithUser: (userId: string) =>
-          repo.findSharingWithUser(userId),
-        findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
-        save: (location: Location) => repo.save(location),
-        delete: (id: string) => repo.delete(id as LocationId),
-        deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
-        existsForUser: (userId: string) => repo.existsForUser(userId),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
-
-  describe("[UNIT] execute", () => {
-    it("should delete location when found", async () => {
-      // Arrange
-      const existingLocation = createValidLocation({
-        id: "loc-to-delete" as LocationId,
+/**
+ * Mock Location with sharing capabilities
+ */
+function createMockLocation(overrides: Partial<Location> = {}): Location {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "loc-123",
+    userId: overrides.userId ?? "user-123",
+    latitude: overrides.latitude ?? 52.52,
+    longitude: overrides.longitude ?? 13.405,
+    accuracy: overrides.accuracy ?? 10,
+    altitude: overrides.altitude ?? null,
+    altitudeAccuracy: overrides.altitudeAccuracy ?? null,
+    heading: overrides.heading ?? null,
+    speed: overrides.speed ?? null,
+    timestamp: overrides.timestamp ?? now,
+    usersToShareWith: overrides.usersToShareWith ?? [],
+    isSharingLocation: overrides.isSharingLocation ?? false,
+    isSharing: function () {
+      return this.isSharingLocation;
+    },
+    hasValidCoordinates: function () {
+      return this.latitude !== null && this.longitude !== null;
+    },
+    getCoordinates: function () {
+      if (this.latitude !== null && this.longitude !== null) {
+        return [this.latitude, this.longitude];
+      }
+      return null;
+    },
+    distanceTo: function () {
+      return null;
+    },
+    isStale: function () {
+      return false;
+    },
+    getAgeInMinutes: function () {
+      return 0;
+    },
+    belongsToUser: function (userId: string) {
+      return this.userId === userId;
+    },
+    enableSharing: function () {
+      return createMockLocation({ ...this, isSharingLocation: true });
+    },
+    disableSharing: function () {
+      return createMockLocation({ ...this, isSharingLocation: false });
+    },
+    lastInactivityNotification: null,
+    updateInactivityNotification: function (timestamp: Date) {
+      return createMockLocation({
+        ...this,
+        lastInactivityNotification: timestamp,
       });
-      Effect.runSync(repo.create(existingLocation));
-
-      const input: DeleteLocationInput = {
-        locationId: "loc-to-delete" as LocationId,
-      };
-
-      // Verify location exists before deletion
-      const beforeDelete = Effect.runSync(
-        repo.findById("loc-to-delete" as LocationId),
-      );
-      expect(beforeDelete).not.toBeNull();
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.success).toBe(true);
-      expect(result.deletedLocationId).toBe("loc-to-delete");
-
-      // Verify location was actually deleted
-      const afterDelete = Effect.runSync(
-        repo.findById("loc-to-delete" as LocationId),
-      );
-      expect(afterDelete).toBeNull();
-    });
-
-    it("should fail when location not found", async () => {
-      // Arrange
-      const input: DeleteLocationInput = {
-        locationId: "non-existent-id" as LocationId,
-      };
-
-      // Act
-      const program = deleteLocationUseCase(input).pipe(
-        Effect.provideService(LocationGatewayTag, {
-          create: (location: Location) => repo.create(location),
-          findById: (id: string) => repo.findById(id as LocationId),
-          findByUserId: (userId: string) => repo.findByUserId(userId),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          findSharingWithUser: (userId: string) =>
-            repo.findSharingWithUser(userId),
-          findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
-          save: (location: Location) => repo.save(location),
-          delete: (id: string) => repo.delete(id as LocationId),
-          deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
-          existsForUser: (userId: string) => repo.existsForUser(userId),
+    },
+    updateCoordinates: function (coords: {
+      latitude?: number | null;
+      longitude?: number | null;
+      accuracy?: number | null;
+      altitude?: number | null;
+      heading?: number | null;
+      speed?: number | null;
+    }) {
+      return Effect.succeed(
+        createMockLocation({
+          ...this,
+          latitude:
+            coords.latitude !== undefined ? coords.latitude : this.latitude,
+          longitude:
+            coords.longitude !== undefined ? coords.longitude : this.longitude,
+          accuracy:
+            coords.accuracy !== undefined ? coords.accuracy : this.accuracy,
+          altitude:
+            coords.altitude !== undefined ? coords.altitude : this.altitude,
+          heading: coords.heading !== undefined ? coords.heading : this.heading,
+          speed: coords.speed !== undefined ? coords.speed : this.speed,
         }),
       );
+    },
+    canBeViewedBy: function () {
+      return true;
+    },
+    isWithinRadius: function () {
+      return true;
+    },
+    startSharing: function () {
+      return createMockLocation({ ...this, isSharingLocation: true });
+    },
+    stopSharing: function () {
+      return createMockLocation({ ...this, isSharingLocation: false });
+    },
+    addSharingUser: function () {
+      return Effect.succeed(this);
+    },
+    removeSharingUser: function () {
+      return this;
+    },
+    updateSharingUsers: function () {
+      return Effect.succeed(this);
+    },
+  } as Location;
+}
 
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(DeleteLocationNotFoundError);
+/**
+ * Mock LocationGateway for testing
+ */
+function createMockLocationGateway(
+  locations: Location[] = [],
+  options: {
+    shouldFailDelete?: boolean;
+    shouldFailFind?: boolean;
+  } = {},
+): LocationGateway {
+  const locationMap = new Map(locations.map((loc) => [loc.id, loc]));
+  const userLocationMap = new Map(locations.map((loc) => [loc.userId, loc]));
+
+  return {
+    create: (location: LocationDTO) => {
+      const mockLoc = createMockLocation({
+        id: location.id ?? crypto.randomUUID(),
+        userId: location.userId,
+        latitude: location.latitude ?? null,
+        longitude: location.longitude ?? null,
+        accuracy: location.accuracy ?? null,
+        isSharingLocation:
+          (location as unknown as Location).isSharingLocation ?? false,
+      });
+      locationMap.set(mockLoc.id, mockLoc);
+      userLocationMap.set(mockLoc.userId, mockLoc);
+      return Effect.succeed(mockLoc);
+    },
+
+    findById: (id: string) => {
+      if (options.shouldFailFind) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database error",
+          }),
+        );
       }
+      const location = locationMap.get(id);
+      return Effect.succeed(location ?? null);
+    },
+
+    findByUserId: (userId: string) => {
+      const location = userLocationMap.get(userId);
+      return Effect.succeed(location ?? null);
+    },
+
+    findByUserIds: () => Effect.succeed([]),
+
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(locationMap.values()),
+        total: locationMap.size,
+        limit: locationMap.size,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    findSharingWithUser: () => Effect.succeed([]),
+
+    findSharingWithUserConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByUserIdsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    save: (location: Location) => {
+      locationMap.set(location.id, location);
+      userLocationMap.set(location.userId, location);
+      return Effect.succeed(location);
+    },
+
+    delete: (id: LocationId) => {
+      if (options.shouldFailDelete) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "delete",
+            message: "Database error",
+          }),
+        );
+      }
+      locationMap.delete(id);
+      return Effect.succeed(void 0);
+    },
+
+    deleteByUserId: () => Effect.succeed(void 0),
+
+    existsForUser: () => Effect.succeed(false),
+
+    findSharingRequestsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findReceivedSharingRequestsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+describe("[UNIT] deleteLocationUseCase", () => {
+  it("should delete location successfully when it exists", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-to-delete",
+      userId: "user-123",
     });
+    const mockGateway = createMockLocationGateway([existingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
 
-    it("should not affect other locations when deleting one", async () => {
-      // Arrange
-      const location1 = createValidLocation({
-        id: "loc-1" as LocationId,
-        userId: "user-1",
-      });
-      const location2 = createValidLocation({
-        id: "loc-2" as LocationId,
-        userId: "user-2",
-      });
-      const location3 = createValidLocation({
-        id: "loc-3" as LocationId,
-        userId: "user-3",
-      });
+    const input: DeleteLocationInput = {
+      locationId: "loc-to-delete" as LocationId,
+    };
 
-      Effect.runSync(repo.create(location1));
-      Effect.runSync(repo.create(location2));
-      Effect.runSync(repo.create(location3));
+    const program = deleteLocationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const input: DeleteLocationInput = {
-        locationId: "loc-2" as LocationId,
-      };
+    expect(result.success).toBe(true);
+    expect(result.deletedLocationId).toBe("loc-to-delete");
+  });
 
-      // Act
-      await runUseCase(input);
+  it("should fail with DeleteLocationNotFoundError when location does not exist", async () => {
+    const mockGateway = createMockLocationGateway([]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
 
-      // Assert
-      const allLocations = Effect.runSync(repo.findAll());
-      expect(allLocations).toHaveLength(2);
-      expect(allLocations.find((l) => l.id === "loc-1")).not.toBeNull();
-      expect(allLocations.find((l) => l.id === "loc-2")).toBeUndefined();
-      expect(allLocations.find((l) => l.id === "loc-3")).not.toBeNull();
+    const input: DeleteLocationInput = {
+      locationId: "nonexistent-loc" as LocationId,
+    };
+
+    const program = deleteLocationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DeleteLocationNotFoundError);
+      if (either.left instanceof DeleteLocationNotFoundError) {
+        expect(either.left.locationId).toBe("nonexistent-loc");
+      }
+    }
+  });
+
+  it("should fail with DatabaseError when database error occurs during find", async () => {
+    const mockGateway = createMockLocationGateway([], {
+      shouldFailFind: true,
     });
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: DeleteLocationInput = {
+      locationId: "loc-123" as LocationId,
+    };
+
+    const program = deleteLocationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should fail with DatabaseError when database error occurs during delete", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-to-delete",
+      userId: "user-123",
+    });
+    const mockGateway = createMockLocationGateway([existingLocation], {
+      shouldFailDelete: true,
+    });
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: DeleteLocationInput = {
+      locationId: "loc-to-delete" as LocationId,
+    };
+
+    const program = deleteLocationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should handle location with sharing users", async () => {
+    const existingLocation = createMockLocation({
+      id: "shared-loc",
+      userId: "user-123",
+      isSharingLocation: true,
+      usersToShareWith: [
+        { id: "user-456", firstName: "John", lastName: "Doe" },
+      ],
+    });
+    const mockGateway = createMockLocationGateway([existingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: DeleteLocationInput = {
+      locationId: "shared-loc" as LocationId,
+    };
+
+    const program = deleteLocationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.deletedLocationId).toBe("shared-loc");
+  });
+
+  it("should verify location is actually removed after delete", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-verify-delete",
+      userId: "user-789",
+    });
+    const mockGateway = createMockLocationGateway([existingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: DeleteLocationInput = {
+      locationId: "loc-verify-delete" as LocationId,
+    };
+
+    const deleteProgram = deleteLocationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    await Effect.runPromise(deleteProgram);
+
+    const findProgram = mockGateway
+      .findById("loc-verify-delete")
+      .pipe(Effect.provide(mockLayer));
+    const foundLocation = await Effect.runPromise(findProgram);
+
+    expect(foundLocation).toBeNull();
   });
 });

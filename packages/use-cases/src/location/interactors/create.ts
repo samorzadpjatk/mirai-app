@@ -1,5 +1,5 @@
 import { Data, Effect } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
+import { LocationGatewayTag } from "../ports/gateway";
 import { Location } from "@mirai-app/domain";
 import { DatabaseError } from "@mirai-app/domain";
 
@@ -103,12 +103,19 @@ export function createLocationUseCase(
       });
 
       // Run validation effect and map errors
-      const updated = yield* updateEffect.pipe(
+      let updated = yield* updateEffect.pipe(
         Effect.mapError(
           (validationError) =>
             new LocationUpdateError({ message: validationError.message }),
         ),
       );
+
+      // Update sharing status if provided
+      if (input.isSharingLocation !== undefined) {
+        updated = input.isSharingLocation
+          ? updated.enableSharing()
+          : updated.disableSharing();
+      }
 
       const saved = yield* locationRepo.save(updated);
       return toOutput(saved);
@@ -152,7 +159,7 @@ function toOutput(location: Location): CreateLocationOutput {
     latitude: location.latitude,
     longitude: location.longitude,
     accuracy: location.accuracy,
-    isSharingLocation: location.isSharingLocation(),
+    isSharingLocation: location.isSharing(),
     timestamp: location.timestamp,
     usersToShareWith: location.usersToShareWith,
   };

@@ -1,6 +1,6 @@
 import { Effect, Data } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
-import type { Location } from "@mirai-app/domain";
+import { LocationGatewayTag } from "../../ports/gateway";
+import type { LocationDTO, SharingUserInfo } from "../../dto";
 
 /**
  * Input for UpdateSharingSettings use case
@@ -8,11 +8,7 @@ import type { Location } from "@mirai-app/domain";
 export interface UpdateSharingSettingsInput {
   userId: string;
   isSharingLocation: boolean;
-  usersToShareWith?: Array<{
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-  }>;
+  usersToShareWith?: SharingUserInfo[];
 }
 
 /**
@@ -22,11 +18,7 @@ export interface UpdateSharingSettingsOutput {
   id: string;
   userId: string;
   isSharingLocation: boolean;
-  usersToShareWith: Array<{
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-  }>;
+  usersToShareWith: SharingUserInfo[];
   timestamp: Date;
 }
 
@@ -73,9 +65,6 @@ export function updateSharingSettingsUseCase(
 > {
   return Effect.gen(function* () {
     const locationRepo = yield* LocationGatewayTag;
-    const { Location } = yield* Effect.promise(
-      () => import("@mirai-app/domain"),
-    );
 
     // Find existing location
     let location = yield* locationRepo.findByUserId(input.userId).pipe(
@@ -88,22 +77,24 @@ export function updateSharingSettingsUseCase(
       ),
     );
 
+    const now = new Date();
+
     if (!location) {
       // Create new location if none exists
-      const newLocation = yield* Location.create({
+      const newLocation: LocationDTO = {
+        id: crypto.randomUUID(),
         userId: input.userId,
+        latitude: 0,
+        longitude: 0,
+        accuracy: null,
+        altitude: null,
+        speed: null,
+        heading: null,
+        recordedAt: now,
+        createdAt: now,
         isSharingLocation: input.isSharingLocation,
-        ...(input.usersToShareWith !== undefined && {
-          usersToShareWith: input.usersToShareWith,
-        }),
-      }).pipe(
-        Effect.mapError(
-          (error) =>
-            new UpdateSharingSettingsValidationError({
-              message: error.message,
-            }),
-        ),
-      );
+        usersToShareWith: input.usersToShareWith ?? [],
+      };
 
       // Persist the new location
       const saved = yield* locationRepo.create(newLocation).pipe(
@@ -117,52 +108,38 @@ export function updateSharingSettingsUseCase(
       );
 
       return toOutput(saved);
-    } else {
-      // Update sharing status
-      if (input.isSharingLocation) {
-        location = location.startSharing();
-      } else {
-        location = location.stopSharing();
-      }
-
-      // Update sharing users if provided
-      if (input.usersToShareWith !== undefined) {
-        location = yield* location
-          .updateSharingUsers(input.usersToShareWith)
-          .pipe(
-            Effect.mapError(
-              (validationError) =>
-                new UpdateSharingSettingsValidationError({
-                  message: validationError.message,
-                }),
-            ),
-          );
-      }
     }
 
+    // Update sharing settings
+    const updatedLocation: LocationDTO = {
+      ...location,
+      isSharingLocation: input.isSharingLocation,
+      ...(input.usersToShareWith !== undefined && {
+        usersToShareWith: input.usersToShareWith,
+      }),
+    };
+
     // Persist changes
-    const saved = yield* locationRepo
-      .save(location)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new UpdateSharingSettingsRepositoryError({
-              operation: "save location",
-              cause,
-            }),
-        ),
-      );
+    const saved = yield* locationRepo.save(updatedLocation).pipe(
+      Effect.mapError(
+        (cause) =>
+          new UpdateSharingSettingsRepositoryError({
+            operation: "save location",
+            cause,
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });
 }
 
-function toOutput(location: Location): UpdateSharingSettingsOutput {
+function toOutput(location: LocationDTO): UpdateSharingSettingsOutput {
   return {
     id: location.id,
     userId: location.userId,
-    isSharingLocation: location.isSharingLocation(),
+    isSharingLocation: location.isSharingLocation,
     usersToShareWith: location.usersToShareWith,
-    timestamp: location.timestamp,
+    timestamp: location.recordedAt,
   };
 }

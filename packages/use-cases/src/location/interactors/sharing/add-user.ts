@@ -1,6 +1,6 @@
 import { Effect, Data } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
-import type { Location } from "@mirai-app/domain";
+import { LocationGatewayTag } from "../../ports/gateway";
+import type { LocationDTO, SharingUserInfo } from "../../dto";
 
 /**
  * Input for AddSharingUser use case
@@ -19,11 +19,7 @@ export interface AddSharingUserOutput {
   id: string;
   userId: string;
   isSharingLocation: boolean;
-  usersToShareWith: Array<{
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-  }>;
+  usersToShareWith: SharingUserInfo[];
 }
 
 /**
@@ -78,9 +74,6 @@ export function addSharingUserUseCase(
 > {
   return Effect.gen(function* () {
     const locationRepo = yield* LocationGatewayTag;
-    const { Location } = yield* Effect.promise(
-      () => import("@mirai-app/domain"),
-    );
 
     // Prevent self-sharing
     if (input.ownerUserId === input.userToAddId) {
@@ -88,22 +81,30 @@ export function addSharingUserUseCase(
     }
 
     // Find existing location
-    let location = yield* locationRepo
-      .findByUserId(input.ownerUserId)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new AddSharingUserRepositoryError({
-              operation: "find location by user",
-              cause,
-            }),
-        ),
-      );
+    let location = yield* locationRepo.findByUserId(input.ownerUserId).pipe(
+      Effect.mapError(
+        (cause) =>
+          new AddSharingUserRepositoryError({
+            operation: "find location by user",
+            cause,
+          }),
+      ),
+    );
 
     if (!location) {
       // Create new location with sharing enabled
-      const newLocation = yield* Location.create({
+      const now = new Date();
+      const newLocation: LocationDTO = {
+        id: crypto.randomUUID(),
         userId: input.ownerUserId,
+        latitude: 0,
+        longitude: 0,
+        accuracy: null,
+        altitude: null,
+        speed: null,
+        heading: null,
+        recordedAt: now,
+        createdAt: now,
         isSharingLocation: true,
         usersToShareWith: [
           {
@@ -112,65 +113,65 @@ export function addSharingUserUseCase(
             lastName: input.userLastName,
           },
         ],
-      }).pipe(
-        Effect.mapError(
-          (error) =>
-            new AddSharingUserValidationError({ message: error.message }),
-        ),
-      );
+      };
 
-      const saved = yield* locationRepo
-        .create(newLocation)
-        .pipe(
-          Effect.mapError(
-            (cause) =>
-              new AddSharingUserRepositoryError({
-                operation: "create location",
-                cause,
-              }),
-          ),
-        );
-      return toOutput(saved);
-    }
-
-    // Add user to sharing list
-    const updatedLocation = yield* location
-      .addSharingUser({
-        id: input.userToAddId,
-        firstName: input.userFirstName,
-        lastName: input.userLastName,
-      })
-      .pipe(
-        Effect.mapError(
-          (validationError) =>
-            new AddSharingUserValidationError({
-              message: validationError.message,
-            }),
-        ),
-      );
-
-    // Persist changes
-    const saved = yield* locationRepo
-      .save(updatedLocation)
-      .pipe(
+      const saved = yield* locationRepo.create(newLocation).pipe(
         Effect.mapError(
           (cause) =>
             new AddSharingUserRepositoryError({
-              operation: "save location",
+              operation: "create location",
               cause,
             }),
         ),
       );
+      return toOutput(saved);
+    }
+
+    // Add user to sharing list
+    const userExists = location.usersToShareWith.some(
+      (u) => u.id === input.userToAddId,
+    );
+    if (userExists) {
+      return yield* Effect.fail(
+        new AddSharingUserValidationError({
+          message: "User is already in sharing list",
+        }),
+      );
+    }
+
+    const updatedLocation: LocationDTO = {
+      ...location,
+      isSharingLocation: true,
+      usersToShareWith: [
+        ...location.usersToShareWith,
+        {
+          id: input.userToAddId,
+          firstName: input.userFirstName,
+          lastName: input.userLastName,
+        },
+      ],
+    };
+
+    // Persist changes
+    const saved = yield* locationRepo.save(updatedLocation).pipe(
+      Effect.mapError(
+        (cause) =>
+          new AddSharingUserRepositoryError({
+            operation: "save location",
+            cause,
+          }),
+      ),
+    );
 
     return toOutput(saved);
   });
 }
 
-function toOutput(location: Location): AddSharingUserOutput {
+function toOutput(location: LocationDTO): AddSharingUserOutput {
   return {
     id: location.id,
     userId: location.userId,
-    isSharingLocation: location.isSharingLocation(),
+    isSharingLocation: location.isSharingLocation,
     usersToShareWith: location.usersToShareWith,
   };
 }

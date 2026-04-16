@@ -1,6 +1,6 @@
 import { Data, Effect } from "effect";
 import type { LocationId } from "@mirai-app/domain";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
+import { LocationGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
 
 /**

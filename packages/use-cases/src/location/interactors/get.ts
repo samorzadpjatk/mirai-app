@@ -1,6 +1,6 @@
 import type { Location } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
+import { LocationGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
 
 /**
@@ -53,7 +53,7 @@ function toOutput(location: Location): GetLocationOutput {
     altitudeAccuracy: location.altitudeAccuracy,
     heading: location.heading,
     speed: location.speed,
-    isSharingLocation: location.isSharingLocation(),
+    isSharingLocation: location.isSharing(),
     timestamp: location.timestamp,
     usersToShareWith: location.usersToShareWith,
   };

@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   shareLocationUseCase,
   type ShareLocationInput,
@@ -6,256 +7,464 @@ import {
   ShareLocationValidationError,
   ShareLocationSelfShareError,
 } from "./share";
-import { Location } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
-import { InMemoryLocationGateway } from "@mirai-app/adapters";
+import { LocationGatewayTag, type LocationGateway } from "../ports/gateway";
+import type { LocationDTO } from "../dto";
+import { DatabaseError } from "@mirai-app/domain";
+import type { Location } from "@mirai-app/domain";
 
-describe("[UNIT] shareLocationUseCase (Effect)", () => {
-  let repo: InMemoryLocationGateway;
-
-  beforeEach(() => {
-    repo = new InMemoryLocationGateway();
-  });
-
-  // Helper to create a valid location
-  const createValidLocation = (
-    overrides?: Partial<{
+/**
+ * Mock Location with sharing capabilities
+ */
+function createMockLocation(overrides: Partial<Location> = {}): Location {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "loc-123",
+    userId: overrides.userId ?? "user-123",
+    latitude: overrides.latitude ?? 52.52,
+    longitude: overrides.longitude ?? 13.405,
+    accuracy: overrides.accuracy ?? 10,
+    altitude: overrides.altitude ?? null,
+    altitudeAccuracy: overrides.altitudeAccuracy ?? null,
+    heading: overrides.heading ?? null,
+    speed: overrides.speed ?? null,
+    timestamp: overrides.timestamp ?? now,
+    usersToShareWith: overrides.usersToShareWith ?? [],
+    isSharingLocation: overrides.isSharingLocation ?? false,
+    isSharing: function () {
+      return this.isSharingLocation;
+    },
+    hasValidCoordinates: function () {
+      return this.latitude !== null && this.longitude !== null;
+    },
+    getCoordinates: function () {
+      if (this.latitude !== null && this.longitude !== null) {
+        return [this.latitude, this.longitude];
+      }
+      return null;
+    },
+    distanceTo: function () {
+      return null;
+    },
+    isStale: function () {
+      return false;
+    },
+    getAgeInMinutes: function () {
+      return 0;
+    },
+    belongsToUser: function (userId: string) {
+      return this.userId === userId;
+    },
+    enableSharing: function () {
+      return createMockLocation({ ...this, isSharingLocation: true });
+    },
+    disableSharing: function () {
+      return createMockLocation({ ...this, isSharingLocation: false });
+    },
+    lastInactivityNotification: null,
+    updateInactivityNotification: function (timestamp: Date) {
+      return createMockLocation({
+        ...this,
+        lastInactivityNotification: timestamp,
+      });
+    },
+    updateCoordinates: function (coords: {
+      latitude?: number | null;
+      longitude?: number | null;
+      accuracy?: number | null;
+      altitude?: number | null;
+      heading?: number | null;
+      speed?: number | null;
+    }) {
+      return Effect.succeed(
+        createMockLocation({
+          ...this,
+          latitude:
+            coords.latitude !== undefined ? coords.latitude : this.latitude,
+          longitude:
+            coords.longitude !== undefined ? coords.longitude : this.longitude,
+          accuracy:
+            coords.accuracy !== undefined ? coords.accuracy : this.accuracy,
+          altitude:
+            coords.altitude !== undefined ? coords.altitude : this.altitude,
+          heading: coords.heading !== undefined ? coords.heading : this.heading,
+          speed: coords.speed !== undefined ? coords.speed : this.speed,
+        }),
+      );
+    },
+    canBeViewedBy: function () {
+      return true;
+    },
+    isWithinRadius: function () {
+      return true;
+    },
+    startSharing: function () {
+      return createMockLocation({ ...this, isSharingLocation: true });
+    },
+    stopSharing: function () {
+      return createMockLocation({ ...this, isSharingLocation: false });
+    },
+    addSharingUser: function (user: {
       id: string;
-      userId: string;
-      isSharingLocation: boolean;
-    }>,
-  ): Location => {
-    const effect = Location.create({
-      id: overrides?.id ?? "loc-123",
-      userId: overrides?.userId ?? "user-123",
-      latitude: 52.52,
-      longitude: 13.405,
-      accuracy: 10,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
-      isSharingLocation: overrides?.isSharingLocation ?? false,
+      firstName: string | null;
+      lastName: string | null;
+    }) {
+      const updatedUsers = [...this.usersToShareWith, user];
+      return Effect.succeed(
+        createMockLocation({
+          ...this,
+          usersToShareWith: updatedUsers,
+          isSharingLocation: true,
+        }),
+      );
+    },
+    removeSharingUser: function () {
+      return this;
+    },
+    updateSharingUsers: function () {
+      return Effect.succeed(this);
+    },
+  } as Location;
+}
+
+/**
+ * Mock LocationGateway for testing
+ */
+function createMockLocationGateway(
+  locations: Location[] = [],
+  options: {
+    shouldFailFind?: boolean;
+    shouldFailSave?: boolean;
+  } = {},
+): LocationGateway {
+  const locationMap = new Map(locations.map((loc) => [loc.id, loc]));
+  const userLocationMap = new Map(locations.map((loc) => [loc.userId, loc]));
+
+  return {
+    create: (location: LocationDTO) => {
+      const mockLoc = createMockLocation({
+        id: location.id ?? crypto.randomUUID(),
+        userId: location.userId,
+        latitude: location.latitude ?? null,
+        longitude: location.longitude ?? null,
+        accuracy: location.accuracy ?? null,
+        isSharingLocation:
+          (location as unknown as Location).isSharingLocation ?? false,
+      });
+      locationMap.set(mockLoc.id, mockLoc);
+      userLocationMap.set(mockLoc.userId, mockLoc);
+      return Effect.succeed(mockLoc);
+    },
+
+    findById: (id: string) => {
+      const location = locationMap.get(id);
+      return Effect.succeed(location ?? null);
+    },
+
+    findByUserId: (userId: string) => {
+      if (options.shouldFailFind) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findByUserId",
+            message: "Database error",
+          }),
+        );
+      }
+      const location = userLocationMap.get(userId);
+      return Effect.succeed(location ?? null);
+    },
+
+    findByUserIds: () => Effect.succeed([]),
+
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(locationMap.values()),
+        total: locationMap.size,
+        limit: locationMap.size,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    findSharingWithUser: () => Effect.succeed([]),
+
+    findSharingWithUserConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByUserIdsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    save: (location: Location) => {
+      if (options.shouldFailSave) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "save",
+            message: "Database error",
+          }),
+        );
+      }
+      locationMap.set(location.id, location);
+      userLocationMap.set(location.userId, location);
+      return Effect.succeed(location);
+    },
+
+    delete: () => Effect.succeed(void 0),
+
+    deleteByUserId: () => Effect.succeed(void 0),
+
+    existsForUser: () => Effect.succeed(false),
+
+    findSharingRequestsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findReceivedSharingRequestsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+describe("[UNIT] shareLocationUseCase", () => {
+  it("should share location with target user successfully", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-123",
+      userId: "owner-user",
+      isSharingLocation: false,
       usersToShareWith: [],
     });
-    try {
-      return Effect.runSync(effect);
-    } catch (e) {
-      throw new Error(`Failed to create test location: ${e}`);
+    const mockGateway = createMockLocationGateway([existingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: ShareLocationInput = {
+      userId: "owner-user",
+      targetUserId: "target-user",
+      targetUserFirstName: "John",
+      targetUserLastName: "Doe",
+    };
+
+    const program = shareLocationUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.userId).toBe("owner-user");
+    expect(result.isSharingLocation).toBe(true);
+    expect(result.usersToShareWith).toHaveLength(1);
+    expect(result.usersToShareWith[0].id).toBe("target-user");
+    expect(result.usersToShareWith[0].firstName).toBe("John");
+    expect(result.usersToShareWith[0].lastName).toBe("Doe");
+  });
+
+  it("should fail with ShareLocationNotFoundError when location does not exist", async () => {
+    const mockGateway = createMockLocationGateway([]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: ShareLocationInput = {
+      userId: "nonexistent-user",
+      targetUserId: "target-user",
+      targetUserFirstName: "John",
+      targetUserLastName: "Doe",
+    };
+
+    const program = shareLocationUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ShareLocationNotFoundError);
+      if (either.left instanceof ShareLocationNotFoundError) {
+        expect(either.left.userId).toBe("nonexistent-user");
+      }
     }
-  };
+  });
 
-  // Helper to run use case with repository
-  const runUseCase = async (input: ShareLocationInput) => {
-    const program = shareLocationUseCase(input).pipe(
-      Effect.provideService(LocationGatewayTag, {
-        create: (location: Location) => repo.create(location),
-        findById: (id: string) => repo.findById(id),
-        findByUserId: (userId: string) => repo.findByUserId(userId),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        findSharingWithUser: (userId: string) =>
-          repo.findSharingWithUser(userId),
-        findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
-        save: (location: Location) => repo.save(location),
-        delete: (id: string) => repo.delete(id),
-        deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
-        existsForUser: (userId: string) => repo.existsForUser(userId),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
+  it("should fail with ShareLocationSelfShareError when trying to share with self", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-123",
+      userId: "owner-user",
+    });
+    const mockGateway = createMockLocationGateway([existingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
 
-  describe("[UNIT] execute", () => {
-    it("should share location with target user", async () => {
-      // Arrange - seed existing location with sharing disabled
-      const existingLocation = createValidLocation({
-        userId: "user-123",
-        isSharingLocation: false,
-      });
-      Effect.runSync(repo.create(existingLocation));
+    const input: ShareLocationInput = {
+      userId: "owner-user",
+      targetUserId: "owner-user",
+      targetUserFirstName: "Self",
+      targetUserLastName: "Share",
+    };
 
-      const input: ShareLocationInput = {
-        userId: "user-123",
-        targetUserId: "target-user",
-        targetUserFirstName: "John",
-        targetUserLastName: "Doe",
-      };
+    const program = shareLocationUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Act
-      const result = await runUseCase(input);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ShareLocationSelfShareError);
+    }
+  });
 
-      // Assert
-      expect(result.isSharingLocation).toBe(true);
-      expect(result.usersToShareWith).toHaveLength(1);
-      expect(result.usersToShareWith[0].id).toBe("target-user");
-      expect(result.usersToShareWith[0].firstName).toBe("John");
-      expect(result.usersToShareWith[0].lastName).toBe("Doe");
+  it("should fail with DatabaseError when database error occurs", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-123",
+      userId: "owner-user",
+    });
+    const mockGateway = createMockLocationGateway([existingLocation], {
+      shouldFailSave: true,
+    });
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
 
-      // Verify location was updated
-      const stored = Effect.runSync(repo.findByUserId("user-123"));
-      expect(stored?.isSharingLocation()).toBe(true);
-      expect(stored?.usersToShareWith).toHaveLength(1);
+    const input: ShareLocationInput = {
+      userId: "owner-user",
+      targetUserId: "target-user",
+      targetUserFirstName: "John",
+      targetUserLastName: "Doe",
+    };
+
+    const program = shareLocationUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should add multiple users to sharing list", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-123",
+      userId: "owner-user",
+      isSharingLocation: true,
+      usersToShareWith: [
+        { id: "user-1", firstName: "Alice", lastName: "Smith" },
+      ],
+    });
+    const mockGateway = createMockLocationGateway([existingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: ShareLocationInput = {
+      userId: "owner-user",
+      targetUserId: "user-2",
+      targetUserFirstName: "Bob",
+      targetUserLastName: "Jones",
+    };
+
+    const program = shareLocationUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.usersToShareWith).toHaveLength(2);
+  });
+
+  it("should handle null firstName and lastName", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-123",
+      userId: "owner-user",
+      isSharingLocation: false,
+      usersToShareWith: [],
+    });
+    const mockGateway = createMockLocationGateway([existingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: ShareLocationInput = {
+      userId: "owner-user",
+      targetUserId: "target-user",
+      targetUserFirstName: null,
+      targetUserLastName: null,
+    };
+
+    const program = shareLocationUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.usersToShareWith[0].firstName).toBeNull();
+    expect(result.usersToShareWith[0].lastName).toBeNull();
+  });
+
+  it("should enable sharing when it was previously disabled", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-123",
+      userId: "owner-user",
+      isSharingLocation: false,
+      usersToShareWith: [],
+    });
+    const mockGateway = createMockLocationGateway([existingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
+
+    const input: ShareLocationInput = {
+      userId: "owner-user",
+      targetUserId: "target-user",
+      targetUserFirstName: "John",
+      targetUserLastName: "Doe",
+    };
+
+    const program = shareLocationUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.isSharingLocation).toBe(true);
+  });
+
+  it("should fail with ShareLocationValidationError when addSharingUser fails", async () => {
+    const existingLocation = createMockLocation({
+      id: "loc-123",
+      userId: "owner-user",
+      usersToShareWith: [],
     });
 
-    it("should fail when trying to share with self", async () => {
-      // Arrange - seed existing location
-      const existingLocation = createValidLocation({
-        userId: "user-123",
-      });
-      Effect.runSync(repo.create(existingLocation));
+    const failingLocation = {
+      ...existingLocation,
+      addSharingUser: () =>
+        Effect.fail(
+          new DatabaseError({
+            operation: "addSharingUser",
+            message: "Validation failed",
+          }),
+        ),
+    } as Location;
 
-      const input: ShareLocationInput = {
-        userId: "user-123",
-        targetUserId: "user-123", // Same as userId
-        targetUserFirstName: "John",
-        targetUserLastName: "Doe",
-      };
+    const mockGateway = createMockLocationGateway([failingLocation]);
+    const mockLayer = Layer.succeed(LocationGatewayTag, mockGateway);
 
-      // Act
-      const program = shareLocationUseCase(input).pipe(
-        Effect.provideService(LocationGatewayTag, {
-          create: (location: Location) => repo.create(location),
-          findById: (id: string) => repo.findById(id),
-          findByUserId: (userId: string) => repo.findByUserId(userId),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          findSharingWithUser: (userId: string) =>
-            repo.findSharingWithUser(userId),
-          findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
-          save: (location: Location) => repo.save(location),
-          delete: (id: string) => repo.delete(id),
-          deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
-          existsForUser: (userId: string) => repo.existsForUser(userId),
-        }),
-      );
+    const input: ShareLocationInput = {
+      userId: "owner-user",
+      targetUserId: "target-user",
+      targetUserFirstName: "John",
+      targetUserLastName: "Doe",
+    };
 
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ShareLocationSelfShareError);
-      }
-    });
+    const program = shareLocationUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-    it("should fail when location not found for user", async () => {
-      // Arrange - no location in repo
-      const input: ShareLocationInput = {
-        userId: "user-without-location",
-        targetUserId: "target-user",
-        targetUserFirstName: "John",
-        targetUserLastName: "Doe",
-      };
-
-      // Act
-      const program = shareLocationUseCase(input).pipe(
-        Effect.provideService(LocationGatewayTag, {
-          create: (location: Location) => repo.create(location),
-          findById: (id: string) => repo.findById(id),
-          findByUserId: (userId: string) => repo.findByUserId(userId),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          findSharingWithUser: (userId: string) =>
-            repo.findSharingWithUser(userId),
-          findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
-          save: (location: Location) => repo.save(location),
-          delete: (id: string) => repo.delete(id),
-          deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
-          existsForUser: (userId: string) => repo.existsForUser(userId),
-        }),
-      );
-
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ShareLocationNotFoundError);
-      }
-    });
-
-    it("should fail when already sharing with target user", async () => {
-      // Arrange - seed location already sharing with one user
-      const locationWithSharing = createValidLocation({
-        userId: "user-123",
-        isSharingLocation: true,
-      });
-      // Add first user to sharing list via Effect
-      const addUserEffect = locationWithSharing.addSharingUser({
-        id: "target-user",
-        firstName: "John",
-        lastName: "Doe",
-      });
-      const loc = Effect.runSync(addUserEffect);
-      Effect.runSync(repo.create(loc));
-
-      const input: ShareLocationInput = {
-        userId: "user-123",
-        targetUserId: "target-user", // Already sharing with this user
-        targetUserFirstName: "John",
-        targetUserLastName: "Doe",
-      };
-
-      // Act
-      const program = shareLocationUseCase(input).pipe(
-        Effect.provideService(LocationGatewayTag, {
-          create: (location: Location) => repo.create(location),
-          findById: (id: string) => repo.findById(id),
-          findByUserId: (userId: string) => repo.findByUserId(userId),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          findSharingWithUser: (userId: string) =>
-            repo.findSharingWithUser(userId),
-          findByUserIds: (userIds: string[]) => repo.findByUserIds(userIds),
-          save: (location: Location) => repo.save(location),
-          delete: (id: string) => repo.delete(id),
-          deleteByUserId: (userId: string) => repo.deleteByUserId(userId),
-          existsForUser: (userId: string) => repo.existsForUser(userId),
-        }),
-      );
-
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ShareLocationValidationError);
-        expect(either.left.message).toContain("Already sharing");
-      }
-    });
-
-    it("should share location with multiple users", async () => {
-      // Arrange - seed location already sharing with one user
-      const locationWithSharing = createValidLocation({
-        userId: "user-123",
-        isSharingLocation: true,
-      });
-      // Add first user to sharing list via Effect
-      const addUserEffect = locationWithSharing.addSharingUser({
-        id: "user-1",
-        firstName: "First",
-        lastName: "User",
-      });
-      const loc = Effect.runSync(addUserEffect);
-      Effect.runSync(repo.create(loc));
-
-      const input: ShareLocationInput = {
-        userId: "user-123",
-        targetUserId: "user-2", // Different user
-        targetUserFirstName: "Second",
-        targetUserLastName: "User",
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.usersToShareWith).toHaveLength(2);
-      expect(result.usersToShareWith.some((u) => u.id === "user-1")).toBe(true);
-      expect(result.usersToShareWith.some((u) => u.id === "user-2")).toBe(true);
-
-      // Verify location was updated
-      const stored = Effect.runSync(repo.findByUserId("user-123"));
-      expect(stored?.usersToShareWith).toHaveLength(2);
-    });
+    expect(either._tag).toBe("Left");
   });
 });

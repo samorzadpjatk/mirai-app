@@ -8,6 +8,15 @@
 import type { PaginatedResult } from "../system/shared/dto";
 
 /**
+ * User sharing info
+ */
+export interface SharingUserInfo {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+/**
  * LocationDTO - Lightweight representation of a user location
  */
 export interface LocationDTO {
@@ -21,6 +30,8 @@ export interface LocationDTO {
   heading: number | null;
   recordedAt: Date;
   createdAt: Date;
+  isSharingLocation: boolean;
+  usersToShareWith: SharingUserInfo[];
 }
 
 /**

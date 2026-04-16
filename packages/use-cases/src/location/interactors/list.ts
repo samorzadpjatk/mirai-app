@@ -56,7 +56,7 @@ function toOutput(
     altitude: location.altitude,
     heading: location.heading,
     speed: location.speed,
-    isSharingLocation: location.isSharingLocation(),
+    isSharingLocation: location.isSharing(),
     timestamp: location.timestamp,
   };
 
