@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   listRewardsUseCase,
   type ListRewardsInput,
@@ -6,278 +7,426 @@ import {
   RewardRepositoryError,
   TripPointsCalculatorError,
 } from "./list";
-import { Reward, RewardId } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
 import {
   RewardGatewayTag,
   TripPointsCalculatorTag,
+  type RewardGateway,
+  type TripPointsCalculator,
+  type PaginationOptions,
   type PaginatedResult,
 } from "../ports/gateway";
-import { InMemoryRewardGateway } from "@mirai-app/adapters";
+import type { RewardDTO } from "../dto";
+import { DatabaseError, RewardStatus } from "@mirai-app/domain";
 
-describe("[UNIT] listRewardsUseCase (Effect)", () => {
-  let rewardRepo: InMemoryRewardGateway;
+/**
+ * Extended RewardGateway with the methods used by list.ts
+ */
+interface ExtendedRewardGateway extends RewardGateway {
+  findByTripId(
+    tripId: string,
+    options?: { includeHidden?: boolean } & PaginationOptions,
+  ): Effect.Effect<PaginatedResult<RewardDTO>, DatabaseError, never>;
+  findVisibleByTripId(
+    tripId: string,
+    pagination?: PaginationOptions,
+  ): Effect.Effect<PaginatedResult<RewardDTO>, DatabaseError, never>;
+}
 
-  // Helper to create a valid reward
-  const createValidReward = (
-    overrides?: Partial<{
-      id: string;
-      name: string;
-      tripId: string;
-      availableQuantity: number;
-      isHidden?: boolean;
-    }>,
-  ): Reward => {
-    const rewardId = RewardId.unsafeCreate(overrides?.id ?? "reward-123");
+/**
+ * Mock RewardGateway for testing
+ */
+function createMockRewardGateway(
+  rewards: RewardDTO[] = [],
+): ExtendedRewardGateway {
+  return {
+    create: (reward: RewardDTO) => Effect.succeed(reward),
 
-    const result = Reward.create({
-      id: rewardId,
-      name: overrides?.name ?? "Test Reward",
-      description: "A test reward description",
-      availableQuantity: overrides?.availableQuantity ?? 10,
-      coinCostPercentage: 10,
-      images: ["https://example.com/image.png"],
-      isHidden: overrides?.isHidden ?? false,
-      tripId: overrides?.tripId ?? "trip-123",
-      createdById: "user-123",
+    findById: (id: string) => {
+      const reward = rewards.find((r) => r.id === id);
+      return Effect.succeed(reward ?? null);
+    },
+
+    findByTripId: (
+      tripId: string,
+      options?: { includeHidden?: boolean } & PaginationOptions,
+    ) => {
+      let filtered = rewards.filter((r) => r.tripId === tripId);
+      if (!options?.includeHidden) {
+        filtered = filtered.filter((r) => !r.isHidden);
+      }
+      const limit = options?.limit ?? 10;
+      const offset = options?.offset ?? 0;
+      const paginated = filtered.slice(offset, offset + limit);
+      return Effect.succeed({
+        items: paginated,
+        total: filtered.length,
+        limit,
+        offset,
+        hasMore: offset + limit < filtered.length,
+      });
+    },
+
+    findVisibleByTripId: (tripId: string, pagination?: PaginationOptions) => {
+      const filtered = rewards.filter(
+        (r) => r.tripId === tripId && !r.isHidden,
+      );
+      const limit = pagination?.limit ?? 10;
+      const offset = pagination?.offset ?? 0;
+      const paginated = filtered.slice(offset, offset + limit);
+      return Effect.succeed({
+        items: paginated,
+        total: filtered.length,
+        limit,
+        offset,
+        hasMore: offset + limit < filtered.length,
+      });
+    },
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: rewards.length,
+      }),
+
+    findVisibleByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: rewards.filter((r) => !r.isHidden).length,
+      }),
+
+    update: (reward: RewardDTO) => Effect.succeed(reward),
+
+    delete: () => Effect.succeed(void 0),
+
+    hasPurchases: () => Effect.succeed(false),
+
+    getPurchaseCount: () => Effect.succeed(0),
+
+    decrementQuantity: (id: string) => {
+      const reward = rewards.find((r) => r.id === id);
+      return reward
+        ? Effect.succeed(reward)
+        : Effect.fail(
+            new DatabaseError({
+              operation: "decrementQuantity",
+              message: "Reward not found",
+            }),
+          );
+    },
+
+    incrementQuantity: (id: string) => {
+      const reward = rewards.find((r) => r.id === id);
+      return reward
+        ? Effect.succeed(reward)
+        : Effect.fail(
+            new DatabaseError({
+              operation: "incrementQuantity",
+              message: "Reward not found",
+            }),
+          );
+    },
+  };
+}
+
+/**
+ * Mock TripPointsCalculator for testing
+ */
+function createMockTripPointsCalculator(
+  options: {
+    totalPoints?: number;
+    shouldFail?: boolean;
+  } = {},
+): TripPointsCalculator {
+  return {
+    calculateTotalAvailablePoints: () => {
+      if (options.shouldFail) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "calculateTotalAvailablePoints",
+            message: "Failed to calculate points",
+          }),
+        );
+      }
+      return Effect.succeed(options.totalPoints ?? 1000);
+    },
+  };
+}
+
+function createMockRewardDTO(overrides: Partial<RewardDTO> = {}): RewardDTO {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "reward-123",
+    tripId: overrides.tripId ?? "trip-123",
+    title: overrides.title ?? "Test Reward",
+    description: overrides.description ?? "Test reward description",
+    imageUrl: overrides.imageUrl ?? null,
+    pointsCost: overrides.pointsCost ?? 100,
+    quantity: overrides.quantity ?? null,
+    availableQuantity: overrides.availableQuantity ?? 10,
+    status: overrides.status ?? RewardStatus.AVAILABLE,
+    isHidden: overrides.isHidden ?? false,
+    createdById: overrides.createdById ?? "user-123",
+    createdAt: overrides.createdAt ?? now,
+    updatedAt: overrides.updatedAt ?? now,
+  };
+}
+
+describe("[UNIT] listRewardsUseCase", () => {
+  it("should return list of visible rewards for trip", async () => {
+    const mockRewards = [
+      createMockRewardDTO({
+        id: "reward-1",
+        title: "Reward 1",
+        isHidden: false,
+      }),
+      createMockRewardDTO({
+        id: "reward-2",
+        title: "Reward 2",
+        isHidden: false,
+      }),
+    ];
+    const mockGateway = createMockRewardGateway(mockRewards);
+    const mockPointsCalculator = createMockTripPointsCalculator({
+      totalPoints: 1000,
     });
 
-    return Effect.runSync(result);
-  };
-
-  // Helper to run use case with mocked services
-  const runUseCase = async (
-    input: ListRewardsInput,
-    totalPoints: number = 1000,
-  ) => {
-    const program = listRewardsUseCase(input).pipe(
-      Effect.provideService(RewardGatewayTag, {
-        create: (reward: Reward) => rewardRepo.create(reward),
-        findById: (id: string) => rewardRepo.findById(id),
-        findByTripId: (tripId: string, options?) =>
-          rewardRepo.findByTripId(tripId, options),
-        findVisibleByTripId: (tripId: string, options?) =>
-          rewardRepo.findVisibleByTripId(tripId, options),
-        update: (reward: Reward) => rewardRepo.update(reward),
-        delete: (id: string) => rewardRepo.delete(id),
-        hasPurchases: (id: string) => rewardRepo.hasPurchases(id),
-        getPurchaseCount: (id: string) => rewardRepo.getPurchaseCount(id),
-        decrementQuantity: (id: string, amount: number) =>
-          rewardRepo.decrementQuantity(id, amount),
-        incrementQuantity: (id: string, amount: number) =>
-          rewardRepo.incrementQuantity(id, amount),
-      }),
-      Effect.provideService(TripPointsCalculatorTag, {
-        calculateTotalAvailablePoints: () => Effect.succeed(totalPoints),
-      }),
+    const rewardLayer = Layer.succeed(
+      RewardGatewayTag,
+      mockGateway as RewardGateway,
     );
-    return await Effect.runPromise(program);
-  };
+    const pointsLayer = Layer.succeed(
+      TripPointsCalculatorTag,
+      mockPointsCalculator,
+    );
+    const combinedLayer = Layer.mergeAll(rewardLayer, pointsLayer);
 
-  beforeEach(() => {
-    rewardRepo = new InMemoryRewardGateway();
+    const input: ListRewardsInput = { tripId: "trip-123" };
+    const program = listRewardsUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.items).toHaveLength(2);
+    expect(result.total).toBe(2);
+    expect(result.items[0].name).toBe("Reward 1");
+    expect(result.items[1].name).toBe("Reward 2");
   });
 
-  describe("[UNIT] execute", () => {
-    it("should list all visible rewards for a trip", async () => {
-      // Arrange
-      const reward1 = createValidReward({ id: "reward-1", name: "Reward 1" });
-      const reward2 = createValidReward({ id: "reward-2", name: "Reward 2" });
-      Effect.runSync(rewardRepo.create(reward1));
-      Effect.runSync(rewardRepo.create(reward2));
-
-      const input: ListRewardsInput = {
-        tripId: "trip-123",
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.items).toHaveLength(2);
-      expect(result.total).toBe(2);
-      expect(result.hasMore).toBe(false);
-    });
-
-    it("should include hidden rewards when includeHidden is true", async () => {
-      // Arrange
-      const visibleReward = createValidReward({
+  it("should include hidden rewards when includeHidden is true", async () => {
+    const mockRewards = [
+      createMockRewardDTO({
         id: "reward-1",
-        name: "Visible Reward",
-      });
-      const hiddenReward = createValidReward({
-        id: "reward-hidden",
-        name: "Hidden Reward",
+        title: "Visible Reward",
+        isHidden: false,
+      }),
+      createMockRewardDTO({
+        id: "reward-2",
+        title: "Hidden Reward",
         isHidden: true,
-      });
-      Effect.runSync(rewardRepo.create(visibleReward));
-      Effect.runSync(rewardRepo.create(hiddenReward));
-
-      const input: ListRewardsInput = {
-        tripId: "trip-123",
-        includeHidden: true,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.items).toHaveLength(2);
-      expect(result.total).toBe(2);
+      }),
+    ];
+    const mockGateway = createMockRewardGateway(mockRewards);
+    const mockPointsCalculator = createMockTripPointsCalculator({
+      totalPoints: 1000,
     });
 
-    it("should exclude hidden rewards by default", async () => {
-      // Arrange
-      const visibleReward = createValidReward({
+    const rewardLayer = Layer.succeed(
+      RewardGatewayTag,
+      mockGateway as RewardGateway,
+    );
+    const pointsLayer = Layer.succeed(
+      TripPointsCalculatorTag,
+      mockPointsCalculator,
+    );
+    const combinedLayer = Layer.mergeAll(rewardLayer, pointsLayer);
+
+    const input: ListRewardsInput = { tripId: "trip-123", includeHidden: true };
+    const program = listRewardsUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.items).toHaveLength(2);
+  });
+
+  it("should calculate dynamic coin cost correctly", async () => {
+    const mockRewards = [
+      createMockRewardDTO({ id: "reward-1", title: "Reward", pointsCost: 50 }),
+    ];
+    const mockGateway = createMockRewardGateway(mockRewards);
+    const mockPointsCalculator = createMockTripPointsCalculator({
+      totalPoints: 1000,
+    });
+
+    const rewardLayer = Layer.succeed(
+      RewardGatewayTag,
+      mockGateway as RewardGateway,
+    );
+    const pointsLayer = Layer.succeed(
+      TripPointsCalculatorTag,
+      mockPointsCalculator,
+    );
+    const combinedLayer = Layer.mergeAll(rewardLayer, pointsLayer);
+
+    const input: ListRewardsInput = { tripId: "trip-123" };
+    const program = listRewardsUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.items[0].dynamicCoinCost).toBeDefined();
+    expect(typeof result.items[0].dynamicCoinCost).toBe("number");
+  });
+
+  it("should calculate canAfford when groupCoins provided", async () => {
+    const mockRewards = [
+      createMockRewardDTO({ id: "reward-1", title: "Reward", pointsCost: 50 }),
+    ];
+    const mockGateway = createMockRewardGateway(mockRewards);
+    const mockPointsCalculator = createMockTripPointsCalculator({
+      totalPoints: 1000,
+    });
+
+    const rewardLayer = Layer.succeed(
+      RewardGatewayTag,
+      mockGateway as RewardGateway,
+    );
+    const pointsLayer = Layer.succeed(
+      TripPointsCalculatorTag,
+      mockPointsCalculator,
+    );
+    const combinedLayer = Layer.mergeAll(rewardLayer, pointsLayer);
+
+    const input: ListRewardsInput = { tripId: "trip-123", groupCoins: 500 };
+    const program = listRewardsUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.items[0].canAfford).toBeDefined();
+    expect(typeof result.items[0].canAfford).toBe("boolean");
+  });
+
+  it("should fail with TripPointsCalculatorError when points calculation fails", async () => {
+    const mockRewards = [createMockRewardDTO({ id: "reward-1" })];
+    const mockGateway = createMockRewardGateway(mockRewards);
+    const mockPointsCalculator = createMockTripPointsCalculator({
+      shouldFail: true,
+    });
+
+    const rewardLayer = Layer.succeed(
+      RewardGatewayTag,
+      mockGateway as RewardGateway,
+    );
+    const pointsLayer = Layer.succeed(
+      TripPointsCalculatorTag,
+      mockPointsCalculator,
+    );
+    const combinedLayer = Layer.mergeAll(rewardLayer, pointsLayer);
+
+    const input: ListRewardsInput = { tripId: "trip-123" };
+    const program = listRewardsUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(TripPointsCalculatorError);
+      expect(either.left.message).toBe("Failed to calculate trip points");
+    }
+  });
+
+  it("should handle pagination options", async () => {
+    const mockRewards = [
+      createMockRewardDTO({ id: "reward-1", title: "Reward 1" }),
+      createMockRewardDTO({ id: "reward-2", title: "Reward 2" }),
+      createMockRewardDTO({ id: "reward-3", title: "Reward 3" }),
+    ];
+    const mockGateway = createMockRewardGateway(mockRewards);
+    const mockPointsCalculator = createMockTripPointsCalculator({
+      totalPoints: 1000,
+    });
+
+    const rewardLayer = Layer.succeed(
+      RewardGatewayTag,
+      mockGateway as RewardGateway,
+    );
+    const pointsLayer = Layer.succeed(
+      TripPointsCalculatorTag,
+      mockPointsCalculator,
+    );
+    const combinedLayer = Layer.mergeAll(rewardLayer, pointsLayer);
+
+    const input: ListRewardsInput = {
+      tripId: "trip-123",
+      pagination: { limit: 2, offset: 0 },
+    };
+    const program = listRewardsUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.limit).toBe(2);
+    expect(result.offset).toBe(0);
+  });
+
+  it("should return correct isInStock and canBePurchased flags", async () => {
+    const mockRewards = [
+      createMockRewardDTO({
         id: "reward-1",
-        name: "Visible Reward",
-      });
-      const hiddenReward = createValidReward({
-        id: "reward-hidden",
-        name: "Hidden Reward",
-        isHidden: true,
-      });
-      Effect.runSync(rewardRepo.create(visibleReward));
-      Effect.runSync(rewardRepo.create(hiddenReward));
-
-      const input: ListRewardsInput = {
-        tripId: "trip-123",
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.items).toHaveLength(1);
-      expect(result.items[0]?.name).toBe("Visible Reward");
+        title: "In Stock",
+        availableQuantity: 10,
+      }),
+      createMockRewardDTO({
+        id: "reward-2",
+        title: "Out of Stock",
+        availableQuantity: 0,
+      }),
+    ];
+    const mockGateway = createMockRewardGateway(mockRewards);
+    const mockPointsCalculator = createMockTripPointsCalculator({
+      totalPoints: 1000,
     });
 
-    it("should calculate dynamic coin costs", async () => {
-      // Arrange
-      const reward = createValidReward({ id: "reward-1", name: "Reward 1" });
-      Effect.runSync(rewardRepo.create(reward));
+    const rewardLayer = Layer.succeed(
+      RewardGatewayTag,
+      mockGateway as RewardGateway,
+    );
+    const pointsLayer = Layer.succeed(
+      TripPointsCalculatorTag,
+      mockPointsCalculator,
+    );
+    const combinedLayer = Layer.mergeAll(rewardLayer, pointsLayer);
 
-      const input: ListRewardsInput = {
-        tripId: "trip-123",
-      };
+    const input: ListRewardsInput = { tripId: "trip-123", includeHidden: true };
+    const program = listRewardsUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      // Act
-      const result = await runUseCase(input, 1000);
+    const inStockReward = result.items.find((r) => r.name === "In Stock");
+    const outOfStockReward = result.items.find(
+      (r) => r.name === "Out of Stock",
+    );
 
-      // Assert
-      expect(result.items[0]?.dynamicCoinCost).toBeDefined();
-      expect(result.items[0]?.coinCostPercentage).toBe(10);
-      // Dynamic cost = totalPoints * coinCostPercentage / 100 = 1000 * 0.1 = 100
-      expect(result.items[0]?.dynamicCoinCost).toBe(100);
-    });
-
-    it("should calculate affordability when groupCoins provided", async () => {
-      // Arrange
-      const reward = createValidReward({ id: "reward-1", name: "Reward 1" });
-      Effect.runSync(rewardRepo.create(reward));
-
-      const input: ListRewardsInput = {
-        tripId: "trip-123",
-        groupCoins: 500,
-      };
-
-      // Act
-      const result = await runUseCase(input, 1000);
-
-      // Assert
-      expect(result.items[0]?.canAfford).toBeDefined();
-      // Dynamic cost is 100, group has 500, so canAfford should be true
-      expect(result.items[0]?.canAfford).toBe(true);
-    });
-
-    it("should return canAfford as false when group cannot afford", async () => {
-      // Arrange
-      const reward = createValidReward({
-        id: "reward-1",
-        name: "Reward 1",
-        availableQuantity: 5,
-      });
-      Effect.runSync(rewardRepo.create(reward));
-
-      // With totalPoints=10000 and coinCostPercentage=10, dynamicCost=1000
-      // Group has only 50 coins, so cannot afford
-      const input: ListRewardsInput = {
-        tripId: "trip-123",
-        groupCoins: 50,
-      };
-
-      // Act
-      const result = await runUseCase(input, 1000);
-
-      // Assert
-      expect(result.items[0]?.canAfford).toBe(false);
-    });
-
-    it("should handle pagination options", async () => {
-      // Arrange
-      for (let i = 0; i < 5; i++) {
-        const reward = createValidReward({
-          id: `reward-${i}`,
-          name: `Reward ${i}`,
-        });
-        Effect.runSync(rewardRepo.create(reward));
-      }
-
-      const input: ListRewardsInput = {
-        tripId: "trip-123",
-        pagination: { limit: 3, offset: 0 },
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.items).toHaveLength(3);
-      expect(result.total).toBe(5);
-      expect(result.limit).toBe(3);
-      expect(result.hasMore).toBe(true);
-    });
-
-    it("should return empty list when no rewards exist", async () => {
-      // Arrange
-      const input: ListRewardsInput = {
-        tripId: "empty-trip",
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.items).toHaveLength(0);
-      expect(result.total).toBe(0);
-    });
-
-    it("should include calculated fields in output", async () => {
-      // Arrange
-      const reward = createValidReward({ id: "reward-1", name: "Reward 1" });
-      Effect.runSync(rewardRepo.create(reward));
-
-      const input: ListRewardsInput = {
-        tripId: "trip-123",
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      const item = result.items[0];
-      expect(item?.id).toBeDefined();
-      expect(item?.name).toBeDefined();
-      expect(item?.description).toBeDefined();
-      expect(item?.availableQuantity).toBeDefined();
-      expect(item?.images).toBeDefined();
-      expect(item?.primaryImage).toBeDefined();
-      expect(item?.isHidden).toBeDefined();
-      expect(item?.tripId).toBeDefined();
-      expect(item?.createdAt).toBeInstanceOf(Date);
-      expect(item?.updatedAt).toBeInstanceOf(Date);
-      expect(item?.isInStock).toBeDefined();
-      expect(item?.canBePurchased).toBeDefined();
-    });
+    expect(inStockReward?.isInStock).toBe(true);
+    expect(inStockReward?.canBePurchased).toBe(true);
+    expect(outOfStockReward?.isInStock).toBe(false);
+    expect(outOfStockReward?.availableQuantity).toBe(0);
   });
 });

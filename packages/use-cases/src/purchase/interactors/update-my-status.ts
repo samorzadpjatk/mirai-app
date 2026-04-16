@@ -2,9 +2,11 @@ import { Data, Effect } from "effect";
 import {
   RewardGatewayTag,
   RewardPurchaseGatewayTag,
+} from "../../reward/ports/gateway";
+import {
   GroupCoinsServiceTag,
   TripAccessCheckerTag,
-} from "../reward/ports/gateway";
+} from "../../trip/ports/gateway";
 import {
   canTransitionPurchaseStatus,
   REWARD_PURCHASE_STATUSES,

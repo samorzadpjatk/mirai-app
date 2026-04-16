@@ -1,4 +1,4 @@
-import { CoinAmount, Reward } from "@mirai-app/domain";
+import { CoinAmount, Reward, ValidationError } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import {
   RewardGatewayTag,
@@ -6,6 +6,7 @@ import {
   type PaginationOptions,
   type PaginatedResult,
 } from "../ports/gateway";
+import type { RewardDTO } from "../dto";
 
 /**
  * Input for ListRewards use case
@@ -111,8 +112,8 @@ export function listRewardsUseCase(
         ),
       );
 
-    // Fetch rewards
-    const result = input.includeHidden
+    // Fetch rewards (as DTOs)
+    const result: PaginatedResult<RewardDTO> = input.includeHidden
       ? yield* rewardRepo
           .findByTripId(input.tripId, {
             includeHidden: true,
@@ -143,23 +144,35 @@ export function listRewardsUseCase(
         ? CoinAmount.unsafeCreate(input.groupCoins)
         : null;
 
-    // Map to output with calculations
+    // Map to output with calculations - convert each DTO to domain entity
     const items = yield* Effect.all(
-      result.items.map((reward) =>
+      result.items.map((rewardDTO: RewardDTO) =>
         Effect.gen(function* () {
+          // Convert DTO to domain entity
+          const reward = yield* dtoToReward(rewardDTO).pipe(
+            Effect.mapError(
+              (validationError: ValidationError) =>
+                new ListRewardsError({
+                  message: `Invalid reward data: ${validationError.message}`,
+                }),
+            ),
+          );
+
           const dynamicCost = reward.calculateDynamicCoinCost(totalPoints);
 
           // Calculate affordability if group coins provided
           const canAfford =
             groupCoins !== null
-              ? yield* reward.canAfford(groupCoins, 1, totalPoints).pipe(
-                  Effect.mapError(
-                    () =>
-                      new ListRewardsError({
-                        message: "Failed to calculate affordability",
-                      }),
-                  ),
-                )
+              ? yield* reward
+                  .canAffordWithDynamicCost(groupCoins, 1, totalPoints)
+                  .pipe(
+                    Effect.mapError(
+                      () =>
+                        new ListRewardsError({
+                          message: "Failed to calculate affordability",
+                        }),
+                    ),
+                  )
               : undefined;
 
           return {
@@ -193,5 +206,27 @@ export function listRewardsUseCase(
       offset: result.offset,
       hasMore: result.hasMore,
     };
+  });
+}
+
+/**
+ * Convert RewardDTO to domain Reward entity
+ */
+function dtoToReward(
+  dto: RewardDTO,
+): Effect.Effect<Reward, ValidationError, never> {
+  return Reward.create({
+    id: dto.id,
+    name: dto.title,
+    description: dto.description ?? "",
+    availableQuantity: dto.availableQuantity,
+    coinCost: dto.pointsCost,
+    image: dto.imageUrl,
+    images: dto.images,
+    isHidden: dto.isHidden,
+    tripId: dto.tripId,
+    createdById: dto.createdById,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   });
 }

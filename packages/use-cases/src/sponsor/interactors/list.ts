@@ -76,10 +76,11 @@ export function listSponsorsUseCase(
 
     const { limit = 100, offset = 0, activeOnly = false } = input;
 
-    // Fetch sponsors
+    // Fetch sponsors - filter by active status if requested
+    const result = yield* repo.findAll({ limit, offset });
     const sponsors = activeOnly
-      ? yield* repo.findActive()
-      : yield* repo.findAll({ limit, offset });
+      ? result.items.filter((sponsor) => sponsor.isActive)
+      : result.items;
 
     // Map to DTO
     const items = sponsors.map((sponsor) => toListItem(sponsor));

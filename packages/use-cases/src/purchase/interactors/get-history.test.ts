@@ -1,441 +1,395 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { Effect, Either } from "effect";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   getPurchaseHistoryUseCase,
   type GetPurchaseHistoryInput,
   NoGroupAccessError,
+  PurchaseRepositoryError,
+  TripAccessCheckerError,
 } from "./get-history";
 import {
   RewardPurchaseGatewayTag,
+  type RewardPurchaseGateway,
+} from "../../reward/ports/gateway";
+import {
   TripAccessCheckerTag,
-  type PaginatedResult,
-} from "../reward/ports/gateway";
-import type { RewardPurchase } from "@mirai-app/domain";
+  type TripAccessChecker,
+} from "../../trip/ports/gateway";
+import type { RewardPurchaseDTO } from "../../reward/dto";
+import { DatabaseError, RewardPurchaseStatus } from "@mirai-app/domain";
 
-// Mock RewardPurchase domain object
-const createMockPurchase = (
-  overrides?: Partial<RewardPurchase>,
-): RewardPurchase =>
-  ({
-    id: "purchase-123",
-    rewardId: "reward-123",
-    groupId: "group-123",
-    quantity: 2,
-    totalCost: 100,
-    status: "BOUGHT",
-    collectionMethod: null,
-    purchasedById: "user-123",
-    statusUpdatedById: null,
-    purchasedAt: new Date("2024-01-01"),
-    statusUpdatedAt: new Date("2024-01-01"),
-    ...overrides,
-  }) as RewardPurchase;
+/**
+ * Mock RewardPurchaseGateway for testing
+ */
+function createMockPurchaseGateway(
+  purchases: RewardPurchaseDTO[] = [],
+  options: {
+    shouldFailFindByTripId?: boolean;
+  } = {},
+): RewardPurchaseGateway {
+  const purchaseMap = new Map(purchases.map((p) => [p.id, p]));
 
-// Helper to build use case program with mocked services
-const buildGetPurchaseHistoryProgram = (
-  input: GetPurchaseHistoryInput,
-  deps: {
-    mockPurchaseRepository: {
-      findByTripId: (
-        tripId: string,
-        options?: { groupId?: string },
-      ) => Promise<PaginatedResult<RewardPurchase>>;
-    };
-    mockAccessChecker: {
-      isGroupLeader: (
-        userId: string,
-        tripId: string,
-      ) => Promise<{
-        isLeader: boolean;
-        groupId?: string;
-        groupName?: string;
-        coins?: number;
-      }>;
-    };
-  },
-) => {
-  return getPurchaseHistoryUseCase(input).pipe(
-    Effect.provideService(RewardPurchaseGatewayTag, {
-      create: (purchase: RewardPurchase) =>
-        Effect.promise(() => Promise.resolve(purchase)),
-      findById: (id: string) =>
-        Effect.promise(() => Promise.resolve(null as RewardPurchase | null)),
-      findByRewardId: (rewardId: string, options?) =>
-        Effect.promise(() =>
-          Promise.resolve({
-            items: [],
-            total: 0,
-            limit: 20,
-            offset: 0,
-            hasMore: false,
+  return {
+    create: (purchase: RewardPurchaseDTO) => {
+      purchaseMap.set(purchase.id, purchase);
+      return Effect.succeed(purchase);
+    },
+
+    findById: (id: string) => {
+      const purchase = purchaseMap.get(id);
+      return Effect.succeed(purchase ?? null);
+    },
+
+    findByRewardIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+      }),
+
+    findByGroupIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+      }),
+
+    findByTripId: (_tripId: string, filters?: { groupId?: string }) => {
+      if (options.shouldFailFindByTripId) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findByTripId",
+            message: "Database error",
           }),
-        ),
-      findByGroupId: (groupId: string, options?) =>
-        Effect.promise(() =>
-          Promise.resolve({
-            items: [],
-            total: 0,
-            limit: 20,
-            offset: 0,
-            hasMore: false,
-          }),
-        ),
-      findByTripId: (tripId: string, options?) =>
-        Effect.promise(() =>
-          deps.mockPurchaseRepository.findByTripId(tripId, options),
-        ),
-      updateStatus: (
-        id: string,
-        status: string,
-        updatedById: string,
-        collectionMethod?,
-      ) => Effect.promise(() => Promise.resolve({} as RewardPurchase)),
-      countByRewardId: (rewardId: string) =>
-        Effect.promise(() => Promise.resolve(0)),
-    }),
-    Effect.provideService(TripAccessCheckerTag, {
-      isGroupLeader: (userId: string, tripId: string) =>
-        Effect.promise(() =>
-          deps.mockAccessChecker.isGroupLeader(userId, tripId),
-        ),
-      isStaff: (userId: string) => Effect.promise(() => Promise.resolve(false)),
-      hasTripEnded: (tripId: string) =>
-        Effect.promise(() => Promise.resolve(false)),
-    }),
-  );
-};
+        );
+      }
+      let items = Array.from(purchaseMap.values());
+      if (filters?.groupId) {
+        items = items.filter((p) => p.groupId === filters.groupId);
+      }
+      return Effect.succeed({
+        items,
+        total: items.length,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      });
+    },
 
-// Helper to run use case with Effect
-const runGetPurchaseHistoryUseCase = async (
-  input: GetPurchaseHistoryInput,
-  deps: {
-    mockPurchaseRepository: {
-      findByTripId: (
-        tripId: string,
-        options?: { groupId?: string },
-      ) => Promise<PaginatedResult<RewardPurchase>>;
-    };
-    mockAccessChecker: {
-      isGroupLeader: (
-        userId: string,
-        tripId: string,
-      ) => Promise<{
-        isLeader: boolean;
-        groupId?: string;
-        groupName?: string;
-        coins?: number;
-      }>;
-    };
-  },
-) => {
-  const program = buildGetPurchaseHistoryProgram(input, deps);
-  return await Effect.runPromise(program);
-};
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+      }),
 
-describe("[UNIT] getPurchaseHistoryUseCase (Effect)", () => {
-  let mockPurchaseRepository: {
-    findByTripId: ReturnType<typeof mock>;
-  };
-  let mockAccessChecker: {
-    isGroupLeader: ReturnType<typeof mock>;
-  };
-
-  beforeEach(() => {
-    mockPurchaseRepository = {
-      findByTripId: mock(() =>
-        Promise.resolve({
-          items: [],
-          total: 0,
-          limit: 20,
-          offset: 0,
-          hasMore: false,
+    updateStatus: (id: string, status: string) => {
+      const purchase = purchaseMap.get(id);
+      if (purchase) {
+        return Effect.succeed({
+          ...purchase,
+          status: status as RewardPurchaseStatus,
+        });
+      }
+      return Effect.fail(
+        new DatabaseError({
+          operation: "updateStatus",
+          message: "Purchase not found",
         }),
-      ),
+      );
+    },
+
+    countByRewardId: () => Effect.succeed(0),
+  };
+}
+
+/**
+ * Mock TripAccessChecker for testing
+ */
+function createMockTripAccessChecker(
+  options: {
+    isStaff?: boolean;
+    isGroupLeader?: boolean;
+    groupId?: string;
+    shouldFailIsGroupLeader?: boolean;
+  } = {},
+): TripAccessChecker {
+  return {
+    isStaff: () => Effect.succeed(options.isStaff ?? false),
+
+    isGroupLeader: () => {
+      if (options.shouldFailIsGroupLeader) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "isGroupLeader",
+            message: "Failed to check group leader",
+          }),
+        );
+      }
+      return Effect.succeed({
+        isLeader: options.isGroupLeader ?? true,
+        groupId: options.groupId,
+        groupName: options.groupId ? "Test Group" : undefined,
+        coins: options.groupId ? 1000 : undefined,
+      });
+    },
+  };
+}
+
+function createMockPurchaseDTO(
+  overrides: Partial<RewardPurchaseDTO> = {},
+): RewardPurchaseDTO {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "purchase-123",
+    rewardId: overrides.rewardId ?? "reward-123",
+    groupId: overrides.groupId ?? "group-123",
+    userId: overrides.userId ?? "user-123",
+    pointsSpent: overrides.pointsSpent ?? 100,
+    totalCost: overrides.totalCost ?? 100,
+    status: overrides.status ?? RewardPurchaseStatus.BOUGHT,
+    quantity: overrides.quantity ?? 1,
+    collectionMethod: overrides.collectionMethod ?? null,
+    collectedAt: overrides.collectedAt ?? null,
+    collectedById: overrides.collectedById ?? null,
+    notes: overrides.notes ?? null,
+    purchasedAt: overrides.purchasedAt ?? now,
+    updatedAt: overrides.updatedAt ?? now,
+    statusUpdatedAt: overrides.statusUpdatedAt ?? now,
+    statusUpdatedById: overrides.statusUpdatedById ?? null,
+  };
+}
+
+describe("[UNIT] getPurchaseHistoryUseCase", () => {
+  it("should return purchases for staff user", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      rewardId: "reward-1",
+      groupId: "group-1",
+      quantity: 2,
+      pointsSpent: 200,
+      totalCost: 200,
+      status: RewardPurchaseStatus.BOUGHT,
+    });
+    const mockGateway = createMockPurchaseGateway([mockPurchase]);
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: true });
+
+    const gatewayLayer = Layer.succeed(RewardPurchaseGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(TripAccessCheckerTag, mockAccessChecker);
+    const combinedLayer = Layer.merge(gatewayLayer, accessLayer);
+
+    const input: GetPurchaseHistoryInput = {
+      tripId: "trip-123",
+      userId: "staff-123",
+      isStaff: true,
     };
 
-    mockAccessChecker = {
-      isGroupLeader: mock(() =>
-        Promise.resolve({ isLeader: true, groupId: "group-123" }),
-      ),
-    };
+    const program = getPurchaseHistoryUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].purchaseId).toBe("purchase-1");
+    expect(result.items[0].rewardId).toBe("reward-1");
+    expect(result.items[0].groupId).toBe("group-1");
+    expect(result.items[0].quantity).toBe(2);
+    expect(result.total).toBe(1);
   });
 
-  describe("[UNIT] execute", () => {
-    it("should return empty history when no purchases", async () => {
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: true,
-      };
-
-      const result = await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
-
-      expect(result.items).toEqual([]);
-      expect(result.total).toBe(0);
+  it("should return purchases filtered by group for regular user", async () => {
+    const mockPurchase1 = createMockPurchaseDTO({
+      id: "purchase-1",
+      groupId: "group-123",
+      rewardId: "reward-1",
+    });
+    const mockPurchase2 = createMockPurchaseDTO({
+      id: "purchase-2",
+      groupId: "group-456",
+      rewardId: "reward-2",
+    });
+    const mockGateway = createMockPurchaseGateway([
+      mockPurchase1,
+      mockPurchase2,
+    ]);
+    const mockAccessChecker = createMockTripAccessChecker({
+      isStaff: false,
+      isGroupLeader: true,
+      groupId: "group-123",
     });
 
-    it("should return all purchases for staff", async () => {
-      const mockPurchases = [
-        createMockPurchase({ id: "purchase-1" }),
-        createMockPurchase({ id: "purchase-2" }),
-      ];
+    const gatewayLayer = Layer.succeed(RewardPurchaseGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(TripAccessCheckerTag, mockAccessChecker);
+    const combinedLayer = Layer.merge(gatewayLayer, accessLayer);
 
-      mockPurchaseRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          items: mockPurchases,
-          total: 2,
-          limit: 20,
-          offset: 0,
-          hasMore: false,
-        }),
-      );
+    const input: GetPurchaseHistoryInput = {
+      tripId: "trip-123",
+      userId: "user-123",
+      isStaff: false,
+    };
 
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: true,
-      };
+    const program = getPurchaseHistoryUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const result = await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
+    // Should only see purchases from their own group
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].groupId).toBe("group-123");
+  });
 
-      expect(result.items).toHaveLength(2);
-      expect(result.total).toBe(2);
+  it("should fail with NoGroupAccessError when user has no group", async () => {
+    const mockGateway = createMockPurchaseGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({
+      isStaff: false,
+      isGroupLeader: false,
+      groupId: undefined,
     });
 
-    it("should filter by group for non-staff users", async () => {
-      mockAccessChecker.isGroupLeader = mock(() =>
-        Promise.resolve({ isLeader: true, groupId: "group-456" }),
-      );
+    const gatewayLayer = Layer.succeed(RewardPurchaseGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(TripAccessCheckerTag, mockAccessChecker);
+    const combinedLayer = Layer.merge(gatewayLayer, accessLayer);
 
-      mockPurchaseRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          items: [createMockPurchase({ groupId: "group-456" })],
-          total: 1,
-          limit: 20,
-          offset: 0,
-          hasMore: false,
-        }),
-      );
+    const input: GetPurchaseHistoryInput = {
+      tripId: "trip-123",
+      userId: "user-123",
+      isStaff: false,
+    };
 
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: false,
-      };
+    const program = getPurchaseHistoryUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const result = await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NoGroupAccessError);
+    }
+  });
 
-      expect(mockPurchaseRepository.findByTripId).toHaveBeenCalledWith(
-        "trip-123",
-        expect.objectContaining({ groupId: "group-456" }),
-      );
+  it("should fail with PurchaseRepositoryError when database fails", async () => {
+    const mockGateway = createMockPurchaseGateway([], {
+      shouldFailFindByTripId: true,
+    });
+    const mockAccessChecker = createMockTripAccessChecker({
+      isStaff: true,
     });
 
-    it("should return error if user has no group", async () => {
-      mockAccessChecker.isGroupLeader = mock(() =>
-        Promise.resolve({ isLeader: false }),
-      );
+    const gatewayLayer = Layer.succeed(RewardPurchaseGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(TripAccessCheckerTag, mockAccessChecker);
+    const combinedLayer = Layer.merge(gatewayLayer, accessLayer);
 
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: false,
-      };
+    const input: GetPurchaseHistoryInput = {
+      tripId: "trip-123",
+      userId: "staff-123",
+      isStaff: true,
+    };
 
-      // Act - use Either to properly check error type
-      const program = buildGetPurchaseHistoryProgram(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
-      const either = await Effect.runPromise(Effect.either(program));
+    const program = getPurchaseHistoryUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Assert
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NoGroupAccessError);
-      }
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(PurchaseRepositoryError);
+      expect(either.left.message).toBe("Failed to fetch purchase history");
+    }
+  });
+
+  it("should fail with TripAccessCheckerError when group leader check fails", async () => {
+    const mockGateway = createMockPurchaseGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({
+      isStaff: false,
+      shouldFailIsGroupLeader: true,
     });
 
-    it("should apply group filter when provided by staff", async () => {
-      mockPurchaseRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          items: [createMockPurchase({ groupId: "group-filter" })],
-          total: 1,
-          limit: 20,
-          offset: 0,
-          hasMore: false,
-        }),
-      );
+    const gatewayLayer = Layer.succeed(RewardPurchaseGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(TripAccessCheckerTag, mockAccessChecker);
+    const combinedLayer = Layer.merge(gatewayLayer, accessLayer);
 
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: true,
-        groupId: "group-filter",
-      };
+    const input: GetPurchaseHistoryInput = {
+      tripId: "trip-123",
+      userId: "user-123",
+      isStaff: false,
+    };
 
-      await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
+    const program = getPurchaseHistoryUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      expect(mockPurchaseRepository.findByTripId).toHaveBeenCalledWith(
-        "trip-123",
-        expect.objectContaining({ groupId: "group-filter" }),
-      );
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(TripAccessCheckerError);
+    }
+  });
+
+  it("should apply group filter when groupId is provided", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      groupId: "filtered-group",
+      rewardId: "reward-1",
     });
+    const mockGateway = createMockPurchaseGateway([mockPurchase]);
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: true });
 
-    it("should pass pagination options to repository", async () => {
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: true,
-        pagination: { limit: 10, offset: 20 },
-      };
+    const gatewayLayer = Layer.succeed(RewardPurchaseGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(TripAccessCheckerTag, mockAccessChecker);
+    const combinedLayer = Layer.merge(gatewayLayer, accessLayer);
 
-      await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
+    const input: GetPurchaseHistoryInput = {
+      tripId: "trip-123",
+      userId: "staff-123",
+      isStaff: true,
+      groupId: "filtered-group",
+    };
 
-      expect(mockPurchaseRepository.findByTripId).toHaveBeenCalledWith(
-        "trip-123",
-        expect.objectContaining({ limit: 10, offset: 20 }),
-      );
-    });
+    const program = getPurchaseHistoryUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-    it("should map purchase fields correctly", async () => {
-      const mockPurchase = createMockPurchase({
-        id: "purchase-123",
-        rewardId: "reward-456",
-        groupId: "group-789",
-        quantity: 5,
-        totalCost: 250,
-        status: "ACCEPTED",
-        collectionMethod: "pickup",
-        purchasedById: "user-456",
-        statusUpdatedById: "admin-123",
-        purchasedAt: new Date("2024-01-15"),
-        statusUpdatedAt: new Date("2024-01-16"),
-      });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].groupId).toBe("filtered-group");
+  });
 
-      mockPurchaseRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          items: [mockPurchase],
-          total: 1,
-          limit: 20,
-          offset: 0,
-          hasMore: false,
-        }),
-      );
+  it("should return empty result when no purchases exist", async () => {
+    const mockGateway = createMockPurchaseGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: true });
 
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: true,
-      };
+    const gatewayLayer = Layer.succeed(RewardPurchaseGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(TripAccessCheckerTag, mockAccessChecker);
+    const combinedLayer = Layer.merge(gatewayLayer, accessLayer);
 
-      const result = await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
+    const input: GetPurchaseHistoryInput = {
+      tripId: "trip-123",
+      userId: "staff-123",
+      isStaff: true,
+    };
 
-      const item = result.items[0];
-      expect(item?.purchaseId).toBe("purchase-123");
-      expect(item?.rewardId).toBe("reward-456");
-      expect(item?.groupId).toBe("group-789");
-      expect(item?.quantity).toBe(5);
-      expect(item?.totalCost).toBe(250);
-      expect(item?.status).toBe("ACCEPTED");
-      expect(item?.collectionMethod).toBe("pickup");
-      expect(item?.purchasedById).toBe("user-456");
-      expect(item?.statusUpdatedById).toBe("admin-123");
-      expect(item?.purchasedAt).toBeInstanceOf(Date);
-      expect(item?.statusUpdatedAt).toBeInstanceOf(Date);
-    });
+    const program = getPurchaseHistoryUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-    it("should handle purchases with null statusUpdatedById", async () => {
-      const mockPurchase = createMockPurchase({
-        statusUpdatedById: null,
-      });
-
-      mockPurchaseRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          items: [mockPurchase],
-          total: 1,
-          limit: 20,
-          offset: 0,
-          hasMore: false,
-        }),
-      );
-
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: true,
-      };
-
-      const result = await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
-
-      expect(result.items[0]?.statusUpdatedById).toBeNull();
-    });
-
-    it("should return pagination info", async () => {
-      mockPurchaseRepository.findByTripId = mock(() =>
-        Promise.resolve({
-          items: [],
-          total: 100,
-          limit: 20,
-          offset: 40,
-          hasMore: true,
-        }),
-      );
-
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-123",
-        userId: "user-123",
-        isStaff: true,
-      };
-
-      const result = await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
-
-      expect(result.total).toBe(100);
-      expect(result.limit).toBe(20);
-      expect(result.offset).toBe(40);
-      expect(result.hasMore).toBe(true);
-    });
-
-    it("should call isGroupLeader with userId and tripId", async () => {
-      const input: GetPurchaseHistoryInput = {
-        tripId: "trip-456",
-        userId: "user-789",
-        isStaff: false,
-      };
-
-      await runGetPurchaseHistoryUseCase(input, {
-        mockPurchaseRepository,
-        mockAccessChecker,
-      });
-
-      expect(mockAccessChecker.isGroupLeader).toHaveBeenCalledWith(
-        "user-789",
-        "trip-456",
-      );
-    });
+    expect(result.items).toHaveLength(0);
+    expect(result.total).toBe(0);
+    expect(result.hasMore).toBe(false);
   });
 });

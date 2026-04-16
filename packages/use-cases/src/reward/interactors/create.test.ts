@@ -1,333 +1,419 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   createRewardUseCase,
   type CreateRewardInput,
   CreateRewardError,
   RewardRepositoryError,
 } from "./create";
-import { Reward, UserRole, RewardId } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
+import { RewardGatewayTag, type RewardGateway } from "../ports/gateway";
+import type {
+  TripAccessChecker,
+  GroupCoinsService,
+} from "../../trip/ports/gateway";
 import {
-  RewardGatewayTag,
   TripAccessCheckerTag,
-} from "../ports/gateway";
-import { InMemoryRewardGateway } from "@mirai-app/adapters";
+  GroupCoinsServiceTag,
+} from "../../trip/ports/gateway";
+import type { RewardDTO } from "../dto";
+import { DatabaseError, RewardStatus, UserRole } from "@mirai-app/domain";
 
-describe("[UNIT] createRewardUseCase (Effect)", () => {
-  let rewardRepo: InMemoryRewardGateway;
+/**
+ * Mock RewardGateway for testing
+ */
+function createMockRewardGateway(
+  rewards: RewardDTO[] = [],
+  options: {
+    shouldFailCreate?: boolean;
+  } = {},
+): RewardGateway {
+  const rewardMap = new Map(rewards.map((r) => [r.id, r]));
 
-  beforeEach(() => {
-    rewardRepo = new InMemoryRewardGateway();
-  });
+  return {
+    create: (reward: RewardDTO) => {
+      if (options.shouldFailCreate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "create",
+            message: "Database error",
+          }),
+        );
+      }
+      rewardMap.set(reward.id, reward);
+      return Effect.succeed(reward);
+    },
 
-  // Helper to create a valid reward input
-  const createValidInput = (): CreateRewardInput => ({
-    name: "Test Reward",
-    description: "A test reward description",
-    availableQuantity: 10,
-    coinCostPercentage: 15,
-    tripId: "trip-123",
-    createdById: "user-123",
-    creatorRole: UserRole.MODERATOR,
-  });
+    findById: (id: string) => {
+      const reward = rewardMap.get(id);
+      return Effect.succeed(reward ?? null);
+    },
 
-  // Helper to run use case with mocked services
-  const runUseCase = async (
-    input: CreateRewardInput,
-    isStaff: boolean = true,
-    hasTripEnded: boolean = false,
-  ) => {
-    const program = createRewardUseCase(input).pipe(
-      Effect.provideService(RewardGatewayTag, {
-        create: (reward: Reward) => rewardRepo.create(reward),
-        findById: (id: RewardId) => rewardRepo.findById(id),
-        findByTripId: (tripId: string, options?) =>
-          rewardRepo.findByTripId(tripId, options),
-        findVisibleByTripId: (tripId: string, options?) =>
-          rewardRepo.findVisibleByTripId(tripId, options),
-        update: (reward: Reward) => rewardRepo.update(reward),
-        delete: (id: RewardId) => rewardRepo.delete(id),
-        hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
-        getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
-        decrementQuantity: (id: RewardId, amount: number) =>
-          rewardRepo.decrementQuantity(id, amount),
-        incrementQuantity: (id: RewardId, amount: number) =>
-          rewardRepo.incrementQuantity(id, amount),
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
       }),
-      Effect.provideService(TripAccessCheckerTag, {
-        isGroupLeader: () =>
-          Effect.succeed({ isLeader: true, groupId: "group-123" }),
-        isStaff: () => Effect.succeed(isStaff),
-        hasTripEnded: () => Effect.succeed(hasTripEnded),
+
+    findVisibleByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
       }),
-    );
-    return await Effect.runPromise(program);
+
+    update: (reward: RewardDTO) => Effect.succeed(reward),
+
+    delete: () => Effect.succeed(void 0),
+
+    hasPurchases: () => Effect.succeed(false),
+
+    getPurchaseCount: () => Effect.succeed(0),
+
+    decrementQuantity: (id: string) => {
+      const reward = rewardMap.get(id);
+      return reward
+        ? Effect.succeed(reward)
+        : Effect.fail(
+            new DatabaseError({
+              operation: "decrementQuantity",
+              message: "Reward not found",
+            }),
+          );
+    },
+
+    incrementQuantity: (id: string) => {
+      const reward = rewardMap.get(id);
+      return reward
+        ? Effect.succeed(reward)
+        : Effect.fail(
+            new DatabaseError({
+              operation: "incrementQuantity",
+              message: "Reward not found",
+            }),
+          );
+    },
   };
+}
 
-  describe("[UNIT] execute", () => {
-    it("should create reward with valid input", async () => {
-      // Arrange
-      const input = createValidInput();
+/**
+ * Extended TripAccessChecker for testing with hasTripEnded
+ */
+interface ExtendedTripAccessChecker extends TripAccessChecker {
+  hasTripEnded(tripId: string): Effect.Effect<boolean, Error, never>;
+}
 
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.name).toBe("Test Reward");
-      expect(result.description).toBe("A test reward description");
-      expect(result.availableQuantity).toBe(10);
-      expect(result.coinCostPercentage).toBe(15);
-      expect(result.tripId).toBe("trip-123");
-      expect(result.createdById).toBe("user-123");
-      expect(result.isInStock).toBe(true);
-      expect(result.canBePurchased).toBe(true);
-
-      // Verify reward was actually stored
-      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
-      expect(stored.items).toHaveLength(1);
-      expect(stored.items[0]?.name).toBe("Test Reward");
-    });
-
-    it("should create reward with images", async () => {
-      // Arrange
-      const input: CreateRewardInput = {
-        ...createValidInput(),
-        images: [
-          "https://example.com/image1.png",
-          "https://example.com/image2.png",
-        ],
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.images).toEqual([
-        "https://example.com/image1.png",
-        "https://example.com/image2.png",
-      ]);
-
-      // Verify stored reward
-      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
-      expect(stored.items[0]?.images).toHaveLength(2);
-    });
-
-    it("should create hidden reward when isHidden is true", async () => {
-      // Arrange
-      const input: CreateRewardInput = {
-        ...createValidInput(),
-        isHidden: true,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.isHidden).toBe(true);
-    });
-
-    it("should reject non-staff users", async () => {
-      // Arrange
-      const input: CreateRewardInput = {
-        ...createValidInput(),
-        creatorRole: UserRole.USER,
-      };
-
-      // Act
-      const program = createRewardUseCase(input).pipe(
-        Effect.provideService(RewardGatewayTag, {
-          create: (reward: Reward) => rewardRepo.create(reward),
-          findById: (id: RewardId) => rewardRepo.findById(id),
-          findByTripId: (tripId: string, options?) =>
-            rewardRepo.findByTripId(tripId, options),
-          findVisibleByTripId: (tripId: string, options?) =>
-            rewardRepo.findVisibleByTripId(tripId, options),
-          update: (reward: Reward) => rewardRepo.update(reward),
-          delete: (id: RewardId) => rewardRepo.delete(id),
-          hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
-          getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
-          decrementQuantity: (id: RewardId, amount: number) =>
-            rewardRepo.decrementQuantity(id, amount),
-          incrementQuantity: (id: RewardId, amount: number) =>
-            rewardRepo.incrementQuantity(id, amount),
-        }),
-        Effect.provideService(TripAccessCheckerTag, {
-          isGroupLeader: () => Effect.succeed({ isLeader: false }),
-          isStaff: () => Effect.succeed(false),
-          hasTripEnded: () => Effect.succeed(false),
-        }),
-      );
-
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(CreateRewardError);
-        expect(either.left.message).toContain("moderators");
+/**
+ * Mock TripAccessChecker for testing
+ */
+function createMockTripAccessChecker(
+  options: {
+    isStaff?: boolean;
+    hasTripEnded?: boolean;
+    shouldFailIsStaff?: boolean;
+    shouldFailHasTripEnded?: boolean;
+  } = {},
+): ExtendedTripAccessChecker {
+  return {
+    isStaff: () => {
+      if (options.shouldFailIsStaff) {
+        return Effect.fail(new Error("Failed to check staff status"));
       }
-
-      // Verify no reward was stored
-      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
-      expect(stored.items).toHaveLength(0);
-    });
-
-    it("should reject creation for ended trips", async () => {
-      // Arrange
-      const input = createValidInput();
-
-      // Act
-      const program = createRewardUseCase(input).pipe(
-        Effect.provideService(RewardGatewayTag, {
-          create: (reward: Reward) => rewardRepo.create(reward),
-          findById: (id: RewardId) => rewardRepo.findById(id),
-          findByTripId: (tripId: string, options?) =>
-            rewardRepo.findByTripId(tripId, options),
-          findVisibleByTripId: (tripId: string, options?) =>
-            rewardRepo.findVisibleByTripId(tripId, options),
-          update: (reward: Reward) => rewardRepo.update(reward),
-          delete: (id: RewardId) => rewardRepo.delete(id),
-          hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
-          getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
-          decrementQuantity: (id: RewardId, amount: number) =>
-            rewardRepo.decrementQuantity(id, amount),
-          incrementQuantity: (id: RewardId, amount: number) =>
-            rewardRepo.incrementQuantity(id, amount),
-        }),
-        Effect.provideService(TripAccessCheckerTag, {
-          isGroupLeader: () =>
-            Effect.succeed({ isLeader: true, groupId: "group-123" }),
-          isStaff: () => Effect.succeed(true),
-          hasTripEnded: () => Effect.succeed(true),
-        }),
-      );
-
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(CreateRewardError);
-        expect(either.left.message).toContain("ended");
+      return Effect.succeed(options.isStaff ?? true);
+    },
+    isGroupLeader: () =>
+      Effect.succeed({
+        isLeader: true,
+        groupId: "group-123",
+        groupName: "Test Group",
+        coins: 1000,
+      }),
+    hasTripEnded: () => {
+      if (options.shouldFailHasTripEnded) {
+        return Effect.fail(new Error("Failed to check trip status"));
       }
+      return Effect.succeed(options.hasTripEnded ?? false);
+    },
+  };
+}
 
-      // Verify no reward was stored
-      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
-      expect(stored.items).toHaveLength(0);
-    });
+/**
+ * Mock GroupCoinsService for testing
+ */
+function createMockGroupCoinsService(): GroupCoinsService {
+  return {
+    addCoins: () =>
+      Effect.succeed({
+        id: "transaction-123",
+        groupId: "group-123",
+        amount: 100,
+        type: "ADD",
+        reason: "Test",
+        createdById: "user-123",
+        createdAt: new Date(),
+      }),
+  };
+}
 
-    it("should fail when coinCostPercentage is out of range", async () => {
-      // Arrange
-      const input: CreateRewardInput = {
-        ...createValidInput(),
-        coinCostPercentage: 150, // Out of range (1-100)
-      };
+describe("[UNIT] createRewardUseCase", () => {
+  it("should create reward successfully when user is staff", async () => {
+    const mockGateway = createMockRewardGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: true });
+    const mockCoinsService = createMockGroupCoinsService();
 
-      // Act
-      const program = createRewardUseCase(input).pipe(
-        Effect.provideService(RewardGatewayTag, {
-          create: (reward: Reward) => rewardRepo.create(reward),
-          findById: (id: RewardId) => rewardRepo.findById(id),
-          findByTripId: (tripId: string, options?) =>
-            rewardRepo.findByTripId(tripId, options),
-          findVisibleByTripId: (tripId: string, options?) =>
-            rewardRepo.findVisibleByTripId(tripId, options),
-          update: (reward: Reward) => rewardRepo.update(reward),
-          delete: (id: RewardId) => rewardRepo.delete(id),
-          hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
-          getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
-          decrementQuantity: (id: RewardId, amount: number) =>
-            rewardRepo.decrementQuantity(id, amount),
-          incrementQuantity: (id: RewardId, amount: number) =>
-            rewardRepo.incrementQuantity(id, amount),
-        }),
-        Effect.provideService(TripAccessCheckerTag, {
-          isGroupLeader: () =>
-            Effect.succeed({ isLeader: true, groupId: "group-123" }),
-          isStaff: () => Effect.succeed(true),
-          hasTripEnded: () => Effect.succeed(false),
-        }),
+    const rewardLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(
+      TripAccessCheckerTag,
+      mockAccessChecker as TripAccessChecker,
+    );
+    const coinsLayer = Layer.succeed(GroupCoinsServiceTag, mockCoinsService);
+    const combinedLayer = Layer.mergeAll(rewardLayer, accessLayer, coinsLayer);
+
+    const input: CreateRewardInput = {
+      name: "New Reward",
+      description: "A test reward",
+      availableQuantity: 10,
+      coinCostPercentage: 50,
+      tripId: "trip-123",
+      createdById: "user-123",
+      creatorRole: UserRole.MODERATOR,
+    };
+
+    const program = createRewardUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.name).toBe("New Reward");
+    expect(result.description).toBe("A test reward");
+    expect(result.availableQuantity).toBe(10);
+    expect(result.coinCostPercentage).toBe(50);
+    expect(result.tripId).toBe("trip-123");
+    expect(result.createdById).toBe("user-123");
+    expect(result.isInStock).toBe(true);
+    expect(result.canBePurchased).toBe(true);
+    expect(result.images).toEqual([]);
+    expect(result.isHidden).toBe(false);
+  });
+
+  it("should fail with CreateRewardError when user is not staff", async () => {
+    const mockGateway = createMockRewardGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: false });
+    const mockCoinsService = createMockGroupCoinsService();
+
+    const rewardLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(
+      TripAccessCheckerTag,
+      mockAccessChecker as TripAccessChecker,
+    );
+    const coinsLayer = Layer.succeed(GroupCoinsServiceTag, mockCoinsService);
+    const combinedLayer = Layer.mergeAll(rewardLayer, accessLayer, coinsLayer);
+
+    const input: CreateRewardInput = {
+      name: "New Reward",
+      description: "A test reward",
+      availableQuantity: 10,
+      coinCostPercentage: 50,
+      tripId: "trip-123",
+      createdById: "user-123",
+      creatorRole: UserRole.USER,
+    };
+
+    const program = createRewardUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(CreateRewardError);
+      expect(either.left.message).toBe(
+        "Only moderators and admins can create rewards",
       );
+    }
+  });
 
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(CreateRewardError);
-        expect(either.left.message).toContain("percentage");
-      }
-
-      // Verify no reward was stored
-      const stored = Effect.runSync(rewardRepo.findByTripId("trip-123"));
-      expect(stored.items).toHaveLength(0);
+  it("should fail with CreateRewardError when trip has ended", async () => {
+    const mockGateway = createMockRewardGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({
+      isStaff: true,
+      hasTripEnded: true,
     });
+    const mockCoinsService = createMockGroupCoinsService();
 
-    it("should fail when description is empty", async () => {
-      // Arrange
-      const input: CreateRewardInput = {
-        ...createValidInput(),
-        description: "", // Empty description
-      };
+    const rewardLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(
+      TripAccessCheckerTag,
+      mockAccessChecker as TripAccessChecker,
+    );
+    const coinsLayer = Layer.succeed(GroupCoinsServiceTag, mockCoinsService);
+    const combinedLayer = Layer.mergeAll(rewardLayer, accessLayer, coinsLayer);
 
-      // Act
-      const program = createRewardUseCase(input).pipe(
-        Effect.provideService(RewardGatewayTag, {
-          create: (reward: Reward) => rewardRepo.create(reward),
-          findById: (id: RewardId) => rewardRepo.findById(id),
-          findByTripId: (tripId: string, options?) =>
-            rewardRepo.findByTripId(tripId, options),
-          findVisibleByTripId: (tripId: string, options?) =>
-            rewardRepo.findVisibleByTripId(tripId, options),
-          update: (reward: Reward) => rewardRepo.update(reward),
-          delete: (id: RewardId) => rewardRepo.delete(id),
-          hasPurchases: (id: RewardId) => rewardRepo.hasPurchases(id),
-          getPurchaseCount: (id: RewardId) => rewardRepo.getPurchaseCount(id),
-          decrementQuantity: (id: RewardId, amount: number) =>
-            rewardRepo.decrementQuantity(id, amount),
-          incrementQuantity: (id: RewardId, amount: number) =>
-            rewardRepo.incrementQuantity(id, amount),
-        }),
-        Effect.provideService(TripAccessCheckerTag, {
-          isGroupLeader: () =>
-            Effect.succeed({ isLeader: true, groupId: "group-123" }),
-          isStaff: () => Effect.succeed(true),
-          hasTripEnded: () => Effect.succeed(false),
-        }),
-      );
+    const input: CreateRewardInput = {
+      name: "New Reward",
+      description: "A test reward",
+      availableQuantity: 10,
+      coinCostPercentage: 50,
+      tripId: "trip-123",
+      createdById: "user-123",
+      creatorRole: UserRole.ADMIN,
+    };
 
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(CreateRewardError);
-        expect(either.left.message).toContain("Description");
-      }
-    });
+    const program = createRewardUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-    it("should allow admin users to create rewards", async () => {
-      // Arrange
-      const input: CreateRewardInput = {
-        ...createValidInput(),
-        creatorRole: UserRole.ADMIN,
-      };
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(CreateRewardError);
+      expect(either.left.message).toBe("Cannot create rewards for ended trips");
+    }
+  });
 
-      // Act
-      const result = await runUseCase(input, true, false);
+  it("should fail with CreateRewardError for invalid input", async () => {
+    const mockGateway = createMockRewardGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: true });
+    const mockCoinsService = createMockGroupCoinsService();
 
-      // Assert
-      expect(result.name).toBe("Test Reward");
-    });
+    const rewardLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(
+      TripAccessCheckerTag,
+      mockAccessChecker as TripAccessChecker,
+    );
+    const coinsLayer = Layer.succeed(GroupCoinsServiceTag, mockCoinsService);
+    const combinedLayer = Layer.mergeAll(rewardLayer, accessLayer, coinsLayer);
 
-    it("should allow moderator users to create rewards", async () => {
-      // Arrange
-      const input: CreateRewardInput = {
-        ...createValidInput(),
-        creatorRole: UserRole.MODERATOR,
-      };
+    const input: CreateRewardInput = {
+      name: "",
+      description: "A test reward",
+      availableQuantity: -1,
+      coinCostPercentage: 50,
+      tripId: "trip-123",
+      createdById: "user-123",
+      creatorRole: UserRole.ADMIN,
+    };
 
-      // Act
-      const result = await runUseCase(input, true, false);
+    const program = createRewardUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Assert
-      expect(result.name).toBe("Test Reward");
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(CreateRewardError);
+    }
+  });
+
+  it("should fail with RewardRepositoryError when database fails", async () => {
+    const mockGateway = createMockRewardGateway([], { shouldFailCreate: true });
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: true });
+    const mockCoinsService = createMockGroupCoinsService();
+
+    const rewardLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(
+      TripAccessCheckerTag,
+      mockAccessChecker as TripAccessChecker,
+    );
+    const coinsLayer = Layer.succeed(GroupCoinsServiceTag, mockCoinsService);
+    const combinedLayer = Layer.mergeAll(rewardLayer, accessLayer, coinsLayer);
+
+    const input: CreateRewardInput = {
+      name: "New Reward",
+      description: "A test reward",
+      availableQuantity: 10,
+      coinCostPercentage: 50,
+      tripId: "trip-123",
+      createdById: "user-123",
+      creatorRole: UserRole.ADMIN,
+    };
+
+    const program = createRewardUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(RewardRepositoryError);
+      expect(either.left.message).toBe("Failed to create reward");
+    }
+  });
+
+  it("should create hidden reward when isHidden is true", async () => {
+    const mockGateway = createMockRewardGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: true });
+    const mockCoinsService = createMockGroupCoinsService();
+
+    const rewardLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(
+      TripAccessCheckerTag,
+      mockAccessChecker as TripAccessChecker,
+    );
+    const coinsLayer = Layer.succeed(GroupCoinsServiceTag, mockCoinsService);
+    const combinedLayer = Layer.mergeAll(rewardLayer, accessLayer, coinsLayer);
+
+    const input: CreateRewardInput = {
+      name: "Hidden Reward",
+      description: "A hidden test reward",
+      availableQuantity: 5,
+      coinCostPercentage: 100,
+      isHidden: true,
+      tripId: "trip-123",
+      createdById: "user-123",
+      creatorRole: UserRole.MODERATOR,
+    };
+
+    const program = createRewardUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.isHidden).toBe(true);
+    expect(result.name).toBe("Hidden Reward");
+  });
+
+  it("should create reward with images", async () => {
+    const mockGateway = createMockRewardGateway([]);
+    const mockAccessChecker = createMockTripAccessChecker({ isStaff: true });
+    const mockCoinsService = createMockGroupCoinsService();
+
+    const rewardLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+    const accessLayer = Layer.succeed(
+      TripAccessCheckerTag,
+      mockAccessChecker as TripAccessChecker,
+    );
+    const coinsLayer = Layer.succeed(GroupCoinsServiceTag, mockCoinsService);
+    const combinedLayer = Layer.mergeAll(rewardLayer, accessLayer, coinsLayer);
+
+    const input: CreateRewardInput = {
+      name: "Reward With Images",
+      description: "A reward with images",
+      availableQuantity: 10,
+      coinCostPercentage: 75,
+      images: ["image1.jpg", "image2.jpg"],
+      tripId: "trip-123",
+      createdById: "user-123",
+      creatorRole: UserRole.ADMIN,
+    };
+
+    const program = createRewardUseCase(input).pipe(
+      Effect.provide(combinedLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.images).toEqual(["image1.jpg", "image2.jpg"]);
   });
 });

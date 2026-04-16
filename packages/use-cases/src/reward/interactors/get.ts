@@ -1,7 +1,8 @@
-import { Reward, type RewardId } from "@mirai-app/domain";
+import { Reward, ValidationError, type RewardId } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { RewardGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
+import type { RewardDTO } from "../dto";
 
 /**
  * Input for GetReward use case
@@ -80,10 +81,10 @@ export function getRewardUseCase(
   return Effect.gen(function* () {
     const rewardRepo = yield* RewardGatewayTag;
 
-    // Find reward
-    const reward = yield* rewardRepo.findById(input.rewardId);
+    // Find reward DTO
+    const rewardDTO = yield* rewardRepo.findById(input.rewardId);
 
-    if (!reward) {
+    if (!rewardDTO) {
       return yield* Effect.fail(
         new RewardNotFoundError({
           message: `Reward not found: ${input.rewardId}`,
@@ -91,6 +92,16 @@ export function getRewardUseCase(
         }),
       );
     }
+
+    // Convert DTO to domain entity
+    const reward = yield* dtoToReward(rewardDTO).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new RewardRepositoryError({
+            message: `Invalid reward data: ${validationError.message}`,
+          }),
+      ),
+    );
 
     // Get purchase count
     const purchaseCount = yield* rewardRepo
@@ -126,4 +137,26 @@ function toOutput(reward: Reward, purchaseCount: number): GetRewardOutput {
     canBePurchased: reward.canBePurchased(),
     purchaseCount,
   };
+}
+
+/**
+ * Convert RewardDTO to domain Reward entity
+ */
+function dtoToReward(
+  dto: RewardDTO,
+): Effect.Effect<Reward, ValidationError, never> {
+  return Reward.create({
+    id: dto.id,
+    name: dto.title,
+    description: dto.description ?? "",
+    availableQuantity: dto.availableQuantity,
+    coinCost: dto.pointsCost,
+    image: dto.imageUrl,
+    images: dto.images,
+    isHidden: dto.isHidden,
+    tripId: dto.tripId,
+    createdById: dto.createdById,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  });
 }

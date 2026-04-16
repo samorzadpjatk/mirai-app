@@ -2,6 +2,7 @@ import { Reward, ValidationError, type RewardId } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { RewardGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
+import type { RewardDTO } from "../dto";
 
 /**
  * Input for UpdateReward use case
@@ -89,10 +90,10 @@ export function updateRewardUseCase(
   return Effect.gen(function* () {
     const rewardRepo = yield* RewardGatewayTag;
 
-    // Find existing reward
-    const existing = yield* rewardRepo.findById(input.rewardId);
+    // Find existing reward DTO
+    const existingDTO = yield* rewardRepo.findById(input.rewardId);
 
-    if (!existing) {
+    if (!existingDTO) {
       return yield* Effect.fail(
         new RewardNotFoundError({
           message: `Reward not found: ${input.rewardId}`,
@@ -101,6 +102,16 @@ export function updateRewardUseCase(
       );
     }
 
+    // Convert DTO to domain entity
+    const existing = yield* dtoToReward(existingDTO).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new RewardRepositoryError({
+            message: `Invalid reward data: ${validationError.message}`,
+          }),
+      ),
+    );
+
     // Apply updates to domain entity
     const updated = yield* existing
       .update({
@@ -108,7 +119,7 @@ export function updateRewardUseCase(
         description: input.description,
         availableQuantity: input.availableQuantity,
         images: input.images,
-        coinCostPercentage: input.coinCostPercentage,
+        coinCost: input.coinCostPercentage,
       })
       .pipe(
         Effect.mapError(
@@ -117,8 +128,25 @@ export function updateRewardUseCase(
         ),
       );
 
-    // Persist updated reward
-    const saved = yield* rewardRepo.update(updated).pipe(
+    // Persist updated reward - convert domain entity to DTO
+    const updatedDTO: RewardDTO = {
+      id: updated.id,
+      tripId: updated.tripId,
+      title: updated.name,
+      description: updated.description,
+      imageUrl: updated.image,
+      images: updated.images,
+      pointsCost: updated.coinCost,
+      quantity: updated.availableQuantity,
+      availableQuantity: updated.availableQuantity,
+      status: existingDTO.status, // Preserve original status
+      isHidden: updated.isHidden,
+      createdById: updated.createdById,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+    };
+
+    const persistedDTO = yield* rewardRepo.update(updatedDTO).pipe(
       Effect.mapError(
         () =>
           new RewardRepositoryError({
@@ -127,7 +155,17 @@ export function updateRewardUseCase(
       ),
     );
 
-    return toOutput(saved);
+    // Convert persisted DTO back to domain for output
+    const persisted = yield* dtoToReward(persistedDTO).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new RewardRepositoryError({
+            message: `Failed to reconstruct reward: ${validationError.message}`,
+          }),
+      ),
+    );
+
+    return toOutput(persisted);
   });
 }
 
@@ -146,4 +184,26 @@ function toOutput(reward: Reward): UpdateRewardOutput {
     isInStock: reward.isInStock(),
     canBePurchased: reward.canBePurchased(),
   };
+}
+
+/**
+ * Convert RewardDTO to domain Reward entity
+ */
+function dtoToReward(
+  dto: RewardDTO,
+): Effect.Effect<Reward, ValidationError, never> {
+  return Reward.create({
+    id: dto.id,
+    name: dto.title,
+    description: dto.description ?? "",
+    availableQuantity: dto.availableQuantity,
+    coinCost: dto.pointsCost,
+    image: dto.imageUrl,
+    images: dto.images,
+    isHidden: dto.isHidden,
+    tripId: dto.tripId,
+    createdById: dto.createdById,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  });
 }

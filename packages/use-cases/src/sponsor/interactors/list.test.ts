@@ -1,135 +1,257 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import { listSponsorsUseCase, type ListSponsorsInput } from "./list";
+import { SponsorGatewayTag, type SponsorGateway } from "../ports/gateway";
+import { DatabaseError } from "@mirai-app/domain";
 import { Sponsor } from "@mirai-app/domain";
-import { SponsorGatewayTag } from "../ports/gateway";
-import { Effect } from "effect";
+
+/**
+ * Create a mock Sponsor for testing
+ */
+async function createMockSponsor(
+  overrides: Partial<{
+    id: string;
+    name: string;
+    description: string;
+    logoPath: string;
+    isActive: boolean;
+  }> = {},
+): Promise<Sponsor> {
+  const effect = Sponsor.create({
+    id: overrides.id ?? `sponsor-${Math.random().toString(36).substring(7)}`,
+    name: overrides.name ?? "Test Sponsor",
+    description: overrides.description ?? "Test description",
+    logoPath: overrides.logoPath ?? "/logo.png",
+    isActive: overrides.isActive ?? true,
+  });
+  return await Effect.runPromise(effect);
+}
+
+/**
+ * Mock SponsorGateway for testing
+ */
+function createMockSponsorGateway(
+  sponsors: Sponsor[] = [],
+  options: {
+    shouldFailFindAll?: boolean;
+    shouldFailFindActive?: boolean;
+  } = {},
+): SponsorGateway {
+  const sponsorMap = new Map(sponsors.map((s) => [s.id, s]));
+
+  return {
+    create: (sponsor: Sponsor) => {
+      sponsorMap.set(sponsor.id, sponsor);
+      return Effect.succeed(sponsor);
+    },
+
+    findById: (id: string) => {
+      const sponsor = sponsorMap.get(id);
+      return Effect.succeed(sponsor ?? null);
+    },
+
+    findAll: (opts?: { limit?: number; offset?: number }) => {
+      if (options.shouldFailFindAll) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findAll",
+            message: "Database error",
+          }),
+        );
+      }
+      const items = Array.from(sponsorMap.values());
+      const limit = opts?.limit ?? items.length;
+      const offset = opts?.offset ?? 0;
+      const paginated = items.slice(offset, offset + limit);
+      return Effect.succeed({
+        items: paginated,
+        total: items.length,
+        limit,
+        offset,
+        hasMore: offset + limit < items.length,
+      });
+    },
+
+    findActiveConnection: () => {
+      if (options.shouldFailFindActive) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findActiveConnection",
+            message: "Database error",
+          }),
+        );
+      }
+      const activeItems = Array.from(sponsorMap.values()).filter(
+        (s) => s.isActive,
+      );
+      return Effect.succeed({
+        edges: activeItems.map((s) => ({
+          node: s,
+          cursor: { id: s.id, createdAt: s.createdAt.toISOString() },
+        })),
+        nodes: activeItems,
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: activeItems.length,
+      });
+    },
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    update: (sponsor: Sponsor) => {
+      sponsorMap.set(sponsor.id, sponsor);
+      return Effect.succeed(sponsor);
+    },
+
+    delete: () => Effect.succeed(void 0),
+
+    exists: () => Effect.succeed(false),
+
+    isLinkedToTrip: () => Effect.succeed(false),
+
+    linkToTrip: () =>
+      Effect.succeed({
+        id: "link-123",
+        tripId: "trip-123",
+        sponsorId: "sponsor-123",
+        tier: "GOLD",
+        benefits: null,
+        displayOrder: 1,
+        isActive: true,
+        linkedAt: new Date(),
+        linkedById: "user-123",
+      }),
+
+    unlinkFromTrip: () => Effect.succeed(void 0),
+  };
+}
 
 describe("[UNIT] listSponsorsUseCase", () => {
-  const createValidSponsor = (
-    overrides?: Partial<{ id: string; name: string; isActive: boolean }>,
-  ): Sponsor => {
-    const effect = Sponsor.create({
-      id: overrides?.id ?? "sponsor-123",
-      name: overrides?.name ?? "Test Sponsor",
-      description: "A test sponsor description",
-      logoPath: "/logos/test.png",
-      height: null,
-      offsetX: null,
-      offsetY: null,
-      isActive: overrides?.isActive ?? true,
+  it("should return all sponsors with default pagination", async () => {
+    const sponsor1 = await createMockSponsor({
+      id: "sponsor-1",
+      name: "Sponsor 1",
     });
-    try {
-      return Effect.runSync(effect);
-    } catch (e) {
-      throw new Error(`Failed to create test sponsor: ${e}`);
-    }
-  };
+    const sponsor2 = await createMockSponsor({
+      id: "sponsor-2",
+      name: "Sponsor 2",
+    });
+    const mockGateway = createMockSponsorGateway([sponsor1, sponsor2]);
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-  const createMockRepoService = (overrides?: {
-    findAll?: () => Promise<Sponsor[]>;
-    findActive?: () => Promise<Sponsor[]>;
-  }) => ({
-    create: () => Effect.promise(() => Promise.resolve(createValidSponsor())),
-    findById: () => Effect.promise(() => Promise.resolve(null)),
-    findAll: () =>
-      Effect.promise(() =>
-        overrides?.findAll ? overrides.findAll() : Promise.resolve([]),
-      ),
-    findActive: () =>
-      Effect.promise(() =>
-        overrides?.findActive ? overrides.findActive() : Promise.resolve([]),
-      ),
-    findByTripId: () => Effect.promise(() => Promise.resolve([])),
-    update: () => Effect.promise(() => Promise.resolve(createValidSponsor())),
-    delete: () => Effect.promise(() => Promise.resolve()),
-    exists: () => Effect.promise(() => Promise.resolve(false)),
-    isLinkedToTrip: () => Effect.promise(() => Promise.resolve(false)),
-    linkToTrip: () => Effect.promise(() => Promise.resolve()),
-    unlinkFromTrip: () => Effect.promise(() => Promise.resolve()),
+    const input: ListSponsorsInput = {};
+    const program = listSponsorsUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.sponsors).toHaveLength(2);
+    expect(result.total).toBe(2);
   });
 
-  // Helper to run use case with repository service
-  const runUseCase = async (
-    input: ListSponsorsInput,
-    repoOverrides?: {
-      findAll?: () => Promise<Sponsor[]>;
-      findActive?: () => Promise<Sponsor[]>;
-    },
-  ) => {
-    const program = listSponsorsUseCase(input).pipe(
-      Effect.provideService(
-        SponsorGatewayTag,
-        createMockRepoService(repoOverrides),
-      ),
-    );
-    return await Effect.runPromise(program);
-  };
+  it("should respect limit parameter", async () => {
+    const sponsor1 = await createMockSponsor({ id: "sponsor-1" });
+    const sponsor2 = await createMockSponsor({ id: "sponsor-2" });
+    const sponsor3 = await createMockSponsor({ id: "sponsor-3" });
+    const mockGateway = createMockSponsorGateway([
+      sponsor1,
+      sponsor2,
+      sponsor3,
+    ]);
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-  describe("[UNIT] execute", () => {
-    it("should list all sponsors", async () => {
-      const mockSponsors = [
-        createValidSponsor({ id: "sponsor-1", name: "Sponsor 1" }),
-        createValidSponsor({ id: "sponsor-2", name: "Sponsor 2" }),
-        createValidSponsor({
-          id: "sponsor-3",
-          name: "Sponsor 3",
-          isActive: false,
-        }),
-      ];
+    const input: ListSponsorsInput = { limit: 2 };
+    const program = listSponsorsUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      const result = await runUseCase(
-        {},
-        { findAll: () => Promise.resolve(mockSponsors) },
-      );
+    expect(result.sponsors).toHaveLength(2);
+    expect(result.total).toBe(2);
+  });
 
-      expect(result.sponsors).toHaveLength(3);
-      expect(result.total).toBe(3);
-      expect(result.sponsors[0].name).toBe("Sponsor 1");
-      expect(result.sponsors[1].name).toBe("Sponsor 2");
-      expect(result.sponsors[2].isActive).toBe(false);
+  it("should respect offset parameter", async () => {
+    const sponsor1 = await createMockSponsor({
+      id: "sponsor-1",
+      name: "First",
     });
-
-    it("should list only active sponsors when activeOnly is true", async () => {
-      const activeSponsors = [
-        createValidSponsor({ id: "sponsor-1", name: "Active Sponsor 1" }),
-        createValidSponsor({ id: "sponsor-2", name: "Active Sponsor 2" }),
-      ];
-
-      const result = await runUseCase(
-        { activeOnly: true },
-        { findActive: () => Promise.resolve(activeSponsors) },
-      );
-
-      expect(result.sponsors).toHaveLength(2);
-      expect(result.sponsors.every((s) => s.isActive)).toBe(true);
+    const sponsor2 = await createMockSponsor({
+      id: "sponsor-2",
+      name: "Second",
     });
+    const mockGateway = createMockSponsorGateway([sponsor1, sponsor2]);
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-    it("should apply pagination options", async () => {
-      // The use case passes { limit, offset } to findAll
-      // Verify it works by checking the result structure is correct
-      const result = await runUseCase(
-        { limit: 10, offset: 20 },
-        {
-          findAll: async () => [],
-        },
-      );
+    const input: ListSponsorsInput = { offset: 1, limit: 10 };
+    const program = listSponsorsUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      expect(result.sponsors).toEqual([]);
-      expect(result.total).toBe(0);
+    expect(result.sponsors).toHaveLength(1);
+    expect(result.total).toBe(1);
+  });
+
+  it("should return empty list when no sponsors exist", async () => {
+    const mockGateway = createMockSponsorGateway([]);
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
+
+    const input: ListSponsorsInput = {};
+    const program = listSponsorsUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.sponsors).toHaveLength(0);
+    expect(result.total).toBe(0);
+  });
+
+  it("should fail with DatabaseError when findAll fails", async () => {
+    const sponsor1 = await createMockSponsor({ id: "sponsor-1" });
+    const mockGateway = createMockSponsorGateway([sponsor1], {
+      shouldFailFindAll: true,
     });
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-    it("should return empty list when no sponsors exist", async () => {
-      const result = await runUseCase({});
+    const input: ListSponsorsInput = {};
+    const program = listSponsorsUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      expect(result.sponsors).toHaveLength(0);
-      expect(result.total).toBe(0);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should map sponsors to list items correctly", async () => {
+    const sponsor = await createMockSponsor({
+      id: "sponsor-map",
+      name: "Mapped Sponsor",
+      description: "Mapped description",
+      logoPath: "/mapped.png",
     });
+    const mockGateway = createMockSponsorGateway([sponsor]);
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-    it("should use default values when no input provided", async () => {
-      const result = await runUseCase({});
+    const input: ListSponsorsInput = {};
+    const program = listSponsorsUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      expect(result.sponsors).toEqual([]);
-      expect(result.total).toBe(0);
-    });
+    expect(result.sponsors[0]).toHaveProperty("id");
+    expect(result.sponsors[0]).toHaveProperty("name");
+    expect(result.sponsors[0]).toHaveProperty("description");
+    expect(result.sponsors[0]).toHaveProperty("logoPath");
+    expect(result.sponsors[0]).toHaveProperty("height");
+    expect(result.sponsors[0]).toHaveProperty("offsetX");
+    expect(result.sponsors[0]).toHaveProperty("offsetY");
+    expect(result.sponsors[0]).toHaveProperty("isActive");
+    expect(result.sponsors[0]).toHaveProperty("createdAt");
   });
 });

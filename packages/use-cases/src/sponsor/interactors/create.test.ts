@@ -1,213 +1,255 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   createSponsorUseCase,
   type CreateSponsorInput,
   CreateSponsorValidationError,
 } from "./create";
-import { Sponsor, SponsorId } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { SponsorGatewayTag } from "../ports/gateway";
+import { SponsorGatewayTag, type SponsorGateway } from "../ports/gateway";
+import { DatabaseError } from "@mirai-app/domain";
+import { Sponsor } from "@mirai-app/domain";
 
-describe("[UNIT] createSponsorUseCase (Effect)", () => {
-  // Helper to create a valid sponsor using Effect
-  const createValidSponsor = (
-    overrides?: Partial<{ id: SponsorId; name: string }>,
-  ): Sponsor => {
-    const effect = Sponsor.create({
-      id: overrides?.id ?? ("sponsor-123" as SponsorId),
-      name: overrides?.name ?? "Test Sponsor",
-      description: "A test sponsor description",
-      logoPath: "/logos/test.png",
-      height: null,
-      offsetX: null,
-      offsetY: null,
-      isActive: true,
-    });
-    try {
-      return Effect.runSync(effect);
-    } catch (e) {
-      throw new Error(`Failed to create test sponsor: ${e}`);
-    }
+/**
+ * Mock SponsorGateway for testing
+ */
+function createMockSponsorGateway(
+  options: {
+    shouldFailCreate?: boolean;
+  } = {},
+): SponsorGateway {
+  const sponsorMap = new Map<string, Sponsor>();
+
+  return {
+    create: (sponsor: Sponsor) => {
+      if (options.shouldFailCreate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "create",
+            message: "Database error",
+          }),
+        );
+      }
+      sponsorMap.set(sponsor.id, sponsor);
+      return Effect.succeed(sponsor);
+    },
+
+    findById: (id: string) => {
+      const sponsor = sponsorMap.get(id);
+      return Effect.succeed(sponsor ?? null);
+    },
+
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(sponsorMap.values()),
+        total: sponsorMap.size,
+        limit: sponsorMap.size,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    findActiveConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    update: (sponsor: Sponsor) => {
+      sponsorMap.set(sponsor.id, sponsor);
+      return Effect.succeed(sponsor);
+    },
+
+    delete: () => Effect.succeed(void 0),
+
+    exists: () => Effect.succeed(false),
+
+    isLinkedToTrip: () => Effect.succeed(false),
+
+    linkToTrip: () =>
+      Effect.succeed({
+        id: "link-123",
+        tripId: "trip-123",
+        sponsorId: "sponsor-123",
+        tier: "GOLD",
+        benefits: null,
+        displayOrder: 1,
+        isActive: true,
+        linkedAt: new Date(),
+        linkedById: "user-123",
+      }),
+
+    unlinkFromTrip: () => Effect.succeed(void 0),
   };
+}
 
-  // Helper to create mock repository service
-  const createMockRepoService = (overrides?: {
-    create?: (sponsor: Sponsor) => Promise<Sponsor>;
-  }) => ({
-    create: (sponsor: Sponsor) =>
-      Effect.promise(() =>
-        overrides?.create
-          ? overrides.create(sponsor)
-          : Promise.resolve(sponsor),
-      ),
-    findById: () => Effect.promise(() => Promise.resolve(null)),
-    findAll: () => Effect.promise(() => Promise.resolve([])),
-    findActive: () => Effect.promise(() => Promise.resolve([])),
-    findByTripId: () => Effect.promise(() => Promise.resolve([])),
-    update: (sponsor: Sponsor) =>
-      Effect.promise(() => Promise.resolve(sponsor)),
-    delete: () => Effect.promise(() => Promise.resolve()),
-    exists: () => Effect.promise(() => Promise.resolve(false)),
-    isLinkedToTrip: () => Effect.promise(() => Promise.resolve(false)),
-    linkToTrip: () => Effect.promise(() => Promise.resolve()),
-    unlinkFromTrip: () => Effect.promise(() => Promise.resolve()),
+describe("[UNIT] createSponsorUseCase", () => {
+  it("should create sponsor successfully with valid input", async () => {
+    const mockGateway = createMockSponsorGateway();
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
+
+    const input: CreateSponsorInput = {
+      name: "Test Sponsor",
+      description: "A test sponsor description",
+      logoPath: "/images/sponsor-logo.png",
+    };
+
+    const program = createSponsorUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.name).toBe("Test Sponsor");
+    expect(result.description).toBe("A test sponsor description");
+    expect(result.logoPath).toBe("/images/sponsor-logo.png");
+    expect(result.id).toBeDefined();
+    expect(result.isActive).toBe(true);
+    expect(result.createdAt).toBeInstanceOf(Date);
   });
 
-  // Helper to run use case with repository service
-  const runUseCase = async (
-    input: CreateSponsorInput,
-    repoOverrides?: { create?: (sponsor: Sponsor) => Promise<Sponsor> },
-  ) => {
-    const program = createSponsorUseCase(input).pipe(
-      Effect.provideService(
-        SponsorGatewayTag,
-        createMockRepoService(repoOverrides),
-      ),
-    );
-    return await Effect.runPromise(program);
-  };
+  it("should create sponsor with all optional fields", async () => {
+    const mockGateway = createMockSponsorGateway();
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-  describe("[UNIT] execute", () => {
-    it("should create sponsor with valid input", async () => {
-      // Create a mock sponsor that matches the input
-      const mockSponsor = Effect.runSync(
-        Sponsor.create({
-          id: "sponsor-456" as SponsorId,
-          name: "Acme Corp",
-          description: "A leading technology company",
-          logoPath: "/logos/acme.png",
-          height: null,
-          offsetX: null,
-          offsetY: null,
-          isActive: true,
-        }),
-      );
+    const input: CreateSponsorInput = {
+      name: "Full Sponsor",
+      description: "Complete sponsor data",
+      logoPath: "/images/full-logo.png",
+      height: 150,
+      offsetX: 10,
+      offsetY: 20,
+      isActive: false,
+    };
 
-      const result = await runUseCase(
-        {
-          name: "Acme Corp",
-          description: "A leading technology company",
-          logoPath: "/logos/acme.png",
-        },
-        { create: async () => mockSponsor },
-      );
+    const program = createSponsorUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      expect(result.name).toBe("Acme Corp");
-      expect(result.description).toBe("A leading technology company");
-      expect(result.logoPath).toBe("/logos/acme.png");
-      expect(result.isActive).toBe(true);
-      expect(result.createdAt).toBeInstanceOf(Date);
-    });
+    expect(result.name).toBe("Full Sponsor");
+    expect(result.height).toBe(150);
+    expect(result.offsetX).toBe(10);
+    expect(result.offsetY).toBe(20);
+    expect(result.isActive).toBe(false);
+  });
 
-    it("should fail when name is empty", async () => {
-      const program = createSponsorUseCase({
-        name: "",
-        description: "Description",
-        logoPath: "/logo.png",
-      }).pipe(
-        Effect.provideService(SponsorGatewayTag, createMockRepoService()),
-      );
+  it("should fail with CreateSponsorValidationError when name is empty", async () => {
+    const mockGateway = createMockSponsorGateway();
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
+    const input: CreateSponsorInput = {
+      name: "",
+      description: "Description",
+      logoPath: "/logo.png",
+    };
+
+    const program = createSponsorUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
+      if (either.left instanceof CreateSponsorValidationError) {
+        expect(either.left.message).toContain("name");
       }
-    });
+    }
+  });
 
-    it("should fail when description is empty", async () => {
-      const program = createSponsorUseCase({
-        name: "Test Sponsor",
-        description: "",
-        logoPath: "/logo.png",
-      }).pipe(
-        Effect.provideService(SponsorGatewayTag, createMockRepoService()),
-      );
+  it("should fail with CreateSponsorValidationError when description is empty", async () => {
+    const mockGateway = createMockSponsorGateway();
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
-      }
-    });
+    const input: CreateSponsorInput = {
+      name: "Name",
+      description: "",
+      logoPath: "/logo.png",
+    };
 
-    it("should fail when logoPath is empty", async () => {
-      const program = createSponsorUseCase({
-        name: "Test Sponsor",
-        description: "Description",
-        logoPath: "",
-      }).pipe(
-        Effect.provideService(SponsorGatewayTag, createMockRepoService()),
-      );
+    const program = createSponsorUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
-      }
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
+    }
+  });
 
-    it("should create sponsor with optional positioning fields", async () => {
-      const mockSponsor = createValidSponsor({
-        id: "sponsor-789" as SponsorId,
-      });
+  it("should fail with CreateSponsorValidationError when logoPath is empty", async () => {
+    const mockGateway = createMockSponsorGateway();
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-      const result = await runUseCase(
-        {
-          name: "Positioned Sponsor",
-          description: "A sponsor with positioning",
-          logoPath: "/logos/positioned.png",
-          height: 100,
-          offsetX: 10,
-          offsetY: 20,
-        },
-        { create: async () => mockSponsor },
-      );
+    const input: CreateSponsorInput = {
+      name: "Name",
+      description: "Description",
+      logoPath: "",
+    };
 
-      expect(result.id).toBe("sponsor-789");
-    });
+    const program = createSponsorUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-    it("should create inactive sponsor when specified", async () => {
-      const inactiveEffect = Sponsor.create({
-        id: "sponsor-inactive" as SponsorId,
-        name: "Inactive Sponsor",
-        description: "This sponsor is inactive",
-        logoPath: "/logos/inactive.png",
-        height: null,
-        offsetX: null,
-        offsetY: null,
-        isActive: false,
-      });
-      const mockSponsor = Effect.runSync(inactiveEffect);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(CreateSponsorValidationError);
+    }
+  });
 
-      const result = await runUseCase(
-        {
-          name: "Inactive Sponsor",
-          description: "This sponsor is inactive",
-          logoPath: "/logos/inactive.png",
-          isActive: false,
-        },
-        { create: async () => mockSponsor },
-      );
+  it("should fail with DatabaseError when database error occurs", async () => {
+    const mockGateway = createMockSponsorGateway({ shouldFailCreate: true });
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
 
-      expect(result.isActive).toBe(false);
-    });
+    const input: CreateSponsorInput = {
+      name: "Test Sponsor",
+      description: "Description",
+      logoPath: "/logo.png",
+    };
 
-    it("should propagate repository errors as defects", async () => {
-      const program = createSponsorUseCase({
-        name: "Test Sponsor",
-        description: "Description",
-        logoPath: "/logo.png",
-      }).pipe(
-        Effect.provideService(
-          SponsorGatewayTag,
-          createMockRepoService({
-            create: () => Promise.reject(new Error("Create failed")),
-          }),
-        ),
-      );
+    const program = createSponsorUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      await expect(Effect.runPromise(program)).rejects.toThrow("Create failed");
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should return all expected output properties", async () => {
+    const mockGateway = createMockSponsorGateway();
+    const mockLayer = Layer.succeed(SponsorGatewayTag, mockGateway);
+
+    const input: CreateSponsorInput = {
+      name: "Complete Sponsor",
+      description: "Complete description",
+      logoPath: "/images/logo.png",
+      height: 100,
+      offsetX: 5,
+      offsetY: 10,
+    };
+
+    const program = createSponsorUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result).toHaveProperty("id");
+    expect(result).toHaveProperty("name");
+    expect(result).toHaveProperty("description");
+    expect(result).toHaveProperty("logoPath");
+    expect(result).toHaveProperty("height");
+    expect(result).toHaveProperty("offsetX");
+    expect(result).toHaveProperty("offsetY");
+    expect(result).toHaveProperty("isActive");
+    expect(result).toHaveProperty("createdAt");
   });
 });

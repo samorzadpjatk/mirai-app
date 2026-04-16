@@ -9,6 +9,11 @@ import type {
   PaginationOptions,
   PaginatedResult,
 } from "../../system/shared/dto";
+
+/**
+ * Re-export PaginationOptions and PaginatedResult for use in reward interactors
+ */
+export type { PaginationOptions, PaginatedResult };
 import type {
   RewardDTO,
   RewardPurchaseDTO,
@@ -100,6 +105,24 @@ export interface RewardGateway {
   ): Effect.Effect<Connection<RewardDTO>, DatabaseError, never>;
 
   /**
+   * Find rewards by trip ID with offset-based pagination
+   * Returns a PaginatedResult for simpler offset/limit pagination
+   */
+  findByTripId(
+    tripId: string,
+    options?: { includeHidden?: boolean } & PaginationOptions,
+  ): Effect.Effect<PaginatedResult<RewardDTO>, DatabaseError, never>;
+
+  /**
+   * Find visible rewards by trip ID with offset-based pagination
+   * Returns a PaginatedResult for simpler offset/limit pagination
+   */
+  findVisibleByTripId(
+    tripId: string,
+    pagination?: PaginationOptions,
+  ): Effect.Effect<PaginatedResult<RewardDTO>, DatabaseError, never>;
+
+  /**
    * Update reward
    */
   update(reward: RewardDTO): Effect.Effect<RewardDTO, DatabaseError, never>;
@@ -184,6 +207,19 @@ export interface RewardPurchaseGateway {
     tripId: string,
     args: RewardPurchaseConnectionArgs,
   ): Effect.Effect<Connection<RewardPurchaseDTO>, DatabaseError, never>;
+
+  /**
+   * Find purchases for a trip with offset-based pagination
+   * Used for admin/moderator purchase history
+   */
+  findByTripId(
+    tripId: string,
+    options?: {
+      groupId?: string;
+      limit?: number;
+      offset?: number;
+    },
+  ): Effect.Effect<PaginatedResult<RewardPurchaseDTO>, DatabaseError, never>;
 
   /**
    * Update purchase status

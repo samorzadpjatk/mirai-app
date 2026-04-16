@@ -17,6 +17,7 @@ export interface RewardDTO {
   title: string;
   description: string | null;
   imageUrl: string | null;
+  images?: string[]; // Array of image URLs
   pointsCost: number;
   quantity: number | null;
   availableQuantity: number;
@@ -36,6 +37,7 @@ export interface RewardPurchaseDTO {
   groupId: string;
   userId: string;
   pointsSpent: number;
+  totalCost: number;
   status: PurchaseStatus;
   quantity: number;
   collectionMethod: string | null;
@@ -44,6 +46,8 @@ export interface RewardPurchaseDTO {
   notes: string | null;
   purchasedAt: Date;
   updatedAt: Date;
+  statusUpdatedAt: Date;
+  statusUpdatedById: string | null;
 }
 
 /**

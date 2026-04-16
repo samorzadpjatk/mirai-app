@@ -1,9 +1,9 @@
-import {
-  RewardPurchaseGatewayTag,
-  TripAccessCheckerTag,
-  type PaginationOptions,
-  type PaginatedResult,
-} from "../reward/ports/gateway";
+import { RewardPurchaseGatewayTag } from "../../reward/ports/gateway";
+import { TripAccessCheckerTag } from "../../trip/ports/gateway";
+import type {
+  PaginationOptions,
+  PaginatedResult,
+} from "../../system/shared/dto";
 import { Data, Effect } from "effect";
 
 /**

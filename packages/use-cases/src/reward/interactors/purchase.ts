@@ -1,15 +1,21 @@
-import { RewardPurchase, CoinAmount } from "@mirai-app/domain";
+import {
+  Reward,
+  RewardPurchase,
+  CoinAmount,
+  ValidationError,
+} from "@mirai-app/domain";
 import {
   RewardGatewayTag,
   RewardPurchaseGatewayTag,
   TripPointsCalculatorTag,
+} from "../ports/gateway";
+import {
   GroupCoinsServiceTag,
   TripAccessCheckerTag,
-  type PaginationOptions,
-  type PaginatedResult,
-} from "../ports/gateway";
+} from "../../trip/ports/gateway";
 import { Effect, Data } from "effect";
 import type { RewardId } from "@mirai-app/domain";
+import type { RewardDTO, RewardPurchaseDTO } from "../dto";
 
 /**
  * Input for PurchaseReward use case
@@ -166,36 +172,42 @@ export function purchaseRewardUseCase(
     const accessChecker = yield* TripAccessCheckerTag;
 
     // Find the reward
-    const reward = yield* rewardRepo.findById(input.rewardId).pipe(
+    const rewardDTO = yield* rewardRepo.findById(input.rewardId).pipe(
       Effect.mapError(
         () => new RewardRepositoryError({ message: "Failed to load reward" }),
       ),
       Effect.flatMap((r) =>
-        r === null
-          ? Effect.fail(new RewardNotFoundError({}))
-          : Effect.succeed(r),
+        r === null ? Effect.fail(new RewardNotFoundError()) : Effect.succeed(r),
+      ),
+    );
+
+    // Convert DTO to domain entity
+    const reward = yield* dtoToReward(rewardDTO).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new RewardRepositoryError({
+            message: `Invalid reward data: ${validationError.message}`,
+          }),
       ),
     );
 
     // Check if trip has ended
-    const hasEnded = yield* accessChecker
-      .hasTripEnded(reward.tripId)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new TripAccessCheckerError({
-              message: "Failed to check trip status",
-            }),
-        ),
-      );
+    const hasEnded = yield* accessChecker.hasTripEnded(reward.tripId).pipe(
+      Effect.mapError(
+        () =>
+          new TripAccessCheckerError({
+            message: "Failed to check trip status",
+          }),
+      ),
+    );
 
     if (hasEnded) {
-      return yield* Effect.fail(new TripEndedError({}));
+      return yield* Effect.fail(new TripEndedError());
     }
 
     // Check if reward is hidden
-    if (reward.isHidden) {
-      return yield* Effect.fail(new RewardHiddenError({}));
+    if (reward.isHiddenReward()) {
+      return yield* Effect.fail(new RewardHiddenError());
     }
 
     // Check if sufficient quantity is available
@@ -221,7 +233,7 @@ export function purchaseRewardUseCase(
       );
 
     if (!leaderCheck.isLeader || !leaderCheck.groupId) {
-      return yield* Effect.fail(new NotGroupLeaderError({}));
+      return yield* Effect.fail(new NotGroupLeaderError());
     }
 
     // Calculate dynamic coin cost
@@ -236,36 +248,23 @@ export function purchaseRewardUseCase(
         ),
       );
 
-    // Calculate total cost (returns Effect)
-    const totalCost = yield* reward
-      .calculateTotalCost(input.quantity, totalPoints)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new RewardRepositoryError({
-              message: "Failed to calculate total cost",
-            }),
-        ),
-      );
+    // Calculate total cost (domain method returns number, not Effect)
+    const totalCost = reward.calculateTotalCost(input.quantity);
 
     // Check if group has enough coins
-    const groupCoins = yield* coinsService
-      .getBalance(leaderCheck.groupId)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new GroupCoinsServiceError({
-              message: "Failed to get group coins",
-            }),
-        ),
-      );
+    const groupCoins = yield* coinsService.getBalance(leaderCheck.groupId).pipe(
+      Effect.mapError(
+        () =>
+          new GroupCoinsServiceError({
+            message: "Failed to get group coins",
+          }),
+      ),
+    );
 
-    const groupCoinsAmount = CoinAmount.unsafeCreate(groupCoins);
-
-    if (!groupCoinsAmount.isGreaterThanOrEqual(totalCost)) {
+    if (!reward.canAfford(groupCoins)) {
       return yield* Effect.fail(
         new InsufficientCoinsError({
-          needed: totalCost.toNumber(),
+          needed: totalCost,
           have: groupCoins,
         }),
       );
@@ -289,7 +288,7 @@ export function purchaseRewardUseCase(
     yield* coinsService
       .deductCoins(
         leaderCheck.groupId,
-        totalCost.toNumber(),
+        totalCost,
         `Claimed ${input.quantity}x ${reward.name}`,
         input.userId,
       )
@@ -300,12 +299,12 @@ export function purchaseRewardUseCase(
         ),
       );
 
-    // 3. Create purchase record
+    // 3. Create purchase record (domain entity)
     const purchaseResult = RewardPurchase.create({
       rewardId: input.rewardId,
       groupId: leaderCheck.groupId,
       quantity: input.quantity,
-      totalCost: totalCost.toNumber(),
+      totalCost: totalCost,
       purchasedById: input.userId,
       statusUpdatedById: input.userId,
     });
@@ -317,8 +316,28 @@ export function purchaseRewardUseCase(
       ),
     );
 
-    const savedPurchase = yield* purchaseRepo
-      .create(purchase)
+    // Convert domain entity to DTO for gateway
+    const purchaseDTO: RewardPurchaseDTO = {
+      id: purchase.id,
+      rewardId: purchase.rewardId,
+      groupId: purchase.groupId,
+      userId: purchase.purchasedById,
+      pointsSpent: purchase.totalCost,
+      totalCost: purchase.totalCost,
+      status: purchase.status,
+      quantity: purchase.quantity,
+      collectionMethod: null,
+      collectedAt: null,
+      collectedById: null,
+      notes: null,
+      purchasedAt: purchase.purchasedAt,
+      updatedAt: purchase.statusUpdatedAt,
+      statusUpdatedAt: purchase.statusUpdatedAt,
+      statusUpdatedById: purchase.statusUpdatedById,
+    };
+
+    const savedPurchaseDTO = yield* purchaseRepo
+      .create(purchaseDTO)
       .pipe(
         Effect.mapError(
           () =>
@@ -339,15 +358,36 @@ export function purchaseRewardUseCase(
       );
 
     return {
-      purchaseId: savedPurchase.id,
+      purchaseId: savedPurchaseDTO.id,
       rewardId: reward.id,
       groupId: leaderCheck.groupId,
       quantity: input.quantity,
-      totalCost: totalCost.toNumber(),
-      status: savedPurchase.status,
-      purchasedAt: savedPurchase.purchasedAt,
+      totalCost: totalCost,
+      status: savedPurchaseDTO.status,
+      purchasedAt: savedPurchaseDTO.purchasedAt,
       remainingGroupCoins: remainingCoins,
       remainingRewardQuantity: updatedReward.availableQuantity,
     };
+  });
+}
+
+/**
+ * Convert RewardDTO to domain Reward entity
+ */
+function dtoToReward(
+  dto: RewardDTO,
+): Effect.Effect<Reward, ValidationError, never> {
+  return Reward.create({
+    id: dto.id,
+    name: dto.title,
+    description: dto.description ?? "",
+    availableQuantity: dto.availableQuantity,
+    coinCost: dto.pointsCost,
+    image: dto.imageUrl,
+    isHidden: dto.isHidden,
+    tripId: dto.tripId,
+    createdById: dto.createdById,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   });
 }

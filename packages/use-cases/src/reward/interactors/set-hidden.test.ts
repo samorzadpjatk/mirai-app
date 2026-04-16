@@ -1,134 +1,267 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   setRewardHiddenUseCase,
   type SetRewardHiddenInput,
+  RewardNotFoundError,
+  SetRewardHiddenRepositoryError,
 } from "./set-hidden";
-import { Effect, Either } from "effect";
-import { RewardGatewayTag } from "../ports/gateway";
-import type { Reward, RewardId } from "@mirai-app/domain";
+import { RewardGatewayTag, type RewardGateway } from "../ports/gateway";
+import type { RewardDTO } from "../dto";
+import { DatabaseError, RewardStatus } from "@mirai-app/domain";
 
-// Mock Reward domain object
-const createMockReward = (overrides?: Partial<Reward>): Reward =>
-  ({
-    id: "reward-123",
-    name: "Test Reward",
-    isHidden: false,
-    updatedAt: new Date("2024-01-01"),
-    hide: function () {
-      return { ...this, isHidden: true, updatedAt: new Date("2024-01-02") };
+/**
+ * Mock RewardGateway for testing
+ */
+function createMockRewardGateway(
+  rewards: RewardDTO[] = [],
+  options: {
+    shouldFailFind?: boolean;
+    shouldFailUpdate?: boolean;
+  } = {},
+): RewardGateway {
+  const rewardMap = new Map(rewards.map((r) => [r.id, r]));
+
+  return {
+    create: (reward: RewardDTO) => {
+      rewardMap.set(reward.id, reward);
+      return Effect.succeed(reward);
     },
-    unhide: function () {
-      return { ...this, isHidden: false, updatedAt: new Date("2024-01-02") };
+
+    findById: (id: string) => {
+      if (options.shouldFailFind) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database error",
+          }),
+        );
+      }
+      const reward = rewardMap.get(id);
+      return Effect.succeed(reward ?? null);
     },
-    ...overrides,
-  }) as unknown as Reward;
 
-// Create mock repository service
-const createMockRepoService = (overrides?: {
-  findById?: (id: RewardId) => Promise<Reward | null>;
-  update?: (reward: Reward) => Promise<Reward>;
-}) => ({
-  create: () => Effect.promise(() => Promise.resolve({} as Reward)),
-  findById: (id: RewardId) =>
-    Effect.promise(() =>
-      overrides?.findById
-        ? overrides.findById(id)
-        : Promise.resolve(createMockReward()),
-    ),
-  findByTripId: () =>
-    Effect.promise(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
       }),
-    ),
-  findVisibleByTripId: () =>
-    Effect.promise(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
+
+    findVisibleByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
       }),
-    ),
-  update: (reward: Reward) =>
-    Effect.promise(() =>
-      overrides?.update ? overrides.update(reward) : Promise.resolve(reward),
-    ),
-  delete: () => Effect.promise(() => Promise.resolve()),
-  hasPurchases: () => Effect.promise(() => Promise.resolve(false)),
-  getPurchaseCount: () => Effect.promise(() => Promise.resolve(0)),
-  decrementQuantity: () => Effect.promise(() => Promise.resolve({} as any)),
-  incrementQuantity: () => Effect.promise(() => Promise.resolve({} as any)),
-});
 
-// Helper to run use case with repository service
-const runUseCase = async (
-  input: SetRewardHiddenInput,
-  repoOverrides?: {
-    findById?: (id: RewardId) => Promise<Reward | null>;
-    update?: (reward: Reward) => Promise<Reward>;
-  },
-) => {
-  const program = setRewardHiddenUseCase(input).pipe(
-    Effect.provideService(
-      RewardGatewayTag,
-      createMockRepoService(repoOverrides),
-    ),
-  );
-  return await Effect.runPromise(program);
-};
+    update: (reward: RewardDTO) => {
+      if (options.shouldFailUpdate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "update",
+            message: "Database error",
+          }),
+        );
+      }
+      rewardMap.set(reward.id, reward);
+      return Effect.succeed(reward);
+    },
 
-describe("[UNIT] setRewardHiddenUseCase (Effect)", () => {
-  describe("[UNIT] execute", () => {
-    it("should hide a reward", async () => {
-      const input: SetRewardHiddenInput = {
-        rewardId: "reward-123" as RewardId,
-        isHidden: true,
-      };
+    delete: () => Effect.succeed(void 0),
 
-      const result = await runUseCase(input);
+    hasPurchases: () => Effect.succeed(false),
 
-      expect(result.id).toBe("reward-123");
-      expect(result.name).toBe("Test Reward");
-      expect(result.isHidden).toBe(true);
-      expect(result.updatedAt).toBeInstanceOf(Date);
+    getPurchaseCount: () => Effect.succeed(0),
+
+    decrementQuantity: (id: string) => {
+      const reward = rewardMap.get(id);
+      return reward
+        ? Effect.succeed(reward)
+        : Effect.fail(
+            new DatabaseError({
+              operation: "decrementQuantity",
+              message: "Reward not found",
+            }),
+          );
+    },
+
+    incrementQuantity: (id: string) => {
+      const reward = rewardMap.get(id);
+      return reward
+        ? Effect.succeed(reward)
+        : Effect.fail(
+            new DatabaseError({
+              operation: "incrementQuantity",
+              message: "Reward not found",
+            }),
+          );
+    },
+  };
+}
+
+function createMockRewardDTO(overrides: Partial<RewardDTO> = {}): RewardDTO {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "reward-123",
+    tripId: overrides.tripId ?? "trip-123",
+    title: overrides.title ?? "Test Reward",
+    description: overrides.description ?? "Test reward description",
+    imageUrl: overrides.imageUrl ?? null,
+    pointsCost: overrides.pointsCost ?? 100,
+    quantity: overrides.quantity ?? null,
+    availableQuantity: overrides.availableQuantity ?? 10,
+    status: overrides.status ?? RewardStatus.ACTIVE,
+    isHidden: overrides.isHidden ?? false,
+    createdById: overrides.createdById ?? "user-123",
+    createdAt: overrides.createdAt ?? now,
+    updatedAt: overrides.updatedAt ?? now,
+  };
+}
+
+describe("[UNIT] setRewardHiddenUseCase", () => {
+  it("should hide reward successfully", async () => {
+    const mockReward = createMockRewardDTO({
+      id: "reward-visible",
+      title: "Visible Reward",
+      isHidden: false,
     });
+    const mockGateway = createMockRewardGateway([mockReward]);
+    const mockLayer = Layer.succeed(RewardGatewayTag, mockGateway);
 
-    it("should unhide a reward", async () => {
-      const hiddenReward = createMockReward({ isHidden: true });
+    const input: SetRewardHiddenInput = {
+      rewardId: "reward-visible",
+      isHidden: true,
+    };
+    const program = setRewardHiddenUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const input: SetRewardHiddenInput = {
-        rewardId: "reward-123" as RewardId,
-        isHidden: false,
-      };
+    expect(result.id).toBe("reward-visible");
+    expect(result.name).toBe("Visible Reward");
+    expect(result.isHidden).toBe(true);
+  });
 
-      const result = await runUseCase(input, {
-        findById: () => Promise.resolve(hiddenReward),
-      });
-
-      expect(result.isHidden).toBe(false);
+  it("should unhide reward successfully", async () => {
+    const mockReward = createMockRewardDTO({
+      id: "reward-hidden",
+      title: "Hidden Reward",
+      isHidden: true,
     });
+    const mockGateway = createMockRewardGateway([mockReward]);
+    const mockLayer = Layer.succeed(RewardGatewayTag, mockGateway);
 
-    it("should return updatedAt timestamp", async () => {
-      const updatedReward = createMockReward({
-        updatedAt: new Date("2024-06-15"),
-      });
+    const input: SetRewardHiddenInput = {
+      rewardId: "reward-hidden",
+      isHidden: false,
+    };
+    const program = setRewardHiddenUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const input: SetRewardHiddenInput = {
-        rewardId: "reward-123" as RewardId,
-        isHidden: true,
-      };
+    expect(result.id).toBe("reward-hidden");
+    expect(result.isHidden).toBe(false);
+  });
 
-      const result = await runUseCase(input, {
-        update: () => Promise.resolve(updatedReward),
-      });
+  it("should fail with RewardNotFoundError when reward does not exist", async () => {
+    const mockGateway = createMockRewardGateway([]);
+    const mockLayer = Layer.succeed(RewardGatewayTag, mockGateway);
 
-      expect(result.updatedAt).toEqual(new Date("2024-06-15"));
+    const input: SetRewardHiddenInput = {
+      rewardId: "non-existent",
+      isHidden: true,
+    };
+    const program = setRewardHiddenUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(RewardNotFoundError);
+      expect(either.left.message).toBe("Reward not found");
+    }
+  });
+
+  it("should handle database errors during find", async () => {
+    const mockGateway = createMockRewardGateway([], { shouldFailFind: true });
+    const mockLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+
+    const input: SetRewardHiddenInput = {
+      rewardId: "reward-find-fail",
+      isHidden: true,
+    };
+    const program = setRewardHiddenUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(SetRewardHiddenRepositoryError);
+      expect(either.left.operation).toBe("find reward");
+    }
+  });
+
+  it("should handle database errors during update", async () => {
+    const mockReward = createMockRewardDTO({
+      id: "reward-update-fail",
+      title: "Update Fail Reward",
     });
+    const mockGateway = createMockRewardGateway([mockReward], {
+      shouldFailUpdate: true,
+    });
+    const mockLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+
+    const input: SetRewardHiddenInput = {
+      rewardId: "reward-update-fail",
+      isHidden: true,
+    };
+    const program = setRewardHiddenUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(SetRewardHiddenRepositoryError);
+      expect(either.left.operation).toBe("update reward");
+    }
+  });
+
+  it("should update updatedAt timestamp", async () => {
+    const originalDate = new Date("2024-01-01");
+    const mockReward = createMockRewardDTO({
+      id: "reward-update-time",
+      title: "Time Update Reward",
+      updatedAt: originalDate,
+    });
+    const mockGateway = createMockRewardGateway([mockReward]);
+    const mockLayer = Layer.succeed(RewardGatewayTag, mockGateway);
+
+    const input: SetRewardHiddenInput = {
+      rewardId: "reward-update-time",
+      isHidden: true,
+    };
+    const program = setRewardHiddenUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.updatedAt).toBeInstanceOf(Date);
   });
 });

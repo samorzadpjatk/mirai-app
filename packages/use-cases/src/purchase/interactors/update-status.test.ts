@@ -1,232 +1,643 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   updatePurchaseStatusUseCase,
   type UpdatePurchaseStatusInput,
+  PurchaseNotFoundError,
+  NotAuthorizedError,
+  InvalidPurchaseStatusTransitionError,
+  UpdatePurchaseValidationError,
+  UpdatePurchaseOperationError,
 } from "./update-status";
-import { Effect, Either } from "effect";
 import {
   RewardGatewayTag,
   RewardPurchaseGatewayTag,
+  type RewardGateway,
+  type RewardPurchaseGateway,
+} from "../../reward/ports/gateway";
+import {
   GroupCoinsServiceTag,
   TripAccessCheckerTag,
-} from "../reward/ports/gateway";
-import { RewardPurchaseStatus, RewardId } from "@mirai-app/domain";
-import type { RewardPurchase } from "@mirai-app/domain";
+  type GroupCoinsService,
+  type TripAccessChecker,
+} from "../../trip/ports/gateway";
+import type { RewardPurchaseDTO } from "../../reward/dto";
+import {
+  DatabaseError,
+  RewardPurchaseStatus,
+  RewardId,
+} from "@mirai-app/domain";
 
-// Mock RewardPurchase domain object
-const createMockPurchase = (
-  overrides?: Partial<RewardPurchase>,
-): RewardPurchase =>
-  ({
-    id: "purchase-123",
-    rewardId: "reward-123",
-    groupId: "group-123",
-    quantity: 2,
-    totalCost: 200,
-    status: "BOUGHT" as RewardPurchaseStatus,
-    collectionMethod: null,
-    statusUpdatedById: null,
-    statusUpdatedAt: new Date(),
-    purchasedAt: new Date(),
-    ...overrides,
-  }) as RewardPurchase;
+/**
+ * Mock RewardPurchaseGateway for testing
+ */
+function createMockPurchaseGateway(
+  purchases: RewardPurchaseDTO[] = [],
+  options: {
+    shouldFailFindById?: boolean;
+    shouldFailUpdateStatus?: boolean;
+  } = {},
+): RewardPurchaseGateway {
+  const purchaseMap = new Map(purchases.map((p) => [p.id, p]));
 
-// Create mock repository services
-const createMockRewardRepo = (overrides?: {
-  incrementQuantity?: (
-    rewardId: ReturnType<typeof RewardId.unsafeCreate>,
-    quantity: number,
-  ) => Promise<unknown>;
-}) => ({
-  create: () => Effect.promise(() => Promise.resolve({} as any)),
-  findById: () => Effect.promise(() => Promise.resolve(null)),
-  findByTripId: () =>
-    Effect.promise(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
-      }),
-    ),
-  findVisibleByTripId: () =>
-    Effect.promise(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
-      }),
-    ),
-  update: () => Effect.promise(() => Promise.resolve({} as any)),
-  delete: () => Effect.promise(() => Promise.resolve()),
-  hasPurchases: () => Effect.promise(() => Promise.resolve(false)),
-  getPurchaseCount: () => Effect.promise(() => Promise.resolve(0)),
-  decrementQuantity: () => Effect.promise(() => Promise.resolve({} as any)),
-  incrementQuantity: (
-    rewardId: ReturnType<typeof RewardId.unsafeCreate>,
-    quantity: number,
-  ) =>
-    Effect.promise(() =>
-      overrides?.incrementQuantity
-        ? overrides.incrementQuantity(rewardId, quantity)
-        : Promise.resolve({} as any),
-    ),
-});
+  return {
+    create: (purchase: RewardPurchaseDTO) => {
+      purchaseMap.set(purchase.id, purchase);
+      return Effect.succeed(purchase);
+    },
 
-const createMockPurchaseRepo = (overrides?: {
-  findById?: (id: string) => Promise<RewardPurchase | null>;
-  updateStatus?: (
-    id: string,
-    status: RewardPurchaseStatus,
-    updatedById: string,
-    collectionMethod: string | null | undefined,
-  ) => Promise<RewardPurchase>;
-}) => ({
-  create: () => Effect.promise(() => Promise.resolve(createMockPurchase())),
-  findById: (id: string) =>
-    Effect.promise(() =>
-      overrides?.findById ? overrides.findById(id) : Promise.resolve(null),
-    ),
-  findByRewardId: () =>
-    Effect.promise(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
-      }),
-    ),
-  findByGroupId: () =>
-    Effect.promise(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
-      }),
-    ),
-  findByTripId: () =>
-    Effect.promise(() =>
-      Promise.resolve({
-        items: [],
-        total: 0,
-        limit: 10,
-        offset: 0,
-        hasMore: false,
-      }),
-    ),
-  updateStatus: (
-    id: string,
-    status: RewardPurchaseStatus,
-    updatedById: string,
-    collectionMethod: string | null | undefined,
-  ) =>
-    Effect.promise(() =>
-      overrides?.updateStatus
-        ? overrides.updateStatus(id, status, updatedById, collectionMethod)
-        : Promise.resolve(
-            createMockPurchase({
-              id,
-              status,
-              statusUpdatedById: updatedById,
-              collectionMethod,
-            }),
-          ),
-    ),
-  countByRewardId: () => Effect.promise(() => Promise.resolve(0)),
-});
+    findById: (id: string) => {
+      if (options.shouldFailFindById) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database error",
+          }),
+        );
+      }
+      const purchase = purchaseMap.get(id);
+      return Effect.succeed(purchase ?? null);
+    },
 
-const createMockCoinsService = () => ({
-  getBalance: () => Effect.promise(() => Promise.resolve(500)),
-  deductCoins: () => Effect.promise(() => Promise.resolve()),
-  addCoins: () => Effect.promise(() => Promise.resolve()),
-});
-
-const createMockAccessChecker = (overrides?: {
-  isStaff?: () => Promise<boolean>;
-  isGroupLeader?: () => Promise<{ isLeader: boolean; groupId: string }>;
-}) => ({
-  isGroupLeader: () =>
-    Effect.promise(() =>
-      overrides?.isGroupLeader
-        ? overrides.isGroupLeader()
-        : Promise.resolve({ isLeader: false, groupId: "group-b" }),
-    ),
-  isStaff: () =>
-    Effect.promise(() =>
-      overrides?.isStaff ? overrides.isStaff() : Promise.resolve(false),
-    ),
-  hasTripEnded: () => Effect.promise(() => Promise.resolve(false)),
-});
-
-// Helper to run use case with services
-const runUseCase = async (
-  input: UpdatePurchaseStatusInput,
-  overrides?: {
-    rewardRepo?: Parameters<typeof createMockRewardRepo>[0];
-    purchaseRepo?: Parameters<typeof createMockPurchaseRepo>[0];
-    coinsService?: Parameters<typeof createMockCoinsService>[0];
-    accessChecker?: Parameters<typeof createMockAccessChecker>[0];
-  },
-) => {
-  const program = updatePurchaseStatusUseCase(input).pipe(
-    Effect.provideService(
-      RewardGatewayTag,
-      createMockRewardRepo(overrides?.rewardRepo),
-    ),
-    Effect.provideService(
-      RewardPurchaseGatewayTag,
-      createMockPurchaseRepo(overrides?.purchaseRepo),
-    ),
-    Effect.provideService(GroupCoinsServiceTag, createMockCoinsService()),
-    Effect.provideService(
-      TripAccessCheckerTag,
-      createMockAccessChecker(overrides?.accessChecker),
-    ),
-  );
-  return await Effect.runPromise(program);
-};
-
-describe("[UNIT] updatePurchaseStatusUseCase (Effect)", () => {
-  describe("[UNIT] execute", () => {
-    it("should update purchase status for staff user", async () => {
-      const mockPurchase = createMockPurchase({ id: "purchase-456" });
-
-      const input: UpdatePurchaseStatusInput = {
-        purchaseId: "purchase-456",
-        newStatus: "ACCEPTED" as RewardPurchaseStatus,
-        updatedById: "staff-123",
-        collectionMethod: "In-person pickup",
-      };
-
-      const result = await runUseCase(input, {
-        purchaseRepo: {
-          findById: () => Promise.resolve(mockPurchase),
-          updateStatus: (id, status, updatedById, collectionMethod) =>
-            Promise.resolve(
-              createMockPurchase({
-                id,
-                status,
-                statusUpdatedById: updatedById,
-                collectionMethod,
-              }),
-            ),
+    findByRewardIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
         },
-        accessChecker: {
-          isStaff: () => Promise.resolve(true),
-          isGroupLeader: () =>
-            Promise.resolve({ isLeader: false, groupId: "group-b" }),
+      }),
+
+    findByGroupIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
         },
+      }),
+
+    findByTripId: () =>
+      Effect.succeed({
+        items: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+      }),
+
+    updateStatus: (
+      id: string,
+      status: string,
+      _updatedById: string,
+      collectionMethod?: string | null,
+    ) => {
+      if (options.shouldFailUpdateStatus) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "updateStatus",
+            message: "Failed to update status",
+          }),
+        );
+      }
+      const purchase = purchaseMap.get(id);
+      if (purchase) {
+        const updated = {
+          ...purchase,
+          status: status as RewardPurchaseStatus,
+          collectionMethod: collectionMethod ?? purchase.collectionMethod,
+          updatedAt: new Date(),
+        };
+        purchaseMap.set(id, updated);
+        return Effect.succeed(updated);
+      }
+      return Effect.fail(
+        new DatabaseError({
+          operation: "updateStatus",
+          message: "Purchase not found",
+        }),
+      );
+    },
+
+    countByRewardId: () => Effect.succeed(0),
+  };
+}
+
+/**
+ * Mock RewardGateway for testing
+ */
+function createMockRewardGateway(
+  options: {
+    shouldFailIncrementQuantity?: boolean;
+  } = {},
+): RewardGateway {
+  return {
+    create: (reward) => Effect.succeed(reward),
+    findById: () => Effect.succeed(null),
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+    findVisibleByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+    update: (reward) => Effect.succeed(reward),
+    delete: () => Effect.succeed(void 0),
+    hasPurchases: () => Effect.succeed(false),
+    getPurchaseCount: () => Effect.succeed(0),
+    decrementQuantity: (id) =>
+      Effect.succeed({
+        id: id.toString(),
+        tripId: "trip-123",
+        title: "Test Reward",
+        description: null,
+        imageUrl: null,
+        pointsCost: 100,
+        quantity: null,
+        availableQuantity: 10,
+        status: "AVAILABLE" as const,
+        isHidden: false,
+        createdById: "user-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    incrementQuantity: (id, _amount) => {
+      if (options.shouldFailIncrementQuantity) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "incrementQuantity",
+            message: "Failed to increment quantity",
+          }),
+        );
+      }
+      return Effect.succeed({
+        id: id.toString(),
+        tripId: "trip-123",
+        title: "Test Reward",
+        description: null,
+        imageUrl: null,
+        pointsCost: 100,
+        quantity: null,
+        availableQuantity: 10,
+        status: "AVAILABLE" as const,
+        isHidden: false,
+        createdById: "user-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
+    },
+  };
+}
 
-      expect(result.purchaseId).toBe("purchase-456");
-      expect(result.status).toBe("ACCEPTED");
-      expect(result.collectionMethod).toBe("In-person pickup");
+/**
+ * Mock GroupCoinsService for testing
+ */
+function createMockCoinsService(
+  options: {
+    shouldFailAddCoins?: boolean;
+  } = {},
+): GroupCoinsService {
+  return {
+    addCoins: (
+      _groupId: string,
+      _amount: number,
+      _reason: string,
+      _updatedById: string,
+    ) => {
+      if (options.shouldFailAddCoins) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "addCoins",
+            message: "Failed to add coins",
+          }),
+        );
+      }
+      return Effect.succeed({
+        id: "transaction-123",
+        groupId: "group-123",
+        amount: 100,
+        type: "EARNED",
+        reason: "Test refund",
+        createdById: "user-123",
+        createdAt: new Date(),
+      });
+    },
+  };
+}
+
+/**
+ * Mock TripAccessChecker for testing
+ */
+function createMockTripAccessChecker(
+  options: {
+    isStaff?: boolean;
+    isGroupLeader?: boolean;
+    groupId?: string;
+    shouldFailIsStaff?: boolean;
+    shouldFailIsGroupLeader?: boolean;
+  } = {},
+): TripAccessChecker {
+  return {
+    isStaff: () => {
+      if (options.shouldFailIsStaff) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "isStaff",
+            message: "Failed to check staff status",
+          }),
+        );
+      }
+      return Effect.succeed(options.isStaff ?? false);
+    },
+    isGroupLeader: () => {
+      if (options.shouldFailIsGroupLeader) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "isGroupLeader",
+            message: "Failed to check group leader",
+          }),
+        );
+      }
+      return Effect.succeed({
+        isLeader: options.isGroupLeader ?? true,
+        groupId: options.groupId ?? "group-123",
+        groupName: "Test Group",
+        coins: 1000,
+      });
+    },
+  };
+}
+
+function createMockPurchaseDTO(
+  overrides: Partial<RewardPurchaseDTO> = {},
+): RewardPurchaseDTO {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "purchase-123",
+    rewardId: overrides.rewardId ?? "reward-123",
+    groupId: overrides.groupId ?? "group-123",
+    userId: overrides.userId ?? "user-123",
+    pointsSpent: overrides.pointsSpent ?? 100,
+    totalCost: overrides.totalCost ?? 100,
+    status: overrides.status ?? RewardPurchaseStatus.BOUGHT,
+    quantity: overrides.quantity ?? 1,
+    collectionMethod: overrides.collectionMethod ?? null,
+    collectedAt: overrides.collectedAt ?? null,
+    collectedById: overrides.collectedById ?? null,
+    notes: overrides.notes ?? null,
+    purchasedAt: overrides.purchasedAt ?? now,
+    updatedAt: overrides.updatedAt ?? now,
+    statusUpdatedAt: overrides.statusUpdatedAt ?? now,
+    statusUpdatedById: overrides.statusUpdatedById ?? null,
+  };
+}
+
+describe("[UNIT] updatePurchaseStatusUseCase", () => {
+  it("should update status for staff user", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      status: RewardPurchaseStatus.BOUGHT,
+      rewardId: "reward-1",
+      groupId: "group-456",
+      pointsSpent: 100,
+      totalCost: 100,
+      quantity: 1,
     });
+    const purchaseGateway = createMockPurchaseGateway([mockPurchase]);
+    const rewardGateway = createMockRewardGateway();
+    const coinsService = createMockCoinsService();
+    const accessChecker = createMockTripAccessChecker({
+      isStaff: true,
+      isGroupLeader: false,
+      groupId: "group-123",
+    });
+
+    const layers = Layer.mergeAll(
+      Layer.succeed(RewardPurchaseGatewayTag, purchaseGateway),
+      Layer.succeed(RewardGatewayTag, rewardGateway),
+      Layer.succeed(GroupCoinsServiceTag, coinsService),
+      Layer.succeed(TripAccessCheckerTag, accessChecker),
+    );
+
+    const input: UpdatePurchaseStatusInput = {
+      purchaseId: "purchase-1",
+      newStatus: RewardPurchaseStatus.ACCEPTED,
+      updatedById: "staff-123",
+      collectionMethod: "Pickup at hotel",
+    };
+
+    const program = updatePurchaseStatusUseCase(input).pipe(
+      Effect.provide(layers),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.purchaseId).toBe("purchase-1");
+    expect(result.status).toBe(RewardPurchaseStatus.ACCEPTED);
+    expect(result.collectionMethod).toBe("Pickup at hotel");
+    expect(result.refunded).toBe(false);
+  });
+
+  it("should update status for group leader of the purchase group", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      status: RewardPurchaseStatus.BOUGHT,
+      rewardId: "reward-1",
+      groupId: "group-123",
+      pointsSpent: 100,
+      totalCost: 100,
+      quantity: 1,
+    });
+    const purchaseGateway = createMockPurchaseGateway([mockPurchase]);
+    const rewardGateway = createMockRewardGateway();
+    const coinsService = createMockCoinsService();
+    const accessChecker = createMockTripAccessChecker({
+      isStaff: false,
+      isGroupLeader: true,
+      groupId: "group-123",
+    });
+
+    const layers = Layer.mergeAll(
+      Layer.succeed(RewardPurchaseGatewayTag, purchaseGateway),
+      Layer.succeed(RewardGatewayTag, rewardGateway),
+      Layer.succeed(GroupCoinsServiceTag, coinsService),
+      Layer.succeed(TripAccessCheckerTag, accessChecker),
+    );
+
+    const input: UpdatePurchaseStatusInput = {
+      purchaseId: "purchase-1",
+      newStatus: RewardPurchaseStatus.ACCEPTED,
+      updatedById: "user-123",
+      collectionMethod: "Delivery to room",
+    };
+
+    const program = updatePurchaseStatusUseCase(input).pipe(
+      Effect.provide(layers),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.purchaseId).toBe("purchase-1");
+    expect(result.status).toBe(RewardPurchaseStatus.ACCEPTED);
+    expect(result.refunded).toBe(false);
+  });
+
+  it("should cancel purchase with refund for staff user", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      status: RewardPurchaseStatus.BOUGHT,
+      rewardId: "reward-1",
+      groupId: "group-123",
+      pointsSpent: 100,
+      totalCost: 100,
+      quantity: 1,
+    });
+    const purchaseGateway = createMockPurchaseGateway([mockPurchase]);
+    const rewardGateway = createMockRewardGateway();
+    const coinsService = createMockCoinsService();
+    const accessChecker = createMockTripAccessChecker({
+      isStaff: true,
+    });
+
+    const layers = Layer.mergeAll(
+      Layer.succeed(RewardPurchaseGatewayTag, purchaseGateway),
+      Layer.succeed(RewardGatewayTag, rewardGateway),
+      Layer.succeed(GroupCoinsServiceTag, coinsService),
+      Layer.succeed(TripAccessCheckerTag, accessChecker),
+    );
+
+    const input: UpdatePurchaseStatusInput = {
+      purchaseId: "purchase-1",
+      newStatus: RewardPurchaseStatus.CANCELLED,
+      updatedById: "staff-123",
+    };
+
+    const program = updatePurchaseStatusUseCase(input).pipe(
+      Effect.provide(layers),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.purchaseId).toBe("purchase-1");
+    expect(result.status).toBe(RewardPurchaseStatus.CANCELLED);
+    expect(result.refunded).toBe(true);
+  });
+
+  it("should fail with PurchaseNotFoundError when purchase does not exist", async () => {
+    const purchaseGateway = createMockPurchaseGateway([]);
+    const rewardGateway = createMockRewardGateway();
+    const coinsService = createMockCoinsService();
+    const accessChecker = createMockTripAccessChecker({
+      isStaff: true,
+    });
+
+    const layers = Layer.mergeAll(
+      Layer.succeed(RewardPurchaseGatewayTag, purchaseGateway),
+      Layer.succeed(RewardGatewayTag, rewardGateway),
+      Layer.succeed(GroupCoinsServiceTag, coinsService),
+      Layer.succeed(TripAccessCheckerTag, accessChecker),
+    );
+
+    const input: UpdatePurchaseStatusInput = {
+      purchaseId: "non-existent",
+      newStatus: RewardPurchaseStatus.ACCEPTED,
+      updatedById: "staff-123",
+    };
+
+    const program = updatePurchaseStatusUseCase(input).pipe(
+      Effect.provide(layers),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(PurchaseNotFoundError);
+    }
+  });
+
+  it("should fail with NotAuthorizedError when non-staff and not group leader", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      status: RewardPurchaseStatus.BOUGHT,
+      groupId: "group-456",
+    });
+    const purchaseGateway = createMockPurchaseGateway([mockPurchase]);
+    const rewardGateway = createMockRewardGateway();
+    const coinsService = createMockCoinsService();
+    const accessChecker = createMockTripAccessChecker({
+      isStaff: false,
+      isGroupLeader: true,
+      groupId: "group-123",
+    });
+
+    const layers = Layer.mergeAll(
+      Layer.succeed(RewardPurchaseGatewayTag, purchaseGateway),
+      Layer.succeed(RewardGatewayTag, rewardGateway),
+      Layer.succeed(GroupCoinsServiceTag, coinsService),
+      Layer.succeed(TripAccessCheckerTag, accessChecker),
+    );
+
+    const input: UpdatePurchaseStatusInput = {
+      purchaseId: "purchase-1",
+      newStatus: RewardPurchaseStatus.ACCEPTED,
+      updatedById: "user-123",
+    };
+
+    const program = updatePurchaseStatusUseCase(input).pipe(
+      Effect.provide(layers),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotAuthorizedError);
+    }
+  });
+
+  it("should fail with InvalidPurchaseStatusTransitionError for invalid transition", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      status: RewardPurchaseStatus.DELIVERED,
+      groupId: "group-123",
+    });
+    const purchaseGateway = createMockPurchaseGateway([mockPurchase]);
+    const rewardGateway = createMockRewardGateway();
+    const coinsService = createMockCoinsService();
+    const accessChecker = createMockTripAccessChecker({
+      isStaff: true,
+    });
+
+    const layers = Layer.mergeAll(
+      Layer.succeed(RewardPurchaseGatewayTag, purchaseGateway),
+      Layer.succeed(RewardGatewayTag, rewardGateway),
+      Layer.succeed(GroupCoinsServiceTag, coinsService),
+      Layer.succeed(TripAccessCheckerTag, accessChecker),
+    );
+
+    const input: UpdatePurchaseStatusInput = {
+      purchaseId: "purchase-1",
+      newStatus: RewardPurchaseStatus.ACCEPTED,
+      updatedById: "staff-123",
+    };
+
+    const program = updatePurchaseStatusUseCase(input).pipe(
+      Effect.provide(layers),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(InvalidPurchaseStatusTransitionError);
+    }
+  });
+
+  it("should fail with UpdatePurchaseValidationError when collection method missing for ACCEPTED", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      status: RewardPurchaseStatus.BOUGHT,
+      groupId: "group-123",
+      collectionMethod: null,
+    });
+    const purchaseGateway = createMockPurchaseGateway([mockPurchase]);
+    const rewardGateway = createMockRewardGateway();
+    const coinsService = createMockCoinsService();
+    const accessChecker = createMockTripAccessChecker({
+      isStaff: true,
+    });
+
+    const layers = Layer.mergeAll(
+      Layer.succeed(RewardPurchaseGatewayTag, purchaseGateway),
+      Layer.succeed(RewardGatewayTag, rewardGateway),
+      Layer.succeed(GroupCoinsServiceTag, coinsService),
+      Layer.succeed(TripAccessCheckerTag, accessChecker),
+    );
+
+    const input: UpdatePurchaseStatusInput = {
+      purchaseId: "purchase-1",
+      newStatus: RewardPurchaseStatus.ACCEPTED,
+      updatedById: "staff-123",
+    };
+
+    const program = updatePurchaseStatusUseCase(input).pipe(
+      Effect.provide(layers),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(UpdatePurchaseValidationError);
+    }
+  });
+
+  it("should fail with UpdatePurchaseOperationError when database fails", async () => {
+    const mockPurchase = createMockPurchaseDTO({
+      id: "purchase-1",
+      status: RewardPurchaseStatus.BOUGHT,
+      groupId: "group-123",
+    });
+    const purchaseGateway = createMockPurchaseGateway([mockPurchase], {
+      shouldFailFindById: true,
+    });
+    const rewardGateway = createMockRewardGateway();
+    const coinsService = createMockCoinsService();
+    const accessChecker = createMockTripAccessChecker({
+      isStaff: true,
+    });
+
+    const layers = Layer.mergeAll(
+      Layer.succeed(RewardPurchaseGatewayTag, purchaseGateway),
+      Layer.succeed(RewardGatewayTag, rewardGateway),
+      Layer.succeed(GroupCoinsServiceTag, coinsService),
+      Layer.succeed(TripAccessCheckerTag, accessChecker),
+    );
+
+    const input: UpdatePurchaseStatusInput = {
+      purchaseId: "purchase-1",
+      newStatus: RewardPurchaseStatus.ACCEPTED,
+      updatedById: "staff-123",
+      collectionMethod: "Test",
+    };
+
+    const program = updatePurchaseStatusUseCase(input).pipe(
+      Effect.provide(layers),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(UpdatePurchaseOperationError);
+    }
   });
 });

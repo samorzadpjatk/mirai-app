@@ -1,9 +1,13 @@
-import { Reward, UserRole, ValidationError } from "@mirai-app/domain";
-import { Data, Effect } from "effect";
 import {
-  RewardGatewayTag,
-  TripAccessCheckerTag,
-} from "../ports/gateway";
+  Reward,
+  UserRole,
+  ValidationError,
+  RewardStatus,
+} from "@mirai-app/domain";
+import { Data, Effect } from "effect";
+import { RewardGatewayTag } from "../ports/gateway";
+import { TripAccessCheckerTag } from "../../trip/ports/gateway";
+import type { RewardDTO } from "../dto";
 
 /**
  * Input for CreateReward use case
@@ -13,6 +17,7 @@ export interface CreateRewardInput {
   description: string;
   availableQuantity: number;
   coinCostPercentage: number;
+  image?: string | null;
   images?: string[];
   isHidden?: boolean;
   tripId: string;
@@ -87,7 +92,14 @@ export function createRewardUseCase(
     const accessChecker = yield* TripAccessCheckerTag;
 
     // Verify user is staff (moderator or admin)
-    const isStaff = yield* accessChecker.isStaff(input.createdById);
+    const isStaff = yield* accessChecker.isStaff(input.createdById).pipe(
+      Effect.mapError(
+        (error) =>
+          new CreateRewardError({
+            message: `Failed to check staff status: ${error.message}`,
+          }),
+      ),
+    );
     if (
       !isStaff &&
       input.creatorRole !== UserRole.ADMIN &&
@@ -101,7 +113,14 @@ export function createRewardUseCase(
     }
 
     // Check if trip has ended
-    const hasEnded = yield* accessChecker.hasTripEnded(input.tripId);
+    const hasEnded = yield* accessChecker.hasTripEnded(input.tripId).pipe(
+      Effect.mapError(
+        (error) =>
+          new CreateRewardError({
+            message: `Failed to check trip status: ${error.message}`,
+          }),
+      ),
+    );
     if (hasEnded) {
       return yield* Effect.fail(
         new CreateRewardError({
@@ -115,7 +134,8 @@ export function createRewardUseCase(
       name: input.name,
       description: input.description,
       availableQuantity: input.availableQuantity,
-      coinCostPercentage: input.coinCostPercentage,
+      coinCost: input.coinCostPercentage,
+      image: input.image,
       images: input.images,
       isHidden: input.isHidden,
       tripId: input.tripId,
@@ -129,8 +149,26 @@ export function createRewardUseCase(
       ),
     );
 
+    // Convert domain entity to DTO for gateway
+    const rewardDTO: RewardDTO = {
+      id: reward.id,
+      tripId: reward.tripId,
+      title: reward.name,
+      description: reward.description,
+      imageUrl: reward.image,
+      images: reward.images,
+      pointsCost: reward.coinCost,
+      quantity: reward.availableQuantity,
+      availableQuantity: reward.availableQuantity,
+      status: RewardStatus.AVAILABLE, // Default status for new rewards
+      isHidden: reward.isHidden,
+      createdById: reward.createdById,
+      createdAt: reward.createdAt,
+      updatedAt: reward.updatedAt,
+    };
+
     // Persist reward
-    const saved = yield* rewardRepo.create(reward).pipe(
+    const savedDTO = yield* rewardRepo.create(rewardDTO).pipe(
       Effect.mapError(
         () =>
           new RewardRepositoryError({
@@ -139,7 +177,17 @@ export function createRewardUseCase(
       ),
     );
 
-    return toOutput(saved);
+    // Convert saved DTO back to domain entity to call methods
+    const savedReward = yield* dtoToReward(savedDTO).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new RewardRepositoryError({
+            message: `Failed to reconstruct reward: ${validationError.message}`,
+          }),
+      ),
+    );
+
+    return toOutput(savedReward);
   });
 }
 
@@ -149,13 +197,35 @@ function toOutput(reward: Reward): CreateRewardOutput {
     name: reward.name,
     description: reward.description,
     availableQuantity: reward.availableQuantity,
-    coinCostPercentage: reward.coinCostPercentage.toNumber(),
+    coinCostPercentage: reward.coinCost,
     images: reward.images,
     isHidden: reward.isHidden,
     tripId: reward.tripId,
     createdById: reward.createdById,
     createdAt: reward.createdAt,
     isInStock: reward.isInStock(),
-    canBePurchased: reward.canBePurchased(),
+    canBePurchased: reward.isInStock() && reward.isVisible(),
   };
+}
+
+/**
+ * Convert RewardDTO to domain Reward entity
+ */
+function dtoToReward(
+  dto: RewardDTO,
+): Effect.Effect<Reward, ValidationError, never> {
+  return Reward.create({
+    id: dto.id,
+    name: dto.title,
+    description: dto.description ?? "",
+    availableQuantity: dto.availableQuantity,
+    coinCost: dto.pointsCost,
+    image: dto.imageUrl,
+    images: dto.images,
+    isHidden: dto.isHidden,
+    tripId: dto.tripId,
+    createdById: dto.createdById,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  });
 }

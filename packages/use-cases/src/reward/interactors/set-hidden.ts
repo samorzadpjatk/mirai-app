@@ -1,7 +1,8 @@
 import { Data, Effect } from "effect";
 import { RewardGatewayTag } from "../ports/gateway";
 import type { RewardId } from "@mirai-app/domain";
-import type { Reward } from "@mirai-app/domain";
+import { Reward, ValidationError } from "@mirai-app/domain";
+import type { RewardDTO } from "../dto";
 
 /**
  * Input for SetRewardHidden use case
@@ -66,8 +67,8 @@ export function setRewardHiddenUseCase(
   return Effect.gen(function* () {
     const rewardRepo = yield* RewardGatewayTag;
 
-    // Find existing reward
-    const existing = yield* rewardRepo.findById(input.rewardId).pipe(
+    // Find existing reward DTO
+    const existingDTO = yield* rewardRepo.findById(input.rewardId).pipe(
       Effect.mapError(
         (cause) =>
           new SetRewardHiddenRepositoryError({
@@ -78,17 +79,45 @@ export function setRewardHiddenUseCase(
       ),
     );
 
-    if (!existing) {
+    if (!existingDTO) {
       return yield* Effect.fail(
         new RewardNotFoundError({ message: "Reward not found" }),
       );
     }
 
+    // Convert DTO to domain entity
+    const existing = yield* dtoToReward(existingDTO).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new SetRewardHiddenRepositoryError({
+            message: `Invalid reward data: ${validationError.message}`,
+            operation: "convert DTO",
+          }),
+      ),
+    );
+
     // Apply hide/unhide
     const updated = input.isHidden ? existing.hide() : existing.unhide();
 
-    // Persist
-    const saved = yield* rewardRepo.update(updated).pipe(
+    // Persist - convert domain entity to DTO
+    const updatedDTO: RewardDTO = {
+      id: updated.id,
+      tripId: updated.tripId,
+      title: updated.name,
+      description: updated.description,
+      imageUrl: updated.image,
+      images: updated.images,
+      pointsCost: updated.coinCost,
+      quantity: updated.availableQuantity,
+      availableQuantity: updated.availableQuantity,
+      status: existingDTO.status, // Preserve original status
+      isHidden: updated.isHidden,
+      createdById: updated.createdById,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+    };
+
+    const savedDTO = yield* rewardRepo.update(updatedDTO).pipe(
       Effect.mapError(
         (cause) =>
           new SetRewardHiddenRepositoryError({
@@ -100,10 +129,32 @@ export function setRewardHiddenUseCase(
     );
 
     return {
-      id: saved.id,
-      name: saved.name,
-      isHidden: saved.isHidden,
-      updatedAt: saved.updatedAt,
+      id: savedDTO.id,
+      name: savedDTO.title,
+      isHidden: savedDTO.isHidden,
+      updatedAt: savedDTO.updatedAt,
     };
+  });
+}
+
+/**
+ * Convert RewardDTO to domain Reward entity
+ */
+function dtoToReward(
+  dto: RewardDTO,
+): Effect.Effect<Reward, ValidationError, never> {
+  return Reward.create({
+    id: dto.id,
+    name: dto.title,
+    description: dto.description ?? "",
+    availableQuantity: dto.availableQuantity,
+    coinCost: dto.pointsCost,
+    image: dto.imageUrl,
+    images: dto.images,
+    isHidden: dto.isHidden,
+    tripId: dto.tripId,
+    createdById: dto.createdById,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   });
 }
