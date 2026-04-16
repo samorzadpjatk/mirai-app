@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { Effect } from "effect";
 import { listLocationsUseCase, type ListLocationsInput } from "./list";
-import { LocationGatewayTag } from "../.././ports/location/gateway";
-import type { LocationGateway } from "../.././ports/location/gateway";
+import { LocationGatewayTag } from "../ports/gateway";
+import type { LocationGateway } from "../ports/gateway";
 import type { Location, LocationId } from "@mirai-app/domain";
 
 describe("[UNIT] listLocationsUseCase (Effect)", () => {
