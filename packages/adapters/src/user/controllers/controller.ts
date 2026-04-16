@@ -241,10 +241,11 @@ export class UserController {
 
     const effect = Effect.gen(function* () {
       const repo = yield* UserGatewayTag;
-      return yield* repo.findAll({
-        limit: parsed.data.limit,
-        offset: parsed.data.offset,
+      const connection = yield* repo.findAllConnection({
+        first: parsed.data.limit,
+        after: null,
       });
+      return connection.nodes;
     });
 
     const result = await runWithLayer(effect, this.appLayer, (users) =>
@@ -253,9 +254,10 @@ export class UserController {
         authUserId: user.authUserId,
         firstName: user.firstName,
         lastName: user.lastName,
-        fullName: user.getFullName(),
+        fullName:
+          [user.firstName, user.lastName].filter(Boolean).join(" ") || null,
         role: user.role,
-        hasAvatar: user.hasAvatar,
+        hasAvatar: user.avatarUrl !== null && user.avatarUrl !== "",
         createdAt: user.createdAt,
       })),
     );
