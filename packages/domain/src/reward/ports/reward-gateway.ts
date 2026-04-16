@@ -3,12 +3,30 @@ import type { RewardPurchase } from "../entities/reward-purchase";
 import type { RewardId } from "../../reward/value-objects/id";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
 import type {
   PaginationOptions,
   PaginatedResult,
 } from "../../activity/ports/activity-feed-gateway";
 
 export type { PaginationOptions, PaginatedResult };
+
+/**
+ * Cursor data for reward pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface RewardCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for reward connection pagination
+ */
+export interface RewardConnectionArgs {
+  first?: number;
+  after?: RewardCursorData | null;
+}
 
 /**
  * RewardGateway Port
@@ -33,20 +51,22 @@ export interface RewardGateway {
   findById(id: RewardId): Effect.Effect<Reward | null, DatabaseError, never>;
 
   /**
-   * Find all rewards for a trip
+   * Find rewards by trip ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByTripId(
+  findByTripIdConnection(
     tripId: string,
-    options?: { includeHidden?: boolean } & PaginationOptions,
-  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never>;
+    args: RewardConnectionArgs,
+  ): Effect.Effect<Connection<Reward>, DatabaseError, never>;
 
   /**
-   * Find all visible (not hidden) rewards for a trip
+   * Find visible rewards by trip ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findVisibleByTripId(
+  findVisibleByTripIdConnection(
     tripId: string,
-    options?: PaginationOptions,
-  ): Effect.Effect<PaginatedResult<Reward>, DatabaseError, never>;
+    args: RewardConnectionArgs,
+  ): Effect.Effect<Connection<Reward>, DatabaseError, never>;
 
   /**
    * Update reward

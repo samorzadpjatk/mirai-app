@@ -3,6 +3,24 @@ import type { GroupStatus } from "../../group/enums";
 import type { TripParticipant } from "../../trip/entities/trip-participant";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for group pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface GroupCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for group connection pagination
+ */
+export interface GroupConnectionArgs {
+  first?: number;
+  after?: GroupCursorData | null;
+}
 
 /**
  * GroupGateway Port
@@ -26,44 +44,42 @@ export interface GroupGateway {
   findById(id: string): Effect.Effect<Group | null, DatabaseError, never>;
 
   /**
-   * Find groups by trip ID
+   * Find groups by trip ID with cursor-based pagination
    */
-  findByTripId(tripId: string): Effect.Effect<Group[], DatabaseError, never>;
+  findByTripIdConnection(
+    tripId: string,
+    args: GroupConnectionArgs,
+  ): Effect.Effect<Connection<Group>, DatabaseError, never>;
 
   /**
-   * Find groups by status
+   * Find groups by status with cursor-based pagination
    */
-  findByStatus(
+  findByStatusConnection(
     status: GroupStatus,
-  ): Effect.Effect<Group[], DatabaseError, never>;
+    args: GroupConnectionArgs,
+  ): Effect.Effect<Connection<Group>, DatabaseError, never>;
 
   /**
-   * Find groups by trip ID and status
+   * Find groups by trip ID and status with cursor-based pagination
    */
-  findByTripIdAndStatus(
+  findByTripIdAndStatusConnection(
     tripId: string,
     status: GroupStatus,
-  ): Effect.Effect<Group[], DatabaseError, never>;
+    args: GroupConnectionArgs,
+  ): Effect.Effect<Connection<Group>, DatabaseError, never>;
 
   /**
-   * Find groups by organizer ID
+   * Find groups by organizer ID with cursor-based pagination
    */
-  findByOrganizerId(
+  findByOrganizerIdConnection(
     organizerId: string,
-  ): Effect.Effect<Group[], DatabaseError, never>;
+    args: GroupConnectionArgs,
+  ): Effect.Effect<Connection<Group>, DatabaseError, never>;
 
   /**
    * Find group by code
    */
   findByCode(code: string): Effect.Effect<Group | null, DatabaseError, never>;
-
-  /**
-   * Find all groups with pagination
-   */
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<Group[], DatabaseError, never>;
 
   /**
    * Update group
@@ -94,11 +110,12 @@ export interface GroupGateway {
   ): Effect.Effect<TripParticipant | null, DatabaseError, never>;
 
   /**
-   * Find all participants assigned to a group
+   * Find all trip participants with cursor-based pagination
    */
-  findParticipantsByGroupId(
-    groupId: string,
-  ): Effect.Effect<TripParticipant[], DatabaseError, never>;
+  findTripParticipantsConnection(
+    tripId: string,
+    args: GroupConnectionArgs,
+  ): Effect.Effect<Connection<TripParticipant>, DatabaseError, never>;
 
   /**
    * Assign a user to a group by updating their participant record

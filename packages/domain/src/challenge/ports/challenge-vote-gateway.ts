@@ -2,6 +2,24 @@ import type { ChallengeVote } from "../entities/challenge-vote";
 import type { ChallengeVoteId } from "../value-objects/vote-id";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for challenge vote pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface ChallengeVoteCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for challenge vote connection pagination
+ */
+export interface ChallengeVoteConnectionArgs {
+  first?: number;
+  after?: ChallengeVoteCursorData | null;
+}
 
 /**
  * ChallengeVoteGateway Port
@@ -26,25 +44,31 @@ export interface ChallengeVoteGateway {
   ): Effect.Effect<ChallengeVote | null, DatabaseError, never>;
 
   /**
-   * Find votes by submission ID
+   * Find votes by submission ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findBySubmissionId(
+  findBySubmissionIdConnection(
     submissionId: string,
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never>;
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVote>, DatabaseError, never>;
 
   /**
-   * Find votes by user ID
+   * Find votes by user ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByUserId(
+  findByUserIdConnection(
     userId: string,
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never>;
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVote>, DatabaseError, never>;
 
   /**
-   * Find votes by challenge ID
+   * Find votes by challenge ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByChallengeId(
+  findByChallengeIdConnection(
     challengeId: string,
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never>;
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVote>, DatabaseError, never>;
 
   /**
    * Check if user has voted on a submission

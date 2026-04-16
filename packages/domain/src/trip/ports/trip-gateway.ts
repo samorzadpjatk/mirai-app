@@ -2,6 +2,24 @@ import type { Trip } from "../entities/trip";
 import type { TripStatus } from "../../trip/enums";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for trip pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface TripCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for trip connection pagination
+ */
+export interface TripConnectionArgs {
+  first?: number;
+  after?: TripCursorData | null;
+}
 
 /**
  * TripGateway Port
@@ -22,22 +40,27 @@ export interface TripGateway {
   findById(id: string): Effect.Effect<Trip | null, DatabaseError, never>;
 
   /**
-   * Find trips by status
+   * Find all trips with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByStatus(status: TripStatus): Effect.Effect<Trip[], DatabaseError, never>;
+  findAllConnection(
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<Trip>, DatabaseError, never>;
 
   /**
-   * Find active trips
+   * Find trips by status with cursor-based pagination
    */
-  findActive(): Effect.Effect<Trip[], DatabaseError, never>;
+  findByStatusConnection(
+    status: TripStatus,
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<Trip>, DatabaseError, never>;
 
   /**
-   * Find all trips with pagination
+   * Find active trips with cursor-based pagination
    */
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<Trip[], DatabaseError, never>;
+  findActiveConnection(
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<Trip>, DatabaseError, never>;
 
   /**
    * Update trip

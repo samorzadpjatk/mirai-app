@@ -1,6 +1,24 @@
 import type { Sponsor } from "../entities/sponsor";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for sponsor pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface SponsorCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for sponsor connection pagination
+ */
+export interface SponsorConnectionArgs {
+  first?: number;
+  after?: SponsorCursorData | null;
+}
 
 /**
  * SponsorGateway Port
@@ -20,22 +38,21 @@ export interface SponsorGateway {
   findById(id: string): Effect.Effect<Sponsor | null, DatabaseError, never>;
 
   /**
-   * Find all sponsors
+   * Find all active sponsors with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<Sponsor[], DatabaseError, never>;
+  findActiveConnection(
+    args: SponsorConnectionArgs,
+  ): Effect.Effect<Connection<Sponsor>, DatabaseError, never>;
 
   /**
-   * Find all active sponsors
+   * Find sponsors by trip ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findActive(): Effect.Effect<Sponsor[], DatabaseError, never>;
-
-  /**
-   * Find sponsors by trip ID
-   */
-  findByTripId(tripId: string): Effect.Effect<Sponsor[], DatabaseError, never>;
+  findByTripIdConnection(
+    tripId: string,
+    args: SponsorConnectionArgs,
+  ): Effect.Effect<Connection<Sponsor>, DatabaseError, never>;
 
   /**
    * Update an existing sponsor

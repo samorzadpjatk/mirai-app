@@ -1,5 +1,23 @@
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for notification delivery pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface NotificationDeliveryCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for notification delivery connection pagination
+ */
+export interface NotificationDeliveryConnectionArgs {
+  first?: number;
+  after?: NotificationDeliveryCursorData | null;
+}
 
 /**
  * Delivery status for notification delivery
@@ -80,26 +98,11 @@ export interface DeliveryStats {
  */
 export interface NotificationDeliveryGateway {
   /**
-   * Find deliveries with pagination and filters
-   */
-  findMany(
-    filters: Partial<DeliveryFilters>,
-    pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDelivery[], DatabaseError, never>;
-
-  /**
    * Count deliveries by filters
    */
   count(
     filters?: Partial<DeliveryFilters>,
   ): Effect.Effect<number, DatabaseError, never>;
-
-  /**
-   * Find delivery by notification ID
-   */
-  findByNotificationId(
-    notificationId: string,
-  ): Effect.Effect<NotificationDelivery | null, DatabaseError, never>;
 
   /**
    * Get delivery statistics
@@ -109,15 +112,32 @@ export interface NotificationDeliveryGateway {
   ): Effect.Effect<DeliveryStats, DatabaseError, never>;
 
   /**
-   * Find failed or partially failed deliveries
-   */
-  findFailed(
-    tripId: string,
-    pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDelivery[], DatabaseError, never>;
-
-  /**
    * Count failed deliveries
    */
   countFailed(tripId: string): Effect.Effect<number, DatabaseError, never>;
+
+  /**
+   * Find failed or partially failed deliveries with cursor-based pagination
+   */
+  findFailedConnection(
+    tripId: string,
+    args: NotificationDeliveryConnectionArgs,
+  ): Effect.Effect<Connection<NotificationDelivery>, DatabaseError, never>;
+
+  /**
+   * Find deliveries by notification ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
+   */
+  findByNotificationIdConnection(
+    notificationId: string,
+    args: NotificationDeliveryConnectionArgs,
+  ): Effect.Effect<Connection<NotificationDelivery>, DatabaseError, never>;
+
+  /**
+   * Find deliveries by user ID with cursor-based pagination
+   */
+  findByUserIdConnection(
+    userId: string,
+    args: NotificationDeliveryConnectionArgs,
+  ): Effect.Effect<Connection<NotificationDelivery>, DatabaseError, never>;
 }

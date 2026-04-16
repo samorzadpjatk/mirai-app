@@ -1,6 +1,10 @@
 import type { Notification } from "../entities/notification";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type {
+  Connection,
+  ForwardPaginationArgs,
+} from "../../value-objects/pagination";
 
 /**
  * NotificationGateway Port
@@ -25,18 +29,22 @@ export interface NotificationGateway {
   ): Effect.Effect<Notification | null, DatabaseError, never>;
 
   /**
-   * Find all notifications for a user
+   * Find notifications for a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
    */
-  findByUserId(
+  findByUserIdConnection(
     userId: string,
-  ): Effect.Effect<Notification[], DatabaseError, never>;
+    args: ForwardPaginationArgs,
+  ): Effect.Effect<Connection<Notification>, DatabaseError, never>;
 
   /**
-   * Find unread notifications for a user
+   * Find unread notifications for a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
    */
-  findUnreadByUserId(
+  findUnreadByUserIdConnection(
     userId: string,
-  ): Effect.Effect<Notification[], DatabaseError, never>;
+    args: ForwardPaginationArgs,
+  ): Effect.Effect<Connection<Notification>, DatabaseError, never>;
 
   /**
    * Mark notification as read

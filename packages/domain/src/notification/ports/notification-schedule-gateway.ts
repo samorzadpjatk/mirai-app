@@ -7,6 +7,24 @@ import type {
 } from "../entities/notification-schedule";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for notification schedule pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface NotificationScheduleCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for notification schedule connection pagination
+ */
+export interface NotificationScheduleConnectionArgs {
+  first?: number;
+  after?: NotificationScheduleCursorData | null;
+}
 
 /**
  * Record of a notification schedule execution
@@ -45,13 +63,6 @@ export interface NotificationScheduleGateway {
   ): Effect.Effect<NotificationSchedule | null, DatabaseError, never>;
 
   /**
-   * Find notification schedules by trip ID
-   */
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<NotificationSchedule[], DatabaseError, never>;
-
-  /**
    * Find notification schedules by name (exact match)
    */
   findByName(
@@ -67,40 +78,14 @@ export interface NotificationScheduleGateway {
   ): Effect.Effect<NotificationSchedule | null, DatabaseError, never>;
 
   /**
-   * Find notification schedules by type
-   */
-  findByType(
-    type: NotificationScheduleType,
-  ): Effect.Effect<NotificationSchedule[], DatabaseError, never>;
-
-  /**
-   * Find all notification schedules with filtering and pagination
-   */
-  findAllPaginated(options?: {
-    filter?: NotificationScheduleFilter;
-    pagination?: PaginationOptions;
-  }): Effect.Effect<
-    PaginatedResult<NotificationSchedule>,
-    DatabaseError,
-    never
-  >;
-
-  /**
-   * Find currently active schedules
-   * (isActive=true and current time is within the schedule window)
-   */
-  findActive(
-    now?: Date,
-  ): Effect.Effect<NotificationSchedule[], DatabaseError, never>;
-
-  /**
-   * Find upcoming schedules
+   * Find upcoming schedules with cursor-based pagination
    * (startDate is in the future)
    */
-  findUpcoming(
+  findUpcomingConnection(
+    args: NotificationScheduleConnectionArgs,
     days?: number,
     now?: Date,
-  ): Effect.Effect<NotificationSchedule[], DatabaseError, never>;
+  ): Effect.Effect<Connection<NotificationSchedule>, DatabaseError, never>;
 
   /**
    * Update notification schedule
@@ -157,17 +142,53 @@ export interface NotificationScheduleGateway {
   ): Effect.Effect<number, DatabaseError, never>;
 
   /**
-   * Get execution history for a schedule
-   */
-  getExecutionHistory(
-    scheduleId: string,
-    limit: number,
-  ): Effect.Effect<NotificationScheduleExecutionRecord[], DatabaseError, never>;
-
-  /**
    * Count executions for a schedule
    */
   countExecutions(
     scheduleId: string,
   ): Effect.Effect<number, DatabaseError, never>;
+
+  /**
+   * Find notification schedules with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
+   */
+  findManyConnection(
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationSchedule>, DatabaseError, never>;
+
+  /**
+   * Find currently active schedules with cursor-based pagination
+   * (isActive=true and current time is within the schedule window)
+   */
+  findActiveConnection(
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationSchedule>, DatabaseError, never>;
+
+  /**
+   * Find notification schedules by trip ID with cursor-based pagination
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationSchedule>, DatabaseError, never>;
+
+  /**
+   * Find notification schedule by notification ID with cursor-based pagination
+   */
+  findByNotificationIdConnection(
+    notificationId: string,
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationSchedule>, DatabaseError, never>;
+
+  /**
+   * Get execution history for a schedule with cursor-based pagination
+   */
+  findExecutionsConnection(
+    scheduleId: string,
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<
+    Connection<NotificationScheduleExecutionRecord>,
+    DatabaseError,
+    never
+  >;
 }

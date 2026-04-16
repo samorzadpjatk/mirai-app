@@ -44,6 +44,18 @@ export {
   type BrandedIdFactory,
 } from "./system/utils/branded-id";
 
+// Pagination value objects for Relay Cursor Connections
+export {
+  type Connection,
+  type Edge,
+  type PageInfo,
+  type ForwardPaginationArgs,
+  type BackwardPaginationArgs,
+  type PaginationArgs,
+  isForwardPagination,
+  isBackwardPagination,
+} from "./value-objects/pagination";
+
 // Test constants (for test files)
 export { TestIds, type TestIdKey } from "./system/utils/test-ids";
 
@@ -207,6 +219,72 @@ export type { InsuranceStep } from "./trip/entities/trip-insurance";
 // =============================================================================
 export * from "./event/entities/event";
 export * from "./event/entities/user-event";
+export type {
+  TripGateway,
+  TripCursorData,
+  TripConnectionArgs,
+} from "./trip/ports/trip-gateway";
+export * from "./trip/entities/trip";
+export * from "./trip/enums";
+
+// =============================================================================
+// User Domain Ports
+// =============================================================================
+export type {
+  UserGateway,
+  UserCursorData,
+  UserConnectionArgs,
+} from "./user/ports/user-gateway";
+
+// =============================================================================
+// Challenge Domain Ports
+// =============================================================================
+export type {
+  ChallengeGateway,
+  ChallengeCursorData,
+  ChallengeConnectionArgs,
+  ChallengeSubmissionGateway,
+  ChallengeSubmissionCreatedAtCursorData,
+  ChallengeSubmissionVoteScoreCursorData,
+  ChallengeSubmissionCreatedAtConnectionArgs,
+  ChallengeSubmissionVoteScoreConnectionArgs,
+  ChallengeVoteGateway,
+  ChallengeVoteCursorData,
+  ChallengeVoteConnectionArgs,
+  SubmissionReportGateway,
+  SubmissionReportCursorData,
+  SubmissionReportConnectionArgs,
+} from "./challenge/ports";
+
+// =============================================================================
+// Group Domain Ports
+// =============================================================================
+export type {
+  GroupGateway,
+  GroupCursorData,
+  GroupConnectionArgs,
+} from "./group/ports/group-gateway";
+
+// =============================================================================
+// Location Domain Ports
+// =============================================================================
+export type {
+  LocationGateway,
+  LocationSharingRequestCursorData,
+  LocationSharingRequestConnectionArgs,
+} from "./location/ports/location-gateway";
+
+// =============================================================================
+// Notification Domain Ports
+// =============================================================================
+export type {
+  NotificationScheduleGateway,
+  NotificationScheduleCursorData,
+  NotificationScheduleConnectionArgs,
+  NotificationDeliveryGateway,
+  NotificationDeliveryCursorData,
+  NotificationDeliveryConnectionArgs,
+} from "./notification/ports";
 
 // =============================================================================
 // Location Domain
@@ -244,6 +322,8 @@ export * from "./reward/entities/reward-purchase";
 export {
   Id as RewardId,
   type Id as RewardIdType,
+  PurchaseId as RewardPurchaseId,
+  type PurchaseId as RewardPurchaseIdType,
   CoinAmount,
 } from "./reward/value-objects";
 export * from "./reward/enums";

@@ -1,6 +1,24 @@
 import type { Event } from "../entities/event";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for event pagination
+ * Uses startTime as the primary sort field with id as tiebreaker
+ */
+export interface EventCursorData {
+  id: string;
+  startTime: string;
+}
+
+/**
+ * Arguments for event connection pagination
+ */
+export interface EventConnectionArgs {
+  first?: number;
+  after?: EventCursorData | null;
+}
 
 /**
  * EventGateway Port
@@ -21,30 +39,37 @@ export interface EventGateway {
   findById(id: string): Effect.Effect<Event | null, DatabaseError, never>;
 
   /**
-   * Find events by trip ID
+   * Find events by trip ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByTripId(tripId: string): Effect.Effect<Event[], DatabaseError, never>;
+  findByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<Event>, DatabaseError, never>;
 
   /**
-   * Find upcoming events for a trip
+   * Find upcoming events for a trip with cursor-based pagination
    */
-  findUpcomingByTripId(
+  findUpcomingByTripIdConnection(
     tripId: string,
-  ): Effect.Effect<Event[], DatabaseError, never>;
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<Event>, DatabaseError, never>;
 
   /**
-   * Find ongoing events for a trip
+   * Find ongoing events for a trip with cursor-based pagination
    */
-  findOngoingByTripId(
+  findOngoingByTripIdConnection(
     tripId: string,
-  ): Effect.Effect<Event[], DatabaseError, never>;
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<Event>, DatabaseError, never>;
 
   /**
-   * Find past events for a trip
+   * Find past events for a trip with cursor-based pagination
    */
-  findPastByTripId(
+  findPastByTripIdConnection(
     tripId: string,
-  ): Effect.Effect<Event[], DatabaseError, never>;
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<Event>, DatabaseError, never>;
 
   /**
    * Update event

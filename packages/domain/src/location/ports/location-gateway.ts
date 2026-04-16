@@ -2,6 +2,24 @@ import type { LocationSharingRequest } from "../entities/location-sharing-reques
 import type { LocationId as LocationSharingRequestId } from "../../location/value-objects/id";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for location sharing request pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface LocationSharingRequestCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for location sharing request connection pagination
+ */
+export interface LocationSharingRequestConnectionArgs {
+  first?: number;
+  after?: LocationSharingRequestCursorData | null;
+}
 
 /**
  * LocationGateway Port
@@ -24,20 +42,6 @@ export interface LocationGateway {
   findById(
     id: LocationSharingRequestId,
   ): Effect.Effect<LocationSharingRequest | null, DatabaseError, never>;
-
-  /**
-   * Find active location sharing requests for a trip
-   */
-  findActiveByTripId(
-    tripId: string,
-  ): Effect.Effect<LocationSharingRequest[], DatabaseError, never>;
-
-  /**
-   * Find location sharing requests by user ID
-   */
-  findByUserId(
-    userId: string,
-  ): Effect.Effect<LocationSharingRequest[], DatabaseError, never>;
 
   /**
    * Find active location sharing request for a user in a trip
@@ -67,4 +71,21 @@ export interface LocationGateway {
   delete(
     id: LocationSharingRequestId,
   ): Effect.Effect<void, DatabaseError, never>;
+
+  /**
+   * Find location sharing requests by user ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
+   */
+  findSharingRequestsConnection(
+    userId: string,
+    args: LocationSharingRequestConnectionArgs,
+  ): Effect.Effect<Connection<LocationSharingRequest>, DatabaseError, never>;
+
+  /**
+   * Find received location sharing requests by user ID with cursor-based pagination
+   */
+  findReceivedSharingRequestsConnection(
+    userId: string,
+    args: LocationSharingRequestConnectionArgs,
+  ): Effect.Effect<Connection<LocationSharingRequest>, DatabaseError, never>;
 }

@@ -2,6 +2,24 @@ import type { User } from "../entities/user";
 import type { UserRole } from "../../user/enums";
 import type { Effect } from "effect";
 import type { DatabaseError } from "../../ports/database-error";
+import type { Connection } from "../../value-objects/pagination";
+
+/**
+ * Cursor data for user pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface UserCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for user connection pagination
+ */
+export interface UserConnectionArgs {
+  first?: number;
+  after?: UserCursorData | null;
+}
 
 /**
  * UserGateway Port
@@ -37,17 +55,19 @@ export interface UserGateway {
   ): Effect.Effect<User | null, DatabaseError, never>;
 
   /**
-   * Find users by role
+   * Find users by role with cursor-based pagination
    */
-  findByRole(role: UserRole): Effect.Effect<User[], DatabaseError, never>;
+  findByRoleConnection(
+    role: UserRole,
+    args: UserConnectionArgs,
+  ): Effect.Effect<Connection<User>, DatabaseError, never>;
 
   /**
-   * Find all users with pagination
+   * Find all users with cursor-based pagination
    */
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<User[], DatabaseError, never>;
+  findAllConnection(
+    args: UserConnectionArgs,
+  ): Effect.Effect<Connection<User>, DatabaseError, never>;
 
   /**
    * Update user
