@@ -24,21 +24,23 @@
 
 ```
 src/
-├── index.ts              # Public exports
-├── entities/             # Domain entities
-│   └── .gitkeep
-├── value-objects/        # Value objects
-│   ├── AuthContext.ts    # 🔴 NEW: Auth context VO
-│   └── .gitkeep
-├── enums/                # 🔴 NEW: Enumeration types
-│   └── UserRole.ts       # User roles (ADMIN, MODERATOR, USER)
-├── types/                # 🔴 NEW: Core types
-│   └── Result.ts         # Result<T,E> type
-├── domain-services/      # Pure domain operations
-│   └── .gitkeep
-└── utils/                # Pure utilities
-    ├── result.ts         # Result utilities (legacy)
-    └── validation.ts     # Validation functions
+├── index.ts              # Public exports (barrel)
+├── activity/             # Activity domain
+│   ├── entities/         # Activity-related entities
+│   ├── value-objects/    # Activity value objects
+│   ├── ports/            # Activity ports (formerly repositories)
+│   ├── enums/            # Activity enums
+│   └── errors/           # Activity errors
+├── challenge/            # Challenge domain (same structure)
+├── event/                # Event domain
+├── group/                # Group domain
+├── location/             # Location domain
+├── notification/         # Notification domain
+├── reward/               # Reward domain
+├── sponsor/              # Sponsor domain
+├── trip/                 # Trip domain
+├── user/                 # User domain
+└── system/               # System-wide utilities (errors/, utils/)
 ```
 
 ## Creating an Entity
@@ -65,7 +67,7 @@ Test domain code with pure unit tests:
 ```typescript
 import { describe, it, expect } from "bun:test";
 import { isOk, isErr } from "@mirai-app/domain";
-import { User } from "./User";
+import { User } from "../entities/User";
 
 describe("User", () => {
   it("creates with valid email", () => {
@@ -91,7 +93,7 @@ describe("User", () => {
 The domain uses `Result<T, E>` for operations that fail:
 
 ```typescript
-import { Result, ok, err, isOk, isErr } from "./types/Result";
+import { Result, ok, err, isOk, isErr } from "@mirai-app/domain";
 
 function validateEmail(input: string): Result<Email, string> {
   if (!input.includes("@")) {
@@ -208,7 +210,7 @@ AuthContext uses branded `UserId` to distinguish user identifiers from other IDs
 
 ## Repository Ports
 
-The domain layer defines repository **ports** - pure interfaces that specify what operations the application needs from any data storage implementation.
+The domain layer defines repository **ports** - pure interfaces that specify what operations the application needs from any data storage implementation. Ports follow a consistent naming pattern: `{Domain}Port` (e.g., `UserPort`, `TripPort`).
 
 ### What are Ports?
 
@@ -220,24 +222,24 @@ Ports are TypeScript interfaces that define the contract between the domain laye
 
 ### Available Ports
 
-Import from `@mirai-app/domain/ports`:
+Import from `@mirai-app/domain`:
 
 ```typescript
 import type {
-  UserRepository,
-  TripRepository,
-  ChallengeRepository,
-  GroupRepository,
-  EventRepository,
-  LocationRepository,
-  NotificationRepository,
-  RewardRepository,
-  CoinTransactionRepository,
-  ActivityFeedRepository,
-  ChallengeSubmissionRepository,
-  ChallengeVoteRepository,
+  UserPort,
+  TripPort,
+  ChallengePort,
+  GroupPort,
+  EventPort,
+  LocationPort,
+  NotificationPort,
+  RewardPort,
+  CoinTransactionPort,
+  ActivityFeedPort,
+  ChallengeSubmissionPort,
+  ChallengeVotePort,
   DatabaseError,
-} from "@mirai-app/domain/ports";
+} from "@mirai-app/domain";
 ```
 
 ### Port Characteristics
@@ -249,15 +251,15 @@ Domain ports are:
 - **Framework-agnostic**: No imports from Drizzle, Prisma, or other ORMs
 - **Type-safe**: Branded IDs prevent mixing different entity types
 
-### Example: UserRepository Port
+### Example: UserPort
 
 ```typescript
-// packages/domain/src/ports/UserRepository.ts
+// packages/domain/src/user/ports/UserPort.ts
 import type { User, UserRole } from "../entities/User";
 import type { Effect } from "effect";
-import type { DatabaseError } from "./DatabaseError";
+import type { DatabaseError } from "../../system/errors/DatabaseError";
 
-export interface UserRepository {
+export interface UserPort {
   findById(id: string): Effect.Effect<User | null, DatabaseError, never>;
   findByAuthUserId(
     authUserId: string,
@@ -272,10 +274,10 @@ export interface UserRepository {
 ### Port Pattern: Domain defines WHAT, Use Cases orchestrate HOW
 
 ```
-Domain Layer:     UserRepository (interface - what operations exist)
-                        ↓ Port
-Use Cases Layer:  UserRepositoryTag (Context.Tag for Effect DI)
-                        ↓ Port (with DI capability)
+Domain Layer:     UserPort (interface - what operations exist)
+                         ↓ Port
+Use Cases Layer:  UserPortTag (Context.Tag for Effect DI)
+                         ↓ Port (with DI capability)
 Adapters Layer:   DrizzleUserGateway (implementation - how it works)
 ```
 
@@ -284,7 +286,7 @@ Adapters Layer:   DrizzleUserGateway (implementation - how it works)
 All repository ports use `DatabaseError` for consistent error handling:
 
 ```typescript
-import { DatabaseError } from "@mirai-app/domain/ports";
+import { DatabaseError } from "@mirai-app/domain";
 
 // Use in error handling
 Effect.catchTag("DatabaseError", (error) => {

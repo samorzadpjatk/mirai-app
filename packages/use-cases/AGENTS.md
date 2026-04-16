@@ -69,19 +69,18 @@ Effect.gen(function* () {
 Define repository/service interfaces as Context.Tags:
 
 ```ts
-// packages/use-cases/src/ports/MyEntityRepository.ts
+// packages/use-cases/src/{domain}/ports/MyEntityPort.ts
 import { Context, Effect } from "effect";
 import type { MyEntity } from "@mirai-app/domain";
 
-export interface MyEntityRepository {
+export interface MyEntityPort {
   findById(id: string): Effect.Effect<MyEntity | null, never, never>;
   save(entity: MyEntity): Effect.Effect<MyEntity, never, never>;
   delete(id: string): Effect.Effect<void, never, never>;
 }
 
 // Create the Context.Tag for dependency injection
-export const MyEntityRepository =
-  Context.Tag<MyEntityRepository>("MyEntityRepository");
+export const MyEntityPort = Context.Tag<MyEntityPort>("MyEntityPort");
 ```
 
 ---
@@ -101,13 +100,13 @@ Mirai App uses a **two-layer port system** for Clean Architecture compliance wit
 │  - Defines WHAT operations exist                              │
 │  - Example: UserRepository (interface)                        │
 ├─────────────────────────────────────────────────────────────┤
-│  Use Cases Layer: packages/use-cases/src/ports/               │
+│  Use Cases Layer: packages/use-cases/src/{domain}/ports/      │
 │  ────────────────────────────────────────────────            │
 │  - Same interface as domain                                   │
 │  - Adds Context.Tag for Effect DI                             │
-│  - Enables `yield* UserRepositoryTag`                         │
+│  - Enables `yield* UserPort`                                  │
 │  - Enables `Layer.succeed` for testing                        │
-│  - Example: UserRepository (interface) + UserRepositoryTag    │
+│  - Example: UserPort (interface + Tag)                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -134,33 +133,30 @@ import type { UserRepository as DomainUserRepository } from "@mirai-app/domain/p
 
 ```ts
 // In use case interactors
-import { UserRepositoryTag } from "../ports/UserRepository";
+import { UserPort } from "../user/ports/UserPort";
 
 // Usage in Effect.gen
-const repo = yield * UserRepositoryTag;
+const repo = yield * UserPort;
 const user = yield * repo.findById(id);
 ```
 
 ### Tag Pattern
 
 ```ts
-// packages/use-cases/src/ports/UserRepository.ts
+// packages/use-cases/src/user/ports/UserPort.ts
 import type { User } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
-import { DatabaseError } from "./errors";
+import { DatabaseError } from "../errors";
 
 // Interface (matches domain port)
-export interface UserRepository {
+export interface UserPort {
   findById(id: string): Effect.Effect<User | null, DatabaseError, never>;
   create(user: User): Effect.Effect<User, DatabaseError, never>;
   // ... other methods
 }
 
 // Context.Tag for dependency injection
-export class UserRepositoryTag extends Context.Tag("UserRepository")<
-  UserRepositoryTag,
-  UserRepository
->() {}
+export class UserPort extends Context.Tag("UserPort")<UserPort, UserPort>() {}
 ```
 
 ### Clean Architecture Flow
@@ -185,10 +181,10 @@ Framework Integration (DI container registration)
 ### Full Example
 
 ```ts
-// packages/use-cases/src/interactors/GetUserWithTrips.ts
+// packages/use-cases/src/user/interactors/GetUserWithTrips.ts
 import { Effect, Data } from "effect";
-import { UserRepositoryTag } from "../ports/UserRepository";
-import { TripRepositoryTag } from "../ports/TripRepository";
+import { UserPort } from "../ports/UserPort";
+import { TripPort } from "../../trip/ports/TripPort";
 
 export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   userId: string;
@@ -198,8 +194,8 @@ export class GetUserWithTripsUseCase {
   execute(userId: string) {
     return Effect.gen(function* () {
       // Get repositories from context
-      const userRepo = yield* UserRepositoryTag;
-      const tripRepo = yield* TripRepositoryTag;
+      const userRepo = yield* UserPort;
+      const tripRepo = yield* TripPort;
 
       // Orchestrate domain operations
       const user = yield* userRepo.findById(userId);
@@ -225,9 +221,9 @@ export class GetUserWithTripsUseCase {
 ## Use Case Template
 
 ```ts
-// packages/use-cases/src/interactors/DoSomething.ts
+// packages/use-cases/src/{domain}/interactors/DoSomething.ts
 import { Effect, Data } from "effect";
-import { MyEntityRepository } from "../ports/MyEntityRepository";
+import { MyEntityPort } from "../ports/MyEntityPort";
 
 export class EntityNotFoundError extends Data.TaggedError(
   "EntityNotFoundError",
@@ -236,13 +232,9 @@ export class EntityNotFoundError extends Data.TaggedError(
 export class DoSomethingUseCase {
   execute(
     input: DoSomethingInput,
-  ): Effect.Effect<
-    SomethingResultDTO,
-    EntityNotFoundError,
-    MyEntityRepository
-  > {
+  ): Effect.Effect<SomethingResultDTO, EntityNotFoundError, MyEntityPort> {
     return Effect.gen(function* () {
-      const repo = yield* MyEntityRepository;
+      const repo = yield* MyEntityPort;
 
       const entity = yield* repo.findById(input.entityId);
       if (!entity) {
@@ -268,11 +260,11 @@ Mock dependencies using `Layer.succeed` and `Effect.provide`:
 import { describe, it, expect } from "bun:test";
 import { Effect, Layer } from "effect";
 import { DoSomethingUseCase } from "./DoSomething";
-import { MyEntityRepository } from "../ports/MyEntityRepository";
+import { MyEntityPort } from "../ports/MyEntityPort";
 
 // Create mock repository layer
 const createMockRepoLayer = () =>
-  Layer.succeed(MyEntityRepository, {
+  Layer.succeed(MyEntityPort, {
     findById: (id: string) => Effect.succeed(null),
     save: (entity: MyEntity) => Effect.succeed(entity),
     delete: (id: string) => Effect.succeed(void 0),
@@ -293,7 +285,7 @@ describe("[UNIT] DoSomethingUseCase", () => {
 
   it("fails with EntityNotFoundError", async () => {
     const useCase = new DoSomethingUseCase();
-    const failingLayer = Layer.succeed(MyEntityRepository, {
+    const failingLayer = Layer.succeed(MyEntityPort, {
       findById: () => Effect.succeed(null), // Returns null
       save: (e: MyEntity) => Effect.succeed(e),
       delete: () => Effect.succeed(void 0),
@@ -327,7 +319,7 @@ describe("[UNIT] DoSomethingUseCase", () => {
   beforeEach(() => {
     container = createTestContainer();
     container.register({
-      myEntityRepository: asClass(InMemoryMyEntityGateway).singleton(),
+      myEntityPort: asClass(InMemoryMyEntityGateway).singleton(),
       doSomethingUseCase: asClass(DoSomethingUseCase).scoped(),
     });
   });

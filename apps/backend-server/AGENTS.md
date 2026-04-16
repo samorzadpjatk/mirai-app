@@ -15,62 +15,70 @@ Note: The backend now uses GraphQL (Pothos schema-first). See `@mirai-app/api-gr
 
 ---
 
-## tRPC Router Patterns
+## GraphQL Resolver Patterns
 
-### Controller Resolution in Routers
+### Controller Resolution in Resolvers
 
-Routers use controllers from the context. No auth in middleware.
+Resolvers use controllers from the context. No auth in middleware.
 
 ```ts
-export const userRouter = createTRPCRouter({
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
+export const userResolvers = {
+  Query: {
+    user: async (
+      _parent: unknown,
+      args: { id: string },
+      ctx: GraphQLContext,
+    ) => {
       // Access controller from context
       const controller = ctx.controllers.userController;
-      const result = await controller.getById(input);
+      const result = await controller.getById({ id: args.id });
       if (!result.success) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error,
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
         });
       }
       return result.data;
-    }),
-});
+    },
+  },
+};
 ```
 
-### Router Template
+### Resolver Template
 
 ```ts
-import { createTRPCRouter, publicProcedure } from "@mirai-app/frameworks/trpc";
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
+import { GraphQLError } from "graphql";
 
-export const featureRouter = createTRPCRouter({
-  list: publicProcedure.query(async ({ ctx }) => {
-    const controller = ctx.controllers.featureController;
-    const result = await controller.list();
-    if (!result.success) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: result.error,
-      });
-    }
-    return result.data;
-  }),
-
-  create: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+export const featureResolvers = {
+  Query: {
+    features: async (_parent: unknown, _args: unknown, ctx: GraphQLContext) => {
       const controller = ctx.controllers.featureController;
-      const result = await controller.create(input);
+      const result = await controller.list();
       if (!result.success) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: result.error });
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
       return result.data;
-    }),
-});
+    },
+  },
+
+  Mutation: {
+    createFeature: async (
+      _parent: unknown,
+      args: { input: { name: string } },
+      ctx: GraphQLContext,
+    ) => {
+      const controller = ctx.controllers.featureController;
+      const result = await controller.create(args.input);
+      if (!result.success) {
+        throw new GraphQLError(result.error, {
+          extensions: { code: "BAD_REQUEST" },
+        });
+      }
+      return result.data;
+    },
+  },
+};
 ```
 
 ---
@@ -86,7 +94,7 @@ import { requireAuth, requireAdmin, getOptionalAuth }
   from "@mirai-app/adapters";
 
 async getById(input: GetByIdInput, di: DIContext) {
-  // Throws TRPCError if missing/invalid
+  // Throws GraphQLError if missing/invalid
   const authContext = await requireAuth(di.headers, di);
 
   // Now authContext.userId, authContext.role available
@@ -104,7 +112,7 @@ async adminAction(input: AdminInput, di: DIContext) {
 
 ## Testing
 
-Backend-server tests live in `src/__tests__/` and test integration of tRPC + DI + auth.
+Backend-server tests live in `src/__tests__/` and test integration of GraphQL + DI + auth.
 
 ---
 

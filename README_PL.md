@@ -2,6 +2,7 @@
 [![Polski](https://img.shields.io/badge/Polski-Click-yellow)](README_PL.md)<br>
 [![AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue)](LICENSE)
 <img width="1440" height="565" alt="mirai_app_banner" src="https://github.com/user-attachments/assets/88e9e651-ec6d-458f-b650-4a351b1bb534" />
+
 <div align="center">
 <h1>MIRAI</h1>
 <b>Aplikacja mobilna Samorządu Studenckiego PJATK</b>
@@ -17,7 +18,7 @@ Spójrz na [zasady współpracy wewnątrz repo](CONTRIBUTING.md)!
 
 > [!IMPORTANT]
 > **Call for Mainteiners**
-> 
+>
 > Szukamy osób, którzy przejmą opiekę nad projektem.
 > Jeśli jesteś zainteresowany, prosimy o kontakt z Samorządem Studenckim PJATK.
 
@@ -30,18 +31,22 @@ Sprawdź szczegóły ich konfiguracji wewnątrz plików [`turbo.json`](turbo.jso
 Znajduje się w nim:
 
 - **Aplikacja natywna** (Expo / React Native) → [`@mirai-app/native`](apps/native/)
-- **Backend serwerowy** (Fastify + tRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
+- **Backend serwerowy** (Hono + GraphQL) → [`@mirai-app/backend-server`](apps/backend-server/)
 - **Nadawca powiadomień** (Expo Push Notifications) → [`@mirai-app/notification-sender`](apps/notification-sender/)
 - **Seed CLI** (Baza danych & Storage seeding) → [`@mirai-app/seed`](apps/seed/)
 - **Współdzielone biblioteki** → [`packages`](packages/)
+  - [`@mirai-app/domain`](packages/domain/) - **Warstwa domenowa** - Encje, obiekty wartości, reguły biznesowe
+  - [`@mirai-app/use-cases`](packages/use-cases/) - **Warstwa przypadków użycia** - Orkiestracja i workflow
+  - [`@mirai-app/adapters`](packages/adapters/) - **Warstwa adapterów** - Kontrolery i bramy (gateways)
+  - [`@mirai-app/frameworks`](packages/frameworks/) - **Warstwa frameworków** - DI, GraphQL, Drizzle config
   - [`@mirai-app/auth`](packages/auth/) - Logika autoryzacji
   - [`@mirai-app/db`](packages/db/) - Klient Prisma bazy danych
-  - [`@mirai-app/shared`](packages/shared/) - Współdzielone utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Konfiguracja klienta Supabase
 
 Wszystkie skrypty mogą zostać wywołane z katalogu głównego projektu za pomocą `bun run <script>`. (Możesz też wejść do konkretnego pakietu i uruchomić `bun run <script>`).
 
 Aby uruchomić skrypt przypisany danemu komponentowi używamy `bun run` (lub `cd <pakiet> && bun run <script>`):
+
 ```bash
 cd apps/native && bun run dev
 ```
@@ -90,7 +95,8 @@ cd packages/seed && bun run db:studio
 
 ### 5. Uruchom wybraną aplikację
 
-Przed uruchomieniem: 
+Przed uruchomieniem:
+
 - spójrz na dokumentację [aplikacji natywnej](apps/native/README.md) oraz [backendu](apps/backend-server/README.md)
 
 #### `bun run dev`
@@ -103,7 +109,7 @@ Uruchamia wszystkie aplikacje w trybie developerskim jednocześnie:
 
 #### `bun run dev:backend`
 
-Uruchamia tylko serwer backendowy (Fastify + tRPC) w trybie deweloperskim (domyślnie port 2022).
+Uruchamia tylko serwer backendowy (Hono + GraphQL) w trybie deweloperskim (domyślnie port 2022).
 
 #### `bun run dev:native`
 

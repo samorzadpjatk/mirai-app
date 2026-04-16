@@ -9,7 +9,7 @@
 The use cases layer contains:
 
 - **Interactors**: Use case implementations using `Effect.gen` for composable workflows
-- **Ports**: Repository interfaces as `Context.Tag` for dependency injection
+- **Ports**: Port interfaces as `Context.Tag` for dependency injection
 - **DTOs**: Input/output data transfer objects
 - **Errors**: Use case specific errors using `Data.TaggedError`
 
@@ -20,35 +20,68 @@ This layer has migrated from class-based `Result<T,E>` to functional **Effect** 
 1. **Only Domain Dependency**: Can only import from `@mirai-app/domain`
 2. **No Framework Knowledge**: No knowledge of UI, database, or frameworks
 3. **Orchestration Only**: Coordinates domain entities, doesn't contain business rules
-4. **Repository Interfaces**: Defines what repositories must do (adapters implement)
+4. **Port Interfaces**: Defines what ports must do (adapters implement)
 5. **Effect<T,E,R>**: All operations return `Effect<T,E,R>` for composable error handling
 
 ## Directory Structure
 
 ```
 src/
-├── index.ts              # Public exports
-├── ports/                # Repository & service interfaces (Context.Tag)
-│   ├── UserRepository.ts # Data access ports with Effect signatures
-│   ├── GroupRepository.ts # Group management with member operations
-│   ├── AuthPort.ts       # Authentication port
-│   ├── TelemetryPort.ts  # Observability port
-│   └── errors.ts         # Common port errors (DatabaseError, etc.)
-├── interactors/          # Use case implementations
-│   ├── CreateUser.ts     # Business workflow use cases
-│   ├── AssignUserToGroup.ts    # Effect.gen pattern example
-│   ├── RemoveUserFromGroup.ts  # Another Effect pattern
-│   ├── AuthenticateUser.ts     # Authentication use case
-│   └── LogTelemetry.ts         # Telemetry use case
-├── dto/                  # Data Transfer Objects
-│   ├── input/            # Input DTOs
-│   └── output/           # Output DTOs
-├── errors/               # Use case specific errors
-└── test/                 # Test utilities (runWithTestLayer, etc.)
-    ├── index.ts          # Public test exports
-    ├── test-helpers.ts   # Layer-based test utilities
-    └── repository-mocks.ts # Pre-built repository mocks
+├── index.ts              # Public exports (barrel)
+├── activity/             # Activity use cases
+│   ├── interactors/      # Activity use case implementations
+│   └── ports/            # Activity ports (Context.Tag interfaces)
+├── auth/                 # Authentication use cases
+│   ├── interactors/      # Auth use case implementations
+│   └── ports/            # Auth ports
+├── challenge/            # Challenge use cases
+│   ├── interactors/      # Challenge use case implementations
+│   └── ports/            # Challenge ports
+├── coin/                 # Coin use cases
+│   ├── interactors/      # Coin use case implementations
+│   └── ports/            # Coin ports
+├── event/                # Event use cases
+│   ├── interactors/      # Event use case implementations
+│   └── ports/            # Event ports
+├── group/                # Group use cases
+│   ├── interactors/      # Group use case implementations
+│   └── ports/            # Group ports
+├── location/             # Location use cases
+│   ├── interactors/      # Location use case implementations
+│   └── ports/            # Location ports
+├── notification/         # Notification use cases
+│   ├── interactors/      # Notification use case implementations
+│   └── ports/            # Notification ports
+├── purchase/             # Purchase use cases
+│   ├── interactors/      # Purchase use case implementations
+│   └── ports/            # Purchase ports
+├── ranking/              # Ranking use cases
+│   ├── interactors/      # Ranking use case implementations
+│   └── ports/            # Ranking ports
+├── report/               # Report use cases
+│   ├── interactors/      # Report use case implementations
+│   └── ports/            # Report ports
+├── reward/               # Reward use cases
+│   ├── interactors/      # Reward use case implementations
+│   └── ports/            # Reward ports
+├── sponsor/              # Sponsor use cases
+│   ├── interactors/      # Sponsor use case implementations
+│   └── ports/            # Sponsor ports
+├── system/               # System use cases
+│   ├── interactors/      # System use case implementations
+│   └── ports/            # System ports
+├── trip/                 # Trip use cases
+│   ├── interactors/      # Trip use case implementations
+│   └── ports/            # Trip ports
+└── user/                 # User use cases
+    ├── interactors/      # User use case implementations
+    └── ports/            # User ports
 ```
+
+Each domain folder contains:
+
+- `interactors/`: Use case implementations (e.g., `CreateUser.ts`, `AssignUserToGroup.ts`)
+- `ports/`: Port interfaces with `Context.Tag` for DI (e.g., `UserRepository.ts`, `GroupRepository.ts`)
 
 ## Effect-Based Use Cases
 
@@ -89,7 +122,7 @@ export const doSomethingUseCase = (input: DoSomethingInput) =>
 
 ### Complete Use Case Example
 
-From `src/interactors/AssignUserToGroup.ts`:
+From `src/group/interactors/AssignUserToGroup.ts`:
 
 ```typescript
 import { Group, TripParticipant } from "@mirai-app/domain";
@@ -170,12 +203,12 @@ export function assignUserToGroupUseCase(
 
 ## Context.Tag Dependency Injection
 
-Repositories and services are accessed via `yield* RepositoryTag` rather than constructor injection.
+Ports are accessed via `yield* PortTag` rather than constructor injection.
 
-### Defining a Repository Port
+### Defining a Port
 
 ```typescript
-// ports/GroupRepository.ts
+// group/ports/GroupRepository.ts
 import { Context, Effect } from "effect";
 import type { Group, GroupStatus, TripParticipant } from "@mirai-app/domain";
 import { DatabaseError } from "./errors";
@@ -203,7 +236,7 @@ export class GroupRepositoryTag extends Context.Tag("GroupRepository")<
 ### Cross-Cutting Concern Ports
 
 ```typescript
-// ports/AuthPort.ts - Authentication abstraction
+// auth/ports/AuthPort.ts - Authentication abstraction
 export interface AuthPort {
   validateToken(token: string): Effect.Effect<AuthContext, AuthError, never>;
   getUserById(userId: UserId): Effect.Effect<AuthUser, AuthError, never>;
@@ -211,7 +244,7 @@ export interface AuthPort {
 
 export const AuthPortTag = Context.Tag<AuthPort>("AuthPort");
 
-// ports/TelemetryPort.ts - Observability abstraction
+// system/ports/TelemetryPort.ts - Observability abstraction
 export interface TelemetryPort {
   log(event: TelemetryEvent): Effect.Effect<void, TelemetryError, never>;
   trackMetric(name: string, value: number): Effect.Effect<void, never, never>;
@@ -258,7 +291,7 @@ export type MyUseCaseError =
 // The Effect signature shows all possible errors
 export const myUseCase = (
   input: Input,
-): Effect.Effect<Output, MyUseCaseError, MyRepositoryTag> => {
+): Effect.Effect<Output, MyUseCaseError, MyPortTag> => {
   return Effect.gen(function* () {
     // ... operations
     if (someCondition) {
@@ -392,7 +425,7 @@ const either = await runWithTestLayer(
 ### Input DTOs
 
 ```typescript
-// dto/input/CreateUserInput.ts
+// user/dto/input/CreateUserInput.ts
 import { z } from "zod";
 
 export const CreateUserInputSchema = z.object({
@@ -406,7 +439,7 @@ export type CreateUserInput = z.infer<typeof CreateUserInputSchema>;
 ### Output DTOs
 
 ```typescript
-// dto/output/UserDTO.ts
+// user/dto/output/UserDTO.ts
 import type { User } from "@mirai-app/domain";
 
 export interface UserDTO {
@@ -464,7 +497,7 @@ const UserRepositoryLive = Layer.succeed(UserRepositoryTag, {
 DTOs prevent domain objects from leaking to outer layers:
 
 ```
-Request → Input DTO → Use Case → Domain Entity → Repository
+Request → Input DTO → Use Case → Domain Entity → Port
                                               ↓
 Response ← Output DTO ← Use Case ← Domain Entity ← Database
 ```
@@ -488,7 +521,7 @@ const result = await Effect.runPromise(program);
 | ----------------- | ----------------------------------- | ------------------------ |
 | Generator         | `Effect.gen(function* () { ... })`  | Sequential orchestration |
 | Extract value     | `yield* someEffect`                 | Unwrap Effect value      |
-| Access dependency | `yield* RepositoryTag`              | DI via Context.Tag       |
+| Access dependency | `yield* PortTag`                    | DI via Context.Tag       |
 | Fail              | `yield* Effect.fail(error)`         | Short-circuit on error   |
 | Succeed           | `Effect.succeed(value)`             | Wrap success             |
 | Map               | `Effect.map(effect, f)`             | Transform success        |

@@ -44,15 +44,13 @@ src/
 │   ├── react.tsx         # React integration
 │   ├── server.ts         # Server-side client
 │   └── store/            # Zustand auth store
-├── layers/               # Effect Layer compositions (DI)
-│   ├── AppLayer.ts       # Merges Repository + Service layers
-│   ├── RepositoryLayer.ts # 17 repositories by domain
-│   ├── ServiceLayer.ts   # 5 external services
-│   └── index.ts          # Barrel exports with factories
-├── di/                   # Legacy DI utilities
-│   ├── index.ts          # Container creation (deprecated)
-│   ├── types.ts          # DI type definitions
-│   └── test-layer.ts     # Effect test utilities ⭐
+├── di/                   # Effect DI composition
+│   ├── index.ts          # DI exports
+│   └── layer/            # Layer compositions
+│       ├── app.ts        # Application layer
+│       ├── repository.ts # Repository layer
+│       ├── service.ts    # Service layer
+│       └── test.ts       # Test layer
 ├── auth/                 # Auth configuration
 │   ├── client.ts         # Client auth setup
 │   ├── server.ts         # Server auth setup
@@ -517,5 +515,5 @@ const testLayer = baseLayer.pipe(
 
 ---
 
-**Last Updated:** 2026-04-15  
-**Version:** 2.0.0 (Effect Layer Composition)
+**Last Updated:** 2026-04-16  
+**Version:** 2.0.1 (Updated DI structure)

@@ -18,7 +18,7 @@
 The Frameworks layer composes Effect Layers for dependency injection:
 
 ```ts
-// packages/frameworks/src/layers/app-layer.ts
+// packages/frameworks/src/di/layer/app.ts
 import { Layer } from "effect";
 import { RepositoryLive } from "@mirai-app/adapters";
 import { DatabaseLive, LoggerLive } from "./infrastructure";
@@ -68,25 +68,28 @@ const controllers = createControllers({ appLayer, supabase });
 
 ## DI Wiring Examples
 
-### Controller Access (routers)
+### Controller Access (resolvers)
 
 ```ts
-// In tRPC router: access controller from context
-export const userRouter = createTRPCRouter({
-  getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
+// In GraphQL resolver: access controller from context
+export const userResolvers = {
+  Query: {
+    user: async (
+      _parent: unknown,
+      args: { id: string },
+      ctx: GraphQLContext,
+    ) => {
       const controller = ctx.controllers.userController;
-      const result = await controller.getById(input);
+      const result = await controller.getById({ id: args.id });
       if (!result.success) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error,
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
         });
       }
       return result.data;
-    }),
-});
+    },
+  },
+};
 ```
 
 ### Test Context Setup
@@ -134,5 +137,5 @@ For comprehensive framework patterns, see **CLAUDE.md**:
 
 ---
 
-**Last Updated:** 2026-04-14  
-**Version:** 1.0.0
+**Last Updated:** 2026-04-16  
+**Version:** 1.0.1 (Updated DI structure paths)

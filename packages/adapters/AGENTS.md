@@ -2,7 +2,35 @@
 
 > **DI patterns, controllers, and gateways for the Mirai App monorepo**
 >
-> This package contains tRPC controllers, database gateways, and awilix-modular DI configuration.
+> This package contains GraphQL resolvers, database gateways, and awilix-modular DI configuration.
+
+---
+
+## Package Structure
+
+The adapters package uses **domain-based folder organization**:
+
+```
+src/
+├── activity/       # Activity domain adapters
+├── challenge/      # Challenge domain
+├── coin/           # Coin transaction domain
+├── event/          # Event domain
+├── group/          # Group domain
+├── location/       # Location domain
+├── notification/   # Notification domain
+├── ranking/        # Ranking domain
+├── reward/         # Reward domain
+├── sponsor/        # Sponsor domain
+├── storage/        # Storage domain
+├── submission/     # Submission report domain
+├── trip/           # Trip domain
+├── user/           # User domain
+├── auth/           # Authentication adapters
+└── system/         # Shared utilities (controllers, gateways, mappers, errors)
+```
+
+Each domain folder contains: `controllers/`, `gateways/`, `mappers/`
 
 ---
 
@@ -20,11 +48,13 @@ The monorepo uses **Effect-based DI** with controllers instantiated per-request.
 ### Quick reference
 
 ```ts
-// In router: access controller from context
+// In resolver: access controller from context
 const controller = ctx.controllers.userController;
 const result = await controller.getById(input);
 if (!result.success) {
-  throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error });
+  throw new GraphQLError(result.error, {
+    extensions: { code: "INTERNAL_SERVER_ERROR" },
+  });
 }
 return result.data;
 
@@ -36,25 +66,28 @@ const ctx = createTestContext({
 });
 ```
 
-### Controller access in routers
+### Controller access in resolvers
 
 ```ts
-export const userRouter = createTRPCRouter({
-  getById: publicProcedure // ✅ Only procedure type
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
+export const userResolvers = {
+  Query: {
+    user: async (
+      _parent: unknown,
+      args: { id: string },
+      ctx: GraphQLContext,
+    ) => {
       // Auth happens in controller, not middleware
       const controller = ctx.controllers.userController;
-      const result = await controller.getById(input);
+      const result = await controller.getById({ id: args.id });
       if (!result.success) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error,
+        throw new GraphQLError(result.error, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
         });
       }
       return result.data;
-    }),
-});
+    },
+  },
+};
 ```
 
 ### Effect Layer Composition
@@ -81,30 +114,37 @@ export const controllers = createControllers({ appLayer });
 
 ## Authentication in controllers
 
-Controllers handle authentication using helper functions from `controller-helpers.ts`:
+Controllers handle authentication using the `AuthServer` class:
 
 ```typescript
-import { requireAuth, requireAdmin, requireModerator, getOptionalAuth }
-  from "@mirai-app/adapters";
+import { AuthServer } from "@mirai-app/adapters/auth/controllers";
 
 // In controller method:
 async getById(input: GetByIdInput, di: DIContext) {
-  // Require authentication (throws TRPCError if missing/invalid)
-  const authContext = await requireAuth(di.headers, di);
+  // Require authentication (throws GraphQLError if missing/invalid)
+  const { dbUser } = await this.authServer.requireAuth(di.supabase, di.accessToken);
 
-  // Now authContext.userId, authContext.role available
+  // Now dbUser.id, dbUser.role available
+  const authContext = { userId: dbUser.id, role: dbUser.role };
   return await this.useCase.execute({ ...input, authContext });
 }
 
 // For admin-only endpoints:
 async adminAction(input: AdminInput, di: DIContext) {
   // Throws if not admin
-  const authContext = await requireAdmin(di.headers, di);
+  const { dbUser } = await this.authServer.requireAdmin(di.supabase, di.accessToken);
   // ...
 }
 ```
 
-AuthContext is passed explicitly to use cases. No auth in tRPC middleware.
+AuthContext is passed explicitly to use cases. No auth in GraphQL middleware.
+
+Available `AuthServer` methods:
+
+- `requireAuth(supabase, accessToken)` - Require valid authentication
+- `requireAdmin(supabase, accessToken)` - Require admin role
+- `requireModerator(supabase, accessToken)` - Require moderator role
+- `getOptionalAuth(supabase, accessToken)` - Get auth if present (returns null if missing)
 
 ---
 
@@ -127,7 +167,7 @@ const program = Effect.gen(function* () {
 
 ## Gateway Patterns with Effect.tryPromise
 
-Wrap external calls (Prisma, Supabase, HTTP APIs) with `Effect.tryPromise`:
+Wrap external calls (Drizzle ORM, Supabase, HTTP APIs) with `Effect.tryPromise`:
 
 ```ts
 import { Effect } from "effect";
@@ -135,23 +175,23 @@ import { Effect } from "effect";
 // Gateway method pattern
 findById(id: string): Effect.Effect<User | null, DatabaseError, never> {
   return Effect.tryPromise({
-    try: () => this.prisma.user.findUnique({ where: { id } }),
+    try: () => this.db.query.users.findFirst({ where: eq(users.id, id) }),
     catch: (error) => new DatabaseError({ cause: error }),
   }).pipe(
-    Effect.map((prismaUser) =>
-      prismaUser ? this.mapper.toDomain(prismaUser) : null
+    Effect.map((dbUser) =>
+      dbUser ? this.mapper.toDomain(dbUser) : null
     )
   );
 }
 ```
 
-Convert errors at boundaries — never let Prisma errors leak into use cases.
+Convert errors at boundaries — never let database errors leak into use cases.
 
 ---
 
-## BasePrismaRepository rules
+## BaseDrizzleGateway rules
 
-If you use a shared base repository (e.g., `BasePrismaRepository`), it must remain **mechanical**:
+The shared base gateway (`BaseDrizzleGateway` in `system/shared/gateways/drizzle-base.ts`) must remain **mechanical**:
 
 - **Allowed:** CRUD boilerplate, query helpers, pagination helpers, transaction plumbing.
 - **Not allowed:** business rules, invariants, authorization, domain decisions.

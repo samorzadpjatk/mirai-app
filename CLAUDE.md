@@ -30,7 +30,7 @@ All error handling and async operations use **Effect**:
 
 ---
 
-# 8 Universal Rules
+# 9 Universal Rules
 
 1. **TDD first:** Write failing test before implementation
 2. **Effect-based:** Domain uses `Effect<T,E,never>`; orchestration uses `Effect.gen` + `Context.Tag`
@@ -40,6 +40,7 @@ All error handling and async operations use **Effect**:
 6. **No emojis in source code:** Use plain text in console.log, console.error, and all source code. No emoji characters in .ts, .js, .tsx, .jsx files. This ensures clean diffs and avoids encoding issues.
 7. **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Never edit `packages/graphql-client/codegen.ts`. Only edit Pothos schema files, then sync schema, then regenerate client
 8. **TODO comments:** When fixing a TODO, implement the fix without rephrasing or removing the TODO comment. The TODO comment documents the original intent and should remain intact for reference
+9. **Minimal comments:** Write self-explanatory code with clear naming, types, and structure. Avoid explanatory comments that describe what the code does; use comments only for _why_ (business rationale, non-obvious design decisions). If code needs a comment to explain what it does, refactor it to be clearer instead.
 
 ---
 
@@ -119,7 +120,7 @@ execute(input: Input): Effect.Effect<
 async handle(input: Input, di: DIContext) {
   const program = this.useCase.execute(input).pipe(
     Effect.catchTag("NotFoundError", () => {
-      throw new TRPCError({ code: "NOT_FOUND" });
+      throw new GraphQLError("Not found", { extensions: { code: "NOT_FOUND" } });
     }),
   );
   return await Effect.runPromise(program);
@@ -189,7 +190,7 @@ bun run clean            # Clean build artifacts
 | `packages/use-cases/`  | @packages/use-cases/AGENTS.md  | Effect orchestration      |
 | `packages/adapters/`   | @packages/adapters/AGENTS.md   | DI, controllers, gateways |
 | `packages/frameworks/` | @packages/frameworks/AGENTS.md | Layer composition         |
-| `apps/backend-server/` | @apps/backend-server/AGENTS.md | tRPC routes, auth         |
+| `apps/backend-server/` | @apps/backend-server/AGENTS.md | GraphQL resolvers, auth   |
 | `apps/native/`         | @apps/native/AGENTS.md         | Mobile testing            |
 | `apps/web/`            | @apps/web/AGENTS.md            | Frontend patterns         |
 
@@ -212,9 +213,17 @@ bun run clean            # Clean build artifacts
 ```
 Is it pure business logic?
 ├─ YES → Domain Layer (packages/domain/)
-│   ├─ Core entities → entities/
-│   ├─ Immutable concepts → value-objects/
-│   └─ Business rules → domain-services/
+│   ├─ activity/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ challenge/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ event/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ group/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ location/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ notification/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ reward/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ sponsor/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ trip/ → entities/, value-objects/, ports/, enums/, errors/
+│   ├─ user/ → entities/, value-objects/, ports/, enums/, errors/
+│   └─ system/ → shared domain utilities (errors/, utils/)
 │
 └─ NO → Does it orchestrate domain objects?
     ├─ YES → Use Case Layer (packages/use-cases/)
@@ -224,12 +233,12 @@ Is it pure business logic?
     │
     └─ NO → Does it connect to frameworks?
         ├─ YES → Adapter Layer (packages/adapters/)
-        │   ├─ tRPC routes → controllers/
+        │   ├─ GraphQL resolvers → controllers/
         │   ├─ DB implementations → gateways/
         │   └─ Format conversions → mappers/
         │
         └─ NO → Framework Layer (packages/frameworks/)
-            ├─ tRPC config → trpc/
+            ├─ GraphQL config → graphql/
             ├─ Effect Layers → effect/
             └─ Supabase config → supabase/
 ```
@@ -248,8 +257,9 @@ Is it pure business logic?
 - **No emojis in source code:** Use plain text in console.log, console.error, and all source code. No emoji characters in .ts, .js, .tsx, .jsx files
 - **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Never edit `packages/graphql-client/codegen.ts`. Only edit Pothos schema files, then sync schema, then regenerate client
 - **TODO comments:** When fixing a TODO, implement the fix without rephrasing or removing the TODO comment. The TODO comment documents the original intent and should remain intact for reference
+- **Minimal comments:** Write self-explanatory code with clear naming, types, and structure. Avoid explanatory comments that describe what the code does; use comments only for _why_ (business rationale, non-obvious design decisions)
 
 ---
 
-**Last Updated:** 2026-04-15  
-**Version:** 3.1.0 (Added no-emojis-in-source rule)
+**Last Updated:** 2026-04-16
+**Version:** 3.3.0 (Updated Layer Decision Tree to reflect domain-based folder structure)

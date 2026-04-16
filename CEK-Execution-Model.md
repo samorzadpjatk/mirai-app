@@ -262,7 +262,7 @@ Architecture synthesized in Phase 1 guides implementation structure in Phase 2.
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │  Frameworks & Drivers (Outermost - Details)                 ││
 │  │  ─────────────────────────────────────────────────          ││
-│  │  Web: Express routes, Fastify routes                           ││
+  │  │  Web: Hono routes                                              ││
 │  │  UI: React components, API clients                             ││
 │  │  External: JWT library, bcrypt, Redis client                   ││
 │  │  Database: PostgreSQL, MongoDB adapters                      ││

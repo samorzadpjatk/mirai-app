@@ -9,7 +9,7 @@
 ## Contents
 
 - **Controllers**: GraphQL resolvers, API endpoints using Effect-based controller factory pattern
-- **Gateways**: Repository implementations (Drizzle ORM with Effect)
+- **Gateways**: Gateway implementations (Drizzle ORM with Effect)
 - **Presenters**: Response formatters
 - **Mappers**: Data transformation between domain and external formats
 - **Utils**: Token extraction, Effect execution helpers, controller utilities
@@ -26,27 +26,30 @@
 
 ```
 src/
-├── index.ts              # Public exports
-├── controllers/          # GraphQL controllers/resolvers
-│   ├── factory.ts        # createControllers() - Effect Layer DI factory
-│   ├── index.ts          # Controller type exports
-│   ├── user.ts           # UserController with Layer DI
-│   ├── group.ts          # GroupController example
-│   └── [15 more...]      # All 17 controllers
-├── utils/               # Utility functions
-│   ├── TokenExtractor.ts    # Extract Bearer tokens from headers
-│   ├── controller-helpers.ts # Result handling, Effect utilities
-│   └── effect-executor.ts   # Effect execution with error mapping
-├── gateways/            # Repository implementations
-│   ├── drizzle/         # Drizzle ORM implementations
-│   ├── in-memory/       # In-memory test implementations
-│   └── base/            # BaseDrizzleGateway for CRUD
-├── mappers/             # Domain <-> DTO <-> DB mapping
-│   └── drizzle/         # Drizzle-specific mappers
-├── test/                # Test helpers
-│   └── test-helpers.ts  # Effect-based test utilities
-└── api/                 # API utilities
-    └── errors.ts        # Error handling utilities
+├── index.ts              # Public exports (barrel)
+├── activity/             # Activity domain adapters
+│   ├── controllers/      # Activity controllers
+│   ├── gateways/         # Activity gateways (Drizzle, in-memory)
+│   └── mappers/          # Activity mappers
+├── challenge/            # Challenge domain
+├── coin/                 # Coin domain
+├── event/                # Event domain
+├── group/                # Group domain
+├── location/             # Location domain
+├── notification/         # Notification domain
+├── ranking/              # Ranking domain
+├── reward/               # Reward domain
+├── sponsor/              # Sponsor domain
+├── storage/              # Storage domain
+├── submission/           # Submission domain
+├── trip/                 # Trip domain
+├── user/                 # User domain
+└── system/               # Shared utilities
+    ├── controllers/      # Shared controller utilities
+    ├── gateways/         # Shared gateway base classes
+    ├── mappers/          # Shared mapper utilities
+    ├── errors/           # Common adapter errors
+    └── utils/            # General utilities
 ```
 
 ## Controller Factory Pattern
@@ -158,29 +161,29 @@ import { UserController } from "@mirai-app/adapters/controllers/user";
 import { GroupController } from "@mirai-app/adapters/controllers/group";
 ```
 
-## Repository Implementation (Gateway)
+## Gateway Implementation
 
 ### BaseDrizzleGateway (Recommended)
 
 Extend the base class for standard CRUD operations with Effect:
 
 ```typescript
-// gateways/drizzle/user.ts
+// user/gateways/drizzle/gateway.ts
 import { Effect } from "effect";
-import { BaseDrizzleGateway } from "../base/repository";
-import { UserDrizzleMapper } from "../../mappers/drizzle/user";
+import { BaseDrizzleGateway } from "../../system/gateways/base";
+import { UserDrizzleMapper } from "../mappers/drizzle";
 import {
   users,
   type UserSelect,
   type UserInsert,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
-import type { UserRepository } from "@mirai-app/use-cases";
+import type { UserGateway } from "@mirai-app/use-cases";
 import { User } from "@mirai-app/domain";
 
 export class DrizzleUserGateway
   extends BaseDrizzleGateway<User, UserSelect, UserInsert, typeof users>
-  implements UserRepository
+  implements UserGateway
 {
   constructor(db: DrizzleDb) {
     super(db, {
@@ -216,7 +219,7 @@ export class DrizzleUserGateway
 
 **Benefits:**
 
-- ~70% less code per repository
+- ~70% less code per gateway
 - Consistent Effect-based error handling
 - Automatic CRUD operations
 - Type-safe with Drizzle
@@ -226,11 +229,11 @@ export class DrizzleUserGateway
 For highly custom needs, implement manually:
 
 ```typescript
-// gateways/drizzle/custom.ts
+// user/gateways/drizzle/custom.ts
 import { Effect } from "effect";
-import type { CustomRepository } from "@mirai-app/use-cases";
+import type { CustomGateway } from "@mirai-app/use-cases";
 
-export class CustomDrizzleGateway implements CustomRepository {
+export class CustomDrizzleGateway implements CustomGateway {
   constructor(private db: DrizzleDb) {}
 
   customQuery(): Effect.Effect<Result, DatabaseError, never> {
@@ -248,7 +251,7 @@ export class CustomDrizzleGateway implements CustomRepository {
 ## Mapper
 
 ```typescript
-// mappers/drizzle/user.ts
+// user/mappers/drizzle.ts
 import { User } from "@mirai-app/domain";
 import type { UserSelect } from "@mirai-app/frameworks/drizzle/schema";
 
@@ -291,14 +294,14 @@ export class UserDrizzleMapper {
 Controllers are thin layers that:
 
 1. Validate input
-2. Access repositories via `yield* RepositoryTag`
+2. Access gateways via `yield* GatewayTag`
 3. Execute use cases
 4. Handle errors
 
 ```typescript
-// controllers/group.ts
+// group/controllers/index.ts
 import { Effect, type Layer } from "effect";
-import { GroupRepositoryTag, getGroupUseCase } from "@mirai-app/use-cases";
+import { GroupGatewayTag, getGroupUseCase } from "@mirai-app/use-cases";
 
 export class GroupController {
   constructor(private appLayer: Layer.Layer<unknown>) {}
@@ -330,9 +333,9 @@ export class GroupController {
       return { success: false, error: "Invalid input" };
     }
 
-    // Access repository directly via Context.Tag
+    // Access gateway directly via Context.Tag
     const effect = Effect.gen(function* () {
-      const repo = yield* GroupRepositoryTag;
+      const gateway = yield* GroupGatewayTag;
       const input: AssignUserToGroupInput = {
         groupId: parsed.data.groupId,
         userId: UserId.create(parsed.data.userId),
@@ -445,12 +448,12 @@ Adapter tests use Effect Layer-based test utilities:
 ```typescript
 import { describe, it, expect } from "bun:test";
 import { Layer, Effect } from "effect";
-import { DrizzleUserGateway } from "../gateways/drizzle/user";
+import { DrizzleUserGateway } from "../user/gateways/drizzle";
 import {
   runWithTestLayer,
   createServiceLayer,
   mergeTestLayers,
-} from "@mirai-app/adapters/test";
+} from "@mirai-app/adapters/system/test";
 
 describe("DrizzleUserGateway", () => {
   it("should find user by authUserId", async () => {
@@ -458,10 +461,10 @@ describe("DrizzleUserGateway", () => {
     const testDb = createTestDatabase();
     const dbLayer = createServiceLayer(DrizzleDbTag, testDb);
 
-    const repo = new DrizzleUserGateway(testDb);
+    const gateway = new DrizzleUserGateway(testDb);
 
     const user = await runWithTestLayer(
-      repo.findByAuthUserId("auth-123"),
+      gateway.findByAuthUserId("auth-123"),
       dbLayer,
     );
 
@@ -483,7 +486,7 @@ describe("GroupController", () => {
       supabase: mockSupabase,
       db: testDb,
     }).pipe(
-      Layer.merge(mockRepositoryLayer), // Override with mocks
+      Layer.merge(mockGatewayLayer), // Override with mocks
     );
 
     const controllers = createControllers({
@@ -517,7 +520,7 @@ export class BadController {
       throw new Error("Domain blocked");
     }
 
-    // ❌ Direct database access (should use repository)
+    // ❌ Direct database access (should use gateway)
     const user = await prisma.user.create({ data: input });
     return user;
   }
@@ -530,12 +533,12 @@ export class BadController {
 // BAD: Manual container resolution (old awilix pattern)
 async getById(input: GetByIdInput, container: DIContainer) {
   // ❌ OLD: String-based resolution
-  const repo = container.resolve("userRepository");
+  const gateway = container.resolve("userGateway");
 
   // ✅ NEW: Use Effect Context.Tag
   const effect = Effect.gen(function* () {
-    const repo = yield* UserRepositoryTag;
-    return yield* repo.findById(input.id);
+    const gateway = yield* UserGatewayTag;
+    return yield* gateway.findById(input.id);
   });
 }
 ```

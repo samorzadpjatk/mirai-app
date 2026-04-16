@@ -441,7 +441,7 @@ it("performs parallel operations", async () => {
 - Direct store testing
 - Reset state via `setState`
 
-### Fastify/tRPC utilities
+### GraphQL utilities
 
 - Test Effect execution at boundary
 - Error conversion with `Effect.catchTag`

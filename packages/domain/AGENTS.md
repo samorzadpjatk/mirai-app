@@ -55,7 +55,7 @@ const result = await Effect.runPromise(entityEffect);
 ## Entity Creation Template
 
 ```ts
-// packages/domain/src/entities/MyEntity.ts
+// packages/domain/src/activity/entities/MyEntity.ts
 import { Effect, Data } from "effect";
 
 export class ValidationError extends Data.TaggedError("ValidationError")<{
@@ -99,7 +99,7 @@ export class MyEntity {
 Create type-safe identifiers that prevent mixing IDs across aggregates:
 
 ```ts
-// packages/domain/src/value-objects/UserId.ts
+// packages/domain/src/user/value-objects/UserId.ts
 import {
   createBrandedId,
   isValidUUID,
@@ -130,7 +130,7 @@ const str = UserId.toString(id); // Convert to string
 
 ## Common Mistakes to Avoid
 
-1. **Wrong imports:** Importing Prisma, tRPC, or Effect runtime services into domain code breaks purity
+1. **Wrong imports:** Importing Prisma, GraphQL resolvers, or Effect runtime services into domain code breaks purity
 2. **Hidden nondeterminism:** Using `Date.now()`, `Math.random()`, or `crypto.randomUUID()` inside entities
 3. **Mutation:** Mutating entity state with setters instead of returning immutable updates
 4. **Exceptions as control flow:** Throwing in domain; always return `Effect.fail(new TaggedError(...))`
@@ -181,48 +181,50 @@ describe("[UNIT] MyEntity", () => {
 Define repository ports (interfaces) for domain entities:
 
 ```ts
-// packages/domain/src/ports/MyEntityRepository.ts
-import type { MyEntity } from "../entities/MyEntity";
+// packages/domain/src/activity/ports/ActivityFeedPort.ts
+import type { ActivityFeed } from "../entities/ActivityFeed";
 import type { Effect } from "effect";
-import type { DatabaseError } from "./DatabaseError";
+import type { DatabaseError } from "../../errors/unified-errors";
 
 /**
- * MyEntityRepository Port
+ * ActivityFeed Port
  *
  * This interface defines what operations the application needs
- * from any MyEntity repository implementation.
+ * from any ActivityFeed storage implementation.
  */
-export interface MyEntityRepository {
+export interface ActivityFeedPort {
   /**
-   * Find entity by ID
-   * @returns Entity or null if not found
+   * Find feed by ID
+   * @returns Feed or null if not found
    */
-  findById(id: string): Effect.Effect<MyEntity | null, DatabaseError, never>;
+  findById(
+    id: string,
+  ): Effect.Effect<ActivityFeed | null, DatabaseError, never>;
 
   /**
-   * Find all entities for a parent/related entity
+   * Find all feeds for a user
    */
-  findByParentId(
-    parentId: string,
-  ): Effect.Effect<MyEntity[], DatabaseError, never>;
+  findByUserId(
+    userId: string,
+  ): Effect.Effect<ActivityFeed[], DatabaseError, never>;
 
   /**
-   * Create new entity
+   * Create new feed
    */
-  create(entity: MyEntity): Effect.Effect<MyEntity, DatabaseError, never>;
+  create(feed: ActivityFeed): Effect.Effect<ActivityFeed, DatabaseError, never>;
 
   /**
-   * Update existing entity
+   * Update existing feed
    */
-  update(entity: MyEntity): Effect.Effect<MyEntity, DatabaseError, never>;
+  update(feed: ActivityFeed): Effect.Effect<ActivityFeed, DatabaseError, never>;
 
   /**
-   * Delete entity by ID
+   * Delete feed by ID
    */
   delete(id: string): Effect.Effect<void, DatabaseError, never>;
 
   /**
-   * Check if entity exists
+   * Check if feed exists
    */
   exists(id: string): Effect.Effect<boolean, DatabaseError, never>;
 }
@@ -230,16 +232,31 @@ export interface MyEntityRepository {
 
 **Naming conventions:**
 
-- Interface name: `*Repository` (e.g., `UserRepository`)
+- Interface name: `*Port` (e.g., `ActivityFeedPort`, `UserProfilePort`)
 - Methods: `findBy*`, `create`, `update`, `delete`, `exists`, `countBy*`
 - Return type: Always `Effect<T, DatabaseError, never>`
 - Find methods: Return `T | null` for single items, `T[]` for collections
 
-**Add to barrel export:**
+**Barrel exports (domain-based):**
+
+Ports are now organized within their domain folders:
 
 ```ts
-// packages/domain/src/ports/index.ts
-export type { MyEntityRepository } from "./MyEntityRepository";
+// packages/domain/src/activity/ports/index.ts
+export type { ActivityFeedPort } from "./ActivityFeedPort";
+export type { ActivityItemPort } from "./ActivityItemPort";
+
+// packages/domain/src/user/ports/index.ts
+export type { UserProfilePort } from "./UserProfilePort";
+export type { UserPreferencesPort } from "./UserPreferencesPort";
+```
+
+Each domain manages its own ports barrel export. The main domain index then exports from each domain:
+
+```ts
+// packages/domain/src/index.ts
+export * from "./activity/ports";
+export * from "./user/ports";
 ```
 
 **Key rules:**
@@ -296,5 +313,5 @@ For comprehensive domain patterns, see **CLAUDE.md**:
 
 ---
 
-**Last Updated:** 2026-04-15  
-**Version:** 1.1.0 (Ports documentation)
+**Last Updated:** 2026-04-16  
+**Version:** 1.2.0 (Updated for domain-based folder structure)

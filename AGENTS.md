@@ -36,12 +36,12 @@ Is it pure business logic?
     │
     └─ NO → Does it connect to frameworks?
         ├─ YES → Adapter Layer (packages/adapters/)
-        │   ├─ tRPC routes → controllers/
+        │   ├─ GraphQL resolvers → controllers/
         │   ├─ DB implementations → gateways/
         │   └─ Format conversions → mappers/
         │
         └─ NO → Framework Layer (packages/frameworks/)
-            ├─ tRPC config → trpc/
+            ├─ GraphQL config → graphql/
             ├─ Effect Layers → effect/
             └─ Supabase config → supabase/
 ```
@@ -85,14 +85,14 @@ Is it pure business logic?
 | [`packages/use-cases/AGENTS.md`](./packages/use-cases/AGENTS.md)             | Effect orchestration      | `Effect.gen`, `yield*`, `Context.Tag`, `Layer.provide` testing |
 | [`packages/adapters/AGENTS.md`](./packages/adapters/AGENTS.md)               | DI, controllers, gateways | awilix-modular, `Effect.tryPromise`, auth helpers              |
 | [`packages/frameworks/AGENTS.md`](./packages/frameworks/AGENTS.md)           | Layer composition         | `Layer.mergeAll`, `Layer.toRuntime`, Effect Runtime            |
-| [`apps/backend-server/AGENTS.md`](./apps/backend-server/AGENTS.md)           | tRPC routes, auth         | Container resolution, `Effect.runPromise` at boundaries        |
+| [`apps/backend-server/AGENTS.md`](./apps/backend-server/AGENTS.md)           | GraphQL resolvers, auth   | Container resolution, `Effect.runPromise` at boundaries        |
 | [`apps/native/AGENTS.md`](./apps/native/AGENTS.md)                           | Mobile testing            | Jest patterns, spike cleanup                                   |
 | [`apps/web/AGENTS.md`](./apps/web/AGENTS.md)                                 | Frontend patterns         | Component testing, Effect patterns                             |
 | [`apps/notification-sender/AGENTS.md`](./apps/notification-sender/AGENTS.md) | Background jobs           | Parallel workflows, PDCA                                       |
 
 ---
 
-## 8 Universal Rules
+## 9 Universal Rules
 
 1. **TDD first:** Write the failing test before implementation.
 2. **Effect-based:** Domain uses `Effect<T,E,never>`; orchestration uses `Effect.gen` + `Context.Tag`.
@@ -102,6 +102,7 @@ Is it pure business logic?
 6. **No emojis in source code:** Use plain text in console.log, console.error, and all source code. No emoji characters in .ts, .js, .tsx, .jsx files. This ensures clean diffs and avoids encoding issues.
 7. **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Never edit `packages/graphql-client/codegen.ts`. Only edit Pothos schema files, then sync schema, then regenerate client.
 8. **TODO comments:** When fixing a TODO, implement the fix without rephrasing or removing the TODO comment. The TODO comment documents the original intent and should remain intact for reference.
+9. **Minimal comments:** Write self-explanatory code with clear naming, types, and structure. Avoid explanatory comments that describe what the code does; use comments only for _why_ (business rationale, non-obvious design decisions). If code needs a comment to explain what it does, refactor it to be clearer instead.
 
 ---
 
@@ -195,5 +196,5 @@ For comprehensive conventions, see **CLAUDE.md**:
 
 ---
 
-**Last Updated:** 2026-04-15  
-**Version:** 2.2.0 (Added no-emojis-in-source rule)
+**Last Updated:** 2026-04-15
+**Version:** 2.3.0 (Added minimal comments rule)

@@ -22,20 +22,6 @@ Read the [collaboration guidelines](CONTRIBUTING.md).
 > We are looking for maintainers to take over the project.
 > If you are interested, please contact the PJAIT's Student Council.
 
-## Agent Guidelines
-
-This codebase uses **layered AGENTS.md** files for AI agent guidance:
-
-- **Root** [`AGENTS.md`](AGENTS.md) — Universal conventions and quick reference
-- **Domain** [`packages/domain/AGENTS.md`](packages/domain/AGENTS.md) — Entities, value objects
-- **Use Cases** [`packages/use-cases/AGENTS.md`](packages/use-cases/AGENTS.md) — Effect orchestration
-- **Adapters** [`packages/adapters/AGENTS.md`](packages/adapters/AGENTS.md) — DI, controllers, gateways
-- **Frameworks** [`packages/frameworks/AGENTS.md`](packages/frameworks/AGENTS.md) — Layer composition
-- **Backend** [`apps/backend-server/AGENTS.md`](apps/backend-server/AGENTS.md) — tRPC routes
-- **Native** [`apps/native/AGENTS.md`](apps/native/AGENTS.md) — Mobile development
-- **Web** [`apps/web/AGENTS.md`](apps/web/AGENTS.md) — Frontend patterns
-- **Notifications** [`apps/notification-sender/AGENTS.md`](apps/notification-sender/AGENTS.md) — Background jobs
-
 ## Project Structure
 
 This monorepo uses **Turborepo** for builds and **Bun workspaces** for package management.
@@ -45,13 +31,16 @@ See [`turbo.json`](turbo.json) and [`bun.lock`](bun.lock) for configuration deta
 It contains:
 
 - **Native application** (Expo / React Native) → [`@mirai-app/native`](apps/native/)
-- **Backend server** (Fastify + tRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
+- **Backend server** (Hono + GraphQL) → [`@mirai-app/backend-server`](apps/backend-server/)
 - **Notification sender** (Expo Push Notifications) → [`@mirai-app/notification-sender`](apps/notification-sender/)
 - **Seed CLI** (Database & Storage seeding) → [`@mirai-app/seed`](apps/seed/)
 - **Shared packages** → [`packages`](packages/)
+  - [`@mirai-app/domain`](packages/domain/) - **Domain layer** - Entities, value objects, business rules
+  - [`@mirai-app/use-cases`](packages/use-cases/) - **Use case layer** - Orchestration and workflows
+  - [`@mirai-app/adapters`](packages/adapters/) - **Adapter layer** - Controllers and gateways
+  - [`@mirai-app/frameworks`](packages/frameworks/) - **Framework layer** - DI, GraphQL, Drizzle config
   - [`@mirai-app/auth`](packages/auth/) - Authentication logic
   - [`@mirai-app/db`](packages/db/) - Prisma database client
-  - [`@mirai-app/shared`](packages/shared/) - Shared utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Supabase client configuration
   - [`@mirai-app/ui`](packages/ui/) - **UI Component Library (Tamagui)**
 
@@ -220,7 +209,7 @@ Runs all applications simultaneously:
 
 #### `bun run dev:backend`
 
-Runs only the backend server (Fastify + tRPC) at port 2022.
+Runs only the backend server (Hono + GraphQL) at port 2022.
 
 #### `bun run dev:native`
 
