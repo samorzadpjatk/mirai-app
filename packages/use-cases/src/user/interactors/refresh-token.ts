@@ -9,7 +9,11 @@
 
 import { Effect, Data } from "effect";
 import type { AuthContext } from "@mirai-app/domain";
-import { AuthPortTag, AuthError, SessionExpiredError } from "../../ports/auth/port";
+import {
+  AuthPortTag,
+  AuthError,
+  SessionExpiredError,
+} from "../../auth/ports/port";
 
 /**
  * Error thrown when token refresh fails

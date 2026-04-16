@@ -103,3 +103,98 @@ export class TripGatewayTag extends Context.Tag("TripGateway")<
   TripGatewayTag,
   TripGateway
 >() {}
+
+/**
+ * Result of checking if a user is a group leader
+ */
+export interface GroupLeaderCheckResult {
+  isLeader: boolean;
+  groupId?: string;
+  groupName?: string;
+  coins?: number;
+}
+
+/**
+ * TripAccessChecker service interface
+ *
+ * Provides access control checks for trips and users.
+ */
+export interface TripAccessChecker {
+  /**
+   * Check if a user is staff (admin or moderator)
+   */
+  isStaff(userId: string): Effect.Effect<boolean, Error, never>;
+
+  /**
+   * Check if a user is a group leader in a trip
+   */
+  isGroupLeader(
+    userId: string,
+    tripId: string,
+  ): Effect.Effect<GroupLeaderCheckResult, Error, never>;
+
+  /**
+   * Check if a trip has ended
+   */
+  hasTripEnded(tripId: string): Effect.Effect<boolean, Error, never>;
+}
+
+/**
+ * TripAccessCheckerTag Context.Tag for Effect dependency injection
+ */
+export class TripAccessCheckerTag extends Context.Tag("TripAccessChecker")<
+  TripAccessCheckerTag,
+  TripAccessChecker
+>() {}
+
+/**
+ * GroupCoinsService interface
+ *
+ * Manages group coin balances and transactions.
+ */
+export interface GroupCoinsService {
+  /**
+   * Get the current coin balance for a group
+   */
+  getBalance(groupId: string): Effect.Effect<number, Error, never>;
+
+  /**
+   * Add coins to a group's balance
+   */
+  addCoins(
+    groupId: string,
+    amount: number,
+    reason: string,
+    updatedById: string,
+  ): Effect.Effect<
+    {
+      id: string;
+      groupId: string;
+      amount: number;
+      type: string;
+      reason: string;
+      createdById: string;
+      createdAt: Date;
+    },
+    Error,
+    never
+  >;
+
+  /**
+   * Deduct coins from a group's balance
+   */
+  deductCoins(
+    groupId: string,
+    amount: number,
+    reason: string,
+    updatedById: string,
+  ): Effect.Effect<void, Error, never>;
+}
+
+/**
+ * GroupCoinsServiceTag Context.Tag for Effect dependency injection
+ */
+export class GroupCoinsServiceTag extends Context.Tag("GroupCoinsService")<
+  GroupCoinsServiceTag,
+  GroupCoinsService
+>() {}

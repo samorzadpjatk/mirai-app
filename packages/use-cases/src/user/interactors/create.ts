@@ -2,6 +2,7 @@ import { User, UserRole } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { UserGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
+import type { UserDTO } from "../dto";
 
 /**
  * Input for CreateUser use case
@@ -88,11 +89,15 @@ export function createUserUseCase(
     }
 
     // Create domain entity
+    const now = new Date();
     const user = yield* User.create({
+      id: crypto.randomUUID(),
       authUserId: input.authUserId,
       firstName: input.firstName,
       lastName: input.lastName,
       role: input.role ?? UserRole.USER,
+      createdAt: now,
+      updatedAt: now,
     }).pipe(
       Effect.mapError(
         (validationError) =>
@@ -100,22 +105,45 @@ export function createUserUseCase(
       ),
     );
 
+    // Convert entity to DTO for gateway
+    const userDTO: UserDTO = {
+      id: user.id,
+      authUserId: user.authUserId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      nickname: null,
+      email: null,
+      phone: null,
+      avatarUrl: null,
+      role: user.role,
+      status: "ACTIVE",
+      groupId: null,
+      bio: null,
+      birthDate: null,
+      shirtSize: null,
+      dietaryRequirements: null,
+      medicalInfo: null,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
     // Save to repository
-    const saved = yield* userRepo.create(user);
+    const saved = yield* userRepo.create(userDTO);
 
     return toOutput(saved);
   });
 }
 
-function toOutput(user: User): CreateUserOutput {
+function toOutput(user: UserDTO): CreateUserOutput {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
   return {
     id: user.id,
     authUserId: user.authUserId,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    fullName: user.getFullName(),
+    firstName: user.firstName ?? "",
+    lastName: user.lastName ?? "",
+    fullName: fullName || user.nickname || "",
     role: user.role,
-    hasAvatar: user.hasAvatar,
+    hasAvatar: !!user.avatarUrl,
     createdAt: user.createdAt,
   };
 }

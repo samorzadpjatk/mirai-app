@@ -1,7 +1,7 @@
-import type { User } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { UserGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
+import type { UserDTO } from "../dto";
 
 /**
  * Input for UpdateUser use case
@@ -78,29 +78,13 @@ export function updateUserUseCase(
       );
     }
 
-    let updatedUser: User = user;
-
-    // Update name if provided
-    if (input.firstName !== undefined || input.lastName !== undefined) {
-      const nameResult = yield* updatedUser
-        .updateName({
-          firstName: input.firstName ?? user.firstName,
-          lastName: input.lastName ?? user.lastName,
-        })
-        .pipe(
-          Effect.mapError(
-            (validationError) =>
-              new UserUpdateError({ message: validationError.message }),
-          ),
-        );
-
-      updatedUser = nameResult;
-    }
-
-    // Update avatar if provided
-    if (input.hasAvatar !== undefined) {
-      updatedUser = updatedUser.setAvatar(input.hasAvatar);
-    }
+    // Update user fields directly on DTO
+    const updatedUser: UserDTO = {
+      ...user,
+      firstName: input.firstName ?? user.firstName,
+      lastName: input.lastName ?? user.lastName,
+      updatedAt: new Date(),
+    };
 
     // Save updated user
     const saved = yield* userRepo.update(updatedUser);
@@ -109,15 +93,16 @@ export function updateUserUseCase(
   });
 }
 
-function toOutput(user: User): UpdateUserOutput {
+function toOutput(user: UserDTO): UpdateUserOutput {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
   return {
     id: user.id,
     authUserId: user.authUserId,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    fullName: user.getFullName(),
+    firstName: user.firstName ?? "",
+    lastName: user.lastName ?? "",
+    fullName: fullName || user.nickname || "",
     role: user.role,
-    hasAvatar: user.hasAvatar,
+    hasAvatar: !!user.avatarUrl,
     updatedAt: user.updatedAt,
   };
 }

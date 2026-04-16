@@ -30,7 +30,7 @@ import {
   AuthError,
   InvalidTokenError,
   SessionExpiredError,
-} from "../../ports/auth/port";
+} from "../../auth/ports/port";
 
 /**
  * Input for AuthenticateUser use case

@@ -1,7 +1,7 @@
-import type { User } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { UserGatewayTag } from "../ports/gateway";
-import { DatabaseError } from "../../ports/errors";
+import { DatabaseError } from "@mirai-app/domain";
+import type { UserDTO } from "../dto";
 
 /**
  * Input for GetUser use case
@@ -30,11 +30,9 @@ export interface GetUserOutput {
  */
 export class GetUserNotFoundError extends Data.TaggedError(
   "GetUserNotFoundError",
-)<{ readonly userId: string }> {
-  get message(): string {
-    return `User not found: ${this.userId}`;
-  }
-}
+)<{
+  readonly userId: string;
+}> {}
 
 /**
  * GetUser Use Case
@@ -83,16 +81,17 @@ export class GetUserUseCase {
   }
 }
 
-function toOutput(user: User): GetUserOutput {
+function toOutput(user: UserDTO): GetUserOutput {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
   return {
     id: user.id,
     authUserId: user.authUserId,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    fullName: user.getFullName(),
+    firstName: user.firstName ?? "",
+    lastName: user.lastName ?? "",
+    fullName: fullName || user.nickname || "",
     role: user.role,
-    hasAvatar: user.hasAvatar,
+    hasAvatar: !!user.avatarUrl,
     createdAt: user.createdAt,
-    lastSeenOn: user.lastSeenOn,
+    lastSeenOn: null,
   };
 }

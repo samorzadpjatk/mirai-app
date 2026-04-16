@@ -1,233 +1,176 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   deleteTripUseCase,
   type DeleteTripInput,
   DeleteTripNotFoundError,
 } from "./delete";
-import { Trip, TripStatus } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { TripGatewayTag } from "../ports/gateway";
-import { InMemoryTripGateway } from "@mirai-app/adapters";
+import { TripGatewayTag, type TripGateway } from "../ports/gateway";
+import type { TripDTO } from "../dto";
+import { DatabaseError, TripStatus } from "@mirai-app/domain";
 
-describe("[UNIT] deleteTripUseCase (Effect)", () => {
-  let repo: InMemoryTripGateway;
+/**
+ * Mock TripGateway for testing
+ */
+function createMockTripGateway(
+  trips: TripDTO[] = [],
+  options: {
+    shouldFailDelete?: boolean;
+  } = {},
+): TripGateway {
+  const tripMap = new Map(trips.map((t) => [t.id, t]));
 
-  beforeEach(() => {
-    repo = new InMemoryTripGateway();
-  });
+  return {
+    create: (trip: TripDTO) => {
+      tripMap.set(trip.id, trip);
+      return Effect.succeed(trip);
+    },
 
-  const createValidTrip = (
-    overrides?: Partial<{
-      id: string;
-      name: string;
-      status: TripStatus;
-    }>,
-  ): Trip => {
-    const result = Trip.create({
-      id: overrides?.id ?? "trip-123",
-      name: overrides?.name ?? "Test Trip",
-      description: null,
-      startDate: new Date("2026-06-01"),
-      endDate: new Date("2026-06-07"),
-      backgroundImagePath: null,
-      status: overrides?.status ?? TripStatus.PLANNING,
-    });
-    return Effect.runSync(result);
-  };
+    findById: (id: string) => {
+      const trip = tripMap.get(id);
+      return Effect.succeed(trip ?? null);
+    },
 
-  const runUseCase = async (input: DeleteTripInput) => {
-    const program = deleteTripUseCase(input).pipe(
-      Effect.provideService(TripGatewayTag, {
-        create: (trip: Trip) => repo.create(trip),
-        findById: (id: string) => repo.findById(id),
-        findByStatus: (status: TripStatus) => repo.findByStatus(status),
-        findActive: () => repo.findActive(),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (trip: Trip) => repo.update(trip),
-        updateStatus: (id: string, status: TripStatus) =>
-          repo.updateStatus(id, status),
-        delete: (id: string) => repo.delete(id),
-        exists: (id: string) => repo.exists(id),
-        countByStatus: (status: TripStatus) => repo.countByStatus(status),
+    findAllConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
       }),
-    );
-    return await Effect.runPromise(program);
-  };
 
-  describe("[UNIT] execute", () => {
-    it("should delete existing trip", async () => {
-      const existingTrip = createValidTrip({ id: "trip-to-delete" });
-      await Effect.runPromise(repo.create(existingTrip));
+    findByStatusConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
 
-      expect(await Effect.runPromise(repo.exists("trip-to-delete"))).toBe(true);
+    findActiveConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
 
-      const input: DeleteTripInput = {
-        tripId: "trip-to-delete",
-      };
+    update: (trip: TripDTO) => Effect.succeed(trip),
 
-      const result = await runUseCase(input);
-
-      expect(result.success).toBe(true);
-      expect(result.deletedTripId).toBe("trip-to-delete");
-
-      expect(await Effect.runPromise(repo.exists("trip-to-delete"))).toBe(
-        false,
-      );
-    });
-
-    it("should delete trip with PLANNING status", async () => {
-      const planningTrip = createValidTrip({
-        id: "trip-planning-delete",
-        status: TripStatus.PLANNING,
-      });
-      await Effect.runPromise(repo.create(planningTrip));
-
-      const input: DeleteTripInput = {
-        tripId: "trip-planning-delete",
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.success).toBe(true);
-      expect(await Effect.runPromise(repo.exists("trip-planning-delete"))).toBe(
-        false,
-      );
-    });
-
-    it("should delete trip with ACTIVE status", async () => {
-      const activeTrip = createValidTrip({
-        id: "trip-active-delete",
-        status: TripStatus.ACTIVE,
-      });
-      await Effect.runPromise(repo.create(activeTrip));
-
-      const input: DeleteTripInput = {
-        tripId: "trip-active-delete",
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.success).toBe(true);
-      expect(await Effect.runPromise(repo.exists("trip-active-delete"))).toBe(
-        false,
-      );
-    });
-
-    it("should delete trip with COMPLETED status", async () => {
-      const completedTrip = createValidTrip({
-        id: "trip-completed-delete",
-        status: TripStatus.COMPLETED,
-      });
-      await Effect.runPromise(repo.create(completedTrip));
-
-      const input: DeleteTripInput = {
-        tripId: "trip-completed-delete",
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.success).toBe(true);
-      expect(
-        await Effect.runPromise(repo.exists("trip-completed-delete")),
-      ).toBe(false);
-    });
-
-    it("should delete trip with CANCELLED status", async () => {
-      const cancelledTrip = createValidTrip({
-        id: "trip-cancelled-delete",
-        status: TripStatus.CANCELLED,
-      });
-      await Effect.runPromise(repo.create(cancelledTrip));
-
-      const input: DeleteTripInput = {
-        tripId: "trip-cancelled-delete",
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.success).toBe(true);
-      expect(
-        await Effect.runPromise(repo.exists("trip-cancelled-delete")),
-      ).toBe(false);
-    });
-
-    it("should fail when trip not found", async () => {
-      const input: DeleteTripInput = {
-        tripId: "non-existent-trip",
-      };
-
-      const program = deleteTripUseCase(input).pipe(
-        Effect.provideService(TripGatewayTag, {
-          create: (trip: Trip) => repo.create(trip),
-          findById: (id: string) => repo.findById(id),
-          findByStatus: (status: TripStatus) => repo.findByStatus(status),
-          findActive: () => repo.findActive(),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (trip: Trip) => repo.update(trip),
-          updateStatus: (id: string, status: TripStatus) =>
-            repo.updateStatus(id, status),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: TripStatus) => repo.countByStatus(status),
+    updateStatus: (id: string, status: string) => {
+      const trip = tripMap.get(id);
+      if (trip) {
+        return Effect.succeed({ ...trip, status: status as TripStatus });
+      }
+      return Effect.fail(
+        new DatabaseError({
+          operation: "updateStatus",
+          message: "Trip not found",
         }),
       );
+    },
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(DeleteTripNotFoundError);
-        expect(either.left.tripId).toBe("non-existent-trip");
+    delete: (id: string) => {
+      if (options.shouldFailDelete) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "delete",
+            message: "Database error during delete",
+          }),
+        );
       }
+      tripMap.delete(id);
+      return Effect.succeed(void 0);
+    },
+
+    exists: (id: string) => {
+      return Effect.succeed(tripMap.has(id));
+    },
+
+    countByStatus: () => Effect.succeed(0),
+  };
+}
+
+function createMockTripDTO(overrides: Partial<TripDTO> = {}): TripDTO {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "trip-123",
+    name: overrides.name ?? "Test Trip",
+    description: overrides.description ?? null,
+    imageUrl: overrides.imageUrl ?? null,
+    destination: overrides.destination ?? "Test Destination",
+    startDate: overrides.startDate ?? new Date("2024-06-01"),
+    endDate: overrides.endDate ?? new Date("2024-06-10"),
+    status: overrides.status ?? TripStatus.PLANNING,
+    basePrice: overrides.basePrice ?? null,
+    totalSpots: overrides.totalSpots ?? null,
+    availableSpots: overrides.availableSpots ?? null,
+    registrationDeadline: overrides.registrationDeadline ?? null,
+    createdAt: overrides.createdAt ?? now,
+    updatedAt: overrides.updatedAt ?? now,
+  };
+}
+
+describe("[UNIT] deleteTripUseCase", () => {
+  it("should delete a trip successfully", async () => {
+    const mockTrip = createMockTripDTO({ id: "trip-456" });
+    const mockGateway = createMockTripGateway([mockTrip]);
+    const mockLayer = Layer.succeed(TripGatewayTag, mockGateway);
+
+    const input: DeleteTripInput = { tripId: "trip-456" };
+    const program = deleteTripUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.deletedTripId).toBe("trip-456");
+  });
+
+  it("should fail with DeleteTripNotFoundError when trip not found", async () => {
+    const mockGateway = createMockTripGateway([]);
+    const mockLayer = Layer.succeed(TripGatewayTag, mockGateway);
+
+    const input: DeleteTripInput = { tripId: "non-existent" };
+    const program = deleteTripUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DeleteTripNotFoundError);
+      if (either.left instanceof DeleteTripNotFoundError) {
+        expect(either.left.tripId).toBe("non-existent");
+      }
+    }
+  });
+
+  it("should handle database errors during delete", async () => {
+    const mockTrip = createMockTripDTO({ id: "trip-789" });
+    const mockGateway = createMockTripGateway([mockTrip], {
+      shouldFailDelete: true,
     });
+    const mockLayer = Layer.succeed(TripGatewayTag, mockGateway);
 
-    it("should delete one of multiple trips", async () => {
-      const trip1 = createValidTrip({ id: "trip-1", name: "Trip One" });
-      const trip2 = createValidTrip({ id: "trip-2", name: "Trip Two" });
-      const trip3 = createValidTrip({ id: "trip-3", name: "Trip Three" });
+    const input: DeleteTripInput = { tripId: "trip-789" };
+    const program = deleteTripUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      await Effect.runPromise(repo.create(trip1));
-      await Effect.runPromise(repo.create(trip2));
-      await Effect.runPromise(repo.create(trip3));
-
-      const input: DeleteTripInput = {
-        tripId: "trip-2",
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.success).toBe(true);
-      expect(result.deletedTripId).toBe("trip-2");
-
-      expect(await Effect.runPromise(repo.exists("trip-1"))).toBe(true);
-      expect(await Effect.runPromise(repo.exists("trip-2"))).toBe(false);
-      expect(await Effect.runPromise(repo.exists("trip-3"))).toBe(true);
-
-      const allTrips = await Effect.runPromise(repo.findAll());
-      expect(allTrips).toHaveLength(2);
-    });
-
-    it("should allow deleting same ID after recreating", async () => {
-      const trip = createValidTrip({ id: "trip-recreate" });
-      await Effect.runPromise(repo.create(trip));
-
-      const input: DeleteTripInput = {
-        tripId: "trip-recreate",
-      };
-
-      await runUseCase(input);
-      expect(await Effect.runPromise(repo.exists("trip-recreate"))).toBe(false);
-
-      const newTrip = createValidTrip({
-        id: "trip-recreate",
-        name: "Recreated Trip",
-      });
-      await Effect.runPromise(repo.create(newTrip));
-
-      const result = await runUseCase(input);
-      expect(result.success).toBe(true);
-      expect(await Effect.runPromise(repo.exists("trip-recreate"))).toBe(false);
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
   });
 });

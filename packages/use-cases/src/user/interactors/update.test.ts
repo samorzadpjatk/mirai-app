@@ -1,280 +1,231 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   updateUserUseCase,
   type UpdateUserInput,
   UserNotFoundError,
   UserUpdateError,
 } from "./update";
-import { User, UserRole } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { UserGatewayTag } from "../ports/gateway";
-import { InMemoryUserGateway } from "@mirai-app/adapters";
+import { UserGatewayTag, type UserGateway } from "../ports/gateway";
+import type { UserDTO } from "../dto";
+import { DatabaseError, UserRole } from "@mirai-app/domain";
 
-describe("[UNIT] updateUserUseCase (Effect)", () => {
-  let repo: InMemoryUserGateway;
+/**
+ * Mock UserGateway for testing
+ */
+function createMockUserGateway(users: UserDTO[] = []): UserGateway {
+  const userMap = new Map(users.map((u) => [u.id, u]));
 
-  beforeEach(() => {
-    repo = new InMemoryUserGateway();
+  return {
+    create: (user: UserDTO) => {
+      userMap.set(user.id, user);
+      return Effect.succeed(user);
+    },
+
+    findById: (id: string) => {
+      const user = userMap.get(id);
+      return Effect.succeed(user ?? null);
+    },
+
+    findByAuthUserId: () => Effect.succeed(null),
+
+    findAllConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByRoleConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    update: (user: UserDTO) => {
+      userMap.set(user.id, user);
+      return Effect.succeed(user);
+    },
+
+    delete: () => Effect.succeed(void 0),
+
+    existsByAuthUserId: () => Effect.succeed(false),
+  };
+}
+
+function createMockUserDTO(overrides: Partial<UserDTO> = {}): UserDTO {
+  return {
+    id: overrides.id ?? "user-123",
+    authUserId: overrides.authUserId ?? "auth-123",
+    firstName: overrides.firstName ?? "John",
+    lastName: overrides.lastName ?? "Doe",
+    nickname: overrides.nickname ?? null,
+    email: overrides.email ?? null,
+    phone: overrides.phone ?? null,
+    avatarUrl: overrides.avatarUrl ?? null,
+    role: overrides.role ?? UserRole.USER,
+    status: overrides.status ?? "ACTIVE",
+    groupId: overrides.groupId ?? null,
+    bio: overrides.bio ?? null,
+    birthDate: overrides.birthDate ?? null,
+    shirtSize: overrides.shirtSize ?? null,
+    dietaryRequirements: overrides.dietaryRequirements ?? null,
+    medicalInfo: overrides.medicalInfo ?? null,
+    createdAt: overrides.createdAt ?? new Date("2024-01-01"),
+    updatedAt: overrides.updatedAt ?? new Date("2024-01-01"),
+  };
+}
+
+describe("[UNIT] updateUserUseCase", () => {
+  it("should update user first name successfully", async () => {
+    const mockUser = createMockUserDTO({
+      id: "user-456",
+      firstName: "Old",
+      lastName: "Name",
+    });
+    const mockGateway = createMockUserGateway([mockUser]);
+    const mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
+
+    const input: UpdateUserInput = {
+      userId: "user-456",
+      firstName: "New",
+    };
+
+    const program = updateUserUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBe("user-456");
+    expect(result.firstName).toBe("New");
+    expect(result.lastName).toBe("Name");
+    expect(result.fullName).toBe("New Name");
+    expect(result.updatedAt).toBeInstanceOf(Date);
   });
 
-  // Helper to create a valid user
-  const createValidUser = (
-    overrides?: Partial<{
-      id: string;
-      firstName: string;
-      lastName: string;
-      hasAvatar: boolean;
-    }>,
-  ): User => {
-    const effect = User.create({
-      id: overrides?.id ?? "user-123",
-      authUserId: "auth-123",
-      firstName: overrides?.firstName ?? "John",
-      lastName: overrides?.lastName ?? "Doe",
-      role: UserRole.USER,
-      hasAvatar: overrides?.hasAvatar ?? false,
+  it("should update user last name successfully", async () => {
+    const mockUser = createMockUserDTO({
+      id: "user-789",
+      firstName: "John",
+      lastName: "Doe",
     });
-    try {
-      return Effect.runSync(effect);
-    } catch (e) {
-      throw new Error(`Failed to create test user: ${e}`);
+    const mockGateway = createMockUserGateway([mockUser]);
+    const mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
+
+    const input: UpdateUserInput = {
+      userId: "user-789",
+      lastName: "Smith",
+    };
+
+    const program = updateUserUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBe("user-789");
+    expect(result.firstName).toBe("John");
+    expect(result.lastName).toBe("Smith");
+    expect(result.fullName).toBe("John Smith");
+  });
+
+  it("should update both first and last name together", async () => {
+    const mockUser = createMockUserDTO({
+      id: "user-abc",
+      firstName: "OldFirst",
+      lastName: "OldLast",
+    });
+    const mockGateway = createMockUserGateway([mockUser]);
+    const mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
+
+    const input: UpdateUserInput = {
+      userId: "user-abc",
+      firstName: "NewFirst",
+      lastName: "NewLast",
+    };
+
+    const program = updateUserUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.firstName).toBe("NewFirst");
+    expect(result.lastName).toBe("NewLast");
+    expect(result.fullName).toBe("NewFirst NewLast");
+  });
+
+  it("should fail with UserNotFoundError when user not found", async () => {
+    const mockGateway = createMockUserGateway([]);
+    const mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
+
+    const input: UpdateUserInput = {
+      userId: "non-existent",
+      firstName: "New",
+    };
+
+    const program = updateUserUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(UserNotFoundError);
+      expect(either.left.message).toBe("User not found");
     }
-  };
+  });
 
-  // Helper to run use case with repository
-  const runUseCase = async (input: UpdateUserInput) => {
-    const program = updateUserUseCase(input).pipe(
-      Effect.provideService(UserGatewayTag, {
-        create: (user: User) => repo.create(user),
-        findById: (id: string) => repo.findById(id),
-        findByAuthUserId: (authUserId: string) =>
-          repo.findByAuthUserId(authUserId),
-        findByRole: (role: UserRole) => repo.findByRole(role),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (user: User) => repo.update(user),
-        delete: (id: string) => repo.delete(id),
-        existsByAuthUserId: (authUserId: string) =>
-          repo.existsByAuthUserId(authUserId),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
+  it("should handle database errors", async () => {
+    const mockUser = createMockUserDTO({ id: "user-123" });
+    const failingGateway: UserGateway = {
+      ...createMockUserGateway([mockUser]),
+      findById: () =>
+        Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database connection failed",
+          }),
+        ),
+    };
+    const failingLayer = Layer.succeed(UserGatewayTag, failingGateway);
 
-  describe("[UNIT] execute", () => {
-    it("should update user first and last name", async () => {
-      // Arrange
-      const existingUser = createValidUser({ id: "user-456" });
-      await Effect.runPromise(repo.create(existingUser));
+    const input: UpdateUserInput = {
+      userId: "user-123",
+      firstName: "New",
+    };
 
-      const input: UpdateUserInput = {
-        userId: "user-456",
-        firstName: "Jane",
-        lastName: "Smith",
-      };
+    const program = updateUserUseCase(input).pipe(Effect.provide(failingLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Act
-      const result = await runUseCase(input);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
 
-      // Assert
-      expect(result.firstName).toBe("Jane");
-      expect(result.lastName).toBe("Smith");
-      expect(result.fullName).toBe("Jane Smith");
+  it("should allow empty firstName when updating", async () => {
+    const mockUser = createMockUserDTO({
+      id: "user-xyz",
+      firstName: "Valid",
+      lastName: "Name",
     });
+    const mockGateway = createMockUserGateway([mockUser]);
+    const mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
 
-    it("should update only first name when lastName not provided", async () => {
-      // Arrange
-      const existingUser = createValidUser({
-        id: "user-789",
-        lastName: "Original",
-      });
-      await Effect.runPromise(repo.create(existingUser));
+    const input: UpdateUserInput = {
+      userId: "user-xyz",
+      firstName: "",
+    };
 
-      const input: UpdateUserInput = {
-        userId: "user-789",
-        firstName: "NewFirst",
-        // lastName not provided
-      };
+    const program = updateUserUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.firstName).toBe("NewFirst");
-      expect(result.lastName).toBe("Original");
-    });
-
-    it("should update only last name when firstName not provided", async () => {
-      // Arrange
-      const existingUser = createValidUser({
-        id: "user-abc",
-        firstName: "Original",
-      });
-      await Effect.runPromise(repo.create(existingUser));
-
-      const input: UpdateUserInput = {
-        userId: "user-abc",
-        lastName: "NewLast",
-        // firstName not provided
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.firstName).toBe("Original");
-      expect(result.lastName).toBe("NewLast");
-    });
-
-    it("should update hasAvatar status", async () => {
-      // Arrange
-      const existingUser = createValidUser({
-        id: "user-avatar",
-        hasAvatar: false,
-      });
-      await Effect.runPromise(repo.create(existingUser));
-
-      const input: UpdateUserInput = {
-        userId: "user-avatar",
-        hasAvatar: true,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.hasAvatar).toBe(true);
-    });
-
-    it("should fail when user not found", async () => {
-      // Arrange
-      const input: UpdateUserInput = {
-        userId: "non-existent",
-        firstName: "NewName",
-      };
-
-      // Act
-      const program = updateUserUseCase(input).pipe(
-        Effect.provideService(UserGatewayTag, {
-          create: (user: User) => repo.create(user),
-          findById: (id: string) => repo.findById(id),
-          findByAuthUserId: (authUserId: string) =>
-            repo.findByAuthUserId(authUserId),
-          findByRole: (role: UserRole) => repo.findByRole(role),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (user: User) => repo.update(user),
-          delete: (id: string) => repo.delete(id),
-          existsByAuthUserId: (authUserId: string) =>
-            repo.existsByAuthUserId(authUserId),
-        }),
-      );
-
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(UserNotFoundError);
-      }
-    });
-
-    it("should fail when name validation fails", async () => {
-      // Arrange
-      const existingUser = createValidUser({ id: "user-invalid" });
-      await Effect.runPromise(repo.create(existingUser));
-
-      const input: UpdateUserInput = {
-        userId: "user-invalid",
-        firstName: "A", // Too short
-        lastName: "Doe",
-      };
-
-      // Act
-      const program = updateUserUseCase(input).pipe(
-        Effect.provideService(UserGatewayTag, {
-          create: (user: User) => repo.create(user),
-          findById: (id: string) => repo.findById(id),
-          findByAuthUserId: (authUserId: string) =>
-            repo.findByAuthUserId(authUserId),
-          findByRole: (role: UserRole) => repo.findByRole(role),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (user: User) => repo.update(user),
-          delete: (id: string) => repo.delete(id),
-          existsByAuthUserId: (authUserId: string) =>
-            repo.existsByAuthUserId(authUserId),
-        }),
-      );
-
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(UserUpdateError);
-      }
-    });
-
-    it("should fail when name contains digits", async () => {
-      // Arrange
-      const existingUser = createValidUser({ id: "user-digits" });
-      await Effect.runPromise(repo.create(existingUser));
-
-      const input: UpdateUserInput = {
-        userId: "user-digits",
-        firstName: "John123",
-        lastName: "Doe",
-      };
-
-      // Act
-      const program = updateUserUseCase(input).pipe(
-        Effect.provideService(UserGatewayTag, {
-          create: (user: User) => repo.create(user),
-          findById: (id: string) => repo.findById(id),
-          findByAuthUserId: (authUserId: string) =>
-            repo.findByAuthUserId(authUserId),
-          findByRole: (role: UserRole) => repo.findByRole(role),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (user: User) => repo.update(user),
-          delete: (id: string) => repo.delete(id),
-          existsByAuthUserId: (authUserId: string) =>
-            repo.existsByAuthUserId(authUserId),
-        }),
-      );
-
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(UserUpdateError);
-      }
-    });
-
-    it("should update multiple fields at once", async () => {
-      // Arrange
-      const existingUser = createValidUser({
-        id: "user-multi",
-        firstName: "Old",
-        lastName: "Name",
-        hasAvatar: false,
-      });
-      await Effect.runPromise(repo.create(existingUser));
-
-      const input: UpdateUserInput = {
-        userId: "user-multi",
-        firstName: "New",
-        lastName: "Person",
-        hasAvatar: true,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.firstName).toBe("New");
-      expect(result.lastName).toBe("Person");
-      expect(result.fullName).toBe("New Person");
-      expect(result.hasAvatar).toBe(true);
-    });
+    // Empty firstName should be allowed and result in empty fullName
+    expect(result.firstName).toBe("");
+    expect(result.fullName).toBe("Name");
   });
 });

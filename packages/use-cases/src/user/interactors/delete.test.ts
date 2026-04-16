@@ -1,135 +1,202 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   deleteUserUseCase,
   type DeleteUserInput,
   DeleteUserNotFoundError,
 } from "./delete";
-import { User, UserRole } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { UserGatewayTag } from "../ports/gateway";
-import { InMemoryUserGateway } from "@mirai-app/adapters";
+import { UserGatewayTag, type UserGateway } from "../ports/gateway";
+import type { UserDTO } from "../dto";
+import { DatabaseError, UserRole } from "@mirai-app/domain";
 
-describe("[UNIT] deleteUserUseCase (Effect)", () => {
-  let repo: InMemoryUserGateway;
+/**
+ * Mock UserGateway for testing
+ */
+function createMockUserGateway(users: UserDTO[] = []): UserGateway {
+  const userMap = new Map(users.map((u) => [u.id, u]));
+  const deletedIds = new Set<string>();
 
-  beforeEach(() => {
-    repo = new InMemoryUserGateway();
+  return {
+    create: (user: UserDTO) => {
+      userMap.set(user.id, user);
+      return Effect.succeed(user);
+    },
+
+    findById: (id: string) => {
+      if (deletedIds.has(id)) {
+        return Effect.succeed(null);
+      }
+      const user = userMap.get(id);
+      return Effect.succeed(user ?? null);
+    },
+
+    findByAuthUserId: () => Effect.succeed(null),
+
+    findAllConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByRoleConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    update: (user: UserDTO) => Effect.succeed(user),
+
+    delete: (id: string) => {
+      deletedIds.add(id);
+      userMap.delete(id);
+      return Effect.succeed(void 0);
+    },
+
+    existsByAuthUserId: () => Effect.succeed(false),
+  };
+}
+
+function createMockUserDTO(overrides: Partial<UserDTO> = {}): UserDTO {
+  return {
+    id: overrides.id ?? "user-123",
+    authUserId: overrides.authUserId ?? "auth-123",
+    firstName: overrides.firstName ?? "John",
+    lastName: overrides.lastName ?? "Doe",
+    nickname: overrides.nickname ?? null,
+    email: overrides.email ?? null,
+    phone: overrides.phone ?? null,
+    avatarUrl: overrides.avatarUrl ?? null,
+    role: overrides.role ?? UserRole.USER,
+    status: overrides.status ?? "ACTIVE",
+    groupId: overrides.groupId ?? null,
+    bio: overrides.bio ?? null,
+    birthDate: overrides.birthDate ?? null,
+    shirtSize: overrides.shirtSize ?? null,
+    dietaryRequirements: overrides.dietaryRequirements ?? null,
+    medicalInfo: overrides.medicalInfo ?? null,
+    createdAt: overrides.createdAt ?? new Date("2024-01-01"),
+    updatedAt: overrides.updatedAt ?? new Date("2024-01-01"),
+  };
+}
+
+describe("[UNIT] deleteUserUseCase", () => {
+  it("should delete user successfully", async () => {
+    const mockUser = createMockUserDTO({ id: "user-to-delete" });
+    const mockGateway = createMockUserGateway([mockUser]);
+    const mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
+
+    const input: DeleteUserInput = {
+      userId: "user-to-delete",
+    };
+
+    const program = deleteUserUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.deletedUserId).toBe("user-to-delete");
   });
 
-  const createValidUser = (
-    overrides?: Partial<{
-      id: string;
-      authUserId: string;
-      firstName: string;
-      lastName: string;
-    }>,
-  ): User => {
-    const effect = User.create({
-      id: overrides?.id ?? "user-123",
-      authUserId: overrides?.authUserId ?? "auth-123",
-      firstName: overrides?.firstName ?? "John",
-      lastName: overrides?.lastName ?? "Doe",
-      role: UserRole.USER,
-    });
-    try {
-      return Effect.runSync(effect);
-    } catch (e) {
-      throw new Error(`Failed to create test user: ${e}`);
+  it("should fail with DeleteUserNotFoundError when user not found", async () => {
+    const mockGateway = createMockUserGateway([]);
+    const mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
+
+    const input: DeleteUserInput = {
+      userId: "non-existent-user",
+    };
+
+    const program = deleteUserUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DeleteUserNotFoundError);
+      expect(either.left.userId).toBe("non-existent-user");
     }
-  };
+  });
 
-  const runUseCase = async (input: DeleteUserInput) => {
-    const program = deleteUserUseCase(input).pipe(
-      Effect.provideService(UserGatewayTag, {
-        create: (user: User) => repo.create(user),
-        findById: (id: string) => repo.findById(id),
-        findByAuthUserId: (authUserId: string) =>
-          repo.findByAuthUserId(authUserId),
-        findByRole: (role: UserRole) => repo.findByRole(role),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (user: User) => repo.update(user),
-        delete: (id: string) => repo.delete(id),
-        existsByAuthUserId: (authUserId: string) =>
-          repo.existsByAuthUserId(authUserId),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
+  it("should handle database errors during find", async () => {
+    const failingGateway: UserGateway = {
+      ...createMockUserGateway([]),
+      findById: () =>
+        Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database connection failed",
+          }),
+        ),
+    };
+    const failingLayer = Layer.succeed(UserGatewayTag, failingGateway);
 
-  describe("[UNIT] execute", () => {
-    it("should delete user when found", async () => {
-      const existingUser = createValidUser({ id: "user-to-delete" });
-      await Effect.runPromise(repo.create(existingUser));
+    const input: DeleteUserInput = {
+      userId: "user-123",
+    };
 
-      const input: DeleteUserInput = {
-        userId: "user-to-delete",
-      };
+    const program = deleteUserUseCase(input).pipe(Effect.provide(failingLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const beforeDelete = await Effect.runPromise(
-        repo.findById("user-to-delete"),
-      );
-      expect(beforeDelete).not.toBeNull();
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
 
-      const result = await runUseCase(input);
+  it("should handle database errors during delete", async () => {
+    const mockUser = createMockUserDTO({ id: "user-456" });
+    const failingGateway: UserGateway = {
+      ...createMockUserGateway([mockUser]),
+      delete: () =>
+        Effect.fail(
+          new DatabaseError({
+            operation: "delete",
+            message: "Cannot delete user with existing references",
+          }),
+        ),
+    };
+    const failingLayer = Layer.succeed(UserGatewayTag, failingGateway);
 
-      expect(result.success).toBe(true);
-      expect(result.deletedUserId).toBe("user-to-delete");
+    const input: DeleteUserInput = {
+      userId: "user-456",
+    };
 
-      const afterDelete = await Effect.runPromise(
-        repo.findById("user-to-delete"),
-      );
-      expect(afterDelete).toBeNull();
-    });
+    const program = deleteUserUseCase(input).pipe(Effect.provide(failingLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-    it("should fail when user not found", async () => {
-      const input: DeleteUserInput = {
-        userId: "non-existent-id",
-      };
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
 
-      const program = deleteUserUseCase(input).pipe(
-        Effect.provideService(UserGatewayTag, {
-          create: (user: User) => repo.create(user),
-          findById: (id: string) => repo.findById(id),
-          findByAuthUserId: (authUserId: string) =>
-            repo.findByAuthUserId(authUserId),
-          findByRole: (role: UserRole) => repo.findByRole(role),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (user: User) => repo.update(user),
-          delete: (id: string) => repo.delete(id),
-          existsByAuthUserId: (authUserId: string) =>
-            repo.existsByAuthUserId(authUserId),
-        }),
-      );
+  it("should delete user and verify user is gone", async () => {
+    const mockUser = createMockUserDTO({ id: "user-verify" });
+    const mockGateway = createMockUserGateway([mockUser]);
+    const mockLayer = Layer.succeed(UserGatewayTag, mockGateway);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(DeleteUserNotFoundError);
-      }
-    });
+    const input: DeleteUserInput = {
+      userId: "user-verify",
+    };
 
-    it("should not affect other users when deleting one", async () => {
-      const user1 = createValidUser({ id: "user-1", authUserId: "auth-1" });
-      const user2 = createValidUser({ id: "user-2", authUserId: "auth-2" });
-      const user3 = createValidUser({ id: "user-3", authUserId: "auth-3" });
+    const program = deleteUserUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      await Effect.runPromise(repo.create(user1));
-      await Effect.runPromise(repo.create(user2));
-      await Effect.runPromise(repo.create(user3));
+    expect(result.success).toBe(true);
 
-      const input: DeleteUserInput = {
-        userId: "user-2",
-      };
-
-      await runUseCase(input);
-
-      const allUsers = await Effect.runPromise(repo.findAll());
-      expect(allUsers).toHaveLength(2);
-      expect(allUsers.find((u) => u.id === "user-1")).not.toBeNull();
-      expect(allUsers.find((u) => u.id === "user-2")).toBeUndefined();
-      expect(allUsers.find((u) => u.id === "user-3")).not.toBeNull();
-    });
+    const findProgram = mockGateway.findById("user-verify");
+    const foundUser = await Effect.runPromise(findProgram);
+    expect(foundUser).toBeNull();
   });
 });

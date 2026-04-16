@@ -35,12 +35,12 @@ export interface TripParticipantDTO {
   id: string;
   tripId: string;
   userId: string;
+  groupId: string | null;
+  role: string;
   status: string;
-  registeredAt: Date;
-  paidAt: Date | null;
-  paymentAmount: number | null;
-  cancellationReason: string | null;
-  cancelledAt: Date | null;
+  joinedAt: Date;
+  leftAt: Date | null;
+  invitedById: string | null;
 }
 
 /**

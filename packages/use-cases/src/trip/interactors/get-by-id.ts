@@ -1,7 +1,7 @@
-import { Trip } from "@mirai-app/domain";
+import type { TripDTO } from "../dto";
 import { Effect, Data } from "effect";
 import { TripGatewayTag } from "../ports/gateway";
-import { DatabaseError } from "@mirai-app/domain";
+import { DatabaseError, TripStatus } from "@mirai-app/domain";
 
 /**
  * Input for GetTripById use case
@@ -87,25 +87,43 @@ export function getTripByIdUseCase(
   });
 }
 
-function toOutput(trip: Trip): GetTripByIdOutput {
+function toOutput(trip: TripDTO): GetTripByIdOutput {
+  const now = new Date();
+  const isActive = trip.status === TripStatus.ACTIVE;
+  const isPlanning = trip.status === TripStatus.PLANNING;
+  const isCompleted = trip.status === TripStatus.COMPLETED;
+  const isCancelled = trip.status === TripStatus.CANCELLED;
+  const hasStarted = trip.startDate <= now;
+  const hasEnded = trip.endDate <= now;
+  const isOngoing = isActive && hasStarted && !hasEnded;
+
+  // Calculate duration in days
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const durationInDays = Math.ceil(
+    (trip.endDate.getTime() - trip.startDate.getTime()) / msPerDay,
+  );
+
+  // Generate summary
+  const summary = `${trip.name} (${durationInDays} days)`;
+
   return {
     id: trip.id,
     name: trip.name,
     description: trip.description,
     startDate: trip.startDate,
     endDate: trip.endDate,
-    backgroundImagePath: trip.backgroundImagePath,
+    backgroundImagePath: trip.imageUrl,
     status: trip.status,
     createdAt: trip.createdAt,
     updatedAt: trip.updatedAt,
-    isActive: trip.isActive(),
-    isPlanning: trip.isPlanning(),
-    isCompleted: trip.isCompleted(),
-    isCancelled: trip.isCancelled(),
-    isOngoing: trip.isOngoing(),
-    hasStarted: trip.hasStarted(),
-    hasEnded: trip.hasEnded(),
-    durationInDays: trip.getDurationInDays(),
-    summary: trip.getSummary(),
+    isActive,
+    isPlanning,
+    isCompleted,
+    isCancelled,
+    isOngoing,
+    hasStarted,
+    hasEnded,
+    durationInDays,
+    summary,
   };
 }

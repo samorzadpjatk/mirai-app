@@ -8,7 +8,11 @@
  */
 
 import { Effect, Data } from "effect";
-import { AuthPortTag, AuthError, SessionExpiredError } from "../../ports/auth/port";
+import {
+  AuthPortTag,
+  AuthError,
+  SessionExpiredError,
+} from "../../auth/ports/port";
 
 /**
  * Error thrown when logout fails
