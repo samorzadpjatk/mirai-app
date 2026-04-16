@@ -1,0 +1,91 @@
+import type { SponsorId } from "@mirai-app/domain";
+import { Context, Effect } from "effect";
+import type { PaginationOptions } from "../../system/shared/dto";
+import type {
+  SponsorDTO,
+  TripSponsorDTO,
+  SponsorPaginatedResult,
+} from "../dto";
+import type { DatabaseError } from "./errors";
+
+/**
+ * SponsorGateway Port
+ *
+ * This interface defines what operations the application needs
+ * from any sponsor gateway implementation.
+ *
+ * All methods return DTOs instead of domain entities.
+ *
+ * Implementations (in adapters layer):
+ * - DrizzleSponsorGateway: Uses Drizzle ORM
+ * - InMemorySponsorGateway: For testing
+ */
+export interface SponsorGateway {
+  /**
+   * Create a new sponsor
+   */
+  create(sponsor: SponsorDTO): Effect.Effect<SponsorDTO, DatabaseError, never>;
+
+  /**
+   * Find sponsor by ID
+   * @returns SponsorDTO or null if not found
+   */
+  findById(
+    id: SponsorId,
+  ): Effect.Effect<SponsorDTO | null, DatabaseError, never>;
+
+  /**
+   * Find all sponsors with pagination
+   */
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+  }): Effect.Effect<SponsorPaginatedResult, DatabaseError, never>;
+
+  /**
+   * Update sponsor
+   */
+  update(sponsor: SponsorDTO): Effect.Effect<SponsorDTO, DatabaseError, never>;
+
+  /**
+   * Delete sponsor
+   */
+  delete(id: SponsorId): Effect.Effect<void, DatabaseError, never>;
+
+  /**
+   * Check if sponsor exists
+   */
+  exists(id: SponsorId): Effect.Effect<boolean, DatabaseError, never>;
+
+  /**
+   * Link sponsor to a trip
+   */
+  linkToTrip(
+    tripId: string,
+    sponsorId: SponsorId,
+    tier: string,
+  ): Effect.Effect<TripSponsorDTO, DatabaseError, never>;
+
+  /**
+   * Unlink sponsor from a trip
+   */
+  unlinkFromTrip(
+    tripId: string,
+    sponsorId: SponsorId,
+  ): Effect.Effect<void, DatabaseError, never>;
+
+  /**
+   * Find sponsors by trip ID
+   */
+  findByTripId(
+    tripId: string,
+  ): Effect.Effect<TripSponsorDTO[], DatabaseError, never>;
+}
+
+/**
+ * SponsorGateway Context.Tag for Effect dependency injection
+ */
+export class SponsorGatewayTag extends Context.Tag("SponsorGateway")<
+  SponsorGatewayTag,
+  SponsorGateway
+>() {}

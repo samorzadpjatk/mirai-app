@@ -6,14 +6,23 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./ports/*": "./src/ports/*.ts",
+    "./ports/*.ts": "./src/*/ports/*.ts",
+    "./ports/*/gateway.ts": "./src/*/ports/gateway.ts",
+    "./ports/challenge/*.ts": "./src/challenge/ports/*.ts",
+    "./ports/challenge/submission/*.ts": "./src/challenge/ports/submission/*.ts",
+    "./ports/challenge/vote/*.ts": "./src/challenge/ports/vote/*.ts",
+    "./ports/notification/*.ts": "./src/notification/ports/*.ts",
+    "./ports/notification/delivery/*.ts": "./src/notification/ports/delivery/*.ts",
+    "./ports/notification/schedule/*.ts": "./src/notification/ports/schedule/*.ts",
+    "./ports/notification/sender/*.ts": "./src/notification/ports/sender/*.ts",
     "./interactors": "./src/interactors/index.ts",
     "./interactors/*": "./src/interactors/*.ts",
     "./dto/*": "./src/dto/*.ts",
     "./errors/*": "./src/errors/*.ts",
     "./modules/*": "./src/modules/*.ts",
     "./test": "./src/test/index.ts",
-    "./test/*": "./src/test/*.ts"
+    "./test/*": "./src/test/*.ts",
+    "./system/*": "./src/system/*.ts"
   },
   "scripts": {
     "test": "bun test",
