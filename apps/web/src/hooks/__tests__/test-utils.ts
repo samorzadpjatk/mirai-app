@@ -1,10 +1,10 @@
 import { mock } from "bun:test";
 
 /**
- * Creates a mock tRPC client for testing hooks.
+ * Creates a mock GraphQL client for testing hooks.
  * Returns a mock client with common methods that can be customized per test.
  */
-export function createMockTRPCClient() {
+export function createMockGraphQLClient() {
   return {
     challenge: {
       getById: {
@@ -56,14 +56,14 @@ export function createMockTRPCClient() {
  * Mock module for @mirai-app/frameworks/graphql/client
  * Call this at the top of your test file before importing hooks
  */
-export function mockTRPCClient(
-  mockClient?: ReturnType<typeof createMockTRPCClient>,
+export function mockGraphQLClient(
+  mockClient?: ReturnType<typeof createMockGraphQLClient>,
 ) {
-  const client = mockClient ?? createMockTRPCClient();
+  const client = mockClient ?? createMockGraphQLClient();
 
   mock.module("@mirai-app/frameworks/graphql/client", () => ({
-    useTRPCClient: () => client,
-    getTRPCClient: () => ({ client, cleanup: () => Promise.resolve() }),
+    useGraphQL: () => client,
+    getGraphQLClient: () => ({ client, cleanup: () => Promise.resolve() }),
   }));
 
   return client;

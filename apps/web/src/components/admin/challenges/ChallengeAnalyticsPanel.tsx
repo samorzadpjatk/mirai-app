@@ -32,8 +32,7 @@ const formatDateTime = (value: string | null): string => {
 };
 
 export function ChallengeAnalyticsPanel(props: ChallengeAnalyticsPanelProps) {
-  // For tRPC calls that aren't available via GraphQL yet, we can use a custom query
-  // that calls the tRPC client directly. This is a bridge pattern.
+  // Analytics queries use GraphQL for data fetching
   const [submissionsResult] = useQuery({
     query: `
       query GetSubmissionsForAnalytics($tripId: ID!, $challengeId: ID!) {
@@ -44,8 +43,7 @@ export function ChallengeAnalyticsPanel(props: ChallengeAnalyticsPanelProps) {
     pause: !props.tripId || !props.challengeId,
   });
 
-  // We'll use the tRPC client directly for now since these aren't in GraphQL
-  // In the future, these should be migrated to GraphQL
+  // Groups query for analytics
   const [groupsResult] = useQuery({
     query: `
       query GetGroupsCount($tripId: ID!) {
@@ -66,8 +64,7 @@ export function ChallengeAnalyticsPanel(props: ChallengeAnalyticsPanelProps) {
     pause: !props.challengeId,
   });
 
-  // Since these are tRPC calls not yet in GraphQL, we'll show loading state
-  // and return early with a message that analytics are being loaded
+  // Show loading state while fetching analytics data
   if (
     submissionsResult.fetching ||
     groupsResult.fetching ||
@@ -76,8 +73,7 @@ export function ChallengeAnalyticsPanel(props: ChallengeAnalyticsPanelProps) {
     return <LoadingSpinner label="Loading challenge analytics..." />;
   }
 
-  // For now, show a message that analytics require tRPC (not yet migrated)
-  // This is a temporary state during migration
+  // Analytics panel display
   return (
     <section className="space-y-4">
       <Card className="space-y-3">

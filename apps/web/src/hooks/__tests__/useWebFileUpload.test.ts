@@ -4,8 +4,8 @@
 // Note: These values must be consistent with other test files due to module caching
 process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
 process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
-process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
+process.env.PUBLIC_GRAPHQL_API_URL = "http://localhost:3000/graphql";
+process.env.PUBLIC_GRAPHQL_WS_URL = "ws://localhost:3000/graphql";
 
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { renderHook, act } from "@testing-library/react";
@@ -22,7 +22,7 @@ const mockMutate = mock(() =>
 );
 
 mock.module("@mirai-app/frameworks/graphql/client", () => ({
-  useTRPCClient: () => ({
+  useGraphQL: () => ({
     storage: {
       createUploadUrl: {
         mutate: mockMutate,
@@ -33,8 +33,8 @@ mock.module("@mirai-app/frameworks/graphql/client", () => ({
       },
     },
   }),
-  // Include getTRPCClient for compatibility with other tests
-  getTRPCClient: () => ({
+  // Include getGraphQLClient for compatibility with other tests
+  getGraphQLClient: () => ({
     client: {
       user: {
         getMy: {

@@ -60,7 +60,7 @@ export function GroupAssignmentModal({
 
   // Filter out users already in the group
   // Note: GraphQL Group type doesn't expose participants directly,
-  // so we show all users. This differs from the tRPC implementation.
+  // so we show all users.
   const availableUsers = useMemo(() => {
     return users;
   }, [users]);

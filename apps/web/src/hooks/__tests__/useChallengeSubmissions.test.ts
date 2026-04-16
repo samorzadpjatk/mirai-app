@@ -44,13 +44,13 @@ mock.module("@tanstack/react-query", () => ({
   },
 }));
 
-// Mock tRPC client
+// Mock GraphQL client
 const mockGetByChallengeForAdmin = mock(() => Promise.resolve([]));
 const mockReview = mock(() => Promise.resolve({ success: true }));
 const mockCreateReport = mock(() => Promise.resolve({ success: true }));
 
 mock.module("@mirai-app/frameworks/graphql/client", () => ({
-  useTRPCClient: () => ({
+  useGraphQL: () => ({
     challengeSubmission: {
       getByChallengeForAdmin: {
         query: mockGetByChallengeForAdmin,

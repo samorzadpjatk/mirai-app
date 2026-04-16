@@ -2,8 +2,8 @@
 // Note: These values must be consistent with other test files due to module caching
 process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
 process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
-process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
+process.env.PUBLIC_GRAPHQL_API_URL = "http://localhost:3000/graphql";
+process.env.PUBLIC_GRAPHQL_WS_URL = "ws://localhost:3000/graphql";
 
 import { describe, expect, test, beforeEach, mock } from "bun:test";
 
@@ -15,7 +15,7 @@ const mockGetUser = mock(() =>
 );
 
 mock.module("@mirai-app/frameworks/graphql/client", () => ({
-  getTRPCClient: () => ({
+  getGraphQLClient: () => ({
     client: {
       user: {
         getMy: {
@@ -105,7 +105,7 @@ describe("[INTEGRATION] onAuthUserFetch", () => {
     expect(result).toBeNull();
   });
 
-  test("fetches user via tRPC and returns mapped AuthUser", async () => {
+  test("fetches user via GraphQL and returns mapped AuthUser", async () => {
     const mockUser = createMockUserResponse({
       firstName: "John",
       lastName: "Doe",
@@ -129,7 +129,7 @@ describe("[INTEGRATION] onAuthUserFetch", () => {
     expect(mockCleanup).toHaveBeenCalled();
   });
 
-  test("returns null when tRPC user authUserId doesn't match", async () => {
+  test("returns null when GraphQL user authUserId doesn't match", async () => {
     const mockUser = createMockUserResponse({
       authUserId: "different-auth-id",
     });
@@ -143,9 +143,9 @@ describe("[INTEGRATION] onAuthUserFetch", () => {
     expect(result).toBeNull();
   });
 
-  test("handles tRPC error and falls back to Supabase", async () => {
+  test("handles GraphQL error and falls back to Supabase", async () => {
     mockQuery.mockImplementation(() =>
-      Promise.reject(new Error("tRPC failed")),
+      Promise.reject(new Error("GraphQL failed")),
     );
 
     const supabaseUser = {
@@ -179,7 +179,7 @@ describe("[INTEGRATION] onAuthUserFetch", () => {
 
   test("returns null when Supabase user ID doesn't match", async () => {
     mockQuery.mockImplementation(() =>
-      Promise.reject(new Error("tRPC failed")),
+      Promise.reject(new Error("GraphQL failed")),
     );
 
     const supabaseUser = {
@@ -200,7 +200,7 @@ describe("[INTEGRATION] onAuthUserFetch", () => {
 
   test("returns null when Supabase getUser returns error", async () => {
     mockQuery.mockImplementation(() =>
-      Promise.reject(new Error("tRPC failed")),
+      Promise.reject(new Error("GraphQL failed")),
     );
     mockGetUser.mockImplementation(() =>
       Promise.resolve({
@@ -286,7 +286,7 @@ describe("[INTEGRATION] onAuthUserFetch", () => {
 
   test("handles Supabase fallback with missing metadata", async () => {
     mockQuery.mockImplementation(() =>
-      Promise.reject(new Error("tRPC failed")),
+      Promise.reject(new Error("GraphQL failed")),
     );
 
     const supabaseUser = {
@@ -317,7 +317,7 @@ describe("[INTEGRATION] checkIsAdminUser", () => {
     expect(result).toBe(false);
   });
 
-  test("returns true when tRPC returns ADMIN role", async () => {
+  test("returns true when GraphQL returns ADMIN role", async () => {
     const mockUser = createMockUserResponse({ role: "ADMIN" });
     mockQuery.mockImplementation(() => Promise.resolve(mockUser));
 
@@ -329,7 +329,7 @@ describe("[INTEGRATION] checkIsAdminUser", () => {
     expect(result).toBe(true);
   });
 
-  test("returns false when tRPC returns non-ADMIN role", async () => {
+  test("returns false when GraphQL returns non-ADMIN role", async () => {
     const mockUser = createMockUserResponse({ role: "USER" });
     mockQuery.mockImplementation(() => Promise.resolve(mockUser));
 
@@ -341,7 +341,7 @@ describe("[INTEGRATION] checkIsAdminUser", () => {
     expect(result).toBe(false);
   });
 
-  test("returns false when tRPC returns MODERATOR role", async () => {
+  test("returns false when GraphQL returns MODERATOR role", async () => {
     const mockUser = createMockUserResponse({ role: "MODERATOR" });
     mockQuery.mockImplementation(() => Promise.resolve(mockUser));
 
@@ -353,7 +353,7 @@ describe("[INTEGRATION] checkIsAdminUser", () => {
     expect(result).toBe(false);
   });
 
-  test("returns false when tRPC returns null user", async () => {
+  test("returns false when GraphQL returns null user", async () => {
     mockQuery.mockImplementation(() => Promise.resolve(null));
 
     authStore.setState({
@@ -364,9 +364,9 @@ describe("[INTEGRATION] checkIsAdminUser", () => {
     expect(result).toBe(false);
   });
 
-  test("falls back to Supabase when tRPC fails", async () => {
+  test("falls back to Supabase when GraphQL fails", async () => {
     mockQuery.mockImplementation(() =>
-      Promise.reject(new Error("tRPC failed")),
+      Promise.reject(new Error("GraphQL failed")),
     );
 
     const supabaseUser = {
@@ -390,7 +390,7 @@ describe("[INTEGRATION] checkIsAdminUser", () => {
 
   test("returns false on Supabase fallback when not ADMIN", async () => {
     mockQuery.mockImplementation(() =>
-      Promise.reject(new Error("tRPC failed")),
+      Promise.reject(new Error("GraphQL failed")),
     );
 
     const supabaseUser = {
@@ -414,7 +414,7 @@ describe("[INTEGRATION] checkIsAdminUser", () => {
 
   test("returns false when Supabase getUser fails", async () => {
     mockQuery.mockImplementation(() =>
-      Promise.reject(new Error("tRPC failed")),
+      Promise.reject(new Error("GraphQL failed")),
     );
     mockGetUser.mockImplementation(() =>
       Promise.resolve({
@@ -433,7 +433,7 @@ describe("[INTEGRATION] checkIsAdminUser", () => {
 
   test("returns false when Supabase returns no user", async () => {
     mockQuery.mockImplementation(() =>
-      Promise.reject(new Error("tRPC failed")),
+      Promise.reject(new Error("GraphQL failed")),
     );
     mockGetUser.mockImplementation(() =>
       Promise.resolve({ data: { user: null }, error: null }),

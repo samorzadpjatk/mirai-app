@@ -4,8 +4,8 @@ import { describe, expect, test, beforeAll } from "bun:test";
 // Note: These values must be consistent with other test files due to module caching
 process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
 process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
-process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
+process.env.PUBLIC_GRAPHQL_API_URL = "http://localhost:3000/graphql";
+process.env.PUBLIC_GRAPHQL_WS_URL = "ws://localhost:3000/graphql";
 
 // Dynamic import after env setup
 let supabase: any;

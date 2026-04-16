@@ -56,9 +56,9 @@ mock.module("@tanstack/react-query", () => ({
   },
 }));
 
-// Mock tRPC client
+// Mock GraphQL client
 mock.module("@mirai-app/frameworks/graphql/client", () => ({
-  useTRPCClient: () => ({
+  useGraphQL: () => ({
     challenge: {
       getById: {
         query: mock(() => Promise.resolve(null)),
