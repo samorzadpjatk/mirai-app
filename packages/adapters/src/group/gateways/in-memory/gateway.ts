@@ -8,6 +8,8 @@ import type {
   GroupGateway,
   GroupDTO,
   GroupPaginatedResult,
+  CursorPaginationOptions,
+  CursorPaginatedResult,
 } from "@mirai-app/use-cases";
 import { Effect } from "effect";
 import {
@@ -215,6 +217,199 @@ export class InMemoryGroupGateway
     );
   }
 
+  // ============================================================================
+  // Cursor-based pagination methods (Connection methods)
+  // ============================================================================
+
+  findByTripIdConnection(
+    tripId: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  > {
+    return Effect.sync(() => {
+      const limit = Math.min(options.limit ?? 20, 100);
+      const cursor = options.cursor;
+
+      let items = this.getAllItems().filter((g) => g.tripId === tripId);
+      const total = items.length;
+
+      // Sort by createdAt DESC, id DESC
+      items.sort((a, b) => {
+        const dateCompare = b.createdAt.getTime() - a.createdAt.getTime();
+        if (dateCompare !== 0) return dateCompare;
+        return b.id.localeCompare(a.id);
+      });
+
+      // Apply cursor filter
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        items = items.filter((g) => {
+          const gDate = g.createdAt.getTime();
+          const cDate = cursorDate.getTime();
+          if (gDate !== cDate) return gDate < cDate;
+          return g.id.localeCompare(cursor.id) < 0;
+        });
+      }
+
+      const hasMore = items.length > limit;
+      const paginatedItems = items.slice(0, limit);
+
+      const lastItem = paginatedItems[paginatedItems.length - 1];
+      const nextCursor =
+        hasMore && lastItem
+          ? { id: lastItem.id, createdAt: lastItem.createdAt.toISOString() }
+          : null;
+
+      return { items: paginatedItems, total, hasMore, nextCursor };
+    });
+  }
+
+  findByStatusConnection(
+    status: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  > {
+    return Effect.sync(() => {
+      const limit = Math.min(options.limit ?? 20, 100);
+      const cursor = options.cursor;
+
+      let items = this.getAllItems().filter((g) => g.status === status);
+      const total = items.length;
+
+      // Sort by createdAt DESC, id DESC
+      items.sort((a, b) => {
+        const dateCompare = b.createdAt.getTime() - a.createdAt.getTime();
+        if (dateCompare !== 0) return dateCompare;
+        return b.id.localeCompare(a.id);
+      });
+
+      // Apply cursor filter
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        items = items.filter((g) => {
+          const gDate = g.createdAt.getTime();
+          const cDate = cursorDate.getTime();
+          if (gDate !== cDate) return gDate < cDate;
+          return g.id.localeCompare(cursor.id) < 0;
+        });
+      }
+
+      const hasMore = items.length > limit;
+      const paginatedItems = items.slice(0, limit);
+
+      const lastItem = paginatedItems[paginatedItems.length - 1];
+      const nextCursor =
+        hasMore && lastItem
+          ? { id: lastItem.id, createdAt: lastItem.createdAt.toISOString() }
+          : null;
+
+      return { items: paginatedItems, total, hasMore, nextCursor };
+    });
+  }
+
+  findByTripIdAndStatusConnection(
+    tripId: string,
+    status: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  > {
+    return Effect.sync(() => {
+      const limit = Math.min(options.limit ?? 20, 100);
+      const cursor = options.cursor;
+
+      let items = this.getAllItems().filter(
+        (g) => g.tripId === tripId && g.status === status,
+      );
+      const total = items.length;
+
+      // Sort by createdAt DESC, id DESC
+      items.sort((a, b) => {
+        const dateCompare = b.createdAt.getTime() - a.createdAt.getTime();
+        if (dateCompare !== 0) return dateCompare;
+        return b.id.localeCompare(a.id);
+      });
+
+      // Apply cursor filter
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        items = items.filter((g) => {
+          const gDate = g.createdAt.getTime();
+          const cDate = cursorDate.getTime();
+          if (gDate !== cDate) return gDate < cDate;
+          return g.id.localeCompare(cursor.id) < 0;
+        });
+      }
+
+      const hasMore = items.length > limit;
+      const paginatedItems = items.slice(0, limit);
+
+      const lastItem = paginatedItems[paginatedItems.length - 1];
+      const nextCursor =
+        hasMore && lastItem
+          ? { id: lastItem.id, createdAt: lastItem.createdAt.toISOString() }
+          : null;
+
+      return { items: paginatedItems, total, hasMore, nextCursor };
+    });
+  }
+
+  findByOrganizerIdConnection(
+    organizerId: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  > {
+    return Effect.sync(() => {
+      const limit = Math.min(options.limit ?? 20, 100);
+      const cursor = options.cursor;
+
+      let items = this.getAllItems().filter(
+        (g) => g.createdById === organizerId,
+      );
+      const total = items.length;
+
+      // Sort by createdAt DESC, id DESC
+      items.sort((a, b) => {
+        const dateCompare = b.createdAt.getTime() - a.createdAt.getTime();
+        if (dateCompare !== 0) return dateCompare;
+        return b.id.localeCompare(a.id);
+      });
+
+      // Apply cursor filter
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        items = items.filter((g) => {
+          const gDate = g.createdAt.getTime();
+          const cDate = cursorDate.getTime();
+          if (gDate !== cDate) return gDate < cDate;
+          return g.id.localeCompare(cursor.id) < 0;
+        });
+      }
+
+      const hasMore = items.length > limit;
+      const paginatedItems = items.slice(0, limit);
+
+      const lastItem = paginatedItems[paginatedItems.length - 1];
+      const nextCursor =
+        hasMore && lastItem
+          ? { id: lastItem.id, createdAt: lastItem.createdAt.toISOString() }
+          : null;
+
+      return { items: paginatedItems, total, hasMore, nextCursor };
+    });
+  }
+
   countByTripId(tripId: string): Effect.Effect<number, never, never> {
     return Effect.sync(
       () => this.getAllItems().filter((g) => g.tripId === tripId).length,
@@ -281,7 +476,7 @@ export class InMemoryGroupGateway
       }
 
       // Get the group to verify it exists
-      const group = yield* this.findById(groupId);
+      const group = yield* this.findById(groupId as GroupId);
       if (!group) {
         return yield* Effect.fail(
           new DatabaseError({

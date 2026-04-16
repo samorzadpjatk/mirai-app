@@ -36,6 +36,8 @@ export class ChallengeSubmissionDrizzleMapper implements DrizzleEntityMapper<
       reviewNotes: record.rejectionReason,
       submittedAt: record.createdAt,
       updatedAt: record.updatedAt,
+      voteCount: record.voteCount,
+      voteScore: record.voteScore,
     };
   }
 

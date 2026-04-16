@@ -1,6 +1,8 @@
-import type { EventDTO } from "@mirai-app/use-cases";
+import type { EventDTO, EventConnectionArgs } from "@mirai-app/use-cases";
 import type { EventGateway } from "@mirai-app/use-cases";
 import { EventType, EventStatus } from "@mirai-app/use-cases";
+import type { Connection } from "@mirai-app/domain";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { Effect } from "effect";
 import { InMemoryGateway } from "../../../system/shared/gateways/in-memory-base";
 
@@ -318,5 +320,135 @@ export class InMemoryEventGateway
         ([key, value]) => key.endsWith(`:${eventId}`) && value.enlistedIn,
       ).length,
     );
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find events by trip ID with cursor-based pagination
+   * Sorts by startTime, then id, then slices
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, never, never> {
+    return this.executeConnectionQuery(tripId, args, () => true);
+  }
+
+  /**
+   * Find upcoming events for a trip with cursor-based pagination
+   * Events with startTime > now
+   */
+  findUpcomingByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, never, never> {
+    const now = new Date();
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      (event) => event.startTime > now,
+    );
+  }
+
+  /**
+   * Find ongoing events for a trip with cursor-based pagination
+   * Events with startTime <= now <= endTime
+   */
+  findOngoingByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, never, never> {
+    const now = new Date();
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      (event) => event.startTime <= now && (event.endTime ?? now) >= now,
+    );
+  }
+
+  /**
+   * Find past events for a trip with cursor-based pagination
+   * Events with endTime < now
+   */
+  findPastByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, never, never> {
+    const now = new Date();
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      (event) => (event.endTime ?? event.startTime) < now,
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Sorts by startTime, then id, then slices
+   */
+  private executeConnectionQuery(
+    tripId: string,
+    args: EventConnectionArgs,
+    filterFn: (event: EventDTO) => boolean,
+  ): Effect.Effect<Connection<EventDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all events for the trip
+      let events = this.getAllItems().filter(
+        (e) => e.tripId === tripId && filterFn(e),
+      );
+
+      // Sort by startTime ascending, then by id as tiebreaker
+      events.sort((a, b) => {
+        const timeCompare = a.startTime.getTime() - b.startTime.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.startTime);
+        startIndex = events.findIndex(
+          (e) =>
+            e.startTime > cursorDate ||
+            (e.startTime.getTime() === cursorDate.getTime() &&
+              e.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = events.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = events.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < events.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.startTime.toISOString(),
+          startTime: item.startTime.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
   }
 }

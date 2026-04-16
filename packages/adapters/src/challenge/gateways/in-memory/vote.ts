@@ -1,8 +1,10 @@
 import type {
   ChallengeVoteGateway,
   ChallengeVoteDTO,
+  ChallengeVoteConnectionArgs,
 } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/domain";
+import { DatabaseError, type Connection } from "@mirai-app/domain";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { Effect } from "effect";
 import { InMemoryGateway } from "../../../system/shared/gateways/in-memory-base";
 
@@ -150,6 +152,119 @@ export class InMemoryChallengeVoteGateway
   override seed(votes: ChallengeVoteDTO[]): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
       votes.forEach((vote) => this.storage.set(vote.id, vote));
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find votes by challenge ID with cursor-based pagination
+   * Sorts by createdAt (votedAt), then id, then slices
+   */
+  findByChallengeIdConnection(
+    challengeId: string,
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, never, never> {
+    return this.executeConnectionQuery(
+      challengeId,
+      args,
+      (vote) => vote.challengeId === challengeId,
+    );
+  }
+
+  /**
+   * Find votes by challenge and voter with cursor-based pagination
+   * Sorts by createdAt (votedAt), then id, then slices
+   */
+  findByChallengeAndVoterConnection(
+    challengeId: string,
+    voterId: string,
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, never, never> {
+    return this.executeConnectionQuery(
+      challengeId,
+      args,
+      (vote) => vote.challengeId === challengeId && vote.voterId === voterId,
+    );
+  }
+
+  /**
+   * Find votes by submission ID with cursor-based pagination
+   * Sorts by createdAt (votedAt), then id, then slices
+   */
+  findBySubmissionIdConnection(
+    submissionId: string,
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, never, never> {
+    return this.executeConnectionQuery(
+      submissionId,
+      args,
+      (vote) => vote.submissionId === submissionId,
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Sorts by votedAt (createdAt), then id, then slices
+   */
+  private executeConnectionQuery(
+    _filterValue: string,
+    args: ChallengeVoteConnectionArgs,
+    filterFn: (vote: ChallengeVoteDTO) => boolean,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all votes matching the filter
+      let votes = this.getAllItems().filter(filterFn);
+
+      // Sort by votedAt ascending, then by id as tiebreaker
+      votes.sort((a, b) => {
+        const timeCompare = a.votedAt.getTime() - b.votedAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = votes.findIndex(
+          (v) =>
+            v.votedAt > cursorDate ||
+            (v.votedAt.getTime() === cursorDate.getTime() && v.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = votes.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = votes.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < votes.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.votedAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
     });
   }
 }

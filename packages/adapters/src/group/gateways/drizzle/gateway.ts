@@ -1,4 +1,4 @@
-import { sql, eq, and } from "drizzle-orm";
+import { sql, eq, and, desc } from "drizzle-orm";
 import {
   groups,
   tripParticipants,
@@ -18,6 +18,8 @@ import type {
   GroupGateway,
   GroupDTO,
   GroupPaginatedResult,
+  CursorPaginationOptions,
+  CursorPaginatedResult,
 } from "@mirai-app/use-cases";
 import { DatabaseError } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
@@ -152,6 +154,251 @@ export class DrizzleGroupGateway
   }
 
   /**
+   * Find groups by trip ID with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByTripIdConnection(
+    tripId: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = Math.min(options.limit ?? 20, 100);
+        const cursor = options.cursor;
+
+        const conditions = [eq(this.table.tripId, tripId)];
+
+        if (cursor) {
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) < (${cursor.createdAt}, ${cursor.id})`,
+          );
+        }
+
+        const [countResult] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.tripId, tripId));
+        const total = countResult?.count ?? 0;
+
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.createdAt), desc(this.table.id))
+          .limit(limit + 1);
+
+        const hasMore = records.length > limit;
+        const items = records.slice(0, limit).map((r) => this.mapper.toDTO(r));
+
+        const lastItem = items[items.length - 1];
+        const nextCursor =
+          hasMore && lastItem
+            ? { id: lastItem.id, createdAt: lastItem.createdAt.toISOString() }
+            : null;
+
+        return { items, total, hasMore, nextCursor };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripIdConnection",
+          message: "Failed to find groups by trip ID with cursor pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find groups by status with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByStatusConnection(
+    status: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = Math.min(options.limit ?? 20, 100);
+        const cursor = options.cursor;
+        const isDeleted = status === GroupStatus.DELETED;
+
+        const conditions = [eq(this.table.isDeleted, isDeleted)];
+
+        if (cursor) {
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) < (${cursor.createdAt}, ${cursor.id})`,
+          );
+        }
+
+        const [countResult] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.isDeleted, isDeleted));
+        const total = countResult?.count ?? 0;
+
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.createdAt), desc(this.table.id))
+          .limit(limit + 1);
+
+        const hasMore = records.length > limit;
+        const items = records.slice(0, limit).map((r) => this.mapper.toDTO(r));
+
+        const lastItem = items[items.length - 1];
+        const nextCursor =
+          hasMore && lastItem
+            ? { id: lastItem.id, createdAt: lastItem.createdAt.toISOString() }
+            : null;
+
+        return { items, total, hasMore, nextCursor };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByStatusConnection",
+          message: "Failed to find groups by status with cursor pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find groups by trip ID and status with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByTripIdAndStatusConnection(
+    tripId: string,
+    status: GroupStatus,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = Math.min(options.limit ?? 20, 100);
+        const cursor = options.cursor;
+        const isDeleted = status === GroupStatus.DELETED;
+
+        const conditions = [
+          eq(this.table.tripId, tripId),
+          eq(this.table.isDeleted, isDeleted),
+        ];
+
+        if (cursor) {
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) < (${cursor.createdAt}, ${cursor.id})`,
+          );
+        }
+
+        const [countResult] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(
+            and(
+              eq(this.table.tripId, tripId),
+              eq(this.table.isDeleted, isDeleted),
+            ),
+          );
+        const total = countResult?.count ?? 0;
+
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.createdAt), desc(this.table.id))
+          .limit(limit + 1);
+
+        const hasMore = records.length > limit;
+        const items = records.slice(0, limit).map((r) => this.mapper.toDTO(r));
+
+        const lastItem = items[items.length - 1];
+        const nextCursor =
+          hasMore && lastItem
+            ? { id: lastItem.id, createdAt: lastItem.createdAt.toISOString() }
+            : null;
+
+        return { items, total, hasMore, nextCursor };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripIdAndStatusConnection",
+          message:
+            "Failed to find groups by trip ID and status with cursor pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find groups by organizer ID with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByOrganizerIdConnection(
+    organizerId: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  > {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = Math.min(options.limit ?? 20, 100);
+        const cursor = options.cursor;
+
+        const conditions = [eq(this.table.organizerId, organizerId)];
+
+        if (cursor) {
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) < (${cursor.createdAt}, ${cursor.id})`,
+          );
+        }
+
+        const [countResult] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(eq(this.table.organizerId, organizerId));
+        const total = countResult?.count ?? 0;
+
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.createdAt), desc(this.table.id))
+          .limit(limit + 1);
+
+        const hasMore = records.length > limit;
+        const items = records.slice(0, limit).map((r) => this.mapper.toDTO(r));
+
+        const lastItem = items[items.length - 1];
+        const nextCursor =
+          hasMore && lastItem
+            ? { id: lastItem.id, createdAt: lastItem.createdAt.toISOString() }
+            : null;
+
+        return { items, total, hasMore, nextCursor };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByOrganizerIdConnection",
+          message:
+            "Failed to find groups by organizer ID with cursor pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
    * Find group by code
    */
   findByCode(
@@ -236,21 +483,21 @@ export class DrizzleGroupGateway
   ): Effect.Effect<boolean, DatabaseError, never> {
     return Effect.tryPromise({
       try: async () => {
-        let query = this.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(this.table)
-          .where(eq(this.table.code, code));
+        const conditions: Array<ReturnType<typeof eq>> = [
+          eq(this.table.code, code),
+        ];
 
         if (excludeGroupId) {
-          query = query.where(
-            and(
-              eq(this.table.code, code),
-              sql`${this.table.id} != ${excludeGroupId}`,
-            ),
-          ) as typeof query;
+          conditions.push(
+            sql`${this.table.id} != ${excludeGroupId}` as ReturnType<typeof eq>,
+          );
         }
 
-        const result = await query;
+        const result = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(this.table)
+          .where(and(...conditions));
+
         return (result[0]?.count ?? 0) > 0;
       },
       catch: (error) =>

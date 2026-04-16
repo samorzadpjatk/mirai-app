@@ -2,7 +2,18 @@ import type {
   SupabaseClient,
   SupabaseUser,
 } from "@mirai-app/frameworks/supabase";
-import type { AuthUser } from "@mirai-app/frameworks/stores";
+
+// AuthUser type for client-side representation (defined locally to avoid frontend dependency)
+export interface AuthUser {
+  id: string;
+  authUserId: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  name: string | null;
+  emailVerified: Date | null;
+  role: "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
+}
 
 // Inline type definitions to replace the removed Prisma dependency
 type Role = "ADMIN" | "MODERATOR" | "SERVICE" | "USER";
@@ -316,8 +327,6 @@ export class AuthServer {
     );
 
     if (adminLookup.error) {
-     
-     
     } else {
       const adminUser = adminLookup.data.user as AdminUserWithBan | null;
       const bannedUntilRaw = adminUser?.banned_until ?? null;

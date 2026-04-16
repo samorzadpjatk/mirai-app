@@ -3,13 +3,15 @@ import type {
   SponsorDTO,
   TripSponsorDTO,
   SponsorPaginatedResult,
+  SponsorConnectionArgs,
 } from "@mirai-app/use-cases";
-import type { SponsorId } from "@mirai-app/domain";
+import type { SponsorId, Connection } from "@mirai-app/domain";
 import { Effect } from "effect";
 import {
   InMemoryGateway,
   DatabaseError,
 } from "../../../system/shared/gateways/in-memory-base";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * In-Memory Sponsor Gateway for Testing
@@ -171,6 +173,146 @@ export class InMemorySponsorGateway
           this.tripLinks.delete(sponsorId);
         }
       }
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find all active sponsors with cursor-based pagination
+   * Sorts by createdAt, then id, then slices
+   * Note: In-memory storage doesn't track isActive separately; all stored sponsors are considered active
+   */
+  findActiveConnection(
+    args: SponsorConnectionArgs,
+  ): Effect.Effect<Connection<SponsorDTO>, DatabaseError, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all sponsors (all stored sponsors are considered active)
+      let sponsors = Array.from(this.storage.values());
+
+      // Sort by createdAt ascending, then by id as tiebreaker
+      sponsors.sort((a, b) => {
+        const timeCompare = a.createdAt.getTime() - b.createdAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = sponsors.findIndex(
+          (s) =>
+            s.createdAt > cursorDate ||
+            (s.createdAt.getTime() === cursorDate.getTime() &&
+              s.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = sponsors.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = sponsors.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < sponsors.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.createdAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
+  }
+
+  /**
+   * Find sponsors by trip ID with cursor-based pagination
+   * Sorts by linkedAt (createdAt of tripSponsor), then id, then slices
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: SponsorConnectionArgs,
+  ): Effect.Effect<Connection<TripSponsorDTO>, DatabaseError, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all trip sponsors for the trip
+      let tripSponsors: TripSponsorDTO[] = [];
+      for (const [key, tripSponsor] of this.tripSponsorData.entries()) {
+        if (tripSponsor.tripId === tripId) {
+          // Include sponsor data if available
+          const sponsor = this.storage.get(tripSponsor.sponsorId);
+          tripSponsors.push({
+            ...tripSponsor,
+            sponsor: sponsor,
+          });
+        }
+      }
+
+      // Sort by linkedAt (createdAt) ascending, then by id as tiebreaker
+      tripSponsors.sort((a, b) => {
+        const timeCompare = a.linkedAt.getTime() - b.linkedAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = tripSponsors.findIndex(
+          (ts) =>
+            ts.linkedAt > cursorDate ||
+            (ts.linkedAt.getTime() === cursorDate.getTime() &&
+              ts.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = tripSponsors.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = tripSponsors.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < tripSponsors.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.linkedAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
     });
   }
 }

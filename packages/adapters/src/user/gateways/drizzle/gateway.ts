@@ -4,17 +4,17 @@ import {
   type UserInsert,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
-import { eq } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { UserRole } from "@mirai-app/domain";
+import { UserRole, type Connection, DatabaseError } from "@mirai-app/domain";
 import type {
   UserGateway,
   UserDTO,
-  UserPaginatedResult,
+  UserConnectionArgs,
 } from "@mirai-app/use-cases";
-import { inArray, sql } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { UserDrizzleMapper } from "../../../user/mappers/drizzle/mapper";
-import { DatabaseError } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 
 /**
@@ -38,59 +38,6 @@ export class DrizzleUserGateway
     super(db, {
       table: users,
       mapper: UserDrizzleMapper.instance,
-    });
-  }
-
-  /**
-   * Find all users with pagination
-   *
-   * Overrides base class to return paginated result instead of array.
-   */
-  // @ts-expect-error - Intentionally different return type from base class to satisfy interface
-  override findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<UserPaginatedResult, DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const limit = options?.limit ?? 50;
-        const offset = options?.offset ?? 0;
-
-        // Get total count
-        const [countResult] = await this.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(this.table);
-        const total = countResult?.count ?? 0;
-
-        // Get paginated records
-        let query = this.db.select().from(this.table);
-
-        if (limit) {
-          query = query.limit(limit) as typeof query;
-        }
-        if (offset) {
-          query = query.offset(offset) as typeof query;
-        }
-
-        const records = await query;
-        const items = records.map((record) => this.mapper.toDTO(record));
-
-        const hasMore = items.length === limit && offset + items.length < total;
-
-        return {
-          items,
-          total,
-          limit,
-          offset,
-          hasMore,
-        };
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findAll",
-          message: "Failed to find all users",
-          cause: error,
-        }),
     });
   }
 
@@ -141,28 +88,6 @@ export class DrizzleUserGateway
         new DatabaseError({
           operation: "findByIds",
           message: "Failed to find users by IDs",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find users by their role
-   */
-  findByRole(role: UserRole): Effect.Effect<UserDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const records = await this.db
-          .select()
-          .from(this.table)
-          .where(eq(this.table.role, role));
-
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findByRole",
-          message: "Failed to find users by role",
           cause: error,
         }),
     });
@@ -230,6 +155,120 @@ export class DrizzleUserGateway
           user.firstName?.toLowerCase().includes(lowerQuery) ||
           user.lastName?.toLowerCase().includes(lowerQuery),
       );
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find all users with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findAllConnection(
+    args: UserConnectionArgs,
+  ): Effect.Effect<Connection<UserDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(args, undefined, "findAllConnection");
+  }
+
+  /**
+   * Find users by role with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findByRoleConnection(
+    role: UserRole,
+    args: UserConnectionArgs,
+  ): Effect.Effect<Connection<UserDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(
+      args,
+      () => eq(this.table.role, role),
+      "findByRoleConnection",
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Uses (createdAt, id) < (cursor.createdAt, cursor.id) WHERE clause for DESC order
+   * Uses ORDER BY createdAt DESC, id DESC with LIMIT first + 1
+   */
+  private executeConnectionQuery(
+    args: UserConnectionArgs,
+    buildFilterCondition:
+      | (() => ReturnType<typeof eq> | ReturnType<typeof and> | undefined)
+      | undefined,
+    operation: string,
+  ): Effect.Effect<Connection<UserDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions: Array<
+          | ReturnType<typeof eq>
+          | ReturnType<typeof and>
+          | ReturnType<typeof sql>
+        > = [];
+
+        // Add filter condition if provided
+        if (buildFilterCondition) {
+          const filterCondition = buildFilterCondition();
+          if (filterCondition) {
+            conditions.push(filterCondition);
+          }
+        }
+
+        // Add cursor condition: (createdAt, id) < (cursor.createdAt, cursor.id) for DESC order
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) < (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(
+            sql`${this.table.createdAt} DESC`,
+            sql`${this.table.id} DESC`,
+          )
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation,
+          message: `Failed to execute ${operation}`,
+          cause: error,
+        }),
     });
   }
 }

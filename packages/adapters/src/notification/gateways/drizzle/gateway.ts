@@ -9,6 +9,8 @@ import { Effect } from "effect";
 import {
   NotificationStatus,
   type NotificationPriority,
+  type Connection,
+  type ForwardPaginationArgs,
 } from "@mirai-app/domain";
 import type {
   NotificationGateway,
@@ -18,6 +20,10 @@ import type {
 import { DatabaseError } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { NotificationDrizzleMapper } from "../../../notification/mappers/drizzle/mapper";
+import {
+  encodeCursor,
+  decodeCursor,
+} from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * DrizzleNotificationGateway
@@ -302,6 +308,145 @@ export class DrizzleNotificationGateway
         new DatabaseError({
           operation: "countPendingByTripId",
           message: "Failed to count pending notifications by trip ID",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find notifications for a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findByUserIdConnection(
+    userId: string,
+    args: ForwardPaginationArgs,
+  ): Effect.Effect<Connection<NotificationDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = Math.min(args.first ?? 20, 100);
+        const afterCursor = args.after ? decodeCursor(args.after) : null;
+
+        // Build WHERE conditions
+        const conditions = [eq(this.table.createdById, userId)];
+
+        // Add cursor pagination: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (afterCursor) {
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${new Date(afterCursor.createdAt)}, ${afterCursor.id})`,
+          );
+        }
+
+        // Fetch limit + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(asc(this.table.createdAt), asc(this.table.id))
+          .limit(limit + 1);
+
+        const hasMore = records.length > limit;
+        const items = records.slice(0, limit).map((r) => this.mapper.toDTO(r));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!afterCursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByUserIdConnection",
+          message: "Failed to find notifications by user ID with pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find unread notifications for a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   * Note: For broadcast notifications, "unread" is determined by status != SENT
+   * and scheduledFor being in the past or null
+   */
+  findUnreadByUserIdConnection(
+    userId: string,
+    args: ForwardPaginationArgs,
+  ): Effect.Effect<Connection<NotificationDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const limit = Math.min(args.first ?? 20, 100);
+        const afterCursor = args.after ? decodeCursor(args.after) : null;
+        const now = new Date();
+
+        // Build WHERE conditions
+        // Unread notifications: not yet sent (DRAFT or READY status)
+        // and either not scheduled or scheduled for the past
+        const conditions = [
+          eq(this.table.createdById, userId),
+          inArray(this.table.status, [
+            NotificationStatus.DRAFT,
+            NotificationStatus.READY,
+          ]),
+          sql`(${this.table.scheduledFor} IS NULL OR ${this.table.scheduledFor} <= ${now})`,
+        ];
+
+        // Add cursor pagination: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (afterCursor) {
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${new Date(afterCursor.createdAt)}, ${afterCursor.id})`,
+          );
+        }
+
+        // Fetch limit + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(asc(this.table.createdAt), asc(this.table.id))
+          .limit(limit + 1);
+
+        const hasMore = records.length > limit;
+        const items = records.slice(0, limit).map((r) => this.mapper.toDTO(r));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!afterCursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findUnreadByUserIdConnection",
+          message:
+            "Failed to find unread notifications by user ID with pagination",
           cause: error,
         }),
     });

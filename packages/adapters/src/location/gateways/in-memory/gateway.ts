@@ -1,10 +1,17 @@
-import type { LocationId } from "@mirai-app/domain";
+import type {
+  LocationId,
+  Connection,
+  LocationSharingRequestConnectionArgs,
+} from "@mirai-app/domain";
 import type {
   LocationGateway,
   LocationDTO,
   LocationPaginatedResult,
+  LocationConnectionArgs,
+  LocationSharingDTO,
 } from "@mirai-app/use-cases";
 import { Effect } from "effect";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import {
   InMemoryGateway,
   DatabaseError,
@@ -56,6 +63,8 @@ export class InMemoryLocationGateway
   extends InMemoryGateway<LocationDTO>
   implements LocationGateway
 {
+  private sharingRequestsStorage: Map<string, LocationSharingDTO> = new Map();
+
   /**
    * Reconstruct a LocationDTO from plain object storage.
    * For DTOs, this is a simple cast since they are plain objects.
@@ -64,6 +73,16 @@ export class InMemoryLocationGateway
     plain: unknown,
   ): Effect.Effect<LocationDTO, DatabaseError, never> {
     return Effect.succeed(plain as LocationDTO);
+  }
+
+  /**
+   * Reset both location and sharing request storage
+   */
+  override reset(): Effect.Effect<void, never, never> {
+    return Effect.sync(() => {
+      super.reset();
+      this.sharingRequestsStorage.clear();
+    });
   }
 
   create(location: LocationDTO): Effect.Effect<LocationDTO, never, never> {
@@ -120,24 +139,6 @@ export class InMemoryLocationGateway
     });
   }
 
-  findSharingWithUser(
-    userId: string,
-  ): Effect.Effect<LocationDTO[], never, never> {
-    return Effect.gen(this, function* () {
-      // For simplicity in testing, return empty array
-      // In real implementation, this would check sharing permissions
-      return [];
-    });
-  }
-
-  findByUserIds(userIds: string[]): Effect.Effect<LocationDTO[], never, never> {
-    return Effect.gen(this, function* () {
-      const userIdSet = new Set(userIds);
-      const items = this.getAllItems();
-      return items.filter((loc) => userIdSet.has(loc.userId));
-    });
-  }
-
   save(location: LocationDTO): Effect.Effect<LocationDTO, never, never> {
     return Effect.sync(() => {
       this.storage.set(location.id, location);
@@ -165,5 +166,281 @@ export class InMemoryLocationGateway
     return Effect.succeed(
       this.getAllItems().some((loc) => loc.userId === userId),
     );
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find locations for users that are sharing with a specific user
+   * Uses cursor-based pagination with (recordedAt, id) sort
+   */
+  findSharingWithUserConnection(
+    userId: string,
+    args: LocationConnectionArgs,
+  ): Effect.Effect<Connection<LocationDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all items that are "sharing" (simplified for testing)
+      // In a real implementation, this would check isSharingLocation and permissions
+      let items = this.getAllItems();
+
+      // Sort by recordedAt, then id
+      items.sort((a, b) => {
+        const timeCompare = a.recordedAt.getTime() - b.recordedAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = items.findIndex(
+          (loc) =>
+            loc.recordedAt > cursorDate ||
+            (loc.recordedAt.getTime() === cursorDate.getTime() &&
+              loc.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = items.length;
+        }
+      }
+
+      // Slice to get the page
+      const pageItems = items.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < items.length;
+
+      // Build edges with cursors
+      const edges = pageItems.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.recordedAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: pageItems,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
+  }
+
+  /**
+   * Find locations by user IDs with cursor-based pagination
+   * Uses (recordedAt, id) composite sort key for stable pagination
+   */
+  findByUserIdsConnection(
+    userIds: string[],
+    args: LocationConnectionArgs,
+  ): Effect.Effect<Connection<LocationDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Handle empty userIds
+      if (userIds.length === 0) {
+        return {
+          edges: [],
+          nodes: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: !!cursor,
+            startCursor: null,
+            endCursor: null,
+          },
+        };
+      }
+
+      // Get items for specified user IDs
+      const userIdSet = new Set(userIds);
+      let items = this.getAllItems().filter((loc) => userIdSet.has(loc.userId));
+
+      // Sort by recordedAt, then id
+      items.sort((a, b) => {
+        const timeCompare = a.recordedAt.getTime() - b.recordedAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = items.findIndex(
+          (loc) =>
+            loc.recordedAt > cursorDate ||
+            (loc.recordedAt.getTime() === cursorDate.getTime() &&
+              loc.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = items.length;
+        }
+      }
+
+      // Slice to get the page
+      const pageItems = items.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < items.length;
+
+      // Build edges with cursors
+      const edges = pageItems.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.recordedAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: pageItems,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
+  }
+
+  /**
+   * Find location sharing requests sent by a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findSharingRequestsConnection(
+    userId: string,
+    args: LocationSharingRequestConnectionArgs,
+  ): Effect.Effect<Connection<LocationSharingDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all sharing requests sent by this user
+      let items = Array.from(this.sharingRequestsStorage.values()).filter(
+        (req) => req.userId === userId,
+      );
+
+      // Sort by createdAt, then id
+      items.sort((a, b) => {
+        const timeCompare = a.createdAt.getTime() - b.createdAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = items.findIndex(
+          (req) =>
+            req.createdAt > cursorDate ||
+            (req.createdAt.getTime() === cursorDate.getTime() &&
+              req.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = items.length;
+        }
+      }
+
+      // Slice to get the page
+      const pageItems = items.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < items.length;
+
+      // Build edges with cursors
+      const edges = pageItems.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.createdAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: pageItems,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
+  }
+
+  /**
+   * Find location sharing requests received by a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findReceivedSharingRequestsConnection(
+    userId: string,
+    args: LocationSharingRequestConnectionArgs,
+  ): Effect.Effect<Connection<LocationSharingDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all sharing requests received by this user
+      let items = Array.from(this.sharingRequestsStorage.values()).filter(
+        (req) => req.sharedWithUserId === userId,
+      );
+
+      // Sort by createdAt, then id
+      items.sort((a, b) => {
+        const timeCompare = a.createdAt.getTime() - b.createdAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = items.findIndex(
+          (req) =>
+            req.createdAt > cursorDate ||
+            (req.createdAt.getTime() === cursorDate.getTime() &&
+              req.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = items.length;
+        }
+      }
+
+      // Slice to get the page
+      const pageItems = items.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < items.length;
+
+      // Build edges with cursors
+      const edges = pageItems.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.createdAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: pageItems,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
   }
 }

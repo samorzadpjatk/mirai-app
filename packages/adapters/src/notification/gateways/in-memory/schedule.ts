@@ -1,13 +1,8 @@
-import type {
-  NotificationScheduleType,
-  NotificationScheduleFilter,
-  PaginationOptions,
-} from "@mirai-app/domain";
+import type { NotificationScheduleFilter } from "@mirai-app/domain";
 import type {
   NotificationScheduleGateway,
   NotificationScheduleExecutionRecord,
   NotificationScheduleDTO,
-  PaginatedResult,
 } from "@mirai-app/use-cases";
 import { DatabaseError } from "@mirai-app/domain";
 import { Effect } from "effect";
@@ -80,16 +75,6 @@ export class InMemoryNotificationScheduleGateway
     return Effect.sync(() => this.storage.get(id) ?? null);
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    return Effect.succeed(
-      this.getAllItems()
-        .filter((s) => s.tripId === tripId)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    );
-  }
-
   findByName(
     name: string,
   ): Effect.Effect<NotificationScheduleDTO | null, DatabaseError, never> {
@@ -109,166 +94,6 @@ export class InMemoryNotificationScheduleGateway
         (s) =>
           s.tripId === tripId && s.name.toLowerCase() === name.toLowerCase(),
       ) ?? null,
-    );
-  }
-
-  findByType(
-    type: NotificationScheduleType,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    return Effect.succeed(
-      this.getAllItems()
-        .filter((s) => s.notificationType === type)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    );
-  }
-
-  findAll(options?: {
-    filter?: NotificationScheduleFilter;
-    pagination?: PaginationOptions;
-  }): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    return Effect.gen(this, function* () {
-      let items = this.getAllItems();
-
-      if (options?.filter) {
-        const filter = options.filter;
-
-        if (filter.tripId !== undefined && filter.tripId !== null) {
-          items = items.filter((s) => s.tripId === filter.tripId);
-        }
-
-        if (filter.notificationType !== undefined) {
-          items = items.filter(
-            (s) => s.notificationType === filter.notificationType,
-          );
-        }
-
-        if (filter.isActive !== undefined) {
-          items = items.filter((s) => s.isActive === filter.isActive);
-        }
-
-        if (filter.startDateFrom !== undefined) {
-          items = items.filter((s) => s.startDate >= filter.startDateFrom!);
-        }
-
-        if (filter.startDateTo !== undefined) {
-          items = items.filter((s) => s.startDate <= filter.startDateTo!);
-        }
-
-        if (filter.search !== undefined && filter.search.trim() !== "") {
-          const searchLower = filter.search.toLowerCase();
-          items = items.filter((s) =>
-            s.name.toLowerCase().includes(searchLower),
-          );
-        }
-      }
-
-      items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-      if (options?.pagination?.offset) {
-        items = items.slice(options.pagination.offset);
-      }
-
-      if (options?.pagination?.limit !== undefined) {
-        items = items.slice(0, options.pagination.limit);
-      }
-
-      return items;
-    });
-  }
-
-  findAllPaginated(options?: {
-    filter?: NotificationScheduleFilter;
-    pagination?: PaginationOptions;
-  }): Effect.Effect<
-    PaginatedResult<NotificationScheduleDTO>,
-    DatabaseError,
-    never
-  > {
-    let items = this.getAllItems();
-
-    if (options?.filter) {
-      const filter = options.filter;
-
-      if (filter.tripId !== undefined && filter.tripId !== null) {
-        items = items.filter((s) => s.tripId === filter.tripId);
-      }
-
-      if (filter.notificationType !== undefined) {
-        items = items.filter(
-          (s) => s.notificationType === filter.notificationType,
-        );
-      }
-
-      if (filter.isActive !== undefined) {
-        items = items.filter((s) => s.isActive === filter.isActive);
-      }
-
-      if (filter.startDateFrom !== undefined) {
-        items = items.filter((s) => s.startDate >= filter.startDateFrom!);
-      }
-
-      if (filter.startDateTo !== undefined) {
-        items = items.filter((s) => s.startDate <= filter.startDateTo!);
-      }
-
-      if (filter.search !== undefined && filter.search.trim() !== "") {
-        const searchLower = filter.search.toLowerCase();
-        items = items.filter((s) => s.name.toLowerCase().includes(searchLower));
-      }
-    }
-
-    items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    const total = items.length;
-
-    const limit = options?.pagination?.limit ?? 50;
-    const offset = options?.pagination?.offset ?? 0;
-    items = items.slice(offset, offset + limit);
-
-    return Effect.succeed({
-      items,
-      total,
-      limit,
-      offset,
-      hasMore: offset + limit < total,
-    });
-  }
-
-  findActive(
-    now?: Date,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    const currentTime = now ?? new Date();
-    return Effect.succeed(
-      this.getAllItems()
-        .filter(
-          (s) =>
-            s.isActive &&
-            s.startDate <= currentTime &&
-            s.endDate >= currentTime,
-        )
-        .sort((a, b) => {
-          const hourDiff = a.hour - b.hour;
-          if (hourDiff !== 0) return hourDiff;
-          return a.minute - b.minute;
-        }),
-    );
-  }
-
-  findUpcoming(
-    days?: number,
-    now?: Date,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    const currentTime = now ?? new Date();
-    const futureDate = new Date(currentTime);
-    futureDate.setDate(futureDate.getDate() + (days ?? 7));
-
-    return Effect.succeed(
-      this.getAllItems()
-        .filter(
-          (s) =>
-            s.isActive && s.startDate <= futureDate && s.endDate >= currentTime,
-        )
-        .sort((a, b) => a.startDate.getTime() - b.startDate.getTime()),
     );
   }
 
@@ -401,22 +226,6 @@ export class InMemoryNotificationScheduleGateway
       }
     }
     return Effect.succeed(count);
-  }
-
-  getExecutionHistory(
-    scheduleId: string,
-    limit: number,
-  ): Effect.Effect<
-    NotificationScheduleExecutionRecord[],
-    DatabaseError,
-    never
-  > {
-    const executions = this.executionStorage.get(scheduleId) ?? [];
-    return Effect.succeed(
-      executions
-        .sort((a, b) => b.executedAt.getTime() - a.executedAt.getTime())
-        .slice(0, limit),
-    );
   }
 
   countExecutions(

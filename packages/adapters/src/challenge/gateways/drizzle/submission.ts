@@ -1,6 +1,8 @@
 import type {
   ChallengeSubmissionGateway,
   ChallengeSubmissionDTO,
+  ChallengeSubmissionVoteScoreConnectionArgs,
+  ChallengeSubmissionCreatedAtConnectionArgs,
 } from "@mirai-app/use-cases";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
@@ -11,8 +13,10 @@ import {
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DatabaseError } from "@mirai-app/domain";
+import type { Connection } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { ChallengeSubmissionDrizzleMapper } from "../../mappers/drizzle/submission-mapper";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * DrizzleChallengeSubmissionGateway
@@ -114,215 +118,6 @@ export class DrizzleChallengeSubmissionGateway
         new DatabaseError({
           operation: "findByChallengeAndGroup",
           message: "Failed to find submission by challenge and group",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find submissions by challenge ID with pagination
-   */
-  findByChallengeId(
-    challengeId: string,
-    options?: { limit?: number; offset?: number },
-  ): Effect.Effect<
-    {
-      items: ChallengeSubmissionDTO[];
-      total: number;
-      limit: number;
-      offset: number;
-      hasMore: boolean;
-    },
-    DatabaseError,
-    never
-  > {
-    return Effect.tryPromise({
-      try: async () => {
-        const limit = options?.limit ?? 20;
-        const offset = options?.offset ?? 0;
-
-        let query = this.db
-          .select()
-          .from(this.table)
-          .where(eq(this.table.challengeId, challengeId))
-          .orderBy(desc(this.table.voteScore), asc(this.table.createdAt));
-
-        query = query.limit(limit).offset(offset) as unknown as typeof query;
-
-        const records = await query;
-
-        // Get total count
-        const [countResult] = await this.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(this.table)
-          .where(eq(this.table.challengeId, challengeId))
-          .limit(1);
-
-        const total = countResult?.count ?? 0;
-
-        return {
-          items: records.map((record) => this.mapper.toDTO(record)),
-          total,
-          limit,
-          offset,
-          hasMore: offset + records.length < total,
-        };
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findByChallengeId",
-          message: "Failed to find submissions by challenge ID",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find submissions by user ID with pagination
-   */
-  findByUserId(
-    userId: string,
-    options?: { limit?: number; offset?: number },
-  ): Effect.Effect<
-    {
-      items: ChallengeSubmissionDTO[];
-      total: number;
-      limit: number;
-      offset: number;
-      hasMore: boolean;
-    },
-    DatabaseError,
-    never
-  > {
-    return Effect.tryPromise({
-      try: async () => {
-        const limit = options?.limit ?? 20;
-        const offset = options?.offset ?? 0;
-
-        let query = this.db
-          .select()
-          .from(this.table)
-          .where(eq(this.table.groupId, userId))
-          .orderBy(desc(this.table.createdAt));
-
-        query = query.limit(limit).offset(offset) as unknown as typeof query;
-
-        const records = await query;
-
-        // Get total count
-        const [countResult] = await this.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(this.table)
-          .where(eq(this.table.groupId, userId))
-          .limit(1);
-
-        const total = countResult?.count ?? 0;
-
-        return {
-          items: records.map((record) => this.mapper.toDTO(record)),
-          total,
-          limit,
-          offset,
-          hasMore: offset + records.length < total,
-        };
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findByUserId",
-          message: "Failed to find submissions by user ID",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find submissions by status
-   */
-  findByStatus(
-    status: "PENDING" | "APPROVED" | "REJECTED",
-  ): Effect.Effect<ChallengeSubmissionDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const records = await this.db
-          .select()
-          .from(this.table)
-          .where(eq(this.table.status, status))
-          .orderBy(desc(this.table.createdAt));
-
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findByStatus",
-          message: "Failed to find submissions by status",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find submissions with filtering and pagination options
-   */
-  findMany(params: {
-    challengeId?: string;
-    groupId?: string;
-    status?: "PENDING" | "APPROVED" | "REJECTED";
-    orderBy?: "voteScore" | "createdAt";
-    orderDirection?: "asc" | "desc";
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<ChallengeSubmissionDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const buildQuery = () => {
-          let query = this.db.select().from(this.table);
-
-          const conditions = [];
-          if (params.challengeId) {
-            conditions.push(eq(this.table.challengeId, params.challengeId));
-          }
-          if (params.groupId) {
-            conditions.push(eq(this.table.groupId, params.groupId));
-          }
-          if (params.status) {
-            conditions.push(eq(this.table.status, params.status));
-          }
-
-          if (conditions.length > 0) {
-            query = query.where(and(...conditions)) as unknown as typeof query;
-          }
-
-          if (params.orderBy === "voteScore") {
-            query = query.orderBy(
-              params.orderDirection === "asc"
-                ? asc(this.table.voteScore)
-                : desc(this.table.voteScore),
-            ) as unknown as typeof query;
-          } else {
-            query = query.orderBy(
-              params.orderDirection === "asc"
-                ? asc(this.table.createdAt)
-                : desc(this.table.createdAt),
-            ) as unknown as typeof query;
-          }
-
-          if (params.limit) {
-            query = query.limit(params.limit) as unknown as typeof query;
-          }
-          if (params.offset) {
-            query = query.offset(params.offset) as unknown as typeof query;
-          }
-
-          return query;
-        };
-
-        const records = await buildQuery();
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findMany",
-          message: "Failed to find submissions with filters",
           cause: error,
         }),
     });
@@ -456,6 +251,410 @@ export class DrizzleChallengeSubmissionGateway
         new DatabaseError({
           operation: "countByChallengeAndStatus",
           message: "Failed to count submissions by challenge and status",
+          cause: error,
+        }),
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find submissions by challenge ID with cursor-based pagination
+   * Uses (voteScore, id) sort for peer voting challenges
+   * Returns highest scoring submissions first
+   */
+  findByChallengeIdConnection(
+    challengeId: string,
+    args: ChallengeSubmissionVoteScoreConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [eq(this.table.challengeId, challengeId)];
+
+        // Add cursor condition: (voteScore, id) < (cursor.voteScore, cursor.id)
+        // Note: We use < because we want lower scores (higher voteScore is better, so we want higher first)
+        if (cursor) {
+          conditions.push(
+            sql`(${this.table.voteScore}, ${this.table.id}) < (${cursor.voteScore}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.voteScore), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.submittedAt.toISOString(),
+            voteScore: item.voteScore,
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByChallengeIdConnection",
+          message:
+            "Failed to find submissions by challenge ID with cursor pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find submissions by challenge ID with cursor-based pagination sorted by createdAt
+   * Uses (createdAt, id) sort for chronological ordering
+   */
+  findByChallengeIdByCreatedAtConnection(
+    challengeId: string,
+    args: ChallengeSubmissionCreatedAtConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [eq(this.table.challengeId, challengeId)];
+
+        // Add cursor condition: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.createdAt), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.submittedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByChallengeIdByCreatedAtConnection",
+          message:
+            "Failed to find submissions by challenge ID (by createdAt) with cursor pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find all submissions by a group with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findByGroupIdConnection(
+    groupId: string,
+    args: ChallengeSubmissionCreatedAtConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [eq(this.table.groupId, groupId)];
+
+        // Add cursor condition: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.createdAt), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.submittedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByGroupIdConnection",
+          message:
+            "Failed to find submissions by group ID with cursor pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find submissions by status with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findByStatusConnection(
+    status: "PENDING" | "APPROVED" | "REJECTED",
+    args: ChallengeSubmissionCreatedAtConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [eq(this.table.status, status)];
+
+        // Add cursor condition: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(desc(this.table.createdAt), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.submittedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByStatusConnection",
+          message:
+            "Failed to find submissions by status with cursor pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find submissions with advanced filtering and cursor-based pagination
+   * Uses (voteScore, id) or (createdAt, id) sort depending on params.orderBy
+   */
+  findManyConnection(params: {
+    challengeId?: string;
+    groupId?: string;
+    status?: "PENDING" | "APPROVED" | "REJECTED";
+    orderBy?: "voteScore" | "createdAt";
+    orderDirection?: "asc" | "desc";
+    first?: number;
+    after?:
+      | ChallengeSubmissionCreatedAtConnectionArgs["after"]
+      | ChallengeSubmissionVoteScoreConnectionArgs["after"]
+      | null;
+  }): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(params.first ?? 20, 100);
+        const cursor = params.after;
+        const orderBy = params.orderBy ?? "createdAt";
+        const orderDirection = params.orderDirection ?? "desc";
+
+        // Build base conditions
+        const conditions = [];
+        if (params.challengeId) {
+          conditions.push(eq(this.table.challengeId, params.challengeId));
+        }
+        if (params.groupId) {
+          conditions.push(eq(this.table.groupId, params.groupId));
+        }
+        if (params.status) {
+          conditions.push(eq(this.table.status, params.status));
+        }
+
+        // Add cursor condition based on sort order
+        if (cursor) {
+          if (
+            orderBy === "voteScore" &&
+            "voteScore" in cursor &&
+            cursor.voteScore !== undefined
+          ) {
+            // For voteScore sorting: (voteScore, id) < (cursor.voteScore, cursor.id)
+            if (orderDirection === "desc") {
+              conditions.push(
+                sql`(${this.table.voteScore}, ${this.table.id}) < (${cursor.voteScore}, ${cursor.id})`,
+              );
+            } else {
+              conditions.push(
+                sql`(${this.table.voteScore}, ${this.table.id}) > (${cursor.voteScore}, ${cursor.id})`,
+              );
+            }
+          } else {
+            // For createdAt sorting: (createdAt, id) > (cursor.createdAt, cursor.id)
+            const cursorDate = new Date(cursor.createdAt);
+            if (orderDirection === "desc") {
+              conditions.push(
+                sql`(${this.table.createdAt}, ${this.table.id}) < (${cursorDate}, ${cursor.id})`,
+              );
+            } else {
+              conditions.push(
+                sql`(${this.table.createdAt}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+              );
+            }
+          }
+        }
+
+        // Build order by clause
+        const orderByClause =
+          orderBy === "voteScore"
+            ? orderDirection === "desc"
+              ? desc(this.table.voteScore)
+              : asc(this.table.voteScore)
+            : orderDirection === "desc"
+              ? desc(this.table.createdAt)
+              : asc(this.table.createdAt);
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(orderByClause, asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => {
+          const cursorData: {
+            id: string;
+            createdAt: string;
+            voteScore?: number;
+          } = {
+            id: item.id,
+            createdAt: item.submittedAt.toISOString(),
+          };
+          if (orderBy === "voteScore") {
+            cursorData.voteScore = item.voteScore;
+          }
+          return {
+            node: item,
+            cursor: encodeCursor(cursorData),
+          };
+        });
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findManyConnection",
+          message:
+            "Failed to find submissions with filters and cursor pagination",
           cause: error,
         }),
     });

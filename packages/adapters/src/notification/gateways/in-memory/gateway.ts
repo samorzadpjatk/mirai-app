@@ -2,11 +2,17 @@ import type { NotificationDTO } from "@mirai-app/use-cases";
 import type {
   NotificationStatus,
   NotificationPriority,
+  Connection,
+  ForwardPaginationArgs,
 } from "@mirai-app/domain";
 import type { NotificationGateway } from "@mirai-app/use-cases";
 import { DatabaseError } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { InMemoryGateway } from "../../../system/shared/gateways/in-memory-base";
+import {
+  encodeCursor,
+  decodeCursor,
+} from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * In-Memory Notification Gateway for Testing
@@ -198,5 +204,134 @@ export class InMemoryNotificationGateway
             n.status === ("READY" as NotificationStatus)),
       ).length,
     );
+  }
+
+  /**
+   * Find notifications for a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findByUserIdConnection(
+    userId: string,
+    args: ForwardPaginationArgs,
+  ): Effect.Effect<Connection<NotificationDTO>, DatabaseError, never> {
+    const limit = Math.min(args.first ?? 20, 100);
+    const afterCursor = args.after ? decodeCursor(args.after) : null;
+
+    // Filter by user and sort by (createdAt, id)
+    let items = this.getAllItems()
+      .filter((n) => n.createdById === userId)
+      .sort((a, b) => {
+        // Sort by createdAt first, then by id as tiebreaker
+        const timeDiff = a.createdAt.getTime() - b.createdAt.getTime();
+        if (timeDiff !== 0) return timeDiff;
+        return a.id.localeCompare(b.id);
+      });
+
+    // Apply cursor pagination
+    if (afterCursor) {
+      const cursorDate = new Date(afterCursor.createdAt);
+      items = items.filter((item) => {
+        const itemTime = item.createdAt.getTime();
+        const cursorTime = cursorDate.getTime();
+        if (itemTime > cursorTime) return true;
+        if (itemTime < cursorTime) return false;
+        // Equal times - compare by id
+        return item.id.localeCompare(afterCursor.id) > 0;
+      });
+    }
+
+    // Get limit + 1 to determine hasNextPage
+    const hasMore = items.length > limit;
+    const paginatedItems = items.slice(0, limit);
+
+    // Build edges with cursors
+    const edges = paginatedItems.map((item) => ({
+      node: item,
+      cursor: encodeCursor({
+        id: item.id,
+        createdAt: item.createdAt.toISOString(),
+      }),
+    }));
+
+    return Effect.succeed({
+      edges,
+      nodes: paginatedItems,
+      pageInfo: {
+        hasNextPage: hasMore,
+        hasPreviousPage: !!afterCursor,
+        startCursor: edges[0]?.cursor ?? null,
+        endCursor: edges[edges.length - 1]?.cursor ?? null,
+      },
+    });
+  }
+
+  /**
+   * Find unread notifications for a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   * Note: For broadcast notifications, "unread" is determined by status != SENT
+   * and scheduledAt being in the past or null
+   */
+  findUnreadByUserIdConnection(
+    userId: string,
+    args: ForwardPaginationArgs,
+  ): Effect.Effect<Connection<NotificationDTO>, DatabaseError, never> {
+    const limit = Math.min(args.first ?? 20, 100);
+    const afterCursor = args.after ? decodeCursor(args.after) : null;
+    const now = Date.now();
+
+    // Filter by user and "unread" criteria, sort by (createdAt, id)
+    let items = this.getAllItems()
+      .filter((n) => {
+        // Must be created by this user
+        if (n.createdById !== userId) return false;
+        // Unread: not yet sent (DRAFT or READY status)
+        if (n.status !== "DRAFT" && n.status !== "READY") return false;
+        // And either not scheduled or scheduled for the past
+        if (n.scheduledAt && n.scheduledAt.getTime() > now) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        // Sort by createdAt first, then by id as tiebreaker
+        const timeDiff = a.createdAt.getTime() - b.createdAt.getTime();
+        if (timeDiff !== 0) return timeDiff;
+        return a.id.localeCompare(b.id);
+      });
+
+    // Apply cursor pagination
+    if (afterCursor) {
+      const cursorDate = new Date(afterCursor.createdAt);
+      items = items.filter((item) => {
+        const itemTime = item.createdAt.getTime();
+        const cursorTime = cursorDate.getTime();
+        if (itemTime > cursorTime) return true;
+        if (itemTime < cursorTime) return false;
+        // Equal times - compare by id
+        return item.id.localeCompare(afterCursor.id) > 0;
+      });
+    }
+
+    // Get limit + 1 to determine hasNextPage
+    const hasMore = items.length > limit;
+    const paginatedItems = items.slice(0, limit);
+
+    // Build edges with cursors
+    const edges = paginatedItems.map((item) => ({
+      node: item,
+      cursor: encodeCursor({
+        id: item.id,
+        createdAt: item.createdAt.toISOString(),
+      }),
+    }));
+
+    return Effect.succeed({
+      edges,
+      nodes: paginatedItems,
+      pageInfo: {
+        hasNextPage: hasMore,
+        hasPreviousPage: !!afterCursor,
+        startCursor: edges[0]?.cursor ?? null,
+        endCursor: edges[edges.length - 1]?.cursor ?? null,
+      },
+    });
   }
 }

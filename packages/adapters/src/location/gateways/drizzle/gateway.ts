@@ -1,20 +1,29 @@
-import { eq, inArray, count } from "drizzle-orm";
+import { eq, inArray, count, and, asc, sql } from "drizzle-orm";
 import {
   locations,
+  locationSharingRequests,
   type LocationSelect,
   type LocationInsert,
+  type LocationSharingRequestSelect,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { Effect } from "effect";
-import type { LocationId } from "@mirai-app/domain";
+import type {
+  LocationId,
+  Connection,
+  LocationSharingRequestConnectionArgs,
+} from "@mirai-app/domain";
 import type {
   LocationGateway,
   LocationDTO,
   LocationPaginatedResult,
+  LocationConnectionArgs,
+  LocationSharingDTO,
 } from "@mirai-app/use-cases";
 import { DatabaseError } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { LocationDrizzleMapper } from "../../../location/mappers/drizzle/mapper";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * DrizzleLocationGateway
@@ -48,7 +57,7 @@ export class DrizzleLocationGateway
   /**
    * Create a new location
    */
-  create(
+  override create(
     location: LocationDTO,
   ): Effect.Effect<LocationDTO, DatabaseError, never> {
     return super.create(location);
@@ -57,7 +66,7 @@ export class DrizzleLocationGateway
   /**
    * Find location by ID
    */
-  findById(
+  override findById(
     id: LocationId,
   ): Effect.Effect<LocationDTO | null, DatabaseError, never> {
     return super.findById(id as string);
@@ -92,7 +101,7 @@ export class DrizzleLocationGateway
   /**
    * Find all locations with pagination
    */
-  findAll(options?: {
+  override findAll(options?: {
     limit?: number;
     offset?: number;
   }): Effect.Effect<LocationPaginatedResult, DatabaseError, never> {
@@ -149,60 +158,9 @@ export class DrizzleLocationGateway
   }
 
   /**
-   * Find locations for users that are sharing with a specific user
-   * Note: This queries all locations and filters by sharing settings
-   */
-  findSharingWithUser(
-    userId: string,
-  ): Effect.Effect<LocationDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const records = await this.db
-          .select()
-          .from(this.table)
-          .where(eq(this.table.isSharingLocation, true));
-
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findSharingWithUser",
-          message: "Failed to find locations sharing with user",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find locations by user IDs
-   */
-  findByUserIds(
-    userIds: string[],
-  ): Effect.Effect<LocationDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        if (userIds.length === 0) return [];
-
-        const records = await this.db
-          .select()
-          .from(this.table)
-          .where(inArray(this.table.userId, userIds));
-
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findByUserIds",
-          message: "Failed to find locations by user IDs",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
    * Update location (upsert pattern for user locations)
    */
-  save(
+  override save(
     location: LocationDTO,
   ): Effect.Effect<LocationDTO, DatabaseError, never> {
     return Effect.tryPromise({
@@ -244,7 +202,7 @@ export class DrizzleLocationGateway
   /**
    * Delete location
    */
-  delete(id: LocationId): Effect.Effect<void, DatabaseError, never> {
+  override delete(id: LocationId): Effect.Effect<void, DatabaseError, never> {
     return super.delete(id as string);
   }
 
@@ -286,5 +244,310 @@ export class DrizzleLocationGateway
           cause: error,
         }),
     });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find locations for users that are sharing with a specific user
+   * Uses cursor-based pagination per Relay Cursor Connections Specification
+   * Uses (timestamp, id) composite sort key for stable pagination
+   */
+  findSharingWithUserConnection(
+    userId: string,
+    args: LocationConnectionArgs,
+  ): Effect.Effect<Connection<LocationDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build conditions - find locations where isSharingLocation is true
+        const conditions = [eq(this.table.isSharingLocation, true)];
+
+        // Add cursor condition: (timestamp, id) > (cursor.createdAt, cursor.id)
+        // Using timestamp as the sort field per the schema
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.timestamp}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(asc(this.table.timestamp), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors using recordedAt (timestamp) as the sort field
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.recordedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findSharingWithUserConnection",
+          message: "Failed to find locations sharing with user",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find locations by user IDs with cursor-based pagination
+   * Uses (timestamp, id) composite sort key for stable pagination
+   */
+  findByUserIdsConnection(
+    userIds: string[],
+    args: LocationConnectionArgs,
+  ): Effect.Effect<Connection<LocationDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Handle empty userIds - return empty result
+        if (userIds.length === 0) {
+          return {
+            edges: [],
+            nodes: [],
+            pageInfo: {
+              hasNextPage: false,
+              hasPreviousPage: !!cursor,
+              startCursor: null,
+              endCursor: null,
+            },
+          };
+        }
+
+        // Build conditions
+        const conditions: Array<
+          ReturnType<typeof inArray> | ReturnType<typeof sql>
+        > = [inArray(this.table.userId, userIds)];
+
+        // Add cursor condition: (timestamp, id) > (cursor.createdAt, cursor.id)
+        // Using timestamp as the sort field per the schema
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.timestamp}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(asc(this.table.timestamp), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors using recordedAt (timestamp) as the sort field
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.recordedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByUserIdsConnection",
+          message: "Failed to find locations by user IDs",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find location sharing requests sent by a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findSharingRequestsConnection(
+    userId: string,
+    args: LocationSharingRequestConnectionArgs,
+  ): Effect.Effect<Connection<LocationSharingDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build conditions - find requests where requesterId matches
+        const conditions = [eq(locationSharingRequests.requesterId, userId)];
+
+        // Add cursor condition: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${locationSharingRequests.createdAt}, ${locationSharingRequests.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(locationSharingRequests)
+          .where(and(...conditions))
+          .orderBy(
+            asc(locationSharingRequests.createdAt),
+            asc(locationSharingRequests.id),
+          )
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.toLocationSharingDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findSharingRequestsConnection",
+          message: "Failed to find sharing requests",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find location sharing requests received by a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findReceivedSharingRequestsConnection(
+    userId: string,
+    args: LocationSharingRequestConnectionArgs,
+  ): Effect.Effect<Connection<LocationSharingDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build conditions - find requests where targetId matches
+        const conditions = [eq(locationSharingRequests.targetId, userId)];
+
+        // Add cursor condition: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${locationSharingRequests.createdAt}, ${locationSharingRequests.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(locationSharingRequests)
+          .where(and(...conditions))
+          .orderBy(
+            asc(locationSharingRequests.createdAt),
+            asc(locationSharingRequests.id),
+          )
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.toLocationSharingDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findReceivedSharingRequestsConnection",
+          message: "Failed to find received sharing requests",
+          cause: error,
+        }),
+    });
+  }
+
+  private toLocationSharingDTO(
+    record: LocationSharingRequestSelect,
+  ): LocationSharingDTO {
+    return {
+      id: record.id,
+      userId: record.requesterId,
+      sharedWithUserId: record.targetId,
+      canViewLocation: record.status === "ACCEPTED",
+      createdAt: record.createdAt,
+    };
   }
 }

@@ -1,14 +1,15 @@
-import type {
-  ChallengeStatus,
-  ScoringCategory,
-  SubmissionType,
-} from "@mirai-app/domain";
+import type { ChallengeStatus, ScoringCategory } from "@mirai-app/domain";
 import type {
   ChallengeGateway,
   ChallengeDTO,
-  ChallengePaginatedResult,
+  ChallengeConnectionArgs,
 } from "@mirai-app/use-cases";
-import { DatabaseError } from "@mirai-app/domain";
+import {
+  DatabaseError,
+  type Connection,
+  type Edge,
+  type PageInfo,
+} from "@mirai-app/domain";
 import { Effect } from "effect";
 import { InMemoryGateway } from "../../../system/shared/gateways/in-memory-base";
 
@@ -23,8 +24,10 @@ import { InMemoryGateway } from "../../../system/shared/gateways/in-memory-base"
  * const gateway = new InMemoryChallengeGateway();
  * gateway.seed([mockChallengeDTO]);
  *
- * const byTrip = await Effect.runPromise(gateway.findByTripId("trip-123"));
- * expect(byTrip).toHaveLength(1);
+ * const connection = await Effect.runPromise(
+ *   gateway.findByTripIdConnection("trip-123", { first: 10 })
+ * );
+ * expect(connection.nodes).toHaveLength(1);
  *
  * gateway.reset();
  * ```
@@ -43,88 +46,98 @@ export class InMemoryChallengeGateway
     return this.findByIdGeneric(id);
   }
 
-  findByTripId(
+  findByTripIdConnection(
     tripId: string,
-  ): Effect.Effect<ChallengeDTO[], DatabaseError, never> {
-    return Effect.succeed(
-      this.getAllItems().filter((c) => c.tripId === tripId),
-    );
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
+    return Effect.sync(() => {
+      const allItems = this.getAllItems().filter((c) => c.tripId === tripId);
+      return this.buildConnectionResult(allItems, args);
+    });
   }
 
-  findByStatus(
+  findByStatusConnection(
     status: string,
-  ): Effect.Effect<ChallengeDTO[], DatabaseError, never> {
-    return Effect.succeed(
-      this.getAllItems().filter((c) => c.status === status),
-    );
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
+    return Effect.sync(() => {
+      const allItems = this.getAllItems().filter((c) => c.status === status);
+      return this.buildConnectionResult(allItems, args);
+    });
   }
 
-  findByTripIdAndStatus(
+  findByTripIdAndStatusConnection(
     tripId: string,
-    status: ChallengeStatus,
-  ): Effect.Effect<ChallengeDTO[], DatabaseError, never> {
-    return Effect.succeed(
-      this.getAllItems().filter(
+    status: string,
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
+    return Effect.sync(() => {
+      const allItems = this.getAllItems().filter(
         (c) => c.tripId === tripId && c.status === status,
-      ),
-    );
+      );
+      return this.buildConnectionResult(allItems, args);
+    });
   }
 
-  findBySubmissionType(
-    type: SubmissionType,
-  ): Effect.Effect<ChallengeDTO[], DatabaseError, never> {
-    return Effect.succeed(
-      this.getAllItems().filter((c) => c.scoringCategory === type),
-    );
+  findBySubmissionTypeConnection(
+    _type: string,
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
+    // Note: ChallengeDTO doesn't have submissionType field
+    // Return empty connection
+    return Effect.sync(() => this.buildConnectionResult([], args));
   }
 
-  findByScoringCategory(
-    category: ScoringCategory,
-  ): Effect.Effect<ChallengeDTO[], DatabaseError, never> {
-    return Effect.succeed(
-      this.getAllItems().filter((c) => c.scoringCategory === category),
-    );
+  findByScoringCategoryConnection(
+    category: string,
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
+    return Effect.sync(() => {
+      const allItems = this.getAllItems().filter(
+        (c) => c.scoringCategory === category,
+      );
+      return this.buildConnectionResult(allItems, args);
+    });
   }
 
-  findActive(): Effect.Effect<ChallengeDTO[], DatabaseError, never> {
-    return this.findByStatus("ACTIVE");
+  findActiveConnection(
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
+    return Effect.sync(() => {
+      const allItems = this.getAllItems().filter((c) => c.status === "ACTIVE");
+      return this.buildConnectionResult(allItems, args);
+    });
   }
 
-  findOpenForSubmission(): Effect.Effect<ChallengeDTO[], DatabaseError, never> {
-    const now = new Date();
-    return Effect.succeed(
-      this.getAllItems().filter((c) => {
+  findOpenForSubmissionConnection(
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
+    return Effect.sync(() => {
+      const now = new Date();
+      const allItems = this.getAllItems().filter((c) => {
         if (c.status !== "ACTIVE") return false;
         if (c.startDate && c.startDate > now) return false;
         if (c.endDate && c.endDate < now) return false;
         return true;
-      }),
-    );
+      });
+      return this.buildConnectionResult(allItems, args);
+    });
   }
 
-  findRecurring(): Effect.Effect<ChallengeDTO[], DatabaseError, never> {
-    return Effect.succeed([]);
+  findRecurringConnection(
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
+    // Note: ChallengeDTO doesn't have isRecurring field
+    // Return empty connection
+    return Effect.sync(() => this.buildConnectionResult([], args));
   }
 
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<ChallengePaginatedResult, DatabaseError, never> {
+  findAllConnection(
+    args: ChallengeConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeDTO>, DatabaseError, never> {
     return Effect.sync(() => {
-      const limit = options?.limit ?? 50;
-      const offset = options?.offset ?? 0;
       const allItems = this.getAllItems();
-      const total = allItems.length;
-      const items = allItems.slice(offset, offset + limit);
-      const hasMore = offset + items.length < total;
-
-      return {
-        items,
-        total,
-        limit,
-        offset,
-        hasMore,
-      };
+      return this.buildConnectionResult(allItems, args);
     });
   }
 
@@ -165,5 +178,82 @@ export class InMemoryChallengeGateway
     return Effect.succeed(
       this.getAllItems().filter((c) => c.tripId === tripId).length,
     );
+  }
+
+  /**
+   * Helper to build a Connection result from items and pagination args
+   */
+  private buildConnectionResult(
+    allItems: ChallengeDTO[],
+    args: ChallengeConnectionArgs,
+  ): Connection<ChallengeDTO> {
+    // Sort by createdAt desc, then id desc
+    const sortedItems = [...allItems].sort((a, b) => {
+      const dateDiff = b.createdAt.getTime() - a.createdAt.getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return b.id.localeCompare(a.id);
+    });
+
+    // Handle cursor if provided (object format from ChallengeConnectionArgs)
+    let startIndex = 0;
+    if (args.after) {
+      const cursorId = args.after.id;
+      const cursorCreatedAt = new Date(args.after.createdAt);
+      // Find position after cursor
+      const cursorIndex = sortedItems.findIndex(
+        (item) =>
+          item.id === cursorId &&
+          item.createdAt.getTime() === cursorCreatedAt.getTime(),
+      );
+      if (cursorIndex >= 0) {
+        startIndex = cursorIndex + 1;
+      }
+    }
+
+    // Get limit
+    const limit = this.getPaginationLimit(args.first);
+
+    // Get page items (limit + 1 to detect hasNextPage)
+    const pageItems = sortedItems.slice(startIndex, startIndex + limit + 1);
+    const hasMore = pageItems.length > limit;
+    const items = pageItems.slice(0, limit);
+
+    // Build edges with base64-encoded cursor strings
+    const edges: Edge<ChallengeDTO>[] = items.map((item) => ({
+      node: item,
+      cursor: this.encodeCursor(item.id, item.createdAt),
+    }));
+
+    // Build pageInfo
+    const pageInfo: PageInfo = {
+      hasNextPage: hasMore,
+      hasPreviousPage: startIndex > 0,
+      startCursor: edges[0]?.cursor ?? null,
+      endCursor: edges[edges.length - 1]?.cursor ?? null,
+    };
+
+    return {
+      edges,
+      nodes: items,
+      pageInfo,
+    };
+  }
+
+  /**
+   * Encode cursor from id and createdAt to base64 string
+   */
+  private encodeCursor(id: string, createdAt: Date): string {
+    const data = { id, createdAt: createdAt.toISOString() };
+    return Buffer.from(JSON.stringify(data)).toString("base64url");
+  }
+
+  /**
+   * Get pagination limit with defaults and max
+   */
+  private getPaginationLimit(first?: number | null): number {
+    const MAX_LIMIT = 100;
+    const DEFAULT_LIMIT = 20;
+    if (first === undefined || first === null) return DEFAULT_LIMIT;
+    return Math.min(Math.max(1, first), MAX_LIMIT);
   }
 }

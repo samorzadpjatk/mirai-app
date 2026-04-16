@@ -6,13 +6,17 @@ import type {
   RewardPaginatedResult,
   PurchasePaginatedResult,
   PaginationOptions,
+  RewardConnectionArgs,
+  RewardPurchaseConnectionArgs,
 } from "@mirai-app/use-cases";
 import {
   type RewardId,
-  type PurchaseId,
+  type RewardPurchaseId,
   RewardStatus,
+  type Connection,
 } from "@mirai-app/domain";
 import { Effect } from "effect";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * In-Memory Reward Gateway for Testing
@@ -230,6 +234,102 @@ export class InMemoryRewardGateway implements RewardGateway {
         .length,
     );
   }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find rewards by trip ID with cursor-based pagination
+   * Sorts by createdAt, then id, then slices
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: RewardConnectionArgs,
+  ): Effect.Effect<Connection<RewardDTO>, never, never> {
+    return this.executeConnectionQuery(tripId, args, () => true);
+  }
+
+  /**
+   * Find visible rewards by trip ID with cursor-based pagination
+   * Sorts by createdAt, then id, then slices
+   */
+  findVisibleByTripIdConnection(
+    tripId: string,
+    args: RewardConnectionArgs,
+  ): Effect.Effect<Connection<RewardDTO>, never, never> {
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      (reward) => !reward.isHidden,
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Sorts by createdAt, then id, then slices
+   */
+  private executeConnectionQuery(
+    tripId: string,
+    args: RewardConnectionArgs,
+    filterFn: (reward: RewardDTO) => boolean,
+  ): Effect.Effect<Connection<RewardDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all rewards for the trip
+      let rewards = Array.from(this.rewards.values()).filter(
+        (r) => r.tripId === tripId && filterFn(r),
+      );
+
+      // Sort by createdAt descending (newest first), then by id as tiebreaker
+      rewards.sort((a, b) => {
+        const timeCompare = b.createdAt.getTime() - a.createdAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = rewards.findIndex(
+          (r) =>
+            r.createdAt < cursorDate ||
+            (r.createdAt.getTime() === cursorDate.getTime() &&
+              r.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = rewards.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = rewards.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < rewards.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.createdAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
+  }
 }
 
 /**
@@ -263,7 +363,7 @@ export class InMemoryRewardPurchaseGateway implements RewardPurchaseGateway {
   }
 
   findById(
-    id: PurchaseId,
+    id: RewardPurchaseId,
   ): Effect.Effect<RewardPurchaseDTO | null, never, never> {
     return Effect.succeed(this.purchases.get(id) ?? null);
   }
@@ -340,7 +440,7 @@ export class InMemoryRewardPurchaseGateway implements RewardPurchaseGateway {
   }
 
   updateStatus(
-    id: PurchaseId,
+    id: RewardPurchaseId,
     status: string,
     updatedById: string,
     collectionMethod?: string | null,
@@ -398,5 +498,169 @@ export class InMemoryRewardPurchaseGateway implements RewardPurchaseGateway {
       Array.from(this.purchases.values()).filter((p) => p.groupId === groupId)
         .length,
     );
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find purchases by reward ID with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
+   */
+  findByRewardIdConnection(
+    rewardId: RewardId,
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, never, never> {
+    return this.executeConnectionQuery(
+      rewardId,
+      args,
+      (purchase) => purchase.rewardId === rewardId,
+    );
+  }
+
+  /**
+   * Find purchases by group ID with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
+   */
+  findByGroupIdConnection(
+    groupId: string,
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, never, never> {
+    return this.executeConnectionQuery(
+      groupId,
+      args,
+      (purchase) => purchase.groupId === groupId,
+    );
+  }
+
+  /**
+   * Find all purchases for a trip with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all purchases (Note: In memory version doesn't filter by tripId
+      // since RewardPurchaseDTO doesn't have tripId field)
+      let purchases = Array.from(this.purchases.values());
+
+      // Sort by purchasedAt ascending, then by id as tiebreaker
+      purchases.sort((a, b) => {
+        const timeCompare = a.purchasedAt.getTime() - b.purchasedAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.purchasedAt);
+        startIndex = purchases.findIndex(
+          (p) =>
+            p.purchasedAt > cursorDate ||
+            (p.purchasedAt.getTime() === cursorDate.getTime() &&
+              p.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = purchases.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = purchases.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < purchases.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.purchasedAt.toISOString(),
+          purchasedAt: item.purchasedAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Sorts by purchasedAt, then id, then slices
+   */
+  private executeConnectionQuery(
+    idValue: string,
+    args: RewardPurchaseConnectionArgs,
+    filterFn: (purchase: RewardPurchaseDTO) => boolean,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all matching purchases
+      let purchases = Array.from(this.purchases.values()).filter(filterFn);
+
+      // Sort by purchasedAt ascending, then by id as tiebreaker
+      purchases.sort((a, b) => {
+        const timeCompare = a.purchasedAt.getTime() - b.purchasedAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.purchasedAt);
+        startIndex = purchases.findIndex(
+          (p) =>
+            p.purchasedAt > cursorDate ||
+            (p.purchasedAt.getTime() === cursorDate.getTime() &&
+              p.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = purchases.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = purchases.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < purchases.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.purchasedAt.toISOString(),
+          purchasedAt: item.purchasedAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
   }
 }

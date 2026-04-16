@@ -1,12 +1,7 @@
-import type {
-  NotificationScheduleType,
-  NotificationScheduleFilter,
-  PaginationOptions,
-} from "@mirai-app/domain";
+import type { NotificationScheduleFilter } from "@mirai-app/domain";
 import type {
   NotificationScheduleGateway,
   NotificationScheduleDTO,
-  PaginatedResult,
 } from "@mirai-app/use-cases";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
@@ -71,31 +66,6 @@ export class DrizzleNotificationScheduleGateway
   }
 
   /**
-   * Find schedules by trip ID
-   */
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const records = await this.db
-          .select()
-          .from(notificationSchedules)
-          .where(eq(notificationSchedules.tripId, tripId))
-          .orderBy(desc(notificationSchedules.createdAt));
-
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findByTripId",
-          message: "Failed to find notification schedules by trip ID",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
    * Find schedule by name
    */
   findByName(
@@ -146,153 +116,6 @@ export class DrizzleNotificationScheduleGateway
         new DatabaseError({
           operation: "findByTripIdAndName",
           message: "Failed to find notification schedule by trip ID and name",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find schedules by type
-   */
-  findByType(
-    type: NotificationScheduleType,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const records = await this.db
-          .select()
-          .from(notificationSchedules)
-          .where(eq(notificationSchedules.notificationType, type.toString()))
-          .orderBy(desc(notificationSchedules.createdAt));
-
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findByType",
-          message: "Failed to find notification schedules by type",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find all schedules with pagination and filters
-   * Note: Renamed from findAll to avoid collision with BaseDrizzleGateway.findAll
-   */
-  findAllPaginated(options?: {
-    filter?: NotificationScheduleFilter;
-    pagination?: PaginationOptions;
-  }): Effect.Effect<
-    PaginatedResult<NotificationScheduleDTO>,
-    DatabaseError,
-    never
-  > {
-    return Effect.tryPromise({
-      try: async () => {
-        const whereClause = this.buildWhereClause(options?.filter);
-
-        const limit = options?.pagination?.limit ?? 50;
-        const offset = options?.pagination?.offset ?? 0;
-
-        const [records, totalResult] = await Promise.all([
-          this.db
-            .select()
-            .from(notificationSchedules)
-            .where(whereClause)
-            .orderBy(desc(notificationSchedules.createdAt))
-            .limit(limit)
-            .offset(offset),
-          this.db
-            .select({ count: sql<number>`count(*)::int` })
-            .from(notificationSchedules)
-            .where(whereClause)
-            .limit(1),
-        ]);
-
-        const total = totalResult[0]?.count ?? 0;
-
-        return {
-          items: records.map((record) => this.mapper.toDTO(record)),
-          total,
-          limit,
-          offset,
-          hasMore: offset + limit < total,
-        };
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findAll",
-          message: "Failed to find all notification schedules",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find active schedules
-   */
-  findActive(
-    now?: Date,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const currentTime = now ?? new Date();
-
-        const records = await this.db
-          .select()
-          .from(notificationSchedules)
-          .where(
-            and(
-              eq(notificationSchedules.isSent, false),
-              lte(notificationSchedules.scheduledFor, currentTime),
-            ),
-          )
-          .orderBy(asc(notificationSchedules.scheduledFor));
-
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findActive",
-          message: "Failed to find active notification schedules",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find upcoming schedules
-   */
-  findUpcoming(
-    days?: number,
-    now?: Date,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const currentTime = now ?? new Date();
-        const futureDate = new Date(currentTime);
-        futureDate.setDate(futureDate.getDate() + (days ?? 7));
-
-        const records = await this.db
-          .select()
-          .from(notificationSchedules)
-          .where(
-            and(
-              eq(notificationSchedules.isSent, false),
-              eq(notificationSchedules.isDraft, false),
-              gte(notificationSchedules.scheduledFor, currentTime),
-              lte(notificationSchedules.scheduledFor, futureDate),
-            ),
-          )
-          .orderBy(asc(notificationSchedules.scheduledFor));
-
-        return records.map((record) => this.mapper.toDTO(record));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findUpcoming",
-          message: "Failed to find upcoming notification schedules",
           cause: error,
         }),
     });
@@ -451,68 +274,6 @@ export class DrizzleNotificationScheduleGateway
         new DatabaseError({
           operation: "bulkToggleActive",
           message: "Failed to bulk toggle active state",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Get execution history for a schedule
-   */
-  getExecutionHistory(
-    scheduleId: string,
-    limit: number,
-  ): Effect.Effect<
-    Array<{
-      id: string;
-      executedAt: Date;
-      notification: {
-        id: string;
-        title: string;
-        body: string;
-        createdAt: Date;
-      } | null;
-    }>,
-    DatabaseError,
-    never
-  > {
-    return Effect.tryPromise({
-      try: async () => {
-        const executions = await this.db
-          .select({
-            id: notificationScheduleExecutions.id,
-            executedAt: notificationScheduleExecutions.executedAt,
-            notificationId: notifications.id,
-            notificationTitle: notifications.title,
-            notificationBody: notifications.body,
-            notificationCreatedAt: notifications.createdAt,
-          })
-          .from(notificationScheduleExecutions)
-          .leftJoin(
-            notifications,
-            eq(notificationScheduleExecutions.notificationId, notifications.id),
-          )
-          .where(eq(notificationScheduleExecutions.scheduleId, scheduleId))
-          .orderBy(desc(notificationScheduleExecutions.executedAt))
-          .limit(limit);
-
-        return executions.map((e) => ({
-          id: e.id,
-          executedAt: e.executedAt,
-          notification: e.notificationId
-            ? {
-                id: e.notificationId,
-                title: e.notificationTitle ?? "",
-                body: e.notificationBody ?? "",
-                createdAt: e.notificationCreatedAt ?? e.executedAt,
-              }
-            : null,
-        }));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "getExecutionHistory",
-          message: `Failed to get execution history for schedule ${scheduleId}`,
           cause: error,
         }),
     });

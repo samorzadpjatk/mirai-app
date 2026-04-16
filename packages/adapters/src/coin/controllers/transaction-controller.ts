@@ -5,6 +5,7 @@ import {
   getCoinTransactionsUseCase,
   getCoinQuickStatsUseCase,
   getCoinAdditionalInsightsUseCase,
+  getCoinTransactionsConnectionUseCase,
   type GetCoinAdditionalInsightsOutput,
 } from "@mirai-app/use-cases";
 import {
@@ -360,6 +361,88 @@ export class CoinTransactionController {
             }
           : null,
       })),
+    };
+  }
+
+  /**
+   * Get coin transactions with cursor-based pagination
+   */
+  async getManyConnection(input: {
+    tripId: string;
+    groupId?: string;
+    first: number;
+    after: { id: string; createdAt: Date } | null;
+  }): Promise<
+    | {
+        success: true;
+        data: {
+          items: Array<{
+            id: string;
+            amount: number;
+            reason: string | null;
+            createdAt: Date;
+            group: { id: string; name: string; coins: number } | null;
+            admin: {
+              id: string;
+              firstName: string | null;
+              lastName: string | null;
+            } | null;
+          }>;
+          hasMore: boolean;
+        };
+      }
+    | { success: false; error: string }
+  > {
+    const effect = getCoinTransactionsConnectionUseCase({
+      tripId: input.tripId,
+      groupId: input.groupId,
+      first: input.first,
+      after: input.after,
+    });
+
+    const result = await runWithLayer(effect, this.appLayer);
+
+    if (!result.success) {
+      return result as { success: false; error: string };
+    }
+
+    const data = result.data as {
+      items: Array<{
+        id: string;
+        amount: number;
+        reason: string | null;
+        createdAt: Date;
+        group: { id: string; name: string; coins: number } | null;
+        admin: {
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+        } | null;
+      }>;
+      hasMore: boolean;
+    };
+
+    return {
+      success: true,
+      data: {
+        items: data.items.map((t) => ({
+          id: t.id,
+          amount: t.amount,
+          reason: t.reason ?? null,
+          createdAt: t.createdAt,
+          group: t.group
+            ? { id: t.group.id, name: t.group.name, coins: t.group.coins }
+            : null,
+          admin: t.admin
+            ? {
+                id: t.admin.id,
+                firstName: t.admin.firstName ?? null,
+                lastName: t.admin.lastName ?? null,
+              }
+            : null,
+        })),
+        hasMore: data.hasMore,
+      },
     };
   }
 }

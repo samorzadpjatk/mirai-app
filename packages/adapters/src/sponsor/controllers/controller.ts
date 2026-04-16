@@ -471,4 +471,151 @@ export class SponsorController {
         }
       | { success: false; error: string };
   }
+
+  /**
+   * Get active sponsors with cursor-based pagination
+   */
+  async getActiveConnection(input: {
+    first: number;
+    after: { id: string; createdAt: Date } | null;
+  }): Promise<{
+    items: Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      logoUrl: string | null;
+      websiteUrl: string | null;
+      contactEmail: string | null;
+      contactPhone: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }>;
+    hasMore: boolean;
+  }> {
+    const effect = Effect.gen(function* () {
+      const repo = yield* SponsorGatewayTag;
+      return yield* repo.findActiveConnection({
+        first: input.first,
+        after: input.after
+          ? {
+              id: input.after.id,
+              createdAt: input.after.createdAt.toISOString(),
+            }
+          : null,
+      });
+    });
+
+    const result = await runWithLayer(effect, this.appLayer);
+
+    if (!result.success) {
+      return { items: [], hasMore: false };
+    }
+
+    // Transform Connection result to simpler format for GraphQL
+    const connection = result.data as {
+      edges: Array<{ node: unknown; cursor: string }>;
+      nodes: unknown[];
+      pageInfo: { hasNextPage: boolean };
+    };
+
+    return {
+      items: connection.nodes as Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        logoUrl: string | null;
+        websiteUrl: string | null;
+        contactEmail: string | null;
+        contactPhone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+      }>,
+      hasMore: connection.pageInfo.hasNextPage,
+    };
+  }
+
+  /**
+   * Get sponsors by trip ID with cursor-based pagination
+   */
+  async getByTripIdConnection(input: {
+    tripId: string;
+    first: number;
+    after: { id: string; createdAt: Date } | null;
+  }): Promise<{
+    items: Array<{
+      id: string;
+      tripId: string;
+      sponsorId: string;
+      tier: string;
+      benefits: string | null;
+      displayOrder: number;
+      isActive: boolean;
+      linkedAt: Date;
+      linkedById: string;
+      sponsor?: {
+        id: string;
+        name: string;
+        description: string | null;
+        logoUrl: string | null;
+        websiteUrl: string | null;
+        contactEmail: string | null;
+        contactPhone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+      };
+    }>;
+    hasMore: boolean;
+  }> {
+    const effect = Effect.gen(function* () {
+      const repo = yield* SponsorGatewayTag;
+      return yield* repo.findByTripIdConnection(input.tripId, {
+        first: input.first,
+        after: input.after
+          ? {
+              id: input.after.id,
+              createdAt: input.after.createdAt.toISOString(),
+            }
+          : null,
+      });
+    });
+
+    const result = await runWithLayer(effect, this.appLayer);
+
+    if (!result.success) {
+      return { items: [], hasMore: false };
+    }
+
+    // Transform Connection result to simpler format for GraphQL
+    const connection = result.data as {
+      edges: Array<{ node: unknown; cursor: string }>;
+      nodes: unknown[];
+      pageInfo: { hasNextPage: boolean };
+    };
+
+    return {
+      items: connection.nodes as Array<{
+        id: string;
+        tripId: string;
+        sponsorId: string;
+        tier: string;
+        benefits: string | null;
+        displayOrder: number;
+        isActive: boolean;
+        linkedAt: Date;
+        linkedById: string;
+        sponsor?: {
+          id: string;
+          name: string;
+          description: string | null;
+          logoUrl: string | null;
+          websiteUrl: string | null;
+          contactEmail: string | null;
+          contactPhone: string | null;
+          createdAt: Date;
+          updatedAt: Date;
+        };
+      }>,
+      hasMore: connection.pageInfo.hasNextPage,
+    };
+  }
 }

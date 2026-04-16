@@ -2,7 +2,6 @@ import type {
   NotificationDeliveryGateway,
   NotificationDeliveryDTO,
   DeliveryFilters,
-  PaginationOptions,
   DeliveryStats,
   DeliveryStatus,
 } from "@mirai-app/use-cases";
@@ -66,42 +65,6 @@ export class InMemoryNotificationDeliveryGateway implements NotificationDelivery
     deliveries.forEach((delivery) => this.storage.set(delivery.id, delivery));
   }
 
-  findMany(
-    filters: Partial<DeliveryFilters>,
-    pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDeliveryDTO[], never, never> {
-    let results = Array.from(this.storage.values());
-
-    if (filters.status !== undefined) {
-      results = results.filter((d) => d.status === filters.status);
-    }
-
-    if (filters.scheduleId !== undefined) {
-      results = results.filter((d) => d.notificationId === filters.scheduleId);
-    }
-
-    if (filters.startDate !== undefined) {
-      results = results.filter(
-        (d) => d.sentAt?.getTime() ?? 0 >= filters.startDate!.getTime(),
-      );
-    }
-
-    if (filters.endDate !== undefined) {
-      results = results.filter(
-        (d) => d.sentAt?.getTime() ?? 0 <= filters.endDate!.getTime(),
-      );
-    }
-
-    results.sort(
-      (a, b) => (b.sentAt?.getTime() ?? 0) - (a.sentAt?.getTime() ?? 0),
-    );
-
-    const start = pagination.offset ?? 0;
-    const limit = pagination.limit ?? 50;
-    const end = start + limit;
-    return Effect.succeed(results.slice(start, end));
-  }
-
   count(
     filters?: Partial<DeliveryFilters>,
   ): Effect.Effect<number, never, never> {
@@ -128,15 +91,6 @@ export class InMemoryNotificationDeliveryGateway implements NotificationDelivery
     }
 
     return Effect.succeed(results.length);
-  }
-
-  findByNotificationId(
-    notificationId: string,
-  ): Effect.Effect<NotificationDeliveryDTO | null, never, never> {
-    const results = Array.from(this.storage.values()).filter(
-      (d) => d.notificationId === notificationId,
-    );
-    return Effect.succeed(results.length > 0 ? results[0]! : null);
   }
 
   getStats(
@@ -205,24 +159,6 @@ export class InMemoryNotificationDeliveryGateway implements NotificationDelivery
       successRate,
       statusBreakdown,
     });
-  }
-
-  findFailed(
-    tripId: string,
-    pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDeliveryDTO[], never, never> {
-    let results = Array.from(this.storage.values()).filter(
-      (d) => d.status === "failure" || d.status === "partial_failure",
-    );
-
-    results.sort(
-      (a, b) => (b.sentAt?.getTime() ?? 0) - (a.sentAt?.getTime() ?? 0),
-    );
-
-    const start = pagination.offset ?? 0;
-    const limit = pagination.limit ?? 50;
-    const end = start + limit;
-    return Effect.succeed(results.slice(start, end));
   }
 
   countFailed(tripId: string): Effect.Effect<number, never, never> {

@@ -1,4 +1,4 @@
-import { sql, eq, and, inArray } from "drizzle-orm";
+import { sql, eq, and, inArray, asc } from "drizzle-orm";
 import {
   rewards,
   rewardPurchases,
@@ -22,7 +22,11 @@ import type {
   RewardPaginatedResult,
   PurchasePaginatedResult,
   PaginationOptions,
+  RewardConnectionArgs,
+  RewardPurchaseConnectionArgs,
 } from "@mirai-app/use-cases";
+import type { Connection } from "@mirai-app/domain";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import {
   RewardDrizzleMapper,
@@ -341,6 +345,120 @@ export class DrizzleRewardGateway
         }),
     });
   }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find rewards by trip ID with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: RewardConnectionArgs,
+  ): Effect.Effect<Connection<RewardDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      () => undefined,
+      "findByTripIdConnection",
+    );
+  }
+
+  /**
+   * Find visible rewards by trip ID with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findVisibleByTripIdConnection(
+    tripId: string,
+    args: RewardConnectionArgs,
+  ): Effect.Effect<Connection<RewardDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      () => eq(this.table.isHidden, false),
+      "findVisibleByTripIdConnection",
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Uses (createdAt, id) > (cursor.createdAt, cursor.id) WHERE clause
+   * Uses ORDER BY createdAt, id with LIMIT first + 1
+   */
+  private executeConnectionQuery(
+    tripId: string,
+    args: RewardConnectionArgs,
+    buildFilterCondition: () =>
+      | ReturnType<typeof eq>
+      | ReturnType<typeof and>
+      | undefined,
+    operation: string,
+  ): Effect.Effect<Connection<RewardDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [eq(this.table.tripId, tripId)];
+
+        // Add filter condition if provided
+        const filterCondition = buildFilterCondition();
+        if (filterCondition) {
+          conditions.push(filterCondition);
+        }
+
+        // Add cursor condition: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(asc(this.table.createdAt), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation,
+          message: `Failed to execute ${operation}`,
+          cause: error,
+        }),
+    });
+  }
 }
 
 /**
@@ -582,6 +700,182 @@ export class DrizzleRewardPurchaseGateway
         new DatabaseError({
           operation: "countByRewardId",
           message: `Failed to count purchases for reward ${rewardId}`,
+          cause: error,
+        }),
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find purchases by reward ID with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
+   */
+  findByRewardIdConnection(
+    rewardId: RewardId,
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, DatabaseError, never> {
+    return this.executePurchaseConnectionQuery(
+      rewardId,
+      args,
+      (table) => eq(table.rewardId, rewardId),
+      "findByRewardIdConnection",
+    );
+  }
+
+  /**
+   * Find purchases by group ID with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
+   */
+  findByGroupIdConnection(
+    groupId: string,
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, DatabaseError, never> {
+    return this.executePurchaseConnectionQuery(
+      groupId,
+      args,
+      (table) => eq(table.groupId, groupId),
+      "findByGroupIdConnection",
+    );
+  }
+
+  /**
+   * Find all purchases for a trip with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base query with join to rewards table for trip filtering
+        const conditions: Array<
+          ReturnType<typeof eq> | ReturnType<typeof and>
+        > = [];
+
+        // Add cursor condition: (createdAt, id) > (cursor.purchasedAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.purchasedAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select({ purchase: this.table })
+          .from(this.table)
+          .innerJoin(rewards, eq(this.table.rewardId, rewards.id))
+          .where(and(eq(rewards.tripId, tripId), ...conditions))
+          .orderBy(asc(this.table.createdAt), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record.purchase));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.purchasedAt.toISOString(),
+            purchasedAt: item.purchasedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripIdConnection",
+          message: `Failed to find purchases for trip ${tripId}`,
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Uses (createdAt, id) > (cursor.purchasedAt, cursor.id) WHERE clause
+   * Uses ORDER BY createdAt, id with LIMIT first + 1
+   */
+  private executePurchaseConnectionQuery(
+    idValue: string,
+    args: RewardPurchaseConnectionArgs,
+    buildCondition: (table: typeof this.table) => ReturnType<typeof eq>,
+    operation: string,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [buildCondition(this.table)];
+
+        // Add cursor condition: (createdAt, id) > (cursor.purchasedAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.purchasedAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(asc(this.table.createdAt), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.purchasedAt.toISOString(),
+            purchasedAt: item.purchasedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation,
+          message: `Failed to execute ${operation}`,
           cause: error,
         }),
     });

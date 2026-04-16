@@ -1,9 +1,11 @@
-import type { TripStatus } from "@mirai-app/domain";
+import type { TripStatus, Connection } from "@mirai-app/domain";
 import type {
   TripGateway,
   TripDTO,
   TripPaginatedResult,
+  TripConnectionArgs,
 } from "@mirai-app/use-cases";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { Effect } from "effect";
 import {
   InMemoryGateway,
@@ -119,5 +121,109 @@ export class InMemoryTripGateway
     return Effect.succeed(
       this.getAllItems().filter((t) => t.status === status).length,
     );
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find all trips with cursor-based pagination
+   * Sorts by createdAt DESC, then id DESC, then slices
+   */
+  findAllConnection(
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, never, never> {
+    return this.executeConnectionQuery(args, () => true);
+  }
+
+  /**
+   * Find trips by status with cursor-based pagination
+   */
+  findByStatusConnection(
+    status: TripStatus,
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, never, never> {
+    return this.executeConnectionQuery(args, (trip) => trip.status === status);
+  }
+
+  /**
+   * Find active trips with cursor-based pagination
+   * Active trips: current time is between start and end dates
+   */
+  findActiveConnection(
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, never, never> {
+    const now = new Date();
+    return this.executeConnectionQuery(
+      args,
+      (trip) =>
+        trip.startDate <= now &&
+        trip.endDate >= now &&
+        trip.status === "ACTIVE",
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Sorts by createdAt DESC, then id DESC, then slices
+   */
+  private executeConnectionQuery(
+    args: TripConnectionArgs,
+    filterFn: (trip: TripDTO) => boolean,
+  ): Effect.Effect<Connection<TripDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all trips matching the filter
+      let trips = this.getAllItems().filter(filterFn);
+
+      // Sort by createdAt DESC, then by id DESC as tiebreaker
+      trips.sort((a, b) => {
+        const timeCompare = b.createdAt.getTime() - a.createdAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return b.id.localeCompare(a.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = trips.findIndex(
+          (t) =>
+            t.createdAt < cursorDate ||
+            (t.createdAt.getTime() === cursorDate.getTime() &&
+              t.id < cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = trips.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = trips.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < trips.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.createdAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
   }
 }

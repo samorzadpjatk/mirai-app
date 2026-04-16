@@ -1,21 +1,25 @@
-import type { CoinTransactionGateway } from "@mirai-app/use-cases";
+import type {
+  CoinTransactionGateway,
+  CoinTransactionConnectionArgs,
+} from "@mirai-app/use-cases";
 import type {
   CoinTransactionFilters,
   PaginationOptions,
   MostActiveAdminStat,
   PaginatedResult,
 } from "@mirai-app/use-cases";
-import type { CoinTransactionDTO } from "@mirai-app/domain";
+import type { CoinTransactionDTO, Connection } from "@mirai-app/domain";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
   coinTransactions,
   groups,
   users,
 } from "@mirai-app/frameworks/drizzle/schema";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, asc } from "drizzle-orm";
 import { Effect } from "effect";
 import { DatabaseError } from "@mirai-app/domain";
 import { CoinTransactionDTODrizzleMapper } from "../../mappers/drizzle/mapper";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * DrizzleCoinTransactionGateway
@@ -515,6 +519,113 @@ export class DrizzleCoinTransactionGateway implements CoinTransactionGateway {
       },
       catch: () => ({ exists: false }),
     }).pipe(Effect.orDie);
+  }
+
+  /**
+   * Find transactions with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   * Filter support is preserved
+   */
+  findManyConnection(
+    filters: Partial<CoinTransactionFilters>,
+    args: CoinTransactionConnectionArgs,
+  ): Effect.Effect<Connection<CoinTransactionDTO>, never, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build filter conditions
+        const conditions = this.buildWhereConditions(filters);
+
+        // Add tripId filter if present
+        if (filters.tripId) {
+          conditions.push(eq(groups.tripId, filters.tripId));
+        }
+
+        // Add cursor condition: (createdAt, id) < (cursor.createdAt, cursor.id)
+        // Note: Using < because we sort by createdAt DESC (newest first)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${coinTransactions.createdAt}, ${coinTransactions.id}) < (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const results = await this.db
+          .select({
+            id: coinTransactions.id,
+            groupId: coinTransactions.groupId,
+            amount: coinTransactions.amount,
+            reason: coinTransactions.reason,
+            adminId: coinTransactions.adminId,
+            createdAt: coinTransactions.createdAt,
+            groupName: groups.name,
+            groupCoins: groups.coins,
+            adminFirstName: users.firstName,
+            adminLastName: users.lastName,
+          })
+          .from(coinTransactions)
+          .leftJoin(groups, eq(coinTransactions.groupId, groups.id))
+          .leftJoin(users, eq(coinTransactions.adminId, users.id))
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(desc(coinTransactions.createdAt), desc(coinTransactions.id))
+          .limit(first + 1);
+
+        const hasMore = results.length > first;
+        const items: CoinTransactionDTO[] = results.slice(0, first).map((r) =>
+          this.mapper.toDTO(
+            r as typeof coinTransactions.$inferSelect & {
+              groupName?: string | null;
+              groupCoins?: number | null;
+              adminFirstName?: string | null;
+              adminLastName?: string | null;
+            },
+          ),
+        );
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findManyConnection",
+          message: "Failed to find coin transactions with cursor pagination",
+          cause: error,
+        }),
+    }).pipe(
+      Effect.catchTag("DatabaseError", () => {
+        const emptyConnection: Connection<CoinTransactionDTO> = {
+          edges: [],
+          nodes: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: false,
+            startCursor: null,
+            endCursor: null,
+          },
+        };
+        return Effect.succeed(emptyConnection);
+      }),
+    );
   }
 
   /**

@@ -1,12 +1,14 @@
 import type {
   ChallengeVoteGateway,
   ChallengeVoteDTO,
+  ChallengeVoteConnectionArgs,
 } from "@mirai-app/use-cases";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { challengeVotes } from "@mirai-app/frameworks/drizzle/schema";
 import { eq, and, asc, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { DatabaseError } from "@mirai-app/domain";
+import { DatabaseError, type Connection } from "@mirai-app/domain";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { ChallengeVoteDrizzleMapper } from "../../../challenge/mappers/drizzle/vote-mapper";
 
@@ -283,6 +285,131 @@ export class DrizzleChallengeVoteGateway
         new DatabaseError({
           operation: "deleteByChallengeId",
           message: "Failed to delete votes by challenge ID",
+          cause: error,
+        }),
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find votes by challenge ID with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findByChallengeIdConnection(
+    challengeId: string,
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(
+      challengeId,
+      args,
+      eq(this.table.challengeId, challengeId),
+      "findByChallengeIdConnection",
+    );
+  }
+
+  /**
+   * Find votes by challenge and voter with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findByChallengeAndVoterConnection(
+    challengeId: string,
+    voterId: string,
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(
+      challengeId,
+      args,
+      and(
+        eq(this.table.challengeId, challengeId),
+        eq(this.table.voterId, voterId),
+      ),
+      "findByChallengeAndVoterConnection",
+    );
+  }
+
+  /**
+   * Find votes by submission ID with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findBySubmissionIdConnection(
+    submissionId: string,
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(
+      submissionId,
+      args,
+      eq(this.table.submissionId, submissionId),
+      "findBySubmissionIdConnection",
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Uses (createdAt, id) > (cursor.createdAt, cursor.id) WHERE clause
+   * Uses ORDER BY createdAt, id with LIMIT first + 1
+   */
+  private executeConnectionQuery(
+    filterValue: string,
+    args: ChallengeVoteConnectionArgs,
+    filterCondition: ReturnType<typeof eq> | ReturnType<typeof and>,
+    operation: string,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [filterCondition];
+
+        // Add cursor condition: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(asc(this.table.createdAt), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.votedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation,
+          message: `Failed to execute ${operation}`,
           cause: error,
         }),
     });

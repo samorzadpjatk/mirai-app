@@ -4,8 +4,10 @@ import type {
   PaginationOptions,
   MostActiveAdminStat,
   PaginatedResult,
+  CoinTransactionConnectionArgs,
 } from "@mirai-app/use-cases";
-import type { CoinTransactionDTO } from "@mirai-app/domain";
+import type { CoinTransactionDTO, Connection } from "@mirai-app/domain";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { Effect } from "effect";
 
 /**
@@ -128,6 +130,70 @@ export class InMemoryCoinTransactionGateway implements CoinTransactionGateway {
     };
 
     return Effect.succeed(result);
+  }
+
+  /**
+   * Find transactions with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   * Filter support is preserved
+   */
+  findManyConnection(
+    filters: Partial<CoinTransactionFilters>,
+    args: CoinTransactionConnectionArgs,
+  ): Effect.Effect<Connection<CoinTransactionDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Apply filters
+      let filtered = this.filterTransactions(filters);
+
+      // Sort by createdAt descending (newest first), then by id as tiebreaker
+      filtered.sort((a, b) => {
+        const timeCompare = b.createdAt.getTime() - a.createdAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return b.id.localeCompare(a.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = filtered.findIndex(
+          (t) =>
+            t.createdAt < cursorDate ||
+            (t.createdAt.getTime() === cursorDate.getTime() &&
+              t.id < cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = filtered.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = filtered.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < filtered.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.createdAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
+    });
   }
 
   findRecent(

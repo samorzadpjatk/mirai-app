@@ -3,8 +3,9 @@ import type {
   SponsorDTO,
   TripSponsorDTO,
   SponsorPaginatedResult,
+  SponsorConnectionArgs,
 } from "@mirai-app/use-cases";
-import type { SponsorId } from "@mirai-app/domain";
+import type { SponsorId, Connection } from "@mirai-app/domain";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
   sponsors,
@@ -17,6 +18,7 @@ import { Effect } from "effect";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { DatabaseError } from "../../../system/shared/gateways/in-memory-base";
 import { SponsorDrizzleMapper } from "../../../sponsor/mappers/drizzle/mapper";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * DrizzleSponsorGateway
@@ -361,6 +363,188 @@ export class DrizzleSponsorGateway
         new DatabaseError({
           operation: "unlinkFromTrip",
           message: "Failed to unlink sponsor from trip",
+          cause: error,
+        }),
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find all active sponsors with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findActiveConnection(
+    args: SponsorConnectionArgs,
+  ): Effect.Effect<Connection<SponsorDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions with active filter
+        const conditions = [eq(sponsors.isActive, true)];
+
+        // Add cursor condition: (createdAt, id) > (cursor.createdAt, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${sponsors.createdAt}, ${sponsors.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(sponsors)
+          .where(and(...conditions))
+          .orderBy(asc(sponsors.createdAt), asc(sponsors.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findActiveConnection",
+          message: "Failed to find active sponsors with pagination",
+          cause: error,
+        }),
+    });
+  }
+
+  /**
+   * Find sponsors by trip ID with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: SponsorConnectionArgs,
+  ): Effect.Effect<Connection<TripSponsorDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [eq(tripSponsors.tripId, tripId)];
+
+        // Add cursor condition for trip sponsors
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${tripSponsors.createdAt}, ${tripSponsors.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Get trip sponsor links with pagination
+        const tripSponsorRecords = await this.db
+          .select()
+          .from(tripSponsors)
+          .where(and(...conditions))
+          .orderBy(asc(tripSponsors.createdAt), asc(tripSponsors.id))
+          .limit(first + 1);
+
+        const hasMore = tripSponsorRecords.length > first;
+        const paginatedTripSponsors = tripSponsorRecords.slice(0, first);
+
+        if (paginatedTripSponsors.length === 0) {
+          return {
+            edges: [],
+            nodes: [],
+            pageInfo: {
+              hasNextPage: false,
+              hasPreviousPage: !!cursor,
+              startCursor: null,
+              endCursor: null,
+            },
+          };
+        }
+
+        // Get sponsor IDs to fetch full sponsor data
+        const sponsorIds = paginatedTripSponsors.map((ts) => ts.sponsorId);
+
+        // Fetch sponsor records
+        const sponsorRecords = await this.db
+          .select()
+          .from(sponsors)
+          .where(
+            and(
+              eq(sponsors.isActive, true),
+              sql`${sponsors.id} IN (${sql.join(sponsorIds, sql`, `)})`,
+            ),
+          );
+
+        // Create a map of sponsor records by ID for quick lookup
+        const sponsorMap = new Map(sponsorRecords.map((s) => [s.id, s]));
+
+        // Build TripSponsorDTOs with sponsor data
+        const items: TripSponsorDTO[] = paginatedTripSponsors.map((ts) => {
+          const sponsorRecord = sponsorMap.get(ts.sponsorId);
+          return {
+            id: ts.id,
+            tripId: ts.tripId,
+            sponsorId: ts.sponsorId,
+            tier: "standard",
+            benefits: null,
+            displayOrder: 0,
+            isActive: true,
+            linkedAt: ts.createdAt,
+            linkedById: "",
+            sponsor: sponsorRecord
+              ? this.mapper.toDTO(sponsorRecord)
+              : undefined,
+          };
+        });
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.linkedAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation: "findByTripIdConnection",
+          message: "Failed to find sponsors by trip ID with pagination",
           cause: error,
         }),
     });

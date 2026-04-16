@@ -2,7 +2,6 @@ import type {
   NotificationDeliveryGateway,
   NotificationDeliveryDTO,
   DeliveryFilters,
-  PaginationOptions,
   DeliveryStats,
 } from "@mirai-app/use-cases";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
@@ -41,73 +40,6 @@ export class DrizzleNotificationDeliveryGateway
   }
 
   /**
-   * Find deliveries with pagination and filters
-   */
-  findMany(
-    filters: Partial<DeliveryFilters>,
-    pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDeliveryDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const whereClause = this.buildWhereClause(filters);
-
-        const results = await this.db
-          .select({
-            id: notificationDeliveries.id,
-            notificationId: notificationDeliveries.notificationId,
-            tripId: notificationDeliveries.tripId,
-            status: notificationDeliveries.status,
-            totalRecipients: notificationDeliveries.totalRecipients,
-            successCount: notificationDeliveries.successCount,
-            failureCount: notificationDeliveries.failureCount,
-            deliveryStartedAt: notificationDeliveries.deliveryStartedAt,
-            deliveryCompletedAt: notificationDeliveries.deliveryCompletedAt,
-            errors: notificationDeliveries.errors,
-            scheduleId: notificationDeliveries.scheduleId,
-            createdAt: notificationDeliveries.createdAt,
-            notificationTitle: notifications.title,
-            notificationBody: notifications.body,
-          })
-          .from(notificationDeliveries)
-          .leftJoin(
-            notifications,
-            eq(notificationDeliveries.notificationId, notifications.id),
-          )
-          .where(whereClause)
-          .orderBy(desc(notificationDeliveries.deliveryStartedAt))
-          .limit(pagination.limit ?? 50)
-          .offset(pagination.offset ?? 0);
-
-        return results.map((r) =>
-          this.mapper.toDTO({
-            id: r.id,
-            notificationId: r.notificationId,
-            tripId: r.tripId,
-            status: r.status,
-            totalRecipients: r.totalRecipients ?? 0,
-            successCount: r.successCount ?? 0,
-            failureCount: r.failureCount ?? 0,
-            deliveryStartedAt: r.deliveryStartedAt ?? r.createdAt,
-            deliveryCompletedAt: r.deliveryCompletedAt,
-            errors: r.errors,
-            scheduleId: r.scheduleId,
-            createdAt: r.createdAt,
-            updatedAt: r.createdAt,
-            notificationTitle: r.notificationTitle,
-            notificationBody: r.notificationBody,
-          } as any),
-        );
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findMany",
-          message: "Failed to find notification deliveries",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
    * Count deliveries by filters
    */
   count(
@@ -129,56 +61,6 @@ export class DrizzleNotificationDeliveryGateway
         new DatabaseError({
           operation: "count",
           message: "Failed to count notification deliveries",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find delivery by notification ID
-   */
-  findByNotificationId(
-    notificationId: string,
-  ): Effect.Effect<NotificationDeliveryDTO | null, DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const [result] = await this.db
-          .select({
-            id: notificationDeliveries.id,
-            notificationId: notificationDeliveries.notificationId,
-            tripId: notificationDeliveries.tripId,
-            status: notificationDeliveries.status,
-            totalRecipients: notificationDeliveries.totalRecipients,
-            successCount: notificationDeliveries.successCount,
-            failureCount: notificationDeliveries.failureCount,
-            deliveryStartedAt: notificationDeliveries.deliveryStartedAt,
-            deliveryCompletedAt: notificationDeliveries.deliveryCompletedAt,
-            errors: notificationDeliveries.errors,
-            scheduleId: notificationDeliveries.scheduleId,
-            createdAt: notificationDeliveries.createdAt,
-            notificationTitle: notifications.title,
-            notificationBody: notifications.body,
-            notificationCreatedAt: notifications.createdAt,
-          })
-          .from(notificationDeliveries)
-          .leftJoin(
-            notifications,
-            eq(notificationDeliveries.notificationId, notifications.id),
-          )
-          .where(eq(notificationDeliveries.notificationId, notificationId))
-          .limit(1);
-
-        if (!result) return null;
-
-        return this.mapper.toDTO({
-          ...result,
-          updatedAt: result.createdAt,
-        } as any);
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findByNotificationId",
-          message: "Failed to find notification delivery by notification ID",
           cause: error,
         }),
     });
@@ -252,66 +134,6 @@ export class DrizzleNotificationDeliveryGateway
         new DatabaseError({
           operation: "getStats",
           message: "Failed to get delivery statistics",
-          cause: error,
-        }),
-    });
-  }
-
-  /**
-   * Find failed or partially failed deliveries
-   */
-  findFailed(
-    tripId: string,
-    pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDeliveryDTO[], DatabaseError, never> {
-    return Effect.tryPromise({
-      try: async () => {
-        const results = await this.db
-          .select({
-            id: notificationDeliveries.id,
-            notificationId: notificationDeliveries.notificationId,
-            tripId: notificationDeliveries.tripId,
-            status: notificationDeliveries.status,
-            totalRecipients: notificationDeliveries.totalRecipients,
-            successCount: notificationDeliveries.successCount,
-            failureCount: notificationDeliveries.failureCount,
-            deliveryStartedAt: notificationDeliveries.deliveryStartedAt,
-            deliveryCompletedAt: notificationDeliveries.deliveryCompletedAt,
-            errors: notificationDeliveries.errors,
-            scheduleId: notificationDeliveries.scheduleId,
-            createdAt: notificationDeliveries.createdAt,
-            notificationTitle: notifications.title,
-            notificationBody: notifications.body,
-          })
-          .from(notificationDeliveries)
-          .leftJoin(
-            notifications,
-            eq(notificationDeliveries.notificationId, notifications.id),
-          )
-          .where(
-            and(
-              eq(notificationDeliveries.tripId, tripId),
-              or(
-                eq(notificationDeliveries.status, "failure"),
-                eq(notificationDeliveries.status, "partial_failure"),
-              ),
-            ),
-          )
-          .orderBy(desc(notificationDeliveries.deliveryStartedAt))
-          .limit(pagination.limit ?? 50)
-          .offset(pagination.offset ?? 0);
-
-        return results.map((r) =>
-          this.mapper.toDTO({
-            ...r,
-            updatedAt: r.createdAt,
-          } as any),
-        );
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findFailed",
-          message: "Failed to find failed deliveries",
           cause: error,
         }),
     });

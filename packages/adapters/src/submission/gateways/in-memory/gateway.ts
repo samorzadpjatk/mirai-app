@@ -1,11 +1,12 @@
 import type {
   SubmissionReportGateway,
   SubmissionReportDTO,
-  ReportPaginatedResult,
+  SubmissionReportConnectionArgs,
 } from "@mirai-app/use-cases";
-import type { ReportId, SubmissionId } from "@mirai-app/domain";
+import type { ReportId, SubmissionId, Connection } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { InMemoryGateway } from "../../../system/shared/gateways/in-memory-base";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 
 /**
  * In-Memory Submission Report Gateway for Testing
@@ -45,69 +46,6 @@ export class InMemorySubmissionReportGateway
     id: ReportId,
   ): Effect.Effect<SubmissionReportDTO | null, never, never> {
     return Effect.sync(() => this.storage.get(id) ?? null);
-  }
-
-  findBySubmissionId(
-    submissionId: SubmissionId,
-  ): Effect.Effect<SubmissionReportDTO[], never, never> {
-    return Effect.succeed(
-      this.getAllItems()
-        .filter((report) => report.submissionId === submissionId)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    );
-  }
-
-  findByReporterId(
-    reporterId: string,
-  ): Effect.Effect<SubmissionReportDTO[], never, never> {
-    return Effect.succeed(
-      this.getAllItems()
-        .filter((report) => report.reporterId === reporterId)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    );
-  }
-
-  findByReason(
-    reason: string,
-  ): Effect.Effect<SubmissionReportDTO[], never, never> {
-    const normalizedReason = reason.toUpperCase();
-    return Effect.succeed(
-      this.getAllItems()
-        .filter((report) => report.reason.value === normalizedReason)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    );
-  }
-
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<ReportPaginatedResult, never, never> {
-    const allItems = this.getAllItems().sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
-
-    const total = allItems.length;
-    const offset = options?.offset ?? 0;
-    const limit = options?.limit ?? 50;
-
-    let items = allItems;
-    if (offset) {
-      items = items.slice(offset);
-    }
-    if (limit !== undefined) {
-      items = items.slice(0, limit);
-    }
-
-    // Calculate hasMore: if we got a full page and there are more items after
-    const hasMore = items.length === limit && offset + items.length < total;
-
-    return Effect.succeed({
-      items,
-      total,
-      limit,
-      offset,
-      hasMore,
-    });
   }
 
   countBySubmissionId(
@@ -164,6 +102,126 @@ export class InMemorySubmissionReportGateway
 
       this.storage.set(id, updated);
       return updated;
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find reports by submission ID with cursor-based pagination
+   */
+  findBySubmissionIdConnection(
+    submissionId: SubmissionId,
+    args: SubmissionReportConnectionArgs,
+  ): Effect.Effect<Connection<SubmissionReportDTO>, never, never> {
+    return this.executeConnectionQuery(
+      submissionId,
+      args,
+      (report) => report.submissionId === submissionId,
+    );
+  }
+
+  /**
+   * Find reports by reporter ID with cursor-based pagination
+   */
+  findByReporterIdConnection(
+    reporterId: string,
+    args: SubmissionReportConnectionArgs,
+  ): Effect.Effect<Connection<SubmissionReportDTO>, never, never> {
+    return this.executeConnectionQuery(
+      reporterId,
+      args,
+      (report) => report.reporterId === reporterId,
+    );
+  }
+
+  /**
+   * Find reports by reason with cursor-based pagination
+   */
+  findByReasonConnection(
+    reason: string,
+    args: SubmissionReportConnectionArgs,
+  ): Effect.Effect<Connection<SubmissionReportDTO>, never, never> {
+    const normalizedReason = reason.toUpperCase();
+    return this.executeConnectionQuery(
+      reason,
+      args,
+      (report) => report.reason.value === normalizedReason,
+    );
+  }
+
+  /**
+   * Find all reports with cursor-based pagination
+   */
+  findManyConnection(
+    args: SubmissionReportConnectionArgs,
+  ): Effect.Effect<Connection<SubmissionReportDTO>, never, never> {
+    return this.executeConnectionQuery("all", args, () => true);
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Sorts by createdAt, then id, then slices
+   */
+  private executeConnectionQuery(
+    filterValue: string,
+    args: SubmissionReportConnectionArgs,
+    filterFn: (report: SubmissionReportDTO) => boolean,
+  ): Effect.Effect<Connection<SubmissionReportDTO>, never, never> {
+    return Effect.sync(() => {
+      const first = Math.min(args.first ?? 20, 100);
+      const cursor = args.after;
+
+      // Get all reports matching the filter
+      let reports = this.getAllItems().filter(filterFn);
+
+      // Sort by createdAt ascending, then by id as tiebreaker
+      reports.sort((a, b) => {
+        const timeCompare = a.createdAt.getTime() - b.createdAt.getTime();
+        if (timeCompare !== 0) return timeCompare;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Find starting position if cursor provided
+      let startIndex = 0;
+      if (cursor) {
+        const cursorDate = new Date(cursor.createdAt);
+        startIndex = reports.findIndex(
+          (r) =>
+            r.createdAt > cursorDate ||
+            (r.createdAt.getTime() === cursorDate.getTime() &&
+              r.id > cursor.id),
+        );
+        if (startIndex === -1) {
+          startIndex = reports.length;
+        }
+      }
+
+      // Slice to get the page
+      const items = reports.slice(startIndex, startIndex + first);
+      const hasMore = startIndex + first < reports.length;
+
+      // Build edges with cursors
+      const edges = items.map((item) => ({
+        node: item,
+        cursor: encodeCursor({
+          id: item.id,
+          createdAt: item.createdAt.toISOString(),
+        }),
+      }));
+
+      return {
+        edges,
+        nodes: items,
+        pageInfo: {
+          hasNextPage: hasMore,
+          hasPreviousPage: !!cursor,
+          startCursor: edges[0]?.cursor ?? null,
+          endCursor: edges[edges.length - 1]?.cursor ?? null,
+        },
+      };
     });
   }
 }

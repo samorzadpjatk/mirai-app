@@ -5,9 +5,15 @@ import {
   type EventInsert,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
-import { eq, and, gt, lt, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, and, gt, lt, gte, lte, sql, inArray, asc } from "drizzle-orm";
 import { Effect } from "effect";
-import type { EventGateway, EventDTO } from "@mirai-app/use-cases";
+import type {
+  EventGateway,
+  EventDTO,
+  EventConnectionArgs,
+} from "@mirai-app/use-cases";
+import type { Connection } from "@mirai-app/domain";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { EventDrizzleMapper } from "../../../event/mappers/drizzle/mapper";
 import { DatabaseError } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
@@ -108,7 +114,7 @@ export class DrizzleEventGateway
   /**
    * Find all events with pagination
    */
-  findAll(options?: {
+  override findAll(options?: {
     limit?: number;
     offset?: number;
   }): Effect.Effect<
@@ -706,6 +712,157 @@ export class DrizzleEventGateway
         new DatabaseError({
           operation: "countEnlisted",
           message: "Failed to count enlisted users",
+          cause: error,
+        }),
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find events by trip ID with cursor-based pagination
+   * Uses (startTime, id) composite sort key for stable pagination
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      () => undefined,
+      "findByTripIdConnection",
+    );
+  }
+
+  /**
+   * Find upcoming events for a trip with cursor-based pagination
+   * Events with startTime > now
+   */
+  findUpcomingByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never> {
+    const now = new Date();
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      () => gt(this.table.startTime, now),
+      "findUpcomingByTripIdConnection",
+    );
+  }
+
+  /**
+   * Find ongoing events for a trip with cursor-based pagination
+   * Events with startTime <= now <= endTime
+   */
+  findOngoingByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never> {
+    const now = new Date();
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      () => and(lte(this.table.startTime, now), gte(this.table.endTime, now)),
+      "findOngoingByTripIdConnection",
+    );
+  }
+
+  /**
+   * Find past events for a trip with cursor-based pagination
+   * Events with endTime < now
+   */
+  findPastByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never> {
+    const now = new Date();
+    return this.executeConnectionQuery(
+      tripId,
+      args,
+      () => lt(this.table.endTime, now),
+      "findPastByTripIdConnection",
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Uses (startTime, id) > (cursor.startTime, cursor.id) WHERE clause
+   * Uses ORDER BY startTime, id with LIMIT first + 1
+   */
+  private executeConnectionQuery(
+    tripId: string,
+    args: EventConnectionArgs,
+    buildFilterCondition: () =>
+      | ReturnType<typeof gt>
+      | ReturnType<typeof and>
+      | ReturnType<typeof lt>
+      | undefined,
+    operation: string,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions = [eq(this.table.creatorId, tripId)];
+
+        // Add filter condition if provided
+        const filterCondition = buildFilterCondition();
+        if (filterCondition) {
+          conditions.push(filterCondition);
+        }
+
+        // Add cursor condition: (startTime, id) > (cursor.startTime, cursor.id)
+        if (cursor) {
+          const cursorDate = new Date(cursor.startTime);
+          conditions.push(
+            sql`(${this.table.startTime}, ${this.table.id}) > (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(and(...conditions))
+          .orderBy(asc(this.table.startTime), asc(this.table.id))
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.startTime.toISOString(),
+            startTime: item.startTime.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation,
+          message: `Failed to execute ${operation}`,
           cause: error,
         }),
     });

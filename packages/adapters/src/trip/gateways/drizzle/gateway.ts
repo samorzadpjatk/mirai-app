@@ -1,4 +1,4 @@
-import { sql, eq, and, gte, lte } from "drizzle-orm";
+import { sql, eq, and, gte, lte, asc } from "drizzle-orm";
 import {
   trips,
   type TripSelect,
@@ -6,13 +6,15 @@ import {
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { Effect } from "effect";
-import { type TripStatus } from "@mirai-app/domain";
+import { type TripStatus, type Connection } from "@mirai-app/domain";
 import type {
   TripGateway,
   TripDTO,
   TripPaginatedResult,
+  TripConnectionArgs,
 } from "@mirai-app/use-cases";
 import { DatabaseError } from "@mirai-app/domain";
+import { encodeCursor } from "@mirai-app/use-cases/system/utils/cursor";
 import { TripDrizzleMapper } from "../../../trip/mappers/drizzle/mapper";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 
@@ -191,6 +193,140 @@ export class DrizzleTripGateway
         new DatabaseError({
           operation: "countByStatus",
           message: "Failed to count trips by status",
+          cause: error,
+        }),
+    });
+  }
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find all trips with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findAllConnection(
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(args, undefined, "findAllConnection");
+  }
+
+  /**
+   * Find trips by status with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
+   */
+  findByStatusConnection(
+    status: TripStatus,
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, DatabaseError, never> {
+    return this.executeConnectionQuery(
+      args,
+      () => eq(this.table.status, status),
+      "findByStatusConnection",
+    );
+  }
+
+  /**
+   * Find active trips with cursor-based pagination
+   * Active trips: current time is between start and end dates with ACTIVE status
+   */
+  findActiveConnection(
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, DatabaseError, never> {
+    const now = new Date();
+    return this.executeConnectionQuery(
+      args,
+      () =>
+        and(
+          lte(this.table.startDate, now),
+          gte(this.table.endDate, now),
+          eq(this.table.status, "ACTIVE"),
+        ),
+      "findActiveConnection",
+    );
+  }
+
+  /**
+   * Internal helper to execute cursor-based pagination queries
+   * Uses (createdAt, id) > (cursor.createdAt, cursor.id) WHERE clause
+   * Uses ORDER BY createdAt DESC, id DESC with LIMIT first + 1
+   */
+  private executeConnectionQuery(
+    args: TripConnectionArgs,
+    buildFilterCondition:
+      | (() => ReturnType<typeof eq> | ReturnType<typeof and> | undefined)
+      | undefined,
+    operation: string,
+  ): Effect.Effect<Connection<TripDTO>, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: async () => {
+        const first = Math.min(args.first ?? 20, 100);
+        const cursor = args.after;
+
+        // Build base conditions
+        const conditions: Array<
+          | ReturnType<typeof eq>
+          | ReturnType<typeof and>
+          | ReturnType<typeof sql>
+        > = [];
+
+        // Add filter condition if provided
+        if (buildFilterCondition) {
+          const filterCondition = buildFilterCondition();
+          if (filterCondition) {
+            conditions.push(filterCondition);
+          }
+        }
+
+        // Add cursor condition: (createdAt, id) < (cursor.createdAt, cursor.id) for DESC order
+        if (cursor) {
+          const cursorDate = new Date(cursor.createdAt);
+          conditions.push(
+            sql`(${this.table.createdAt}, ${this.table.id}) < (${cursorDate}, ${cursor.id})`,
+          );
+        }
+
+        // Fetch first + 1 to determine hasNextPage
+        const records = await this.db
+          .select()
+          .from(this.table)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(
+            sql`${this.table.createdAt} DESC`,
+            sql`${this.table.id} DESC`,
+          )
+          .limit(first + 1);
+
+        const hasMore = records.length > first;
+        const items = records
+          .slice(0, first)
+          .map((record) => this.mapper.toDTO(record));
+
+        // Build edges with cursors
+        const edges = items.map((item) => ({
+          node: item,
+          cursor: encodeCursor({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+          }),
+        }));
+
+        return {
+          edges,
+          nodes: items,
+          pageInfo: {
+            hasNextPage: hasMore,
+            hasPreviousPage: !!cursor,
+            startCursor: edges[0]?.cursor ?? null,
+            endCursor: edges[edges.length - 1]?.cursor ?? null,
+          },
+        };
+      },
+      catch: (error) =>
+        new DatabaseError({
+          operation,
+          message: `Failed to execute ${operation}`,
           cause: error,
         }),
     });
