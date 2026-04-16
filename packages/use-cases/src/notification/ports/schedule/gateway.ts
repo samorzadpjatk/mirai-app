@@ -1,10 +1,5 @@
-import type {
-  NotificationScheduleType,
-  NotificationScheduleFilter,
-  PaginationOptions,
-} from "@mirai-app/domain";
+import type { NotificationScheduleFilter } from "@mirai-app/domain";
 import type { NotificationScheduleDTO } from "../../dto";
-import type { PaginatedResult } from "../../../system/shared/dto";
 import type { DatabaseError } from "../errors";
 import { Context, Effect } from "effect";
 
@@ -51,13 +46,6 @@ export interface NotificationScheduleGateway {
   ): Effect.Effect<NotificationScheduleDTO | null, DatabaseError, never>;
 
   /**
-   * Find notification schedules by trip ID
-   */
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never>;
-
-  /**
    * Find notification schedules by name (exact match)
    */
   findByName(
@@ -71,43 +59,6 @@ export interface NotificationScheduleGateway {
     tripId: string,
     name: string,
   ): Effect.Effect<NotificationScheduleDTO | null, DatabaseError, never>;
-
-  /**
-   * Find notification schedules by type
-   */
-  findByType(
-    type: NotificationScheduleType,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never>;
-
-  /**
-   * Find all notification schedules with filtering and pagination
-   * Note: Renamed from findAll to avoid collision with BaseDrizzleGateway.findAll
-   */
-  findAllPaginated(options?: {
-    filter?: NotificationScheduleFilter;
-    pagination?: PaginationOptions;
-  }): Effect.Effect<
-    PaginatedResult<NotificationScheduleDTO>,
-    DatabaseError,
-    never
-  >;
-
-  /**
-   * Find currently active schedules
-   * (isActive=true and current time is within the schedule window)
-   */
-  findActive(
-    now?: Date,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never>;
-
-  /**
-   * Find upcoming schedules
-   * (startDate is in the future)
-   */
-  findUpcoming(
-    days?: number,
-    now?: Date,
-  ): Effect.Effect<NotificationScheduleDTO[], DatabaseError, never>;
 
   /**
    * Update notification schedule
@@ -162,14 +113,6 @@ export interface NotificationScheduleGateway {
     ids: string[],
     isActive: boolean,
   ): Effect.Effect<number, DatabaseError, never>;
-
-  /**
-   * Get execution history for a schedule
-   */
-  getExecutionHistory(
-    scheduleId: string,
-    limit: number,
-  ): Effect.Effect<NotificationScheduleExecutionRecord[], DatabaseError, never>;
 
   /**
    * Count executions for a schedule

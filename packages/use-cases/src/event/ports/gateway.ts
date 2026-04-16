@@ -1,7 +1,23 @@
 import { Context, Effect } from "effect";
-import type { DatabaseError } from "@mirai-app/domain";
-import type { PaginationOptions } from "../../system/shared/dto";
+import type { DatabaseError, Connection } from "@mirai-app/domain";
 import type { EventDTO, EventPaginatedResult } from "../dto";
+
+/**
+ * Cursor data for event pagination
+ * Uses startTime as the primary sort field with id as tiebreaker
+ */
+export interface EventCursorData {
+  id: string;
+  startTime: string;
+}
+
+/**
+ * Arguments for event connection pagination
+ */
+export interface EventConnectionArgs {
+  first?: number;
+  after?: EventCursorData | null;
+}
 
 /**
  * EventGateway Port
@@ -28,29 +44,9 @@ export interface EventGateway {
   findById(id: string): Effect.Effect<EventDTO | null, DatabaseError, never>;
 
   /**
-   * Find events by trip ID
-   */
-  findByTripId(tripId: string): Effect.Effect<EventDTO[], DatabaseError, never>;
-
-  /**
    * Find events by status
    */
   findByStatus(status: string): Effect.Effect<EventDTO[], DatabaseError, never>;
-
-  /**
-   * Find upcoming events
-   */
-  findUpcoming(): Effect.Effect<EventDTO[], DatabaseError, never>;
-
-  /**
-   * Find ongoing events
-   */
-  findOngoing(): Effect.Effect<EventDTO[], DatabaseError, never>;
-
-  /**
-   * Find past events
-   */
-  findPast(): Effect.Effect<EventDTO[], DatabaseError, never>;
 
   /**
    * Find all events with pagination
@@ -87,6 +83,39 @@ export interface EventGateway {
    * Count events by status
    */
   countByStatus(status: string): Effect.Effect<number, DatabaseError, never>;
+
+  /**
+   * Find events by trip ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never>;
+
+  /**
+   * Find upcoming events for a trip with cursor-based pagination
+   */
+  findUpcomingByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never>;
+
+  /**
+   * Find ongoing events for a trip with cursor-based pagination
+   */
+  findOngoingByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never>;
+
+  /**
+   * Find past events for a trip with cursor-based pagination
+   */
+  findPastByTripIdConnection(
+    tripId: string,
+    args: EventConnectionArgs,
+  ): Effect.Effect<Connection<EventDTO>, DatabaseError, never>;
 }
 
 /**

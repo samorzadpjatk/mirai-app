@@ -38,12 +38,18 @@ export type {
 // User DTOs
 export type { UserDTO, UserPaginatedResult } from "./user/dto";
 
+// User pagination types
+export type { UserCursorData, UserConnectionArgs } from "./user/ports/gateway";
+
 // Trip DTOs
 export type {
   TripDTO,
   TripParticipantDTO,
   TripPaginatedResult,
 } from "./trip/dto";
+
+// Trip pagination types
+export type { TripCursorData, TripConnectionArgs } from "./trip/ports/gateway";
 
 // Event DTOs and Enums
 export type {
@@ -53,6 +59,12 @@ export type {
 } from "./event/dto";
 export { EventType, EventStatus } from "./event/dto";
 
+// Event pagination types
+export type {
+  EventCursorData,
+  EventConnectionArgs,
+} from "./event/ports/gateway";
+
 // Challenge DTOs
 export type {
   ChallengeDTO,
@@ -60,6 +72,8 @@ export type {
   ChallengeVoteDTO,
   ChallengePaginatedResult,
   SubmissionPaginatedResult,
+  ChallengeSubmissionCreatedAtCursorData,
+  ChallengeSubmissionVoteScoreCursorData,
 } from "./challenge/dto";
 
 // Group DTOs
@@ -99,6 +113,12 @@ export type {
   NotificationPaginatedResult,
 } from "./notification/dto";
 
+// PushSubscription DTOs
+export type {
+  PushSubscriptionDTO,
+  PushSubscriptionConnection,
+} from "./notification/ports/push-subscription/dto";
+
 // Report DTOs
 export type { SubmissionReportDTO, ReportPaginatedResult } from "./report/dto";
 
@@ -124,15 +144,31 @@ export type { GroupGateway } from "./group/ports/gateway";
 export { GroupGatewayTag } from "./group/ports/gateway";
 
 // Challenge Domain
-export type { ChallengeGateway } from "./challenge/ports/gateway";
+export type {
+  ChallengeGateway,
+  ChallengeConnectionArgs,
+  ChallengeCursorData,
+} from "./challenge/ports/gateway";
 export { ChallengeGatewayTag } from "./challenge/ports/gateway";
-export type { ChallengeSubmissionGateway } from "./challenge/ports/submission/gateway";
+export type {
+  ChallengeSubmissionGateway,
+  ChallengeSubmissionCreatedAtConnectionArgs,
+  ChallengeSubmissionVoteScoreConnectionArgs,
+} from "./challenge/ports/submission/gateway";
 export { ChallengeSubmissionGatewayTag } from "./challenge/ports/submission/gateway";
-export type { ChallengeVoteGateway } from "./challenge/ports/vote/gateway";
+export type {
+  ChallengeVoteGateway,
+  ChallengeVoteConnectionArgs,
+  ChallengeVoteCursorData,
+} from "./challenge/ports/vote/gateway";
 export { ChallengeVoteGatewayTag } from "./challenge/ports/vote/gateway";
 
 // Location Domain
-export type { LocationGateway } from "./location/ports/gateway";
+export type {
+  LocationGateway,
+  LocationConnectionArgs,
+  LocationCursorData,
+} from "./location/ports/gateway";
 export { LocationGatewayTag } from "./location/ports/gateway";
 
 // Activity Feed Domain
@@ -140,7 +176,11 @@ export type { ActivityFeedGateway } from "./activity/ports/gateway";
 export { ActivityFeedGatewayTag } from "./activity/ports/gateway";
 
 // Sponsor Domain
-export type { SponsorGateway } from "./sponsor/ports/gateway";
+export type {
+  SponsorGateway,
+  SponsorConnectionArgs,
+  SponsorCursorData,
+} from "./sponsor/ports/gateway";
 export { SponsorGatewayTag } from "./sponsor/ports/gateway";
 
 // Event Domain
@@ -148,7 +188,11 @@ export type { EventGateway } from "./event/ports/gateway";
 export { EventGatewayTag } from "./event/ports/gateway";
 
 // Submission Report Domain
-export type { SubmissionReportGateway } from "./report/ports/gateway";
+export type {
+  SubmissionReportGateway,
+  SubmissionReportCursorData,
+  SubmissionReportConnectionArgs,
+} from "./report/ports/gateway";
 export { SubmissionReportGatewayTag } from "./report/ports/gateway";
 
 // Notification Domain
@@ -161,6 +205,10 @@ export { NotificationScheduleGatewayTag } from "./notification/ports/schedule/ga
 export type { NotificationSenderGateway } from "./notification/ports/sender/gateway";
 export { NotificationSenderGatewayTag } from "./notification/ports/sender/gateway";
 
+// PushSubscription (NotificationPreference) Domain
+export type { PushSubscriptionGateway } from "./notification/ports/push-subscription/gateway";
+export { PushSubscriptionGatewayTag } from "./notification/ports/push-subscription/gateway";
+
 // Coin Transaction Domain
 export type { CoinTransactionGateway } from "./coin/ports/gateway";
 export { CoinTransactionGatewayTag } from "./coin/ports/gateway";
@@ -169,23 +217,25 @@ export { CoinTransactionGatewayTag } from "./coin/ports/gateway";
 export type {
   RewardGateway,
   RewardPurchaseGateway,
-  TripPointsCalculator,
-  GroupCoinsService,
-  TripAccessChecker,
-  PaginationOptions,
-  PaginatedResult,
+  RewardCursorData,
+  RewardConnectionArgs,
+  RewardPurchaseCursorData,
+  RewardPurchaseConnectionArgs,
 } from "./reward/ports/gateway";
 export {
   RewardGatewayTag,
+  RewardPurchaseGatewayTag,
   TripPointsCalculatorTag,
-  TripAccessCheckerTag,
 } from "./reward/ports/gateway";
+export type { TripPointsCalculator } from "./reward/ports/gateway";
 export type {
   CoinTransactionGateway,
   CoinTransaction,
   CoinTransactionFilters,
   MostActiveAdminStat,
   CoinStatistics,
+  CoinTransactionCursorData,
+  CoinTransactionConnectionArgs,
 } from "./coin/ports/gateway";
 export type {
   DeliveryFilters,
@@ -750,6 +800,12 @@ export {
   type GetCoinTransactionsInput,
   type GetCoinTransactionsOutput,
 } from "./interactors/coin/get-transactions";
+export {
+  getCoinTransactionsConnectionUseCase,
+  type GetCoinTransactionsConnectionInput,
+  type GetCoinTransactionsConnectionOutput,
+  GetTransactionsConnectionError,
+} from "./interactors/coin/get-transactions-connection";
 export {
   getCoinQuickStatsUseCase,
   type GetCoinQuickStatsInput,

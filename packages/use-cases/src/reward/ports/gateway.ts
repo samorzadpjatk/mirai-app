@@ -1,13 +1,59 @@
-import type { RewardId, PurchaseId } from "@mirai-app/domain";
+import type {
+  RewardId,
+  RewardPurchaseId,
+  Connection,
+  DatabaseError,
+} from "@mirai-app/domain";
 import { Context, Effect } from "effect";
-import type { PaginationOptions, PaginatedResult } from "../../system/shared/dto";
+import type {
+  PaginationOptions,
+  PaginatedResult,
+} from "../../system/shared/dto";
 import type {
   RewardDTO,
   RewardPurchaseDTO,
   RewardPaginatedResult,
   PurchasePaginatedResult,
 } from "../dto";
-import type { DatabaseError } from "./errors";
+
+/**
+ * PurchaseId type for reward purchases
+ */
+export type PurchaseId = string;
+
+/**
+ * Cursor data for reward pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface RewardCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for reward connection pagination
+ */
+export interface RewardConnectionArgs {
+  first?: number;
+  after?: RewardCursorData | null;
+}
+
+/**
+ * Cursor data for reward purchase pagination
+ * Uses purchasedAt as the primary sort field with id as tiebreaker
+ */
+export interface RewardPurchaseCursorData {
+  id: string;
+  purchasedAt: string;
+}
+
+/**
+ * Arguments for reward purchase connection pagination
+ */
+export interface RewardPurchaseConnectionArgs {
+  first?: number;
+  after?: RewardPurchaseCursorData | null;
+}
 
 /**
  * RewardGateway Port
@@ -34,20 +80,24 @@ export interface RewardGateway {
   findById(id: RewardId): Effect.Effect<RewardDTO | null, DatabaseError, never>;
 
   /**
-   * Find all rewards for a trip
+   * Find rewards by trip ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
+   * Uses (createdAt, id) composite sort key for stable pagination
    */
-  findByTripId(
+  findByTripIdConnection(
     tripId: string,
-    options?: { includeHidden?: boolean } & PaginationOptions,
-  ): Effect.Effect<RewardPaginatedResult, DatabaseError, never>;
+    args: RewardConnectionArgs,
+  ): Effect.Effect<Connection<RewardDTO>, DatabaseError, never>;
 
   /**
-   * Find all visible (not hidden) rewards for a trip
+   * Find visible rewards by trip ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
+   * Uses (createdAt, id) composite sort key for stable pagination
    */
-  findVisibleByTripId(
+  findVisibleByTripIdConnection(
     tripId: string,
-    options?: PaginationOptions,
-  ): Effect.Effect<RewardPaginatedResult, DatabaseError, never>;
+    args: RewardConnectionArgs,
+  ): Effect.Effect<Connection<RewardDTO>, DatabaseError, never>;
 
   /**
    * Update reward
@@ -109,34 +159,37 @@ export interface RewardPurchaseGateway {
   ): Effect.Effect<RewardPurchaseDTO | null, DatabaseError, never>;
 
   /**
-   * Find purchases by reward ID
+   * Find purchases by reward ID with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
    */
-  findByRewardId(
+  findByRewardIdConnection(
     rewardId: RewardId,
-    options?: PaginationOptions,
-  ): Effect.Effect<PurchasePaginatedResult, DatabaseError, never>;
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, DatabaseError, never>;
 
   /**
-   * Find purchases by group ID
+   * Find purchases by group ID with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
    */
-  findByGroupId(
+  findByGroupIdConnection(
     groupId: string,
-    options?: PaginationOptions,
-  ): Effect.Effect<PurchasePaginatedResult, DatabaseError, never>;
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, DatabaseError, never>;
 
   /**
-   * Find all purchases for a trip
+   * Find all purchases for a trip with cursor-based pagination
+   * Uses (purchasedAt, id) composite sort key for stable pagination
    */
-  findByTripId(
+  findByTripIdConnection(
     tripId: string,
-    options?: { groupId?: string } & PaginationOptions,
-  ): Effect.Effect<PurchasePaginatedResult, DatabaseError, never>;
+    args: RewardPurchaseConnectionArgs,
+  ): Effect.Effect<Connection<RewardPurchaseDTO>, DatabaseError, never>;
 
   /**
    * Update purchase status
    */
   updateStatus(
-    id: PurchaseId,
+    id: RewardPurchaseId,
     status: string,
     updatedById: string,
     collectionMethod?: string | null,

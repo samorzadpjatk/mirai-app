@@ -1,5 +1,9 @@
 import { Context, Effect } from "effect";
-import type { CoinTransactionDTO } from "@mirai-app/domain";
+import type {
+  CoinTransactionDTO,
+  Connection,
+  DatabaseError,
+} from "@mirai-app/domain";
 
 /**
  * CoinTransactionGateway Port
@@ -7,7 +11,7 @@ import type { CoinTransactionDTO } from "@mirai-app/domain";
  * This interface defines what operations the application needs
  * from any coin transaction gateway implementation.
  *
- * All methods return CoinTransactionDTO instead of domain entities.
+ * All methods return CoinTransactionDTOs instead of domain entities.
  *
  * Implementations (in adapters layer):
  * - DrizzleCoinTransactionGateway: Uses Drizzle ORM
@@ -19,6 +23,28 @@ export interface CoinTransactionFilters {
   groupId?: string;
   startDate?: Date;
   endDate?: Date;
+}
+
+export interface PaginationOptions {
+  limit: number;
+  offset: number;
+}
+
+/**
+ * Cursor data for coin transaction pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface CoinTransactionCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for coin transaction connection pagination
+ */
+export interface CoinTransactionConnectionArgs {
+  first?: number;
+  after?: CoinTransactionCursorData | null;
 }
 
 export interface PaginationOptions {
@@ -81,12 +107,13 @@ export interface CoinTransactionGateway {
   ): Effect.Effect<MostActiveAdminStat[], never, never>;
 
   /**
-   * Find transactions with pagination
+   * Find transactions with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findMany(
+  findManyConnection(
     filters: Partial<CoinTransactionFilters>,
-    pagination: PaginationOptions,
-  ): Effect.Effect<PaginatedResult<CoinTransactionDTO>, never, never>;
+    args: CoinTransactionConnectionArgs,
+  ): Effect.Effect<Connection<CoinTransactionDTO>, never, never>;
 
   /**
    * Find recent transactions

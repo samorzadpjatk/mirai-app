@@ -1,10 +1,29 @@
-import type { SubmissionId, SubmissionStatus } from "@mirai-app/domain";
+import type { SubmissionId } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 import { DatabaseError } from "@mirai-app/domain";
 import type {
   ChallengeSubmissionDTO,
   SubmissionPaginatedResult,
+  ChallengeSubmissionCreatedAtCursorData,
+  ChallengeSubmissionVoteScoreCursorData,
 } from "../../dto";
+import type { Connection } from "@mirai-app/domain";
+
+/**
+ * Arguments for challenge submission connection pagination by createdAt
+ */
+export interface ChallengeSubmissionCreatedAtConnectionArgs {
+  first?: number;
+  after?: ChallengeSubmissionCreatedAtCursorData | null;
+}
+
+/**
+ * Arguments for challenge submission connection pagination by voteScore
+ */
+export interface ChallengeSubmissionVoteScoreConnectionArgs {
+  first?: number;
+  after?: ChallengeSubmissionVoteScoreCursorData | null;
+}
 
 /**
  * ChallengeSubmissionGateway Port
@@ -44,42 +63,6 @@ export interface ChallengeSubmissionGateway {
   ): Effect.Effect<ChallengeSubmissionDTO | null, DatabaseError, never>;
 
   /**
-   * Find submissions by challenge ID with pagination
-   */
-  findByChallengeId(
-    challengeId: string,
-    options?: { limit?: number; offset?: number },
-  ): Effect.Effect<SubmissionPaginatedResult, DatabaseError, never>;
-
-  /**
-   * Find submissions by user ID with pagination
-   */
-  findByUserId(
-    userId: string,
-    options?: { limit?: number; offset?: number },
-  ): Effect.Effect<SubmissionPaginatedResult, DatabaseError, never>;
-
-  /**
-   * Find submissions by status
-   */
-  findByStatus(
-    status: "PENDING" | "APPROVED" | "REJECTED",
-  ): Effect.Effect<ChallengeSubmissionDTO[], DatabaseError, never>;
-
-  /**
-   * Find submissions with advanced filtering
-   */
-  findMany(params: {
-    challengeId?: string;
-    groupId?: string;
-    status?: "PENDING" | "APPROVED" | "REJECTED";
-    orderBy?: "voteScore" | "createdAt";
-    orderDirection?: "asc" | "desc";
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<ChallengeSubmissionDTO[], DatabaseError, never>;
-
-  /**
    * Update submission
    */
   update(
@@ -113,6 +96,64 @@ export interface ChallengeSubmissionGateway {
     challengeId: string,
     status: "PENDING" | "APPROVED" | "REJECTED",
   ): Effect.Effect<number, DatabaseError, never>;
+
+  // ============================================================================
+  // Cursor-based Pagination Methods (Relay Connection Spec)
+  // ============================================================================
+
+  /**
+   * Find submissions by challenge ID with cursor-based pagination
+   * Uses (voteScore, id) sort for peer voting challenges
+   * Returns highest scoring submissions first
+   */
+  findByChallengeIdConnection(
+    challengeId: string,
+    args: ChallengeSubmissionVoteScoreConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never>;
+
+  /**
+   * Find submissions by challenge ID with cursor-based pagination sorted by createdAt
+   * Uses (createdAt, id) sort for chronological ordering
+   */
+  findByChallengeIdByCreatedAtConnection(
+    challengeId: string,
+    args: ChallengeSubmissionCreatedAtConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never>;
+
+  /**
+   * Find all submissions by a group with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findByGroupIdConnection(
+    groupId: string,
+    args: ChallengeSubmissionCreatedAtConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never>;
+
+  /**
+   * Find submissions by status with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findByStatusConnection(
+    status: "PENDING" | "APPROVED" | "REJECTED",
+    args: ChallengeSubmissionCreatedAtConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never>;
+
+  /**
+   * Find submissions with advanced filtering and cursor-based pagination
+   * Uses (voteScore, id) or (createdAt, id) sort depending on params.orderBy
+   */
+  findManyConnection(params: {
+    challengeId?: string;
+    groupId?: string;
+    status?: "PENDING" | "APPROVED" | "REJECTED";
+    orderBy?: "voteScore" | "createdAt";
+    orderDirection?: "asc" | "desc";
+    first?: number;
+    after?:
+      | ChallengeSubmissionCreatedAtCursorData
+      | ChallengeSubmissionVoteScoreCursorData
+      | null;
+  }): Effect.Effect<Connection<ChallengeSubmissionDTO>, DatabaseError, never>;
 }
 
 /**

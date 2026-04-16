@@ -1,8 +1,45 @@
-import type { LocationId } from "@mirai-app/domain";
+import type { LocationId, Connection, DatabaseError } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 import type { PaginationOptions } from "../../system/shared/dto";
-import type { LocationDTO, LocationPaginatedResult } from "../dto";
-import type { DatabaseError } from "./errors";
+import type {
+  LocationDTO,
+  LocationPaginatedResult,
+  LocationSharingDTO,
+} from "../dto";
+
+/**
+ * Cursor data for location pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface LocationCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for location connection pagination
+ */
+export interface LocationConnectionArgs {
+  first?: number;
+  after?: LocationCursorData | null;
+}
+
+/**
+ * Cursor data for location sharing request pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface LocationSharingRequestCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for location sharing request connection pagination
+ */
+export interface LocationSharingRequestConnectionArgs {
+  first?: number;
+  after?: LocationSharingRequestCursorData | null;
+}
 
 /**
  * LocationGateway Port
@@ -50,17 +87,21 @@ export interface LocationGateway {
 
   /**
    * Find locations for users that are sharing with a specific user
+   * Uses cursor-based pagination per Relay Cursor Connections Specification
    */
-  findSharingWithUser(
+  findSharingWithUserConnection(
     userId: string,
-  ): Effect.Effect<LocationDTO[], DatabaseError, never>;
+    args: LocationConnectionArgs,
+  ): Effect.Effect<Connection<LocationDTO>, DatabaseError, never>;
 
   /**
-   * Find locations by user IDs
+   * Find locations by user IDs with cursor-based pagination
+   * Uses (createdAt, id) composite sort key for stable pagination
    */
-  findByUserIds(
+  findByUserIdsConnection(
     userIds: string[],
-  ): Effect.Effect<LocationDTO[], DatabaseError, never>;
+    args: LocationConnectionArgs,
+  ): Effect.Effect<Connection<LocationDTO>, DatabaseError, never>;
 
   /**
    * Update location (upsert pattern for user locations)
@@ -81,6 +122,24 @@ export interface LocationGateway {
    * Check if location exists for user
    */
   existsForUser(userId: string): Effect.Effect<boolean, DatabaseError, never>;
+
+  /**
+   * Find location sharing requests sent by a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findSharingRequestsConnection(
+    userId: string,
+    args: LocationSharingRequestConnectionArgs,
+  ): Effect.Effect<Connection<LocationSharingDTO>, DatabaseError, never>;
+
+  /**
+   * Find location sharing requests received by a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findReceivedSharingRequestsConnection(
+    userId: string,
+    args: LocationSharingRequestConnectionArgs,
+  ): Effect.Effect<Connection<LocationSharingDTO>, DatabaseError, never>;
 }
 
 /**

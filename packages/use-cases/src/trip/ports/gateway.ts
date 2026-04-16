@@ -1,8 +1,24 @@
-import type { TripId } from "@mirai-app/domain";
+import type { TripId, Connection, DatabaseError } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
 import type { PaginationOptions } from "../../system/shared/dto";
 import type { TripDTO, TripPaginatedResult } from "../dto";
-import type { DatabaseError } from "./errors";
+
+/**
+ * Cursor data for trip pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface TripCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for trip connection pagination
+ */
+export interface TripConnectionArgs {
+  first?: number;
+  after?: TripCursorData | null;
+}
 
 /**
  * TripGateway Port
@@ -29,22 +45,27 @@ export interface TripGateway {
   findById(id: TripId): Effect.Effect<TripDTO | null, DatabaseError, never>;
 
   /**
-   * Find trips by status
+   * Find all trips with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByStatus(status: string): Effect.Effect<TripDTO[], DatabaseError, never>;
+  findAllConnection(
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, DatabaseError, never>;
 
   /**
-   * Find active trips
+   * Find trips by status with cursor-based pagination
    */
-  findActive(): Effect.Effect<TripDTO[], DatabaseError, never>;
+  findByStatusConnection(
+    status: string,
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, DatabaseError, never>;
 
   /**
-   * Find all trips with pagination
+   * Find active trips with cursor-based pagination
    */
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<TripPaginatedResult, DatabaseError, never>;
+  findActiveConnection(
+    args: TripConnectionArgs,
+  ): Effect.Effect<Connection<TripDTO>, DatabaseError, never>;
 
   /**
    * Update trip

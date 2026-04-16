@@ -48,6 +48,8 @@ export interface ChallengeSubmissionDTO {
   reviewNotes: string | null;
   submittedAt: Date;
   updatedAt: Date;
+  voteCount: number;
+  voteScore: number;
 }
 
 /**
@@ -73,3 +75,22 @@ export type ChallengePaginatedResult = PaginatedResult<ChallengeDTO>;
  * Paginated result for submission queries
  */
 export type SubmissionPaginatedResult = PaginatedResult<ChallengeSubmissionDTO>;
+
+/**
+ * Cursor data for challenge submission pagination by createdAt
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface ChallengeSubmissionCreatedAtCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Cursor data for challenge submission pagination by voteScore
+ * Uses voteScore as the primary sort field with id as tiebreaker
+ */
+export interface ChallengeSubmissionVoteScoreCursorData {
+  id: string;
+  createdAt: string;
+  voteScore: number;
+}

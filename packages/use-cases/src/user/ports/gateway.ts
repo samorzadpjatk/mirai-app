@@ -1,8 +1,23 @@
-import type { UserId } from "@mirai-app/domain";
+import type { UserId, Connection, DatabaseError } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
-import type { PaginationOptions } from "../../system/shared/dto";
-import type { UserDTO, UserPaginatedResult } from "../dto";
-import type { DatabaseError } from "./errors";
+import type { UserDTO } from "../dto";
+
+/**
+ * Cursor data for user pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface UserCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for user connection pagination
+ */
+export interface UserConnectionArgs {
+  first?: number;
+  after?: UserCursorData | null;
+}
 
 /**
  * UserGateway Port
@@ -37,17 +52,20 @@ export interface UserGateway {
   ): Effect.Effect<UserDTO | null, DatabaseError, never>;
 
   /**
-   * Find users by role
+   * Find all users with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByRole(role: string): Effect.Effect<UserDTO[], DatabaseError, never>;
+  findAllConnection(
+    args: UserConnectionArgs,
+  ): Effect.Effect<Connection<UserDTO>, DatabaseError, never>;
 
   /**
-   * Find all users with pagination
+   * Find users by role with cursor-based pagination
    */
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<UserPaginatedResult, DatabaseError, never>;
+  findByRoleConnection(
+    role: string,
+    args: UserConnectionArgs,
+  ): Effect.Effect<Connection<UserDTO>, DatabaseError, never>;
 
   /**
    * Update user

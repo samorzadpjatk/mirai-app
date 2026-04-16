@@ -1,8 +1,64 @@
 import type { NotificationId } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
-import type { PaginationOptions } from "../../system/shared/dto";
-import type { NotificationDTO, NotificationPaginatedResult } from "../dto";
+import type {
+  NotificationDTO,
+  NotificationPaginatedResult,
+  NotificationScheduleDTO,
+  NotificationDeliveryDTO,
+} from "../dto";
 import type { DatabaseError } from "./errors";
+import type { Connection } from "@mirai-app/domain";
+
+/**
+ * Cursor data for notification pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface NotificationCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for notification connection pagination
+ */
+export interface NotificationConnectionArgs {
+  first?: number;
+  after?: NotificationCursorData | null;
+}
+
+/**
+ * Cursor data for notification schedule pagination
+ * Uses scheduledAt as the primary sort field with id as tiebreaker
+ */
+export interface NotificationScheduleCursorData {
+  id: string;
+  scheduledAt: string;
+}
+
+/**
+ * Arguments for notification schedule connection pagination
+ */
+export interface NotificationScheduleConnectionArgs {
+  first?: number;
+  after?: NotificationScheduleCursorData | null;
+}
+
+/**
+ * Cursor data for notification delivery pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface NotificationDeliveryCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for notification delivery connection pagination
+ */
+export interface NotificationDeliveryConnectionArgs {
+  first?: number;
+  after?: NotificationDeliveryCursorData | null;
+}
 
 /**
  * NotificationGateway Port
@@ -114,6 +170,84 @@ export interface NotificationGateway {
   countPendingByTripId(
     tripId: string,
   ): Effect.Effect<number, DatabaseError, never>;
+
+  /**
+   * Find notifications for a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findByUserIdConnection(
+    userId: string,
+    args: NotificationConnectionArgs,
+  ): Effect.Effect<Connection<NotificationDTO>, DatabaseError, never>;
+
+  /**
+   * Find unread notifications for a user with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findUnreadByUserIdConnection(
+    userId: string,
+    args: NotificationConnectionArgs,
+  ): Effect.Effect<Connection<NotificationDTO>, DatabaseError, never>;
+
+  /**
+   * Find all notification schedules with cursor-based pagination
+   * Uses (scheduledAt, id) sort order for stable pagination
+   */
+  findManyConnection(
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationScheduleDTO>, DatabaseError, never>;
+
+  /**
+   * Find active notification schedules with cursor-based pagination
+   * Uses (scheduledAt, id) sort order for stable pagination
+   */
+  findActiveConnection(
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationScheduleDTO>, DatabaseError, never>;
+
+  /**
+   * Find notification schedules by trip ID with cursor-based pagination
+   * Uses (scheduledAt, id) sort order for stable pagination
+   */
+  findByTripIdConnection(
+    tripId: string,
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationScheduleDTO>, DatabaseError, never>;
+
+  /**
+   * Find notification schedules by notification ID with cursor-based pagination
+   * Uses (scheduledAt, id) sort order for stable pagination
+   */
+  findByNotificationIdConnection(
+    notificationId: NotificationId,
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationScheduleDTO>, DatabaseError, never>;
+
+  /**
+   * Find notification schedule executions with cursor-based pagination
+   * Uses (scheduledAt, id) sort order for stable pagination
+   */
+  findExecutionsConnection(
+    args: NotificationScheduleConnectionArgs,
+  ): Effect.Effect<Connection<NotificationScheduleDTO>, DatabaseError, never>;
+
+  /**
+   * Find notification deliveries by notification ID with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findDeliveriesByNotificationIdConnection(
+    notificationId: NotificationId,
+    args: NotificationDeliveryConnectionArgs,
+  ): Effect.Effect<Connection<NotificationDeliveryDTO>, DatabaseError, never>;
+
+  /**
+   * Find notification deliveries by user ID with cursor-based pagination
+   * Uses (createdAt, id) sort order for stable pagination
+   */
+  findDeliveriesByUserIdConnection(
+    userId: string,
+    args: NotificationDeliveryConnectionArgs,
+  ): Effect.Effect<Connection<NotificationDeliveryDTO>, DatabaseError, never>;
 }
 
 /**

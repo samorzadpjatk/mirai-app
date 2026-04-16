@@ -73,14 +73,6 @@ export interface DeliveryStats {
 
 export interface NotificationDeliveryGateway {
   /**
-   * Find deliveries with pagination and filters
-   */
-  findMany(
-    filters: Partial<DeliveryFilters>,
-    pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDeliveryDTO[], DatabaseError, never>;
-
-  /**
    * Count deliveries by filters
    */
   count(
@@ -88,26 +80,11 @@ export interface NotificationDeliveryGateway {
   ): Effect.Effect<number, DatabaseError, never>;
 
   /**
-   * Find delivery by notification ID
-   */
-  findByNotificationId(
-    notificationId: string,
-  ): Effect.Effect<NotificationDeliveryDTO | null, DatabaseError, never>;
-
-  /**
    * Get delivery statistics
    */
   getStats(
     filters?: Partial<DeliveryFilters>,
   ): Effect.Effect<DeliveryStats, DatabaseError, never>;
-
-  /**
-   * Find failed or partially failed deliveries
-   */
-  findFailed(
-    tripId: string,
-    pagination: PaginationOptions,
-  ): Effect.Effect<NotificationDeliveryDTO[], DatabaseError, never>;
 
   /**
    * Count failed deliveries

@@ -1,8 +1,28 @@
-import type { ReportId, SubmissionId } from "@mirai-app/domain";
+import type {
+  ReportId,
+  SubmissionId,
+  Connection,
+  DatabaseError,
+} from "@mirai-app/domain";
 import { Context, Effect } from "effect";
-import type { PaginationOptions } from "../../system/shared/dto";
-import type { SubmissionReportDTO, ReportPaginatedResult } from "../dto";
-import type { DatabaseError } from "./errors";
+import type { SubmissionReportDTO } from "../dto";
+
+/**
+ * Cursor data for submission report pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface SubmissionReportCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for submission report connection pagination
+ */
+export interface SubmissionReportConnectionArgs {
+  first?: number;
+  after?: SubmissionReportCursorData | null;
+}
 
 /**
  * SubmissionReportGateway Port
@@ -31,35 +51,6 @@ export interface SubmissionReportGateway {
   findById(
     id: ReportId,
   ): Effect.Effect<SubmissionReportDTO | null, DatabaseError, never>;
-
-  /**
-   * Find all reports for a submission
-   */
-  findBySubmissionId(
-    submissionId: SubmissionId,
-  ): Effect.Effect<SubmissionReportDTO[], DatabaseError, never>;
-
-  /**
-   * Find all reports filed by a reporter
-   */
-  findByReporterId(
-    reporterId: string,
-  ): Effect.Effect<SubmissionReportDTO[], DatabaseError, never>;
-
-  /**
-   * Find reports by reason
-   */
-  findByReason(
-    reason: string,
-  ): Effect.Effect<SubmissionReportDTO[], DatabaseError, never>;
-
-  /**
-   * Find reports with pagination
-   */
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<ReportPaginatedResult, DatabaseError, never>;
 
   /**
    * Count reports for a submission
@@ -94,6 +85,30 @@ export interface SubmissionReportGateway {
     status: string,
     reviewedById: string,
   ): Effect.Effect<SubmissionReportDTO, DatabaseError, never>;
+
+  /**
+   * Find reports by submission ID with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
+   */
+  findBySubmissionIdConnection(
+    submissionId: SubmissionId,
+    args: SubmissionReportConnectionArgs,
+  ): Effect.Effect<Connection<SubmissionReportDTO>, DatabaseError, never>;
+
+  /**
+   * Find reports by reporter ID with cursor-based pagination
+   */
+  findByReporterIdConnection(
+    reporterId: string,
+    args: SubmissionReportConnectionArgs,
+  ): Effect.Effect<Connection<SubmissionReportDTO>, DatabaseError, never>;
+
+  /**
+   * Find all reports with cursor-based pagination
+   */
+  findManyConnection(
+    args: SubmissionReportConnectionArgs,
+  ): Effect.Effect<Connection<SubmissionReportDTO>, DatabaseError, never>;
 }
 
 /**

@@ -1,6 +1,23 @@
 import { Context, Effect } from "effect";
 import type { ChallengeVoteDTO } from "../../dto";
-import type { DatabaseError } from "@mirai-app/domain";
+import type { DatabaseError, Connection } from "@mirai-app/domain";
+
+/**
+ * Cursor data for challenge vote pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface ChallengeVoteCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for challenge vote connection pagination
+ */
+export interface ChallengeVoteConnectionArgs {
+  first?: number;
+  after?: ChallengeVoteCursorData | null;
+}
 
 /**
  * ChallengeVoteGateway Port
@@ -38,26 +55,32 @@ export interface ChallengeVoteGateway {
   ): Effect.Effect<ChallengeVoteDTO | null, DatabaseError, never>;
 
   /**
-   * Find all votes for a challenge
+   * Find all votes for a challenge with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByChallengeId(
+  findByChallengeIdConnection(
     challengeId: string,
-  ): Effect.Effect<ChallengeVoteDTO[], DatabaseError, never>;
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, DatabaseError, never>;
 
   /**
-   * Find all votes by a specific voter in a challenge
+   * Find all votes by a specific voter in a challenge with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findByChallengeAndVoter(
+  findByChallengeAndVoterConnection(
     challengeId: string,
     voterId: string,
-  ): Effect.Effect<ChallengeVoteDTO[], DatabaseError, never>;
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, DatabaseError, never>;
 
   /**
-   * Find all votes for a specific submission
+   * Find all votes for a specific submission with cursor-based pagination
+   * Returns a Connection result per Relay Cursor Connections Specification
    */
-  findBySubmissionId(
+  findBySubmissionIdConnection(
     submissionId: string,
-  ): Effect.Effect<ChallengeVoteDTO[], DatabaseError, never>;
+    args: ChallengeVoteConnectionArgs,
+  ): Effect.Effect<Connection<ChallengeVoteDTO>, DatabaseError, never>;
 
   /**
    * Check if a voter has already voted in a challenge

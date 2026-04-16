@@ -1,8 +1,28 @@
-import type { GroupId } from "@mirai-app/domain";
+import type { GroupId, Connection, DatabaseError } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
-import type { PaginationOptions } from "../../system/shared/dto";
+import type {
+  CursorPaginatedResult,
+  CursorPaginationOptions,
+} from "../../system/shared/dto";
 import type { GroupDTO, GroupPaginatedResult } from "../dto";
-import type { DatabaseError } from "./errors";
+import type { TripParticipantDTO } from "../../trip/dto";
+
+/**
+ * Cursor data for group pagination
+ * Uses createdAt as the primary sort field with id as tiebreaker
+ */
+export interface GroupCursorData {
+  id: string;
+  createdAt: string;
+}
+
+/**
+ * Arguments for group connection pagination
+ */
+export interface GroupConnectionArgs {
+  first?: number;
+  after?: GroupCursorData | null;
+}
 
 /**
  * GroupGateway Port
@@ -29,14 +49,85 @@ export interface GroupGateway {
   findById(id: GroupId): Effect.Effect<GroupDTO | null, DatabaseError, never>;
 
   /**
-   * Find groups by trip ID
+   * Find groups by trip ID with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
    */
-  findByTripId(tripId: string): Effect.Effect<GroupDTO[], DatabaseError, never>;
+  findByTripIdConnection(
+    tripId: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  >;
 
   /**
-   * Find groups by status
+   * Find groups by status with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
    */
-  findByStatus(status: string): Effect.Effect<GroupDTO[], DatabaseError, never>;
+  findByStatusConnection(
+    status: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  >;
+
+  /**
+   * Find groups by trip ID and status with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByTripIdAndStatusConnection(
+    tripId: string,
+    status: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  >;
+
+  /**
+   * Find groups by organizer ID with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByOrganizerIdConnection(
+    organizerId: string,
+    options: CursorPaginationOptions<{ id: string; createdAt: string }>,
+  ): Effect.Effect<
+    CursorPaginatedResult<GroupDTO, { id: string; createdAt: string }>,
+    DatabaseError,
+    never
+  >;
+
+  /**
+   * Find groups by status with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByStatusConnection(
+    status: string,
+    options: CursorPaginationOptions,
+  ): Effect.Effect<CursorPaginatedResult<GroupDTO>, DatabaseError, never>;
+
+  /**
+   * Find groups by trip ID and status with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByTripIdAndStatusConnection(
+    tripId: string,
+    status: string,
+    options: CursorPaginationOptions,
+  ): Effect.Effect<CursorPaginatedResult<GroupDTO>, DatabaseError, never>;
+
+  /**
+   * Find groups by organizer ID with cursor-based pagination
+   * Sorted by (createdAt DESC, id DESC)
+   */
+  findByOrganizerIdConnection(
+    organizerId: string,
+    options: CursorPaginationOptions,
+  ): Effect.Effect<CursorPaginatedResult<GroupDTO>, DatabaseError, never>;
 
   /**
    * Find all groups with pagination
@@ -88,6 +179,14 @@ export interface GroupGateway {
     id: GroupId,
     amount: number,
   ): Effect.Effect<GroupDTO, DatabaseError, never>;
+
+  /**
+   * Find trip participants with cursor-based pagination
+   */
+  findTripParticipantsConnection(
+    tripId: string,
+    args: GroupConnectionArgs,
+  ): Effect.Effect<Connection<TripParticipantDTO>, DatabaseError, never>;
 }
 
 /**
