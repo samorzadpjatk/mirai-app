@@ -1,166 +1,180 @@
-import { Hono } from "hono";
-import { createYoga } from "graphql-yoga";
-import type { Schema } from "./schema";
-import type { GraphQLContext } from "./builder";
-import type { Controllers } from "@mirai-app/adapters";
-import type { AuthPort } from "@mirai-app/use-cases";
-import type { Layer } from "effect";
+import {
+  createYoga,
+  type YogaServerOptions,
+  type YogaInitialContext,
+  type YogaLogger,
+} from "graphql-yoga";
+import type { GraphQLSchema } from "graphql";
+import { formatError } from "./errors";
+import type { GraphQLContext, GraphQLContextFactory } from "./context";
 
 /**
- * Create Hono App with GraphQL endpoint
- *
- * Phase 3: API Layer
- * - Hono web framework (lightweight, fast)
- * - GraphQL Yoga for GraphQL server
- * - Pothos schema builder integration
- * - Auth middleware
- * - Effect DI integration via controllers
- *
- * Strangler Fig Pattern:
- * - Hono runs alongside tRPC (different ports)
- * - Existing clients use tRPC (port 3000)
- * - New polyglot clients use GraphQL (port 4000)
- * - Gradual migration without breaking changes
- *
- * @example
- * ```typescript
- * // Start the server
- * const app = createHonoApp(schema, { getControllers });
- * app.fire(4000);
- * ```
+ * GraphQL Server configuration
  */
-export function createHonoApp(
-  schema: Schema,
-  options: {
-    getControllers: () => Controllers;
-    authPort?: AuthPort;
-    appLayer: Layer.Layer<unknown>;
-  },
-) {
-  const app = new Hono();
+export interface GraphQLServerConfig {
+  /**
+   * The GraphQL schema
+   */
+  schema: GraphQLSchema;
 
-  // Create GraphQL Yoga instance
-  const yoga = createYoga({
-    schema,
-    // Custom context factory
-    context: async ({ request }): Promise<GraphQLContext> => {
-      const controllers = options.getControllers();
+  /**
+   * Context factory function
+   */
+  context: GraphQLContextFactory;
 
-      // Extract and validate auth token
-      let authContext: GraphQLContext["authContext"] = undefined;
+  /**
+   * Whether to enable GraphiQL IDE
+   * @default process.env.NODE_ENV === "development"
+   */
+  graphiql?: boolean;
 
-      if (options.authPort) {
-        const authHeader = request.headers.get("authorization");
-        if (authHeader?.startsWith("Bearer ")) {
-          const token = authHeader.slice(7);
-          const result = await options.authPort.validateToken(token);
+  /**
+   * Whether to enable introspection
+   * @default process.env.NODE_ENV === "development"
+   */
+  introspection?: boolean;
 
-          if (result.kind === "ok") {
-            authContext = {
-              userId: result.value.userId.toString(),
-              role: result.value.role,
-            };
-          }
-        }
-      }
+  /**
+   * Request logging
+   */
+  logging?: boolean | YogaLogger;
 
-      return {
-        controllers,
-        authContext,
-        appLayer: options.appLayer,
-        requestId: crypto.randomUUID(),
-      };
-    },
-  });
+  /**
+   * Maximum request body size in bytes
+   * @default 10485760 (10MB)
+   */
+  maxRequestSize?: number;
 
-  // Health check endpoint
-  app.get("/health", (c) => {
-    return c.json({
-      status: "healthy",
-      service: "graphql",
-      timestamp: new Date().toISOString(),
-    });
-  });
+  /**
+   * CORS configuration
+   */
+  cors?: {
+    origin?: string | string[];
+    credentials?: boolean;
+    allowedHeaders?: string[];
+    exposedHeaders?: string[];
+  };
 
-  // GraphQL endpoint
-  app.all("/graphql", async (c) => {
-    const response = await yoga.handle(c.req.raw);
-    return response;
-  });
+  /**
+   * Health check endpoint
+   * @default "/health"
+   */
+  healthCheckPath?: string;
 
-  // GraphiQL endpoint (only in development)
-  if (process.env.NODE_ENV !== "production") {
-    app.get("/graphiql", async (c) => {
-      return c.html(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>GraphiQL</title>
-            <style>
-              body { margin: 0; height: 100vh; }
-              #graphiql { height: 100%; }
-            </style>
-            <script
-              crossorigin
-              src="https://unpkg.com/react@18/umd/react.development.js"
-            ></script>
-            <script
-              crossorigin
-              src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
-            ></script>
-            <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
-          </head>
-          <body>
-            <div id="graphiql"></div>
-            <script
-              src="https://unpkg.com/graphiql/graphiql.min.js"
-              type="application/javascript"
-            ></script>
-            <script>
-              ReactDOM.render(
-                React.createElement(GraphiQL, {
-                  fetcher: GraphiQL.createFetcher({ url: '/graphql' }),
-                  defaultEditorToolsVisibility: true,
-                }),
-                document.getElementById('graphiql'),
-              );
-            </script>
-          </body>
-        </html>
-      `);
-    });
-  }
-
-  return app;
+  /**
+   * Is development mode (for error formatting)
+   * @default process.env.NODE_ENV === "development"
+   */
+  isDevelopment?: boolean;
 }
 
 /**
- * Start Hono GraphQL server
- *
- * @param schema - Pothos GraphQL schema
- * @param options - Server configuration
- * @returns Server instance
+ * GraphQL Server type (Yoga instance)
  */
-export async function startHonoServer(
-  schema: Schema,
-  options: {
-    port: number;
-    getControllers: () => Controllers;
-    authPort?: AuthPort;
-    appLayer: Layer.Layer<unknown>;
-  },
-) {
-  const app = createHonoApp(schema, {
-    getControllers: options.getControllers,
-    authPort: options.authPort,
-    appLayer: options.appLayer,
-  });
+export type GraphQLServer = ReturnType<typeof createGraphQLServer>;
 
-  // Bun-specific server start
-  const server = Bun.serve({
-    port: options.port,
-    fetch: app.fetch,
-  });
+/**
+ * Yoga context (initial context before GraphQL context is built)
+ */
+export type YogaContext = YogaInitialContext;
 
-  return server;
+/**
+ * Create a GraphQL Yoga server
+ *
+ * This factory creates a fully configured Yoga server with:
+ * - Schema execution
+ * - Context creation
+ * - Error formatting
+ * - CORS support
+ * - Health checks
+ * - Request logging
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * import { createGraphQLServer } from "@mirai-app/frameworks/graphql";
+ * import { schema } from "./schema";
+ * import { context } from "./context";
+ *
+ * const yoga = createGraphQLServer({
+ *   schema,
+ *   context,
+ *   graphiql: true,
+ * });
+ *
+ * // With Hono
+ * import { Hono } from "hono";
+ *
+ * const app = new Hono();
+ * app.use("/graphql", yoga);
+ * ```
+ *
+ * @param config - Server configuration
+ * @returns Configured Yoga server
+ */
+export function createGraphQLServer(config: GraphQLServerConfig) {
+  const isDevelopment =
+    config.isDevelopment ?? process.env.NODE_ENV === "development";
+  const graphiql = config.graphiql ?? isDevelopment;
+  const introspection = config.introspection ?? isDevelopment;
+
+  const yogaConfig: YogaServerOptions<GraphQLContext, GraphQLContext> = {
+    schema: config.schema,
+    context: config.context,
+
+    // GraphiQL IDE (enables introspection in dev mode automatically)
+    graphiql,
+
+    // Logging
+    logging: config.logging ?? isDevelopment,
+
+    // Error formatting
+    maskedErrors: {
+      maskError(error) {
+        return formatError(
+          error as Error & { extensions?: Record<string, unknown> },
+          isDevelopment,
+        );
+      },
+    },
+
+    // CORS
+    cors: config.cors ?? {
+      origin: "*",
+      credentials: true,
+      allowedHeaders: ["content-type", "authorization", "x-request-id"],
+    },
+
+    // Enable multipart for file uploads
+    multipart: true,
+
+    // Health check
+    healthCheckEndpoint: config.healthCheckPath ?? "/health",
+
+    // Parser cache for performance
+    parserAndValidationCache: true,
+  };
+
+  return createYoga(yogaConfig);
+}
+
+/**
+ * Create a simple GraphQL server with defaults
+ *
+ * Quick-start function for simple use cases.
+ *
+ * @param schema - GraphQL schema
+ * @param context - Context factory
+ * @returns Yoga server
+ */
+export function createSimpleGraphQLServer(
+  schema: GraphQLSchema,
+  context: GraphQLContextFactory,
+): GraphQLServer {
+  return createGraphQLServer({
+    schema,
+    context,
+    graphiql: true,
+    introspection: true,
+  });
 }
