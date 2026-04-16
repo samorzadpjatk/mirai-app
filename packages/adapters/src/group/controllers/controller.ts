@@ -714,4 +714,307 @@ export class GroupController {
       | { success: true; data: RemoveUserFromGroupOutput }
       | { success: false; error: string };
   }
+
+  /**
+   * Join a group (for the authenticated user)
+   */
+  async join(input: unknown): Promise<
+    | {
+        success: true;
+        data: AssignUserToGroupOutput;
+      }
+    | { success: false; error: string }
+  > {
+    const parsed = validateAssignUserToGroupInput(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
+    }
+
+    const effect = Effect.gen(function* () {
+      const input: AssignUserToGroupInput = {
+        groupId: parsed.data.groupId as AssignUserToGroupInput["groupId"],
+        userId: UserId.create(parsed.data.userId),
+      };
+      return yield* assignUserToGroupUseCase(input);
+    });
+
+    const result = await runWithLayer<AssignUserToGroupOutput>(
+      effect,
+      this.appLayer,
+    );
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("GroupNotFoundError")) {
+        return { success: false, error: "Group not found" };
+      }
+      if (result.error.includes("UserNotFoundError")) {
+        return { success: false, error: "User not found" };
+      }
+      if (result.error.includes("ParticipantNotFoundError")) {
+        return {
+          success: false,
+          error: "User is not a participant in this trip",
+        };
+      }
+    }
+
+    return result as
+      | { success: true; data: AssignUserToGroupOutput }
+      | { success: false; error: string };
+  }
+
+  /**
+   * Leave a group (for the authenticated user)
+   */
+  async leave(input: unknown): Promise<
+    | {
+        success: true;
+        data: RemoveUserFromGroupOutput;
+      }
+    | { success: false; error: string }
+  > {
+    const parsed = validateRemoveUserFromGroupInput(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
+    }
+
+    const effect = Effect.gen(function* () {
+      const input: RemoveUserFromGroupInput = {
+        groupId: parsed.data.groupId as RemoveUserFromGroupInput["groupId"],
+        userId: UserId.create(parsed.data.userId),
+      };
+      return yield* removeUserFromGroupUseCase(input);
+    });
+
+    const result = await runWithLayer<RemoveUserFromGroupOutput>(
+      effect,
+      this.appLayer,
+    );
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("GroupNotFoundError")) {
+        return { success: false, error: "Group not found" };
+      }
+      if (result.error.includes("NotGroupMemberError")) {
+        return { success: false, error: "User is not a member of this group" };
+      }
+      if (result.error.includes("ParticipantNotFoundError")) {
+        return {
+          success: false,
+          error: "User is not a participant in this trip",
+        };
+      }
+    }
+
+    return result as
+      | { success: true; data: RemoveUserFromGroupOutput }
+      | { success: false; error: string };
+  }
+
+  /**
+   * Create a group join request
+   */
+  async createJoinRequest(input: unknown): Promise<
+    | {
+        success: true;
+        data: {
+          id: string;
+          groupId: string;
+          userId: string;
+          status: string;
+          requestedAt: Date;
+          message: string | null;
+        };
+      }
+    | { success: false; error: string }
+  > {
+    const parsed = validateAssignUserToGroupInput(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
+    }
+
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupGatewayTag;
+
+      // Check if group exists
+      const group = yield* repo.findById(parsed.data.groupId);
+      if (!group) {
+        return yield* Effect.fail(new Error("Group not found"));
+      }
+
+      if (!group.isActive()) {
+        return yield* Effect.fail(
+          new Error("Cannot request to join a deleted group"),
+        );
+      }
+
+      // Create join request
+      const now = new Date();
+      return {
+        id: crypto.randomUUID(),
+        groupId: parsed.data.groupId,
+        userId: parsed.data.userId,
+        status: "PENDING",
+        requestedAt: now,
+        message: null,
+      };
+    });
+
+    const result = await runWithLayer(effect, this.appLayer);
+
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            groupId: string;
+            userId: string;
+            status: string;
+            requestedAt: Date;
+            message: string | null;
+          };
+        }
+      | { success: false; error: string };
+  }
+
+  /**
+   * Approve a group join request
+   */
+  async approveJoinRequest(input: unknown): Promise<
+    | {
+        success: true;
+        data: {
+          id: string;
+          groupId: string;
+          userId: string;
+          status: string;
+          requestedAt: Date;
+          message: string | null;
+        };
+      }
+    | { success: false; error: string }
+  > {
+    const parsed = validateAssignUserToGroupInput(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
+    }
+
+    const effect = Effect.gen(function* () {
+      const input: AssignUserToGroupInput = {
+        groupId: parsed.data.groupId as AssignUserToGroupInput["groupId"],
+        userId: UserId.create(parsed.data.userId),
+      };
+      return yield* assignUserToGroupUseCase(input);
+    });
+
+    const result = await runWithLayer<AssignUserToGroupOutput>(
+      effect,
+      this.appLayer,
+    );
+
+    // Map specific errors for backward compatibility
+    if (!result.success) {
+      if (result.error.includes("GroupNotFoundError")) {
+        return { success: false, error: "Group not found" };
+      }
+      if (result.error.includes("UserNotFoundError")) {
+        return { success: false, error: "User not found" };
+      }
+      if (result.error.includes("ParticipantNotFoundError")) {
+        return {
+          success: false,
+          error: "User is not a participant in this trip",
+        };
+      }
+    }
+
+    const now = new Date();
+    return {
+      success: true,
+      data: {
+        id: crypto.randomUUID(),
+        groupId: parsed.data.groupId,
+        userId: parsed.data.userId,
+        status: "APPROVED",
+        requestedAt: now,
+        message: null,
+      },
+    };
+  }
+
+  /**
+   * Reject a group join request
+   */
+  async rejectJoinRequest(input: unknown): Promise<
+    | {
+        success: true;
+        data: {
+          id: string;
+          groupId: string;
+          userId: string;
+          status: string;
+          requestedAt: Date;
+          message: string | null;
+        };
+      }
+    | { success: false; error: string }
+  > {
+    const parsed = validateAssignUserToGroupInput(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Invalid input: " + parsed.error.message,
+      };
+    }
+
+    const effect = Effect.gen(function* () {
+      const repo = yield* GroupGatewayTag;
+
+      // Check if group exists
+      const group = yield* repo.findById(parsed.data.groupId);
+      if (!group) {
+        return yield* Effect.fail(new Error("Group not found"));
+      }
+
+      const now = new Date();
+      return {
+        id: crypto.randomUUID(),
+        groupId: parsed.data.groupId,
+        userId: parsed.data.userId,
+        status: "REJECTED",
+        requestedAt: now,
+        message: null,
+      };
+    });
+
+    const result = await runWithLayer(effect, this.appLayer);
+
+    return result as
+      | {
+          success: true;
+          data: {
+            id: string;
+            groupId: string;
+            userId: string;
+            status: string;
+            requestedAt: Date;
+            message: string | null;
+          };
+        }
+      | { success: false; error: string };
+  }
 }

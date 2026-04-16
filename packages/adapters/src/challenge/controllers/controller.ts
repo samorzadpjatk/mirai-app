@@ -4,10 +4,13 @@ import {
   createChallengeUseCase,
   updateChallengeUseCase,
   updateChallengeStatusUseCase,
+  deleteChallengeUseCase,
   ChallengeGatewayTag,
   type CreateChallengeInput,
   type UpdateChallengeInput,
   type UpdateChallengeStatusInput,
+  type DeleteChallengeInput,
+  type DeleteChallengeOutput,
 } from "@mirai-app/use-cases";
 import {
   validateGetByIdInput,
@@ -628,5 +631,20 @@ export class ChallengeController {
           }>;
         }
       | { success: false; error: string };
+  }
+
+  /**
+   * Delete a challenge by ID
+   */
+  async delete(
+    input: DeleteChallengeInput,
+  ): Promise<DeleteChallengeOutput | { success: false; error: string }> {
+    const effect = deleteChallengeUseCase(input);
+
+    const result = await runWithLayer(effect, this.appLayer);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    return result.data as DeleteChallengeOutput;
   }
 }

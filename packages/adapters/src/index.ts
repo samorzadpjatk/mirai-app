@@ -82,6 +82,31 @@ export { EventEmitterPubSub } from "./system/shared/services/event-emitter-pub-s
 export { TokenExtractor } from "./system/utils/token-extractor";
 
 // =============================================================================
+// Trip Services (Drizzle implementations of use-case ports)
+// =============================================================================
+export {
+  DrizzleTripPointsCalculator,
+  PointsCalculatorError,
+} from "./trip/services";
+export { DrizzleTripAccessChecker, AccessCheckerError } from "./trip/services";
+
+// =============================================================================
+// Group Services (Drizzle implementations of use-case ports)
+// =============================================================================
+export {
+  DrizzleGroupCoinsService,
+  GroupCoinsServiceError,
+} from "./group/services";
+
+// =============================================================================
+// Ranking Services (Drizzle implementations of use-case ports)
+// =============================================================================
+export {
+  DrizzleRankingActivityService,
+  RankingActivityError,
+} from "./ranking/services";
+
+// =============================================================================
 // Mappers (Domain <-> DTO <-> Database) - Drizzle ORM
 // =============================================================================
 export { UserDrizzleMapper } from "./user/mappers/drizzle/mapper";
