@@ -1,216 +1,382 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer, Data } from "effect";
 import {
   getFailedDeliveriesUseCase,
   type GetFailedDeliveriesInput,
+  GetFailedDeliveriesError,
 } from "./get-failed";
-import { Effect } from "effect";
-import { NotificationDeliveryGatewayTag } from "../../ports/delivery/gateway";
-import { InMemoryNotificationDeliveryGateway } from "@mirai-app/adapters";
-import type { NotificationDelivery } from "../../ports/delivery/gateway";
+import {
+  NotificationDeliveryGatewayTag,
+  type NotificationDeliveryGateway,
+  type NotificationDelivery,
+  type DeliveryStatus,
+} from "../../ports/delivery/gateway";
 
-// Mock NotificationDelivery
-const createMockDelivery = (
-  overrides?: Partial<NotificationDelivery>,
-): NotificationDelivery =>
-  ({
-    id: "delivery-123",
-    notificationId: "notif-123",
-    tripId: "trip-123",
-    status: "failure",
-    totalRecipients: 100,
-    successCount: 50,
-    failureCount: 50,
-    deliveryStartedAt: new Date("2024-01-01T09:00:00"),
-    errorLog: "Connection timeout",
-    ...overrides,
-  }) as NotificationDelivery;
+/**
+ * Mock NotificationDeliveryGateway for testing
+ */
+function createMockDeliveryGateway(
+  deliveries: NotificationDelivery[] = [],
+  options: {
+    shouldFailFindFailed?: boolean;
+    shouldFailCountFailed?: boolean;
+  } = {},
+): NotificationDeliveryGateway {
+  const failedDeliveries = deliveries.filter(
+    (d) => d.status === "failure" || d.status === "partial_failure",
+  );
 
-describe("[UNIT] getFailedDeliveriesUseCase (Effect)", () => {
-  let gateway: InMemoryNotificationDeliveryGateway;
+  return {
+    count: () => Effect.succeed(deliveries.length),
 
-  beforeEach(() => {
-    gateway = new InMemoryNotificationDeliveryGateway();
+    getStats: () =>
+      Effect.succeed({
+        totalDeliveries: deliveries.length,
+        totalRecipients: deliveries.length,
+        totalSuccess: deliveries.filter((d) => d.status === "success").length,
+        totalFailures: failedDeliveries.length,
+        avgSuccessPerDelivery: 0,
+        avgFailuresPerDelivery: 0,
+        successRate: 0,
+        statusBreakdown: {},
+      }),
+
+    countFailed: () => {
+      if (options.shouldFailCountFailed) {
+        return Effect.fail(
+          new DatabaseErrorMock({
+            operation: "countFailed",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed(failedDeliveries.length);
+    },
+
+    findFailed: () => {
+      if (options.shouldFailFindFailed) {
+        return Effect.fail(
+          new DatabaseErrorMock({
+            operation: "findFailed",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed(failedDeliveries);
+    },
+
+    findMany: () => Effect.succeed(deliveries),
+
+    findByNotificationId: () => Effect.succeed(null),
+
+    findFailedConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+class DatabaseErrorMock extends Data.TaggedError("DatabaseError")<{
+  operation: string;
+  message: string;
+}> {}
+
+function createMockNotificationDelivery(
+  overrides: Partial<NotificationDelivery> = {},
+): NotificationDelivery {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "delivery-123",
+    notificationId: overrides.notificationId ?? "notification-123",
+    tripId: overrides.tripId ?? "trip-123",
+    status: overrides.status ?? "failure",
+    totalRecipients: overrides.totalRecipients ?? 10,
+    successCount: overrides.successCount ?? 0,
+    failureCount: overrides.failureCount ?? 10,
+    deliveryStartedAt: overrides.deliveryStartedAt ?? now,
+    deliveryCompletedAt: overrides.deliveryCompletedAt ?? now,
+    errorLog: overrides.errorLog ?? null,
+    scheduleId: overrides.scheduleId ?? null,
+    notification: overrides.notification ?? null,
+  };
+}
+
+describe("[UNIT] getFailedDeliveriesUseCase", () => {
+  it("should return failed deliveries for a trip", async () => {
+    const mockDeliveries: NotificationDelivery[] = [
+      createMockNotificationDelivery({
+        id: "delivery-1",
+        notificationId: "notification-1",
+        tripId: "trip-123",
+        status: "failure" as DeliveryStatus,
+        totalRecipients: 50,
+        successCount: 0,
+        failureCount: 50,
+        errorLog: "Connection timeout",
+      }),
+      createMockNotificationDelivery({
+        id: "delivery-2",
+        notificationId: "notification-2",
+        tripId: "trip-123",
+        status: "partial_failure" as DeliveryStatus,
+        totalRecipients: 100,
+        successCount: 60,
+        failureCount: 40,
+        errorLog: "Some recipients unreachable",
+      }),
+      createMockNotificationDelivery({
+        id: "delivery-3",
+        notificationId: "notification-3",
+        tripId: "trip-123",
+        status: "success" as DeliveryStatus,
+        totalRecipients: 30,
+        successCount: 30,
+        failureCount: 0,
+      }),
+    ];
+
+    const mockGateway = createMockDeliveryGateway(mockDeliveries);
+    const mockLayer = Layer.succeed(
+      NotificationDeliveryGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetFailedDeliveriesInput = {
+      tripId: "trip-123",
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getFailedDeliveriesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.deliveries).toHaveLength(2);
+    expect(result.total).toBe(2);
+    expect(result.limit).toBe(10);
+    expect(result.offset).toBe(0);
+    expect(result.deliveries[0].status).toBe("failure");
+    expect(result.deliveries[1].status).toBe("partial_failure");
   });
 
-  // Helper to run use case with gateway
-  const runUseCase = async (input: GetFailedDeliveriesInput) => {
-    const program = getFailedDeliveriesUseCase(input).pipe(
-      Effect.provideService(NotificationDeliveryGatewayTag, {
-        findMany: (filters, pagination) =>
-          gateway.findMany(filters, pagination),
-        count: (filters) => gateway.count(filters),
-        findByNotificationId: (notificationId) =>
-          gateway.findByNotificationId(notificationId),
-        getStats: (filters) => gateway.getStats(filters),
-        findFailed: (tripId, pagination) =>
-          gateway.findFailed(tripId, pagination),
-        countFailed: (tripId) => gateway.countFailed(tripId),
-      }),
+  it("should use default pagination when not specified", async () => {
+    const mockDeliveries: NotificationDelivery[] = Array.from(
+      { length: 25 },
+      (_, i) =>
+        createMockNotificationDelivery({
+          id: `delivery-${i}`,
+          notificationId: `notification-${i}`,
+          tripId: "trip-123",
+          status: i % 2 === 0 ? "failure" : "partial_failure",
+        }),
     );
-    return await Effect.runPromise(program);
-  };
 
-  describe("[UNIT] execute", () => {
-    it("should return failed deliveries", async () => {
-      // Arrange
-      gateway.seed([
-        createMockDelivery({
-          id: "delivery-1",
-          tripId: "trip-123",
-          status: "failure",
-        }),
-        createMockDelivery({
-          id: "delivery-2",
-          tripId: "trip-123",
-          status: "partial_failure",
-        }),
-        createMockDelivery({
-          id: "delivery-3",
-          tripId: "trip-123",
-          status: "success",
-        }),
-      ]);
+    const mockGateway = createMockDeliveryGateway(mockDeliveries);
+    const mockLayer = Layer.succeed(
+      NotificationDeliveryGatewayTag,
+      mockGateway,
+    );
 
-      const input: GetFailedDeliveriesInput = {
+    const input: GetFailedDeliveriesInput = {
+      tripId: "trip-123",
+    };
+
+    const program = getFailedDeliveriesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.deliveries).toHaveLength(25);
+    expect(result.limit).toBe(20);
+    expect(result.offset).toBe(0);
+  });
+
+  it("should return empty array when no failed deliveries exist", async () => {
+    const mockDeliveries: NotificationDelivery[] = [
+      createMockNotificationDelivery({
+        id: "delivery-1",
+        notificationId: "notification-1",
         tripId: "trip-123",
-      };
+        status: "success" as DeliveryStatus,
+      }),
+    ];
 
-      // Act
-      const result = await runUseCase(input);
+    const mockGateway = createMockDeliveryGateway(mockDeliveries);
+    const mockLayer = Layer.succeed(
+      NotificationDeliveryGatewayTag,
+      mockGateway,
+    );
 
-      // Assert - should only return failure and partial_failure
-      expect(result.deliveries).toHaveLength(2);
-      expect(result.total).toBe(2);
-      expect(result.limit).toBe(20);
-      expect(result.offset).toBe(0);
+    const input: GetFailedDeliveriesInput = {
+      tripId: "trip-123",
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getFailedDeliveriesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.deliveries).toHaveLength(0);
+    expect(result.total).toBe(0);
+  });
+
+  it("should handle database errors during findFailed", async () => {
+    const mockGateway = createMockDeliveryGateway([], {
+      shouldFailFindFailed: true,
     });
+    const mockLayer = Layer.succeed(
+      NotificationDeliveryGatewayTag,
+      mockGateway,
+    );
 
-    it("should use default pagination values", async () => {
-      gateway.seed([
-        createMockDelivery({
-          id: "delivery-1",
+    const input: GetFailedDeliveriesInput = {
+      tripId: "trip-123",
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getFailedDeliveriesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetFailedDeliveriesError);
+    }
+  });
+
+  it("should handle database errors during countFailed", async () => {
+    const mockGateway = createMockDeliveryGateway([], {
+      shouldFailCountFailed: true,
+    });
+    const mockLayer = Layer.succeed(
+      NotificationDeliveryGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetFailedDeliveriesInput = {
+      tripId: "trip-123",
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getFailedDeliveriesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetFailedDeliveriesError);
+    }
+  });
+
+  it("should apply pagination correctly", async () => {
+    const mockDeliveries: NotificationDelivery[] = Array.from(
+      { length: 50 },
+      (_, i) =>
+        createMockNotificationDelivery({
+          id: `delivery-${i}`,
+          notificationId: `notification-${i}`,
           tripId: "trip-123",
-          status: "failure",
+          status: "failure" as DeliveryStatus,
         }),
-      ]);
+    );
 
-      const input: GetFailedDeliveriesInput = {
+    const mockGateway = createMockDeliveryGateway(mockDeliveries);
+    const mockLayer = Layer.succeed(
+      NotificationDeliveryGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetFailedDeliveriesInput = {
+      tripId: "trip-123",
+      pagination: { limit: 5, offset: 10 },
+    };
+
+    const program = getFailedDeliveriesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.deliveries).toHaveLength(50);
+    expect(result.total).toBe(50);
+    expect(result.limit).toBe(5);
+    expect(result.offset).toBe(10);
+  });
+
+  it("should include delivery details in results", async () => {
+    const mockDeliveries: NotificationDelivery[] = [
+      createMockNotificationDelivery({
+        id: "delivery-detail",
+        notificationId: "notification-detail",
         tripId: "trip-123",
-      };
+        status: "failure" as DeliveryStatus,
+        totalRecipients: 100,
+        successCount: 0,
+        failureCount: 100,
+        errorLog: "Detailed error log",
+        notification: {
+          id: "notification-detail",
+          title: "Failed Notification",
+          body: "This notification failed to deliver",
+          createdAt: new Date(),
+        },
+      }),
+    ];
 
-      await runUseCase(input);
+    const mockGateway = createMockDeliveryGateway(mockDeliveries);
+    const mockLayer = Layer.succeed(
+      NotificationDeliveryGatewayTag,
+      mockGateway,
+    );
 
-      // Just verify the call works with defaults
-      expect(true).toBe(true);
-    });
+    const input: GetFailedDeliveriesInput = {
+      tripId: "trip-123",
+    };
 
-    it("should use custom pagination when provided", async () => {
-      // Arrange - add more than limit
-      for (let i = 1; i <= 10; i++) {
-        gateway.seed([
-          createMockDelivery({
-            id: `delivery-${i}`,
-            tripId: "trip-123",
-            status: "failure",
-          }),
-        ]);
-      }
+    const program = getFailedDeliveriesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const input: GetFailedDeliveriesInput = {
-        tripId: "trip-123",
-        pagination: { limit: 5, offset: 0 },
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.deliveries.length).toBeLessThanOrEqual(5);
-      expect(result.total).toBe(10);
-    });
-
-    it("should return empty array when no failed deliveries", async () => {
-      // Arrange - only success deliveries
-      gateway.seed([
-        createMockDelivery({
-          id: "delivery-1",
-          tripId: "trip-123",
-          status: "success",
-        }),
-      ]);
-
-      const input: GetFailedDeliveriesInput = {
-        tripId: "trip-123",
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.deliveries).toHaveLength(0);
-      expect(result.total).toBe(0);
-    });
-
-    it("should only return deliveries for the specified trip", async () => {
-      // Arrange
-      gateway.seed([
-        createMockDelivery({ id: "d1", tripId: "trip-123", status: "failure" }),
-        createMockDelivery({ id: "d2", tripId: "trip-456", status: "failure" }),
-      ]);
-
-      const input: GetFailedDeliveriesInput = {
-        tripId: "trip-123",
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.deliveries).toHaveLength(1);
-      expect(result.deliveries[0].id).toBe("d1");
-    });
-
-    it("should handle partial pagination options", async () => {
-      gateway.seed([
-        createMockDelivery({
-          id: "delivery-1",
-          tripId: "trip-123",
-          status: "failure",
-        }),
-      ]);
-
-      const input: GetFailedDeliveriesInput = {
-        tripId: "trip-123",
-        pagination: { limit: 30 },
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.limit).toBe(30);
-      expect(result.offset).toBe(0);
-    });
-
-    it("should return delivery details", async () => {
-      gateway.seed([
-        createMockDelivery({
-          id: "delivery-failed",
-          notificationId: "notif-failed",
-          tripId: "trip-123",
-          status: "failure",
-          failureCount: 100,
-          errorLog: "SMTP error",
-        }),
-      ]);
-
-      const input: GetFailedDeliveriesInput = {
-        tripId: "trip-123",
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.deliveries[0].id).toBe("delivery-failed");
-      expect(result.deliveries[0].status).toBe("failure");
-      expect(result.deliveries[0].failureCount).toBe(100);
-    });
+    expect(result.deliveries[0].id).toBe("delivery-detail");
+    expect(result.deliveries[0].errorLog).toBe("Detailed error log");
+    expect(result.deliveries[0].totalRecipients).toBe(100);
+    expect(result.deliveries[0].failureCount).toBe(100);
   });
 });

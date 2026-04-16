@@ -1,7 +1,6 @@
-import { Notification } from "@mirai-app/domain";
+import { NotificationStatus, DatabaseError } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { NotificationGatewayTag } from "../ports/gateway";
-import { DatabaseError } from "@mirai-app/domain";
 
 /**
  * Input for DeleteNotification use case
@@ -83,7 +82,7 @@ export function deleteNotificationUseCase(
     // Find the notification to check its status
     const notification = yield* notificationRepo.findById(input.notificationId);
 
-    if (notification && notification.isSent()) {
+    if (notification && notification.status === NotificationStatus.SENT) {
       return yield* Effect.fail(
         new NotificationAlreadySentError({
           notificationId: input.notificationId,

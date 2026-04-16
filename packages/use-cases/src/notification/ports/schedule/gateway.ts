@@ -1,5 +1,9 @@
-import type { NotificationScheduleFilter } from "@mirai-app/domain";
-import type { NotificationScheduleDTO } from "../../dto";
+import type {
+  NotificationScheduleFilter,
+  PaginatedResult,
+  PaginationOptions,
+  NotificationSchedule,
+} from "@mirai-app/domain";
 import type { DatabaseError } from "../errors";
 import { Context, Effect } from "effect";
 
@@ -23,7 +27,7 @@ export interface NotificationScheduleExecutionRecord {
  * This interface defines what operations the application needs
  * from any notification schedule gateway implementation.
  *
- * All methods return DTOs instead of domain entities.
+ * All methods return domain entities to enable business logic in use cases.
  *
  * Implementations (in adapters layer):
  * - DrizzleNotificationScheduleGateway: Uses Drizzle ORM
@@ -34,23 +38,23 @@ export interface NotificationScheduleGateway {
    * Create a new notification schedule
    */
   create(
-    schedule: NotificationScheduleDTO,
-  ): Effect.Effect<NotificationScheduleDTO, DatabaseError, never>;
+    schedule: NotificationSchedule,
+  ): Effect.Effect<NotificationSchedule, DatabaseError, never>;
 
   /**
    * Find notification schedule by ID
-   * @returns NotificationScheduleDTO or null if not found
+   * @returns NotificationSchedule or null if not found
    */
   findById(
     id: string,
-  ): Effect.Effect<NotificationScheduleDTO | null, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never>;
 
   /**
    * Find notification schedules by name (exact match)
    */
   findByName(
     name: string,
-  ): Effect.Effect<NotificationScheduleDTO | null, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never>;
 
   /**
    * Find notification schedule by trip ID and name
@@ -58,14 +62,14 @@ export interface NotificationScheduleGateway {
   findByTripIdAndName(
     tripId: string,
     name: string,
-  ): Effect.Effect<NotificationScheduleDTO | null, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never>;
 
   /**
    * Update notification schedule
    */
   update(
-    schedule: NotificationScheduleDTO,
-  ): Effect.Effect<NotificationScheduleDTO, DatabaseError, never>;
+    schedule: NotificationSchedule,
+  ): Effect.Effect<NotificationSchedule, DatabaseError, never>;
 
   /**
    * Delete notification schedule
@@ -96,14 +100,14 @@ export interface NotificationScheduleGateway {
   updateLastRun(
     id: string,
     lastRun: Date,
-  ): Effect.Effect<NotificationScheduleDTO, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule, DatabaseError, never>;
 
   /**
    * Toggle isActive status for a schedule
    */
   toggleActive(
     id: string,
-  ): Effect.Effect<NotificationScheduleDTO, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule, DatabaseError, never>;
 
   /**
    * Update isActive status for multiple schedules
@@ -120,6 +124,38 @@ export interface NotificationScheduleGateway {
   countExecutions(
     scheduleId: string,
   ): Effect.Effect<number, DatabaseError, never>;
+
+  /**
+   * Find all notification schedules with pagination and optional filtering
+   */
+  findAllPaginated(options?: {
+    filter?: NotificationScheduleFilter;
+    pagination?: PaginationOptions;
+  }): Effect.Effect<
+    PaginatedResult<NotificationSchedule>,
+    DatabaseError,
+    never
+  >;
+
+  /**
+   * Find active notification schedules (currently within their time window)
+   */
+  findActive(): Effect.Effect<NotificationSchedule[], DatabaseError, never>;
+
+  /**
+   * Find upcoming notification schedules
+   */
+  findUpcoming(
+    days?: number,
+  ): Effect.Effect<NotificationSchedule[], DatabaseError, never>;
+
+  /**
+   * Get execution history for a schedule
+   */
+  getExecutionHistory(
+    scheduleId: string,
+    limit: number,
+  ): Effect.Effect<NotificationScheduleExecutionRecord[], DatabaseError, never>;
 }
 
 /**

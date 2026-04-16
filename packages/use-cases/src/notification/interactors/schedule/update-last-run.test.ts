@@ -1,162 +1,310 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import { Effect, Either } from "effect";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
+import type { NotificationScheduleGateway } from "../../ports/schedule/gateway";
+import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
 import {
   updateNotificationScheduleLastRunUseCase,
   type UpdateNotificationScheduleLastRunInput,
   UpdateLastRunNotFoundError,
 } from "./update-last-run";
-import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
 import {
   NotificationSchedule,
   NotificationScheduleType,
 } from "@mirai-app/domain";
-import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters";
+import { DatabaseError } from "@mirai-app/domain";
 
-describe("[UNIT] updateNotificationScheduleLastRunUseCase (Effect)", () => {
-  let gateway: InMemoryNotificationScheduleGateway;
+/**
+ * Create a mock NotificationSchedule domain entity
+ */
+function createMockScheduleDomainEntity(
+  id: string,
+  overrides: Partial<NotificationSchedule> = {},
+): NotificationSchedule {
+  const futureStart = new Date();
+  futureStart.setDate(futureStart.getDate() + 2);
+  const futureEnd = new Date(futureStart);
+  futureEnd.setDate(futureEnd.getDate() + 7);
 
-  beforeEach(() => {
-    gateway = new InMemoryNotificationScheduleGateway();
-  });
+  const startDate = overrides.startDate ?? futureStart;
+  const endDate = overrides.endDate ?? futureEnd;
+  const hour = overrides.hour ?? 10;
+  const minute = overrides.minute ?? 0;
+  const isActive = overrides.isActive ?? true;
+  const name = overrides.name ?? `Schedule ${id}`;
+  const lastRun = overrides.lastRun ?? null;
 
-  const getFutureDate = (daysFromNow: number): Date => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  };
-
-  const createValidSchedule = async (
-    overrides?: Partial<{
-      id: string;
-      name: string;
-    }>,
-  ): Promise<NotificationSchedule> => {
-    return await Effect.runPromise(
-      NotificationSchedule.create({
-        id: overrides?.id ?? "schedule-123",
-        name: overrides?.name ?? "Test Schedule",
-        tripId: null,
-        notificationType: NotificationScheduleType.INFO,
-        startDate: getFutureDate(2),
-        endDate: getFutureDate(10),
-        hour: 9,
-        minute: 0,
-        createdById: "user-123",
-      }),
-    );
-  };
-
-  // Helper to run use case with gateway
-  const runUseCase = async (input: UpdateNotificationScheduleLastRunInput) => {
-    const program = updateNotificationScheduleLastRunUseCase(input).pipe(
-      Effect.provideService(NotificationScheduleGatewayTag, {
-        create: (schedule: NotificationSchedule) => gateway.create(schedule),
-        findById: (id: string) => gateway.findById(id),
-        findByTripId: (tripId: string) => gateway.findByTripId(tripId),
-        findByName: (name: string) => gateway.findByName(name),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          gateway.findByTripIdAndName(tripId, name),
-        findByType: (type: NotificationScheduleType) =>
-          gateway.findByType(type),
-        findAll: (options?: {
-          filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-          pagination?: import("@mirai-app/domain").PaginationOptions;
-        }) => gateway.findAll(options),
-        findActive: (now?: Date) => gateway.findActive(now),
-        findUpcoming: (days?: number, now?: Date) =>
-          gateway.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => gateway.update(schedule),
-        delete: (id: string) => gateway.delete(id),
-        deleteMany: (ids: string[]) => gateway.deleteMany(ids),
-        exists: (id: string) => gateway.exists(id),
-        count: (
-          filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-        ) => gateway.count(filter),
-        updateLastRun: (id: string, lastRun: Date) =>
-          gateway.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => gateway.toggleActive(id),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          gateway.bulkToggleActive(ids, isActive),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          gateway.getExecutionHistory(scheduleId, limit),
-        countExecutions: (scheduleId: string) =>
-          gateway.countExecutions(scheduleId),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
-
-  describe("[UNIT] execute", () => {
-    it("should update lastRun successfully", async () => {
-      // Arrange
-      const schedule = await createValidSchedule({
-        id: "schedule-123",
-        name: "Test Schedule",
+  const entity: NotificationSchedule = {
+    id,
+    name,
+    tripId: overrides.tripId ?? null,
+    notificationType:
+      overrides.notificationType ?? NotificationScheduleType.INFO,
+    notificationTitle: overrides.notificationTitle ?? null,
+    notificationBody: overrides.notificationBody ?? null,
+    notificationUrl: overrides.notificationUrl ?? null,
+    startDate,
+    endDate,
+    hour,
+    minute,
+    isActive,
+    createdById: overrides.createdById ?? "admin-123",
+    lastRun,
+    createdAt: overrides.createdAt ?? new Date("2024-12-01"),
+    updatedAt: overrides.updatedAt ?? new Date("2024-12-01"),
+    isCurrentlyActive: (now = new Date()) => {
+      if (!isActive) return false;
+      return now >= startDate && now <= endDate;
+    },
+    isExpired: (now = new Date()) => now > endDate,
+    isUpcoming: (now = new Date()) => now < startDate,
+    shouldRunAt: (date: Date) => {
+      return date.getUTCHours() === hour && date.getUTCMinutes() === minute;
+    },
+    getNextRunTime: () => null,
+    getDurationMs: () => endDate.getTime() - startDate.getTime(),
+    getDurationDays: () =>
+      Math.round(
+        (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000),
+      ),
+    isDailyRanking: () =>
+      overrides.notificationType === NotificationScheduleType.DAILY_RANKING,
+    isTripSpecific: () => (overrides.tripId ?? null) !== null,
+    hasContent: () => false,
+    hasUrl: () => false,
+    getFormattedTime: () => {
+      const h = String(hour).padStart(2, "0");
+      const m = String(minute).padStart(2, "0");
+      return `${h}:${m}`;
+    },
+    getSummary: () =>
+      `${name} (${overrides.notificationType ?? NotificationScheduleType.INFO}) at ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} - ${isActive ? "active" : "inactive"}`,
+    toggleActive: function () {
+      return createMockScheduleDomainEntity(id, {
+        ...overrides,
+        isActive: !isActive,
       });
-      Effect.runSync(gateway.create(schedule));
+    },
+    updateLastRun: function (lr: Date) {
+      return createMockScheduleDomainEntity(id, {
+        ...overrides,
+        lastRun: lr,
+        updatedAt: new Date(),
+      });
+    },
+    duplicate: (params) =>
+      Effect.succeed(
+        createMockScheduleDomainEntity("new-id", {
+          ...overrides,
+          name: params.name ?? `${name} (Copy)`,
+          createdById: params.newCreatedById,
+        }),
+      ),
+    update: (props) =>
+      Effect.succeed(
+        createMockScheduleDomainEntity(id, { ...overrides, ...props }),
+      ),
+  } as NotificationSchedule;
 
-      const lastRun = new Date("2024-06-15T10:30:00Z");
-      const input: UpdateNotificationScheduleLastRunInput = {
-        id: "schedule-123",
-        lastRun,
-      };
+  return entity;
+}
 
-      // Act
-      const result = await runUseCase(input);
+/**
+ * Mock NotificationScheduleGateway for testing
+ */
+function createMockNotificationScheduleGateway(
+  options: {
+    existingSchedule?: NotificationSchedule | null;
+    shouldFailUpdate?: boolean;
+  } = {},
+): NotificationScheduleGateway {
+  const baseSchedule = createMockScheduleDomainEntity("schedule-123");
 
-      // Assert
-      expect(result.id).toBe("schedule-123");
-      expect(result.lastRun).toEqual(lastRun);
-    });
+  return {
+    create: (schedule) => Effect.succeed(schedule),
 
-    it("should return error when schedule not found", async () => {
-      const input: UpdateNotificationScheduleLastRunInput = {
-        id: "nonexistent",
-        lastRun: new Date(),
-      };
+    findById: (id: string) => {
+      if (options.existingSchedule !== undefined) {
+        return Effect.succeed(options.existingSchedule);
+      }
+      if (id === "schedule-123") {
+        return Effect.succeed(baseSchedule);
+      }
+      return Effect.succeed(null);
+    },
 
-      const program = updateNotificationScheduleLastRunUseCase(input).pipe(
-        Effect.provideService(NotificationScheduleGatewayTag, {
-          create: (schedule: NotificationSchedule) => gateway.create(schedule),
-          findById: () => Effect.succeed(null),
-          findByTripId: (tripId: string) => gateway.findByTripId(tripId),
-          findByName: (name: string) => gateway.findByName(name),
-          findByTripIdAndName: (tripId: string, name: string) =>
-            gateway.findByTripIdAndName(tripId, name),
-          findByType: (type: NotificationScheduleType) =>
-            gateway.findByType(type),
-          findAll: (options?: {
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-            pagination?: import("@mirai-app/domain").PaginationOptions;
-          }) => gateway.findAll(options),
-          findActive: (now?: Date) => gateway.findActive(now),
-          findUpcoming: (days?: number, now?: Date) =>
-            gateway.findUpcoming(days, now),
-          update: (schedule: NotificationSchedule) => gateway.update(schedule),
-          delete: (id: string) => gateway.delete(id),
-          deleteMany: (ids: string[]) => gateway.deleteMany(ids),
-          exists: (id: string) => gateway.exists(id),
-          count: (
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-          ) => gateway.count(filter),
-          updateLastRun: (id: string, lastRun: Date) =>
-            gateway.updateLastRun(id, lastRun),
-          toggleActive: (id: string) => gateway.toggleActive(id),
-          bulkToggleActive: (ids: string[], isActive: boolean) =>
-            gateway.bulkToggleActive(ids, isActive),
-          getExecutionHistory: (scheduleId: string, limit: number) =>
-            gateway.getExecutionHistory(scheduleId, limit),
-          countExecutions: (scheduleId: string) =>
-            gateway.countExecutions(scheduleId),
+    findByName: () => Effect.succeed(null),
+
+    findByTripIdAndName: () => Effect.succeed(null),
+
+    update: (schedule) => Effect.succeed(schedule),
+
+    delete: () => Effect.succeed(void 0),
+
+    deleteMany: () => Effect.succeed(0),
+
+    exists: () => Effect.succeed(false),
+
+    count: () => Effect.succeed(0),
+
+    updateLastRun: (id: string, lr: Date) => {
+      if (options.shouldFailUpdate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "updateLastRun",
+            message: "Database error",
+          }),
+        );
+      }
+      // Return schedule with updated lastRun
+      return Effect.succeed(
+        createMockScheduleDomainEntity(id, {
+          lastRun: lr,
+          updatedAt: new Date(),
         }),
       );
+    },
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(UpdateLastRunNotFoundError);
-      }
+    toggleActive: () => Effect.succeed(baseSchedule),
+
+    bulkToggleActive: () => Effect.succeed(0),
+
+    countExecutions: () => Effect.succeed(0),
+
+    findAllPaginated: () =>
+      Effect.succeed({
+        items: [],
+        pagination: {
+          total: 0,
+          limit: 20,
+          offset: 0,
+          hasMore: false,
+        },
+      }),
+
+    findActive: () => Effect.succeed([]),
+
+    findUpcoming: () => Effect.succeed([]),
+
+    getExecutionHistory: () => Effect.succeed([]),
+  };
+}
+
+describe("[UNIT] updateNotificationScheduleLastRunUseCase", () => {
+  it("should update last run timestamp successfully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const lastRunTime = new Date("2025-01-15T10:30:00Z");
+
+    const input: UpdateNotificationScheduleLastRunInput = {
+      id: "schedule-123",
+      lastRun: lastRunTime,
+    };
+
+    const program = updateNotificationScheduleLastRunUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBe("schedule-123");
+    expect(result.lastRun).toEqual(lastRunTime);
+  });
+
+  it("should fail with UpdateLastRunNotFoundError when schedule does not exist", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingSchedule: null,
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: UpdateNotificationScheduleLastRunInput = {
+      id: "nonexistent-123",
+      lastRun: new Date(),
+    };
+
+    const program = updateNotificationScheduleLastRunUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(UpdateLastRunNotFoundError);
+    }
+  });
+
+  it("should handle database errors gracefully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      shouldFailUpdate: true,
+    });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: UpdateNotificationScheduleLastRunInput = {
+      id: "schedule-123",
+      lastRun: new Date(),
+    };
+
+    const program = updateNotificationScheduleLastRunUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should return schedule with updated timestamp", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const lastRunTime = new Date("2025-01-20T14:00:00Z");
+
+    const input: UpdateNotificationScheduleLastRunInput = {
+      id: "schedule-123",
+      lastRun: lastRunTime,
+    };
+
+    const program = updateNotificationScheduleLastRunUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.updatedAt).toBeInstanceOf(Date);
+    expect(result.lastRun).toEqual(lastRunTime);
+  });
+
+  it("should update last run to current time", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const now = new Date();
+
+    const input: UpdateNotificationScheduleLastRunInput = {
+      id: "schedule-123",
+      lastRun: now,
+    };
+
+    const program = updateNotificationScheduleLastRunUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.lastRun).toEqual(now);
   });
 });

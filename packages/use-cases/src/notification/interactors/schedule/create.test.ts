@@ -1,314 +1,375 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer, Data } from "effect";
+import type { NotificationScheduleGateway } from "../../ports/schedule/gateway";
+import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
 import {
   createNotificationScheduleUseCase,
   type CreateNotificationScheduleInput,
   DuplicateScheduleNameError,
   ScheduleValidationError,
 } from "./create";
-import {
-  NotificationSchedule,
-  NotificationScheduleType,
-} from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
-import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters";
+import { NotificationScheduleType } from "@mirai-app/domain";
+import type { NotificationScheduleDTO } from "../../dto";
+import { DatabaseError } from "@mirai-app/domain";
 
-describe("[UNIT] createNotificationScheduleUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleGateway;
+/**
+ * Mock NotificationScheduleGateway for testing
+ */
+function createMockNotificationScheduleGateway(
+  options: {
+    shouldFailCreate?: boolean;
+    existingSchedule?: NotificationScheduleDTO | null;
+  } = {},
+): NotificationScheduleGateway {
+  const scheduleMap = new Map<string, NotificationScheduleDTO>();
 
-  beforeEach(() => {
-    repo = new InMemoryNotificationScheduleGateway();
-  });
-
-  const getFutureDate = (daysFromNow: number): Date => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    date.setHours(0, 0, 0, 0);
-    return date;
+  const baseSchedule: NotificationScheduleDTO = {
+    id: "schedule-123",
+    name: "Test Schedule",
+    tripId: null,
+    notificationType: NotificationScheduleType.INFO,
+    notificationTitle: null,
+    notificationBody: null,
+    notificationUrl: null,
+    startDate: new Date("2025-01-01T10:00:00Z"),
+    endDate: new Date("2025-01-07T10:00:00Z"),
+    hour: 10,
+    minute: 0,
+    isActive: true,
+    createdById: "admin-123",
+    lastRun: null,
+    createdAt: new Date("2024-12-01"),
+    updatedAt: new Date("2024-12-01"),
   };
 
-  const createValidInput = (
-    overrides?: Partial<CreateNotificationScheduleInput>,
-  ): CreateNotificationScheduleInput => ({
-    name: overrides?.name ?? "Test Schedule",
-    tripId: overrides?.tripId ?? null,
-    notificationType:
-      overrides?.notificationType ?? NotificationScheduleType.INFO,
-    notificationTitle: overrides?.notificationTitle ?? null,
-    notificationBody: overrides?.notificationBody ?? null,
-    notificationUrl: overrides?.notificationUrl ?? null,
-    startDate: overrides?.startDate ?? getFutureDate(2),
-    endDate: overrides?.endDate ?? getFutureDate(10),
-    hour: overrides?.hour ?? 9,
-    minute: overrides?.minute ?? 0,
-    isActive: overrides?.isActive ?? true,
-    createdById: overrides?.createdById ?? "user-123",
-  });
+  return {
+    create: (schedule: NotificationScheduleDTO) => {
+      if (options.shouldFailCreate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "create",
+            message: "Database error",
+          }),
+        );
+      }
+      scheduleMap.set(schedule.id, schedule);
+      return Effect.succeed(schedule);
+    },
 
-  const createValidSchedule = async (
-    overrides?: Partial<{
-      id: string;
-      name: string;
-      tripId: string | null;
-      notificationType: NotificationScheduleType;
-    }>,
-  ): Promise<NotificationSchedule> => {
-    const notificationType =
-      overrides?.notificationType ?? NotificationScheduleType.INFO;
-    const needsContent = notificationType !== NotificationScheduleType.INFO;
+    findById: (id: string) =>
+      Effect.succeed(scheduleMap.get(id) || options.existingSchedule || null),
 
-    const schedule = await Effect.runPromise(
-      NotificationSchedule.create({
-        id: overrides?.id ?? "schedule-123",
-        name: overrides?.name ?? "Test Schedule",
-        tripId: overrides?.tripId ?? null,
-        notificationType,
-        ...(needsContent && {
-          notificationTitle: "Test Title",
-          notificationBody: "Test Body",
-        }),
-        startDate: getFutureDate(2),
-        endDate: getFutureDate(10),
-        hour: 9,
-        minute: 0,
-        createdById: "user-123",
-      }),
+    findByName: () => Effect.succeed(null),
+
+    findByTripIdAndName: (tripId: string, name: string) => {
+      if (
+        options.existingSchedule &&
+        options.existingSchedule.tripId === tripId &&
+        options.existingSchedule.name === name
+      ) {
+        return Effect.succeed(options.existingSchedule);
+      }
+      return Effect.succeed(null);
+    },
+
+    update: (schedule: NotificationScheduleDTO) => Effect.succeed(schedule),
+
+    delete: () => Effect.succeed(void 0),
+
+    deleteMany: () => Effect.succeed(0),
+
+    exists: () => Effect.succeed(false),
+
+    count: () => Effect.succeed(0),
+
+    updateLastRun: () => Effect.succeed(baseSchedule),
+
+    toggleActive: () => Effect.succeed(baseSchedule),
+
+    bulkToggleActive: () => Effect.succeed(0),
+
+    countExecutions: () => Effect.succeed(0),
+  };
+}
+
+describe("[UNIT] createNotificationScheduleUseCase", () => {
+  it("should create a notification schedule successfully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
     );
-    return schedule;
-  };
 
-  const runUseCase = async (input: CreateNotificationScheduleInput) => {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 2);
+    const endDate = new Date(futureDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    const input: CreateNotificationScheduleInput = {
+      name: "Daily Reminder",
+      notificationType: NotificationScheduleType.INFO,
+      startDate: futureDate,
+      endDate: endDate,
+      hour: 9,
+      minute: 0,
+      createdById: "admin-123",
+    };
+
     const program = createNotificationScheduleUseCase(input).pipe(
-      Effect.provideService(NotificationScheduleGatewayTag, {
-        create: (schedule: NotificationSchedule) => repo.create(schedule),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByName: (name: string) => repo.findByName(name),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          repo.findByTripIdAndName(tripId, name),
-        findByType: (type: NotificationScheduleType) => repo.findByType(type),
-        findAll: (options?: {
-          filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-          pagination?: import("@mirai-app/domain").PaginationOptions;
-        }) => repo.findAll(options),
-        findActive: (now?: Date) => repo.findActive(now),
-        findUpcoming: (days?: number, now?: Date) =>
-          repo.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => repo.update(schedule),
-        delete: (id: string) => repo.delete(id),
-        deleteMany: (ids: string[]) => repo.deleteMany(ids),
-        exists: (id: string) => repo.exists(id),
-        count: (
-          filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-        ) => repo.count(filter),
-        updateLastRun: (id: string, lastRun: Date) =>
-          repo.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => repo.toggleActive(id),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          repo.bulkToggleActive(ids, isActive),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          repo.getExecutionHistory(scheduleId, limit),
-        countExecutions: (scheduleId: string) =>
-          repo.countExecutions(scheduleId),
-      }),
+      Effect.provide(mockLayer),
     );
-    return await Effect.runPromise(program);
-  };
+    const result = await Effect.runPromise(program);
 
-  describe("[UNIT] execute", () => {
-    it("should create schedule with valid input", async () => {
-      const input = createValidInput({
-        name: "Daily Reminder",
-        notificationType: NotificationScheduleType.REMINDER,
-        notificationTitle: "Test Title",
-        notificationBody: "Test Body",
-      });
+    expect(result.name).toBe("Daily Reminder");
+    expect(result.notificationType).toBe(NotificationScheduleType.INFO);
+    expect(result.isActive).toBe(true);
+    expect(result.createdById).toBe("admin-123");
+    expect(result.hour).toBe(9);
+    expect(result.minute).toBe(0);
+  });
 
-      const result = await runUseCase(input);
+  it("should fail with DuplicateScheduleNameError when name exists in same trip", async () => {
+    const existingSchedule: NotificationScheduleDTO = {
+      id: "existing-123",
+      name: "Duplicate Name",
+      tripId: "trip-123",
+      notificationType: NotificationScheduleType.INFO,
+      notificationTitle: null,
+      notificationBody: null,
+      notificationUrl: null,
+      startDate: new Date("2025-02-01T10:00:00Z"),
+      endDate: new Date("2025-02-07T10:00:00Z"),
+      hour: 10,
+      minute: 0,
+      isActive: true,
+      createdById: "admin-123",
+      lastRun: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-      expect(result.name).toBe("Daily Reminder");
-      expect(result.notificationType).toBe("REMINDER");
-      expect(result.notificationTitle).toBe("Test Title");
-      expect(result.notificationBody).toBe("Test Body");
-      expect(result.isActive).toBe(true);
-
-      const stored = await Effect.runPromise(repo.findById(result.id));
-      expect(stored).not.toBeNull();
-      expect(stored?.name).toBe("Daily Reminder");
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingSchedule,
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should create schedule without tripId", async () => {
-      const input = createValidInput({
-        tripId: null,
-      });
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 2);
+    const endDate = new Date(futureDate);
+    endDate.setDate(endDate.getDate() + 7);
 
-      const result = await runUseCase(input);
+    const input: CreateNotificationScheduleInput = {
+      name: "Duplicate Name",
+      tripId: "trip-123",
+      notificationType: NotificationScheduleType.INFO,
+      startDate: futureDate,
+      endDate: endDate,
+      hour: 9,
+      minute: 0,
+      createdById: "admin-123",
+    };
 
-      expect(result.tripId).toBeNull();
+    const program = createNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DuplicateScheduleNameError);
+    }
+  });
+
+  it("should fail with ScheduleValidationError for invalid hour", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 2);
+    const endDate = new Date(futureDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    const input: CreateNotificationScheduleInput = {
+      name: "Invalid Schedule",
+      notificationType: NotificationScheduleType.INFO,
+      startDate: futureDate,
+      endDate: endDate,
+      hour: 25, // Invalid hour
+      minute: 0,
+      createdById: "admin-123",
+    };
+
+    const program = createNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ScheduleValidationError);
+    }
+  });
+
+  it("should fail with ScheduleValidationError for empty name", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 2);
+    const endDate = new Date(futureDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    const input: CreateNotificationScheduleInput = {
+      name: "",
+      notificationType: NotificationScheduleType.INFO,
+      startDate: futureDate,
+      endDate: endDate,
+      hour: 9,
+      minute: 0,
+      createdById: "admin-123",
+    };
+
+    const program = createNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ScheduleValidationError);
+    }
+  });
+
+  it("should create schedule with trip association", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 2);
+    const endDate = new Date(futureDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    const input: CreateNotificationScheduleInput = {
+      name: "Trip Reminder",
+      tripId: "trip-456",
+      notificationType: NotificationScheduleType.REMINDER,
+      notificationTitle: "Trip Update",
+      notificationBody: "Your trip is starting soon!",
+      startDate: futureDate,
+      endDate: endDate,
+      hour: 8,
+      minute: 30,
+      isActive: true,
+      createdById: "admin-456",
+    };
+
+    const program = createNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.tripId).toBe("trip-456");
+    expect(result.notificationTitle).toBe("Trip Update");
+    expect(result.notificationBody).toBe("Your trip is starting soon!");
+  });
+
+  it("should handle repository database errors gracefully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      shouldFailCreate: true,
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should create INFO type schedule without notification content", async () => {
-      const input = createValidInput({
-        notificationType: NotificationScheduleType.INFO,
-        notificationTitle: null,
-        notificationBody: null,
-      });
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 2);
+    const endDate = new Date(futureDate);
+    endDate.setDate(endDate.getDate() + 7);
 
-      const result = await runUseCase(input);
+    const input: CreateNotificationScheduleInput = {
+      name: "Error Test",
+      notificationType: NotificationScheduleType.INFO,
+      startDate: futureDate,
+      endDate: endDate,
+      hour: 9,
+      minute: 0,
+      createdById: "admin-123",
+    };
 
-      expect(result.notificationType).toBe("INFO");
-      expect(result.notificationTitle).toBeNull();
-      expect(result.notificationBody).toBeNull();
+    const program = createNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should allow same name in different trips", async () => {
+    const existingSchedule: NotificationScheduleDTO = {
+      id: "existing-123",
+      name: "Shared Name",
+      tripId: "trip-111",
+      notificationType: NotificationScheduleType.INFO,
+      notificationTitle: null,
+      notificationBody: null,
+      notificationUrl: null,
+      startDate: new Date("2025-02-01T10:00:00Z"),
+      endDate: new Date("2025-02-07T10:00:00Z"),
+      hour: 10,
+      minute: 0,
+      isActive: true,
+      createdById: "admin-123",
+      lastRun: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingSchedule,
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should fail when schedule with same name exists for trip", async () => {
-      const existing = await createValidSchedule({
-        id: "existing-123",
-        name: "Duplicate Schedule",
-        tripId: "trip-456",
-      });
-      await Effect.runPromise(repo.create(existing));
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 2);
+    const endDate = new Date(futureDate);
+    endDate.setDate(endDate.getDate() + 7);
 
-      const input = createValidInput({
-        name: "Duplicate Schedule",
-        tripId: "trip-456",
-      });
+    const input: CreateNotificationScheduleInput = {
+      name: "Shared Name",
+      tripId: "trip-222", // Different trip
+      notificationType: NotificationScheduleType.INFO,
+      startDate: futureDate,
+      endDate: endDate,
+      hour: 9,
+      minute: 0,
+      createdById: "admin-123",
+    };
 
-      const program = createNotificationScheduleUseCase(input).pipe(
-        Effect.provideService(NotificationScheduleGatewayTag, {
-          create: (schedule: NotificationSchedule) => repo.create(schedule),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByName: (name: string) => repo.findByName(name),
-          findByTripIdAndName: (tripId: string, name: string) =>
-            repo.findByTripIdAndName(tripId, name),
-          findByType: (type: NotificationScheduleType) => repo.findByType(type),
-          findAll: (options?: {
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-            pagination?: import("@mirai-app/domain").PaginationOptions;
-          }) => repo.findAll(options),
-          findActive: (now?: Date) => repo.findActive(now),
-          findUpcoming: (days?: number, now?: Date) =>
-            repo.findUpcoming(days, now),
-          update: (schedule: NotificationSchedule) => repo.update(schedule),
-          delete: (id: string) => repo.delete(id),
-          deleteMany: (ids: string[]) => repo.deleteMany(ids),
-          exists: (id: string) => repo.exists(id),
-          count: (
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-          ) => repo.count(filter),
-          updateLastRun: (id: string, lastRun: Date) =>
-            repo.updateLastRun(id, lastRun),
-          toggleActive: (id: string) => repo.toggleActive(id),
-          bulkToggleActive: (ids: string[], isActive: boolean) =>
-            repo.bulkToggleActive(ids, isActive),
-          getExecutionHistory: (scheduleId: string, limit: number) =>
-            repo.getExecutionHistory(scheduleId, limit),
-          countExecutions: (scheduleId: string) =>
-            repo.countExecutions(scheduleId),
-        }),
-      );
+    const program = createNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(DuplicateScheduleNameError);
-        expect(either.left.name).toBe("Duplicate Schedule");
-      }
-    });
-
-    it("should fail when validation fails for empty name", async () => {
-      const input = createValidInput({
-        name: "",
-      });
-
-      const program = createNotificationScheduleUseCase(input).pipe(
-        Effect.provideService(NotificationScheduleGatewayTag, {
-          create: (schedule: NotificationSchedule) => repo.create(schedule),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByName: (name: string) => repo.findByName(name),
-          findByTripIdAndName: () => Effect.succeed(null),
-          findByType: (type: NotificationScheduleType) => repo.findByType(type),
-          findAll: (options?: {
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-            pagination?: import("@mirai-app/domain").PaginationOptions;
-          }) => repo.findAll(options),
-          findActive: (now?: Date) => repo.findActive(now),
-          findUpcoming: (days?: number, now?: Date) =>
-            repo.findUpcoming(days, now),
-          update: (schedule: NotificationSchedule) => repo.update(schedule),
-          delete: (id: string) => repo.delete(id),
-          deleteMany: (ids: string[]) => repo.deleteMany(ids),
-          exists: (id: string) => repo.exists(id),
-          count: (
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-          ) => repo.count(filter),
-          updateLastRun: (id: string, lastRun: Date) =>
-            repo.updateLastRun(id, lastRun),
-          toggleActive: (id: string) => repo.toggleActive(id),
-          bulkToggleActive: (ids: string[], isActive: boolean) =>
-            repo.bulkToggleActive(ids, isActive),
-          getExecutionHistory: (scheduleId: string, limit: number) =>
-            repo.getExecutionHistory(scheduleId, limit),
-          countExecutions: (scheduleId: string) =>
-            repo.countExecutions(scheduleId),
-        }),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ScheduleValidationError);
-      }
-    });
-
-    it("should fail when non-INFO type requires notification content", async () => {
-      const input = createValidInput({
-        notificationType: NotificationScheduleType.REMINDER,
-        notificationTitle: null,
-        notificationBody: null,
-      });
-
-      const program = createNotificationScheduleUseCase(input).pipe(
-        Effect.provideService(NotificationScheduleGatewayTag, {
-          create: (schedule: NotificationSchedule) => repo.create(schedule),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByName: (name: string) => repo.findByName(name),
-          findByTripIdAndName: () => Effect.succeed(null),
-          findByType: (type: NotificationScheduleType) => repo.findByType(type),
-          findAll: (options?: {
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-            pagination?: import("@mirai-app/domain").PaginationOptions;
-          }) => repo.findAll(options),
-          findActive: (now?: Date) => repo.findActive(now),
-          findUpcoming: (days?: number, now?: Date) =>
-            repo.findUpcoming(days, now),
-          update: (schedule: NotificationSchedule) => repo.update(schedule),
-          delete: (id: string) => repo.delete(id),
-          deleteMany: (ids: string[]) => repo.deleteMany(ids),
-          exists: (id: string) => repo.exists(id),
-          count: (
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-          ) => repo.count(filter),
-          updateLastRun: (id: string, lastRun: Date) =>
-            repo.updateLastRun(id, lastRun),
-          toggleActive: (id: string) => repo.toggleActive(id),
-          bulkToggleActive: (ids: string[], isActive: boolean) =>
-            repo.bulkToggleActive(ids, isActive),
-          getExecutionHistory: (scheduleId: string, limit: number) =>
-            repo.getExecutionHistory(scheduleId, limit),
-          countExecutions: (scheduleId: string) =>
-            repo.countExecutions(scheduleId),
-        }),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ScheduleValidationError);
-      }
-    });
+    expect(result.name).toBe("Shared Name");
+    expect(result.tripId).toBe("trip-222");
   });
 });

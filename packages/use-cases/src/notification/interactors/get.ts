@@ -1,7 +1,7 @@
 import { Effect, Data } from "effect";
 import { NotificationGatewayTag } from "../ports/gateway";
-import type { Notification } from "@mirai-app/domain";
-import { DatabaseError } from "@mirai-app/domain";
+import { DatabaseError, NotificationStatus } from "@mirai-app/domain";
+import type { NotificationDTO } from "../dto";
 
 /**
  * Input for GetNotification use case
@@ -36,22 +36,22 @@ export class NotificationNotFoundError extends Data.TaggedError(
 )<{ notificationId: string }> {}
 
 /**
- * Helper function to convert Notification to output DTO
+ * Helper function to convert NotificationDTO to output DTO
  */
-function toOutput(notification: Notification): GetNotificationOutput {
+function toOutput(notification: NotificationDTO): GetNotificationOutput {
   return {
     id: notification.id,
     title: notification.title,
-    body: notification.body,
-    url: notification.url,
+    body: notification.content,
+    url: null, // DTO has no url field
     status: notification.status,
     priority: notification.priority,
     tripId: notification.tripId,
     createdById: notification.createdById,
     createdAt: notification.createdAt,
-    isSent: notification.isSent(),
-    isScheduled: notification.isScheduled(),
-    isReadyToSend: notification.isReadyToSend(),
+    isSent: notification.status === NotificationStatus.SENT,
+    isScheduled: notification.scheduledAt !== null,
+    isReadyToSend: notification.status === NotificationStatus.READY,
   };
 }
 

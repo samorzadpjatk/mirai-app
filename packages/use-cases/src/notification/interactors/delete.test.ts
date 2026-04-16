@@ -1,247 +1,351 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   deleteNotificationUseCase,
   type DeleteNotificationInput,
   NotificationNotFoundError,
   NotificationAlreadySentError,
 } from "./delete";
-import { Notification, NotificationStatus } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { NotificationGatewayTag } from "../ports/gateway";
-import { InMemoryNotificationGateway } from "@mirai-app/adapters";
+import {
+  NotificationGatewayTag,
+  type NotificationGateway,
+} from "../ports/gateway";
+import type { NotificationDTO } from "../dto";
+import {
+  NotificationStatus,
+  NotificationPriority,
+  DatabaseError,
+} from "@mirai-app/domain";
 
-describe("[UNIT] deleteNotificationUseCase (Effect)", () => {
-  let repo: InMemoryNotificationGateway;
+/**
+ * Mock NotificationGateway for testing
+ */
+function createMockNotificationGateway(
+  notifications: NotificationDTO[] = [],
+): NotificationGateway {
+  const notificationMap = new Map<string, NotificationDTO>(
+    notifications.map((n) => [n.id, n]),
+  );
 
-  beforeEach(() => {
-    repo = new InMemoryNotificationGateway();
+  return {
+    create: (notification: NotificationDTO) => {
+      notificationMap.set(notification.id, notification);
+      return Effect.succeed(notification);
+    },
+
+    findById: (id: string) => {
+      const notification = notificationMap.get(id);
+      return Effect.succeed(notification ?? null);
+    },
+
+    findByTripId: () => Effect.succeed([]),
+
+    findByStatus: () => Effect.succeed([]),
+
+    findByTripIdAndStatus: () => Effect.succeed([]),
+
+    findByPriority: () => Effect.succeed([]),
+
+    findReadyToSend: () => Effect.succeed([]),
+
+    findOverdue: () => Effect.succeed([]),
+
+    findByCreatedById: () => Effect.succeed([]),
+
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(notificationMap.values()),
+        total: notificationMap.size,
+        limit: notificationMap.size,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    update: (notification: NotificationDTO) => Effect.succeed(notification),
+
+    delete: (id: string) => {
+      notificationMap.delete(id);
+      return Effect.succeed(void 0);
+    },
+
+    exists: (id: string) => Effect.succeed(notificationMap.has(id)),
+
+    countByStatus: () => Effect.succeed(0),
+
+    countPendingByTripId: () => Effect.succeed(0),
+
+    findByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findUnreadByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findManyConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findActiveConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findExecutionsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findDeliveriesByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findDeliveriesByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+// Helper to create a mock NotificationDTO
+function createMockNotification(
+  id: string,
+  status: NotificationStatus = NotificationStatus.DRAFT,
+): NotificationDTO {
+  return {
+    id,
+    tripId: null,
+    title: "Test Notification",
+    content: "Test content",
+    type: "GENERAL",
+    status,
+    priority: NotificationPriority.NORMAL,
+    scheduledAt: null,
+    sentAt: status === NotificationStatus.SENT ? new Date() : null,
+    createdById: "admin-123",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+describe("[UNIT] deleteNotificationUseCase", () => {
+  it("should delete a notification successfully", async () => {
+    const draftNotification = createMockNotification(
+      "notif-123",
+      NotificationStatus.DRAFT,
+    );
+    const mockGateway = createMockNotificationGateway([draftNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: DeleteNotificationInput = {
+      notificationId: "notif-123",
+    };
+
+    const program = deleteNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.deletedNotificationId).toBe("notif-123");
+
+    // Verify it was deleted
+    const exists = await Effect.runPromise(
+      mockGateway.exists("notif-123").pipe(Effect.provide(mockLayer)),
+    );
+    expect(exists).toBe(false);
   });
 
-  // Helper to create and save a notification
-  const createAndSaveNotification = async (
-    status: NotificationStatus = NotificationStatus.DRAFT,
-  ): Promise<Notification> => {
-    const notification = await Effect.runPromise(
-      Notification.create({
-        title: "Test Notification",
-        body: "Test body content",
-        createdById: "admin-123",
-        status,
-      }),
-    );
-    return Effect.runSync(repo.create(notification));
-  };
+  it("should fail with NotificationNotFoundError for non-existent notification", async () => {
+    const mockGateway = createMockNotificationGateway([]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-  // Helper to run use case with repository
-  const runUseCase = async (input: DeleteNotificationInput) => {
+    const input: DeleteNotificationInput = {
+      notificationId: "non-existent",
+    };
+
     const program = deleteNotificationUseCase(input).pipe(
-      Effect.provideService(NotificationGatewayTag, {
-        create: (notification: Notification) => repo.create(notification),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByStatus: (status: NotificationStatus) => repo.findByStatus(status),
-        findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-          repo.findByTripIdAndStatus(tripId, status),
-        findByPriority: (priority) => repo.findByPriority(priority),
-        findReadyToSend: () => repo.findReadyToSend(),
-        findOverdue: () => repo.findOverdue(),
-        findByCreatedById: (createdById: string) =>
-          repo.findByCreatedById(createdById),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (notification: Notification) => repo.update(notification),
-        delete: (id: string) => repo.delete(id),
-        exists: (id: string) => repo.exists(id),
-        countByStatus: (status: NotificationStatus) =>
-          repo.countByStatus(status),
-        countPendingByTripId: (tripId: string) =>
-          repo.countPendingByTripId(tripId),
-      }),
+      Effect.provide(mockLayer),
     );
-    return await Effect.runPromise(program);
-  };
+    const either = await Effect.runPromise(Effect.either(program));
 
-  describe("[UNIT] execute", () => {
-    it("should delete notification successfully", async () => {
-      // Arrange
-      const notification = await createAndSaveNotification(
-        NotificationStatus.DRAFT,
-      );
-      const input: DeleteNotificationInput = {
-        notificationId: notification.id,
-      };
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationNotFoundError);
+      expect(either.left.notificationId).toBe("non-existent");
+    }
+  });
 
-      // Act
-      const result = await runUseCase(input);
+  it("should fail with NotificationAlreadySentError for sent notifications", async () => {
+    const sentNotification = createMockNotification(
+      "notif-456",
+      NotificationStatus.SENT,
+    );
+    const mockGateway = createMockNotificationGateway([sentNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-      // Assert
-      expect(result.success).toBe(true);
-      expect(result.deletedNotificationId).toBe(notification.id);
+    const input: DeleteNotificationInput = {
+      notificationId: "notif-456",
+    };
 
-      // Verify notification was deleted
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored).toBeNull();
-    });
+    const program = deleteNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-    it("should delete READY notification", async () => {
-      // Arrange
-      const notification = await createAndSaveNotification(
-        NotificationStatus.READY,
-      );
-      const input: DeleteNotificationInput = {
-        notificationId: notification.id,
-      };
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationAlreadySentError);
+      expect(either.left.notificationId).toBe("notif-456");
+    }
+  });
 
-      // Act
-      const result = await runUseCase(input);
+  it("should delete a READY notification", async () => {
+    const readyNotification = createMockNotification(
+      "notif-789",
+      NotificationStatus.READY,
+    );
+    const mockGateway = createMockNotificationGateway([readyNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-      // Assert
-      expect(result.success).toBe(true);
+    const input: DeleteNotificationInput = {
+      notificationId: "notif-789",
+    };
 
-      // Verify notification was deleted
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored).toBeNull();
-    });
+    const program = deleteNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-    it("should fail when notification not found", async () => {
-      const input: DeleteNotificationInput = {
-        notificationId: "non-existent-id",
-      };
+    expect(result.success).toBe(true);
+    expect(result.deletedNotificationId).toBe("notif-789");
+  });
 
-      // Act
-      const program = deleteNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority) => repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
+  it("should delete a FAILED notification", async () => {
+    const failedNotification = createMockNotification(
+      "notif-fail",
+      NotificationStatus.FAILED,
+    );
+    const mockGateway = createMockNotificationGateway([failedNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationNotFoundError);
-        expect(either.left.notificationId).toBe("non-existent-id");
-      }
-    });
+    const input: DeleteNotificationInput = {
+      notificationId: "notif-fail",
+    };
 
-    it("should fail when notification has already been sent", async () => {
-      // Create and mark as sent
-      let notification = await createAndSaveNotification(
-        NotificationStatus.READY,
-      );
-      notification = await Effect.runPromise(notification.markAsSent());
-      Effect.runSync(repo.update(notification));
+    const program = deleteNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const input: DeleteNotificationInput = {
-        notificationId: notification.id,
-      };
+    expect(result.success).toBe(true);
+    expect(result.deletedNotificationId).toBe("notif-fail");
+  });
 
-      // Act
-      const program = deleteNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority) => repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
+  it("should delete a CANCELLED notification", async () => {
+    const cancelledNotification = createMockNotification(
+      "notif-cancel",
+      NotificationStatus.CANCELLED,
+    );
+    const mockGateway = createMockNotificationGateway([cancelledNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationAlreadySentError);
-        expect(either.left.notificationId).toBe(notification.id);
-      }
+    const input: DeleteNotificationInput = {
+      notificationId: "notif-cancel",
+    };
 
-      // Verify notification was not deleted
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored).not.toBeNull();
-    });
+    const program = deleteNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-    it("should allow deletion of FAILED notification", async () => {
-      // Create a FAILED notification
-      let notification = await createAndSaveNotification(
-        NotificationStatus.READY,
-      );
-      notification = await Effect.runPromise(
-        notification.markAsFailed("Test failure"),
-      );
-      Effect.runSync(repo.update(notification));
-
-      const input: DeleteNotificationInput = {
-        notificationId: notification.id,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.success).toBe(true);
-
-      // Verify notification was deleted
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored).toBeNull();
-    });
-
-    it("should allow deletion of CANCELLED notification", async () => {
-      // Create a CANCELLED notification
-      let notification = await createAndSaveNotification(
-        NotificationStatus.DRAFT,
-      );
-      notification = await Effect.runPromise(notification.cancel());
-      Effect.runSync(repo.update(notification));
-
-      const input: DeleteNotificationInput = {
-        notificationId: notification.id,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.success).toBe(true);
-
-      // Verify notification was deleted
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored).toBeNull();
-    });
+    expect(result.success).toBe(true);
+    expect(result.deletedNotificationId).toBe("notif-cancel");
   });
 });

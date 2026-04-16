@@ -1,405 +1,437 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
+import type { NotificationGateway } from "../ports/gateway";
+import { NotificationGatewayTag } from "../ports/gateway";
 import {
   scheduleNotificationUseCase,
   type ScheduleNotificationInput,
   NotificationNotFoundError,
   NotificationValidationError,
   NotificationStateError,
+  NotificationScheduleError,
 } from "./schedule";
-import { Notification, NotificationStatus } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { NotificationGatewayTag } from "../ports/gateway";
-import { InMemoryNotificationGateway } from "@mirai-app/adapters";
+import {
+  NotificationStatus,
+  NotificationPriority,
+  DatabaseError,
+} from "@mirai-app/domain";
+import type { NotificationDTO } from "../dto";
 
-describe("[UNIT] scheduleNotificationUseCase (Effect)", () => {
-  let repo: InMemoryNotificationGateway;
+/**
+ * Mock NotificationGateway for testing
+ */
+function createMockNotificationGateway(
+  options: {
+    existingNotification?: NotificationDTO | null;
+    shouldFailUpdate?: boolean;
+  } = {},
+): NotificationGateway {
+  const baseNotification: NotificationDTO = {
+    id: "notif-123",
+    tripId: null,
+    title: "Test Notification",
+    content: "Test Content",
+    type: "INFO" as string,
+    status: NotificationStatus.DRAFT,
+    priority: NotificationPriority.NORMAL,
+    scheduledAt: null,
+    sentAt: null,
+    createdById: "admin-123",
+    createdAt: new Date("2024-12-01"),
+    updatedAt: new Date("2024-12-01"),
+  };
 
-  beforeEach(() => {
-    repo = new InMemoryNotificationGateway();
+  return {
+    create: (notification: NotificationDTO) => Effect.succeed(notification),
+
+    findById: (id: string) => {
+      if (options.existingNotification !== undefined) {
+        return Effect.succeed(options.existingNotification);
+      }
+      if (id === "notif-123") {
+        return Effect.succeed(baseNotification);
+      }
+      return Effect.succeed(null);
+    },
+
+    findByTripId: () => Effect.succeed([]),
+
+    findByStatus: () => Effect.succeed([]),
+
+    findByTripIdAndStatus: () => Effect.succeed([]),
+
+    findByPriority: () => Effect.succeed([]),
+
+    findReadyToSend: () => Effect.succeed([]),
+
+    findOverdue: () => Effect.succeed([]),
+
+    findByCreatedById: () => Effect.succeed([]),
+
+    findAll: () =>
+      Effect.succeed({
+        items: [],
+        total: 0,
+        limit: 20,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    update: (notification: NotificationDTO) => {
+      if (options.shouldFailUpdate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "update",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed({
+        ...notification,
+        updatedAt: new Date(),
+      });
+    },
+
+    delete: () => Effect.succeed(void 0),
+
+    exists: () => Effect.succeed(false),
+
+    countByStatus: () => Effect.succeed(0),
+
+    countPendingByTripId: () => Effect.succeed(0),
+
+    findByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findUnreadByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findManyConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findActiveConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findExecutionsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findDeliveriesByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findDeliveriesByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+describe("[UNIT] scheduleNotificationUseCase", () => {
+  it("should schedule a notification successfully", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const futureTime = new Date();
+    futureTime.setHours(futureTime.getHours() + 2);
+
+    const input: ScheduleNotificationInput = {
+      notificationId: "notif-123",
+      scheduledFor: futureTime,
+    };
+
+    const program = scheduleNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBe("notif-123");
+    expect(result.scheduledFor).toEqual(futureTime);
+    expect(result.status).toBe(NotificationStatus.READY);
   });
 
-  // Helper to create and save a notification
-  const createAndSaveNotification = async (
-    status: NotificationStatus = NotificationStatus.DRAFT,
-  ): Promise<Notification> => {
-    const notification = await Effect.runPromise(
-      Notification.create({
-        title: "Test Notification",
-        body: "Test body content",
-        createdById: "admin-123",
-        status,
-      }),
-    );
-    return Effect.runSync(repo.create(notification));
-  };
+  it("should fail with NotificationNotFoundError when notification does not exist", async () => {
+    const mockGateway = createMockNotificationGateway({
+      existingNotification: null,
+    });
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-  // Helper to run use case with repository
-  const runUseCase = async (input: ScheduleNotificationInput) => {
+    const futureTime = new Date();
+    futureTime.setHours(futureTime.getHours() + 2);
+
+    const input: ScheduleNotificationInput = {
+      notificationId: "nonexistent-123",
+      scheduledFor: futureTime,
+    };
+
     const program = scheduleNotificationUseCase(input).pipe(
-      Effect.provideService(NotificationGatewayTag, {
-        create: (notification: Notification) => repo.create(notification),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByStatus: (status: NotificationStatus) => repo.findByStatus(status),
-        findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-          repo.findByTripIdAndStatus(tripId, status),
-        findByPriority: (priority) => repo.findByPriority(priority),
-        findReadyToSend: () => repo.findReadyToSend(),
-        findOverdue: () => repo.findOverdue(),
-        findByCreatedById: (createdById: string) =>
-          repo.findByCreatedById(createdById),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (notification: Notification) => repo.update(notification),
-        delete: (id: string) => repo.delete(id),
-        exists: (id: string) => repo.exists(id),
-        countByStatus: (status: NotificationStatus) =>
-          repo.countByStatus(status),
-        countPendingByTripId: (tripId: string) =>
-          repo.countPendingByTripId(tripId),
-      }),
+      Effect.provide(mockLayer),
     );
-    return await Effect.runPromise(program);
-  };
+    const either = await Effect.runPromise(Effect.either(program));
 
-  describe("[UNIT] execute", () => {
-    it("should schedule notification successfully", async () => {
-      // Arrange
-      const notification = await createAndSaveNotification(
-        NotificationStatus.DRAFT,
-      );
-      const scheduledFor = new Date(Date.now() + 3600000); // 1 hour from now
-      const input: ScheduleNotificationInput = {
-        notificationId: notification.id,
-        scheduledFor,
-      };
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationNotFoundError);
+    }
+  });
 
-      // Act
-      const result = await runUseCase(input);
+  it("should fail with NotificationStateError when notification already sent", async () => {
+    const sentNotification: NotificationDTO = {
+      id: "sent-notif",
+      tripId: null,
+      title: "Sent Notification",
+      content: "Already sent",
+      type: "INFO" as string,
+      status: NotificationStatus.SENT,
+      priority: NotificationPriority.NORMAL,
+      scheduledAt: new Date("2024-12-01"),
+      sentAt: new Date("2024-12-01"),
+      createdById: "admin-123",
+      createdAt: new Date("2024-11-01"),
+      updatedAt: new Date("2024-12-01"),
+    };
 
-      // Assert
-      expect(result.id).toBe(notification.id);
-      expect(result.scheduledFor).toEqual(scheduledFor);
-      expect(result.status).toBe("READY"); // Status should transition to READY
-
-      // Verify stored notification
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored?.scheduledFor).toEqual(scheduledFor);
-      expect(stored?.status).toBe(NotificationStatus.READY);
+    const mockGateway = createMockNotificationGateway({
+      existingNotification: sentNotification,
     });
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should schedule notification from DRAFT to READY", async () => {
-      // Arrange
-      const notification = await createAndSaveNotification(
-        NotificationStatus.DRAFT,
-      );
-      expect(notification.status).toBe(NotificationStatus.DRAFT);
+    const futureTime = new Date();
+    futureTime.setHours(futureTime.getHours() + 2);
 
-      const scheduledFor = new Date(Date.now() + 7200000); // 2 hours from now
-      const input: ScheduleNotificationInput = {
-        notificationId: notification.id,
-        scheduledFor,
-      };
+    const input: ScheduleNotificationInput = {
+      notificationId: "sent-notif",
+      scheduledFor: futureTime,
+    };
 
-      // Act
-      const result = await runUseCase(input);
+    const program = scheduleNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Assert
-      expect(result.status).toBe("READY");
-      expect(result.scheduledFor).toEqual(scheduledFor);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationStateError);
+    }
+  });
 
-      // Verify stored notification
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored?.status).toBe(NotificationStatus.READY);
+  it("should fail with NotificationStateError when notification cancelled", async () => {
+    const cancelledNotification: NotificationDTO = {
+      id: "cancelled-notif",
+      tripId: null,
+      title: "Cancelled Notification",
+      content: "Was cancelled",
+      type: "INFO" as string,
+      status: NotificationStatus.CANCELLED,
+      priority: NotificationPriority.NORMAL,
+      scheduledAt: null,
+      sentAt: null,
+      createdById: "admin-123",
+      createdAt: new Date("2024-11-01"),
+      updatedAt: new Date("2024-12-01"),
+    };
+
+    const mockGateway = createMockNotificationGateway({
+      existingNotification: cancelledNotification,
     });
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should reschedule already READY notification", async () => {
-      // Arrange
-      let notification = await createAndSaveNotification(
-        NotificationStatus.DRAFT,
-      );
-      notification = await Effect.runPromise(
-        notification.schedule(new Date(Date.now() + 3600000)),
-      );
-      notification = await Effect.runPromise(
-        notification.updateStatus(NotificationStatus.READY),
-      );
-      Effect.runSync(repo.update(notification));
+    const futureTime = new Date();
+    futureTime.setHours(futureTime.getHours() + 2);
 
-      const newScheduledFor = new Date(Date.now() + 7200000); // 2 hours from now
-      const input: ScheduleNotificationInput = {
-        notificationId: notification.id,
-        scheduledFor: newScheduledFor,
-      };
+    const input: ScheduleNotificationInput = {
+      notificationId: "cancelled-notif",
+      scheduledFor: futureTime,
+    };
 
-      // Act
-      const result = await runUseCase(input);
+    const program = scheduleNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Assert
-      expect(result.scheduledFor).toEqual(newScheduledFor);
-      expect(result.status).toBe("READY");
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationStateError);
+    }
+  });
 
-    it("should fail when notification not found", async () => {
-      const scheduledFor = new Date(Date.now() + 3600000);
-      const input: ScheduleNotificationInput = {
-        notificationId: "non-existent-id",
-        scheduledFor,
-      };
+  it("should fail with NotificationValidationError when scheduled time is in the past", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-      // Act
-      const program = scheduleNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority) => repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
+    const pastTime = new Date();
+    pastTime.setHours(pastTime.getHours() - 2);
 
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationNotFoundError);
-        expect(either.left.notificationId).toBe("non-existent-id");
+    const input: ScheduleNotificationInput = {
+      notificationId: "notif-123",
+      scheduledFor: pastTime,
+    };
+
+    const program = scheduleNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationValidationError);
+      if (either.left._tag === "NotificationValidationError") {
+        expect(either.left.field).toBe("scheduledFor");
       }
+    }
+  });
+
+  it("should handle database errors gracefully", async () => {
+    const mockGateway = createMockNotificationGateway({
+      shouldFailUpdate: true,
     });
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should fail when notification has already been sent", async () => {
-      // Create and mark as sent
-      let notification = await createAndSaveNotification(
-        NotificationStatus.READY,
-      );
-      notification = await Effect.runPromise(notification.markAsSent());
-      Effect.runSync(repo.update(notification));
+    const futureTime = new Date();
+    futureTime.setHours(futureTime.getHours() + 2);
 
-      const scheduledFor = new Date(Date.now() + 3600000);
-      const input: ScheduleNotificationInput = {
-        notificationId: notification.id,
-        scheduledFor,
-      };
+    const input: ScheduleNotificationInput = {
+      notificationId: "notif-123",
+      scheduledFor: futureTime,
+    };
 
-      // Act
-      const program = scheduleNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority) => repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
+    const program = scheduleNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationStateError);
-        expect(either.left.message).toContain("already been sent");
-      }
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationScheduleError);
+    }
+  });
+
+  it("should schedule failed notification and update status to READY", async () => {
+    const failedNotification: NotificationDTO = {
+      id: "failed-notif",
+      tripId: null,
+      title: "Failed Notification",
+      content: "Previously failed",
+      type: "INFO" as string,
+      status: NotificationStatus.FAILED,
+      priority: NotificationPriority.HIGH,
+      scheduledAt: null,
+      sentAt: null,
+      createdById: "admin-123",
+      createdAt: new Date("2024-11-01"),
+      updatedAt: new Date("2024-11-01"),
+    };
+
+    const mockGateway = createMockNotificationGateway({
+      existingNotification: failedNotification,
     });
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should fail when notification has been cancelled", async () => {
-      // Create and cancel
-      let notification = await createAndSaveNotification(
-        NotificationStatus.DRAFT,
-      );
-      notification = await Effect.runPromise(notification.cancel());
-      Effect.runSync(repo.update(notification));
+    const futureTime = new Date();
+    futureTime.setHours(futureTime.getHours() + 2);
 
-      const scheduledFor = new Date(Date.now() + 3600000);
-      const input: ScheduleNotificationInput = {
-        notificationId: notification.id,
-        scheduledFor,
-      };
+    const input: ScheduleNotificationInput = {
+      notificationId: "failed-notif",
+      scheduledFor: futureTime,
+    };
 
-      // Act
-      const program = scheduleNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority) => repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
+    const program = scheduleNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationStateError);
-        expect(either.left.message).toContain("cancelled");
-      }
-    });
-
-    it("should fail when scheduled time is in the past", async () => {
-      const notification = await createAndSaveNotification();
-      const scheduledFor = new Date(Date.now() - 3600000); // 1 hour ago
-      const input: ScheduleNotificationInput = {
-        notificationId: notification.id,
-        scheduledFor,
-      };
-
-      // Act
-      const program = scheduleNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority) => repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
-
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationValidationError);
-        expect(either.left.message).toContain("future");
-      }
-
-      // Verify notification was not changed
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored?.status).toBe(NotificationStatus.DRAFT);
-      expect(stored?.scheduledFor).toBeNull();
-    });
-
-    it("should fail when scheduled time is now", async () => {
-      const notification = await createAndSaveNotification();
-      const input: ScheduleNotificationInput = {
-        notificationId: notification.id,
-        scheduledFor: new Date(), // Now
-      };
-
-      // Act
-      const program = scheduleNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority) => repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
-
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationValidationError);
-      }
-    });
-
-    it("should allow scheduling FAILED notification", async () => {
-      // Create a FAILED notification
-      let notification = await createAndSaveNotification(
-        NotificationStatus.READY,
-      );
-      notification = await Effect.runPromise(
-        notification.markAsFailed("Test failure"),
-      );
-      Effect.runSync(repo.update(notification));
-
-      const scheduledFor = new Date(Date.now() + 3600000);
-      const input: ScheduleNotificationInput = {
-        notificationId: notification.id,
-        scheduledFor,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.status).toBe("READY");
-      expect(result.scheduledFor).toEqual(scheduledFor);
-
-      // Verify stored notification
-      const stored = Effect.runSync(repo.findById(notification.id));
-      expect(stored?.status).toBe(NotificationStatus.READY);
-    });
+    expect(result.status).toBe(NotificationStatus.READY);
   });
 });

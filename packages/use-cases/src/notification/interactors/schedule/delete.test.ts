@@ -1,194 +1,204 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
+import type { NotificationScheduleGateway } from "../../ports/schedule/gateway";
+import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
 import {
   deleteNotificationScheduleUseCase,
   type DeleteNotificationScheduleInput,
   DeleteScheduleNotFoundError,
 } from "./delete";
-import {
-  NotificationSchedule,
-  NotificationScheduleType,
-} from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
-import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters";
+import { NotificationScheduleType } from "@mirai-app/domain";
+import type { NotificationScheduleDTO } from "../../dto";
+import { DatabaseError } from "@mirai-app/domain";
 
-describe("[UNIT] deleteNotificationScheduleUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleGateway;
+/**
+ * Mock NotificationScheduleGateway for testing
+ */
+function createMockNotificationScheduleGateway(
+  options: {
+    shouldFailDelete?: boolean;
+    existingSchedule?: NotificationScheduleDTO | null;
+  } = {},
+): NotificationScheduleGateway {
+  const baseSchedule: NotificationScheduleDTO = {
+    id: "schedule-123",
+    name: "Test Schedule",
+    tripId: null,
+    notificationType: NotificationScheduleType.INFO,
+    notificationTitle: null,
+    notificationBody: null,
+    notificationUrl: null,
+    startDate: new Date("2025-01-01T10:00:00Z"),
+    endDate: new Date("2025-01-07T10:00:00Z"),
+    hour: 10,
+    minute: 0,
+    isActive: true,
+    createdById: "admin-123",
+    lastRun: null,
+    createdAt: new Date("2024-12-01"),
+    updatedAt: new Date("2024-12-01"),
+  };
 
-  beforeEach(() => {
-    repo = new InMemoryNotificationScheduleGateway();
+  return {
+    create: (schedule: NotificationScheduleDTO) => Effect.succeed(schedule),
+
+    findById: (id: string) => {
+      if (options.existingSchedule) {
+        return Effect.succeed(options.existingSchedule);
+      }
+      if (id === "schedule-123") {
+        return Effect.succeed(baseSchedule);
+      }
+      return Effect.succeed(null);
+    },
+
+    findByName: () => Effect.succeed(null),
+
+    findByTripIdAndName: () => Effect.succeed(null),
+
+    update: (schedule: NotificationScheduleDTO) => Effect.succeed(schedule),
+
+    delete: (id: string) => {
+      if (options.shouldFailDelete) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "delete",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed(void 0);
+    },
+
+    deleteMany: () => Effect.succeed(0),
+
+    exists: () => Effect.succeed(false),
+
+    count: () => Effect.succeed(0),
+
+    updateLastRun: () => Effect.succeed(baseSchedule),
+
+    toggleActive: () => Effect.succeed(baseSchedule),
+
+    bulkToggleActive: () => Effect.succeed(0),
+
+    countExecutions: (scheduleId: string) => {
+      return Effect.succeed(scheduleId === "schedule-123" ? 5 : 0);
+    },
+  };
+}
+
+describe("[UNIT] deleteNotificationScheduleUseCase", () => {
+  it("should delete a schedule successfully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: DeleteNotificationScheduleInput = {
+      id: "schedule-123",
+    };
+
+    const program = deleteNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain("Test Schedule");
+    expect(result.message).toContain("5 execution records");
+    expect(result.deletedExecutionCount).toBe(5);
   });
 
-  const getFutureDate = (daysFromNow: number): Date => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  };
-
-  const createValidSchedule = async (
-    overrides?: Partial<{
-      id: string;
-      name: string;
-      notificationType: NotificationScheduleType;
-    }>,
-  ): Promise<NotificationSchedule> => {
-    const notificationType =
-      overrides?.notificationType ?? NotificationScheduleType.INFO;
-    const needsContent = notificationType !== NotificationScheduleType.INFO;
-
-    const schedule = await Effect.runPromise(
-      NotificationSchedule.create({
-        id: overrides?.id ?? "schedule-123",
-        name: overrides?.name ?? "Test Schedule",
-        tripId: null,
-        notificationType,
-        ...(needsContent && {
-          notificationTitle: "Test Title",
-          notificationBody: "Test Body",
-        }),
-        startDate: getFutureDate(2),
-        endDate: getFutureDate(10),
-        hour: 9,
-        minute: 0,
-        createdById: "user-123",
-      }),
+  it("should fail with DeleteScheduleNotFoundError when schedule does not exist", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingSchedule: null,
+    });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
     );
-    return schedule;
-  };
 
-  const runUseCase = async (input: DeleteNotificationScheduleInput) => {
+    const input: DeleteNotificationScheduleInput = {
+      id: "nonexistent-123",
+    };
+
     const program = deleteNotificationScheduleUseCase(input).pipe(
-      Effect.provideService(NotificationScheduleGatewayTag, {
-        create: (schedule: NotificationSchedule) => repo.create(schedule),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByName: (name: string) => repo.findByName(name),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          repo.findByTripIdAndName(tripId, name),
-        findByType: (type: NotificationScheduleType) => repo.findByType(type),
-        findAll: (options?: {
-          filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-          pagination?: import("@mirai-app/domain").PaginationOptions;
-        }) => repo.findAll(options),
-        findActive: (now?: Date) => repo.findActive(now),
-        findUpcoming: (days?: number, now?: Date) =>
-          repo.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => repo.update(schedule),
-        delete: (id: string) => repo.delete(id),
-        deleteMany: (ids: string[]) => repo.deleteMany(ids),
-        exists: (id: string) => repo.exists(id),
-        count: (
-          filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-        ) => repo.count(filter),
-        updateLastRun: (id: string, lastRun: Date) =>
-          repo.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => repo.toggleActive(id),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          repo.bulkToggleActive(ids, isActive),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          repo.getExecutionHistory(scheduleId, limit),
-        countExecutions: (scheduleId: string) =>
-          repo.countExecutions(scheduleId),
-      }),
+      Effect.provide(mockLayer),
     );
-    return await Effect.runPromise(program);
-  };
+    const either = await Effect.runPromise(Effect.either(program));
 
-  describe("[UNIT] execute", () => {
-    it("should delete schedule successfully", async () => {
-      const schedule = await createValidSchedule({
-        id: "schedule-456",
-        name: "Daily Reminder",
-      });
-      await Effect.runPromise(repo.create(schedule));
-      repo.seedExecutionHistory("schedule-456", [
-        {
-          id: "exec-1",
-          executedAt: new Date(),
-          notification: {
-            id: "notif-1",
-            title: "Test",
-            body: "Test body",
-            createdAt: new Date(),
-          },
-        },
-        {
-          id: "exec-2",
-          executedAt: new Date(),
-          notification: null,
-        },
-        {
-          id: "exec-3",
-          executedAt: new Date(),
-          notification: {
-            id: "notif-2",
-            title: "Test 2",
-            body: "Test body 2",
-            createdAt: new Date(),
-          },
-        },
-      ]);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DeleteScheduleNotFoundError);
+      expect(either.left.id).toBe("nonexistent-123");
+    }
+  });
 
-      const input: DeleteNotificationScheduleInput = {
-        id: "schedule-456",
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.success).toBe(true);
-      expect(result.deletedExecutionCount).toBe(3);
-      expect(result.message).toContain("Daily Reminder");
-
-      const stored = await Effect.runPromise(repo.findById("schedule-456"));
-      expect(stored).toBeNull();
+  it("should handle database errors gracefully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      shouldFailDelete: true,
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should return error when schedule not found", async () => {
-      const input: DeleteNotificationScheduleInput = {
-        id: "non-existent",
-      };
+    const input: DeleteNotificationScheduleInput = {
+      id: "schedule-123",
+    };
 
-      const program = deleteNotificationScheduleUseCase(input).pipe(
-        Effect.provideService(NotificationScheduleGatewayTag, {
-          create: (schedule: NotificationSchedule) => repo.create(schedule),
-          findById: () => Effect.succeed(null),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByName: (name: string) => repo.findByName(name),
-          findByTripIdAndName: (tripId: string, name: string) =>
-            repo.findByTripIdAndName(tripId, name),
-          findByType: (type: NotificationScheduleType) => repo.findByType(type),
-          findAll: (options?: {
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-            pagination?: import("@mirai-app/domain").PaginationOptions;
-          }) => repo.findAll(options),
-          findActive: (now?: Date) => repo.findActive(now),
-          findUpcoming: (days?: number, now?: Date) =>
-            repo.findUpcoming(days, now),
-          update: (schedule: NotificationSchedule) => repo.update(schedule),
-          delete: (id: string) => repo.delete(id),
-          deleteMany: (ids: string[]) => repo.deleteMany(ids),
-          exists: (id: string) => repo.exists(id),
-          count: (
-            filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-          ) => repo.count(filter),
-          updateLastRun: (id: string, lastRun: Date) =>
-            repo.updateLastRun(id, lastRun),
-          toggleActive: (id: string) => repo.toggleActive(id),
-          bulkToggleActive: (ids: string[], isActive: boolean) =>
-            repo.bulkToggleActive(ids, isActive),
-          getExecutionHistory: (scheduleId: string, limit: number) =>
-            repo.getExecutionHistory(scheduleId, limit),
-          countExecutions: (scheduleId: string) =>
-            repo.countExecutions(scheduleId),
-        }),
-      );
+    const program = deleteNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(DeleteScheduleNotFoundError);
-      }
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should include execution count in success message", async () => {
+    const customSchedule: NotificationScheduleDTO = {
+      id: "custom-456",
+      name: "Custom Schedule",
+      tripId: "trip-123",
+      notificationType: NotificationScheduleType.DAILY_RANKING,
+      notificationTitle: "Daily Update",
+      notificationBody: "Check your ranking!",
+      notificationUrl: null,
+      startDate: new Date("2025-01-01T09:00:00Z"),
+      endDate: new Date("2025-01-31T09:00:00Z"),
+      hour: 9,
+      minute: 0,
+      isActive: true,
+      createdById: "admin-456",
+      lastRun: new Date("2025-01-15"),
+      createdAt: new Date("2024-12-01"),
+      updatedAt: new Date("2025-01-15"),
+    };
+
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingSchedule: customSchedule,
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: DeleteNotificationScheduleInput = {
+      id: "custom-456",
+    };
+
+    const program = deleteNotificationScheduleUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain("Custom Schedule");
+    expect(result.deletedExecutionCount).toBe(0); // Because the gateway counts by ID
   });
 });

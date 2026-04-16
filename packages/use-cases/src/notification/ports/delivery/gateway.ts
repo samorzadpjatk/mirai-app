@@ -32,6 +32,7 @@ export interface NotificationDelivery {
     id: string;
     title: string;
     body: string;
+    url?: string | null;
     createdAt: Date;
     createdBy?: {
       id: string;
@@ -90,6 +91,29 @@ export interface NotificationDeliveryGateway {
    * Count failed deliveries
    */
   countFailed(tripId: string): Effect.Effect<number, DatabaseError, never>;
+
+  /**
+   * Find delivery by notification ID
+   */
+  findByNotificationId(
+    notificationId: string,
+  ): Effect.Effect<NotificationDelivery | null, DatabaseError, never>;
+
+  /**
+   * Find deliveries with filters and pagination
+   */
+  findMany(
+    filters: Partial<DeliveryFilters>,
+    pagination: PaginationOptions,
+  ): Effect.Effect<NotificationDelivery[], DatabaseError, never>;
+
+  /**
+   * Find failed deliveries for a trip
+   */
+  findFailed(
+    tripId: string,
+    pagination: PaginationOptions,
+  ): Effect.Effect<NotificationDelivery[], DatabaseError, never>;
 }
 
 /**

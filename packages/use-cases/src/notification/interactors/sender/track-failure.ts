@@ -24,7 +24,7 @@ export class TrackDeliveryFailureError extends Data.TaggedError(
 )<{
   readonly message: string;
   readonly cause?: unknown;
-}>() {}
+}> {}
 
 /**
  * TrackDeliveryFailure Use Case

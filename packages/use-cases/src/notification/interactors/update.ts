@@ -1,13 +1,11 @@
 import {
-  Notification,
   NotificationStatus,
   NotificationPriority,
-  ValidationError,
-  StateTransitionError,
+  DatabaseError,
 } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { NotificationGatewayTag } from "../ports/gateway";
-import { DatabaseError } from "@mirai-app/domain";
+import type { NotificationDTO } from "../dto";
 
 /**
  * Input for UpdateNotification use case
@@ -106,50 +104,35 @@ export function updateNotificationUseCase(
       );
     }
 
-    // Update content if provided
-    let updated = existing;
-    if (
-      input.title !== undefined ||
-      input.body !== undefined ||
-      input.url !== undefined
-    ) {
-      updated = yield* updated
-        .updateContent({
-          title: input.title,
-          body: input.body,
-          url: input.url,
-        })
-        .pipe(
-          Effect.mapError((error) => {
-            if (error instanceof ValidationError) {
-              return new NotificationValidationError({
-                message: error.message,
-                field: error.field,
-              });
-            }
-            return new NotificationStateError({
-              message: error.message,
-            });
-          }),
-        );
-    }
-
-    // Update status if provided
-    if (input.status !== undefined && input.status !== updated.status) {
-      updated = yield* updated.updateStatus(input.status).pipe(
-        Effect.mapError(
-          (error) =>
-            new NotificationStateError({
-              message: `Cannot transition from ${error.from} to ${error.to}: ${error.message}`,
-            }),
-        ),
+    // Validate title if provided
+    if (input.title !== undefined && input.title.trim().length === 0) {
+      return yield* Effect.fail(
+        new NotificationValidationError({
+          message: "Title cannot be empty",
+          field: "title",
+        }),
       );
     }
 
-    // Update priority if provided
-    if (input.priority !== undefined && input.priority !== updated.priority) {
-      updated = updated.updatePriority(input.priority);
+    // Validate body if provided
+    if (input.body !== undefined && input.body.trim().length === 0) {
+      return yield* Effect.fail(
+        new NotificationValidationError({
+          message: "Body cannot be empty",
+          field: "body",
+        }),
+      );
     }
+
+    // Build updated DTO
+    const updated: NotificationDTO = {
+      ...existing,
+      ...(input.title !== undefined && { title: input.title.trim() }),
+      ...(input.body !== undefined && { content: input.body.trim() }),
+      ...(input.status !== undefined && { status: input.status }),
+      ...(input.priority !== undefined && { priority: input.priority }),
+      updatedAt: new Date(),
+    };
 
     // Save to repository
     const saved = yield* notificationRepo.update(updated).pipe(
@@ -165,17 +148,17 @@ export function updateNotificationUseCase(
   });
 }
 
-function toOutput(notification: Notification): UpdateNotificationOutput {
+function toOutput(notification: NotificationDTO): UpdateNotificationOutput {
   return {
     id: notification.id,
     title: notification.title,
-    body: notification.body,
-    url: notification.url,
+    body: notification.content,
+    url: null,
     createdById: notification.createdById,
     tripId: notification.tripId,
     status: notification.status,
     priority: notification.priority,
-    scheduledFor: notification.scheduledFor,
+    scheduledFor: notification.scheduledAt,
     sentAt: notification.sentAt,
     createdAt: notification.createdAt,
     updatedAt: notification.updatedAt,

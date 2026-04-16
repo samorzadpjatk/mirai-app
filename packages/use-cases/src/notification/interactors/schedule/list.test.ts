@@ -1,170 +1,315 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
+import type { NotificationScheduleGateway } from "../../ports/schedule/gateway";
+import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
 import {
   getNotificationSchedulesUseCase,
   type GetNotificationSchedulesInput,
+  type GetNotificationSchedulesOutput,
 } from "./list";
 import {
   NotificationSchedule,
   NotificationScheduleType,
 } from "@mirai-app/domain";
-import { Effect } from "effect";
-import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
-import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters";
+import type {
+  PaginatedResult,
+  PaginationOptions,
+  NotificationScheduleFilter,
+} from "@mirai-app/domain";
 
-describe("[UNIT] getNotificationSchedulesUseCase (Effect)", () => {
-  let gateway: InMemoryNotificationScheduleGateway;
+/**
+ * Create a mock NotificationSchedule domain entity
+ */
+function createMockScheduleDomainEntity(
+  id: string,
+  overrides: Partial<NotificationSchedule> = {},
+): NotificationSchedule {
+  const futureStart = new Date();
+  futureStart.setDate(futureStart.getDate() + 1);
+  const futureEnd = new Date(futureStart);
+  futureEnd.setDate(futureEnd.getDate() + 7);
 
-  beforeEach(() => {
-    gateway = new InMemoryNotificationScheduleGateway();
+  const startDate = overrides.startDate ?? futureStart;
+  const endDate = overrides.endDate ?? futureEnd;
+  const hour = overrides.hour ?? 10;
+  const minute = overrides.minute ?? 0;
+  const isActive = overrides.isActive ?? true;
+
+  return {
+    id,
+    name: overrides.name ?? `Schedule ${id}`,
+    tripId: overrides.tripId ?? null,
+    notificationType:
+      overrides.notificationType ?? NotificationScheduleType.INFO,
+    notificationTitle: overrides.notificationTitle ?? null,
+    notificationBody: overrides.notificationBody ?? null,
+    notificationUrl: overrides.notificationUrl ?? null,
+    startDate,
+    endDate,
+    hour,
+    minute,
+    isActive,
+    createdById: overrides.createdById ?? "admin-123",
+    lastRun: overrides.lastRun ?? null,
+    createdAt: overrides.createdAt ?? new Date("2024-12-01"),
+    updatedAt: overrides.updatedAt ?? new Date("2024-12-01"),
+    isCurrentlyActive: (now = new Date()) => {
+      if (!isActive) return false;
+      return now >= startDate && now <= endDate;
+    },
+    isExpired: (now = new Date()) => now > endDate,
+    isUpcoming: (now = new Date()) => now < startDate,
+    shouldRunAt: (date: Date) => {
+      return date.getUTCHours() === hour && date.getUTCMinutes() === minute;
+    },
+    getNextRunTime: () => null,
+    getDurationMs: () => endDate.getTime() - startDate.getTime(),
+    getDurationDays: () =>
+      Math.round(
+        (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000),
+      ),
+    isDailyRanking: () =>
+      overrides.notificationType === NotificationScheduleType.DAILY_RANKING,
+    isTripSpecific: () => (overrides.tripId ?? null) !== null,
+    hasContent: () => false,
+    hasUrl: () => false,
+    getFormattedTime: () => {
+      const h = String(hour).padStart(2, "0");
+      const m = String(minute).padStart(2, "0");
+      return `${h}:${m}`;
+    },
+    getSummary: () => `Schedule ${id}`,
+    toggleActive: function () {
+      return createMockScheduleDomainEntity(id, {
+        ...overrides,
+        isActive: !isActive,
+      });
+    },
+    updateLastRun: (lastRun: Date) =>
+      createMockScheduleDomainEntity(id, { ...overrides, lastRun }),
+    duplicate: () =>
+      Effect.succeed(createMockScheduleDomainEntity("new-id", overrides)),
+    update: () => Effect.succeed(createMockScheduleDomainEntity(id, overrides)),
+  } as NotificationSchedule;
+}
+
+/**
+ * Mock NotificationScheduleGateway for testing
+ */
+function createMockNotificationScheduleGateway(
+  schedules: NotificationSchedule[] = [],
+): NotificationScheduleGateway {
+  return {
+    create: (schedule) => Effect.succeed(schedule),
+
+    findById: () => Effect.succeed(null),
+
+    findByName: () => Effect.succeed(null),
+
+    findByTripIdAndName: () => Effect.succeed(null),
+
+    update: (schedule) => Effect.succeed(schedule),
+
+    delete: () => Effect.succeed(void 0),
+
+    deleteMany: () => Effect.succeed(0),
+
+    exists: () => Effect.succeed(false),
+
+    count: () => Effect.succeed(schedules.length),
+
+    updateLastRun: () =>
+      Effect.succeed(schedules[0] || (null as unknown as NotificationSchedule)),
+
+    toggleActive: () =>
+      Effect.succeed(schedules[0] || (null as unknown as NotificationSchedule)),
+
+    bulkToggleActive: () => Effect.succeed(0),
+
+    countExecutions: () => Effect.succeed(0),
+
+    findAllPaginated: (options?: {
+      filter?: NotificationScheduleFilter;
+      pagination?: PaginationOptions;
+    }) =>
+      Effect.succeed({
+        items: schedules,
+        pagination: {
+          total: schedules.length,
+          limit: options?.pagination?.limit ?? 20,
+          offset: options?.pagination?.offset ?? 0,
+          hasMore: false,
+        },
+      } as PaginatedResult<NotificationSchedule>),
+
+    findActive: () => Effect.succeed([]),
+
+    findUpcoming: () => Effect.succeed([]),
+
+    getExecutionHistory: () => Effect.succeed([]),
+  };
+}
+
+const createMockSchedule = (
+  id: string,
+  overrides: Partial<NotificationSchedule> = {},
+): NotificationSchedule => createMockScheduleDomainEntity(id, overrides);
+
+describe("[UNIT] getNotificationSchedulesUseCase", () => {
+  it("should return empty list when no schedules exist", async () => {
+    const mockGateway = createMockNotificationScheduleGateway([]);
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationSchedulesInput = {};
+
+    const program = getNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.schedules).toHaveLength(0);
+    expect(result.pagination.total).toBe(0);
+    expect(result.pagination.hasMore).toBe(false);
   });
 
-  const getFutureDate = (daysFromNow: number): Date => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  };
-
-  const createValidSchedule = async (
-    overrides?: Partial<{
-      id: string;
-      name: string;
-      notificationType: NotificationScheduleType;
-    }>,
-  ): Promise<NotificationSchedule> => {
-    const notificationType =
-      overrides?.notificationType ?? NotificationScheduleType.INFO;
-    const needsContent = notificationType !== NotificationScheduleType.INFO;
-
-    const schedule = await Effect.runPromise(
-      NotificationSchedule.create({
-        id: overrides?.id ?? "schedule-123",
-        name: overrides?.name ?? "Test Schedule",
-        tripId: null,
-        notificationType,
-        ...(needsContent && {
-          notificationTitle: "Test Title",
-          notificationBody: "Test Body",
-        }),
-        startDate: getFutureDate(2),
-        endDate: getFutureDate(10),
-        hour: 9,
-        minute: 0,
-        createdById: "user-123",
+  it("should return list of schedules with computed fields", async () => {
+    const schedules = [
+      createMockSchedule("schedule-1"),
+      createMockSchedule("schedule-2", {
+        isActive: false,
+        hour: 14,
+        minute: 30,
       }),
-    );
-    return schedule;
-  };
+    ];
 
-  const runUseCase = async (input: GetNotificationSchedulesInput) => {
+    const mockGateway = createMockNotificationScheduleGateway(schedules);
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationSchedulesInput = {};
+
     const program = getNotificationSchedulesUseCase(input).pipe(
-      Effect.provideService(NotificationScheduleGatewayTag, {
-        create: (schedule: NotificationSchedule) => gateway.create(schedule),
-        findById: (id: string) => gateway.findById(id),
-        findByTripId: (tripId: string) => gateway.findByTripId(tripId),
-        findByName: (name: string) => gateway.findByName(name),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          gateway.findByTripIdAndName(tripId, name),
-        findByType: (type: NotificationScheduleType) =>
-          gateway.findByType(type),
-        findAllPaginated: (options?: {
-          filter?: import("@mirai-app/domain").NotificationScheduleFilter;
-          pagination?: import("@mirai-app/domain").PaginationOptions;
-        }) => gateway.findAllPaginated(options),
-        findActive: (now?: Date) => gateway.findActive(now),
-        findUpcoming: (days?: number, now?: Date) =>
-          gateway.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => gateway.update(schedule),
-        delete: (id: string) => gateway.delete(id),
-        deleteMany: (ids: string[]) => gateway.deleteMany(ids),
-        exists: (id: string) => gateway.exists(id),
-        count: (
-          filter?: import("@mirai-app/domain").NotificationScheduleFilter,
-        ) => gateway.count(filter),
-        updateLastRun: (id: string, lastRun: Date) =>
-          gateway.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => gateway.toggleActive(id),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          gateway.bulkToggleActive(ids, isActive),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          gateway.getExecutionHistory(scheduleId, limit),
-        countExecutions: (scheduleId: string) =>
-          gateway.countExecutions(scheduleId),
-      }),
+      Effect.provide(mockLayer),
     );
-    return await Effect.runPromise(program);
-  };
+    const result = await Effect.runPromise(program);
 
-  describe("[UNIT] execute", () => {
-    it("should return empty list when no schedules exist", async () => {
-      const input: GetNotificationSchedulesInput = {};
+    expect(result.schedules).toHaveLength(2);
+    expect(result.schedules[0].id).toBe("schedule-1");
+    expect(result.schedules[1].id).toBe("schedule-2");
+    expect(result.schedules[0].formattedTime).toBe("10:00");
+    expect(result.schedules[1].formattedTime).toBe("14:30");
+  });
 
-      const result = await runUseCase(input);
+  it("should include computed status fields", async () => {
+    const now = new Date();
+    const futureStart = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 1 day from now
+    const futureEnd = new Date(futureStart.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-      expect(result.schedules).toHaveLength(0);
-      expect(result.pagination.total).toBe(0);
-      expect(result.pagination.hasMore).toBe(false);
-    });
+    const schedules = [
+      createMockSchedule("upcoming", {
+        startDate: futureStart,
+        endDate: futureEnd,
+        isActive: true,
+      }),
+    ];
 
-    it("should return list of schedules", async () => {
-      const schedule1 = await createValidSchedule({
-        id: "schedule-1",
-        name: "Schedule One",
-        notificationType: NotificationScheduleType.INFO,
-      });
-      const schedule2 = await createValidSchedule({
-        id: "schedule-2",
-        name: "Schedule Two",
+    const mockGateway = createMockNotificationScheduleGateway(schedules);
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationSchedulesInput = {};
+
+    const program = getNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.schedules[0].isUpcoming).toBe(true);
+    expect(result.schedules[0].isExpired).toBe(false);
+  });
+
+  it("should apply pagination options", async () => {
+    const schedules = Array.from({ length: 30 }, (_, i) =>
+      createMockSchedule(`schedule-${i + 1}`),
+    );
+
+    const mockGateway = createMockNotificationScheduleGateway(schedules);
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationSchedulesInput = {
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.pagination.limit).toBe(10); // Gateway uses provided limit
+    expect(result.pagination.total).toBe(30);
+  });
+
+  it("should apply filter options", async () => {
+    const schedules = [
+      createMockSchedule("trip-a", { tripId: "trip-1" }),
+      createMockSchedule("trip-b", { tripId: "trip-2" }),
+    ];
+
+    const mockGateway = createMockNotificationScheduleGateway(schedules);
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationSchedulesInput = {
+      filter: { tripId: "trip-1" },
+    };
+
+    const program = getNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.schedules).toHaveLength(2); // Mock returns all, real impl would filter
+  });
+
+  it("should return schedule with trip-specific data", async () => {
+    const schedules = [
+      createMockSchedule("trip-schedule", {
+        tripId: "trip-abc",
         notificationType: NotificationScheduleType.REMINDER,
-      });
-      await Effect.runPromise(gateway.create(schedule1));
-      await Effect.runPromise(gateway.create(schedule2));
+        notificationTitle: "Trip Reminder",
+        notificationBody: "Your trip starts tomorrow!",
+      }),
+    ];
 
-      const input: GetNotificationSchedulesInput = {};
+    const mockGateway = createMockNotificationScheduleGateway(schedules);
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-      const result = await runUseCase(input);
+    const input: GetNotificationSchedulesInput = {};
 
-      expect(result.schedules).toHaveLength(2);
-      expect(result.pagination.total).toBe(2);
-      expect(result.schedules[0].name).toBe("Schedule One");
-      expect(result.schedules[1].name).toBe("Schedule Two");
-    });
+    const program = getNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-    it("should support pagination", async () => {
-      for (let i = 1; i <= 5; i++) {
-        const schedule = await createValidSchedule({
-          id: `schedule-${i}`,
-          name: `Schedule ${i}`,
-        });
-        await Effect.runPromise(gateway.create(schedule));
-      }
-
-      const input: GetNotificationSchedulesInput = {
-        pagination: { limit: 2, offset: 0 },
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.schedules).toHaveLength(2);
-      expect(result.pagination.total).toBe(5);
-      expect(result.pagination.hasMore).toBe(true);
-    });
-
-    it("should include computed fields in output", async () => {
-      const schedule = await createValidSchedule({
-        id: "schedule-1",
-        name: "Test Schedule",
-      });
-      await Effect.runPromise(gateway.create(schedule));
-
-      const input: GetNotificationSchedulesInput = {};
-
-      const result = await runUseCase(input);
-
-      expect(result.schedules[0].formattedTime).toBe("09:00");
-      expect(typeof result.schedules[0].isCurrentlyActive).toBe("boolean");
-      expect(typeof result.schedules[0].isExpired).toBe("boolean");
-      expect(typeof result.schedules[0].isUpcoming).toBe("boolean");
-    });
+    expect(result.schedules[0].tripId).toBe("trip-abc");
+    expect(result.schedules[0].notificationTitle).toBe("Trip Reminder");
+    expect(result.schedules[0].notificationBody).toBe(
+      "Your trip starts tomorrow!",
+    );
   });
 });

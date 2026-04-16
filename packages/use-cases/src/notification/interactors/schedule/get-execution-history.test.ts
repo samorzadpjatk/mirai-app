@@ -1,292 +1,318 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import { Effect, Either } from "effect";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
+import type {
+  NotificationScheduleGateway,
+  NotificationScheduleExecutionRecord,
+} from "../../ports/schedule/gateway";
+import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
 import {
   getNotificationScheduleExecutionHistoryUseCase,
   type GetNotificationScheduleExecutionHistoryInput,
   ScheduleNotFoundError,
 } from "./get-execution-history";
-import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
-import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters";
-import type {
-  NotificationSchedule,
-  NotificationScheduleExecutionRecord,
-} from "@mirai-app/domain";
+import { NotificationScheduleType } from "@mirai-app/domain";
+import type { NotificationScheduleDTO } from "../../dto";
+import { DatabaseError } from "@mirai-app/domain";
 
-describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleGateway;
+/**
+ * Mock NotificationScheduleGateway for testing
+ */
+function createMockNotificationScheduleGateway(
+  options: {
+    exists?: boolean;
+    executionHistory?: NotificationScheduleExecutionRecord[];
+    shouldFailExists?: boolean;
+    shouldFailGetHistory?: boolean;
+  } = {},
+): NotificationScheduleGateway {
+  const baseSchedule: NotificationScheduleDTO = {
+    id: "schedule-123",
+    name: "Test Schedule",
+    tripId: null,
+    notificationType: NotificationScheduleType.INFO,
+    notificationTitle: null,
+    notificationBody: null,
+    notificationUrl: null,
+    startDate: new Date("2025-01-01T10:00:00Z"),
+    endDate: new Date("2025-01-07T10:00:00Z"),
+    hour: 10,
+    minute: 0,
+    isActive: true,
+    createdById: "admin-123",
+    lastRun: new Date("2025-01-05"),
+    createdAt: new Date("2024-12-01"),
+    updatedAt: new Date("2024-12-01"),
+  };
 
-  beforeEach(() => {
-    repo = new InMemoryNotificationScheduleGateway();
+  const defaultHistory: NotificationScheduleExecutionRecord[] = [
+    {
+      id: "exec-1",
+      executedAt: new Date("2025-01-05T10:00:00Z"),
+      notification: {
+        id: "notif-1",
+        title: "Daily Update",
+        body: "Here is your daily update",
+        createdAt: new Date("2025-01-05T10:00:00Z"),
+      },
+    },
+    {
+      id: "exec-2",
+      executedAt: new Date("2025-01-04T10:00:00Z"),
+      notification: {
+        id: "notif-2",
+        title: "Daily Update",
+        body: "Here is your daily update",
+        createdAt: new Date("2025-01-04T10:00:00Z"),
+      },
+    },
+  ];
+
+  return {
+    create: (schedule: NotificationScheduleDTO) => Effect.succeed(schedule),
+
+    findById: () => Effect.succeed(baseSchedule),
+
+    findByName: () => Effect.succeed(null),
+
+    findByTripIdAndName: () => Effect.succeed(null),
+
+    update: (schedule: NotificationScheduleDTO) => Effect.succeed(schedule),
+
+    delete: () => Effect.succeed(void 0),
+
+    deleteMany: () => Effect.succeed(0),
+
+    exists: (id: string) => {
+      if (options.shouldFailExists) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "exists",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed(options.exists ?? id === "schedule-123");
+    },
+
+    count: () => Effect.succeed(0),
+
+    updateLastRun: () => Effect.succeed(baseSchedule),
+
+    toggleActive: () => Effect.succeed(baseSchedule),
+
+    bulkToggleActive: () => Effect.succeed(0),
+
+    countExecutions: () => Effect.succeed(2),
+
+    getExecutionHistory: (scheduleId: string, limit: number) => {
+      if (options.shouldFailGetHistory) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "getExecutionHistory",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed(
+        (options.executionHistory || defaultHistory).slice(0, limit),
+      );
+    },
+  };
+}
+
+describe("[UNIT] getNotificationScheduleExecutionHistoryUseCase", () => {
+  it("should return execution history successfully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({ exists: true });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationScheduleExecutionHistoryInput = {
+      scheduleId: "schedule-123",
+    };
+
+    const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.executions).toHaveLength(2);
+    expect(result.executions[0].id).toBe("exec-1");
+    expect(result.executions[1].id).toBe("exec-2");
+    expect(result.executions[0].notification?.title).toBe("Daily Update");
   });
 
-  const createMockSchedule = (id: string): NotificationSchedule =>
-    ({
-      id,
-      name: `Schedule ${id}`,
-      tripId: "trip-123",
-      notificationType: "reminder",
-      notificationTitle: "Test",
-      notificationBody: "Test",
-      notificationUrl: null,
-      startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-12-31"),
-      hour: 9,
-      minute: 0,
-      isActive: true,
-      createdById: "user-123",
-      lastRun: null,
-      createdAt: new Date("2024-01-01"),
-      updatedAt: new Date("2024-01-01"),
-      isCurrentlyActive: () => true,
-      isExpired: () => false,
-      isUpcoming: () => false,
-      getFormattedTime: () => "09:00",
-    }) as NotificationSchedule;
+  it("should fail with ScheduleNotFoundError when schedule does not exist", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      exists: false,
+    });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-  const createMockHistory = (
-    overrides?: Partial<NotificationScheduleExecutionRecord>[],
-  ): NotificationScheduleExecutionRecord[] =>
-    overrides?.map((o, i) => ({
-      id: o?.id ?? `exec-${i + 1}`,
-      executedAt: o?.executedAt ?? new Date(`2024-01-0${i + 1}T09:00:00Z`),
-      notification: o?.notification ?? {
-        id: `notif-${i + 1}`,
-        title: `Test ${i + 1}`,
-        body: `Body ${i + 1}`,
-        createdAt: new Date(`2024-01-0${i + 1}T09:00:00Z`),
-      },
-    })) ?? [];
+    const input: GetNotificationScheduleExecutionHistoryInput = {
+      scheduleId: "nonexistent-123",
+    };
 
-  const runUseCase = async (
-    input: GetNotificationScheduleExecutionHistoryInput,
-    mockHistory?: NotificationScheduleExecutionRecord[],
-  ) => {
-    const history = mockHistory ?? createMockHistory();
     const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
-      Effect.provideService(NotificationScheduleGatewayTag, {
-        exists: (id: string) => repo.exists(id),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          Effect.succeed(history),
-        create: (schedule: NotificationSchedule) => repo.create(schedule),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByName: (name: string) => repo.findByName(name),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          repo.findByTripIdAndName(tripId, name),
-        findByType: (type: string) => repo.findByType(type as any),
-        findAll: (options?: any) => repo.findAll(options),
-        findActive: (now?: Date) => repo.findActive(now),
-        findUpcoming: (days?: number, now?: Date) =>
-          repo.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => repo.update(schedule),
-        delete: (id: string) => repo.delete(id),
-        deleteMany: (ids: string[]) => repo.deleteMany(ids),
-        count: (filter?: any) => repo.count(filter),
-        updateLastRun: (id: string, lastRun: Date) =>
-          repo.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => repo.toggleActive(id),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          repo.bulkToggleActive(ids, isActive),
-        countExecutions: (scheduleId: string) =>
-          repo.countExecutions(scheduleId),
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ScheduleNotFoundError);
+      expect(either.left.scheduleId).toBe("nonexistent-123");
+    }
+  });
+
+  it("should handle database errors when checking existence", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      shouldFailExists: true,
+    });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationScheduleExecutionHistoryInput = {
+      scheduleId: "schedule-123",
+    };
+
+    const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should handle database errors when getting history", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      exists: true,
+      shouldFailGetHistory: true,
+    });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationScheduleExecutionHistoryInput = {
+      scheduleId: "schedule-123",
+    };
+
+    const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should respect limit parameter", async () => {
+    const history: NotificationScheduleExecutionRecord[] = Array.from(
+      { length: 10 },
+      (_, i) => ({
+        id: `exec-${i + 1}`,
+        executedAt: new Date(
+          `2025-01-${String(i + 1).padStart(2, "0")}T10:00:00Z`,
+        ),
+        notification: {
+          id: `notif-${i + 1}`,
+          title: `Update ${i + 1}`,
+          body: `Body ${i + 1}`,
+          createdAt: new Date(
+            `2025-01-${String(i + 1).padStart(2, "0")}T10:00:00Z`,
+          ),
+        },
       }),
     );
-    return await Effect.runPromise(program);
-  };
 
-  const runUseCaseWithLimitCapture = async (
-    input: GetNotificationScheduleExecutionHistoryInput,
-    captureLimit: (limit: number) => void,
-  ) => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      exists: true,
+      executionHistory: history,
+    });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationScheduleExecutionHistoryInput = {
+      scheduleId: "schedule-123",
+      limit: 5,
+    };
+
     const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
-      Effect.provideService(NotificationScheduleGatewayTag, {
-        exists: (id: string) => repo.exists(id),
-        getExecutionHistory: (scheduleId: string, limit: number) => {
-          captureLimit(limit);
-          return Effect.succeed([]);
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.executions).toHaveLength(5);
+  });
+
+  it("should return empty history when no executions", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      exists: true,
+      executionHistory: [],
+    });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: GetNotificationScheduleExecutionHistoryInput = {
+      scheduleId: "schedule-123",
+    };
+
+    const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.executions).toHaveLength(0);
+  });
+
+  it("should use default limit of 20 when not specified", async () => {
+    const history: NotificationScheduleExecutionRecord[] = Array.from(
+      { length: 25 },
+      (_, i) => ({
+        id: `exec-${i + 1}`,
+        executedAt: new Date(),
+        notification: {
+          id: `notif-${i + 1}`,
+          title: `Update ${i + 1}`,
+          body: `Body ${i + 1}`,
+          createdAt: new Date(),
         },
-        create: (schedule: NotificationSchedule) => repo.create(schedule),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByName: (name: string) => repo.findByName(name),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          repo.findByTripIdAndName(tripId, name),
-        findByType: (type: string) => repo.findByType(type as any),
-        findAll: (options?: any) => repo.findAll(options),
-        findActive: (now?: Date) => repo.findActive(now),
-        findUpcoming: (days?: number, now?: Date) =>
-          repo.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => repo.update(schedule),
-        delete: (id: string) => repo.delete(id),
-        deleteMany: (ids: string[]) => repo.deleteMany(ids),
-        count: (filter?: any) => repo.count(filter),
-        updateLastRun: (id: string, lastRun: Date) =>
-          repo.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => repo.toggleActive(id),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          repo.bulkToggleActive(ids, isActive),
-        countExecutions: (scheduleId: string) =>
-          repo.countExecutions(scheduleId),
       }),
     );
-    return await Effect.runPromise(program);
-  };
 
-  describe("[UNIT] execute", () => {
-    it("should return execution history for schedule", async () => {
-      const schedule = createMockSchedule("schedule-123");
-      await Effect.runPromise(repo.create(schedule));
-
-      const executionHistory = createMockHistory([
-        {
-          id: "exec-1",
-          notification: {
-            id: "notif-1",
-            title: "Test 1",
-            body: "Body 1",
-            createdAt: new Date(),
-          },
-        },
-        {
-          id: "exec-2",
-          notification: {
-            id: "notif-2",
-            title: "Test 2",
-            body: "Body 2",
-            createdAt: new Date(),
-          },
-        },
-      ]);
-
-      const input: GetNotificationScheduleExecutionHistoryInput = {
-        scheduleId: "schedule-123",
-      };
-
-      const result = await runUseCase(input, executionHistory);
-
-      expect(result.executions).toHaveLength(2);
-      expect(result.executions[0].id).toBe("exec-1");
-      expect(result.executions[1].id).toBe("exec-2");
+    const mockGateway = createMockNotificationScheduleGateway({
+      exists: true,
+      executionHistory: history,
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should return error when schedule not found", async () => {
-      const input: GetNotificationScheduleExecutionHistoryInput = {
-        scheduleId: "nonexistent",
-      };
+    const input: GetNotificationScheduleExecutionHistoryInput = {
+      scheduleId: "schedule-123",
+    };
 
-      const program = getNotificationScheduleExecutionHistoryUseCase(
-        input,
-      ).pipe(
-        Effect.provideService(NotificationScheduleGatewayTag, {
-          exists: () => Effect.succeed(false),
-          getExecutionHistory: (scheduleId: string, limit: number) =>
-            Effect.succeed([]),
-          create: (schedule: NotificationSchedule) => repo.create(schedule),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByName: (name: string) => repo.findByName(name),
-          findByTripIdAndName: (tripId: string, name: string) =>
-            repo.findByTripIdAndName(tripId, name),
-          findByType: (type: string) => repo.findByType(type as any),
-          findAll: (options?: any) => repo.findAll(options),
-          findActive: (now?: Date) => repo.findActive(now),
-          findUpcoming: (days?: number, now?: Date) =>
-            repo.findUpcoming(days, now),
-          update: (schedule: NotificationSchedule) => repo.update(schedule),
-          delete: (id: string) => repo.delete(id),
-          deleteMany: (ids: string[]) => repo.deleteMany(ids),
-          count: (filter?: any) => repo.count(filter),
-          updateLastRun: (id: string, lastRun: Date) =>
-            repo.updateLastRun(id, lastRun),
-          toggleActive: (id: string) => repo.toggleActive(id),
-          bulkToggleActive: (ids: string[], isActive: boolean) =>
-            repo.bulkToggleActive(ids, isActive),
-          countExecutions: (scheduleId: string) =>
-            repo.countExecutions(scheduleId),
-        }),
-      );
+    const program = getNotificationScheduleExecutionHistoryUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ScheduleNotFoundError);
-      }
-    });
-
-    it("should use default limit of 20", async () => {
-      const schedule = createMockSchedule("schedule-123");
-      await Effect.runPromise(repo.create(schedule));
-
-      let capturedLimit: number | undefined;
-      const input: GetNotificationScheduleExecutionHistoryInput = {
-        scheduleId: "schedule-123",
-      };
-
-      await runUseCaseWithLimitCapture(input, (limit) => {
-        capturedLimit = limit;
-      });
-
-      expect(capturedLimit).toBe(20);
-    });
-
-    it("should use custom limit when provided", async () => {
-      const schedule = createMockSchedule("schedule-123");
-      await Effect.runPromise(repo.create(schedule));
-
-      let capturedLimit: number | undefined;
-      const input: GetNotificationScheduleExecutionHistoryInput = {
-        scheduleId: "schedule-123",
-        limit: 50,
-      };
-
-      await runUseCaseWithLimitCapture(input, (limit) => {
-        capturedLimit = limit;
-      });
-
-      expect(capturedLimit).toBe(50);
-    });
-
-    it("should handle empty execution history", async () => {
-      const schedule = createMockSchedule("schedule-123");
-      await Effect.runPromise(repo.create(schedule));
-
-      const input: GetNotificationScheduleExecutionHistoryInput = {
-        scheduleId: "schedule-123",
-      };
-
-      const result = await runUseCase(input, []);
-
-      expect(result.executions).toEqual([]);
-    });
-
-    it("should return execution with notification details", async () => {
-      const schedule = createMockSchedule("schedule-123");
-      await Effect.runPromise(repo.create(schedule));
-
-      const executionHistory = createMockHistory([
-        {
-          id: "exec-1",
-          notification: {
-            id: "notif-1",
-            title: "Test 1",
-            body: "Body 1",
-            createdAt: new Date(),
-          },
-        },
-      ]);
-
-      const input: GetNotificationScheduleExecutionHistoryInput = {
-        scheduleId: "schedule-123",
-      };
-
-      const result = await runUseCase(input, executionHistory);
-
-      const execution = result.executions[0];
-      expect(execution.id).toBe("exec-1");
-      expect(execution.executedAt).toBeInstanceOf(Date);
-      expect(execution.notification).not.toBeNull();
-      expect(execution.notification?.id).toBe("notif-1");
-      expect(execution.notification?.title).toBe("Test 1");
-    });
+    expect(result.executions).toHaveLength(20); // Default limit applied by mock
   });
 });

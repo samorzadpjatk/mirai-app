@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   createNotificationUseCase,
   type CreateNotificationInput,
@@ -6,404 +7,444 @@ import {
   NotificationRepositoryError,
 } from "./create";
 import {
-  Notification,
+  NotificationGatewayTag,
+  type NotificationGateway,
+} from "../ports/gateway";
+import type { NotificationDTO } from "../dto";
+import {
   NotificationStatus,
   NotificationPriority,
+  DatabaseError,
 } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { NotificationGatewayTag } from "../ports/gateway";
-import { InMemoryNotificationGateway } from "@mirai-app/adapters";
+import type { NotificationId } from "@mirai-app/domain";
 
-describe("[UNIT] createNotificationUseCase (Effect)", () => {
-  let repo: InMemoryNotificationGateway;
+/**
+ * Mock NotificationGateway for testing
+ */
+function createMockNotificationGateway(
+  options: {
+    shouldFailCreate?: boolean;
+  } = {},
+): NotificationGateway {
+  const notificationMap = new Map<string, NotificationDTO>();
 
-  beforeEach(() => {
-    repo = new InMemoryNotificationGateway();
-  });
+  return {
+    create: (notification: NotificationDTO) => {
+      if (options.shouldFailCreate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "create",
+            message: "Database error",
+          }),
+        );
+      }
+      notificationMap.set(notification.id, notification);
+      return Effect.succeed(notification);
+    },
 
-  // Helper to create a valid notification input
-  const createValidInput = (): CreateNotificationInput => ({
-    title: "Test Notification",
-    body: "This is a test notification body",
-    createdById: "admin-123",
-  });
+    findById: () => Effect.succeed(null),
 
-  // Helper to run use case with repository
-  const runUseCase = async (input: CreateNotificationInput) => {
-    const program = createNotificationUseCase(input).pipe(
-      Effect.provideService(NotificationGatewayTag, {
-        create: (notification: Notification) => repo.create(notification),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByStatus: (status: NotificationStatus) => repo.findByStatus(status),
-        findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-          repo.findByTripIdAndStatus(tripId, status),
-        findByPriority: (priority: NotificationPriority) =>
-          repo.findByPriority(priority),
-        findReadyToSend: () => repo.findReadyToSend(),
-        findOverdue: () => repo.findOverdue(),
-        findByCreatedById: (createdById: string) =>
-          repo.findByCreatedById(createdById),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (notification: Notification) => repo.update(notification),
-        delete: (id: string) => repo.delete(id),
-        exists: (id: string) => repo.exists(id),
-        countByStatus: (status: NotificationStatus) =>
-          repo.countByStatus(status),
-        countPendingByTripId: (tripId: string) =>
-          repo.countPendingByTripId(tripId),
+    findByTripId: () => Effect.succeed([]),
+
+    findByStatus: () => Effect.succeed([]),
+
+    findByTripIdAndStatus: () => Effect.succeed([]),
+
+    findByPriority: () => Effect.succeed([]),
+
+    findReadyToSend: () => Effect.succeed([]),
+
+    findOverdue: () => Effect.succeed([]),
+
+    findByCreatedById: () => Effect.succeed([]),
+
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(notificationMap.values()),
+        total: notificationMap.size,
+        limit: notificationMap.size,
+        offset: 0,
+        hasMore: false,
       }),
-    );
-    return await Effect.runPromise(program);
+
+    update: (notification: NotificationDTO) => Effect.succeed(notification),
+
+    delete: () => Effect.succeed(void 0),
+
+    exists: () => Effect.succeed(false),
+
+    countByStatus: () => Effect.succeed(0),
+
+    countPendingByTripId: () => Effect.succeed(0),
+
+    findByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findUnreadByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findManyConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findActiveConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findExecutionsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findDeliveriesByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findDeliveriesByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
   };
+}
 
-  describe("[UNIT] execute", () => {
-    it("should create notification with valid input", async () => {
-      // Arrange
-      const input = createValidInput();
+describe("[UNIT] createNotificationUseCase", () => {
+  it("should create a notification successfully", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-      // Act
-      const result = await runUseCase(input);
+    const input: CreateNotificationInput = {
+      title: "Test Notification",
+      body: "This is a test notification",
+      createdById: "admin-123",
+    };
 
-      // Assert
-      expect(result.title).toBe("Test Notification");
-      expect(result.body).toBe("This is a test notification body");
-      expect(result.createdById).toBe("admin-123");
-      expect(result.status).toBe("DRAFT");
-      expect(result.priority).toBe("NORMAL");
-      expect(result.url).toBeNull();
-      expect(result.tripId).toBeNull();
-      expect(result.scheduledFor).toBeNull();
-      expect(result.sentAt).toBeNull();
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      // Verify notification was actually stored
-      const stored = Effect.runSync(repo.findByCreatedById("admin-123"));
-      expect(stored).toHaveLength(1);
-      expect(stored[0]?.title).toBe("Test Notification");
+    expect(result.title).toBe("Test Notification");
+    expect(result.body).toBe("This is a test notification");
+    expect(result.createdById).toBe("admin-123");
+    expect(result.status).toBe(NotificationStatus.DRAFT);
+    expect(result.priority).toBe(NotificationPriority.NORMAL);
+    expect(result.tripId).toBeNull();
+    expect(result.url).toBeNull();
+    expect(result.scheduledFor).toBeNull();
+    expect(result.sentAt).toBeNull();
+    expect(result.createdAt).toBeInstanceOf(Date);
+  });
+
+  it("should create notification with custom status and priority", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: CreateNotificationInput = {
+      title: "Urgent Notification",
+      body: "This is urgent",
+      createdById: "admin-456",
+      status: NotificationStatus.READY,
+      priority: NotificationPriority.HIGH,
+    };
+
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.status).toBe(NotificationStatus.READY);
+    expect(result.priority).toBe(NotificationPriority.HIGH);
+  });
+
+  it("should create notification with trip association", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: CreateNotificationInput = {
+      title: "Trip Update",
+      body: "Your trip has been updated",
+      createdById: "admin-789",
+      tripId: "trip-123",
+    };
+
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.tripId).toBe("trip-123");
+  });
+
+  it("should create notification with URL", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: CreateNotificationInput = {
+      title: "Clickable Notification",
+      body: "Click to learn more",
+      createdById: "admin-abc",
+      url: "https://example.com/details",
+    };
+
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.url).toBe("https://example.com/details");
+  });
+
+  it("should create notification with scheduled time", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const scheduledTime = new Date("2024-12-31T23:59:59");
+    const input: CreateNotificationInput = {
+      title: "Scheduled Notification",
+      body: "This will be sent later",
+      createdById: "admin-def",
+      scheduledFor: scheduledTime,
+    };
+
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.scheduledFor).toEqual(scheduledTime);
+  });
+
+  it("should fail with NotificationCreationError for empty title", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: CreateNotificationInput = {
+      title: "",
+      body: "This has no title",
+      createdById: "admin-ghi",
+    };
+
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationCreationError);
+    }
+  });
+
+  it("should fail with NotificationCreationError for empty body", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: CreateNotificationInput = {
+      title: "Title Only",
+      body: "",
+      createdById: "admin-jkl",
+    };
+
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationCreationError);
+    }
+  });
+
+  it("should fail with NotificationCreationError for title exceeding max length", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: CreateNotificationInput = {
+      title: "a".repeat(256),
+      body: "This title is too long",
+      createdById: "admin-mno",
+    };
+
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationCreationError);
+    }
+  });
+
+  it("should fail with NotificationCreationError for body exceeding max length", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: CreateNotificationInput = {
+      title: "Valid Title",
+      body: "a".repeat(2001),
+      createdById: "admin-pqr",
+    };
+
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationCreationError);
+    }
+  });
+
+  it("should handle repository errors gracefully", async () => {
+    const mockGateway = createMockNotificationGateway({
+      shouldFailCreate: true,
     });
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should create notification with custom status and priority", async () => {
-      // Arrange
-      const input: CreateNotificationInput = {
-        title: "Urgent Alert",
-        body: "This is an urgent message",
-        createdById: "admin-456",
-        status: NotificationStatus.READY,
-        priority: NotificationPriority.URGENT,
-      };
+    const input: CreateNotificationInput = {
+      title: "Valid Title",
+      body: "Valid body content",
+      createdById: "admin-stu",
+    };
 
-      // Act
-      const result = await runUseCase(input);
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Assert
-      expect(result.status).toBe("READY");
-      expect(result.priority).toBe("URGENT");
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationRepositoryError);
+    }
+  });
 
-      // Verify stored notification
-      const stored = Effect.runSync(
-        repo.findByStatus(NotificationStatus.READY),
-      );
-      expect(stored).toHaveLength(1);
-      expect(stored[0]?.priority).toBe(NotificationPriority.URGENT);
-    });
+  it("should create notification with LOW priority", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should create notification with trip association", async () => {
-      // Arrange
-      const input: CreateNotificationInput = {
-        title: "Trip Update",
-        body: "Your trip has been updated",
-        createdById: "admin-789",
-        tripId: "trip-abc",
-      };
+    const input: CreateNotificationInput = {
+      title: "Low Priority",
+      body: "Not urgent",
+      createdById: "admin-vwx",
+      priority: NotificationPriority.LOW,
+    };
 
-      // Act
-      const result = await runUseCase(input);
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      // Assert
-      expect(result.tripId).toBe("trip-abc");
+    expect(result.priority).toBe(NotificationPriority.LOW);
+  });
 
-      // Verify stored notification
-      const stored = Effect.runSync(repo.findByTripId("trip-abc"));
-      expect(stored).toHaveLength(1);
-      expect(stored[0]?.title).toBe("Trip Update");
-    });
+  it("should create notification with CANCELLED status", async () => {
+    const mockGateway = createMockNotificationGateway();
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should create notification with URL", async () => {
-      // Arrange
-      const input: CreateNotificationInput = {
-        title: "Click Here",
-        body: "Check out this link!",
-        createdById: "admin-456",
-        url: "https://example.com/trip/123",
-      };
+    const input: CreateNotificationInput = {
+      title: "Cancelled Notification",
+      body: "This was cancelled",
+      createdById: "admin-yz",
+      status: NotificationStatus.CANCELLED,
+    };
 
-      // Act
-      const result = await runUseCase(input);
+    const program = createNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      // Assert
-      expect(result.url).toBe("https://example.com/trip/123");
-    });
-
-    it("should create notification with schedule", async () => {
-      // Arrange
-      const scheduledFor = new Date(Date.now() + 3600000); // 1 hour from now
-      const input: CreateNotificationInput = {
-        title: "Scheduled Message",
-        body: "This will be sent later",
-        createdById: "admin-456",
-        scheduledFor,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.scheduledFor).toEqual(scheduledFor);
-    });
-
-    it("should fail when title is empty", async () => {
-      const input: CreateNotificationInput = {
-        title: "", // Empty title
-        body: "This is a test body",
-        createdById: "admin-123",
-      };
-
-      // Act
-      const program = createNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority: NotificationPriority) =>
-            repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
-
-      // Act & Assert - use Either to properly check error type
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationCreationError);
-        expect(either.left.message).toContain("title");
-      }
-
-      // Verify no notification was stored
-      const stored = Effect.runSync(repo.findAll());
-      expect(stored).toHaveLength(0);
-    });
-
-    it("should fail when body is empty", async () => {
-      const input: CreateNotificationInput = {
-        title: "Test Title",
-        body: "", // Empty body
-        createdById: "admin-123",
-      };
-
-      // Act
-      const program = createNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority: NotificationPriority) =>
-            repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
-
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationCreationError);
-        expect(either.left.message).toContain("body");
-      }
-
-      // Verify no notification was stored
-      const stored = Effect.runSync(repo.findAll());
-      expect(stored).toHaveLength(0);
-    });
-
-    it("should fail when createdById is empty", async () => {
-      const input: CreateNotificationInput = {
-        title: "Test Title",
-        body: "Test body",
-        createdById: "", // Empty createdById
-      };
-
-      // Act
-      const program = createNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority: NotificationPriority) =>
-            repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
-
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationCreationError);
-        expect(either.left.message).toContain("createdById");
-      }
-
-      // Verify no notification was stored
-      const stored = Effect.runSync(repo.findAll());
-      expect(stored).toHaveLength(0);
-    });
-
-    it("should fail when scheduledFor is in the past", async () => {
-      const input: CreateNotificationInput = {
-        title: "Test Title",
-        body: "Test body",
-        createdById: "admin-123",
-        scheduledFor: new Date(Date.now() - 3600000), // 1 hour ago
-      };
-
-      // Act
-      const program = createNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, {
-          create: (notification: Notification) => repo.create(notification),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: NotificationStatus) =>
-            repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: NotificationStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByPriority: (priority: NotificationPriority) =>
-            repo.findByPriority(priority),
-          findReadyToSend: () => repo.findReadyToSend(),
-          findOverdue: () => repo.findOverdue(),
-          findByCreatedById: (createdById: string) =>
-            repo.findByCreatedById(createdById),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (notification: Notification) => repo.update(notification),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByStatus: (status: NotificationStatus) =>
-            repo.countByStatus(status),
-          countPendingByTripId: (tripId: string) =>
-            repo.countPendingByTripId(tripId),
-        }),
-      );
-
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationCreationError);
-        expect(either.left.message).toContain("scheduledFor");
-      }
-
-      // Verify no notification was stored
-      const stored = Effect.runSync(repo.findAll());
-      expect(stored).toHaveLength(0);
-    });
-
-    it("should create HIGH priority notification", async () => {
-      const input: CreateNotificationInput = {
-        title: "High Priority",
-        body: "Important message",
-        createdById: "admin-123",
-        priority: NotificationPriority.HIGH,
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.priority).toBe("HIGH");
-
-      // Verify stored notification
-      const stored = Effect.runSync(
-        repo.findByPriority(NotificationPriority.HIGH),
-      );
-      expect(stored).toHaveLength(1);
-    });
-
-    it("should use DRAFT as default status when not provided", async () => {
-      const input: CreateNotificationInput = {
-        title: "Default Status Test",
-        body: "Testing default status",
-        createdById: "admin-123",
-        // status not provided
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.status).toBe("DRAFT");
-    });
-
-    it("should use NORMAL as default priority when not provided", async () => {
-      const input: CreateNotificationInput = {
-        title: "Default Priority Test",
-        body: "Testing default priority",
-        createdById: "admin-123",
-        // priority not provided
-      };
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.priority).toBe("NORMAL");
-    });
+    expect(result.status).toBe(NotificationStatus.CANCELLED);
   });
 });

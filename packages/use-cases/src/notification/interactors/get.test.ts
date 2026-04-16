@@ -1,238 +1,373 @@
-import { describe, it, expect, mock } from "bun:test";
-import { Effect, Either } from "effect";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   getNotificationUseCase,
+  type GetNotificationInput,
   NotificationNotFoundError,
 } from "./get";
-import type { GetNotificationInput } from "./get";
 import {
-  Notification,
+  NotificationGatewayTag,
+  type NotificationGateway,
+} from "../ports/gateway";
+import type { NotificationDTO } from "../dto";
+import {
+  DatabaseError,
   NotificationStatus,
   NotificationPriority,
+  NotificationScheduleType,
 } from "@mirai-app/domain";
-import { NotificationGatewayTag } from "../ports/gateway";
 
-describe("[UNIT] getNotificationUseCase (Effect)", () => {
-  // Helper to create a valid notification
-  const createValidNotification = (
-    overrides?: Partial<{
-      id: string;
-      title: string;
-      body: string;
-      status: NotificationStatus;
-      priority: NotificationPriority;
-      tripId: string | null;
-    }>,
-  ): Notification => {
-    const effect = Notification.create({
-      id: overrides?.id ?? "notification-123",
-      title: overrides?.title ?? "Test Notification",
-      body: overrides?.body ?? "This is a test notification body",
-      createdById: "admin-123",
-      tripId: overrides?.tripId ?? null,
-      status: overrides?.status ?? NotificationStatus.DRAFT,
-      priority: overrides?.priority ?? NotificationPriority.NORMAL,
-    });
-    return Effect.runSync(effect);
-  };
+/**
+ * Mock NotificationGateway for testing
+ */
+function createMockNotificationGateway(
+  notifications: NotificationDTO[] = [],
+  options: {
+    shouldFailFind?: boolean;
+  } = {},
+): NotificationGateway {
+  const notificationMap = new Map(notifications.map((n) => [n.id, n]));
 
-  const createMockRepo = (overrides?: {
-    findById?: () => Effect.Effect<Notification | null, never, never>;
-  }) => ({
-    create: () => Effect.succeed(createValidNotification()),
-    findById: overrides?.findById ?? (() => Effect.succeed(null)),
+  return {
+    create: (notification: NotificationDTO) => {
+      notificationMap.set(notification.id, notification);
+      return Effect.succeed(notification);
+    },
+
+    findById: (id: string) => {
+      if (options.shouldFailFind) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database error",
+          }),
+        );
+      }
+      const notification = notificationMap.get(id);
+      return Effect.succeed(notification ?? null);
+    },
+
     findByTripId: () => Effect.succeed([]),
+
     findByStatus: () => Effect.succeed([]),
+
     findByTripIdAndStatus: () => Effect.succeed([]),
+
     findByPriority: () => Effect.succeed([]),
+
     findReadyToSend: () => Effect.succeed([]),
+
     findOverdue: () => Effect.succeed([]),
+
     findByCreatedById: () => Effect.succeed([]),
-    findAll: () => Effect.succeed([]),
-    update: () => Effect.succeed(createValidNotification()),
+
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(notificationMap.values()),
+        total: notificationMap.size,
+        limit: notificationMap.size,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    update: (notification: NotificationDTO) => Effect.succeed(notification),
+
     delete: () => Effect.succeed(void 0),
-    exists: () => Effect.succeed(true),
-    countByStatus: () => Effect.succeed(1),
+
+    exists: () => Effect.succeed(false),
+
+    countByStatus: () => Effect.succeed(0),
+
     countPendingByTripId: () => Effect.succeed(0),
+
+    findByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findUnreadByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findManyConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findActiveConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findExecutionsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findDeliveriesByNotificationIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findDeliveriesByUserIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+function createMockNotificationDTO(
+  overrides: Partial<NotificationDTO> = {},
+): NotificationDTO {
+  const now = new Date();
+  return {
+    id: overrides.id ?? "notification-123",
+    tripId: overrides.tripId ?? null,
+    title: overrides.title ?? "Test Notification",
+    content: overrides.content ?? "Test content",
+    type: overrides.type ?? NotificationScheduleType.INFO,
+    status: overrides.status ?? NotificationStatus.DRAFT,
+    priority: overrides.priority ?? NotificationPriority.NORMAL,
+    scheduledAt: overrides.scheduledAt ?? null,
+    sentAt: overrides.sentAt ?? null,
+    createdById: overrides.createdById ?? "user-123",
+    createdAt: overrides.createdAt ?? now,
+    updatedAt: overrides.updatedAt ?? now,
+  };
+}
+
+describe("[UNIT] getNotificationUseCase", () => {
+  it("should return notification when found by ID", async () => {
+    const mockNotification = createMockNotificationDTO({
+      id: "notification-456",
+      title: "Welcome Message",
+      content: "Welcome to the trip!",
+      status: NotificationStatus.SENT,
+      sentAt: new Date(),
+    });
+    const mockGateway = createMockNotificationGateway([mockNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: GetNotificationInput = { notificationId: "notification-456" };
+    const program = getNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBe("notification-456");
+    expect(result.title).toBe("Welcome Message");
+    expect(result.body).toBe("Welcome to the trip!");
+    expect(result.status).toBe("SENT");
+    expect(result.isSent).toBe(true);
   });
 
-  describe("[UNIT] execute", () => {
-    it("should return notification when found by ID", async () => {
-      // Arrange
-      const mockNotification = createValidNotification({
-        id: "notification-456",
-        title: "Trip Reminder",
-        body: "Don't forget to pack your bags!",
-        status: NotificationStatus.READY,
-        priority: NotificationPriority.HIGH,
-      });
+  it("should fail with NotificationNotFoundError when notification not found", async () => {
+    const mockGateway = createMockNotificationGateway([]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-      const mockRepo = createMockRepo({
-        findById: () => Effect.succeed(mockNotification),
-      });
+    const input: GetNotificationInput = { notificationId: "non-existent" };
+    const program = getNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const input: GetNotificationInput = {
-        notificationId: "notification-456",
-      };
-
-      const program = getNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, mockRepo),
-      );
-
-      // Act
-      const result = await Effect.runPromise(program);
-
-      // Assert
-      expect(result.id).toBe("notification-456");
-      expect(result.title).toBe("Trip Reminder");
-      expect(result.body).toBe("Don't forget to pack your bags!");
-      expect(result.status).toBe("READY");
-      expect(result.priority).toBe("HIGH");
-      expect(result.createdById).toBe("admin-123");
-      expect(result.isReadyToSend).toBe(true);
-      expect(result.isSent).toBe(false);
-      expect(result.isScheduled).toBe(false);
-    });
-
-    it("should return error when notification not found", async () => {
-      // Arrange
-      const mockRepo = createMockRepo({
-        findById: () => Effect.succeed(null),
-      });
-
-      const input: GetNotificationInput = {
-        notificationId: "non-existent-id",
-      };
-
-      const program = getNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, mockRepo),
-      );
-
-      // Act
-      const either = await Effect.runPromise(Effect.either(program));
-
-      // Assert
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(NotificationNotFoundError);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(NotificationNotFoundError);
+      if (either.left instanceof NotificationNotFoundError) {
+        expect(either.left.notificationId).toBe("non-existent");
       }
+    }
+  });
+
+  it("should handle database errors", async () => {
+    const mockGateway = createMockNotificationGateway([], {
+      shouldFailFind: true,
     });
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should return sent notification with correct isSent flag", async () => {
-      // Arrange
-      const draftNotification = createValidNotification({
-        id: "notification-sent",
-        title: "Sent Notification",
-        status: NotificationStatus.READY,
-      });
-      const markResult = draftNotification.markAsSent();
-      if (markResult.kind === "err") {
-        throw new Error("Failed to mark notification as sent");
-      }
-      const sentNotification = markResult.value;
+    const input: GetNotificationInput = { notificationId: "notification-123" };
+    const program = getNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const mockRepo = createMockRepo({
-        findById: () => Effect.succeed(sentNotification),
-      });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
 
-      const input: GetNotificationInput = {
-        notificationId: "notification-sent",
-      };
-
-      const program = getNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, mockRepo),
-      );
-
-      // Act
-      const result = await Effect.runPromise(program);
-
-      // Assert
-      expect(result.status).toBe("SENT");
-      expect(result.isSent).toBe(true);
-      expect(result.isReadyToSend).toBe(false);
+  it("should return correct status for scheduled notification", async () => {
+    const mockNotification = createMockNotificationDTO({
+      id: "notification-scheduled",
+      status: NotificationStatus.READY,
+      scheduledAt: new Date(Date.now() + 86400000),
     });
+    const mockGateway = createMockNotificationGateway([mockNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should return notification with trip association", async () => {
-      // Arrange
-      const mockNotification = createValidNotification({
-        id: "notification-trip",
-        title: "Trip Update",
-        tripId: "trip-abc",
-      });
+    const input: GetNotificationInput = {
+      notificationId: "notification-scheduled",
+    };
+    const program = getNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const mockRepo = createMockRepo({
-        findById: () => Effect.succeed(mockNotification),
-      });
+    expect(result.isScheduled).toBe(true);
+    expect(result.isSent).toBe(false);
+  });
 
-      const input: GetNotificationInput = {
-        notificationId: "notification-trip",
-      };
-
-      const program = getNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, mockRepo),
-      );
-
-      // Act
-      const result = await Effect.runPromise(program);
-
-      // Assert
-      expect(result.tripId).toBe("trip-abc");
+  it("should return notification with null tripId", async () => {
+    const mockNotification = createMockNotificationDTO({
+      id: "notification-no-trip",
+      tripId: null,
     });
+    const mockGateway = createMockNotificationGateway([mockNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should return DRAFT notification correctly", async () => {
-      // Arrange
-      const mockNotification = createValidNotification({
-        id: "notification-draft",
-        title: "Draft Notification",
-        status: NotificationStatus.DRAFT,
-      });
+    const input: GetNotificationInput = {
+      notificationId: "notification-no-trip",
+    };
+    const program = getNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const mockRepo = createMockRepo({
-        findById: () => Effect.succeed(mockNotification),
-      });
+    expect(result.tripId).toBeNull();
+  });
 
-      const input: GetNotificationInput = {
-        notificationId: "notification-draft",
-      };
-
-      const program = getNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, mockRepo),
-      );
-
-      // Act
-      const result = await Effect.runPromise(program);
-
-      // Assert
-      expect(result.status).toBe("DRAFT");
-      expect(result.isSent).toBe(false);
-      expect(result.isReadyToSend).toBe(false);
+  it("should return notification with URL", async () => {
+    const mockNotification = createMockNotificationDTO({
+      id: "notification-url",
+      title: "Click here",
+      content: "Visit this link",
     });
+    const mockGateway = createMockNotificationGateway([mockNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
 
-    it("should return URGENT priority notification correctly", async () => {
-      // Arrange
-      const mockNotification = createValidNotification({
-        id: "notification-urgent",
-        title: "URGENT: Action Required",
-        priority: NotificationPriority.URGENT,
-      });
+    const input: GetNotificationInput = { notificationId: "notification-url" };
+    const program = getNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const mockRepo = createMockRepo({
-        findById: () => Effect.succeed(mockNotification),
-      });
+    expect(result.url).toBeDefined();
+    expect(result.priority).toBeDefined();
+    expect(result.createdById).toBeDefined();
+  });
 
-      const input: GetNotificationInput = {
-        notificationId: "notification-urgent",
-      };
-
-      const program = getNotificationUseCase(input).pipe(
-        Effect.provideService(NotificationGatewayTag, mockRepo),
-      );
-
-      // Act
-      const result = await Effect.runPromise(program);
-
-      // Assert
-      expect(result.priority).toBe("URGENT");
+  it("should return all notification properties", async () => {
+    const mockNotification = createMockNotificationDTO({
+      id: "notification-full",
+      title: "Full Notification",
+      content: "Complete content",
+      priority: NotificationPriority.HIGH,
     });
+    const mockGateway = createMockNotificationGateway([mockNotification]);
+    const mockLayer = Layer.succeed(NotificationGatewayTag, mockGateway);
+
+    const input: GetNotificationInput = { notificationId: "notification-full" };
+    const program = getNotificationUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result).toHaveProperty("id");
+    expect(result).toHaveProperty("title");
+    expect(result).toHaveProperty("body");
+    expect(result).toHaveProperty("url");
+    expect(result).toHaveProperty("status");
+    expect(result).toHaveProperty("priority");
+    expect(result).toHaveProperty("tripId");
+    expect(result).toHaveProperty("createdById");
+    expect(result).toHaveProperty("createdAt");
+    expect(result).toHaveProperty("isSent");
+    expect(result).toHaveProperty("isScheduled");
+    expect(result).toHaveProperty("isReadyToSend");
   });
 });

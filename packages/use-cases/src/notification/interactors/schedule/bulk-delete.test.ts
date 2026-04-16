@@ -1,198 +1,237 @@
-import { describe, it, expect, beforeEach } from "bun:test";
-import { Effect, Either } from "effect";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
+import type { NotificationScheduleGateway } from "../../ports/schedule/gateway";
+import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
 import {
   bulkDeleteNotificationSchedulesUseCase,
   type BulkDeleteNotificationSchedulesInput,
   BulkDeleteValidationError,
 } from "./bulk-delete";
-import { NotificationScheduleGatewayTag } from "../../ports/schedule/gateway";
-import { InMemoryNotificationScheduleGateway } from "@mirai-app/adapters";
-import type { NotificationSchedule } from "@mirai-app/domain";
+import { NotificationScheduleType } from "@mirai-app/domain";
+import type { NotificationScheduleDTO } from "../../dto";
+import { DatabaseError } from "@mirai-app/domain";
 
-describe("[UNIT] bulkDeleteNotificationSchedulesUseCase (Effect)", () => {
-  let repo: InMemoryNotificationScheduleGateway;
+/**
+ * Mock NotificationScheduleGateway for testing
+ */
+function createMockNotificationScheduleGateway(
+  options: {
+    existingIds?: string[];
+    shouldFailDelete?: boolean;
+  } = {},
+): NotificationScheduleGateway {
+  const scheduleMap = new Map<string, boolean>();
+  if (options.existingIds) {
+    options.existingIds.forEach((id) => scheduleMap.set(id, true));
+  } else {
+    scheduleMap.set("schedule-1", true);
+    scheduleMap.set("schedule-2", true);
+    scheduleMap.set("schedule-3", true);
+  }
 
-  beforeEach(() => {
-    repo = new InMemoryNotificationScheduleGateway();
-  });
-
-  // Helper to create mock notification schedule
-  const createMockSchedule = (id: string): NotificationSchedule =>
-    ({
-      id,
-      name: `Schedule ${id}`,
-      tripId: "trip-123",
-      notificationType: "reminder",
-      notificationTitle: "Test",
-      notificationBody: "Test",
-      notificationUrl: null,
-      startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-12-31"),
-      hour: 9,
-      minute: 0,
-      isActive: true,
-      createdById: "user-123",
-      lastRun: null,
-      createdAt: new Date("2024-01-01"),
-      updatedAt: new Date("2024-01-01"),
-      isCurrentlyActive: () => true,
-      isExpired: () => false,
-      isUpcoming: () => false,
-      getFormattedTime: () => "09:00",
-    }) as NotificationSchedule;
-
-  // Helper to run use case with repository
-  const runUseCase = async (input: BulkDeleteNotificationSchedulesInput) => {
-    const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
-      Effect.provideService(NotificationScheduleGatewayTag, {
-        exists: (id: string) => repo.exists(id),
-        deleteMany: (ids: string[]) => repo.deleteMany(ids),
-        create: (schedule: NotificationSchedule) => repo.create(schedule),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByName: (name: string) => repo.findByName(name),
-        findByTripIdAndName: (tripId: string, name: string) =>
-          repo.findByTripIdAndName(tripId, name),
-        findByType: (type: string) => repo.findByType(type as any),
-        findAll: (options?: any) => repo.findAll(options),
-        findActive: (now?: Date) => repo.findActive(now),
-        findUpcoming: (days?: number, now?: Date) =>
-          repo.findUpcoming(days, now),
-        update: (schedule: NotificationSchedule) => repo.update(schedule),
-        delete: (id: string) => repo.delete(id),
-        count: (filter?: any) => repo.count(filter),
-        updateLastRun: (id: string, lastRun: Date) =>
-          repo.updateLastRun(id, lastRun),
-        toggleActive: (id: string) => repo.toggleActive(id),
-        bulkToggleActive: (ids: string[], isActive: boolean) =>
-          repo.bulkToggleActive(ids, isActive),
-        getExecutionHistory: (scheduleId: string, limit: number) =>
-          repo.getExecutionHistory(scheduleId, limit),
-        countExecutions: (scheduleId: string) =>
-          repo.countExecutions(scheduleId),
-      }),
-    );
-    return await Effect.runPromise(program);
+  const baseSchedule: NotificationScheduleDTO = {
+    id: "schedule-1",
+    name: "Test Schedule",
+    tripId: null,
+    notificationType: NotificationScheduleType.INFO,
+    notificationTitle: null,
+    notificationBody: null,
+    notificationUrl: null,
+    startDate: new Date("2025-01-01T10:00:00Z"),
+    endDate: new Date("2025-01-07T10:00:00Z"),
+    hour: 10,
+    minute: 0,
+    isActive: true,
+    createdById: "admin-123",
+    lastRun: null,
+    createdAt: new Date("2024-12-01"),
+    updatedAt: new Date("2024-12-01"),
   };
 
-  describe("[UNIT] execute", () => {
-    it("should delete multiple schedules successfully", async () => {
-      // Create schedules first
-      const schedule1 = createMockSchedule("schedule-1");
-      const schedule2 = createMockSchedule("schedule-2");
-      Effect.runSync(repo.create(schedule1));
-      Effect.runSync(repo.create(schedule2));
+  return {
+    create: (schedule: NotificationScheduleDTO) => Effect.succeed(schedule),
 
-      const input: BulkDeleteNotificationSchedulesInput = {
-        ids: ["schedule-1", "schedule-2"],
-      };
+    findById: () => Effect.succeed(null),
 
-      const result = await runUseCase(input);
+    findByName: () => Effect.succeed(null),
 
-      expect(result.success).toBe(true);
-      expect(result.requestedCount).toBe(2);
-      expect(result.deletedCount).toBe(2);
-    });
+    findByTripIdAndName: () => Effect.succeed(null),
 
-    it("should fail when no IDs provided", async () => {
-      const input: BulkDeleteNotificationSchedulesInput = {
-        ids: [],
-      };
+    update: (schedule: NotificationScheduleDTO) => Effect.succeed(schedule),
 
-      const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
-        Effect.provideService(NotificationScheduleGatewayTag, {
-          exists: (id: string) => repo.exists(id),
-          deleteMany: (ids: string[]) => repo.deleteMany(ids),
-          create: (schedule: NotificationSchedule) => repo.create(schedule),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByName: (name: string) => repo.findByName(name),
-          findByTripIdAndName: (tripId: string, name: string) =>
-            repo.findByTripIdAndName(tripId, name),
-          findByType: (type: string) => repo.findByType(type as any),
-          findAll: (options?: any) => repo.findAll(options),
-          findActive: (now?: Date) => repo.findActive(now),
-          findUpcoming: (days?: number, now?: Date) =>
-            repo.findUpcoming(days, now),
-          update: (schedule: NotificationSchedule) => repo.update(schedule),
-          delete: (id: string) => repo.delete(id),
-          count: (filter?: any) => repo.count(filter),
-          updateLastRun: (id: string, lastRun: Date) =>
-            repo.updateLastRun(id, lastRun),
-          toggleActive: (id: string) => repo.toggleActive(id),
-          bulkToggleActive: (ids: string[], isActive: boolean) =>
-            repo.bulkToggleActive(ids, isActive),
-          getExecutionHistory: (scheduleId: string, limit: number) =>
-            repo.getExecutionHistory(scheduleId, limit),
-          countExecutions: (scheduleId: string) =>
-            repo.countExecutions(scheduleId),
-        }),
-      );
+    delete: () => Effect.succeed(void 0),
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(BulkDeleteValidationError);
-        expect(either.left.message).toBe("At least one ID must be provided");
+    deleteMany: (ids: string[]) => {
+      if (options.shouldFailDelete) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "deleteMany",
+            message: "Database error",
+          }),
+        );
       }
+      const existingIds = ids.filter((id) => scheduleMap.has(id));
+      return Effect.succeed(existingIds.length);
+    },
+
+    exists: (id: string) => Effect.succeed(scheduleMap.has(id)),
+
+    count: () => Effect.succeed(scheduleMap.size),
+
+    updateLastRun: () => Effect.succeed(baseSchedule),
+
+    toggleActive: () => Effect.succeed(baseSchedule),
+
+    bulkToggleActive: () => Effect.succeed(0),
+
+    countExecutions: () => Effect.succeed(0),
+  };
+}
+
+describe("[UNIT] bulkDeleteNotificationSchedulesUseCase", () => {
+  it("should delete multiple schedules successfully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingIds: ["schedule-1", "schedule-2", "schedule-3"],
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should identify not found IDs", async () => {
-      // Create only one schedule
-      const schedule1 = createMockSchedule("schedule-1");
-      Effect.runSync(repo.create(schedule1));
+    const input: BulkDeleteNotificationSchedulesInput = {
+      ids: ["schedule-1", "schedule-2", "schedule-3"],
+    };
 
-      const input: BulkDeleteNotificationSchedulesInput = {
-        ids: ["schedule-1", "schedule-2", "schedule-3"],
-      };
+    const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const result = await runUseCase(input);
+    expect(result.success).toBe(true);
+    expect(result.deletedCount).toBe(3);
+    expect(result.requestedCount).toBe(3);
+    expect(result.notFoundIds).toBeUndefined();
+  });
 
-      expect(result.notFoundIds).toContain("schedule-2");
-      expect(result.deletedCount).toBe(1);
-      expect(result.requestedCount).toBe(3);
+  it("should handle partial deletion with some non-existent IDs", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingIds: ["schedule-1", "schedule-2"],
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should handle all IDs not found", async () => {
-      const input: BulkDeleteNotificationSchedulesInput = {
-        ids: ["schedule-1", "schedule-2"],
-      };
+    const input: BulkDeleteNotificationSchedulesInput = {
+      ids: ["schedule-1", "schedule-2", "nonexistent-1", "nonexistent-2"],
+    };
 
-      const result = await runUseCase(input);
+    const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      expect(result.deletedCount).toBe(0);
-      expect(result.notFoundIds).toEqual(["schedule-1", "schedule-2"]);
+    expect(result.success).toBe(true);
+    expect(result.deletedCount).toBe(2);
+    expect(result.requestedCount).toBe(4);
+    expect(result.notFoundIds).toContain("nonexistent-1");
+    expect(result.notFoundIds).toContain("nonexistent-2");
+  });
+
+  it("should fail with BulkDeleteValidationError when no IDs provided", async () => {
+    const mockGateway = createMockNotificationScheduleGateway();
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: BulkDeleteNotificationSchedulesInput = {
+      ids: [],
+    };
+
+    const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(BulkDeleteValidationError);
+      expect(either.left.message).toBe("At least one ID must be provided");
+    }
+  });
+
+  it("should handle database errors gracefully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      shouldFailDelete: true,
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should delete only existing schedules", async () => {
-      // Create only schedule-1
-      const schedule1 = createMockSchedule("schedule-1");
-      Effect.runSync(repo.create(schedule1));
+    const input: BulkDeleteNotificationSchedulesInput = {
+      ids: ["schedule-1", "schedule-2"],
+    };
 
-      const input: BulkDeleteNotificationSchedulesInput = {
-        ids: ["schedule-1", "schedule-2"],
-      };
+    const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      await runUseCase(input);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
 
-      // Verify only schedule-1 was deleted
-      const remaining = Effect.runSync(repo.findById("schedule-1"));
-      expect(remaining).toBeNull();
+  it("should delete single schedule successfully", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingIds: ["single-schedule"],
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
 
-    it("should handle single ID deletion", async () => {
-      const schedule1 = createMockSchedule("schedule-1");
-      Effect.runSync(repo.create(schedule1));
+    const input: BulkDeleteNotificationSchedulesInput = {
+      ids: ["single-schedule"],
+    };
 
-      const input: BulkDeleteNotificationSchedulesInput = {
-        ids: ["schedule-1"],
-      };
+    const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const result = await runUseCase(input);
+    expect(result.success).toBe(true);
+    expect(result.deletedCount).toBe(1);
+    expect(result.requestedCount).toBe(1);
+  });
 
-      expect(result.deletedCount).toBe(1);
-      expect(result.requestedCount).toBe(1);
-      expect(result.notFoundIds).toBeUndefined();
+  it("should report all IDs as not found when none exist", async () => {
+    const mockGateway = createMockNotificationScheduleGateway({
+      existingIds: [],
     });
+    const mockLayer = Layer.succeed(
+      NotificationScheduleGatewayTag,
+      mockGateway,
+    );
+
+    const input: BulkDeleteNotificationSchedulesInput = {
+      ids: ["nonexistent-1", "nonexistent-2", "nonexistent-3"],
+    };
+
+    const program = bulkDeleteNotificationSchedulesUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.deletedCount).toBe(0);
+    expect(result.requestedCount).toBe(3);
+    expect(result.notFoundIds).toHaveLength(3);
+    expect(result.notFoundIds).toContain("nonexistent-1");
+    expect(result.notFoundIds).toContain("nonexistent-2");
+    expect(result.notFoundIds).toContain("nonexistent-3");
   });
 });

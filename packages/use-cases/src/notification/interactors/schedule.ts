@@ -1,12 +1,7 @@
-import {
-  Notification,
-  NotificationStatus,
-  ValidationError,
-  StateTransitionError,
-} from "@mirai-app/domain";
+import { NotificationStatus, DatabaseError } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { NotificationGatewayTag } from "../ports/gateway";
-import { DatabaseError } from "@mirai-app/domain";
+import type { NotificationDTO } from "../dto";
 
 /**
  * Input for ScheduleNotification use case
@@ -103,7 +98,7 @@ export function scheduleNotificationUseCase(
     }
 
     // Cannot schedule if already sent
-    if (existing.isSent()) {
+    if (existing.status === NotificationStatus.SENT) {
       return yield* Effect.fail(
         new NotificationStateError({
           message: "Cannot schedule a notification that has already been sent",
@@ -112,7 +107,7 @@ export function scheduleNotificationUseCase(
     }
 
     // Cannot schedule if already cancelled
-    if (existing.isCancelled()) {
+    if (existing.status === NotificationStatus.CANCELLED) {
       return yield* Effect.fail(
         new NotificationStateError({
           message: "Cannot schedule a notification that has been cancelled",
@@ -131,33 +126,18 @@ export function scheduleNotificationUseCase(
       );
     }
 
-    // Schedule the notification (this validates and sets scheduledFor)
-    let updated = yield* existing.schedule(input.scheduledFor).pipe(
-      Effect.mapError((error: ValidationError | StateTransitionError) => {
-        if (error instanceof ValidationError) {
-          return new NotificationValidationError({
-            message: error.message,
-            field: error.field,
-          });
-        }
-        // error must be StateTransitionError here
-        return new NotificationStateError({
-          message: error.message,
-        });
-      }),
-    );
+    // Build updated DTO with scheduled time
+    const isDraftOrFailed =
+      existing.status === NotificationStatus.DRAFT ||
+      existing.status === NotificationStatus.FAILED;
 
-    // Update status to READY if currently DRAFT or FAILED
-    if (updated.isDraft() || updated.isFailed()) {
-      updated = yield* updated.updateStatus(NotificationStatus.READY).pipe(
-        Effect.mapError(
-          (error) =>
-            new NotificationStateError({
-              message: `Cannot transition to READY: ${error.message}`,
-            }),
-        ),
-      );
-    }
+    const updated: NotificationDTO = {
+      ...existing,
+      scheduledAt: input.scheduledFor,
+      // Update status to READY if currently DRAFT or FAILED
+      ...(isDraftOrFailed && { status: NotificationStatus.READY }),
+      updatedAt: new Date(),
+    };
 
     // Save to repository
     const saved = yield* notificationRepo.update(updated).pipe(
@@ -173,17 +153,17 @@ export function scheduleNotificationUseCase(
   });
 }
 
-function toOutput(notification: Notification): ScheduleNotificationOutput {
+function toOutput(notification: NotificationDTO): ScheduleNotificationOutput {
   return {
     id: notification.id,
     title: notification.title,
-    body: notification.body,
-    url: notification.url,
+    body: notification.content,
+    url: null,
     createdById: notification.createdById,
     tripId: notification.tripId,
     status: notification.status,
     priority: notification.priority,
-    scheduledFor: notification.scheduledFor!,
+    scheduledFor: notification.scheduledAt!,
     sentAt: notification.sentAt,
     createdAt: notification.createdAt,
     updatedAt: notification.updatedAt,
