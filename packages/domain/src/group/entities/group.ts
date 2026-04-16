@@ -377,4 +377,11 @@ export class Group {
       );
     });
   }
+
+  /**
+   * Get a summary of the group
+   */
+  getSummary(): string {
+    return `${this.name} (${this.code}) - ${this.coins} coins`;
+  }
 }

@@ -47,6 +47,7 @@ export interface NotificationDelivery {
     id: string;
     title: string;
     body: string;
+    url?: string | null;
     createdAt: Date;
     createdBy?: {
       id: string;
@@ -140,4 +141,27 @@ export interface NotificationDeliveryGateway {
     userId: string,
     args: NotificationDeliveryConnectionArgs,
   ): Effect.Effect<Connection<NotificationDelivery>, DatabaseError, never>;
+
+  /**
+   * Find delivery by notification ID
+   */
+  findByNotificationId(
+    notificationId: string,
+  ): Effect.Effect<NotificationDelivery | null, DatabaseError, never>;
+
+  /**
+   * Find deliveries with filters and offset-based pagination
+   */
+  findMany(
+    filters: Partial<DeliveryFilters>,
+    pagination: PaginationOptions,
+  ): Effect.Effect<NotificationDelivery[], DatabaseError, never>;
+
+  /**
+   * Find failed deliveries for a trip with offset-based pagination
+   */
+  findFailed(
+    tripId: string,
+    pagination: PaginationOptions,
+  ): Effect.Effect<NotificationDelivery[], DatabaseError, never>;
 }

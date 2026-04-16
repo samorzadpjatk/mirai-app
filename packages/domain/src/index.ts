@@ -18,6 +18,9 @@ export {
   isValidDateRange,
 } from "./system/utils/validation";
 
+// Geo utilities (distance calculations)
+export { calculateDistance, isWithinRadius } from "./system/utils/geo";
+
 // Effect-based validators
 export {
   validateEmail,

@@ -118,6 +118,7 @@ export class Sponsor {
     height?: number | null;
     offsetX?: number | null;
     offsetY?: number | null;
+    isActive?: boolean;
   }): Effect.Effect<Sponsor, ValidationError, never> {
     const self = this;
     return Effect.gen(function* () {
@@ -177,6 +178,12 @@ export class Sponsor {
         offsetY = props.offsetY;
       }
 
+      // Handle isActive if provided
+      let isActive = self.isActive;
+      if (props.isActive !== undefined) {
+        isActive = props.isActive;
+      }
+
       return updateEntity(
         self,
         {
@@ -186,6 +193,7 @@ export class Sponsor {
           height,
           offsetX,
           offsetY,
+          isActive,
         },
         Sponsor,
       );
@@ -223,6 +231,15 @@ export class Sponsor {
    */
   isActiveSponsor(): boolean {
     return this.isActive;
+  }
+
+  /**
+   * Check if sponsor has logo adjustments (height, offsetX, or offsetY)
+   */
+  hasLogoAdjustments(): boolean {
+    return (
+      this.height !== null || this.offsetX !== null || this.offsetY !== null
+    );
   }
 
   /**

@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { ValidationError } from "../../system/errors";
 import { validate } from "../../system/utils/entity-validation";
 import { timestamps, updateEntity } from "../../system/utils/immutable";
+import { CoinAmount } from "../value-objects/coin-amount";
 
 /**
  * Reward entity - represents a reward that groups can purchase
@@ -22,6 +23,8 @@ export class Reward {
     public readonly createdById: string,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    // Additional properties for extended functionality
+    public readonly images: string[] = [],
   ) {}
 
   /**
@@ -35,6 +38,7 @@ export class Reward {
     availableQuantity: number;
     isHidden?: boolean;
     image?: string | null;
+    images?: string[];
     coinCost: number;
     tripId: string;
     createdById: string;
@@ -91,6 +95,9 @@ export class Reward {
         });
       }
 
+      // Validate images array if provided
+      const images = props.images ?? [];
+
       // Validate tripId
       const tripId = yield* validate.id(props.tripId, "tripId");
 
@@ -111,6 +118,7 @@ export class Reward {
         createdById,
         ts.createdAt,
         ts.updatedAt,
+        images,
       );
     });
   }
@@ -124,6 +132,7 @@ export class Reward {
     availableQuantity?: number;
     isHidden?: boolean;
     image?: string | null;
+    images?: string[];
     coinCost?: number;
   }): Effect.Effect<Reward, ValidationError, never> {
     const self = this;
@@ -189,6 +198,9 @@ export class Reward {
         }
       }
 
+      // Update images if provided
+      const images = props.images ?? self.images;
+
       return updateEntity(
         self,
         {
@@ -198,6 +210,7 @@ export class Reward {
           isHidden: props.isHidden,
           image,
           coinCost,
+          images,
         },
         Reward,
       );
@@ -279,7 +292,7 @@ export class Reward {
   }
 
   /**
-   * Show the reward
+   * Show the reward (unhide)
    */
   show(): Reward {
     return updateEntity(
@@ -289,6 +302,13 @@ export class Reward {
       },
       Reward,
     );
+  }
+
+  /**
+   * Alias for show() - unhide the reward
+   */
+  unhide(): Reward {
+    return this.show();
   }
 
   /**
@@ -314,9 +334,27 @@ export class Reward {
 
   /**
    * Check if group can afford this reward
+   * Simple version - checks if group has enough coins for base cost
    */
   canAfford(groupCoins: number): boolean {
     return groupCoins >= this.coinCost;
+  }
+
+  /**
+   * Check if group can afford this reward with dynamic pricing
+   * Calculates actual cost based on total trip points
+   */
+  canAffordWithDynamicCost(
+    groupCoins: CoinAmount,
+    quantity: number,
+    totalTripPoints: number,
+  ): Effect.Effect<boolean, ValidationError, never> {
+    const self = this;
+    return Effect.gen(function* () {
+      const dynamicCost = self.calculateDynamicCoinCost(totalTripPoints);
+      const totalCost = yield* dynamicCost.multiply(quantity);
+      return groupCoins.value >= totalCost.value;
+    });
   }
 
   /**
@@ -327,10 +365,45 @@ export class Reward {
   }
 
   /**
+   * Check if this reward can be purchased (in stock and visible)
+   */
+  canBePurchased(): boolean {
+    return this.isInStock() && this.isVisible();
+  }
+
+  /**
    * Calculate total cost for a quantity
    */
   calculateTotalCost(quantity: number): number {
     return this.coinCost * quantity;
+  }
+
+  /**
+   * Calculate dynamic coin cost based on total trip points
+   * Returns a CoinAmount representing the actual cost
+   */
+  calculateDynamicCoinCost(totalTripPoints: number): CoinAmount {
+    const cost = Math.round((this.coinCost / 100) * totalTripPoints);
+    return CoinAmount.unsafeCreate(cost);
+  }
+
+  /**
+   * Get the coin cost percentage (alias for coinCost)
+   * This represents what percentage of trip points the reward costs
+   */
+  get coinCostPercentage(): CoinAmount {
+    return CoinAmount.unsafeCreate(this.coinCost);
+  }
+
+  /**
+   * Get the primary image (first image or null)
+   */
+  getPrimaryImage(): string | null {
+    const firstImage = this.images[0];
+    if (firstImage !== undefined) {
+      return firstImage;
+    }
+    return this.image ?? null;
   }
 
   /**
