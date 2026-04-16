@@ -168,4 +168,26 @@ export class InMemoryNotificationDeliveryGateway implements NotificationDelivery
       ).length,
     );
   }
+
+  findByNotificationId(
+    _notificationId: string,
+  ): Effect.Effect<never, never, never> {
+    return Effect.fail(
+      new Error("findByNotificationId not implemented") as never,
+    );
+  }
+
+  findMany(
+    _filters: DeliveryFilters,
+    _pagination: { limit: number; offset: number },
+  ): Effect.Effect<never, never, never> {
+    return Effect.fail(new Error("findMany not implemented") as never);
+  }
+
+  findFailed(
+    _tripId: string,
+    _pagination: { limit: number; offset: number },
+  ): Effect.Effect<never, never, never> {
+    return Effect.fail(new Error("findFailed not implemented") as never);
+  }
 }

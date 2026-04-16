@@ -206,4 +206,48 @@ export class DrizzleNotificationDeliveryGateway
 
     return conditions.length > 0 ? and(...conditions) : undefined;
   }
+
+  /**
+   * Find delivery by notification ID
+   */
+  findByNotificationId(
+    _notificationId: string,
+  ): Effect.Effect<never, DatabaseError, never> {
+    return Effect.fail(
+      new DatabaseError({
+        operation: "findByNotificationId",
+        message: "Not implemented",
+      }),
+    );
+  }
+
+  /**
+   * Find deliveries with filters and pagination
+   */
+  findMany(
+    _filters: DeliveryFilters,
+    _pagination: { limit: number; offset: number },
+  ): Effect.Effect<never, DatabaseError, never> {
+    return Effect.fail(
+      new DatabaseError({
+        operation: "findMany",
+        message: "Not implemented",
+      }),
+    );
+  }
+
+  /**
+   * Find failed deliveries for a trip
+   */
+  findFailed(
+    _tripId: string,
+    _pagination: { limit: number; offset: number },
+  ): Effect.Effect<never, DatabaseError, never> {
+    return Effect.fail(
+      new DatabaseError({
+        operation: "findFailed",
+        message: "Not implemented",
+      }),
+    );
+  }
 }
