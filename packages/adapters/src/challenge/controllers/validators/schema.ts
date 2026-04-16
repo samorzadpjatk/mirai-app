@@ -60,18 +60,23 @@ const OptionalTime = Schema.optional(
 const OptionalDate = Schema.optional(
   Schema.Union(Schema.Null, Schema.DateFromString),
 );
-const OptionalNumber = (min: number, max?: number) =>
-  Schema.optional(
+const OptionalNumber = (min: number, max?: number) => {
+  const refinements = [];
+  if (min !== undefined) {
+    refinements.push(Schema.greaterThanOrEqualTo(min));
+  }
+  if (max !== undefined) {
+    refinements.push(Schema.lessThanOrEqualTo(max));
+  }
+  return Schema.optional(
     Schema.Union(
       Schema.Null,
-      Schema.Number.pipe(
-        min !== undefined
-          ? Schema.greaterThanOrEqualTo(min)
-          : (undefined as any),
-        max !== undefined ? Schema.lessThanOrEqualTo(max) : (undefined as any),
-      ),
+      refinements.length > 0
+        ? Schema.Number.pipe(...(refinements as [any]))
+        : Schema.Number,
     ),
   );
+};
 
 export const validateGetByIdInput = (input: unknown) =>
   safeParse(
