@@ -5,23 +5,35 @@
  * All exports are pure TypeScript/JavaScript - no frameworks, no I/O.
  */
 
-// Effect exports - native Effect framework integration
-export { Effect, Either, Data } from "effect";
+// =============================================================================
+// Utilities (shared across all domains)
+// =============================================================================
 
-// Validation utilities
+// Validation utilities (boolean validators)
 export {
   isValidEmail,
-  validateEmail,
-  validateNotEmpty,
-  validateMinLength,
-  validateMaxLength,
-  // Note: isValidUUID is exported from branded-id (for ID validation)
-  validateUUID,
   isValidURL,
   isFutureDate,
   isPastDate,
   isValidDateRange,
-} from "./utils/validation";
+} from "./system/utils/validation";
+
+// Effect-based validators
+export {
+  validateEmail,
+  validateNotEmpty,
+  validateMinLength,
+  validateMaxLength,
+  validateUUID,
+} from "./system/utils/validation";
+
+// Entity validation framework
+export {
+  validate,
+  type StringRule,
+  type NumberRule,
+  type ArrayRule,
+} from "./system/utils/entity-validation";
 
 // Branded ID factory (for creating type-safe identifiers)
 export {
@@ -30,10 +42,10 @@ export {
   isValidCUID,
   type BrandedId,
   type BrandedIdFactory,
-} from "./utils/branded-id";
+} from "./system/utils/branded-id";
 
 // Test constants (for test files)
-export { TestIds, type TestIdKey } from "./utils/test-ids";
+export { TestIds, type TestIdKey } from "./system/utils/test-ids";
 
 // Mock factories (for test files)
 export {
@@ -45,10 +57,9 @@ export {
   mockTrip,
   mockGroup,
   mockChallenge,
-} from "./utils/mock-factories";
+} from "./system/utils/mock-factories";
 
-// Unified Domain Error Hierarchy (consolidates 124 error classes into 20 types)
-// All new code should use these error classes
+// Unified Domain Error Hierarchy
 export {
   DomainError,
   ValidationError,
@@ -86,24 +97,22 @@ export {
   isDatabaseError,
   getDomainErrorMessage,
   getDomainErrorCode,
-} from "./errors/unified-errors";
+} from "./system/errors/unified-errors";
 
-// NEW: Entity validation framework (created in Phase 1)
+// Gateway Error Interfaces (for type consistency across layers)
 export {
-  validate,
-  type StringRule,
-  type NumberRule,
-  type ArrayRule,
-} from "./utils/entity-validation";
+  type GatewayError,
+  type DatabaseGatewayError,
+} from "./ports/gateway-error";
 
-// NEW: State machine factory (created in Phase 1)
+// State machine factory
 export {
   createStateMachine,
   type StateMachineConfig,
   type StateMachine,
-} from "./utils/state-machine";
+} from "./system/utils/state-machine";
 
-// NEW: Immutable update helpers (created in Phase 1)
+// Immutable update helpers
 export {
   timestamps,
   withUpdatedAt,
@@ -111,83 +120,31 @@ export {
   type Timestamps,
   type TimestampOptions,
   type DomainEntity,
-} from "./utils/immutable";
+} from "./system/utils/immutable";
 
-// NEW: Entity helper functions (created in Phase 1)
-export { entityHelpers } from "./utils/entity-helpers";
+// =============================================================================
+// Domain Events
+// =============================================================================
+// export * from "./events"; // TODO: Create events barrel
 
-// Entities - organized by domain/bounded context
-
+// =============================================================================
 // User Domain
-export * from "./entities/user/user";
-export * from "./entities/user/user-agent";
-
-// Challenge Domain
-export * from "./entities/challenge/challenge";
-export * from "./entities/challenge/challenge-submission";
-export * from "./entities/challenge/challenge-vote";
-export * from "./entities/challenge/submission-report";
-
-// Activity & Feed Domain
-export * from "./entities/activity/activity-feed";
-export * from "./entities/activity/activity-reaction";
-
-// Group Domain
-export * from "./entities/group/group";
-export * from "./entities/group/group-join-request";
-export * from "./entities/group/coin-transaction";
-
-// Trip Domain
-export * from "./entities/trip/trip";
-export * from "./entities/trip/trip-participant";
-export * from "./entities/trip/trip-insurance";
-export * from "./entities/trip/trip-resource";
-
-// Event Domain
-export * from "./entities/event/event";
-export * from "./entities/event/user-event";
-
-// Location Domain
-export * from "./entities/location/location";
-export * from "./entities/location/location-sharing-request";
-
-// Notification Domain
-export * from "./entities/notification/notification";
-export * from "./entities/notification/notification-delivery";
-export * from "./entities/notification/notification-schedule";
-export * from "./entities/notification/notification-schedule-execution-record";
-export * from "./entities/notification/push-subscription";
-
-// Reward Domain
-export * from "./entities/reward/reward";
-export * from "./entities/reward/reward-purchase";
-
-// Sponsor Domain
-export * from "./entities/sponsor/sponsor";
-export * from "./entities/sponsor/trip-sponsor";
-
-// Nested Interfaces (re-exported from parent entities)
-export type {
-  ChallengeMetadata,
-  RankChangeMetadata,
-  SubmissionMetadata,
-  PostMetadata,
-} from "./entities/activity/activity-feed";
-export type { InsuranceStep } from "./entities/trip/trip-insurance";
-export type { PushDeliveryRecord } from "./entities/notification/notification-delivery";
-
-// Value Objects - organized by domain (DDD pattern: folder indicates domain)
-// User domain
+// =============================================================================
+export * from "./user/entities/user";
 export {
   Id as UserId,
   type Id as UserIdType,
   AuthContext,
-} from "./value-objects/user";
+} from "./user/value-objects";
+export * from "./user/enums";
 
-// Group domain
-export { Id as GroupId, type Id as GroupIdType } from "./value-objects/group";
-
-// Challenge domain
+// =============================================================================
+// Challenge Domain
+// =============================================================================
+export * from "./challenge/entities/challenge";
+export * from "./challenge/entities/challenge-submission";
+export * from "./challenge/entities/challenge-vote";
+export * from "./challenge/entities/submission-report";
 export {
   Id as ChallengeId,
   type Id as ChallengeIdType,
@@ -198,66 +155,115 @@ export {
   ReportReason,
   VotePosition,
   VoteWeight,
-} from "./value-objects/challenge";
+} from "./challenge/value-objects";
+export * from "./challenge/enums";
 
-// Trip domain
+// =============================================================================
+// Activity & Feed Domain
+// =============================================================================
+export * from "./activity/entities/activity-feed";
+export * from "./activity/entities/activity-reaction";
+export {
+  Id as ActivityId,
+  type Id as ActivityIdType,
+} from "./activity/value-objects";
+export * from "./activity/enums";
+
+// Nested Interfaces from activity entities
+export type {
+  ChallengeMetadata,
+  RankChangeMetadata,
+  SubmissionMetadata,
+  PostMetadata,
+} from "./activity/entities/activity-feed";
+
+// =============================================================================
+// Group Domain
+// =============================================================================
+export * from "./group/entities/group";
+export * from "./group/entities/group-join-request";
+export * from "./group/entities/coin-transaction";
+export { Id as GroupId, type Id as GroupIdType } from "./group/value-objects";
+export * from "./group/enums";
+
+// =============================================================================
+// Trip Domain
+// =============================================================================
+export * from "./trip/entities/trip";
+export * from "./trip/entities/trip-participant";
+export * from "./trip/entities/trip-insurance";
+export * from "./trip/entities/trip-resource";
 export {
   Id as TripId,
   type Id as TripIdType,
   SponsorId as TripSponsorId,
   type SponsorId as TripSponsorIdType,
-} from "./value-objects/trip";
+} from "./trip/value-objects";
+export * from "./trip/enums";
+export type { InsuranceStep } from "./trip/entities/trip-insurance";
 
-// Activity domain
+// =============================================================================
+// Event Domain
+// =============================================================================
+export * from "./event/entities/event";
+export * from "./event/entities/user-event";
+
+// =============================================================================
+// Location Domain
+// =============================================================================
+export * from "./location/entities/location";
+export * from "./location/entities/location-sharing-request";
 export {
-  Id as ActivityId,
-  type Id as ActivityIdType,
-} from "./value-objects/activity";
+  Id as LocationId,
+  type Id as LocationIdType,
+} from "./location/value-objects";
+export * from "./location/enums";
 
-// Notification domain
+// =============================================================================
+// Notification Domain
+// =============================================================================
+export * from "./notification/entities/notification";
+export * from "./notification/entities/notification-delivery";
+export * from "./notification/entities/notification-schedule";
+export * from "./notification/entities/notification-schedule-execution-record";
+export * from "./notification/entities/push-subscription";
 export {
   Id as NotificationId,
   type Id as NotificationIdType,
   ScheduleId as NotificationScheduleId,
   type ScheduleId as NotificationScheduleIdType,
-} from "./value-objects/notification";
+} from "./notification/value-objects";
+export * from "./notification/enums";
+export type { PushDeliveryRecord } from "./notification/entities/notification-delivery";
 
-// Reward domain
+// =============================================================================
+// Reward Domain
+// =============================================================================
+export * from "./reward/entities/reward";
+export * from "./reward/entities/reward-purchase";
 export {
   Id as RewardId,
   type Id as RewardIdType,
   CoinAmount,
-} from "./value-objects/reward";
+} from "./reward/value-objects";
+export * from "./reward/enums";
 
-// Location domain
-export {
-  Id as LocationId,
-  type Id as LocationIdType,
-} from "./value-objects/location";
-
-// Sponsor domain
+// =============================================================================
+// Sponsor Domain
+// =============================================================================
+export * from "./sponsor/entities/sponsor";
+export * from "./sponsor/entities/trip-sponsor";
 export {
   Id as SponsorId,
   type Id as SponsorIdType,
-} from "./value-objects/sponsor";
+} from "./sponsor/value-objects";
 
-// Domain Events (Phase 2: Real-Time Architecture)
-export * from "./events";
-
-// Enums - All domain enums organized by area
+// =============================================================================
+// Domain Enums (barrel export)
+// =============================================================================
 export * from "./enums";
 
-// ============================================================================
-// Effect Framework Integration (NEW - Step 1.1)
-// ============================================================================
-
-// Effect utilities
-export {
-  fromPredicate,
-  isPureEffect,
-  assertPureEffect,
-  type EntityEffect,
-  type EffectSuccess,
-  type EffectError,
-  type EffectRequirements,
-} from "./effect-utils";
+// =============================================================================
+// Domain Ports (barrel export)
+// =============================================================================
+// export * from "./ports"; // TODO: Create ports barrel
