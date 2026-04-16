@@ -1,6 +1,6 @@
-import { Event } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { EventGatewayTag } from "../ports/gateway";
+import type { EventDTO } from "../dto";
 
 /**
  * Input for GetEvent use case
@@ -83,17 +83,17 @@ export function getEventUseCase(
   });
 }
 
-function toOutput(event: Event): GetEventOutput {
+function toOutput(event: EventDTO): GetEventOutput {
   return {
     id: event.id,
-    creatorId: event.creatorId,
-    organizerGroupId: event.organizerGroupId,
+    creatorId: event.createdById,
+    organizerGroupId: event.groupId ?? null,
     title: event.title,
     startTime: event.startTime,
-    endTime: event.endTime,
-    location: event.location,
-    description: event.description,
-    files: event.files,
+    endTime: event.endTime ?? event.startTime,
+    location: event.location ?? "",
+    description: event.description ?? "",
+    files: [], // Events don't have files in DTO, return empty array
     createdAt: event.createdAt,
     updatedAt: event.updatedAt,
   };

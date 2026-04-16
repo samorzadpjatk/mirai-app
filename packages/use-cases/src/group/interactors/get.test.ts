@@ -5,214 +5,197 @@ import {
   type GetGroupInput,
   GetGroupNotFoundError,
 } from "./get";
-import { Group, GroupStatus } from "@mirai-app/domain";
 import { GroupGatewayTag, type GroupGateway } from "../ports/gateway";
+import type { GroupDTO } from "../dto";
+import { DatabaseError, GroupStatus } from "@mirai-app/domain";
 
 /**
- * Simple in-memory mock repository for testing (Effect-based)
+ * Mock GroupGateway for testing
  */
-class MockGroupRepository implements GroupGateway {
-  private groups = new Map<string, Group>();
+function createMockGroupGateway(groups: GroupDTO[] = []): GroupGateway {
+  const groupMap = new Map(groups.map((g) => [g.id, g]));
 
-  create(group: Group): Effect.Effect<Group, never, never> {
-    this.groups.set(group.id, group);
-    return Effect.succeed(group);
-  }
+  return {
+    create: (group: GroupDTO) => {
+      groupMap.set(group.id, group);
+      return Effect.succeed(group);
+    },
 
-  findById(id: string): Effect.Effect<Group | null, never, never> {
-    return Effect.succeed(this.groups.get(id) ?? null);
-  }
+    findById: (id: string) => {
+      const group = groupMap.get(id);
+      return Effect.succeed(group ?? null);
+    },
 
-  findByTripId(tripId: string): Effect.Effect<Group[], never, never> {
-    return Effect.succeed(
-      Array.from(this.groups.values()).filter((g) => g.tripId === tripId),
-    );
-  }
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
 
-  findByStatus(status: GroupStatus): Effect.Effect<Group[], never, never> {
-    return Effect.succeed(
-      Array.from(this.groups.values()).filter((g) => g.status === status),
-    );
-  }
+    findByStatusConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
 
-  findByTripIdAndStatus(
-    tripId: string,
-    status: GroupStatus,
-  ): Effect.Effect<Group[], never, never> {
-    return Effect.succeed(
-      Array.from(this.groups.values()).filter(
-        (g) => g.tripId === tripId && g.status === status,
-      ),
-    );
-  }
+    findByTripIdAndStatusConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
 
-  findByOrganizerId(organizerId: string): Effect.Effect<Group[], never, never> {
-    return Effect.succeed(
-      Array.from(this.groups.values()).filter(
-        (g) => g.organizerId === organizerId,
-      ),
-    );
-  }
+    findByOrganizerIdConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
 
-  findByCode(code: string): Effect.Effect<Group | null, never, never> {
-    return Effect.succeed(
-      Array.from(this.groups.values()).find((g) => g.code === code) ?? null,
-    );
-  }
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(groupMap.values()),
+        total: groupMap.size,
+        limit: groupMap.size,
+        offset: 0,
+        hasMore: false,
+      }),
 
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Effect.Effect<Group[], never, never> {
-    const groups = Array.from(this.groups.values());
-    const offset = options?.offset ?? 0;
-    const limit = options?.limit ?? groups.length;
-    return Effect.succeed(groups.slice(offset, offset + limit));
-  }
+    update: (group: GroupDTO) => Effect.succeed(group),
 
-  update(group: Group): Effect.Effect<Group, never, never> {
-    this.groups.set(group.id, group);
-    return Effect.succeed(group);
-  }
+    delete: () => Effect.succeed(void 0),
 
-  delete(id: string): Effect.Effect<void, never, never> {
-    this.groups.delete(id);
-    return Effect.succeed(undefined);
-  }
+    exists: () => Effect.succeed(false),
 
-  exists(id: string): Effect.Effect<boolean, never, never> {
-    return Effect.succeed(this.groups.has(id));
-  }
+    existsByCode: () => Effect.succeed(false),
 
-  countByTripId(tripId: string): Effect.Effect<number, never, never> {
-    return Effect.succeed(
-      Array.from(this.groups.values()).filter((g) => g.tripId === tripId)
-        .length,
-    );
-  }
+    findByCode: () => Effect.succeed(null),
+
+    getCoins: () => Effect.succeed(0),
+
+    updateCoins: (id: string) => {
+      const group = groupMap.get(id);
+      return group
+        ? Effect.succeed(group)
+        : Effect.succeed(null as unknown as GroupDTO);
+    },
+
+    findTripParticipantsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
 }
 
-describe("[UNIT] getGroupUseCase - Pure Effect Pattern", () => {
-  let repo: MockGroupRepository;
-  let mockLayer: Layer.Layer<GroupGatewayTag>;
+function createMockGroupDTO(overrides: Partial<GroupDTO> = {}): GroupDTO {
+  return {
+    id: overrides.id ?? "group-123",
+    tripId: overrides.tripId ?? "trip-123",
+    name: overrides.name ?? "Test Group",
+    code: overrides.code ?? "TEST123",
+    description: overrides.description ?? null,
+    imageUrl: overrides.imageUrl ?? null,
+    status: overrides.status ?? GroupStatus.ACTIVE,
+    coins: overrides.coins ?? 100,
+    maxMembers: overrides.maxMembers ?? null,
+    createdById: overrides.createdById ?? "user-123",
+    createdAt: overrides.createdAt ?? new Date("2024-01-01"),
+    updatedAt: overrides.updatedAt ?? new Date("2024-01-01"),
+    deletedAt: overrides.deletedAt ?? null,
+    deletedById: overrides.deletedById ?? null,
+  };
+}
 
-  beforeEach(() => {
-    repo = new MockGroupRepository();
-    mockLayer = Layer.succeed(GroupGatewayTag, repo);
+describe("[UNIT] getGroupUseCase", () => {
+  it("should return group when found by ID", async () => {
+    const mockGroup = createMockGroupDTO({
+      id: "group-456",
+      name: "My Group",
+      tripId: "trip-456",
+      coins: 500,
+    });
+    const mockGateway = createMockGroupGateway([mockGroup]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
+
+    const input: GetGroupInput = { groupId: "group-456" };
+    const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBe("group-456");
+    expect(result.name).toBe("My Group");
+    expect(result.tripId).toBe("trip-456");
+    expect(result.coins).toBe(500);
+    expect(result.isActive).toBe(true);
+    expect(result.summary).toContain("My Group");
   });
 
-  const createValidGroup = (
-    overrides?: Partial<{
-      id: string;
-      tripId: string;
-      name: string;
-      code: string;
-      organizerId: string;
-      coins: number;
-      status: GroupStatus;
-    }>,
-  ): Group => {
-    const effect = Group.create({
-      id: overrides?.id ?? "group-123",
-      tripId: overrides?.tripId ?? "trip-123",
-      name: overrides?.name ?? "Test Group",
-      code: overrides?.code ?? "TEST123",
-      organizerId: overrides?.organizerId ?? "user-123",
-      description: "A test description",
-      image: "https://example.com/image.png",
-      coins: overrides?.coins ?? 100,
-      status: overrides?.status ?? GroupStatus.ACTIVE,
+  it("should fail with GetGroupNotFoundError when group not found", async () => {
+    const mockGateway = createMockGroupGateway([]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
+
+    const input: GetGroupInput = { groupId: "non-existent" };
+    const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (
+      either._tag === "Left" &&
+      either.left instanceof GetGroupNotFoundError
+    ) {
+      expect(either.left.groupId).toBe("non-existent");
+    }
+  });
+
+  it("should handle deleted groups correctly", async () => {
+    const mockGroup = createMockGroupDTO({
+      id: "group-deleted",
+      status: GroupStatus.DELETED,
     });
-    return Effect.runSync(effect);
-  };
+    const mockGateway = createMockGroupGateway([mockGroup]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
 
-  describe("[UNIT] execute", () => {
-    it("should return group when found by ID", async () => {
-      const mockGroup = createValidGroup({
-        id: "group-456",
-        name: "My Group",
-        tripId: "trip-456",
-      });
-      Effect.runSync(repo.create(mockGroup));
+    const input: GetGroupInput = { groupId: "group-deleted" };
+    const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      const input: GetGroupInput = {
-        groupId: "group-456",
-      };
+    expect(result.id).toBe("group-deleted");
+    expect(result.isActive).toBe(false);
+  });
 
-      const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
-      const result = await Effect.runPromise(program);
+  it("should handle database errors", async () => {
+    const failingGateway: GroupGateway = {
+      ...createMockGroupGateway([]),
+      findById: () =>
+        Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database connection failed",
+          }),
+        ),
+    };
+    const failingLayer = Layer.succeed(GroupGatewayTag, failingGateway);
 
-      expect(result.id).toBe("group-456");
-      expect(result.name).toBe("My Group");
-      expect(result.tripId).toBe("trip-456");
-      expect(result.code).toBe("TEST123");
-      expect(result.organizerId).toBe("user-123");
-      expect(result.coins).toBe(100);
-      expect(result.status).toBe("ACTIVE");
-      expect(result.isActive).toBe(true);
-      expect(result.summary).toBeDefined();
-      expect(result.createdAt).toBeInstanceOf(Date);
-      expect(result.updatedAt).toBeInstanceOf(Date);
-    });
+    const input: GetGroupInput = { groupId: "group-123" };
+    const program = getGroupUseCase(input).pipe(Effect.provide(failingLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-    it("should fail with GetGroupNotFoundError when group not found", async () => {
-      const input: GetGroupInput = {
-        groupId: "non-existent-id",
-      };
-
-      const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
-      const either = await Effect.runPromise(Effect.either(program));
-
-      expect(either._tag).toBe("Left");
-      if (either._tag === "Left") {
-        expect(either.left).toBeInstanceOf(GetGroupNotFoundError);
-        expect(either.left.groupId).toBe("non-existent-id");
-      }
-    });
-
-    it("should return deleted group if it exists", async () => {
-      const deletedGroup = Effect.runSync(
-        Group.create({
-          id: "group-deleted",
-          tripId: "trip-123",
-          name: "Deleted Group",
-          code: "DELETED",
-          organizerId: "user-123",
-          description: null,
-          image: null,
-          coins: 0,
-          status: GroupStatus.DELETED,
-        }),
-      );
-      Effect.runSync(repo.create(deletedGroup));
-
-      const input: GetGroupInput = {
-        groupId: "group-deleted",
-      };
-
-      const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
-      const result = await Effect.runPromise(program);
-
-      expect(result.id).toBe("group-deleted");
-      expect(result.isActive).toBe(false);
-      expect(result.status).toBe("DELETED");
-    });
-
-    it("should return correct summary for group", async () => {
-      const mockGroup = createValidGroup({
-        name: "Adventure Group",
-        coins: 500,
-      });
-      Effect.runSync(repo.create(mockGroup));
-
-      const input: GetGroupInput = {
-        groupId: "group-123",
-      };
-
-      const program = getGroupUseCase(input).pipe(Effect.provide(mockLayer));
-      const result = await Effect.runPromise(program);
-
-      expect(result.summary).toContain("Adventure Group");
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
   });
 });

@@ -1,235 +1,249 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   addCoinsUseCase,
   type AddCoinsInput,
   GroupNotFoundError,
   GroupNotInTripError,
   GroupDeletedError,
+  IncrementCoinsError,
+  CreateTransactionError,
 } from "./add";
-import { Effect, Either } from "effect";
-import { CoinTransactionGatewayTag } from "../ports/gateway";
-import { InMemoryCoinTransactionGateway } from "@mirai-app/adapters";
+import {
+  CoinTransactionGatewayTag,
+  type CoinTransactionGateway,
+} from "../ports/gateway";
+import type { CoinTransactionDTO } from "@mirai-app/domain";
 
-describe("[UNIT] addCoinsUseCase (Effect)", () => {
-  let repo: InMemoryCoinTransactionGateway;
+function createMockCoinGateway(
+  options: {
+    groupExists?: boolean;
+    groupTripId?: string;
+    isDeleted?: boolean;
+    shouldFailIncrement?: boolean;
+    shouldFailCreate?: boolean;
+  } = {},
+): CoinTransactionGateway {
+  return {
+    count: () => Effect.succeed(0),
 
-  beforeEach(() => {
-    repo = new InMemoryCoinTransactionGateway();
-  });
+    sumAmount: () => Effect.succeed(null),
 
-  const runUseCase = async (input: AddCoinsInput) => {
-    const program = addCoinsUseCase(input).pipe(
-      Effect.provideService(CoinTransactionGatewayTag, {
-        count: (filters?: any) => repo.count(filters),
-        sumAmount: (filters?: any) => repo.sumAmount(filters),
-        sumAddedCoins: (tripId: string) => repo.sumAddedCoins(tripId),
-        sumRemovedCoins: (tripId: string) => repo.sumRemovedCoins(tripId),
-        getMostActiveAdmin: (tripId: string) => repo.getMostActiveAdmin(tripId),
-        findMany: (filters: any, pagination: any) =>
-          repo.findMany(filters, pagination),
-        findRecent: (filters: any, limit: number) =>
-          repo.findRecent(filters, limit),
-        getTotalCoinsByGroup: (tripId: string) =>
-          repo.getTotalCoinsByGroup(tripId),
-        groupByAdmin: (tripId: string, limit: number) =>
-          repo.groupByAdmin(tripId, limit),
-        create: (data: any) => repo.create(data),
-        incrementGroupCoins: (groupId: string, amount: number) =>
-          repo.incrementGroupCoins(groupId, amount),
-        decrementGroupCoins: (groupId: string, amount: number) =>
-          repo.decrementGroupCoins(groupId, amount),
-        getGroupCoins: (groupId: string) => repo.getGroupCoins(groupId),
-        verifyGroupInTrip: (groupId: string, tripId: string) =>
-          repo.verifyGroupInTrip(groupId, tripId),
+    sumAddedCoins: () => Effect.succeed(0),
+
+    sumRemovedCoins: () => Effect.succeed(0),
+
+    getMostActiveAdmin: () => Effect.succeed([]),
+
+    findManyConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
       }),
-    );
-    return await Effect.runPromise(program);
+
+    findRecent: () => Effect.succeed([]),
+
+    getTotalCoinsByGroup: () => Effect.succeed([]),
+
+    groupByAdmin: () => Effect.succeed([]),
+
+    create: (data: {
+      groupId: string;
+      amount: number;
+      reason?: string;
+      adminId: string;
+    }) => {
+      if (options.shouldFailCreate) {
+        return Effect.fail(new Error("Create failed"));
+      }
+      return Effect.succeed({
+        id: "tx-123",
+        groupId: data.groupId,
+        amount: data.amount,
+        reason: data.reason ?? null,
+        adminId: data.adminId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as CoinTransactionDTO);
+    },
+
+    incrementGroupCoins: () => {
+      if (options.shouldFailIncrement) {
+        return Effect.fail(new Error("Increment failed"));
+      }
+      return Effect.succeed(undefined);
+    },
+
+    decrementGroupCoins: () =>
+      Effect.succeed({ success: true, currentBalance: 900 }),
+
+    getGroupCoins: () => Effect.succeed(1000),
+
+    verifyGroupInTrip: () =>
+      Effect.succeed({
+        exists: options.groupExists ?? true,
+        tripId: options.groupTripId ?? "trip-123",
+        isDeleted: options.isDeleted ?? false,
+        coins: 1000,
+      }),
   };
+}
 
+describe("[UNIT] addCoinsUseCase", () => {
   it("should add coins successfully", async () => {
-    repo.seedGroupCoins("group-1", 0);
+    const mockGateway = createMockCoinGateway();
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
 
-    const input = {
-      tripId: "trip-1",
-      groupId: "group-1",
+    const input: AddCoinsInput = {
+      tripId: "trip-123",
+      groupId: "group-123",
       amount: 100,
-      reason: "Test reason",
-      adminId: "admin-1",
+      reason: "Test reward",
+      adminId: "admin-123",
     };
 
-    const result = await runUseCase(input);
+    const program = addCoinsUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
+    expect(result.transaction).toBeDefined();
     expect(result.transaction.amount).toBe(100);
-    expect(result.transaction.groupId).toBe("group-1");
-
-    const groupCoins = await Effect.runPromise(repo.getGroupCoins("group-1"));
-    expect(groupCoins).toBe(100);
+    expect(result.transaction.groupId).toBe("group-123");
+    expect(result.transaction.adminId).toBe("admin-123");
   });
 
-  it("should work without reason", async () => {
-    repo.seedGroupCoins("group-1", 50);
+  it("should add coins without reason", async () => {
+    const mockGateway = createMockCoinGateway();
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
 
-    const input = {
-      tripId: "trip-1",
-      groupId: "group-1",
+    const input: AddCoinsInput = {
+      tripId: "trip-123",
+      groupId: "group-123",
       amount: 50,
-      adminId: "admin-1",
+      adminId: "admin-123",
     };
 
-    const result = await runUseCase(input);
+    const program = addCoinsUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-    expect(result.transaction.reason).toBeNull();
     expect(result.transaction.amount).toBe(50);
-
-    const groupCoins = await Effect.runPromise(repo.getGroupCoins("group-1"));
-    expect(groupCoins).toBe(100);
+    expect(result.transaction.reason).toBeNull();
   });
 
-  it("should fail when group not found", async () => {
-    const mockRepo = {
-      count: (filters?: any) => Effect.succeed(0),
-      sumAmount: (filters?: any) => Effect.succeed(null),
-      sumAddedCoins: (tripId: string) => Effect.succeed(null),
-      sumRemovedCoins: (tripId: string) => Effect.succeed(null),
-      getMostActiveAdmin: (tripId: string) => Effect.succeed([]),
-      findMany: (filters: any, pagination: any) => Effect.succeed([]),
-      findRecent: (filters: any, limit: number) => Effect.succeed([]),
-      getTotalCoinsByGroup: (tripId: string) => Effect.succeed([]),
-      groupByAdmin: (tripId: string, limit: number) => Effect.succeed([]),
-      create: (data: any) =>
-        Effect.succeed({
-          id: "tx-1",
-          groupId: data.groupId,
-          amount: data.amount,
-          reason: data.reason ?? null,
-          adminId: data.adminId,
-          createdAt: new Date(),
-        }),
-      incrementGroupCoins: (groupId: string, amount: number) =>
-        Effect.succeed(undefined),
-      decrementGroupCoins: (groupId: string, amount: number) =>
-        Effect.succeed({ success: true, currentBalance: 400 }),
-      getGroupCoins: (groupId: string) => Effect.succeed(500),
-      verifyGroupInTrip: () => Effect.succeed({ exists: false }),
-    };
+  it("should fail with GroupNotFoundError when group does not exist", async () => {
+    const mockGateway = createMockCoinGateway({ groupExists: false });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
 
-    const input = {
-      tripId: "trip-1",
-      groupId: "nonexistent",
+    const input: AddCoinsInput = {
+      tripId: "trip-123",
+      groupId: "nonexistent-group",
       amount: 100,
-      adminId: "admin-1",
+      adminId: "admin-123",
     };
 
-    const program = addCoinsUseCase(input).pipe(
-      Effect.provideService(CoinTransactionGatewayTag, mockRepo),
-    );
-
+    const program = addCoinsUseCase(input).pipe(Effect.provide(mockLayer));
     const either = await Effect.runPromise(Effect.either(program));
-    expect(Either.isLeft(either)).toBe(true);
-    if (Either.isLeft(either)) {
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
       expect(either.left).toBeInstanceOf(GroupNotFoundError);
+      expect(either.left.message).toBe("Group not found");
     }
   });
 
-  it("should fail when group is deleted", async () => {
-    const mockRepo = {
-      count: (filters?: any) => Effect.succeed(0),
-      sumAmount: (filters?: any) => Effect.succeed(null),
-      sumAddedCoins: (tripId: string) => Effect.succeed(null),
-      sumRemovedCoins: (tripId: string) => Effect.succeed(null),
-      getMostActiveAdmin: (tripId: string) => Effect.succeed([]),
-      findMany: (filters: any, pagination: any) => Effect.succeed([]),
-      findRecent: (filters: any, limit: number) => Effect.succeed([]),
-      getTotalCoinsByGroup: (tripId: string) => Effect.succeed([]),
-      groupByAdmin: (tripId: string, limit: number) => Effect.succeed([]),
-      create: (data: any) =>
-        Effect.succeed({
-          id: "tx-1",
-          groupId: data.groupId,
-          amount: data.amount,
-          reason: data.reason ?? null,
-          adminId: data.adminId,
-          createdAt: new Date(),
-        }),
-      incrementGroupCoins: (groupId: string, amount: number) =>
-        Effect.succeed(undefined),
-      decrementGroupCoins: (groupId: string, amount: number) =>
-        Effect.succeed({ success: true, currentBalance: 400 }),
-      getGroupCoins: (groupId: string) => Effect.succeed(500),
-      verifyGroupInTrip: () =>
-        Effect.succeed({
-          exists: true,
-          tripId: "trip-1",
-          isDeleted: true,
-        }),
-    };
+  it("should fail with GroupNotInTripError when group belongs to different trip", async () => {
+    const mockGateway = createMockCoinGateway({
+      groupExists: true,
+      groupTripId: "different-trip",
+    });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
 
-    const input = {
-      tripId: "trip-1",
-      groupId: "deleted-group",
+    const input: AddCoinsInput = {
+      tripId: "trip-123",
+      groupId: "group-123",
       amount: 100,
-      adminId: "admin-1",
+      adminId: "admin-123",
     };
 
-    const program = addCoinsUseCase(input).pipe(
-      Effect.provideService(CoinTransactionGatewayTag, mockRepo),
-    );
-
+    const program = addCoinsUseCase(input).pipe(Effect.provide(mockLayer));
     const either = await Effect.runPromise(Effect.either(program));
-    expect(Either.isLeft(either)).toBe(true);
-    if (Either.isLeft(either)) {
-      expect(either.left).toBeInstanceOf(GroupDeletedError);
-    }
-  });
 
-  it("should fail when group not in trip", async () => {
-    const mockRepo = {
-      count: (filters?: any) => Effect.succeed(0),
-      sumAmount: (filters?: any) => Effect.succeed(null),
-      sumAddedCoins: (tripId: string) => Effect.succeed(null),
-      sumRemovedCoins: (tripId: string) => Effect.succeed(null),
-      getMostActiveAdmin: (tripId: string) => Effect.succeed([]),
-      findMany: (filters: any, pagination: any) => Effect.succeed([]),
-      findRecent: (filters: any, limit: number) => Effect.succeed([]),
-      getTotalCoinsByGroup: (tripId: string) => Effect.succeed([]),
-      groupByAdmin: (tripId: string, limit: number) => Effect.succeed([]),
-      create: (data: any) =>
-        Effect.succeed({
-          id: "tx-1",
-          groupId: data.groupId,
-          amount: data.amount,
-          reason: data.reason ?? null,
-          adminId: data.adminId,
-          createdAt: new Date(),
-        }),
-      incrementGroupCoins: (groupId: string, amount: number) =>
-        Effect.succeed(undefined),
-      decrementGroupCoins: (groupId: string, amount: number) =>
-        Effect.succeed({ success: true, currentBalance: 400 }),
-      getGroupCoins: (groupId: string) => Effect.succeed(500),
-      verifyGroupInTrip: () =>
-        Effect.succeed({
-          exists: true,
-          tripId: "wrong-trip",
-          isDeleted: false,
-        }),
-    };
-
-    const input = {
-      tripId: "trip-1",
-      groupId: "group-other",
-      amount: 100,
-      adminId: "admin-1",
-    };
-
-    const program = addCoinsUseCase(input).pipe(
-      Effect.provideService(CoinTransactionGatewayTag, mockRepo),
-    );
-
-    const either = await Effect.runPromise(Effect.either(program));
-    expect(Either.isLeft(either)).toBe(true);
-    if (Either.isLeft(either)) {
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
       expect(either.left).toBeInstanceOf(GroupNotInTripError);
+      expect(either.left.message).toBe("Group does not belong to this trip");
+    }
+  });
+
+  it("should fail with GroupDeletedError when group is deleted", async () => {
+    const mockGateway = createMockCoinGateway({
+      groupExists: true,
+      isDeleted: true,
+    });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: AddCoinsInput = {
+      tripId: "trip-123",
+      groupId: "group-123",
+      amount: 100,
+      adminId: "admin-123",
+    };
+
+    const program = addCoinsUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GroupDeletedError);
+      expect(either.left.message).toBe("Group has been deleted");
+    }
+  });
+
+  it("should fail when increment operation fails", async () => {
+    const mockGateway = createMockCoinGateway({ shouldFailIncrement: true });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: AddCoinsInput = {
+      tripId: "trip-123",
+      groupId: "group-123",
+      amount: 100,
+      adminId: "admin-123",
+    };
+
+    const program = addCoinsUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(Error);
+      expect(either.left.message).toBe("Increment failed");
+    }
+  });
+
+  it("should fail when transaction creation fails", async () => {
+    const mockGateway = createMockCoinGateway({ shouldFailCreate: true });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: AddCoinsInput = {
+      tripId: "trip-123",
+      groupId: "group-123",
+      amount: 100,
+      adminId: "admin-123",
+    };
+
+    const program = addCoinsUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(Error);
+      expect(either.left.message).toBe("Create failed");
     }
   });
 });

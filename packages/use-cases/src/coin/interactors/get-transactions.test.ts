@@ -1,172 +1,317 @@
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   getCoinTransactionsUseCase,
   type GetCoinTransactionsInput,
+  GetTransactionsError,
 } from "./get-transactions";
-import { Effect, Either } from "effect";
 import {
   CoinTransactionGatewayTag,
-  type CoinTransaction,
-  type PaginationOptions,
+  type CoinTransactionGateway,
 } from "../ports/gateway";
+import type { CoinTransactionDTO } from "@mirai-app/domain";
 
-describe("[UNIT] getCoinTransactionsUseCase (Effect)", () => {
-  const createMockTransaction = (
-    overrides?: Partial<CoinTransaction>,
-  ): CoinTransaction => ({
-    id: overrides?.id ?? "transaction-123",
-    tripId: overrides?.tripId ?? "trip-123",
-    groupId: overrides?.groupId ?? "group-123",
-    amount: overrides?.amount ?? 100,
-    reason: overrides?.reason ?? "Test transaction",
-    adminId: overrides?.adminId ?? "user-123",
-    createdAt: overrides?.createdAt ?? new Date("2026-01-01"),
-  });
-
-  const createMockRepo = (overrides?: any) => ({
-    count: mock(() => Effect.succeed(0)),
-    sumAmount: mock(() => Effect.succeed(null)),
-    sumAddedCoins: mock(() => Effect.succeed(null)),
-    sumRemovedCoins: mock(() => Effect.succeed(null)),
-    getMostActiveAdmin: mock(() => Effect.succeed([])),
-    findMany: mock(() => Effect.succeed([])),
-    findRecent: mock(() => Effect.succeed([])),
-    getTotalCoinsByGroup: mock(() => Effect.succeed([])),
-    groupByAdmin: mock(() => Effect.succeed([])),
-    create: mock(() => Effect.succeed(createMockTransaction())),
-    incrementGroupCoins: mock(() => Effect.succeed(undefined)),
-    decrementGroupCoins: mock(() => Effect.succeed({ success: true })),
-    getGroupCoins: mock(() => Effect.succeed(0)),
-    verifyGroupInTrip: mock(() => Effect.succeed({ exists: true })),
-    ...overrides,
-  });
-
-  describe("[UNIT] execute", () => {
-    it("should return transactions for trip", async () => {
-      const mockTransactions = [
-        createMockTransaction({ id: "tx-1", amount: 100 }),
-        createMockTransaction({ id: "tx-2", amount: -50 }),
-        createMockTransaction({ id: "tx-3", amount: 200 }),
-      ];
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Effect.succeed(mockTransactions)),
-        count: mock(() => Effect.succeed(3)),
-      });
-
-      const input: GetCoinTransactionsInput = {
-        tripId: "trip-123",
-      };
-
-      const program = getCoinTransactionsUseCase(input).pipe(
-        Effect.provideService(CoinTransactionGatewayTag, mockRepo),
-      );
-
-      const result = await Effect.runPromise(program);
-
-      expect(result.transactions).toHaveLength(3);
-      expect(result.pagination.total).toBe(3);
-      expect(result.pagination.limit).toBe(50);
-      expect(result.pagination.offset).toBe(0);
-      expect(result.pagination.hasMore).toBe(false);
-    });
-
-    it("should filter by group when groupId provided", async () => {
-      const mockTransactions = [
-        createMockTransaction({ id: "tx-1", groupId: "group-456" }),
-      ];
-      const findManyMock = mock((filters: any) => {
-        expect(filters.groupId).toBe("group-456");
-        return Effect.succeed(mockTransactions);
-      });
-      const mockRepo = createMockRepo({
-        findMany: findManyMock,
-        count: mock(() => Effect.succeed(1)),
-      });
-
-      const input: GetCoinTransactionsInput = {
-        tripId: "trip-123",
-        groupId: "group-456",
-      };
-
-      const program = getCoinTransactionsUseCase(input).pipe(
-        Effect.provideService(CoinTransactionGatewayTag, mockRepo),
-      );
-
-      const result = await Effect.runPromise(program);
-
-      expect(result.transactions).toHaveLength(1);
-    });
-
-    it("should apply pagination options", async () => {
-      const findManyMock = mock(
-        (filters: any, pagination: PaginationOptions) => {
-          expect(pagination.limit).toBe(10);
-          expect(pagination.offset).toBe(20);
-          return Effect.succeed([]);
-        },
-      );
-      const mockRepo = createMockRepo({
-        findMany: findManyMock,
-        count: mock(() => Effect.succeed(100)),
-      });
-
-      const input: GetCoinTransactionsInput = {
-        tripId: "trip-123",
-        pagination: { limit: 10, offset: 20 },
-      };
-
-      const program = getCoinTransactionsUseCase(input).pipe(
-        Effect.provideService(CoinTransactionGatewayTag, mockRepo),
-      );
-
-      const result = await Effect.runPromise(program);
-
-      expect(result.pagination.limit).toBe(10);
-      expect(result.pagination.offset).toBe(20);
-      expect(result.pagination.hasMore).toBe(true);
-    });
-
-    it("should return empty list when no transactions", async () => {
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Effect.succeed([])),
-        count: mock(() => Effect.succeed(0)),
-      });
-
-      const input: GetCoinTransactionsInput = {
-        tripId: "trip-empty",
-      };
-
-      const program = getCoinTransactionsUseCase(input).pipe(
-        Effect.provideService(CoinTransactionGatewayTag, mockRepo),
-      );
-
-      const result = await Effect.runPromise(program);
-
-      expect(result.transactions).toHaveLength(0);
-      expect(result.pagination.total).toBe(0);
-      expect(result.pagination.hasMore).toBe(false);
-    });
-
-    it("should handle repository errors", async () => {
-      const mockRepo = createMockRepo({
-        findMany: mock(() => Effect.fail(new Error("DB error"))),
-      });
-
-      const input: GetCoinTransactionsInput = {
-        tripId: "trip-123",
-      };
-
-      const program = getCoinTransactionsUseCase(input).pipe(
-        Effect.provideService(CoinTransactionGatewayTag, mockRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left.message).toContain(
-          "Failed to get coin transactions",
-        );
+function createMockCoinGateway(
+  options: {
+    transactions?: CoinTransactionDTO[];
+    count?: number;
+    shouldFailFindMany?: boolean;
+    shouldFailCount?: boolean;
+  } = {},
+): CoinTransactionGateway {
+  return {
+    count: () => {
+      if (options.shouldFailCount) {
+        return Effect.fail(new Error("Count failed"));
       }
+      return Effect.succeed(options.count ?? 0);
+    },
+
+    findMany: () => {
+      if (options.shouldFailFindMany) {
+        return Effect.fail(new Error("FindMany failed"));
+      }
+      return Effect.succeed(options.transactions ?? []);
+    },
+
+    sumAmount: () => Effect.succeed(null),
+
+    sumAddedCoins: () => Effect.succeed(0),
+
+    sumRemovedCoins: () => Effect.succeed(0),
+
+    getMostActiveAdmin: () => Effect.succeed([]),
+
+    findManyConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findRecent: () => Effect.succeed([]),
+
+    getTotalCoinsByGroup: () => Effect.succeed([]),
+
+    groupByAdmin: () => Effect.succeed([]),
+
+    create: () =>
+      Effect.succeed({
+        id: "tx-123",
+        groupId: "group-123",
+        amount: 100,
+        reason: "Test",
+        adminId: "admin-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as CoinTransactionDTO),
+
+    incrementGroupCoins: () => Effect.succeed(void 0),
+
+    decrementGroupCoins: () =>
+      Effect.succeed({ success: true, currentBalance: 900 }),
+
+    getGroupCoins: () => Effect.succeed(1000),
+
+    verifyGroupInTrip: () =>
+      Effect.succeed({
+        exists: true,
+        tripId: "trip-123",
+        isDeleted: false,
+        coins: 1000,
+      }),
+  };
+}
+
+describe("[UNIT] getCoinTransactionsUseCase", () => {
+  it("should return transactions with pagination", async () => {
+    const transactions: CoinTransactionDTO[] = [
+      {
+        id: "tx-1",
+        groupId: "group-123",
+        amount: 100,
+        reason: "Test",
+        adminId: "admin-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "tx-2",
+        groupId: "group-456",
+        amount: -50,
+        reason: "Deduction",
+        adminId: "admin-456",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const mockGateway = createMockCoinGateway({
+      transactions,
+      count: 10,
     });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetCoinTransactionsInput = {
+      tripId: "trip-123",
+      pagination: { limit: 2, offset: 0 },
+    };
+
+    const program = getCoinTransactionsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.transactions).toHaveLength(2);
+    expect(result.pagination.total).toBe(10);
+    expect(result.pagination.limit).toBe(2);
+    expect(result.pagination.offset).toBe(0);
+    expect(result.pagination.hasMore).toBe(true);
+  });
+
+  it("should use default pagination when not specified", async () => {
+    const transactions: CoinTransactionDTO[] = Array.from(
+      { length: 50 },
+      (_, i) => ({
+        id: `tx-${i}`,
+        groupId: "group-123",
+        amount: 100,
+        reason: "Test",
+        adminId: "admin-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    );
+
+    const mockGateway = createMockCoinGateway({
+      transactions,
+      count: 100,
+    });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetCoinTransactionsInput = {
+      tripId: "trip-123",
+    };
+
+    const program = getCoinTransactionsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.pagination.limit).toBe(50);
+    expect(result.pagination.offset).toBe(0);
+    expect(result.pagination.hasMore).toBe(true);
+  });
+
+  it("should filter by groupId when provided", async () => {
+    const transactions: CoinTransactionDTO[] = [
+      {
+        id: "tx-1",
+        groupId: "group-123",
+        amount: 100,
+        reason: "Test",
+        adminId: "admin-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const mockGateway = createMockCoinGateway({
+      transactions,
+      count: 1,
+    });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetCoinTransactionsInput = {
+      tripId: "trip-123",
+      groupId: "group-123",
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getCoinTransactionsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].groupId).toBe("group-123");
+  });
+
+  it("should fail with GetTransactionsError when findMany fails", async () => {
+    const mockGateway = createMockCoinGateway({
+      shouldFailFindMany: true,
+      count: 10,
+    });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetCoinTransactionsInput = {
+      tripId: "trip-123",
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getCoinTransactionsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetTransactionsError);
+      expect(either.left.message).toBe("Failed to get coin transactions");
+    }
+  });
+
+  it("should fail with GetTransactionsError when count fails", async () => {
+    const mockGateway = createMockCoinGateway({
+      transactions: [],
+      shouldFailCount: true,
+    });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetCoinTransactionsInput = {
+      tripId: "trip-123",
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getCoinTransactionsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetTransactionsError);
+      expect(either.left.message).toBe("Failed to get coin transactions");
+    }
+  });
+
+  it("should calculate hasMore correctly on last page", async () => {
+    const transactions: CoinTransactionDTO[] = [
+      {
+        id: "tx-9",
+        groupId: "group-123",
+        amount: 100,
+        reason: "Test",
+        adminId: "admin-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "tx-10",
+        groupId: "group-123",
+        amount: 100,
+        reason: "Test",
+        adminId: "admin-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const mockGateway = createMockCoinGateway({
+      transactions,
+      count: 10,
+    });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetCoinTransactionsInput = {
+      tripId: "trip-123",
+      pagination: { limit: 10, offset: 8 },
+    };
+
+    const program = getCoinTransactionsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.transactions).toHaveLength(2);
+    expect(result.pagination.hasMore).toBe(false);
+  });
+
+  it("should handle empty result", async () => {
+    const mockGateway = createMockCoinGateway({
+      transactions: [],
+      count: 0,
+    });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetCoinTransactionsInput = {
+      tripId: "trip-empty",
+      pagination: { limit: 10, offset: 0 },
+    };
+
+    const program = getCoinTransactionsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.pagination.total).toBe(0);
+    expect(result.pagination.hasMore).toBe(false);
   });
 });

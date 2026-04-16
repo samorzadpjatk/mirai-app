@@ -3,7 +3,7 @@ import {
   CoinTransactionGatewayTag,
   type CoinTransaction,
 } from "../ports/gateway";
-import { UserGatewayTag } from "../../ports/user/gateway";
+import { UserGatewayTag } from "../../user/ports/gateway";
 
 /**
  * Input for GetCoinAdditionalInsights use case

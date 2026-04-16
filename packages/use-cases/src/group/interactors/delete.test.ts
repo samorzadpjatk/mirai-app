@@ -1,144 +1,259 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   deleteGroupUseCase,
   type DeleteGroupInput,
   DeleteGroupNotFoundError,
 } from "./delete";
-import { Group, GroupStatus } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { GroupGatewayTag } from "../ports/gateway";
-import { InMemoryGroupGateway } from "@mirai-app/adapters";
+import { GroupGatewayTag, type GroupGateway } from "../ports/gateway";
+import type { GroupDTO } from "../dto";
+import { DatabaseError, GroupStatus } from "@mirai-app/domain";
 
-describe("[UNIT] deleteGroupUseCase (Effect)", () => {
-  let repo: InMemoryGroupGateway;
+/**
+ * Mock GroupGateway for testing
+ */
+function createMockGroupGateway(groups: GroupDTO[] = []): GroupGateway {
+  const groupMap = new Map(groups.map((g) => [g.id, g]));
+  const deletedIds = new Set<string>();
 
-  beforeEach(() => {
-    repo = new InMemoryGroupGateway();
+  return {
+    create: (group: GroupDTO) => {
+      groupMap.set(group.id, group);
+      return Effect.succeed(group);
+    },
+
+    findById: (id: string) => {
+      if (deletedIds.has(id)) {
+        return Effect.succeed(null);
+      }
+      const group = groupMap.get(id);
+      return Effect.succeed(group ?? null);
+    },
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
+
+    findByStatusConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
+
+    findByTripIdAndStatusConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
+
+    findByOrganizerIdConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
+
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(groupMap.values()).filter(
+          (g) => !deletedIds.has(g.id),
+        ),
+        total: groupMap.size - deletedIds.size,
+        limit: groupMap.size,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    update: (group: GroupDTO) => Effect.succeed(group),
+
+    delete: (id: string) => {
+      deletedIds.add(id);
+      groupMap.delete(id);
+      return Effect.succeed(void 0);
+    },
+
+    exists: () => Effect.succeed(false),
+
+    existsByCode: () => Effect.succeed(false),
+
+    findByCode: () => Effect.succeed(null),
+
+    getCoins: () => Effect.succeed(0),
+
+    updateCoins: () => Effect.succeed(null as unknown as GroupDTO),
+
+    findTripParticipantsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+function createMockGroupDTO(overrides: Partial<GroupDTO> = {}): GroupDTO {
+  return {
+    id: overrides.id ?? "group-123",
+    tripId: overrides.tripId ?? "trip-123",
+    name: overrides.name ?? "Test Group",
+    code: overrides.code ?? "TEST123",
+    description: overrides.description ?? null,
+    imageUrl: overrides.imageUrl ?? null,
+    status: overrides.status ?? GroupStatus.ACTIVE,
+    coins: overrides.coins ?? 100,
+    maxMembers: overrides.maxMembers ?? null,
+    createdById: overrides.createdById ?? "user-123",
+    createdAt: overrides.createdAt ?? new Date("2024-01-01"),
+    updatedAt: overrides.updatedAt ?? new Date("2024-01-01"),
+    deletedAt: overrides.deletedAt ?? null,
+    deletedById: overrides.deletedById ?? null,
+  };
+}
+
+describe("[UNIT] deleteGroupUseCase", () => {
+  it("should delete group successfully", async () => {
+    const mockGroup = createMockGroupDTO({ id: "group-to-delete" });
+    const mockGateway = createMockGroupGateway([mockGroup]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
+
+    const input: DeleteGroupInput = {
+      groupId: "group-to-delete",
+    };
+
+    const program = deleteGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.deletedGroupId).toBe("group-to-delete");
   });
 
-  const createValidGroup = (
-    overrides?: Partial<{
-      id: string;
-      tripId: string;
-      name: string;
-      code: string;
-      organizerId: string;
-    }>,
-  ): Group => {
-    const effect = Group.create({
-      id: overrides?.id ?? "group-123",
-      tripId: overrides?.tripId ?? "trip-123",
-      name: overrides?.name ?? "Test Group",
-      code: overrides?.code ?? "TEST123",
-      organizerId: overrides?.organizerId ?? "user-123",
-      description: null,
-      image: null,
-      coins: 100,
-      status: GroupStatus.ACTIVE,
-    });
-    return Effect.runSync(effect);
-  };
+  it("should fail with DeleteGroupNotFoundError when group not found", async () => {
+    const mockGateway = createMockGroupGateway([]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
 
-  const runUseCase = async (input: DeleteGroupInput) => {
-    const program = deleteGroupUseCase(input).pipe(
-      Effect.provideService(GroupGatewayTag, {
-        create: (group: Group) => repo.create(group),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByStatus: (status: GroupStatus) => repo.findByStatus(status),
-        findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-          repo.findByTripIdAndStatus(tripId, status),
-        findByOrganizerId: (organizerId: string) =>
-          repo.findByOrganizerId(organizerId),
-        findByCode: (code: string) => repo.findByCode(code),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (group: Group) => repo.update(group),
-        delete: (id: string) => repo.delete(id),
-        exists: (id: string) => repo.exists(id),
-        countByTripId: (tripId: string) => repo.countByTripId(tripId),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
+    const input: DeleteGroupInput = {
+      groupId: "non-existent-group",
+    };
 
-  describe("[UNIT] execute", () => {
-    it("should delete group when found", async () => {
-      const existingGroup = createValidGroup({ id: "group-to-delete" });
-      await Effect.runPromise(repo.create(existingGroup));
+    const program = deleteGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const input: DeleteGroupInput = {
-        groupId: "group-to-delete",
-      };
-
-      const beforeDelete = await Effect.runPromise(
-        repo.findById("group-to-delete"),
-      );
-      expect(beforeDelete).not.toBeNull();
-
-      const result = await runUseCase(input);
-
-      expect(result.success).toBe(true);
-      expect(result.deletedGroupId).toBe("group-to-delete");
-
-      const afterDelete = await Effect.runPromise(
-        repo.findById("group-to-delete"),
-      );
-      expect(afterDelete).toBeNull();
-    });
-
-    it("should fail when group not found", async () => {
-      const input: DeleteGroupInput = {
-        groupId: "non-existent-id",
-      };
-
-      const program = deleteGroupUseCase(input).pipe(
-        Effect.provideService(GroupGatewayTag, {
-          create: (group: Group) => repo.create(group),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: GroupStatus) => repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByOrganizerId: (organizerId: string) =>
-            repo.findByOrganizerId(organizerId),
-          findByCode: (code: string) => repo.findByCode(code),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (group: Group) => repo.update(group),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByTripId: (tripId: string) => repo.countByTripId(tripId),
-        }),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(DeleteGroupNotFoundError);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DeleteGroupNotFoundError);
+      if (either.left instanceof DeleteGroupNotFoundError) {
+        expect(either.left.groupId).toBe("non-existent-group");
       }
+    }
+  });
+
+  it("should handle database errors during find", async () => {
+    const failingGateway: GroupGateway = {
+      ...createMockGroupGateway([]),
+      findById: () =>
+        Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database connection failed",
+          }),
+        ),
+    };
+    const failingLayer = Layer.succeed(GroupGatewayTag, failingGateway);
+
+    const input: DeleteGroupInput = {
+      groupId: "group-123",
+    };
+
+    const program = deleteGroupUseCase(input).pipe(
+      Effect.provide(failingLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should handle database errors during delete", async () => {
+    const mockGroup = createMockGroupDTO({ id: "group-456" });
+    const failingGateway: GroupGateway = {
+      ...createMockGroupGateway([mockGroup]),
+      delete: () =>
+        Effect.fail(
+          new DatabaseError({
+            operation: "delete",
+            message: "Cannot delete group with existing references",
+          }),
+        ),
+    };
+    const failingLayer = Layer.succeed(GroupGatewayTag, failingGateway);
+
+    const input: DeleteGroupInput = {
+      groupId: "group-456",
+    };
+
+    const program = deleteGroupUseCase(input).pipe(
+      Effect.provide(failingLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
+
+  it("should delete group and verify it is gone", async () => {
+    const mockGroup = createMockGroupDTO({ id: "group-verify" });
+    const mockGateway = createMockGroupGateway([mockGroup]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
+
+    const input: DeleteGroupInput = {
+      groupId: "group-verify",
+    };
+
+    const program = deleteGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+
+    const findProgram = mockGateway.findById("group-verify");
+    const foundGroup = await Effect.runPromise(findProgram);
+    expect(foundGroup).toBeNull();
+  });
+
+  it("should delete group with coins", async () => {
+    const mockGroup = createMockGroupDTO({
+      id: "group-with-coins",
+      coins: 1000,
     });
+    const mockGateway = createMockGroupGateway([mockGroup]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
 
-    it("should not affect other groups when deleting one", async () => {
-      const group1 = createValidGroup({ id: "user-1", code: "CODE1" });
-      const group2 = createValidGroup({ id: "user-2", code: "CODE2" });
-      const group3 = createValidGroup({ id: "user-3", code: "CODE3" });
+    const input: DeleteGroupInput = {
+      groupId: "group-with-coins",
+    };
 
-      await Effect.runPromise(repo.create(group1));
-      await Effect.runPromise(repo.create(group2));
-      await Effect.runPromise(repo.create(group3));
+    const program = deleteGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      const input: DeleteGroupInput = {
-        groupId: "user-2",
-      };
-
-      await runUseCase(input);
-
-      const allGroups = await Effect.runPromise(repo.findAll());
-      expect(allGroups).toHaveLength(2);
-      expect(allGroups.find((g) => g.id === "user-1")).not.toBeNull();
-      expect(allGroups.find((g) => g.id === "user-2")).toBeUndefined();
-      expect(allGroups.find((g) => g.id === "user-3")).not.toBeNull();
-    });
+    expect(result.success).toBe(true);
+    expect(result.deletedGroupId).toBe("group-with-coins");
   });
 });

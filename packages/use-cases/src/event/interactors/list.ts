@@ -107,7 +107,20 @@ export function listEventsUseCase(
   });
 }
 
-function toListItem(event: Event): EventListItem {
+function toListItem(
+  event: { startTime: Date; endTime: Date } & Omit<
+    EventListItem,
+    "isOngoing" | "hasStarted" | "hasEnded"
+  >,
+): EventListItem {
+  const now = new Date();
+  const startTime = event.startTime;
+  const endTime = event.endTime;
+
+  const hasStarted = now >= startTime;
+  const hasEnded = now >= endTime;
+  const isOngoing = hasStarted && !hasEnded;
+
   return {
     id: event.id,
     creatorId: event.creatorId,
@@ -120,8 +133,8 @@ function toListItem(event: Event): EventListItem {
     files: event.files,
     createdAt: event.createdAt,
     updatedAt: event.updatedAt,
-    isOngoing: event.isOngoing(),
-    hasStarted: event.hasStarted(),
-    hasEnded: event.hasEnded(),
+    isOngoing,
+    hasStarted,
+    hasEnded,
   };
 }

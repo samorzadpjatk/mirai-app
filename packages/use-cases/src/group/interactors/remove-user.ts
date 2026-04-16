@@ -1,12 +1,8 @@
-import {
-  Group,
-  TripParticipant,
-  type GroupId,
-  type UserId,
-} from "@mirai-app/domain";
+import { GroupStatus, type GroupId, type UserId } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { GroupGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
+import type { GroupDTO } from "../dto";
 
 /**
  * Input for RemoveUserFromGroup use case
@@ -140,20 +136,21 @@ export function removeUserFromGroupUseCase(
   });
 }
 
-function toOutput(group: Group): RemoveUserFromGroupOutput {
+function toOutput(group: GroupDTO): RemoveUserFromGroupOutput {
+  const isActive = group.status === GroupStatus.ACTIVE && !group.deletedAt;
   return {
     id: group.id,
     tripId: group.tripId,
     name: group.name,
     description: group.description,
-    image: group.image,
-    organizerId: group.organizerId,
+    image: group.imageUrl,
+    organizerId: group.createdById,
     code: group.code,
     coins: group.coins,
     status: group.status,
     createdAt: group.createdAt,
     updatedAt: group.updatedAt,
-    isActive: group.isActive(),
-    summary: group.getSummary(),
+    isActive,
+    summary: `${group.name} (${group.code}) - ${group.coins} coins`,
   };
 }

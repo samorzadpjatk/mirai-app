@@ -1,174 +1,196 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { Effect, Either } from "effect";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   getMostActiveAdminStatsUseCase,
   type GetMostActiveAdminStatsInput,
+  CoinTransactionRepositoryError,
 } from "./get-most-active-admin-stats";
 import {
   CoinTransactionGatewayTag,
-  type MostActiveAdminStat,
+  type CoinTransactionGateway,
 } from "../ports/gateway";
+import type { CoinTransactionDTO } from "@mirai-app/domain";
 
-// Helper to run use case with Effect
-const runGetMostActiveAdminStatsUseCase = async (
-  input: GetMostActiveAdminStatsInput,
-  deps: {
-    mockCoinRepo: {
-      getMostActiveAdmin: (tripId: string) => Promise<MostActiveAdminStat[]>;
-    };
-  },
-) => {
-  const program = getMostActiveAdminStatsUseCase(input).pipe(
-    Effect.provideService(CoinTransactionGatewayTag, {
-      count: (filters?) => Effect.promise(() => Promise.resolve(0)),
-      sumAmount: (filters?) => Effect.promise(() => Promise.resolve(null)),
-      sumAddedCoins: (tripId: string) =>
-        Effect.promise(() => Promise.resolve(null)),
-      sumRemovedCoins: (tripId: string) =>
-        Effect.promise(() => Promise.resolve(null)),
-      getMostActiveAdmin: (tripId: string) =>
-        Effect.promise(() => deps.mockCoinRepo.getMostActiveAdmin(tripId)),
-      findMany: (filters, pagination) =>
-        Effect.promise(() => Promise.resolve([])),
-      findRecent: (filters, limit) => Effect.promise(() => Promise.resolve([])),
-      getTotalCoinsByGroup: (tripId: string) =>
-        Effect.promise(() => Promise.resolve([])),
-      groupByAdmin: (tripId: string, limit: number) =>
-        Effect.promise(() => Promise.resolve([])),
-      create: (data) => Effect.promise(() => Promise.resolve({} as any)),
-      incrementGroupCoins: (groupId: string, amount: number) =>
-        Effect.promise(() => Promise.resolve()),
-      decrementGroupCoins: (groupId: string, amount: number) =>
-        Effect.promise(() => Promise.resolve({ success: true })),
-      getGroupCoins: (groupId: string) =>
-        Effect.promise(() => Promise.resolve(0)),
-      verifyGroupInTrip: (groupId: string, tripId: string) =>
-        Effect.promise(() =>
-          Promise.resolve({ exists: true, tripId, isDeleted: false, coins: 0 }),
-        ),
-    }),
-  );
-  return await Effect.runPromise(program);
-};
+function createMockCoinGateway(
+  options: {
+    mostActiveAdminStats?: Array<{
+      adminId: string;
+      _sum: { amount: number | null };
+      _count: { id: number };
+    }>;
+    shouldFail?: boolean;
+  } = {},
+): CoinTransactionGateway {
+  return {
+    count: () => Effect.succeed(0),
 
-describe("[UNIT] getMostActiveAdminStatsUseCase (Effect)", () => {
-  let mockCoinRepo: {
-    getMostActiveAdmin: ReturnType<typeof mock>;
+    sumAmount: () => Effect.succeed(null),
+
+    sumAddedCoins: () => Effect.succeed(0),
+
+    sumRemovedCoins: () => Effect.succeed(0),
+
+    getMostActiveAdmin: () => {
+      if (options.shouldFail) {
+        return Effect.fail(new Error("Database error"));
+      }
+      return Effect.succeed(options.mostActiveAdminStats ?? []);
+    },
+
+    findManyConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findRecent: () => Effect.succeed([]),
+
+    getTotalCoinsByGroup: () => Effect.succeed([]),
+
+    groupByAdmin: () => Effect.succeed([]),
+
+    create: () =>
+      Effect.succeed({
+        id: "tx-123",
+        groupId: "group-123",
+        amount: 100,
+        reason: "Test",
+        adminId: "admin-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as CoinTransactionDTO),
+
+    incrementGroupCoins: () => Effect.succeed(void 0),
+
+    decrementGroupCoins: () =>
+      Effect.succeed({ success: true, currentBalance: 900 }),
+
+    getGroupCoins: () => Effect.succeed(1000),
+
+    verifyGroupInTrip: () =>
+      Effect.succeed({
+        exists: true,
+        tripId: "trip-123",
+        isDeleted: false,
+        coins: 1000,
+      }),
   };
+}
 
-  beforeEach(() => {
-    mockCoinRepo = {
-      getMostActiveAdmin: mock(() =>
-        Promise.resolve([
-          {
-            adminId: "admin-123",
-            _sum: { amount: 500 },
-            _count: { id: 25 },
-          },
-        ]),
-      ),
-    };
+describe("[UNIT] getMostActiveAdminStatsUseCase", () => {
+  it("should return most active admin stats successfully", async () => {
+    const mostActiveAdminStats = [
+      {
+        adminId: "admin-123",
+        _sum: { amount: 5000 },
+        _count: { id: 25 },
+      },
+    ];
+
+    const mockGateway = createMockCoinGateway({ mostActiveAdminStats });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
+    const program = getMostActiveAdminStatsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result).not.toBeNull();
+    expect(result?.adminId).toBe("admin-123");
+    expect(result?.totalAmount).toBe(5000);
+    expect(result?.transactionCount).toBe(25);
   });
 
-  describe("[UNIT] execute", () => {
-    it("should return most active admin stats", async () => {
-      const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
+  it("should return null when no admin stats exist", async () => {
+    const mockGateway = createMockCoinGateway({ mostActiveAdminStats: [] });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
 
-      const result = await runGetMostActiveAdminStatsUseCase(input, {
-        mockCoinRepo,
-      });
+    const input: GetMostActiveAdminStatsInput = { tripId: "trip-empty" };
+    const program = getMostActiveAdminStatsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      expect(result).not.toBeNull();
-      expect(result?.adminId).toBe("admin-123");
-      expect(result?.totalAmount).toBe(500);
-      expect(result?.transactionCount).toBe(25);
-    });
+    expect(result).toBeNull();
+  });
 
-    it("should return null when no stats exist", async () => {
-      mockCoinRepo.getMostActiveAdmin = mock(() => Promise.resolve([]));
+  it("should handle null sum amount by defaulting to 0", async () => {
+    const mostActiveAdminStats = [
+      {
+        adminId: "admin-123",
+        _sum: { amount: null },
+        _count: { id: 10 },
+      },
+    ];
 
-      const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await runGetMostActiveAdminStatsUseCase(input, {
-        mockCoinRepo,
-      });
+    const mockGateway = createMockCoinGateway({ mostActiveAdminStats });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
 
-      expect(result).toBeNull();
-    });
+    const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
+    const program = getMostActiveAdminStatsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-    it("should return null when stats array has no valid entries", async () => {
-      mockCoinRepo.getMostActiveAdmin = mock(() =>
-        Promise.resolve([
-          {
-            adminId: "admin-123",
-            _sum: { amount: null },
-            _count: { id: 0 },
-          },
-        ]),
+    expect(result).not.toBeNull();
+    expect(result?.adminId).toBe("admin-123");
+    expect(result?.totalAmount).toBe(0);
+    expect(result?.transactionCount).toBe(10);
+  });
+
+  it("should fail with CoinTransactionRepositoryError when database fails", async () => {
+    const mockGateway = createMockCoinGateway({ shouldFail: true });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
+
+    const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
+    const program = getMostActiveAdminStatsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(CoinTransactionRepositoryError);
+      expect(either.left.message).toContain(
+        "Failed to get most active admin stats",
       );
+    }
+  });
 
-      const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await runGetMostActiveAdminStatsUseCase(input, {
-        mockCoinRepo,
-      });
+  it("should handle multiple admin stats and return top admin", async () => {
+    const mostActiveAdminStats = [
+      {
+        adminId: "admin-456",
+        _sum: { amount: 10000 },
+        _count: { id: 50 },
+      },
+      {
+        adminId: "admin-123",
+        _sum: { amount: 5000 },
+        _count: { id: 25 },
+      },
+    ];
 
-      expect(result).not.toBeNull();
-      expect(result?.totalAmount).toBe(0);
-      expect(result?.transactionCount).toBe(0);
-    });
+    const mockGateway = createMockCoinGateway({ mostActiveAdminStats });
+    const mockLayer = Layer.succeed(CoinTransactionGatewayTag, mockGateway);
 
-    it("should handle null _sum amount", async () => {
-      mockCoinRepo.getMostActiveAdmin = mock(() =>
-        Promise.resolve([
-          {
-            adminId: "admin-123",
-            _sum: { amount: null },
-            _count: { id: 10 },
-          },
-        ]),
-      );
+    const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
+    const program = getMostActiveAdminStatsUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await runGetMostActiveAdminStatsUseCase(input, {
-        mockCoinRepo,
-      });
-
-      expect(result?.totalAmount).toBe(0);
-      expect(result?.transactionCount).toBe(10);
-    });
-
-    it("should call repository with correct tripId", async () => {
-      const input: GetMostActiveAdminStatsInput = { tripId: "trip-456" };
-
-      await runGetMostActiveAdminStatsUseCase(input, { mockCoinRepo });
-
-      expect(mockCoinRepo.getMostActiveAdmin).toHaveBeenCalledWith("trip-456");
-    });
-
-    it("should handle stats with first admin having valid data", async () => {
-      mockCoinRepo.getMostActiveAdmin = mock(() =>
-        Promise.resolve([
-          {
-            adminId: "admin-123",
-            _sum: { amount: 1000 },
-            _count: { id: 50 },
-          },
-          {
-            adminId: "admin-456",
-            _sum: { amount: 500 },
-            _count: { id: 25 },
-          },
-        ]),
-      );
-
-      const input: GetMostActiveAdminStatsInput = { tripId: "trip-123" };
-      const result = await runGetMostActiveAdminStatsUseCase(input, {
-        mockCoinRepo,
-      });
-
-      // Should pick first (most active)
-      expect(result?.adminId).toBe("admin-123");
-      expect(result?.totalAmount).toBe(1000);
-      expect(result?.transactionCount).toBe(50);
-    });
+    expect(result).not.toBeNull();
+    expect(result?.adminId).toBe("admin-456");
+    expect(result?.totalAmount).toBe(10000);
+    expect(result?.transactionCount).toBe(50);
   });
 });

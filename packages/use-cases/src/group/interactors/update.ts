@@ -1,11 +1,7 @@
-import {
-  Group,
-  StateTransitionError,
-  ValidationError,
-} from "@mirai-app/domain";
+import { GroupStatus, DatabaseError } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { GroupGatewayTag } from "../ports/gateway";
-import { DatabaseError } from "@mirai-app/domain";
+import type { GroupDTO } from "../dto";
 
 /**
  * Input for UpdateGroup use case
@@ -95,43 +91,44 @@ export function updateGroupUseCase(
       return yield* Effect.fail(new UpdateGroupNotFoundError({}));
     }
 
-    if (group.isDeleted()) {
+    if (group.status === GroupStatus.DELETED) {
       return yield* Effect.fail(new UpdateGroupDeletedError({}));
     }
 
-    let updatedGroup: Group = group;
+    // Validate name if provided
+    if (input.name !== undefined && input.name.trim().length === 0) {
+      return yield* Effect.fail(
+        new UpdateGroupValidationError({
+          message: "Group name cannot be empty",
+        }),
+      );
+    }
 
-    // Update details if provided
+    // Validate organizerId if provided
     if (
-      input.name !== undefined ||
-      input.description !== undefined ||
-      input.image !== undefined
+      input.organizerId !== undefined &&
+      input.organizerId.trim().length === 0
     ) {
-      updatedGroup = yield* group
-        .updateDetails({
-          ...(input.name !== undefined && { name: input.name }),
-          ...(input.description !== undefined && {
-            description: input.description,
-          }),
-          ...(input.image !== undefined && { image: input.image }),
-        })
-        .pipe(
-          Effect.mapError((error: ValidationError | StateTransitionError) => {
-            return new UpdateGroupValidationError({ message: error.message });
-          }),
-        );
+      return yield* Effect.fail(
+        new UpdateGroupValidationError({
+          message: "Organizer ID cannot be empty",
+        }),
+      );
     }
 
-    // Update organizer if provided
-    if (input.organizerId !== undefined) {
-      updatedGroup = yield* updatedGroup
-        .changeOrganizer(input.organizerId)
-        .pipe(
-          Effect.mapError((error: ValidationError) => {
-            return new UpdateGroupValidationError({ message: error.message });
-          }),
-        );
-    }
+    // Build updated DTO
+    const updatedGroup: GroupDTO = {
+      ...group,
+      ...(input.name !== undefined && { name: input.name.trim() }),
+      ...(input.description !== undefined && {
+        description: input.description,
+      }),
+      ...(input.image !== undefined && { imageUrl: input.image }),
+      ...(input.organizerId !== undefined && {
+        createdById: input.organizerId,
+      }),
+      updatedAt: new Date(),
+    };
 
     // Save updated group
     const saved = yield* groupRepo.update(updatedGroup);
@@ -140,19 +137,19 @@ export function updateGroupUseCase(
   });
 }
 
-function toOutput(group: Group): UpdateGroupOutput {
+function toOutput(group: GroupDTO): UpdateGroupOutput {
   return {
     id: group.id,
     tripId: group.tripId,
     name: group.name,
     description: group.description,
-    image: group.image,
-    organizerId: group.organizerId,
+    image: group.imageUrl,
+    organizerId: group.createdById,
     code: group.code,
     coins: group.coins,
     status: group.status,
     updatedAt: group.updatedAt,
-    isActive: group.isActive(),
-    summary: group.getSummary(),
+    isActive: group.status === GroupStatus.ACTIVE,
+    summary: `${group.name} (${group.coins} coins)`,
   };
 }

@@ -187,6 +187,30 @@ export interface GroupGateway {
     tripId: string,
     args: GroupConnectionArgs,
   ): Effect.Effect<Connection<TripParticipantDTO>, DatabaseError, never>;
+
+  /**
+   * Find trip participant by user ID and trip ID
+   */
+  findParticipantByUserIdAndTripId(
+    userId: string,
+    tripId: string,
+  ): Effect.Effect<TripParticipantDTO | null, DatabaseError, never>;
+
+  /**
+   * Assign a user to a group
+   */
+  assignUserToGroup(
+    userId: string,
+    groupId: string,
+  ): Effect.Effect<TripParticipantDTO, DatabaseError, never>;
+
+  /**
+   * Remove a user from a group
+   */
+  removeUserFromGroup(
+    userId: string,
+    groupId: string,
+  ): Effect.Effect<TripParticipantDTO, DatabaseError, never>;
 }
 
 /**

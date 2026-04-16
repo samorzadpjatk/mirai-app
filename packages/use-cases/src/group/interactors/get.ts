@@ -1,7 +1,8 @@
-import { Group, type GroupId } from "@mirai-app/domain";
+import { type GroupId, GroupStatus } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { GroupGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
+import type { GroupDTO } from "../dto";
 
 /**
  * Input for GetGroup use case
@@ -81,20 +82,21 @@ export function getGroupUseCase(
   });
 }
 
-function toOutput(group: Group): GetGroupOutput {
+function toOutput(group: GroupDTO): GetGroupOutput {
+  const isActive = group.status === GroupStatus.ACTIVE && !group.deletedAt;
   return {
     id: group.id,
     tripId: group.tripId,
     name: group.name,
     description: group.description,
-    image: group.image,
-    organizerId: group.organizerId,
+    image: group.imageUrl,
+    organizerId: group.createdById,
     code: group.code,
     coins: group.coins,
     status: group.status,
     createdAt: group.createdAt,
     updatedAt: group.updatedAt,
-    isActive: group.isActive(),
-    summary: group.getSummary(),
+    isActive,
+    summary: `${group.name} (${group.code}) - ${group.coins} coins`,
   };
 }

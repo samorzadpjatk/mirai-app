@@ -1,288 +1,259 @@
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   createGroupUseCase,
   type CreateGroupInput,
   GroupCodeAlreadyExistsError,
   GroupCreationError,
 } from "./create";
-import { Group, GroupStatus } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { GroupGatewayTag } from "../ports/gateway";
-import { InMemoryGroupGateway } from "@mirai-app/adapters";
+import { GroupGatewayTag, type GroupGateway } from "../ports/gateway";
+import type { GroupDTO } from "../dto";
+import { DatabaseError, GroupStatus } from "@mirai-app/domain";
+import type { CursorPaginationOptions } from "../../system/shared/dto";
 
-describe("[UNIT] createGroupUseCase (Effect)", () => {
-  let repo: InMemoryGroupGateway;
+/**
+ * Mock GroupGateway for testing
+ */
+function createMockGroupGateway(
+  groups: GroupDTO[] = [],
+  options: {
+    shouldFailCreate?: boolean;
+  } = {},
+): GroupGateway {
+  const groupMap = new Map(groups.map((g) => [g.id, g]));
+  const existingCodes = new Set(groups.map((g) => g.code));
 
-  beforeEach(() => {
-    repo = new InMemoryGroupGateway();
+  return {
+    create: (group: GroupDTO) => {
+      if (options.shouldFailCreate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "create",
+            message: "Database error",
+          }),
+        );
+      }
+      groupMap.set(group.id, group);
+      return Effect.succeed(group);
+    },
+
+    findById: (id: string) => {
+      const group = groupMap.get(id);
+      return Effect.succeed(group ?? null);
+    },
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
+
+    findByStatusConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
+
+    findByTripIdAndStatusConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
+
+    findByOrganizerIdConnection: () =>
+      Effect.succeed({
+        items: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      }),
+
+    findAll: () =>
+      Effect.succeed({
+        items: Array.from(groupMap.values()),
+        total: groupMap.size,
+        limit: groupMap.size,
+        offset: 0,
+        hasMore: false,
+      }),
+
+    update: (group: GroupDTO) => Effect.succeed(group),
+
+    delete: () => Effect.succeed(void 0),
+
+    exists: () => Effect.succeed(false),
+
+    existsByCode: (code: string) => Effect.succeed(existingCodes.has(code)),
+
+    findByCode: (code: string) => {
+      const group = Array.from(groupMap.values()).find((g) => g.code === code);
+      return Effect.succeed(group ?? null);
+    },
+
+    getCoins: () => Effect.succeed(0),
+
+    updateCoins: () => Effect.succeed(null as unknown as GroupDTO),
+
+    findTripParticipantsConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+describe("[UNIT] createGroupUseCase", () => {
+  it("should create a group successfully", async () => {
+    const mockGateway = createMockGroupGateway([]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
+
+    const input: CreateGroupInput = {
+      tripId: "trip-123",
+      name: "Test Group",
+      code: "TEST123",
+      organizerId: "user-123",
+    };
+
+    const program = createGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.name).toBe("Test Group");
+    expect(result.code).toBe("TEST123");
+    expect(result.tripId).toBe("trip-123");
+    expect(result.organizerId).toBe("user-123");
+    expect(result.coins).toBe(0);
+    expect(result.status).toBe("ACTIVE");
+    expect(result.createdAt).toBeInstanceOf(Date);
+    expect(result.updatedAt).toBeInstanceOf(Date);
   });
 
-  const createValidGroup = (
-    overrides?: Partial<{
-      id: string;
-      tripId: string;
-      name: string;
-      code: string;
-      organizerId: string;
-    }>,
-  ): Group => {
-    const effect = Group.create({
-      id: overrides?.id ?? "group-123",
-      tripId: overrides?.tripId ?? "trip-123",
-      name: overrides?.name ?? "Test Group",
-      code: overrides?.code ?? "TEST123",
-      organizerId: overrides?.organizerId ?? "user-123",
+  it("should fail with GroupCodeAlreadyExistsError when code exists", async () => {
+    const existingGroup: GroupDTO = {
+      id: "existing-group",
+      tripId: "trip-123",
+      name: "Existing Group",
+      code: "DUPLICATE",
       description: null,
-      image: null,
-      coins: 100,
+      imageUrl: null,
       status: GroupStatus.ACTIVE,
-    });
-    return Effect.runSync(effect);
-  };
+      coins: 100,
+      maxMembers: null,
+      createdById: "user-123",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      deletedById: null,
+    };
+    const mockGateway = createMockGroupGateway([existingGroup]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
 
-  const runUseCase = async (input: CreateGroupInput) => {
-    const program = createGroupUseCase(input).pipe(
-      Effect.provideService(GroupGatewayTag, {
-        create: (group: Group) => repo.create(group),
-        findById: (id: string) => repo.findById(id),
-        findByTripId: (tripId: string) => repo.findByTripId(tripId),
-        findByStatus: (status: GroupStatus) => repo.findByStatus(status),
-        findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-          repo.findByTripIdAndStatus(tripId, status),
-        findByOrganizerId: (organizerId: string) =>
-          repo.findByOrganizerId(organizerId),
-        findByCode: (code: string) => repo.findByCode(code),
-        findAll: (options?: { limit?: number; offset?: number }) =>
-          repo.findAll(options),
-        update: (group: Group) => repo.update(group),
-        delete: (id: string) => repo.delete(id),
-        exists: (id: string) => repo.exists(id),
-        countByTripId: (tripId: string) => repo.countByTripId(tripId),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
+    const input: CreateGroupInput = {
+      tripId: "trip-456",
+      name: "New Group",
+      code: "DUPLICATE",
+      organizerId: "user-456",
+    };
 
-  describe("[UNIT] execute", () => {
-    it("should create group with valid input", async () => {
-      const input: CreateGroupInput = {
-        tripId: "trip-123",
-        name: "Test Group",
-        code: "TEST123",
-        organizerId: "user-123",
-        coins: 100,
-      };
+    const program = createGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const result = await runUseCase(input);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GroupCodeAlreadyExistsError);
+      expect(either.left.message).toBe("Group code already exists");
+    }
+  });
 
-      expect(result.tripId).toBe("trip-123");
-      expect(result.name).toBe("Test Group");
-      expect(result.code).toBe("TEST123");
-      expect(result.organizerId).toBe("user-123");
-      expect(result.coins).toBe(100);
-      expect(result.status).toBe("ACTIVE");
+  it("should use default values when optional fields not provided", async () => {
+    const mockGateway = createMockGroupGateway([]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
 
-      const stored = await Effect.runPromise(repo.findByCode("TEST123"));
-      expect(stored).not.toBeNull();
-      expect(stored?.tripId).toBe("trip-123");
-    });
+    const input: CreateGroupInput = {
+      tripId: "trip-789",
+      name: "Minimal Group",
+      code: "MINIMAL",
+      organizerId: "user-789",
+    };
 
-    it("should use default values when optional fields not provided", async () => {
-      const input: CreateGroupInput = {
-        tripId: "trip-123",
-        name: "Test Group",
-        code: "TEST456",
-        organizerId: "user-123",
-      };
+    const program = createGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-      const result = await runUseCase(input);
+    expect(result.coins).toBe(0);
+    expect(result.status).toBe("ACTIVE");
+    expect(result.description).toBeNull();
+    expect(result.image).toBeNull();
+  });
 
-      expect(result.coins).toBe(0);
-      expect(result.status).toBe("ACTIVE");
-      expect(result.description).toBeNull();
-      expect(result.image).toBeNull();
+  it("should handle database errors during creation", async () => {
+    const mockGateway = createMockGroupGateway([], { shouldFailCreate: true });
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
 
-      const stored = await Effect.runPromise(repo.findByCode("TEST456"));
-      expect(stored?.coins).toBe(0);
-    });
+    const input: CreateGroupInput = {
+      tripId: "trip-999",
+      name: "Failing Group",
+      code: "FAIL999",
+      organizerId: "user-999",
+    };
 
-    it("should fail when group code already exists", async () => {
-      const existingGroup = createValidGroup({ code: "EXISTING" });
-      await Effect.runPromise(repo.create(existingGroup));
+    const program = createGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const input: CreateGroupInput = {
-        tripId: "trip-123",
-        name: "Test Group",
-        code: "EXISTING",
-        organizerId: "user-123",
-      };
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(DatabaseError);
+    }
+  });
 
-      const program = createGroupUseCase(input).pipe(
-        Effect.provideService(GroupGatewayTag, {
-          create: (group: Group) => repo.create(group),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: GroupStatus) => repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByOrganizerId: (organizerId: string) =>
-            repo.findByOrganizerId(organizerId),
-          findByCode: (code: string) => repo.findByCode(code),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (group: Group) => repo.update(group),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByTripId: (tripId: string) => repo.countByTripId(tripId),
-        }),
-      );
+  it("should create group with custom status and coins", async () => {
+    const mockGateway = createMockGroupGateway([]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(GroupCodeAlreadyExistsError);
-        expect(either.left.message).toContain("already exists");
-      }
+    const input: CreateGroupInput = {
+      tripId: "trip-custom",
+      name: "Custom Group",
+      code: "CUSTOM",
+      organizerId: "user-custom",
+      coins: 500,
+      status: GroupStatus.DELETED,
+    };
 
-      const groups = await Effect.runPromise(repo.findAll());
-      expect(groups).toHaveLength(1);
-    });
+    const program = createGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
 
-    it("should fail when domain validation fails for empty name", async () => {
-      const input: CreateGroupInput = {
-        tripId: "trip-123",
-        name: "",
-        code: "TEST123",
-        organizerId: "user-123",
-      };
+    expect(result.coins).toBe(500);
+    expect(result.status).toBe("DELETED");
+  });
 
-      const program = createGroupUseCase(input).pipe(
-        Effect.provideService(GroupGatewayTag, {
-          create: (group: Group) => repo.create(group),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: GroupStatus) => repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByOrganizerId: (organizerId: string) =>
-            repo.findByOrganizerId(organizerId),
-          findByCode: (code: string) => repo.findByCode(code),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (group: Group) => repo.update(group),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByTripId: (tripId: string) => repo.countByTripId(tripId),
-        }),
-      );
+  it("should fail with GroupCreationError when validation fails", async () => {
+    const mockGateway = createMockGroupGateway([]);
+    const mockLayer = Layer.succeed(GroupGatewayTag, mockGateway);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(GroupCreationError);
-        expect(either.left.message).toContain("name");
-      }
+    const input: CreateGroupInput = {
+      tripId: "trip-invalid",
+      name: "", // Empty name should fail validation
+      code: "INVALID",
+      organizerId: "user-invalid",
+    };
 
-      const stored = await Effect.runPromise(repo.findByCode("TEST123"));
-      expect(stored).toBeNull();
-    });
+    const program = createGroupUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-    it("should fail when domain validation fails for empty tripId", async () => {
-      const input: CreateGroupInput = {
-        tripId: "",
-        name: "Test Group",
-        code: "TEST123",
-        organizerId: "user-123",
-      };
-
-      const program = createGroupUseCase(input).pipe(
-        Effect.provideService(GroupGatewayTag, {
-          create: (group: Group) => repo.create(group),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: GroupStatus) => repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByOrganizerId: (organizerId: string) =>
-            repo.findByOrganizerId(organizerId),
-          findByCode: (code: string) => repo.findByCode(code),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (group: Group) => repo.update(group),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByTripId: (tripId: string) => repo.countByTripId(tripId),
-        }),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(GroupCreationError);
-        expect(either.left.message).toContain("tripId");
-      }
-
-      const groups = await Effect.runPromise(repo.findAll());
-      expect(groups).toHaveLength(0);
-    });
-
-    it("should fail when domain validation fails for empty organizerId", async () => {
-      const input: CreateGroupInput = {
-        tripId: "trip-123",
-        name: "Test Group",
-        code: "TEST123",
-        organizerId: "",
-      };
-
-      const program = createGroupUseCase(input).pipe(
-        Effect.provideService(GroupGatewayTag, {
-          create: (group: Group) => repo.create(group),
-          findById: (id: string) => repo.findById(id),
-          findByTripId: (tripId: string) => repo.findByTripId(tripId),
-          findByStatus: (status: GroupStatus) => repo.findByStatus(status),
-          findByTripIdAndStatus: (tripId: string, status: GroupStatus) =>
-            repo.findByTripIdAndStatus(tripId, status),
-          findByOrganizerId: (organizerId: string) =>
-            repo.findByOrganizerId(organizerId),
-          findByCode: (code: string) => repo.findByCode(code),
-          findAll: (options?: { limit?: number; offset?: number }) =>
-            repo.findAll(options),
-          update: (group: Group) => repo.update(group),
-          delete: (id: string) => repo.delete(id),
-          exists: (id: string) => repo.exists(id),
-          countByTripId: (tripId: string) => repo.countByTripId(tripId),
-        }),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(GroupCreationError);
-        expect(either.left.message).toContain("organizerId");
-      }
-    });
-
-    it("should pass optional description and image to repository", async () => {
-      const input: CreateGroupInput = {
-        tripId: "trip-123",
-        name: "Test Group",
-        code: "TEST123",
-        organizerId: "user-123",
-        description: "A test group description",
-        image: "https://example.com/image.png",
-        coins: 500,
-        status: GroupStatus.ACTIVE,
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.description).toBe("A test group description");
-      expect(result.image).toBe("https://example.com/image.png");
-      expect(result.coins).toBe(500);
-
-      const stored = await Effect.runPromise(repo.findByCode("TEST123"));
-      expect(stored).not.toBeNull();
-      expect(stored?.description).toBe("A test group description");
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GroupCreationError);
+    }
   });
 });

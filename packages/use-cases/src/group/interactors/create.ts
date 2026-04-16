@@ -2,6 +2,7 @@ import { Group, GroupStatus, ValidationError } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { GroupGatewayTag } from "../ports/gateway";
 import { DatabaseError } from "@mirai-app/domain";
+import type { GroupDTO } from "../dto";
 
 /**
  * Input for CreateGroup use case
@@ -108,21 +109,39 @@ export function createGroupUseCase(
       ),
     );
 
+    // Convert entity to DTO
+    const groupDTO: GroupDTO = {
+      id: group.id,
+      tripId: group.tripId,
+      name: group.name,
+      code: group.code,
+      description: group.description,
+      imageUrl: group.image,
+      status: group.status,
+      coins: group.coins,
+      maxMembers: null,
+      createdById: group.organizerId,
+      createdAt: group.createdAt,
+      updatedAt: group.updatedAt,
+      deletedAt: null,
+      deletedById: null,
+    };
+
     // Save to repository
-    const saved = yield* groupRepo.create(group);
+    const saved = yield* groupRepo.create(groupDTO);
 
     return toOutput(saved);
   });
 }
 
-function toOutput(group: Group): CreateGroupOutput {
+function toOutput(group: GroupDTO): CreateGroupOutput {
   return {
     id: group.id,
     tripId: group.tripId,
     name: group.name,
     description: group.description,
-    image: group.image,
-    organizerId: group.organizerId,
+    image: group.imageUrl,
+    organizerId: group.createdById,
     code: group.code,
     coins: group.coins,
     status: group.status,

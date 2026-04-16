@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { CoinTransactionGatewayTag } from "../ports/gateway";
-import { GroupGatewayTag } from "../../ports/group/gateway";
+import { GroupGatewayTag } from "../../group/ports/gateway";
 
 /**
  * Input for GetCoinQuickStats use case
