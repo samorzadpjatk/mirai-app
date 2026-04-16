@@ -65,7 +65,32 @@
 | ------------ | ------------ | -------------------------- | -------------------- |
 | UseCaseError | UseCaseError | operation, message, cause? | Orchestration errors |
 
-### 1.4 RepositoryError Duplicates (High Priority)
+### 1.4 Adapter Layer Error Types (Inconsistency Issue)
+
+**File:** `packages/adapters/src/system/errors/adapter-errors.ts` (375 lines)
+
+**CRITICAL FINDING:** Adapter errors use MIXED patterns - some use `Data.TaggedError`, others use plain `Error` classes.
+
+**Correct (Data.TaggedError):**
+| Error Type | Tag | Fields | Code |
+| ------------------------- | ------------------------- | --------------------------- | ------------------- |
+| ServiceError | ServiceError | operation, message, cause? | "SERVICE_ERROR" |
+| DatabaseConnectionError | DatabaseConnectionError | message, cause? | "CONNECTION_ERROR" |
+| DatabaseTransactionError | DatabaseTransactionError | operation, message, cause? | "TRANSACTION_ERROR" |
+
+**INCORRECT (Plain Error classes - need migration):**
+| Error Type | \_tag | Fields | Code |
+| ------------------------- | ------------------------- | ----------------------------------------- | ------------------- |
+| ExternalAPIError | "ExternalAPIError" | service, endpoint, statusCode?, message | "API_ERROR" |
+| ExternalAPITimeoutError | "ExternalAPITimeoutError" | service, endpoint, timeoutMs | "API_TIMEOUT" |
+| StorageError | "StorageError" | operation, path, message, cause? | "STORAGE_ERROR" |
+| StorageFileNotFoundError | "StorageFileNotFoundError"| path | "FILE_NOT_FOUND" |
+| MappingError | "MappingError" | source, target, field?, message | "MAPPING_ERROR" |
+| ConfigurationError | "ConfigurationError" | key, message | "CONFIG_ERROR" |
+
+**Note:** `DatabaseError` is re-exported from `@mirai-app/domain` for consistency.
+
+### 1.5 RepositoryError Duplicates (High Priority)
 
 **Location:** Scattered across use-case interactors
 
@@ -438,13 +463,15 @@ None - existing files will be refactored, not deleted.
 | DTO definition files                    | 13                             |
 | Interactor files with local errors      | ~50                            |
 | Error types in unified-errors.ts        | 24                             |
+| Adapter errors using plain Error        | 6 (needs migration)            |
 | Files requiring modification            | ~70                            |
+| Total gateways (drizzle + in-memory)    | 34                             |
 
 ---
 
 ## 9. File Paths Created
 
-1. `.specs/scratchpad/analysis-error-types.md` - Working notes
+1. `.specs/scratchpad/analysis-15c50f2661cdd41b.md` - Working scratchpad notes
 2. `.specs/analysis/analysis-deduplicate-error-types.md` - Structured analysis (this file)
 
 ---
