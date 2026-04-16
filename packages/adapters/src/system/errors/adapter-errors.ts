@@ -34,7 +34,11 @@
  */
 
 import { Data } from "effect";
-import { DatabaseError } from "@mirai-app/domain";
+import { DatabaseError as DomainDatabaseError } from "@mirai-app/domain";
+
+// Re-export DatabaseError from domain for convenience
+export const DatabaseError = DomainDatabaseError;
+export type DatabaseError = DomainDatabaseError;
 
 // =============================================================================
 // Service Errors
@@ -370,6 +374,13 @@ export function getAdapterErrorMessage(error: AdapterError): string {
 /**
  * Get error code from any adapter error
  */
-export function getAdapterErrorCode(error: AdapterError): string {
-  return error.code;
+export function getAdapterErrorCode(error: AdapterError): string | undefined {
+  // Check if this is a domain DatabaseError (which has _tag) or adapter error (which has code)
+  const e = error as unknown as Record<string, string>;
+  // Domain DatabaseError doesn't have a code property, return undefined
+  if (e._tag === "DatabaseError") {
+    return undefined;
+  }
+  // Adapter errors have code property
+  return e.code;
 }
