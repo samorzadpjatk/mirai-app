@@ -4,7 +4,7 @@ import { env } from "./lib/env";
 import {
   GetCurrentUserDocument,
   type GetCurrentUserQuery,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 
 const PUBLIC_ROUTES = new Set(["/login"]);
 

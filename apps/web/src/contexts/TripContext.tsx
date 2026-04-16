@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import type { ReactNode } from "react";
-import { useGetTripsQuery } from "@mirai-app/graphql-client/urql";
+import { useGetTripsQuery } from "@mirai-app/frameworks/graphql/urql";
 import { ACTIVE_TRIP_STORAGE_KEY } from "../hooks/useActiveTripId";
 
 interface Trip {

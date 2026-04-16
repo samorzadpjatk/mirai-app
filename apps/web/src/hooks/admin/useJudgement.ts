@@ -12,7 +12,7 @@ import {
   useUpdateChallengeMutation,
   type GetChallengeSubmissionsQuery,
   type ReviewAction,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 
 type ChallengeStatus =
   | "HIDDEN"

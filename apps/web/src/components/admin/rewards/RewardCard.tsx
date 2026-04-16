@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { RewardWithCalculationsFieldsFragment } from "@mirai-app/graphql-client";
+import type { RewardWithCalculationsFieldsFragment } from "@mirai-app/frameworks";
 
 interface RewardCardProps {
   reward: RewardWithCalculationsFieldsFragment;

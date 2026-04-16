@@ -14,7 +14,7 @@ import {
   useDeleteGroupMutation,
   useGetUsersQuery,
   type GetGroupQuery,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
 

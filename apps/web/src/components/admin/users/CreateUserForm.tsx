@@ -5,7 +5,7 @@ import type { FormEvent } from "react";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useCreateUserMutation } from "@mirai-app/graphql-client";
+import { useCreateUserMutation } from "@mirai-app/frameworks";
 import { graphqlClient } from "../../../lib/graphql-client";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";

@@ -10,7 +10,7 @@ import {
   ReviewAction,
   SubmissionStatus,
   type ReportReason,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 
 export { SubmissionStatus };
 

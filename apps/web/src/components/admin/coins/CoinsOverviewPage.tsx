@@ -6,7 +6,7 @@ import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { useTrip } from "../../../contexts/TripContext";
-import { useGetGroupsByTripQuery } from "@mirai-app/graphql-client/urql";
+import { useGetGroupsByTripQuery } from "@mirai-app/frameworks/graphql/urql";
 
 export function CoinsOverviewPage() {
   const { selectedTrip, isLoading: tripsLoading } = useTrip();

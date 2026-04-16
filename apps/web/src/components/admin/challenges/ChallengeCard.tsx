@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { Challenge } from "@mirai-app/graphql-client";
+import type { Challenge } from "@mirai-app/frameworks";
 
 interface ChallengeCardProps {
   challenge: Challenge;

@@ -20,7 +20,6 @@
     "@astrojs/react": "^5.0.2",
     "@mirai-app/adapters": "workspace:*",
     "@mirai-app/frameworks": "workspace:*",
-    "@mirai-app/graphql-client": "workspace:*",
     "@mirai-app/ui": "workspace:*",
     "@tamagui/core": "^1.125.32",
     "@tamagui/config": "^1.125.32",

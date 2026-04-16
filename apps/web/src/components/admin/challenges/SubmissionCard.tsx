@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useClient } from "urql";
-import { CreateDownloadUrlDocument } from "@mirai-app/graphql-client";
+import { CreateDownloadUrlDocument } from "@mirai-app/frameworks";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import { Modal } from "../../ui/Modal";
@@ -57,7 +57,7 @@ const formatReviewer = (submission: SubmissionItem): string => {
   return reviewedBy.email ?? "Unknown reviewer";
 };
 
-// Using CreateDownloadUrlDocument from @mirai-app/graphql-client
+// Using CreateDownloadUrlDocument from @mirai-app/frameworks
 
 export function SubmissionCard({
   submission,

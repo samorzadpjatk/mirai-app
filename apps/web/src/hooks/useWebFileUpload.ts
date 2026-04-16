@@ -8,7 +8,7 @@ import {
   CreateDownloadUrlDocument,
   type CreateDownloadUrlQuery,
   type CreateDownloadUrlQueryVariables,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { authStore } from "@mirai-app/frameworks/auth/client";
 import {
   validateImageFile,

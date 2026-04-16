@@ -6,7 +6,7 @@ import { useQuery, useMutation } from "urql";
 import {
   CreateNotificationDocument,
   SendMobileNotificationsDocument,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";

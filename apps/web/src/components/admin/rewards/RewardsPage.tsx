@@ -5,7 +5,7 @@ import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useGetRewardsByTripAdminQuery } from "@mirai-app/graphql-client/urql";
+import { useGetRewardsByTripAdminQuery } from "@mirai-app/frameworks/graphql/urql";
 import { RewardCard } from "./RewardCard";
 import { useTrip } from "../../../contexts/TripContext";
 

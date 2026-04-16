@@ -15,7 +15,7 @@ import {
   UpdateRewardDocument,
   SetRewardHiddenDocument,
   DeleteRewardDocument,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";
 

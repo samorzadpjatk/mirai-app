@@ -8,7 +8,7 @@ import {
   useGetGroupsByTripQuery,
   useGetUsersQuery,
   type GetGroupsByTripQuery,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 import { appToast } from "../../../lib/toast";
 
 type Group = GetGroupsByTripQuery["groupsByTrip"]["groups"][number];

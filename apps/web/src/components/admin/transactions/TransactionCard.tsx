@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { CoinTransaction } from "@mirai-app/graphql-client";
+import type { CoinTransaction } from "@mirai-app/frameworks";
 
 interface TransactionCardProps {
   transaction: CoinTransaction;

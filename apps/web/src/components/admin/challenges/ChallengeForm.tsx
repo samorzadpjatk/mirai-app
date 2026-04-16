@@ -17,7 +17,7 @@ import {
   type CreateChallengeInput,
   type UpdateChallengeInput,
   type Challenge,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 import { useChallengeForm } from "../../../hooks/admin/useChallengeForm";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";

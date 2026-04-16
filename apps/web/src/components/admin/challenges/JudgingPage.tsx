@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useGetVotesByChallengeQuery } from "@mirai-app/graphql-client/urql";
+import { useGetVotesByChallengeQuery } from "@mirai-app/frameworks/graphql/urql";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 import { ErrorMessage } from "../../ui/ErrorMessage";

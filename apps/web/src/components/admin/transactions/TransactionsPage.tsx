@@ -8,7 +8,7 @@ import { useTrip } from "../../../contexts/TripContext";
 import {
   useGetCoinTransactionsQuery,
   type CoinTransaction,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { graphqlClient } from "../../../lib/graphql-client";
 import { TransactionsFilters } from "./TransactionsFilters";
 import { TransactionCard } from "./TransactionCard";

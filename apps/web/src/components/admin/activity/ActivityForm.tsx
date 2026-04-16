@@ -11,7 +11,7 @@ import {
   useCreateCustomActivityMutation,
   useUpdateActivityMutation,
   useGetActivityQuery,
-} from "@mirai-app/graphql-client";
+} from "@mirai-app/frameworks";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";
 

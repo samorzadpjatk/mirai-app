@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "urql";
-import { CreateDownloadUrlDocument } from "@mirai-app/graphql-client";
+import { CreateDownloadUrlDocument } from "@mirai-app/frameworks";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import type { VotingSubmission } from "../../../hooks/admin/useStaffVoting";

@@ -7,7 +7,7 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { GroupCard } from "./GroupCard";
 import { GroupAssignmentModal } from "./GroupAssignmentModal";
-import { useGetGroupsByTripQuery } from "@mirai-app/graphql-client/urql";
+import { useGetGroupsByTripQuery } from "@mirai-app/frameworks/graphql/urql";
 import { useTrip } from "../../../contexts/TripContext";
 
 const DEFAULT_PAGE_SIZE = 20;
