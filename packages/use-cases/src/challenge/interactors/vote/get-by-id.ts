@@ -1,6 +1,29 @@
-import { ChallengeVote } from "@mirai-app/domain";
+import {
+  ChallengeVote,
+  ValidationError,
+  ChallengeVoteId,
+} from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
+import type { ChallengeVoteDTO } from "../../dto";
+
+/**
+ * Convert ChallengeVoteDTO to ChallengeVote domain entity
+ */
+function dtoToVote(
+  dto: ChallengeVoteDTO,
+): Effect.Effect<ChallengeVote, ValidationError, never> {
+  return ChallengeVote.create({
+    id: ChallengeVoteId.unsafeCreate(dto.id),
+    challengeId: dto.challengeId,
+    submissionId: dto.submissionId,
+    voterId: dto.voterId,
+    position: dto.votePosition,
+    points: dto.votePoints,
+    weight: dto.normalizedWeight,
+    votedAt: dto.votedAt,
+  });
+}
 
 /**
  * Input for GetChallengeVoteById use case
@@ -72,20 +95,32 @@ export function getChallengeVoteByIdUseCase(
     const voteRepo = yield* ChallengeVoteGatewayTag;
 
     // Find vote by ID
-    const vote = yield* voteRepo.findById(input.voteId).pipe(
-      Effect.mapError(
-        () =>
-          new ChallengeVoteGetRepositoryError({
-            message: "Failed to retrieve vote",
-          }),
-      ),
-    );
+    const voteDto = yield* voteRepo
+      .findById(ChallengeVoteId.unsafeCreate(input.voteId))
+      .pipe(
+        Effect.mapError(
+          () =>
+            new ChallengeVoteGetRepositoryError({
+              message: "Failed to retrieve vote",
+            }),
+        ),
+      );
 
-    if (!vote) {
+    if (!voteDto) {
       return yield* Effect.fail(
         new ChallengeVoteNotFoundError({ message: "Vote not found" }),
       );
     }
+
+    // Convert DTO to domain entity
+    const vote = yield* dtoToVote(voteDto).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeVoteGetRepositoryError({
+            message: "Failed to process vote data",
+          }),
+      ),
+    );
 
     return toOutput(vote);
   });

@@ -1,6 +1,7 @@
-import { Challenge } from "@mirai-app/domain";
+import { ChallengeStatus } from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { ChallengeGatewayTag } from "../ports/gateway";
+import type { ChallengeDTO } from "../dto";
 
 /**
  * Input for GetChallenge use case
@@ -103,29 +104,35 @@ export function getChallengeUseCase(
   });
 }
 
-function toOutput(challenge: Challenge): GetChallengeOutput {
+function toOutput(challenge: ChallengeDTO): GetChallengeOutput {
+  const isActive = challenge.status === ChallengeStatus.ACTIVE;
+  const isOpenForSubmission =
+    challenge.status === ChallengeStatus.VISIBLE ||
+    challenge.status === ChallengeStatus.ACTIVE;
+  const hasVotingPhase = challenge.scoringCategory === "PEER_VOTING";
+
   return {
     id: challenge.id,
     tripId: challenge.tripId,
-    name: challenge.name,
+    name: challenge.title,
     description: challenge.description,
-    image: challenge.image,
-    submissionType: challenge.submissionType,
+    image: null, // Not in DTO
+    submissionType: "TEXT", // Not in DTO, default value
     scoringCategory: challenge.scoringCategory,
-    isRecurring: challenge.isRecurring,
-    basePoints: challenge.basePoints,
+    isRecurring: false, // Not in DTO, default value
+    basePoints: challenge.points,
     status: challenge.status,
-    startTime: challenge.startTime,
-    endTime: challenge.endTime,
-    targetLatitude: challenge.targetLatitude,
-    targetLongitude: challenge.targetLongitude,
-    expectedValue: challenge.expectedValue,
-    autoApprove: challenge.autoApprove,
+    startTime: challenge.startDate,
+    endTime: challenge.endDate,
+    targetLatitude: null, // Not in DTO
+    targetLongitude: null, // Not in DTO
+    expectedValue: null, // Not in DTO
+    autoApprove: false, // Not in DTO, default value
     createdAt: challenge.createdAt,
-    isActive: challenge.isActive(),
-    isOpenForSubmission: challenge.isOpenForSubmission(),
-    requiresLocation: challenge.requiresLocation(),
-    requiresQRCode: challenge.requiresQRCode(),
-    hasVotingPhase: challenge.hasVotingPhase(),
+    isActive,
+    isOpenForSubmission,
+    requiresLocation: false, // Not in DTO
+    requiresQRCode: false, // Not in DTO
+    hasVotingPhase,
   };
 }

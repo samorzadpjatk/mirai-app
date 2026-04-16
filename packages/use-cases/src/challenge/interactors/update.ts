@@ -1,6 +1,12 @@
-import { Challenge, ChallengeStatus, ValidationError } from "@mirai-app/domain";
+import {
+  Challenge,
+  ChallengeStatus,
+  ValidationError,
+  ChallengeId,
+} from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { ChallengeGatewayTag } from "../ports/gateway";
+import type { ChallengeDTO } from "../dto";
 
 /**
  * Input for UpdateChallenge use case
@@ -89,20 +95,32 @@ export function updateChallengeUseCase(
     const challengeRepo = yield* ChallengeGatewayTag;
 
     // Find existing challenge
-    const challenge = yield* challengeRepo.findById(input.challengeId).pipe(
-      Effect.mapError(
-        () =>
-          new ChallengeUpdateRepositoryError({
-            message: "Failed to load challenge",
-          }),
-      ),
-    );
+    const challengeDto = yield* challengeRepo
+      .findById(ChallengeId.unsafeCreate(input.challengeId))
+      .pipe(
+        Effect.mapError(
+          () =>
+            new ChallengeUpdateRepositoryError({
+              message: "Failed to load challenge",
+            }),
+        ),
+      );
 
-    if (!challenge) {
+    if (!challengeDto) {
       return yield* Effect.fail(
         new ChallengeNotFoundError({ message: "Challenge not found" }),
       );
     }
+
+    // Convert DTO to domain entity
+    const challenge = yield* dtoToChallenge(challengeDto).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new ChallengeUpdateValidationError({
+            message: validationError.message,
+          }),
+      ),
+    );
 
     // Check if challenge is in terminal state
     if (challenge.isTerminal()) {
@@ -113,95 +131,62 @@ export function updateChallengeUseCase(
       );
     }
 
-    // Apply updates
-    let updatedChallenge: Challenge = challenge;
+    // Build update props
+    const updateProps: Parameters<typeof Challenge.create>[0] = {
+      id: challenge.id,
+      tripId: challenge.tripId,
+      name: input.name ?? challenge.name,
+      description: input.description ?? challenge.description,
+      image: input.image ?? challenge.image,
+      submissionType: challenge.submissionType,
+      scoringCategory: challenge.scoringCategory,
+      basePoints: input.basePoints ?? challenge.basePoints,
+      firstPlacePoints: input.firstPlacePoints ?? challenge.firstPlacePoints,
+      secondPlacePoints: input.secondPlacePoints ?? challenge.secondPlacePoints,
+      thirdPlacePoints: input.thirdPlacePoints ?? challenge.thirdPlacePoints,
+      status: challenge.status,
+      startTime: input.startTime ?? challenge.startTime,
+      endTime: input.endTime ?? challenge.endTime,
+      dailyStartTime: input.dailyStartTime ?? challenge.dailyStartTime,
+      dailyEndTime: input.dailyEndTime ?? challenge.dailyEndTime,
+      targetLatitude: input.targetLatitude ?? challenge.targetLatitude,
+      targetLongitude: input.targetLongitude ?? challenge.targetLongitude,
+      expectedValue: input.expectedValue ?? challenge.expectedValue,
+      autoApprove: input.autoApprove ?? challenge.autoApprove,
+      createdAt: challenge.createdAt,
+      updatedAt: new Date(),
+    };
 
-    // Update details if provided
-    if (
-      input.name !== undefined ||
-      input.description !== undefined ||
-      input.image !== undefined
-    ) {
-      updatedChallenge = yield* updatedChallenge
-        .updateDetails({
-          ...(input.name !== undefined && { name: input.name }),
-          ...(input.description !== undefined && {
-            description: input.description,
+    // Create updated challenge entity
+    const updatedChallenge = yield* Challenge.create(updateProps).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new ChallengeUpdateValidationError({
+            message: validationError.message,
           }),
-          ...(input.image !== undefined && { image: input.image }),
-        })
-        .pipe(
-          Effect.mapError(
-            (validationError: ValidationError) =>
-              new ChallengeUpdateValidationError({
-                message: validationError.message,
-              }),
-          ),
-        );
-    }
+      ),
+    );
 
-    // Update points if provided
-    if (
-      input.basePoints !== undefined ||
-      input.firstPlacePoints !== undefined ||
-      input.secondPlacePoints !== undefined ||
-      input.thirdPlacePoints !== undefined
-    ) {
-      updatedChallenge = yield* updatedChallenge
-        .updatePoints({
-          ...(input.basePoints !== undefined && {
-            basePoints: input.basePoints,
-          }),
-          ...(input.firstPlacePoints !== undefined && {
-            firstPlacePoints: input.firstPlacePoints,
-          }),
-          ...(input.secondPlacePoints !== undefined && {
-            secondPlacePoints: input.secondPlacePoints,
-          }),
-          ...(input.thirdPlacePoints !== undefined && {
-            thirdPlacePoints: input.thirdPlacePoints,
-          }),
-        })
-        .pipe(
-          Effect.mapError(
-            (validationError: ValidationError) =>
-              new ChallengeUpdateValidationError({
-                message: validationError.message,
-              }),
-          ),
-        );
-    }
-
-    // Update schedule if any time-related fields provided
-    if (
-      input.startTime !== undefined ||
-      input.endTime !== undefined ||
-      input.dailyStartTime !== undefined ||
-      input.dailyEndTime !== undefined
-    ) {
-      updatedChallenge = yield* updatedChallenge
-        .updateSchedule({
-          ...(input.startTime !== undefined && { startTime: input.startTime }),
-          ...(input.endTime !== undefined && { endTime: input.endTime }),
-          ...(input.dailyStartTime !== undefined && {
-            dailyStartTime: input.dailyStartTime,
-          }),
-          ...(input.dailyEndTime !== undefined && {
-            dailyEndTime: input.dailyEndTime,
-          }),
-        })
-        .pipe(
-          Effect.mapError(
-            (validationError: ValidationError) =>
-              new ChallengeUpdateValidationError({
-                message: validationError.message,
-              }),
-          ),
-        );
-    }
+    // Convert back to DTO for persistence
+    const updatedDto: ChallengeDTO = {
+      id: updatedChallenge.id,
+      tripId: updatedChallenge.tripId,
+      title: updatedChallenge.name,
+      description: updatedChallenge.description,
+      status: updatedChallenge.status,
+      submissionType: updatedChallenge.submissionType,
+      scoringCategory: updatedChallenge.scoringCategory,
+      points: updatedChallenge.basePoints,
+      maxPoints: challengeDto.maxPoints,
+      startDate: updatedChallenge.startTime,
+      endDate: updatedChallenge.endTime,
+      createdById: challengeDto.createdById,
+      createdAt: updatedChallenge.createdAt,
+      updatedAt: updatedChallenge.updatedAt,
+    };
 
     // Persist changes
-    const saved = yield* challengeRepo.update(updatedChallenge).pipe(
+    const saved = yield* challengeRepo.update(updatedDto).pipe(
       Effect.mapError(
         () =>
           new ChallengeUpdateRepositoryError({
@@ -210,7 +195,39 @@ export function updateChallengeUseCase(
       ),
     );
 
-    return toOutput(saved);
+    // Convert saved DTO back to entity for output
+    const savedEntity = yield* dtoToChallenge(saved).pipe(
+      Effect.mapError(
+        (validationError: ValidationError) =>
+          new ChallengeUpdateValidationError({
+            message: validationError.message,
+          }),
+      ),
+    );
+
+    return toOutput(savedEntity);
+  });
+}
+
+/**
+ * Convert ChallengeDTO to Challenge domain entity
+ */
+function dtoToChallenge(
+  dto: ChallengeDTO,
+): Effect.Effect<Challenge, ValidationError, never> {
+  return Challenge.create({
+    id: dto.id,
+    tripId: dto.tripId,
+    name: dto.title,
+    description: dto.description,
+    submissionType: dto.submissionType,
+    scoringCategory: dto.scoringCategory,
+    basePoints: dto.points,
+    status: dto.status,
+    startTime: dto.startDate,
+    endTime: dto.endDate,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   });
 }
 
@@ -223,6 +240,6 @@ function toOutput(challenge: Challenge): UpdateChallengeOutput {
     basePoints: challenge.basePoints,
     status: challenge.status,
     updatedAt: challenge.updatedAt,
-    isOpenForSubmission: challenge.isOpenForSubmission(),
+    isOpenForSubmission: challenge.canAcceptSubmissions(),
   };
 }

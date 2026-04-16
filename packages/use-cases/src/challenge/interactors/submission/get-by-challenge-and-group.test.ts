@@ -1,181 +1,296 @@
-import { describe, it, expect, mock } from "bun:test";
-import { Effect } from "effect";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   getSubmissionByChallengeAndGroupUseCase,
   type GetSubmissionByChallengeAndGroupInput,
 } from "./get-by-challenge-and-group";
-import { SubmissionId } from "@mirai-app/domain";
-import { ChallengeSubmissionGatewayTag } from "../../ports/submission/gateway";
+import {
+  ChallengeSubmissionGatewayTag,
+  type ChallengeSubmissionGateway,
+} from "../../ports/submission/gateway";
+import type { ChallengeSubmissionDTO } from "../../dto";
+import type { SubmissionId } from "@mirai-app/domain";
 
-describe("[UNIT] getSubmissionByChallengeAndGroupUseCase (Effect)", () => {
-  const createMockSubmission = (
-    overrides?: Partial<{
-      id: string;
-      challengeId: string;
-      groupId: string;
-      status: string;
-    }>,
-  ) => ({
-    id: SubmissionId.unsafeCreate(overrides?.id ?? "submission-123"),
-    challengeId: overrides?.challengeId ?? "challenge-123",
-    groupId: overrides?.groupId ?? "group-123",
-    imageIds: ["image-1"],
-    videoId: null,
-    textContent: "Test content",
-    latitude: 52.52,
-    longitude: 13.405,
-    status: overrides?.status ?? "PENDING",
-    reviewedById: null,
-    reviewedAt: null,
-    rejectionReason: null,
-    awardedPoints: 0,
-    bonusPoints: 0,
-    ranking: null,
-    voteCount: 0,
-    voteScore: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    group: {
-      id: overrides?.groupId ?? "group-123",
-      name: "Test Group",
-      image: null,
-      coins: 500,
-    },
-    reviewedBy: null,
-  });
+/**
+ * Mock ChallengeSubmissionGateway for testing
+ */
+function createMockSubmissionGateway(
+  submissions: ChallengeSubmissionDTO[] = [],
+): ChallengeSubmissionGateway {
+  return {
+    create: (submission: ChallengeSubmissionDTO) => Effect.succeed(submission),
 
-  const createMockRepo = (overrides?: {
-    findByChallengeAndGroup?: () => Effect.Effect<
-      {
-        id: ReturnType<typeof SubmissionId.unsafeCreate>;
-        challengeId: string;
-        groupId: string;
-        imageIds: string[];
-        videoId: null;
-        textContent: string;
-        latitude: number;
-        longitude: number;
-        status: string;
-        reviewedById: null;
-        reviewedAt: null;
-        rejectionReason: null;
-        awardedPoints: number;
-        bonusPoints: number;
-        ranking: null;
-        voteCount: number;
-        voteScore: number;
-        createdAt: Date;
-        updatedAt: Date;
-        group: { id: string; name: string; image: null; coins: number };
-        reviewedBy: null;
-      } | null,
-      never,
-      never
-    >;
-  }) => ({
-    create: () => Effect.succeed(createMockSubmission()),
     findById: () => Effect.succeed(null),
-    findByChallengeAndGroup:
-      overrides?.findByChallengeAndGroup ?? (() => Effect.succeed(null)),
-    findByChallengeId: () => Effect.succeed([]),
-    findByGroupId: () => Effect.succeed([]),
-    findByStatus: () => Effect.succeed([]),
-    findMany: () => Effect.succeed([]),
-    update: () => Effect.succeed(createMockSubmission()),
+
+    findByChallengeAndGroup: (challengeId: string, groupId: string) => {
+      const submission = submissions.find(
+        (s) => s.challengeId === challengeId && s.groupId === groupId,
+      );
+      return Effect.succeed(submission ?? null);
+    },
+
+    update: (submission: ChallengeSubmissionDTO) => Effect.succeed(submission),
+
     delete: () => Effect.succeed(void 0),
+
     existsForChallengeAndGroup: () => Effect.succeed(false),
+
     countByChallengeId: () => Effect.succeed(0),
+
     countByChallengeAndStatus: () => Effect.succeed(0),
+
+    findByChallengeIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByChallengeIdByCreatedAtConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByGroupIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByStatusConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findManyConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+// Helper to create mock submission DTOs
+function createMockSubmissionDTO(
+  overrides: Partial<ChallengeSubmissionDTO> = {},
+): ChallengeSubmissionDTO {
+  return {
+    id: overrides.id ?? "submission-123",
+    challengeId: overrides.challengeId ?? "challenge-123",
+    userId: overrides.userId ?? "user-123",
+    groupId: overrides.groupId ?? null,
+    content: overrides.content ?? "Test submission",
+    mediaUrls: overrides.mediaUrls ?? [],
+    status: overrides.status ?? "PENDING",
+    score: overrides.score ?? null,
+    reviewedById: overrides.reviewedById ?? null,
+    reviewedAt: overrides.reviewedAt ?? null,
+    reviewNotes: overrides.reviewNotes ?? null,
+    submittedAt: overrides.submittedAt ?? new Date(),
+    updatedAt: overrides.updatedAt ?? new Date(),
+  };
+}
+
+describe("[UNIT] getSubmissionByChallengeAndGroupUseCase", () => {
+  it("should return submission when found by challenge and group", async () => {
+    const mockSubmission = createMockSubmissionDTO({
+      id: "submission-456",
+      challengeId: "challenge-789",
+      groupId: "group-101",
+      content: "Group submission",
+      status: "APPROVED",
+    });
+    const mockGateway = createMockSubmissionGateway([mockSubmission]);
+    const mockLayer = Layer.succeed(ChallengeSubmissionGatewayTag, mockGateway);
+
+    const input: GetSubmissionByChallengeAndGroupInput = {
+      challengeId: "challenge-789",
+      groupId: "group-101",
+    };
+
+    const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe("submission-456");
+    expect(result?.challengeId).toBe("challenge-789");
+    expect(result?.groupId).toBe("group-101");
+    expect(result?.content).toBe("Group submission");
+    expect(result?.status).toBe("APPROVED");
   });
 
-  describe("[UNIT] execute", () => {
-    it("should return submission when found", async () => {
-      const mockSubmission = createMockSubmission({
-        id: "submission-456",
-        challengeId: "challenge-456",
-        groupId: "group-456",
-        status: "APPROVED",
-      });
-      const mockRepo = createMockRepo({
-        findByChallengeAndGroup: () => Effect.succeed(mockSubmission),
-      });
+  it("should return null when submission not found", async () => {
+    const mockGateway = createMockSubmissionGateway([]);
+    const mockLayer = Layer.succeed(ChallengeSubmissionGatewayTag, mockGateway);
 
-      const input: GetSubmissionByChallengeAndGroupInput = {
-        challengeId: "challenge-456",
-        groupId: "group-456",
-      };
+    const input: GetSubmissionByChallengeAndGroupInput = {
+      challengeId: "challenge-123",
+      groupId: "group-456",
+    };
 
-      const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
-        Effect.provideService(ChallengeSubmissionGatewayTag, mockRepo),
-      );
+    const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const result = await Effect.runPromise(program);
+    expect(result).toBeNull();
+  });
 
-      expect(result).not.toBeNull();
-      expect(result?.id).toBe("submission-456");
-      expect(result?.challengeId).toBe("challenge-456");
-      expect(result?.groupId).toBe("group-456");
-      expect(result?.status).toBe("APPROVED");
-      expect(result?.group?.name).toBe("Test Group");
+  it("should return submission with all fields populated", async () => {
+    const mockSubmission = createMockSubmissionDTO({
+      id: "submission-full",
+      challengeId: "challenge-1",
+      groupId: "group-1",
+      userId: "user-1",
+      content: "Full content",
+      mediaUrls: ["https://example.com/photo.jpg"],
+      status: "APPROVED",
+      score: 95,
+      reviewedById: "reviewer-1",
+      reviewedAt: new Date("2024-02-01"),
+      reviewNotes: "Excellent work",
     });
+    const mockGateway = createMockSubmissionGateway([mockSubmission]);
+    const mockLayer = Layer.succeed(ChallengeSubmissionGatewayTag, mockGateway);
 
-    it("should return null when submission not found", async () => {
-      const mockRepo = createMockRepo({
-        findByChallengeAndGroup: () => Effect.succeed(null),
-      });
+    const input: GetSubmissionByChallengeAndGroupInput = {
+      challengeId: "challenge-1",
+      groupId: "group-1",
+    };
 
-      const input: GetSubmissionByChallengeAndGroupInput = {
-        challengeId: "challenge-123",
-        groupId: "group-123",
-      };
+    const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
-        Effect.provideService(ChallengeSubmissionGatewayTag, mockRepo),
-      );
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe("submission-full");
+    expect(result?.userId).toBe("user-1");
+    expect(result?.content).toBe("Full content");
+    expect(result?.mediaUrls).toEqual(["https://example.com/photo.jpg"]);
+    expect(result?.score).toBe(95);
+    expect(result?.reviewedById).toBe("reviewer-1");
+    expect(result?.reviewNotes).toBe("Excellent work");
+  });
 
-      const result = await Effect.runPromise(program);
+  it("should handle multiple submissions and find correct one", async () => {
+    const submissions = [
+      createMockSubmissionDTO({
+        id: "submission-1",
+        challengeId: "challenge-a",
+        groupId: "group-x",
+      }),
+      createMockSubmissionDTO({
+        id: "submission-2",
+        challengeId: "challenge-b",
+        groupId: "group-y",
+      }),
+      createMockSubmissionDTO({
+        id: "submission-3",
+        challengeId: "challenge-b",
+        groupId: "group-z",
+      }),
+    ];
+    const mockGateway = createMockSubmissionGateway(submissions);
+    const mockLayer = Layer.succeed(ChallengeSubmissionGatewayTag, mockGateway);
 
-      expect(result).toBeNull();
+    const input: GetSubmissionByChallengeAndGroupInput = {
+      challengeId: "challenge-b",
+      groupId: "group-y",
+    };
+
+    const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe("submission-2");
+  });
+
+  it("should return submission with pending status", async () => {
+    const mockSubmission = createMockSubmissionDTO({
+      id: "submission-pending",
+      challengeId: "challenge-2",
+      groupId: "group-2",
+      status: "PENDING",
     });
+    const mockGateway = createMockSubmissionGateway([mockSubmission]);
+    const mockLayer = Layer.succeed(ChallengeSubmissionGatewayTag, mockGateway);
 
-    it("should return submission with reviewer info when available", async () => {
-      const mockSubmission = {
-        ...createMockSubmission({
-          id: "submission-reviewed",
-          status: "REJECTED",
-        }),
-        reviewedById: "user-123",
-        reviewedAt: new Date(),
-        rejectionReason: "Invalid submission",
-        reviewedBy: {
-          id: "user-123",
-          firstName: "Reviewer",
-          lastName: "User",
-          email: "reviewer@example.com",
-        },
-      };
-      const mockRepo = createMockRepo({
-        findByChallengeAndGroup: () => Effect.succeed(mockSubmission),
-      });
+    const input: GetSubmissionByChallengeAndGroupInput = {
+      challengeId: "challenge-2",
+      groupId: "group-2",
+    };
 
-      const input: GetSubmissionByChallengeAndGroupInput = {
-        challengeId: "challenge-123",
-        groupId: "group-123",
-      };
+    const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
-        Effect.provideService(ChallengeSubmissionGatewayTag, mockRepo),
-      );
+    expect(result).not.toBeNull();
+    expect(result?.status).toBe("PENDING");
+  });
 
-      const result = await Effect.runPromise(program);
-
-      expect(result).not.toBeNull();
-      if (result) {
-        expect(result.status).toBe("REJECTED");
-        expect(result.rejectionReason).toBe("Invalid submission");
-        expect(result.reviewedBy?.firstName).toBe("Reviewer");
-        expect(result.reviewedAt).toBeInstanceOf(Date);
-      }
+  it("should return submission with rejected status", async () => {
+    const mockSubmission = createMockSubmissionDTO({
+      id: "submission-rejected",
+      challengeId: "challenge-3",
+      groupId: "group-3",
+      status: "REJECTED",
     });
+    const mockGateway = createMockSubmissionGateway([mockSubmission]);
+    const mockLayer = Layer.succeed(ChallengeSubmissionGatewayTag, mockGateway);
+
+    const input: GetSubmissionByChallengeAndGroupInput = {
+      challengeId: "challenge-3",
+      groupId: "group-3",
+    };
+
+    const program = getSubmissionByChallengeAndGroupUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result).not.toBeNull();
+    expect(result?.status).toBe("REJECTED");
   });
 });

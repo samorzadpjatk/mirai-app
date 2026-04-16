@@ -1,6 +1,45 @@
-import { ChallengeVote, ValidationError } from "@mirai-app/domain";
+import {
+  ChallengeVote,
+  ValidationError,
+  ChallengeVoteId,
+} from "@mirai-app/domain";
 import { Data, Effect } from "effect";
 import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
+import type { ChallengeVoteDTO } from "../../dto";
+
+/**
+ * Convert ChallengeVote domain entity to ChallengeVoteDTO
+ */
+function toDTO(vote: ChallengeVote): ChallengeVoteDTO {
+  return {
+    id: vote.id,
+    challengeId: vote.challengeId,
+    submissionId: vote.submissionId,
+    voterId: vote.voterId,
+    votePosition: vote.position.value,
+    votePoints: vote.points,
+    normalizedWeight: vote.weight.value,
+    votedAt: vote.votedAt,
+  };
+}
+
+/**
+ * Convert ChallengeVoteDTO to ChallengeVote domain entity
+ */
+function dtoToVote(
+  dto: ChallengeVoteDTO,
+): Effect.Effect<ChallengeVote, ValidationError, never> {
+  return ChallengeVote.create({
+    id: ChallengeVoteId.unsafeCreate(dto.id),
+    challengeId: dto.challengeId,
+    submissionId: dto.submissionId,
+    voterId: dto.voterId,
+    position: dto.votePosition,
+    points: dto.votePoints,
+    weight: dto.normalizedWeight,
+    votedAt: dto.votedAt,
+  });
+}
 
 /**
  * Input for UpdateChallengeVote use case
@@ -83,32 +122,37 @@ export function updateChallengeVoteUseCase(
     const voteRepo = yield* ChallengeVoteGatewayTag;
 
     // Check if vote exists
-    const existingVote = yield* voteRepo.findById(input.voteId).pipe(
-      Effect.mapError(
-        () =>
-          new ChallengeVoteUpdateRepositoryError({
-            message: "Failed to load existing vote",
-          }),
-      ),
-    );
+    const existingDto = yield* voteRepo
+      .findById(ChallengeVoteId.unsafeCreate(input.voteId))
+      .pipe(
+        Effect.mapError(
+          () =>
+            new ChallengeVoteUpdateRepositoryError({
+              message: "Failed to load existing vote",
+            }),
+        ),
+      );
 
-    if (!existingVote) {
+    if (!existingDto) {
       return yield* Effect.fail(
         new ChallengeVoteNotFoundError({ message: "Vote not found" }),
       );
     }
 
-    // Create updated vote with new values
-    const vote = yield* ChallengeVote.create({
-      id: existingVote.id,
-      challengeId: existingVote.challengeId,
-      submissionId: existingVote.submissionId,
-      voterId: existingVote.voterId,
-      position: input.position ?? existingVote.position.value,
-      points: input.points ?? existingVote.points,
-      weight: input.weight ?? existingVote.weight.value,
-      votedAt: existingVote.votedAt,
-    }).pipe(
+    // Create updated vote DTO with new values
+    const updatedDto: ChallengeVoteDTO = {
+      id: existingDto.id,
+      challengeId: existingDto.challengeId,
+      submissionId: existingDto.submissionId,
+      voterId: existingDto.voterId,
+      votePosition: input.position ?? existingDto.votePosition,
+      votePoints: input.points ?? existingDto.votePoints,
+      normalizedWeight: input.weight ?? existingDto.normalizedWeight,
+      votedAt: existingDto.votedAt,
+    };
+
+    // Convert to domain entity for validation
+    const vote = yield* dtoToVote(updatedDto).pipe(
       Effect.mapError(
         (validationError: ValidationError) =>
           new ChallengeVoteValidationError({
@@ -117,12 +161,22 @@ export function updateChallengeVoteUseCase(
       ),
     );
 
-    // Save to repository
-    const saved = yield* voteRepo.create(vote).pipe(
+    // Save to repository (convert back to DTO)
+    const savedDto = yield* voteRepo.create(toDTO(vote)).pipe(
       Effect.mapError(
         () =>
           new ChallengeVoteUpdateRepositoryError({
             message: "Failed to update vote",
+          }),
+      ),
+    );
+
+    // Convert saved DTO back to domain entity for output
+    const saved = yield* dtoToVote(savedDto).pipe(
+      Effect.mapError(
+        () =>
+          new ChallengeVoteUpdateRepositoryError({
+            message: "Failed to process saved vote",
           }),
       ),
     );

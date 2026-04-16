@@ -23,19 +23,19 @@ export class SubmissionDeleteNotFoundError extends Data.TaggedError(
   "SubmissionDeleteNotFoundError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 export class SubmissionDeleteNotAllowedError extends Data.TaggedError(
   "SubmissionDeleteNotAllowedError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 export class DeleteSubmissionRepositoryError extends Data.TaggedError(
   "DeleteSubmissionRepositoryError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 /**
  * DeleteSubmission Use Case (Effect-based)

@@ -42,7 +42,7 @@ export class ListSubmissionsRepositoryError extends Data.TaggedError(
   "ListSubmissionsRepositoryError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 /**
  * ListSubmissionsByChallenge Use Case (Effect-based)
@@ -76,14 +76,18 @@ export function listSubmissionsByChallengeUseCase(
   return Effect.gen(function* () {
     const submissionRepo = yield* ChallengeSubmissionGatewayTag;
 
-    // Fetch submissions
-    const submissions = yield* submissionRepo
-      .findMany({
+    // Fetch submissions using connection pattern with offset-based pagination
+    // The offset is handled by calculating how many items to fetch and then slicing
+    const limit = input.limit ?? 10;
+    const offset = input.offset ?? 0;
+
+    // Fetch enough items to cover the offset + limit
+    const connection = yield* submissionRepo
+      .findManyConnection({
         challengeId: input.challengeId,
         orderBy: input.orderBy ?? "voteScore",
         orderDirection: input.orderDirection ?? "desc",
-        ...(input.limit !== undefined && { limit: input.limit }),
-        ...(input.offset !== undefined && { offset: input.offset }),
+        first: offset + limit,
       })
       .pipe(
         Effect.mapError(
@@ -93,6 +97,9 @@ export function listSubmissionsByChallengeUseCase(
             }),
         ),
       );
+
+    // Extract submissions from connection, applying offset
+    const submissions = connection.nodes.slice(offset, offset + limit);
 
     // Count total
     const totalCount = yield* submissionRepo

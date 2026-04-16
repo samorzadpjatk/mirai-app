@@ -1,7 +1,6 @@
 import { Data, Effect } from "effect";
 import { ChallengeGatewayTag } from "../ports/gateway";
 import { ChallengeStatus } from "@mirai-app/domain";
-import type { Challenge } from "@mirai-app/domain";
 import { DatabaseError } from "@mirai-app/domain";
 
 /**
@@ -55,6 +54,53 @@ export class ChallengeUpdateError extends Data.TaggedError(
 }> {}
 
 /**
+ * Valid status transitions map
+ */
+const VALID_TRANSITIONS: Record<ChallengeStatus, ChallengeStatus[]> = {
+  [ChallengeStatus.HIDDEN]: [
+    ChallengeStatus.VISIBLE,
+    ChallengeStatus.CANCELLED,
+  ],
+  [ChallengeStatus.VISIBLE]: [
+    ChallengeStatus.HIDDEN,
+    ChallengeStatus.ACTIVE,
+    ChallengeStatus.CANCELLED,
+  ],
+  [ChallengeStatus.ACTIVE]: [
+    ChallengeStatus.VISIBLE,
+    ChallengeStatus.VOTING_PHASE,
+    ChallengeStatus.CANCELLED,
+  ],
+  [ChallengeStatus.VOTING_PHASE]: [
+    ChallengeStatus.ACTIVE,
+    ChallengeStatus.COMPLETED,
+    ChallengeStatus.CANCELLED,
+  ],
+  [ChallengeStatus.COMPLETED]: [],
+  [ChallengeStatus.CANCELLED]: [],
+};
+
+/**
+ * Check if a status transition is valid
+ */
+function canTransitionTo(
+  fromStatus: ChallengeStatus,
+  toStatus: ChallengeStatus,
+): boolean {
+  // Always allow transition to CANCELLED from non-terminal states
+  if (
+    toStatus === ChallengeStatus.CANCELLED &&
+    fromStatus !== ChallengeStatus.COMPLETED &&
+    fromStatus !== ChallengeStatus.CANCELLED
+  ) {
+    return true;
+  }
+
+  const validTargets = VALID_TRANSITIONS[fromStatus] || [];
+  return validTargets.includes(toStatus);
+}
+
+/**
  * UpdateChallengeStatus Use Case (Effect-based)
  *
  * Updates a challenge's status with workflow validation.
@@ -83,18 +129,18 @@ export function updateChallengeStatusUseCase(
     const challengeRepo = yield* ChallengeGatewayTag;
 
     // Find existing challenge
-    const challenge = yield* challengeRepo.findById(input.challengeId);
+    const challengeDto = yield* challengeRepo.findById(input.challengeId);
 
-    if (!challenge) {
+    if (!challengeDto) {
       return yield* Effect.fail(
         new ChallengeNotFoundError({ message: "Challenge not found" }),
       );
     }
 
-    const previousStatus = challenge.status;
+    const previousStatus = challengeDto.status;
 
     // Check if transition is valid
-    if (!challenge.canTransitionTo(input.newStatus)) {
+    if (!canTransitionTo(previousStatus, input.newStatus)) {
       return yield* Effect.fail(
         new InvalidStatusTransitionError({
           message: `Invalid status transition from ${previousStatus} to ${input.newStatus}`,
@@ -104,26 +150,37 @@ export function updateChallengeStatusUseCase(
       );
     }
 
-    // Apply status update
-    const updatedChallenge = yield* challenge
-      .updateStatus(input.newStatus)
+    // Cannot transition from terminal states
+    if (
+      previousStatus === ChallengeStatus.COMPLETED ||
+      previousStatus === ChallengeStatus.CANCELLED
+    ) {
+      return yield* Effect.fail(
+        new InvalidStatusTransitionError({
+          message: `Cannot transition from terminal state ${previousStatus}`,
+          fromStatus: previousStatus,
+          toStatus: input.newStatus,
+        }),
+      );
+    }
+
+    // Update status via repository
+    const saved = yield* challengeRepo
+      .updateStatus(input.challengeId, input.newStatus)
       .pipe(
         Effect.mapError(
-          (stateError) =>
+          (dbError) =>
             new ChallengeUpdateError({
-              message: "Failed to update challenge",
-              cause: stateError,
+              message: "Failed to update challenge status",
+              cause: dbError,
             }),
         ),
       );
 
-    // Persist changes
-    const saved = yield* challengeRepo.update(updatedChallenge);
-
     return {
       id: saved.id,
       tripId: saved.tripId,
-      name: saved.name,
+      name: saved.title,
       previousStatus,
       newStatus: saved.status,
       updatedAt: saved.updatedAt,

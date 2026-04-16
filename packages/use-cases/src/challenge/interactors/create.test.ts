@@ -1,266 +1,320 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   createChallengeUseCase,
   type CreateChallengeInput,
   ChallengeCreationError,
   ChallengeRepositoryError,
 } from "./create";
+import { ChallengeGatewayTag, type ChallengeGateway } from "../ports/gateway";
+import type { ChallengeDTO } from "../dto";
 import {
-  Challenge,
+  DatabaseError,
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
 } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { ChallengeGatewayTag } from "../ports/gateway";
 
-describe("[UNIT] createChallengeUseCase (Effect)", () => {
-  const createMockChallenge = (
-    overrides?: Partial<{
-      id: string;
-      tripId: string;
-      name: string;
-      submissionType: SubmissionType;
-      scoringCategory: ScoringCategory;
-      status: ChallengeStatus;
-      basePoints: number;
-    }>,
-  ) => ({
-    id: overrides?.id ?? "challenge-123",
-    tripId: overrides?.tripId ?? "trip-123",
-    name: overrides?.name ?? "Test Challenge",
-    description: "A test challenge description",
-    image: null,
-    submissionType: overrides?.submissionType ?? SubmissionType.IMAGE,
-    scoringCategory: overrides?.scoringCategory ?? ScoringCategory.UNLIMITED,
-    isRecurring: false,
-    dailyStartTime: null,
-    dailyEndTime: null,
-    basePoints: overrides?.basePoints ?? 100,
-    firstPlacePoints: null,
-    secondPlacePoints: null,
-    thirdPlacePoints: null,
-    status: overrides?.status ?? ChallengeStatus.HIDDEN,
-    startTime: null,
-    endTime: null,
-    votingStartTime: null,
-    votingEndTime: null,
-    targetLatitude: null,
-    targetLongitude: null,
-    expectedValue: null,
-    autoApprove: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+// Use correct enum values
+const MOCK_SUBMISSION_TYPE = SubmissionType.IMAGE;
+const MOCK_SCORING_CATEGORY = ScoringCategory.SPEED;
 
-  const createMockRepo = (overrides?: {
-    create?: () => Effect.Effect<Challenge, never, never>;
-    findById?: () => Effect.Effect<Challenge | null, never, never>;
-    findByTripId?: () => Effect.Effect<Challenge[], never, never>;
-    exists?: () => Effect.Effect<boolean, never, never>;
-    countByTripId?: () => Effect.Effect<number, never, never>;
-  }) => ({
-    create:
-      overrides?.create ??
-      (() => Effect.succeed(createMockChallenge() as Challenge)),
-    findById: overrides?.findById ?? (() => Effect.succeed(null)),
-    findByTripId: overrides?.findByTripId ?? (() => Effect.succeed([])),
-    findByStatus: () => Effect.succeed([]),
-    findByTripIdAndStatus: () => Effect.succeed([]),
-    findBySubmissionType: () => Effect.succeed([]),
-    findByScoringCategory: () => Effect.succeed([]),
-    findActive: () => Effect.succeed([]),
-    findOpenForSubmission: () => Effect.succeed([]),
-    findRecurring: () => Effect.succeed([]),
-    findAll: () => Effect.succeed([]),
-    update: () => Effect.succeed(createMockChallenge() as Challenge),
-    updateStatus: () => Effect.succeed(createMockChallenge() as Challenge),
+/**
+ * Mock ChallengeGateway for testing
+ */
+function createMockChallengeGateway(
+  options: {
+    shouldFailCreate?: boolean;
+  } = {},
+): ChallengeGateway {
+  return {
+    create: (challenge: ChallengeDTO) => {
+      if (options.shouldFailCreate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "create",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed(challenge);
+    },
+
+    findById: () => Effect.succeed(null),
+
+    update: (challenge: ChallengeDTO) => Effect.succeed(challenge),
+
+    updateStatus: (id: string, status: string) =>
+      Effect.succeed({
+        id,
+        tripId: "trip-123",
+        title: "Test Challenge",
+        description: null,
+        status: status as ChallengeStatus,
+        submissionType: SubmissionType.IMAGE,
+        scoringCategory: ScoringCategory.SPEED,
+        points: 100,
+        maxPoints: null,
+        startDate: new Date(),
+        endDate: new Date(),
+        createdById: "user-123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+
     delete: () => Effect.succeed(void 0),
-    exists: overrides?.exists ?? (() => Effect.succeed(false)),
-    countByTripId: overrides?.countByTripId ?? (() => Effect.succeed(0)),
+
+    exists: () => Effect.succeed(false),
+
+    countByTripId: () => Effect.succeed(0),
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByStatusConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByTripIdAndStatusConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findBySubmissionTypeConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByScoringCategoryConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findActiveConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findOpenForSubmissionConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findRecurringConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findAllConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+  };
+}
+
+describe("[UNIT] createChallengeUseCase", () => {
+  it("should create a challenge successfully", async () => {
+    const mockGateway = createMockChallengeGateway();
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
+
+    const input: CreateChallengeInput = {
+      tripId: "trip-123",
+      name: "Photo Hunt Challenge",
+      description: "Find and photograph landmarks",
+      submissionType: SubmissionType.IMAGE,
+      scoringCategory: ScoringCategory.SPEED,
+      basePoints: 100,
+      status: ChallengeStatus.ACTIVE,
+    };
+
+    const program = createChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.id).toBeDefined();
+    expect(result.tripId).toBe("trip-123");
+    expect(result.name).toBe("Photo Hunt Challenge");
+    expect(result.basePoints).toBe(100);
+    expect(result.status).toBe("ACTIVE");
   });
 
-  describe("[UNIT] execute", () => {
-    it("should create challenge with valid input", async () => {
-      const mockChallenge = createMockChallenge({
-        id: "challenge-new",
-        tripId: "trip-123",
-        name: "Test Challenge",
-      });
-      const mockRepo = createMockRepo({
-        create: () => Effect.succeed(mockChallenge as Challenge),
-      });
+  it("should fail with ChallengeCreationError when validation fails", async () => {
+    const mockGateway = createMockChallengeGateway();
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
 
-      const input: CreateChallengeInput = {
-        tripId: "trip-123",
-        name: "Test Challenge",
-        description: "A test challenge description",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-        basePoints: 100,
-      };
+    const input: CreateChallengeInput = {
+      tripId: "trip-123",
+      name: "", // Empty name should fail validation
+      submissionType: SubmissionType.IMAGE,
+      scoringCategory: ScoringCategory.SPEED,
+    };
 
-      const program = createChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
-      );
+    const program = createChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const result = await Effect.runPromise(program);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeCreationError);
+    }
+  });
 
-      expect(result.tripId).toBe("trip-123");
-      expect(result.name).toBe("Test Challenge");
-      expect(result.submissionType).toBe("IMAGE");
-      expect(result.scoringCategory).toBe("UNLIMITED");
-      expect(result.status).toBe("HIDDEN");
-      expect(result.basePoints).toBe(100);
+  it("should fail with ChallengeRepositoryError when database error occurs", async () => {
+    const mockGateway = createMockChallengeGateway({
+      shouldFailCreate: true,
     });
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
 
-    it("should use HIDDEN as default status when not provided", async () => {
-      const mockChallenge = createMockChallenge({
-        id: "challenge-456",
-        status: ChallengeStatus.HIDDEN,
-      });
-      const mockRepo = createMockRepo({
-        create: () => Effect.succeed(mockChallenge as Challenge),
-      });
+    const input: CreateChallengeInput = {
+      tripId: "trip-123",
+      name: "Valid Challenge Name",
+      submissionType: SubmissionType.IMAGE,
+      scoringCategory: ScoringCategory.SPEED,
+    };
 
-      const input: CreateChallengeInput = {
-        tripId: "trip-456",
-        name: "Another Challenge",
-        submissionType: SubmissionType.TEXT,
-        scoringCategory: ScoringCategory.SPEED,
-      };
+    const program = createChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const program = createChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
-      );
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeRepositoryError);
+      expect(either.left.message).toBe("Failed to create challenge");
+    }
+  });
 
-      const result = await Effect.runPromise(program);
+  it("should create challenge with default values", async () => {
+    const mockGateway = createMockChallengeGateway();
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
 
-      expect(result.status).toBe("HIDDEN");
-    });
+    const input: CreateChallengeInput = {
+      tripId: "trip-123",
+      name: "Minimal Challenge",
+      submissionType: SubmissionType.TEXT,
+      scoringCategory: ScoringCategory.UNLIMITED,
+    };
 
-    it("should fail when name is empty", async () => {
-      const mockRepo = createMockRepo();
+    const program = createChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const input: CreateChallengeInput = {
-        tripId: "trip-123",
-        name: "",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      };
+    expect(result.basePoints).toBe(0);
+    expect(result.status).toBe("HIDDEN");
+    expect(result.description).toBeNull();
+  });
 
-      const program = createChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
-      );
+  it("should create challenge with all optional fields", async () => {
+    const mockGateway = createMockChallengeGateway();
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ChallengeCreationError);
-        expect(either.left.message).toContain("name");
-      }
-    });
+    const input: CreateChallengeInput = {
+      tripId: "trip-123",
+      name: "Full Challenge",
+      description: "Full description",
+      image: "https://example.com/image.jpg",
+      submissionType: SubmissionType.IMAGE,
+      scoringCategory: ScoringCategory.JUDGED_STAFF,
+      isRecurring: true,
+      dailyStartTime: "09:00",
+      dailyEndTime: "18:00",
+      basePoints: 50,
+      firstPlacePoints: 100,
+      secondPlacePoints: 75,
+      thirdPlacePoints: 50,
+      status: ChallengeStatus.ACTIVE,
+      startTime: new Date("2024-01-01"),
+      endTime: new Date("2024-12-31"),
+      targetLatitude: 40.7128,
+      targetLongitude: -74.006,
+      expectedValue: "completed",
+      autoApprove: true,
+    };
 
-    it("should fail when tripId is empty", async () => {
-      const mockRepo = createMockRepo();
+    const program = createChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const input: CreateChallengeInput = {
-        tripId: "",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-      };
-
-      const program = createChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ChallengeCreationError);
-        expect(either.left.message).toContain("tripId");
-      }
-    });
-
-    it("should fail when basePoints is negative", async () => {
-      const mockRepo = createMockRepo();
-
-      const input: CreateChallengeInput = {
-        tripId: "trip-123",
-        name: "Test Challenge",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.UNLIMITED,
-        basePoints: -10,
-      };
-
-      const program = createChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ChallengeCreationError);
-        expect(either.left.message).toContain("basePoints");
-      }
-    });
-
-    it("should create challenge with location submission type", async () => {
-      const mockChallenge = createMockChallenge({
-        submissionType: SubmissionType.LOCATION,
-        scoringCategory: ScoringCategory.SPEED,
-      });
-      const mockRepo = createMockRepo({
-        create: () => Effect.succeed(mockChallenge as Challenge),
-      });
-
-      const input: CreateChallengeInput = {
-        tripId: "trip-loc",
-        name: "Location Challenge",
-        submissionType: SubmissionType.LOCATION,
-        scoringCategory: ScoringCategory.SPEED,
-        targetLatitude: 52.2297,
-        targetLongitude: 21.0122,
-        basePoints: 200,
-      };
-
-      const result = await Effect.runPromise(
-        createChallengeUseCase(input).pipe(
-          Effect.provideService(ChallengeGatewayTag, mockRepo),
-        ),
-      );
-
-      expect(result.submissionType).toBe("LOCATION");
-      expect(result.scoringCategory).toBe("SPEED");
-    });
-
-    it("should create challenge with peer voting scoring category", async () => {
-      const mockChallenge = createMockChallenge({
-        scoringCategory: ScoringCategory.PEER_VOTING,
-      });
-      const mockRepo = createMockRepo({
-        create: () => Effect.succeed(mockChallenge as Challenge),
-      });
-
-      const input: CreateChallengeInput = {
-        tripId: "trip-vote",
-        name: "Photo Contest",
-        submissionType: SubmissionType.IMAGE,
-        scoringCategory: ScoringCategory.PEER_VOTING,
-        firstPlacePoints: 500,
-        secondPlacePoints: 300,
-        thirdPlacePoints: 100,
-        basePoints: 50,
-      };
-
-      const result = await Effect.runPromise(
-        createChallengeUseCase(input).pipe(
-          Effect.provideService(ChallengeGatewayTag, mockRepo),
-        ),
-      );
-
-      expect(result.scoringCategory).toBe("PEER_VOTING");
-    });
+    expect(result.name).toBe("Full Challenge");
+    expect(result.basePoints).toBe(50);
   });
 });

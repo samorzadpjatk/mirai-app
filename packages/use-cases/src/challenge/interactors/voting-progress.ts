@@ -1,6 +1,29 @@
 import { Data, Effect } from "effect";
-import { ChallengeVote } from "@mirai-app/domain";
+import {
+  ChallengeVote,
+  ValidationError,
+  ChallengeVoteId,
+} from "@mirai-app/domain";
 import { ChallengeVoteGatewayTag } from "../ports/vote/gateway";
+import type { ChallengeVoteDTO } from "../dto";
+
+/**
+ * Convert ChallengeVoteDTO to ChallengeVote domain entity
+ */
+function dtoToVote(
+  dto: ChallengeVoteDTO,
+): Effect.Effect<ChallengeVote, ValidationError, never> {
+  return ChallengeVote.create({
+    id: ChallengeVoteId.unsafeCreate(dto.id),
+    challengeId: dto.challengeId,
+    submissionId: dto.submissionId,
+    voterId: dto.voterId,
+    position: dto.votePosition,
+    points: dto.votePoints,
+    weight: dto.normalizedWeight,
+    votedAt: dto.votedAt,
+  });
+}
 
 /**
  * Input for GetChallengeVotingProgress use case
@@ -91,10 +114,18 @@ export function getChallengeVotingProgressUseCase(
       ),
     );
 
-    // Calculate stats per submission
+    // Convert DTOs to domain entities and calculate stats per submission
     const submissionMap = new Map<string, { count: number; score: number }>();
 
-    for (const vote of votes) {
+    for (const voteDto of votes) {
+      const vote = yield* dtoToVote(voteDto).pipe(
+        Effect.mapError(
+          () =>
+            new GetVotingProgressRepositoryError({
+              message: "Failed to process vote data",
+            }),
+        ),
+      );
       const current = submissionMap.get(vote.submissionId) ?? {
         count: 0,
         score: 0,

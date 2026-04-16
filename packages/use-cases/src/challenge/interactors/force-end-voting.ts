@@ -87,9 +87,7 @@ export function forceEndVotingUseCase(
   | ForceEndValidationError
   | ChallengeWrongTripError
   | ForceEndOperationError,
-  | ChallengeVoteGatewayTag
-  | ChallengeGatewayTag
-  | ChallengeSubmissionGatewayTag
+  ChallengeVoteGatewayTag | ChallengeGatewayTag | ChallengeSubmissionGatewayTag
 > {
   return Effect.gen(function* () {
     const voteRepo = yield* ChallengeVoteGatewayTag;
@@ -160,7 +158,7 @@ export function forceEndVotingUseCase(
     }
 
     // Validate submission phase has ended
-    if (!challenge.endTime) {
+    if (!challenge.endDate) {
       return yield* Effect.fail(
         new ForceEndValidationError({
           message: "Staff voting requires submission end time",
@@ -169,7 +167,7 @@ export function forceEndVotingUseCase(
     }
 
     const now = new Date();
-    if (challenge.endTime.getTime() > now.getTime()) {
+    if (challenge.endDate.getTime() > now.getTime()) {
       return yield* Effect.fail(
         new ForceEndValidationError({
           message:

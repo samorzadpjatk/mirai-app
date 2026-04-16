@@ -1,6 +1,29 @@
 import { Data, Effect } from "effect";
-import { ChallengeVote } from "@mirai-app/domain";
+import {
+  ChallengeVote,
+  ValidationError,
+  ChallengeVoteId,
+} from "@mirai-app/domain";
 import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
+import type { ChallengeVoteDTO as ImportedChallengeVoteDTO } from "../../dto";
+
+/**
+ * Convert ChallengeVoteDTO to ChallengeVote domain entity
+ */
+function dtoToVote(
+  dto: ImportedChallengeVoteDTO,
+): Effect.Effect<ChallengeVote, ValidationError, never> {
+  return ChallengeVote.create({
+    id: ChallengeVoteId.unsafeCreate(dto.id),
+    challengeId: dto.challengeId,
+    submissionId: dto.submissionId,
+    voterId: dto.voterId,
+    position: dto.votePosition,
+    points: dto.votePoints,
+    weight: dto.normalizedWeight,
+    votedAt: dto.votedAt,
+  });
+}
 
 /**
  * Input for GetVotesByChallenge use case
@@ -87,11 +110,29 @@ export function getVotesByChallengeUseCase(
     }
 
     // Fetch all votes
-    const votes = yield* voteRepo.findByChallengeId(input.challengeId).pipe(
+    const voteDtos = yield* voteRepo.findByChallengeId(input.challengeId).pipe(
       Effect.mapError(
         () =>
           new GetVotesByChallengeRepositoryError({
             message: "Failed to retrieve votes",
+          }),
+      ),
+    );
+
+    // Convert DTOs to domain entities
+    const votes = yield* Effect.all(
+      voteDtos.map((dto) => dtoToVote(dto)),
+      { mode: "either" },
+    ).pipe(
+      Effect.map((results) =>
+        results
+          .filter((r): r is typeof r & { _tag: "Right" } => r._tag === "Right")
+          .map((r) => r.right),
+      ),
+      Effect.mapError(
+        () =>
+          new GetVotesByChallengeRepositoryError({
+            message: "Failed to process vote data",
           }),
       ),
     );

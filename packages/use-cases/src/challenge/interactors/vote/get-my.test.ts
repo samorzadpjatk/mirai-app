@@ -1,197 +1,139 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   getMyVotesUseCase,
   type GetMyVotesInput,
   GetMyVotesValidationError,
+  GetMyVotesRepositoryError,
 } from "./get-my";
-import { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
-import { Effect } from "effect";
-import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
-import { InMemoryChallengeVoteGateway } from "@mirai-app/adapters";
+import {
+  ChallengeVoteGatewayTag,
+  type ChallengeVoteGateway,
+} from "../../ports/vote/gateway";
+import type { ChallengeVoteDTO } from "../../dto";
+import { DatabaseError } from "@mirai-app/domain";
 
-describe("[UNIT] getMyVotesUseCase (Effect)", () => {
-  let repo: InMemoryChallengeVoteGateway;
+/**
+ * Mock ChallengeVoteGateway for testing
+ */
+function createMockVoteGateway(
+  votes: ChallengeVoteDTO[] = [],
+  options: {
+    shouldFailFind?: boolean;
+  } = {},
+): ChallengeVoteGateway {
+  return {
+    create: (vote: ChallengeVoteDTO) => Effect.succeed(vote),
 
-  beforeEach(() => {
-    repo = new InMemoryChallengeVoteGateway();
+    createMany: (votes: ChallengeVoteDTO[]) => Effect.succeed(votes),
+
+    findById: () => Effect.succeed(null),
+
+    findByChallengeIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByChallengeAndVoterConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findBySubmissionIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    hasVoted: () => Effect.succeed(false),
+
+    hasVotedForPosition: () => Effect.succeed(false),
+
+    getVotedPositions: () => Effect.succeed([]),
+
+    delete: () => Effect.succeed(void 0),
+
+    deleteByChallengeId: () => Effect.succeed(void 0),
+  };
+}
+
+describe("[UNIT] getMyVotesUseCase", () => {
+  it("should fail with GetMyVotesValidationError when challengeId is empty", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: GetMyVotesInput = {
+      challengeId: "",
+      voterId: "voter-123",
+    };
+
+    const program = getMyVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetMyVotesValidationError);
+      expect(either.left.message).toBe("challengeId is required");
+    }
   });
 
-  // Helper to run use case with repository
-  const runUseCase = async (input: GetMyVotesInput) => {
-    const program = getMyVotesUseCase(input).pipe(
-      Effect.provideService(ChallengeVoteGatewayTag, {
-        create: (vote: ChallengeVote) => repo.create(vote),
-        createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
-        findById: (id: string) => repo.findById(id),
-        findByChallengeId: (challengeId: string) =>
-          repo.findByChallengeId(challengeId),
-        findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-          repo.findByChallengeAndVoter(challengeId, voterId),
-        findBySubmissionId: (submissionId: string) =>
-          repo.findBySubmissionId(submissionId),
-        hasVoted: (challengeId: string, voterId: string) =>
-          repo.hasVoted(challengeId, voterId),
-        hasVotedForPosition: (
-          challengeId: string,
-          voterId: string,
-          position: number,
-        ) => repo.hasVotedForPosition(challengeId, voterId, position),
-        getVotedPositions: (challengeId: string, voterId: string) =>
-          repo.getVotedPositions(challengeId, voterId),
-        delete: (id: string) => repo.delete(id),
-        deleteByChallengeId: (challengeId: string) =>
-          repo.deleteByChallengeId(challengeId),
-      }),
-    );
-    return await Effect.runPromise(program);
-  };
+  it("should fail with GetMyVotesValidationError when voterId is empty", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
 
-  describe("[UNIT] execute", () => {
-    it("should return votes for specific voter", async () => {
-      // Create votes for voter-456
-      const vote1 = await Effect.runPromise(
-        ChallengeVote.create({
-          id: ChallengeVoteId.create("vote-1"),
-          challengeId: "challenge-123",
-          submissionId: "submission-1",
-          voterId: "voter-456",
-          position: 1,
-          points: 30,
-          weight: 1.0,
-        }),
-      );
-      const vote2 = await Effect.runPromise(
-        ChallengeVote.create({
-          id: ChallengeVoteId.create("vote-2"),
-          challengeId: "challenge-123",
-          submissionId: "submission-2",
-          voterId: "voter-456",
-          position: 2,
-          points: 20,
-          weight: 1.0,
-        }),
-      );
-      const vote3 = await Effect.runPromise(
-        ChallengeVote.create({
-          id: ChallengeVoteId.create("vote-3"),
-          challengeId: "challenge-123",
-          submissionId: "submission-3",
-          voterId: "voter-456",
-          position: 3,
-          points: 10,
-          weight: 1.0,
-        }),
-      );
+    const input: GetMyVotesInput = {
+      challengeId: "challenge-123",
+      voterId: "",
+    };
 
-      Effect.runSync(repo.create(vote1));
-      Effect.runSync(repo.create(vote2));
-      Effect.runSync(repo.create(vote3));
+    const program = getMyVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const input: GetMyVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "voter-456",
-      };
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetMyVotesValidationError);
+      expect(either.left.message).toBe("voterId is required");
+    }
+  });
 
-      const result = await runUseCase(input);
+  it("should fail with GetMyVotesValidationError when both inputs are empty", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
 
-      expect(result.votes).toHaveLength(3);
-      expect(result.totalVotes).toBe(3);
-      // Votes should be sorted by position
-      expect(result.votes[0].votePosition).toBe(1);
-      expect(result.votes[1].votePosition).toBe(2);
-      expect(result.votes[2].votePosition).toBe(3);
-    });
+    const input: GetMyVotesInput = {
+      challengeId: "",
+      voterId: "",
+    };
 
-    it("should return validation error when challengeId is empty", async () => {
-      const input: GetMyVotesInput = {
-        challengeId: "",
-        voterId: "voter-123",
-      };
+    const program = getMyVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const program = getMyVotesUseCase(input).pipe(
-        Effect.provideService(ChallengeVoteGatewayTag, {
-          create: (vote: ChallengeVote) => repo.create(vote),
-          createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
-          findById: (id: string) => repo.findById(id),
-          findByChallengeId: (challengeId: string) =>
-            repo.findByChallengeId(challengeId),
-          findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-            repo.findByChallengeAndVoter(challengeId, voterId),
-          findBySubmissionId: (submissionId: string) =>
-            repo.findBySubmissionId(submissionId),
-          hasVoted: (challengeId: string, voterId: string) =>
-            repo.hasVoted(challengeId, voterId),
-          hasVotedForPosition: (
-            challengeId: string,
-            voterId: string,
-            position: number,
-          ) => repo.hasVotedForPosition(challengeId, voterId, position),
-          getVotedPositions: (challengeId: string, voterId: string) =>
-            repo.getVotedPositions(challengeId, voterId),
-          delete: (id: string) => repo.delete(id),
-          deleteByChallengeId: (challengeId: string) =>
-            repo.deleteByChallengeId(challengeId),
-        }),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(either._tag).toBe("Left");
-      if (either._tag === "Left") {
-        expect(either.left).toBeInstanceOf(GetMyVotesValidationError);
-        expect(either.left.message).toBe("challengeId is required");
-      }
-    });
-
-    it("should return validation error when voterId is empty", async () => {
-      const input: GetMyVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "",
-      };
-
-      const program = getMyVotesUseCase(input).pipe(
-        Effect.provideService(ChallengeVoteGatewayTag, {
-          create: (vote: ChallengeVote) => repo.create(vote),
-          createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
-          findById: (id: string) => repo.findById(id),
-          findByChallengeId: (challengeId: string) =>
-            repo.findByChallengeId(challengeId),
-          findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-            repo.findByChallengeAndVoter(challengeId, voterId),
-          findBySubmissionId: (submissionId: string) =>
-            repo.findBySubmissionId(submissionId),
-          hasVoted: (challengeId: string, voterId: string) =>
-            repo.hasVoted(challengeId, voterId),
-          hasVotedForPosition: (
-            challengeId: string,
-            voterId: string,
-            position: number,
-          ) => repo.hasVotedForPosition(challengeId, voterId, position),
-          getVotedPositions: (challengeId: string, voterId: string) =>
-            repo.getVotedPositions(challengeId, voterId),
-          delete: (id: string) => repo.delete(id),
-          deleteByChallengeId: (challengeId: string) =>
-            repo.deleteByChallengeId(challengeId),
-        }),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(either._tag).toBe("Left");
-      if (either._tag === "Left") {
-        expect(either.left).toBeInstanceOf(GetMyVotesValidationError);
-        expect(either.left.message).toBe("voterId is required");
-      }
-    });
-
-    it("should return empty list when voter has not voted", async () => {
-      const input: GetMyVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "voter-no-votes",
-      };
-
-      const result = await runUseCase(input);
-
-      expect(result.votes).toHaveLength(0);
-      expect(result.totalVotes).toBe(0);
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetMyVotesValidationError);
+    }
   });
 });

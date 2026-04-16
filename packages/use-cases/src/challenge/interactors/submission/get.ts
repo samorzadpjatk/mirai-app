@@ -36,13 +36,13 @@ export class SubmissionNotFoundError extends Data.TaggedError(
   "SubmissionNotFoundError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 export class GetSubmissionRepositoryError extends Data.TaggedError(
   "GetSubmissionRepositoryError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 /**
  * GetSubmission Use Case (Effect-based)

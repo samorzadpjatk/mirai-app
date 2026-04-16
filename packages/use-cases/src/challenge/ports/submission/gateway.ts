@@ -98,6 +98,17 @@ export interface ChallengeSubmissionGateway {
   ): Effect.Effect<number, DatabaseError, never>;
 
   // ============================================================================
+  // Simple array methods (non-paginated)
+  // ============================================================================
+
+  /**
+   * Find all submissions for a challenge (simple array version)
+   */
+  findByChallengeId(
+    challengeId: string,
+  ): Effect.Effect<ChallengeSubmissionDTO[], DatabaseError, never>;
+
+  // ============================================================================
   // Cursor-based Pagination Methods (Relay Connection Spec)
   // ============================================================================
 

@@ -1,142 +1,278 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   getJudgedStaffVotingProgressUseCase,
   type GetJudgedStaffVotingProgressInput,
   GetVotingProgressValidationError,
+  GetVotingProgressRepositoryError,
 } from "./get-judged-progress";
-import { Effect, Either } from "effect";
-import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
+import {
+  ChallengeVoteGatewayTag,
+  type ChallengeVoteGateway,
+} from "../../ports/vote/gateway";
+import type { ChallengeVoteDTO } from "../../dto";
+import { DatabaseError } from "@mirai-app/domain";
 
-// Create mock repository service
-const createMockRepoService = (overrides?: {
-  getVotedPositions?: (
-    challengeId: string,
-    voterId: string,
-  ) => Promise<number[]>;
-}) => ({
-  create: () => Effect.promise(() => Promise.resolve({} as any)),
-  createMany: () => Effect.promise(() => Promise.resolve([])),
-  findById: () => Effect.promise(() => Promise.resolve(null)),
-  findByChallengeId: () => Effect.promise(() => Promise.resolve([])),
-  findByChallengeAndVoter: () => Effect.promise(() => Promise.resolve([])),
-  findBySubmissionId: () => Effect.promise(() => Promise.resolve([])),
-  hasVoted: () => Effect.promise(() => Promise.resolve(false)),
-  hasVotedForPosition: () => Effect.promise(() => Promise.resolve(false)),
-  getVotedPositions: (challengeId: string, voterId: string) =>
-    Effect.promise(() =>
-      overrides?.getVotedPositions
-        ? overrides.getVotedPositions(challengeId, voterId)
-        : Promise.resolve([]),
-    ),
-  delete: () => Effect.promise(() => Promise.resolve()),
-  deleteByChallengeId: () => Effect.promise(() => Promise.resolve()),
-});
-
-// Helper to run use case with repository service
-const runUseCase = async (
-  input: GetJudgedStaffVotingProgressInput,
-  repoOverrides?: {
-    getVotedPositions?: (
-      challengeId: string,
-      voterId: string,
-    ) => Promise<number[]>;
-  },
-) => {
-  const program = getJudgedStaffVotingProgressUseCase(input).pipe(
-    Effect.provideService(
-      ChallengeVoteGatewayTag,
-      createMockRepoService(repoOverrides),
-    ),
-  );
-  return await Effect.runPromise(program);
-};
-
-describe("[UNIT] getJudgedStaffVotingProgressUseCase (Effect)", () => {
-  describe("[UNIT] execute", () => {
-    it("should return voting progress for all admins", async () => {
-      const mockGetVotedPositions = (challengeId: string, voterId: string) => {
-        if (voterId === "admin-1") return Promise.resolve([1, 2, 3]);
-        if (voterId === "admin-2") return Promise.resolve([1, 2]);
-        if (voterId === "admin-3") return Promise.resolve([]);
-        return Promise.resolve([]);
-      };
-
-      const result = await runUseCase(
-        {
-          challengeId: "challenge-123",
-          tripId: "trip-123",
-          adminParticipantIds: ["admin-1", "admin-2", "admin-3"],
-          requiredPositions: 3,
-          eligibleSubmissionsCount: 5,
-        },
-        { getVotedPositions: mockGetVotedPositions },
-      );
-
-      expect(result.requiredPositions).toBe(3);
-      expect(result.eligibleSubmissionsCount).toBe(5);
-      expect(result.totalAdmins).toBe(3);
-      expect(result.votedAdmins).toBe(1); // Only admin-1 has all 3 positions
-      expect(result.pendingAdmins).toBe(2);
-      expect(result.allAdminsVoted).toBe(false);
-      expect(result.adminProgress).toHaveLength(3);
-      expect(result.adminProgress[0].participantId).toBe("admin-1");
-      expect(result.adminProgress[0].hasVotedAll).toBe(true);
-      expect(result.adminProgress[1].hasVotedAll).toBe(false);
-      expect(result.adminProgress[2].hasVotedAll).toBe(false);
-    });
-
-    it("should return all admins voted when everyone completed voting", async () => {
-      const result = await runUseCase(
-        {
-          challengeId: "challenge-123",
-          tripId: "trip-123",
-          adminParticipantIds: ["admin-1", "admin-2"],
-          requiredPositions: 3,
-          eligibleSubmissionsCount: 5,
-        },
-        { getVotedPositions: () => Promise.resolve([1, 2, 3]) },
-      );
-
-      expect(result.votedAdmins).toBe(2);
-      expect(result.pendingAdmins).toBe(0);
-      expect(result.allAdminsVoted).toBe(true);
-    });
-
-    it("should handle empty admin list", async () => {
-      const result = await runUseCase({
+/**
+ * Mock ChallengeVoteGateway for testing
+ */
+function createMockVoteGateway(
+  options: {
+    votedPositions?: number[];
+    shouldFailGetVotedPositions?: boolean;
+  } = {},
+): ChallengeVoteGateway {
+  return {
+    create: () =>
+      Effect.succeed({
+        id: "vote-123",
         challengeId: "challenge-123",
-        tripId: "trip-123",
-        adminParticipantIds: [],
-        requiredPositions: 3,
-        eligibleSubmissionsCount: 5,
-      });
+        submissionId: "submission-456",
+        voterId: "voter-789",
+        votePosition: 1,
+        votePoints: 3,
+        normalizedWeight: 1.0,
+        votedAt: new Date(),
+      }),
 
-      expect(result.totalAdmins).toBe(0);
-      expect(result.votedAdmins).toBe(0);
-      expect(result.pendingAdmins).toBe(0);
-      expect(result.allAdminsVoted).toBe(false);
-      expect(result.adminProgress).toHaveLength(0);
-    });
+    createMany: (votes: ChallengeVoteDTO[]) => Effect.succeed(votes),
 
-    it("should fail when challengeId is empty", async () => {
-      const program = getJudgedStaffVotingProgressUseCase({
-        challengeId: "",
-        tripId: "trip-123",
-        adminParticipantIds: ["admin-1"],
-        requiredPositions: 3,
-        eligibleSubmissionsCount: 5,
-      }).pipe(
-        Effect.provideService(
-          ChallengeVoteGatewayTag,
-          createMockRepoService(),
-        ),
-      );
+    findById: () => Effect.succeed(null),
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(GetVotingProgressValidationError);
+    findByChallengeIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByChallengeAndVoterConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findBySubmissionIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    hasVoted: () => Effect.succeed(false),
+
+    hasVotedForPosition: () => Effect.succeed(false),
+
+    getVotedPositions: () => {
+      if (options.shouldFailGetVotedPositions) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "getVotedPositions",
+            message: "Database error",
+          }),
+        );
       }
+      return Effect.succeed(options.votedPositions ?? []);
+    },
+
+    delete: () => Effect.succeed(void 0),
+
+    deleteByChallengeId: () => Effect.succeed(void 0),
+  };
+}
+
+describe("[UNIT] getJudgedStaffVotingProgressUseCase", () => {
+  it("should return progress for no admins", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: GetJudgedStaffVotingProgressInput = {
+      challengeId: "challenge-123",
+      tripId: "trip-123",
+      adminParticipantIds: [],
+      requiredPositions: 3,
+      eligibleSubmissionsCount: 5,
+    };
+
+    const program = getJudgedStaffVotingProgressUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.requiredPositions).toBe(3);
+    expect(result.eligibleSubmissionsCount).toBe(5);
+    expect(result.totalAdmins).toBe(0);
+    expect(result.votedAdmins).toBe(0);
+    expect(result.pendingAdmins).toBe(0);
+    expect(result.allAdminsVoted).toBe(false);
+    expect(result.adminProgress).toEqual([]);
+  });
+
+  it("should return progress with all admins having voted", async () => {
+    const mockGateway = createMockVoteGateway({
+      votedPositions: [1, 2, 3],
     });
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: GetJudgedStaffVotingProgressInput = {
+      challengeId: "challenge-123",
+      tripId: "trip-123",
+      adminParticipantIds: ["admin-1", "admin-2"],
+      requiredPositions: 3,
+      eligibleSubmissionsCount: 5,
+    };
+
+    const program = getJudgedStaffVotingProgressUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.totalAdmins).toBe(2);
+    expect(result.votedAdmins).toBe(2);
+    expect(result.pendingAdmins).toBe(0);
+    expect(result.allAdminsVoted).toBe(true);
+    expect(result.adminProgress).toHaveLength(2);
+    expect(result.adminProgress[0].hasVotedAll).toBe(true);
+  });
+
+  it("should return progress with partial voting", async () => {
+    const mockGateway = createMockVoteGateway({
+      votedPositions: [1, 2],
+    });
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: GetJudgedStaffVotingProgressInput = {
+      challengeId: "challenge-123",
+      tripId: "trip-123",
+      adminParticipantIds: ["admin-1", "admin-2", "admin-3"],
+      requiredPositions: 3,
+      eligibleSubmissionsCount: 5,
+    };
+
+    const program = getJudgedStaffVotingProgressUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.totalAdmins).toBe(3);
+    expect(result.votedAdmins).toBe(0); // No admin has voted all positions
+    expect(result.pendingAdmins).toBe(3);
+    expect(result.allAdminsVoted).toBe(false);
+    expect(result.adminProgress).toHaveLength(3);
+    expect(result.adminProgress[0].hasVotedAll).toBe(false);
+  });
+
+  it("should fail with GetVotingProgressValidationError when challengeId is empty", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: GetJudgedStaffVotingProgressInput = {
+      challengeId: "",
+      tripId: "trip-123",
+      adminParticipantIds: ["admin-1"],
+      requiredPositions: 3,
+      eligibleSubmissionsCount: 5,
+    };
+
+    const program = getJudgedStaffVotingProgressUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetVotingProgressValidationError);
+      expect(either.left.message).toBe("challengeId is required");
+    }
+  });
+
+  it("should fail with GetVotingProgressValidationError when tripId is empty", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: GetJudgedStaffVotingProgressInput = {
+      challengeId: "challenge-123",
+      tripId: "",
+      adminParticipantIds: ["admin-1"],
+      requiredPositions: 3,
+      eligibleSubmissionsCount: 5,
+    };
+
+    const program = getJudgedStaffVotingProgressUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetVotingProgressValidationError);
+      expect(either.left.message).toBe("tripId is required");
+    }
+  });
+
+  it("should fail with GetVotingProgressValidationError when requiredPositions is zero", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: GetJudgedStaffVotingProgressInput = {
+      challengeId: "challenge-123",
+      tripId: "trip-123",
+      adminParticipantIds: ["admin-1"],
+      requiredPositions: 0,
+      eligibleSubmissionsCount: 5,
+    };
+
+    const program = getJudgedStaffVotingProgressUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetVotingProgressValidationError);
+      expect(either.left.message).toBe("requiredPositions must be positive");
+    }
+  });
+
+  it("should fail with GetVotingProgressValidationError when requiredPositions is negative", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: GetJudgedStaffVotingProgressInput = {
+      challengeId: "challenge-123",
+      tripId: "trip-123",
+      adminParticipantIds: ["admin-1"],
+      requiredPositions: -1,
+      eligibleSubmissionsCount: 5,
+    };
+
+    const program = getJudgedStaffVotingProgressUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(GetVotingProgressValidationError);
+    }
   });
 });

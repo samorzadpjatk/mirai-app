@@ -10,6 +10,7 @@ import type {
   ChallengeStatus,
   SubmissionStatus,
   ScoringCategory,
+  SubmissionType,
 } from "@mirai-app/domain";
 
 /**
@@ -21,11 +22,12 @@ export interface ChallengeDTO {
   title: string;
   description: string | null;
   status: ChallengeStatus;
+  submissionType: SubmissionType;
   scoringCategory: ScoringCategory;
   points: number;
   maxPoints: number | null;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | null;
+  endDate: Date | null;
   createdById: string;
   createdAt: Date;
   updatedAt: Date;

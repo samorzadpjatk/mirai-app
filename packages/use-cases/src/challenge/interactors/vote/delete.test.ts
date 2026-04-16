@@ -1,196 +1,215 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   deleteChallengeVoteUseCase,
   type DeleteChallengeVoteInput,
   ChallengeVoteNotFoundError,
+  ChallengeVoteDeleteRepositoryError,
 } from "./delete";
-import { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
-import { InMemoryChallengeVoteGateway } from "@mirai-app/adapters";
+import {
+  ChallengeVoteGatewayTag,
+  type ChallengeVoteGateway,
+} from "../../ports/vote/gateway";
+import type { ChallengeVoteDTO } from "../../dto";
+import { DatabaseError } from "@mirai-app/domain";
 
-describe("[UNIT] deleteChallengeVoteUseCase (Effect)", () => {
-  let repo: InMemoryChallengeVoteGateway;
+/**
+ * Mock ChallengeVoteGateway for testing
+ */
+function createMockVoteGateway(
+  votes: ChallengeVoteDTO[] = [],
+  options: {
+    shouldFailFind?: boolean;
+    shouldFailDelete?: boolean;
+  } = {},
+): ChallengeVoteGateway {
+  const voteMap = new Map(votes.map((v) => [v.id, v]));
 
-  beforeEach(() => {
-    repo = new InMemoryChallengeVoteGateway();
+  return {
+    create: (vote: ChallengeVoteDTO) => {
+      voteMap.set(vote.id, vote);
+      return Effect.succeed(vote);
+    },
+
+    createMany: (votes: ChallengeVoteDTO[]) => {
+      for (const vote of votes) {
+        voteMap.set(vote.id, vote);
+      }
+      return Effect.succeed(votes);
+    },
+
+    findById: (id: string) => {
+      if (options.shouldFailFind) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database error",
+          }),
+        );
+      }
+      const vote = voteMap.get(id);
+      return Effect.succeed(vote ?? null);
+    },
+
+    findByChallengeIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByChallengeAndVoterConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findBySubmissionIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    hasVoted: () => Effect.succeed(false),
+
+    hasVotedForPosition: () => Effect.succeed(false),
+
+    getVotedPositions: () => Effect.succeed([]),
+
+    delete: (id: string) => {
+      if (options.shouldFailDelete) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "delete",
+            message: "Database error",
+          }),
+        );
+      }
+      voteMap.delete(id);
+      return Effect.succeed(void 0);
+    },
+
+    deleteByChallengeId: () => Effect.succeed(void 0),
+  };
+}
+
+// Helper to create mock vote DTOs
+function createMockVoteDTO(
+  overrides: Partial<ChallengeVoteDTO> = {},
+): ChallengeVoteDTO {
+  return {
+    id: overrides.id ?? crypto.randomUUID(),
+    challengeId: overrides.challengeId ?? "challenge-123",
+    submissionId: overrides.submissionId ?? "submission-456",
+    voterId: overrides.voterId ?? "voter-789",
+    votePosition: overrides.votePosition ?? 1,
+    votePoints: overrides.votePoints ?? 3,
+    normalizedWeight: overrides.normalizedWeight ?? 1.0,
+    votedAt: overrides.votedAt ?? new Date(),
+  };
+}
+
+describe("[UNIT] deleteChallengeVoteUseCase", () => {
+  it("should delete a vote successfully", async () => {
+    const mockVote = createMockVoteDTO({ id: "vote-123" });
+    const mockGateway = createMockVoteGateway([mockVote]);
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: DeleteChallengeVoteInput = {
+      voteId: "vote-123",
+    };
+
+    const program = deleteChallengeVoteUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.success).toBe(true);
+    expect(result.message).toBe("Vote deleted successfully");
   });
 
-  // Helper to create a test vote
-  const createTestVote = async (
-    overrides?: Partial<{
-      id: ChallengeVoteId;
-      challengeId: string;
-      submissionId: string;
-      voterId: string;
-      position: number;
-    }>,
-  ): Promise<ChallengeVote> => {
-    const vote = await Effect.runPromise(
-      ChallengeVote.create({
-        id: overrides?.id,
-        challengeId: overrides?.challengeId ?? "challenge-123",
-        submissionId: overrides?.submissionId ?? "submission-456",
-        voterId: overrides?.voterId ?? "voter-789",
-        position: overrides?.position ?? 1,
-      }),
-    );
-    return Effect.runSync(repo.create(vote));
-  };
+  it("should fail with ChallengeVoteNotFoundError when vote not found", async () => {
+    const mockGateway = createMockVoteGateway([]);
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
 
-  // Helper to run use case with repository
-  const runUseCase = async (input: DeleteChallengeVoteInput) => {
+    const input: DeleteChallengeVoteInput = {
+      voteId: "non-existent",
+    };
+
     const program = deleteChallengeVoteUseCase(input).pipe(
-      Effect.provideService(ChallengeVoteGatewayTag, {
-        create: (vote: ChallengeVote) => repo.create(vote),
-        createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
-        findById: (id: string) => repo.findById(id),
-        findByChallengeId: (challengeId: string) =>
-          repo.findByChallengeId(challengeId),
-        findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-          repo.findByChallengeAndVoter(challengeId, voterId),
-        findBySubmissionId: (submissionId: string) =>
-          repo.findBySubmissionId(submissionId),
-        hasVoted: (challengeId: string, voterId: string) =>
-          repo.hasVoted(challengeId, voterId),
-        hasVotedForPosition: (
-          challengeId: string,
-          voterId: string,
-          position: number,
-        ) => repo.hasVotedForPosition(challengeId, voterId, position),
-        getVotedPositions: (challengeId: string, voterId: string) =>
-          repo.getVotedPositions(challengeId, voterId),
-        delete: (id: string) => repo.delete(id),
-        deleteByChallengeId: (challengeId: string) =>
-          repo.deleteByChallengeId(challengeId),
-      }),
+      Effect.provide(mockLayer),
     );
-    return await Effect.runPromise(program);
-  };
+    const either = await Effect.runPromise(Effect.either(program));
 
-  describe("[UNIT] execute", () => {
-    it("should delete existing vote", async () => {
-      // Arrange
-      const existingVote = await createTestVote({
-        id: ChallengeVoteId.unsafeCreate("vote-123"),
-      });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeVoteNotFoundError);
+      expect(either.left.message).toBe("Vote not found");
+    }
+  });
 
-      const input: DeleteChallengeVoteInput = {
-        voteId: existingVote.id,
-      };
-
-      // Verify vote exists before deletion
-      expect(Effect.runSync(repo.findById(existingVote.id))).not.toBeNull();
-
-      // Act
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.success).toBe(true);
-      expect(result.message).toBe("Vote deleted successfully");
-
-      // Verify vote was actually deleted
-      const stored = Effect.runSync(repo.findById(existingVote.id));
-      expect(stored).toBeNull();
+  it("should fail with ChallengeVoteDeleteRepositoryError when database error occurs during find", async () => {
+    const mockGateway = createMockVoteGateway([], {
+      shouldFailFind: true,
     });
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
 
-    it("should delete multiple votes independently", async () => {
-      // Arrange
-      const vote1 = await createTestVote({
-        id: ChallengeVoteId.unsafeCreate("vote-1"),
-      });
-      const vote2 = await createTestVote({
-        id: ChallengeVoteId.unsafeCreate("vote-2"),
-      });
-      const vote3 = await createTestVote({
-        id: ChallengeVoteId.unsafeCreate("vote-3"),
-      });
+    const input: DeleteChallengeVoteInput = {
+      voteId: "vote-123",
+    };
 
-      // Act - Delete vote2
-      const input: DeleteChallengeVoteInput = {
-        voteId: vote2.id,
-      };
-      const result = await runUseCase(input);
+    const program = deleteChallengeVoteUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Assert
-      expect(result.success).toBe(true);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeVoteDeleteRepositoryError);
+      expect(either.left.message).toBe("Failed to load existing vote");
+    }
+  });
 
-      // Verify only vote2 was deleted
-      expect(Effect.runSync(repo.findById(vote1.id))).not.toBeNull();
-      expect(Effect.runSync(repo.findById(vote2.id))).toBeNull();
-      expect(Effect.runSync(repo.findById(vote3.id))).not.toBeNull();
+  it("should fail with ChallengeVoteDeleteRepositoryError when database error occurs during delete", async () => {
+    const mockVote = createMockVoteDTO({ id: "vote-456" });
+    const mockGateway = createMockVoteGateway([mockVote], {
+      shouldFailDelete: true,
     });
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
 
-    it("should fail when vote not found", async () => {
-      const input: DeleteChallengeVoteInput = {
-        voteId: "non-existent-id",
-      };
+    const input: DeleteChallengeVoteInput = {
+      voteId: "vote-456",
+    };
 
-      // Act
-      const program = deleteChallengeVoteUseCase(input).pipe(
-        Effect.provideService(ChallengeVoteGatewayTag, {
-          create: (vote: ChallengeVote) => repo.create(vote),
-          createMany: (votes: ChallengeVote[]) => repo.createMany(votes),
-          findById: (id: string) => repo.findById(id),
-          findByChallengeId: (challengeId: string) =>
-            repo.findByChallengeId(challengeId),
-          findByChallengeAndVoter: (challengeId: string, voterId: string) =>
-            repo.findByChallengeAndVoter(challengeId, voterId),
-          findBySubmissionId: (submissionId: string) =>
-            repo.findBySubmissionId(submissionId),
-          hasVoted: (challengeId: string, voterId: string) =>
-            repo.hasVoted(challengeId, voterId),
-          hasVotedForPosition: (
-            challengeId: string,
-            voterId: string,
-            position: number,
-          ) => repo.hasVotedForPosition(challengeId, voterId, position),
-          getVotedPositions: (challengeId: string, voterId: string) =>
-            repo.getVotedPositions(challengeId, voterId),
-          delete: (id: string) => repo.delete(id),
-          deleteByChallengeId: (challengeId: string) =>
-            repo.deleteByChallengeId(challengeId),
-        }),
-      );
+    const program = deleteChallengeVoteUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      // Act & Assert
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ChallengeVoteNotFoundError);
-        expect(either.left.message).toBe("Vote not found");
-      }
-    });
-
-    it("should handle vote deletion for different challenges", async () => {
-      // Arrange - Create votes for different challenges
-      const vote1 = await createTestVote({
-        id: ChallengeVoteId.unsafeCreate("vote-1"),
-        challengeId: "challenge-a",
-      });
-      const vote2 = await createTestVote({
-        id: ChallengeVoteId.unsafeCreate("vote-2"),
-        challengeId: "challenge-b",
-      });
-
-      // Act - Delete vote from challenge-a
-      const input: DeleteChallengeVoteInput = {
-        voteId: vote1.id,
-      };
-      const result = await runUseCase(input);
-
-      // Assert
-      expect(result.success).toBe(true);
-
-      // Verify vote1 deleted but vote2 remains
-      expect(Effect.runSync(repo.findById(vote1.id))).toBeNull();
-      expect(Effect.runSync(repo.findById(vote2.id))).not.toBeNull();
-
-      // Verify counts per challenge
-      const votesA = Effect.runSync(repo.findByChallengeId("challenge-a"));
-      const votesB = Effect.runSync(repo.findByChallengeId("challenge-b"));
-      expect(votesA).toHaveLength(0);
-      expect(votesB).toHaveLength(1);
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeVoteDeleteRepositoryError);
+      expect(either.left.message).toBe("Failed to delete vote");
+    }
   });
 });

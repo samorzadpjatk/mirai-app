@@ -55,6 +55,13 @@ export interface ChallengeVoteGateway {
   ): Effect.Effect<ChallengeVoteDTO | null, DatabaseError, never>;
 
   /**
+   * Find all votes for a challenge (simple array version)
+   */
+  findByChallengeId(
+    challengeId: string,
+  ): Effect.Effect<ChallengeVoteDTO[], DatabaseError, never>;
+
+  /**
    * Find all votes for a challenge with cursor-based pagination
    * Returns a Connection result per Relay Cursor Connections Specification
    */

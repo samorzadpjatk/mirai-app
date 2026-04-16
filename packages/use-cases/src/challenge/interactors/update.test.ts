@@ -1,267 +1,396 @@
 import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   updateChallengeUseCase,
   type UpdateChallengeInput,
   ChallengeNotFoundError,
   ChallengeUpdateValidationError,
   ChallengeTerminalStateError,
+  ChallengeUpdateRepositoryError,
 } from "./update";
+import { ChallengeGatewayTag, type ChallengeGateway } from "../ports/gateway";
+import type { ChallengeDTO } from "../dto";
 import {
-  Challenge,
+  DatabaseError,
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
 } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { ChallengeGatewayTag } from "../ports/gateway";
 
-describe("[UNIT] updateChallengeUseCase (Effect)", () => {
-  const createMockChallenge = async (
-    overrides?: Partial<{
-      id: string;
-      tripId: string;
-      name: string;
-      description: string | null;
-      submissionType: SubmissionType;
-      scoringCategory: ScoringCategory;
-      status: ChallengeStatus;
-      basePoints: number;
-    }>,
-  ): Promise<Challenge> => {
-    return await Effect.runPromise(
-      Challenge.create({
-        id: overrides?.id ?? "challenge-123",
-        tripId: overrides?.tripId ?? "trip-123",
-        name: overrides?.name ?? "Test Challenge",
-        description: overrides?.description ?? "Original description",
-        image: null,
-        submissionType: overrides?.submissionType ?? SubmissionType.IMAGE,
-        scoringCategory:
-          overrides?.scoringCategory ?? ScoringCategory.UNLIMITED,
-        isRecurring: false,
-        dailyStartTime: null,
-        dailyEndTime: null,
-        basePoints: overrides?.basePoints ?? 100,
-        firstPlacePoints: null,
-        secondPlacePoints: null,
-        thirdPlacePoints: null,
-        status: overrides?.status ?? ChallengeStatus.HIDDEN,
-        startTime: null,
-        endTime: null,
-        votingStartTime: null,
-        votingEndTime: null,
-        targetLatitude: null,
-        targetLongitude: null,
-        expectedValue: null,
-        autoApprove: false,
-      }).pipe(Effect.orDie),
-    );
+/**
+ * Mock ChallengeGateway for testing
+ */
+function createMockChallengeGateway(
+  challenges: ChallengeDTO[] = [],
+  options: {
+    shouldFailFind?: boolean;
+    shouldFailUpdate?: boolean;
+  } = {},
+): ChallengeGateway {
+  const challengeMap = new Map(challenges.map((c) => [c.id, c]));
+
+  return {
+    create: (challenge: ChallengeDTO) => {
+      challengeMap.set(challenge.id, challenge);
+      return Effect.succeed(challenge);
+    },
+
+    findById: (id: string) => {
+      if (options.shouldFailFind) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "findById",
+            message: "Database error",
+          }),
+        );
+      }
+      const challenge = challengeMap.get(id);
+      return Effect.succeed(challenge ?? null);
+    },
+
+    update: (challenge: ChallengeDTO) => {
+      if (options.shouldFailUpdate) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "update",
+            message: "Database error",
+          }),
+        );
+      }
+      challengeMap.set(challenge.id, challenge);
+      return Effect.succeed(challenge);
+    },
+
+    updateStatus: (id: string, status: string) => {
+      const challenge = challengeMap.get(id);
+      if (challenge) {
+        return Effect.succeed({
+          ...challenge,
+          status: status as ChallengeStatus,
+        });
+      }
+      return Effect.fail(
+        new DatabaseError({
+          operation: "updateStatus",
+          message: "Challenge not found",
+        }),
+      );
+    },
+
+    delete: () => Effect.succeed(void 0),
+
+    exists: () => Effect.succeed(false),
+
+    countByTripId: () => Effect.succeed(0),
+
+    findByTripIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByStatusConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByTripIdAndStatusConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findBySubmissionTypeConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByScoringCategoryConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findActiveConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findOpenForSubmissionConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findRecurringConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findAllConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
   };
+}
 
-  describe("[UNIT] execute", () => {
-    it("should update challenge name", async () => {
-      const existingChallenge = await createMockChallenge({
-        id: "challenge-456",
-        name: "Original Name",
-      });
-      const updatedChallenge = await createMockChallenge({
-        id: "challenge-456",
-        name: "Updated Challenge Name",
-      });
+function createMockChallengeDTO(
+  overrides: Partial<ChallengeDTO> = {},
+): ChallengeDTO {
+  return {
+    id: overrides.id ?? "challenge-123",
+    tripId: overrides.tripId ?? "trip-123",
+    title: overrides.title ?? "Test Challenge",
+    description: overrides.description ?? null,
+    status: overrides.status ?? ChallengeStatus.VISIBLE,
+    submissionType: overrides.submissionType ?? SubmissionType.IMAGE,
+    scoringCategory: overrides.scoringCategory ?? ScoringCategory.SPEED,
+    points: overrides.points ?? 100,
+    maxPoints: overrides.maxPoints ?? null,
+    startDate: overrides.startDate ?? new Date("2024-01-01"),
+    endDate: overrides.endDate ?? null,
+    createdById: overrides.createdById ?? "user-123",
+    createdAt: overrides.createdAt ?? new Date("2024-01-01"),
+    updatedAt: overrides.updatedAt ?? new Date("2024-01-01"),
+  };
+}
 
-      const mockRepo = {
-        create: () => Effect.succeed(existingChallenge),
-        findById: () => Effect.succeed(existingChallenge),
-        findByTripId: () => Effect.succeed([]),
-        findByStatus: () => Effect.succeed([]),
-        findByTripIdAndStatus: () => Effect.succeed([]),
-        findBySubmissionType: () => Effect.succeed([]),
-        findByScoringCategory: () => Effect.succeed([]),
-        findActive: () => Effect.succeed([]),
-        findOpenForSubmission: () => Effect.succeed([]),
-        findRecurring: () => Effect.succeed([]),
-        findAll: () => Effect.succeed([]),
-        update: () => Effect.succeed(updatedChallenge),
-        updateStatus: () => Effect.succeed(updatedChallenge),
-        delete: () => Effect.succeed(void 0),
-        exists: () => Effect.succeed(true),
-        countByTripId: () => Effect.succeed(1),
-      };
-
-      const input: UpdateChallengeInput = {
-        challengeId: "challenge-456",
-        name: "Updated Challenge Name",
-      };
-
-      const result = await Effect.runPromise(
-        updateChallengeUseCase(input).pipe(
-          Effect.provideService(ChallengeGatewayTag, mockRepo),
-        ),
-      );
-
-      expect(result.name).toBe("Updated Challenge Name");
+describe("[UNIT] updateChallengeUseCase", () => {
+  it("should update a challenge successfully", async () => {
+    const mockChallenge = createMockChallengeDTO({
+      id: "challenge-456",
+      title: "Original Title",
+      status: ChallengeStatus.VISIBLE,
     });
+    const mockGateway = createMockChallengeGateway([mockChallenge]);
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
 
-    it("should return error when challenge not found", async () => {
-      const mockChallenge = await createMockChallenge();
-      const mockRepo = {
-        create: () => Effect.succeed(mockChallenge),
-        findById: () => Effect.succeed(null),
-        findByTripId: () => Effect.succeed([]),
-        findByStatus: () => Effect.succeed([]),
-        findByTripIdAndStatus: () => Effect.succeed([]),
-        findBySubmissionType: () => Effect.succeed([]),
-        findByScoringCategory: () => Effect.succeed([]),
-        findActive: () => Effect.succeed([]),
-        findOpenForSubmission: () => Effect.succeed([]),
-        findRecurring: () => Effect.succeed([]),
-        findAll: () => Effect.succeed([]),
-        update: () => Effect.succeed(mockChallenge),
-        updateStatus: () => Effect.succeed(mockChallenge),
-        delete: () => Effect.succeed(void 0),
-        exists: () => Effect.succeed(false),
-        countByTripId: () => Effect.succeed(0),
-      };
+    const input: UpdateChallengeInput = {
+      challengeId: "challenge-456",
+      name: "Updated Title",
+    };
 
-      const input: UpdateChallengeInput = {
-        challengeId: "non-existent",
-        name: "New Name",
-      };
+    const program = updateChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
 
-      const program = updateChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
-      );
+    expect(result.name).toBe("Updated Title");
+    expect(result.id).toBe("challenge-456");
+  });
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ChallengeNotFoundError);
-      }
+  it("should fail with ChallengeNotFoundError when challenge not found", async () => {
+    const mockGateway = createMockChallengeGateway([]);
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
+
+    const input: UpdateChallengeInput = {
+      challengeId: "non-existent",
+      name: "New Title",
+    };
+
+    const program = updateChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeNotFoundError);
+    }
+  });
+
+  it("should fail with ChallengeTerminalStateError when challenge is completed", async () => {
+    const mockChallenge = createMockChallengeDTO({
+      id: "challenge-completed",
+      status: ChallengeStatus.COMPLETED,
     });
+    const mockGateway = createMockChallengeGateway([mockChallenge]);
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
 
-    it("should return error when challenge is in terminal state (COMPLETED)", async () => {
-      const completedChallenge = await createMockChallenge({
-        id: "challenge-completed",
-        status: ChallengeStatus.COMPLETED,
-      });
+    const input: UpdateChallengeInput = {
+      challengeId: "challenge-completed",
+      name: "New Title",
+    };
 
-      const mockRepo = {
-        create: () => Effect.succeed(completedChallenge),
-        findById: () => Effect.succeed(completedChallenge),
-        findByTripId: () => Effect.succeed([]),
-        findByStatus: () => Effect.succeed([]),
-        findByTripIdAndStatus: () => Effect.succeed([]),
-        findBySubmissionType: () => Effect.succeed([]),
-        findByScoringCategory: () => Effect.succeed([]),
-        findActive: () => Effect.succeed([]),
-        findOpenForSubmission: () => Effect.succeed([]),
-        findRecurring: () => Effect.succeed([]),
-        findAll: () => Effect.succeed([]),
-        update: () => Effect.succeed(completedChallenge),
-        updateStatus: () => Effect.succeed(completedChallenge),
-        delete: () => Effect.succeed(void 0),
-        exists: () => Effect.succeed(true),
-        countByTripId: () => Effect.succeed(1),
-      };
+    const program = updateChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const input: UpdateChallengeInput = {
-        challengeId: "challenge-completed",
-        name: "New Name",
-      };
-
-      const program = updateChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeTerminalStateError);
+      expect(either.left.message).toBe(
+        "Cannot update a completed or cancelled challenge",
       );
+    }
+  });
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ChallengeTerminalStateError);
-        expect(either.left.message).toContain("completed or cancelled");
-      }
+  it("should fail with ChallengeTerminalStateError when challenge is cancelled", async () => {
+    const mockChallenge = createMockChallengeDTO({
+      id: "challenge-cancelled",
+      status: ChallengeStatus.CANCELLED,
     });
+    const mockGateway = createMockChallengeGateway([mockChallenge]);
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
 
-    it("should return error when challenge is in terminal state (CANCELLED)", async () => {
-      const cancelledChallenge = await createMockChallenge({
-        id: "challenge-cancelled",
-        status: ChallengeStatus.CANCELLED,
-      });
+    const input: UpdateChallengeInput = {
+      challengeId: "challenge-cancelled",
+      name: "New Title",
+    };
 
-      const mockRepo = {
-        create: () => Effect.succeed(cancelledChallenge),
-        findById: () => Effect.succeed(cancelledChallenge),
-        findByTripId: () => Effect.succeed([]),
-        findByStatus: () => Effect.succeed([]),
-        findByTripIdAndStatus: () => Effect.succeed([]),
-        findBySubmissionType: () => Effect.succeed([]),
-        findByScoringCategory: () => Effect.succeed([]),
-        findActive: () => Effect.succeed([]),
-        findOpenForSubmission: () => Effect.succeed([]),
-        findRecurring: () => Effect.succeed([]),
-        findAll: () => Effect.succeed([]),
-        update: () => Effect.succeed(cancelledChallenge),
-        updateStatus: () => Effect.succeed(cancelledChallenge),
-        delete: () => Effect.succeed(void 0),
-        exists: () => Effect.succeed(true),
-        countByTripId: () => Effect.succeed(1),
-      };
+    const program = updateChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const input: UpdateChallengeInput = {
-        challengeId: "challenge-cancelled",
-        name: "New Name",
-      };
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeTerminalStateError);
+    }
+  });
 
-      const program = updateChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ChallengeTerminalStateError);
-        expect(either.left.message).toContain("completed or cancelled");
-      }
+  it("should fail with ChallengeUpdateRepositoryError when database error occurs", async () => {
+    const mockChallenge = createMockChallengeDTO({
+      id: "challenge-123",
+      status: ChallengeStatus.VISIBLE,
     });
-
-    it("should return error when name is empty", async () => {
-      const existingChallenge = await createMockChallenge({
-        id: "challenge-empty",
-      });
-
-      const mockRepo = {
-        create: () => Effect.succeed(existingChallenge),
-        findById: () => Effect.succeed(existingChallenge),
-        findByTripId: () => Effect.succeed([]),
-        findByStatus: () => Effect.succeed([]),
-        findByTripIdAndStatus: () => Effect.succeed([]),
-        findBySubmissionType: () => Effect.succeed([]),
-        findByScoringCategory: () => Effect.succeed([]),
-        findActive: () => Effect.succeed([]),
-        findOpenForSubmission: () => Effect.succeed([]),
-        findRecurring: () => Effect.succeed([]),
-        findAll: () => Effect.succeed([]),
-        update: () => Effect.succeed(existingChallenge),
-        updateStatus: () => Effect.succeed(existingChallenge),
-        delete: () => Effect.succeed(void 0),
-        exists: () => Effect.succeed(true),
-        countByTripId: () => Effect.succeed(1),
-      };
-
-      const input: UpdateChallengeInput = {
-        challengeId: "challenge-empty",
-        name: "",
-      };
-
-      const program = updateChallengeUseCase(input).pipe(
-        Effect.provideService(ChallengeGatewayTag, mockRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(ChallengeUpdateValidationError);
-        expect(either.left.message).toContain("name");
-      }
+    const mockGateway = createMockChallengeGateway([mockChallenge], {
+      shouldFailFind: true,
     });
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
+
+    const input: UpdateChallengeInput = {
+      challengeId: "challenge-123",
+      name: "New Title",
+    };
+
+    const program = updateChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(ChallengeUpdateRepositoryError);
+      expect(either.left.message).toBe("Failed to load challenge");
+    }
+  });
+
+  it("should update challenge with multiple fields", async () => {
+    const mockChallenge = createMockChallengeDTO({
+      id: "challenge-multi",
+      status: ChallengeStatus.VISIBLE,
+    });
+    const mockGateway = createMockChallengeGateway([mockChallenge]);
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
+
+    const input: UpdateChallengeInput = {
+      challengeId: "challenge-multi",
+      name: "New Name",
+      description: "New Description",
+      basePoints: 200,
+      startTime: new Date("2024-06-01"),
+      endTime: new Date("2024-06-30"),
+    };
+
+    const program = updateChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.name).toBe("New Name");
+    expect(result.basePoints).toBe(200);
+  });
+
+  it("should allow partial updates", async () => {
+    const mockChallenge = createMockChallengeDTO({
+      id: "challenge-partial",
+      title: "Original Title",
+      description: "Original Description",
+      status: ChallengeStatus.VISIBLE,
+    });
+    const mockGateway = createMockChallengeGateway([mockChallenge]);
+    const mockLayer = Layer.succeed(ChallengeGatewayTag, mockGateway);
+
+    const input: UpdateChallengeInput = {
+      challengeId: "challenge-partial",
+      name: "Only Name Updated",
+    };
+
+    const program = updateChallengeUseCase(input).pipe(
+      Effect.provide(mockLayer),
+    );
+    const result = await Effect.runPromise(program);
+
+    expect(result.name).toBe("Only Name Updated");
   });
 });

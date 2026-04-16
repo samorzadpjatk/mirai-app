@@ -1,7 +1,46 @@
 import { Effect, Data } from "effect";
-import { ChallengeVote, ValidationError } from "@mirai-app/domain";
+import {
+  ChallengeVote,
+  ValidationError,
+  ChallengeVoteId,
+} from "@mirai-app/domain";
 import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
 import { DatabaseError } from "@mirai-app/domain";
+import type { ChallengeVoteDTO } from "../../dto";
+
+/**
+ * Convert ChallengeVote domain entity to ChallengeVoteDTO
+ */
+function toDTO(vote: ChallengeVote): ChallengeVoteDTO {
+  return {
+    id: vote.id,
+    challengeId: vote.challengeId,
+    submissionId: vote.submissionId,
+    voterId: vote.voterId,
+    votePosition: vote.position.value,
+    votePoints: vote.points,
+    normalizedWeight: vote.weight.value,
+    votedAt: vote.votedAt,
+  };
+}
+
+/**
+ * Convert ChallengeVoteDTO to ChallengeVote domain entity
+ */
+function dtoToVote(
+  dto: ChallengeVoteDTO,
+): Effect.Effect<ChallengeVote, ValidationError, never> {
+  return ChallengeVote.create({
+    id: ChallengeVoteId.unsafeCreate(dto.id),
+    challengeId: dto.challengeId,
+    submissionId: dto.submissionId,
+    voterId: dto.voterId,
+    position: dto.votePosition,
+    points: dto.votePoints,
+    weight: dto.normalizedWeight,
+    votedAt: dto.votedAt,
+  });
+}
 
 /**
  * Input for SubmitVote use case (single vote)
@@ -151,14 +190,25 @@ export function submitVoteUseCase(
       ),
     );
 
+    // Convert domain entity to DTO for persistence
+    const voteDto = toDTO(vote);
+
     // Persist vote
-    const saved = yield* voteRepo
-      .create(vote)
+    const savedDto = yield* voteRepo
+      .create(voteDto)
       .pipe(
         Effect.mapError(
           () => new VoteRepositoryError({ message: "Failed to save vote" }),
         ),
       );
+
+    // Convert saved DTO back to domain entity for output
+    const saved = yield* dtoToVote(savedDto).pipe(
+      Effect.mapError(
+        () =>
+          new VoteRepositoryError({ message: "Failed to process saved vote" }),
+      ),
+    );
 
     return toOutput(saved);
   });

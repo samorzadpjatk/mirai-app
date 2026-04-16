@@ -43,25 +43,25 @@ export class SubmissionUpdateNotFoundError extends Data.TaggedError(
   "SubmissionUpdateNotFoundError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 export class SubmissionUpdateValidationError extends Data.TaggedError(
   "SubmissionUpdateValidationError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 export class InvalidReviewActionError extends Data.TaggedError(
   "InvalidReviewActionError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 export class UpdateSubmissionRepositoryError extends Data.TaggedError(
   "UpdateSubmissionRepositoryError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 /**
  * UpdateSubmission Use Case (Effect-based)

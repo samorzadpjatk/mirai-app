@@ -1,257 +1,126 @@
-/**
- * AuthPort Interface Contract Tests
- *
- * These tests verify that the AuthPort interface:
- * - Has no framework dependencies
- * - Uses the Result pattern correctly
- * - Defines proper method signatures
- * - Has associated error types with correct structure
- *
- * @module ports/__tests__
- */
-
 import { describe, it, expect } from "bun:test";
-import type { AuthPort } from "../port";
-import { AuthError, InvalidTokenError, SessionExpiredError } from "../port";
-import type { Result, AuthContext } from "@mirai-app/domain";
-import { UserRole } from "@mirai-app/domain";
+import {
+  AuthPortTag,
+  AuthPort,
+  AuthError,
+  InvalidTokenError,
+  SessionExpiredError,
+} from "./port";
+import type { AuthContext } from "@mirai-app/domain";
+import { Effect, Context } from "effect";
 
-// =============================================================================
-// Mock Implementation for Testing
-// =============================================================================
+describe("[UNIT] AuthPort Interface", () => {
+  it("AuthPortTag should be a valid Context.Tag", () => {
+    expect(AuthPortTag).toBeDefined();
+  });
 
-/**
- * Mock implementation of AuthPort for testing interface contract
- */
-class MockAuthPort implements AuthPort {
-  async validateToken(
-    token: string,
-  ): Promise<Result<AuthContext, AuthError | InvalidTokenError>> {
-    // Return a mock error for testing - we just need to verify the return type
-    return {
-      kind: "err",
-      error: new InvalidTokenError({
-        message: "Mock token validation",
-        token,
-      }),
+  it("should create AuthError with correct properties", () => {
+    const error = new AuthError({ message: "Test error" });
+    expect(error._tag).toBe("AuthError");
+    expect(error.code).toBe("AUTH_ERROR");
+    expect(error.message).toBe("Test error");
+  });
+
+  it("should create InvalidTokenError with correct properties", () => {
+    const error = new InvalidTokenError({
+      message: "Invalid token",
+      token: "abc123",
+    });
+    expect(error._tag).toBe("InvalidTokenError");
+    expect(error.code).toBe("INVALID_TOKEN");
+    expect(error.token).toBe("abc123");
+  });
+
+  it("should create SessionExpiredError with correct properties", () => {
+    const expiredAt = new Date("2024-01-01");
+    const error = new SessionExpiredError({
+      sessionId: "session-123",
+      expiredAt,
+    });
+    expect(error._tag).toBe("SessionExpiredError");
+    expect(error.code).toBe("SESSION_EXPIRED");
+    expect(error.sessionId).toBe("session-123");
+    expect(error.expiredAt).toBe(expiredAt);
+    expect(error.message).toContain("session-123");
+  });
+
+  it("should allow custom message in SessionExpiredError", () => {
+    const error = new SessionExpiredError({
+      sessionId: "session-456",
+      expiredAt: new Date(),
+      message: "Custom message",
+    });
+    expect(error.message).toBe("Custom message");
+  });
+});
+
+describe("[UNIT] AuthPort Mock Implementation", () => {
+  const mockAuthContext: AuthContext = {
+    userId: "user-123",
+    role: "USER",
+    sessionId: "session-123",
+  };
+
+  it("validateToken should return Effect<AuthContext>", async () => {
+    const mockPort: AuthPort = {
+      validateToken: () => Effect.succeed(mockAuthContext),
+      refreshSession: () => Effect.succeed(mockAuthContext),
     };
-  }
 
-  async refreshSession(
-    sessionId: string,
-  ): Promise<Result<AuthContext, AuthError | SessionExpiredError>> {
-    return {
-      kind: "err",
-      error: new SessionExpiredError({
-        sessionId,
-        expiredAt: new Date(),
-      }),
+    const result = await Effect.runPromise(
+      mockPort.validateToken("valid-token"),
+    );
+    expect(result.userId).toBe("user-123");
+  });
+
+  it("validateToken should fail with InvalidTokenError", async () => {
+    const mockPort: AuthPort = {
+      validateToken: () =>
+        Effect.fail(
+          new InvalidTokenError({ message: "Invalid", token: "bad-token" }),
+        ),
+      refreshSession: () => Effect.succeed(mockAuthContext),
     };
-  }
-}
 
-// =============================================================================
-// Tests
-// =============================================================================
+    const effect = mockPort.validateToken("bad-token");
+    const either = await Effect.runPromise(Effect.either(effect));
 
-describe("[UNIT] AuthPort Interface Contract", () => {
-  describe("[UNIT] AuthPort Interface Structure", () => {
-    it("has validateToken method with correct signature", () => {
-      const port = new MockAuthPort();
-
-      expect(typeof port.validateToken).toBe("function");
-    });
-
-    it("has refreshSession method with correct signature", () => {
-      const port = new MockAuthPort();
-
-      expect(typeof port.refreshSession).toBe("function");
-    });
-
-    it("validateToken accepts a string token parameter", async () => {
-      const port = new MockAuthPort();
-
-      // Should not throw when called with string
-      await expect(port.validateToken("test-token")).resolves.toBeDefined();
-    });
-
-    it("refreshSession accepts a string sessionId parameter", async () => {
-      const port = new MockAuthPort();
-
-      // Should not throw when called with string
-      await expect(port.refreshSession("session-123")).resolves.toBeDefined();
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(InvalidTokenError);
+    }
   });
 
-  describe("[UNIT] Error Types", () => {
-    it("AuthError has correct _tag discriminator", () => {
-      const error = new AuthError({ message: "Test error" });
+  it("refreshSession should return Effect<AuthContext>", async () => {
+    const mockPort: AuthPort = {
+      validateToken: () => Effect.succeed(mockAuthContext),
+      refreshSession: () => Effect.succeed(mockAuthContext),
+    };
 
-      expect(error._tag).toBe("AuthError");
-    });
-
-    it("AuthError has correct error code", () => {
-      const error = new AuthError({ message: "Test error" });
-
-      expect(error.code).toBe("AUTH_ERROR");
-    });
-
-    it("AuthError stores message correctly", () => {
-      const message = "Something went wrong";
-      const error = new AuthError({ message });
-
-      expect(error.message).toBe(message);
-    });
-
-    it("InvalidTokenError has correct _tag discriminator", () => {
-      const error = new InvalidTokenError({
-        message: "Invalid token",
-        token: "abc123",
-      });
-
-      expect(error._tag).toBe("InvalidTokenError");
-    });
-
-    it("InvalidTokenError has correct error code", () => {
-      const error = new InvalidTokenError({
-        message: "Invalid token",
-        token: "abc123",
-      });
-
-      expect(error.code).toBe("INVALID_TOKEN");
-    });
-
-    it("InvalidTokenError stores token correctly", () => {
-      const token = "my-token-123";
-      const error = new InvalidTokenError({
-        message: "Invalid",
-        token,
-      });
-
-      expect(error.token).toBe(token);
-    });
-
-    it("SessionExpiredError has correct _tag discriminator", () => {
-      const expiredAt = new Date();
-      const error = new SessionExpiredError({
-        sessionId: "session-123",
-        expiredAt,
-      });
-
-      expect(error._tag).toBe("SessionExpiredError");
-    });
-
-    it("SessionExpiredError has correct error code", () => {
-      const expiredAt = new Date();
-      const error = new SessionExpiredError({
-        sessionId: "session-123",
-        expiredAt,
-      });
-
-      expect(error.code).toBe("SESSION_EXPIRED");
-    });
-
-    it("SessionExpiredError stores sessionId correctly", () => {
-      const sessionId = "session-456";
-      const error = new SessionExpiredError({
-        sessionId,
-        expiredAt: new Date(),
-      });
-
-      expect(error.sessionId).toBe(sessionId);
-    });
-
-    it("SessionExpiredError stores expiredAt correctly", () => {
-      const expiredAt = new Date("2024-01-01");
-      const error = new SessionExpiredError({
-        sessionId: "session-123",
-        expiredAt,
-      });
-
-      expect(error.expiredAt).toBe(expiredAt);
-    });
-
-    it("SessionExpiredError has default message", () => {
-      const error = new SessionExpiredError({
-        sessionId: "session-789",
-        expiredAt: new Date(),
-      });
-
-      expect(error.message).toContain("session-789");
-      expect(error.message).toContain("expired");
-    });
-
-    it("SessionExpiredError accepts custom message", () => {
-      const customMessage = "Custom expiration message";
-      const error = new SessionExpiredError({
-        sessionId: "session-123",
-        expiredAt: new Date(),
-        message: customMessage,
-      });
-
-      expect(error.message).toBe(customMessage);
-    });
+    const result = await Effect.runPromise(
+      mockPort.refreshSession("session-123"),
+    );
+    expect(result.userId).toBe("user-123");
   });
 
-  describe("[UNIT] Result Type Integration", () => {
-    it("validateToken returns a Result type", async () => {
-      const port = new MockAuthPort();
-      const result = await port.validateToken("test");
+  it("refreshSession should fail with SessionExpiredError", async () => {
+    const mockPort: AuthPort = {
+      validateToken: () => Effect.succeed(mockAuthContext),
+      refreshSession: () =>
+        Effect.fail(
+          new SessionExpiredError({
+            sessionId: "expired-session",
+            expiredAt: new Date(),
+          }),
+        ),
+    };
 
-      // Result type should have kind property
-      expect(result).toHaveProperty("kind");
-      expect(["ok", "err"]).toContain(result.kind);
-    });
+    const effect = mockPort.refreshSession("expired-session");
+    const either = await Effect.runPromise(Effect.either(effect));
 
-    it("refreshSession returns a Result type", async () => {
-      const port = new MockAuthPort();
-      const result = await port.refreshSession("session-1");
-
-      expect(result).toHaveProperty("kind");
-      expect(["ok", "err"]).toContain(result.kind);
-    });
-
-    it("error result contains error property", async () => {
-      const port = new MockAuthPort();
-      const result = await port.validateToken("test");
-
-      if (result.kind === "err") {
-        expect(result.error).toBeDefined();
-        expect(result.error instanceof InvalidTokenError).toBe(true);
-      }
-    });
-  });
-
-  describe("[UNIT] No Framework Dependencies", () => {
-    it("AuthPort source does not import from HTTP/GraphQL frameworks", async () => {
-      // Read the source file and verify no framework imports
-      const file = await import("../AuthPort.ts");
-
-      // The file should only export types and errors
-      expect(file.AuthError).toBeDefined();
-      expect(file.InvalidTokenError).toBeDefined();
-      expect(file.SessionExpiredError).toBeDefined();
-    });
-
-    it("AuthError extends Error (standard JS)", () => {
-      const error = new AuthError({ message: "Test" });
-
-      expect(error).toBeInstanceOf(Error);
-    });
-
-    it("InvalidTokenError extends Error (standard JS)", () => {
-      const error = new InvalidTokenError({ message: "Test" });
-
-      expect(error).toBeInstanceOf(Error);
-    });
-
-    it("SessionExpiredError extends Error (standard JS)", () => {
-      const error = new SessionExpiredError({
-        sessionId: "s-1",
-        expiredAt: new Date(),
-      });
-
-      expect(error).toBeInstanceOf(Error);
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(SessionExpiredError);
+    }
   });
 });

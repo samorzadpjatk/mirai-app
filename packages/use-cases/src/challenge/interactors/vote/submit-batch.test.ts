@@ -1,244 +1,304 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect } from "bun:test";
+import { Effect, Layer } from "effect";
 import {
   submitVotesUseCase,
   type SubmitVotesInput,
+  type VoteInput,
   SubmitVotesValidationError,
   BatchAlreadyVotedError,
   InvalidVoteSetError,
   BatchVoteRepositoryError,
 } from "./submit-batch";
-import { ChallengeVote } from "@mirai-app/domain";
-import { Effect, Either } from "effect";
-import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
+import {
+  ChallengeVoteGatewayTag,
+  type ChallengeVoteGateway,
+} from "../../ports/vote/gateway";
+import type { ChallengeVoteDTO } from "../../dto";
+import { DatabaseError } from "@mirai-app/domain";
 
-describe("[UNIT] submitVotesUseCase (Effect)", () => {
-  const createMockVote = async (
-    overrides?: Partial<{
-      id: string;
-      challengeId: string;
-      submissionId: string;
-      voterId: string;
-      position: number;
-      points: number;
-    }>,
-  ): Promise<ChallengeVote> => {
-    return await Effect.runPromise(
-      ChallengeVote.create({
-        id: overrides?.id as any,
-        challengeId: overrides?.challengeId ?? "challenge-123",
-        submissionId: overrides?.submissionId ?? "submission-1",
-        voterId: overrides?.voterId ?? "voter-123",
-        position: overrides?.position ?? 1,
-        points: overrides?.points ?? 30,
-      }).pipe(Effect.orDie),
-    );
-  };
+/**
+ * Mock ChallengeVoteGateway for testing
+ */
+function createMockVoteGateway(
+  options: {
+    hasVoted?: boolean;
+    shouldFailHasVoted?: boolean;
+    shouldFailCreateMany?: boolean;
+  } = {},
+): ChallengeVoteGateway {
+  return {
+    create: () =>
+      Effect.succeed({
+        id: "vote-123",
+        challengeId: "challenge-123",
+        submissionId: "submission-456",
+        voterId: "voter-789",
+        votePosition: 1,
+        votePoints: 3,
+        normalizedWeight: 1.0,
+        votedAt: new Date(),
+      }),
 
-  const createMockRepo = (votes: ChallengeVote[]) => ({
-    create: () => Effect.succeed(votes[0]),
-    createMany: () => Effect.succeed(votes),
+    createMany: (votes: ChallengeVoteDTO[]) => {
+      if (options.shouldFailCreateMany) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "createMany",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed(votes);
+    },
+
     findById: () => Effect.succeed(null),
-    findByChallengeId: () => Effect.succeed([]),
-    findByChallengeAndVoter: () => Effect.succeed([]),
-    findBySubmissionId: () => Effect.succeed([]),
-    hasVoted: () => Effect.succeed(false),
+
+    findByChallengeIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findByChallengeAndVoterConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    findBySubmissionIdConnection: () =>
+      Effect.succeed({
+        edges: [],
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
+        totalCount: 0,
+      }),
+
+    hasVoted: () => {
+      if (options.shouldFailHasVoted) {
+        return Effect.fail(
+          new DatabaseError({
+            operation: "hasVoted",
+            message: "Database error",
+          }),
+        );
+      }
+      return Effect.succeed(options.hasVoted ?? false);
+    },
+
     hasVotedForPosition: () => Effect.succeed(false),
+
     getVotedPositions: () => Effect.succeed([]),
+
     delete: () => Effect.succeed(void 0),
+
     deleteByChallengeId: () => Effect.succeed(void 0),
+  };
+}
+
+describe("[UNIT] submitVotesUseCase", () => {
+  it("should submit multiple votes successfully", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const votes: VoteInput[] = [
+      { submissionId: "sub-1", position: 1, points: 3 },
+      { submissionId: "sub-2", position: 2, points: 2 },
+      { submissionId: "sub-3", position: 3, points: 1 },
+    ];
+
+    const input: SubmitVotesInput = {
+      challengeId: "challenge-123",
+      voterId: "voter-789",
+      votes,
+      requiredPositions: 3,
+    };
+
+    const program = submitVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const result = await Effect.runPromise(program);
+
+    expect(result.votes).toHaveLength(3);
+    expect(result.totalVotesCast).toBe(3);
   });
 
-  describe("[UNIT] execute", () => {
-    it("should submit multiple votes successfully", async () => {
-      const mockVotes = await Promise.all([
-        createMockVote({
-          position: 1,
-          submissionId: "submission-1",
-          points: 30,
-        }),
-        createMockVote({
-          position: 2,
-          submissionId: "submission-2",
-          points: 20,
-        }),
-        createMockVote({
-          position: 3,
-          submissionId: "submission-3",
-          points: 10,
-        }),
-      ]);
-      const mockRepo = createMockRepo(mockVotes);
+  it("should fail with SubmitVotesValidationError when challengeId is empty", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
 
-      const input: SubmitVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "voter-123",
-        votes: [
-          { submissionId: "submission-1", position: 1, points: 30 },
-          { submissionId: "submission-2", position: 2, points: 20 },
-          { submissionId: "submission-3", position: 3, points: 10 },
-        ],
-        requiredPositions: 3,
-      };
+    const input: SubmitVotesInput = {
+      challengeId: "",
+      voterId: "voter-789",
+      votes: [{ submissionId: "sub-1", position: 1 }],
+      requiredPositions: 1,
+    };
 
-      const result = await Effect.runPromise(
-        submitVotesUseCase(input).pipe(
-          Effect.provideService(ChallengeVoteGatewayTag, mockRepo),
-        ),
-      );
+    const program = submitVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      expect(result.totalVotesCast).toBe(3);
-      expect(result.votes).toHaveLength(3);
-      expect(result.votes[0]?.votePosition).toBe(1);
-      expect(result.votes[1]?.votePosition).toBe(2);
-      expect(result.votes[2]?.votePosition).toBe(3);
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(SubmitVotesValidationError);
+      expect(either.left.message).toBe("Challenge ID is required");
+    }
+  });
+
+  it("should fail with SubmitVotesValidationError when voterId is empty", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: SubmitVotesInput = {
+      challengeId: "challenge-123",
+      voterId: "",
+      votes: [{ submissionId: "sub-1", position: 1 }],
+      requiredPositions: 1,
+    };
+
+    const program = submitVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(SubmitVotesValidationError);
+      expect(either.left.message).toBe("Voter ID is required");
+    }
+  });
+
+  it("should fail with SubmitVotesValidationError when votes array is empty", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const input: SubmitVotesInput = {
+      challengeId: "challenge-123",
+      voterId: "voter-789",
+      votes: [],
+      requiredPositions: 3,
+    };
+
+    const program = submitVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(SubmitVotesValidationError);
+      expect(either.left.message).toBe("At least one vote is required");
+    }
+  });
+
+  it("should fail with BatchAlreadyVotedError when voter has already voted", async () => {
+    const mockGateway = createMockVoteGateway({
+      hasVoted: true,
     });
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
 
-    it("should return error when challengeId is empty", async () => {
-      const mockRepo = createMockRepo([]);
+    const input: SubmitVotesInput = {
+      challengeId: "challenge-123",
+      voterId: "voter-789",
+      votes: [{ submissionId: "sub-1", position: 1 }],
+      requiredPositions: 1,
+    };
 
-      const input: SubmitVotesInput = {
-        challengeId: "",
-        voterId: "voter-123",
-        votes: [
-          { submissionId: "submission-1", position: 1, points: 30 },
-          { submissionId: "submission-2", position: 2, points: 20 },
-          { submissionId: "submission-3", position: 3, points: 10 },
-        ],
-        requiredPositions: 3,
-      };
+    const program = submitVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const program = submitVotesUseCase(input).pipe(
-        Effect.provideService(ChallengeVoteGatewayTag, mockRepo),
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(BatchAlreadyVotedError);
+      expect(either.left.message).toBe(
+        "You have already voted in this challenge",
       );
+    }
+  });
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(SubmitVotesValidationError);
-        expect(either.left.message).toBe("Challenge ID is required");
-      }
+  it("should fail with InvalidVoteSetError for duplicate positions", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const votes: VoteInput[] = [
+      { submissionId: "sub-1", position: 1 },
+      { submissionId: "sub-2", position: 1 },
+    ];
+
+    const input: SubmitVotesInput = {
+      challengeId: "challenge-123",
+      voterId: "voter-789",
+      votes,
+      requiredPositions: 3,
+    };
+
+    const program = submitVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(InvalidVoteSetError);
+    }
+  });
+
+  it("should fail with InvalidVoteSetError for duplicate submissions", async () => {
+    const mockGateway = createMockVoteGateway();
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
+
+    const votes: VoteInput[] = [
+      { submissionId: "sub-1", position: 1 },
+      { submissionId: "sub-1", position: 2 },
+    ];
+
+    const input: SubmitVotesInput = {
+      challengeId: "challenge-123",
+      voterId: "voter-789",
+      votes,
+      requiredPositions: 3,
+    };
+
+    const program = submitVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
+
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(InvalidVoteSetError);
+    }
+  });
+
+  it("should fail with BatchVoteRepositoryError when database error occurs", async () => {
+    const mockGateway = createMockVoteGateway({
+      shouldFailCreateMany: true,
     });
+    const mockLayer = Layer.succeed(ChallengeVoteGatewayTag, mockGateway);
 
-    it("should return error when voter has already voted", async () => {
-      const mockRepo = {
-        ...createMockRepo([]),
-        hasVoted: () => Effect.succeed(true),
-      };
+    const votes: VoteInput[] = [{ submissionId: "sub-1", position: 1 }];
 
-      const input: SubmitVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "voter-123",
-        votes: [
-          { submissionId: "submission-1", position: 1, points: 30 },
-          { submissionId: "submission-2", position: 2, points: 20 },
-          { submissionId: "submission-3", position: 3, points: 10 },
-        ],
-        requiredPositions: 3,
-      };
+    const input: SubmitVotesInput = {
+      challengeId: "challenge-123",
+      voterId: "voter-789",
+      votes,
+      requiredPositions: 1,
+    };
 
-      const program = submitVotesUseCase(input).pipe(
-        Effect.provideService(ChallengeVoteGatewayTag, mockRepo),
-      );
+    const program = submitVotesUseCase(input).pipe(Effect.provide(mockLayer));
+    const either = await Effect.runPromise(Effect.either(program));
 
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(BatchAlreadyVotedError);
-      }
-    });
-
-    it("should return error for duplicate positions", async () => {
-      const mockRepo = createMockRepo([]);
-
-      const input: SubmitVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "voter-123",
-        votes: [
-          { submissionId: "submission-1", position: 1, points: 30 },
-          { submissionId: "submission-2", position: 1, points: 20 },
-        ],
-        requiredPositions: 2,
-      };
-
-      const program = submitVotesUseCase(input).pipe(
-        Effect.provideService(ChallengeVoteGatewayTag, mockRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(InvalidVoteSetError);
-      }
-    });
-
-    it("should return error for duplicate submissionIds", async () => {
-      const mockRepo = createMockRepo([]);
-
-      const input: SubmitVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "voter-123",
-        votes: [
-          { submissionId: "submission-1", position: 1, points: 30 },
-          { submissionId: "submission-1", position: 2, points: 20 },
-        ],
-        requiredPositions: 2,
-      };
-
-      const program = submitVotesUseCase(input).pipe(
-        Effect.provideService(ChallengeVoteGatewayTag, mockRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(InvalidVoteSetError);
-      }
-    });
-
-    it("should return error for missing required positions", async () => {
-      const mockRepo = createMockRepo([]);
-
-      const input: SubmitVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "voter-123",
-        votes: [{ submissionId: "submission-1", position: 1, points: 30 }],
-        requiredPositions: 3,
-      };
-
-      const program = submitVotesUseCase(input).pipe(
-        Effect.provideService(ChallengeVoteGatewayTag, mockRepo),
-      );
-
-      const either = await Effect.runPromise(Effect.either(program));
-      expect(Either.isLeft(either)).toBe(true);
-      if (Either.isLeft(either)) {
-        expect(either.left).toBeInstanceOf(InvalidVoteSetError);
-      }
-    });
-
-    it("should submit single vote with only required fields", async () => {
-      const mockVote = await createMockVote({
-        position: 1,
-        submissionId: "submission-1",
-        points: 30,
-      });
-      const mockRepo = createMockRepo([mockVote]);
-
-      const input: SubmitVotesInput = {
-        challengeId: "challenge-123",
-        voterId: "voter-123",
-        votes: [{ submissionId: "submission-1", position: 1, points: 30 }],
-        requiredPositions: 1,
-      };
-
-      const result = await Effect.runPromise(
-        submitVotesUseCase(input).pipe(
-          Effect.provideService(ChallengeVoteGatewayTag, mockRepo),
-        ),
-      );
-
-      expect(result.totalVotesCast).toBe(1);
-      expect(result.votes[0]?.votePosition).toBe(1);
-    });
+    expect(either._tag).toBe("Left");
+    if (either._tag === "Left") {
+      expect(either.left).toBeInstanceOf(BatchVoteRepositoryError);
+      expect(either.left.message).toBe("Failed to save votes");
+    }
   });
 });

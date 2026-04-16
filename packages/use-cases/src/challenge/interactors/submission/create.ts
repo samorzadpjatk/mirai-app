@@ -36,19 +36,19 @@ export class SubmissionCreationError extends Data.TaggedError(
   "SubmissionCreationError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 export class DuplicateSubmissionError extends Data.TaggedError(
   "DuplicateSubmissionError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 export class SubmissionRepositoryError extends Data.TaggedError(
   "SubmissionRepositoryError",
 )<{
   message: string;
-}>() {}
+}> {}
 
 /**
  * CreateSubmission Use Case (Effect-based)
