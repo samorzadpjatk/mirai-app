@@ -18,5 +18,5 @@ export default function createBaseSupabaseClient(
         eventsPerSecond: 10,
       },
     },
-  }) as SupabaseClient;
+  });
 }

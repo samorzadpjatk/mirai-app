@@ -1,96 +1,185 @@
 /**
- * GraphQL Module
+ * GraphQL Framework Package
  *
- * Framework Layer - GraphQL API Infrastructure
+ * Pothos-based GraphQL schema builder with plugins:
+ * - @pothos/plugin-relay: Relay-compliant pagination and node interface
+ * - @pothos/plugin-dataloader: DataLoader integration for N+1 prevention
+ * - @pothos/plugin-scope-auth: Authorization based on scopes
+ * - graphql-scalars: Custom scalar types (DateTime, EmailAddress, etc.)
  *
- * This module provides GraphQL schema, resolvers, and server infrastructure.
- * It is part of the Frameworks layer in Clean Architecture, providing the
- * API adapter implementation that the application layer uses.
+ * ## Architecture
  *
- * Architecture:
- * - Pothos: Code-first schema builder with TypeScript type safety
- * - GraphQL Yoga: GraphQL server with subscriptions support
- * - Hono: Lightweight web framework integration
- * - DI integration: Resolvers use Effect-based controllers
+ * ```
+ * ┌─────────────────────────────────────────────┐
+ * │           Schema Builder (builder.ts)         │
+ * │  ┌─────────┐ ┌─────────┐ ┌───────────────┐  │
+ * │  │  Relay  │ │Loaders  │ │     Auth      │  │
+ * │  │ Plugin  │ │Plugin   │ │    Plugin     │  │
+ * │  └─────────┘ └─────────┘ └───────────────┘  │
+ * └─────────────────────────────────────────────┘
+ *                      │
+ *         ┌────────────┼────────────┐
+ *         ▼            ▼            ▼
+ *    ┌────────┐  ┌────────┐  ┌──────────┐
+ *    │Scalars │  │Context │  │  Errors  │
+ *    └────────┘  └────────┘  └──────────┘
+ * ```
  *
  * ## Usage
  *
- * ### In Application Layer (backend-server):
+ * ### Building a Schema
  * ```typescript
- * import {
- *   schema,
- *   createYogaHandler,
- *   createSimpleContextFactory
- * } from "@mirai-app/frameworks/graphql";
+ * import { builder } from "@mirai-app/frameworks/graphql";
+ * import "./types/user"; // Register types
  *
- * const yoga = createYogaHandler({
- *   enableGraphiQL: process.env.NODE_ENV === "development",
- *   contextFactory: createSimpleContextFactory(),
+ * export const schema = builder.toSchema();
+ * ```
+ *
+ * ### Creating a Server
+ * ```typescript
+ * import { createGraphQLServer } from "@mirai-app/frameworks/graphql";
+ * import { schema } from "./schema";
+ *
+ * const yoga = createGraphQLServer({
+ *   schema,
+ *   context: async ({ request }) => ({
+ *     user: await authenticate(request),
+ *   }),
  * });
  * ```
  *
- * ### For Client Applications:
+ * ### Defining Types
  * ```typescript
- * import { GraphQLProvider, useGraphQL } from "@mirai-app/frameworks/graphql";
+ * import { builder } from "@mirai-app/frameworks/graphql";
+ *
+ * builder.objectType("User", {
+ *   interfaces: [builder.nodeInterface],
+ *   isTypeOf: (obj) => obj.__typename === "User",
+ *   fields: (t) => ({
+ *     id: t.exposeID("id"),
+ *     email: t.exposeString("email"),
+ *     createdAt: t.field({
+ *       type: "DateTime",
+ *       resolve: (user) => user.createdAt,
+ *     }),
+ *   }),
+ * });
  * ```
  */
 
 // =============================================================================
-// Schema Builder
+// Core Schema Builder
 // =============================================================================
 
-export { builder, UserRoleEnum } from "./builder";
-export type { PothosTypes } from "./builder";
+export { builder, type BuilderType, type SchemaBuilderConfig } from "./builder";
 
 // =============================================================================
-// Schema
-// =============================================================================
-
-export { schema } from "./schema";
-export type { Schema } from "./schema";
-export { generateSDL, saveSchemaToFile, generateAndSaveSchema } from "./schema";
-
-// =============================================================================
-// Context
-// =============================================================================
-
-export type { GraphQLContext } from "./context";
-export { createContextFactory, createSimpleContextFactory } from "./context";
-
-// =============================================================================
-// Server and Handlers
-// =============================================================================
-
-export { createYogaHandler, createDefaultYogaHandler } from "./yoga-handler";
-
-// Legacy server (deprecated - use yoga-handler instead)
-export { createHonoApp, startHonoServer } from "./server";
-
-// =============================================================================
-// Client (for web app)
+// Custom Scalars
 // =============================================================================
 
 export {
-  GraphQLProvider,
-  useGraphQL,
-  useGraphQLQuery,
-  useGraphQLMutation,
-  APIProvider,
-  useTRPCClient,
-  getTRPCClient,
-  type GraphQLClient,
-  type GraphQLClientConfig,
-} from "./client";
+  scalars,
+  type ScalarName,
+  type ScalarsConfig,
+  registerScalars,
+  parseDateTime,
+  serializeDateTime,
+} from "./scalars";
 
 // =============================================================================
-// Native Client (for React Native with React Query integration)
+// Context Types and Utilities
 // =============================================================================
 
 export {
-  GraphQLProvider as TRPCProvider,
-  useGraphQL as useTRPC,
-  useGraphQLClient,
-  GraphQLClient as NativeGraphQLClient,
-  type Procedure,
-  type MutationProcedure,
-} from "./native-client";
+  type GraphQLContext,
+  type AuthContext,
+  type GraphQLContextFactory,
+  type GraphQLContextConfig,
+  createGraphQLContext,
+} from "./context";
+
+// =============================================================================
+// Error Handling
+// =============================================================================
+
+export {
+  type GraphQLErrorCode,
+  GraphQLErrorExtensions,
+  createGraphQLError,
+  formatError,
+  mapDomainErrorToGraphQL,
+} from "./errors";
+
+// =============================================================================
+// Server Setup (Yoga)
+// =============================================================================
+
+export {
+  createGraphQLServer,
+  type GraphQLServerConfig,
+  type GraphQLServer,
+  type YogaContext,
+} from "./server";
+
+// =============================================================================
+// Schema Utilities
+// =============================================================================
+
+export {
+  type NodeType,
+  type ConnectionType,
+  type EdgeType,
+  type PageInfo,
+  createConnectionType,
+  createEdgeType,
+  toGlobalId,
+  fromGlobalId,
+  isValidGlobalId,
+} from "./relay";
+
+// =============================================================================
+// DataLoader Utilities
+// =============================================================================
+
+export {
+  type LoaderConfig,
+  type LoaderCache,
+  createLoader,
+  createCachedLoader,
+  batchLoadFn,
+} from "./loaders";
+
+// =============================================================================
+// Authorization Utilities
+// =============================================================================
+
+export {
+  type AuthScope,
+  type AuthScopeMap,
+  type AuthScopesFunction,
+  defineAuthScopes,
+  checkAuthScope,
+  requireAuth,
+  requireAnyAuth,
+  requireAllAuth,
+} from "./auth";
+
+// =============================================================================
+// Schema Generation
+// =============================================================================
+
+export {
+  printSchemaToSDL,
+  writeSchemaToFile,
+  type SchemaOutputConfig,
+} from "./schema-output";
+
+// =============================================================================
+// Re-exports from Pothos (for convenience)
+// =============================================================================
+
+export {
+  type ObjectTypeOptions,
+  type InterfaceTypeOptions,
+} from "@pothos/core";
+export { type RelayPluginOptions } from "@pothos/plugin-relay";

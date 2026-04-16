@@ -1,7 +1,4 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import * as schema from "./schema";
-
+import { drizzle } from 'drizzle-orm/bun-sql';
 /**
  * Create a Drizzle database client
  *
@@ -24,21 +21,10 @@ export function createDrizzleClient(connectionString?: string) {
     throw new Error("DATABASE_URL environment variable is required");
   }
 
-  const pool = new Pool({
-    connectionString: databaseUrl,
-    // Connection pool settings
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-  });
-
-  return drizzle(pool, { schema });
+  return drizzle(databaseUrl);
 }
 
 /**
  * Type definition for the Drizzle database client
  */
 export type DrizzleDb = ReturnType<typeof createDrizzleClient>;
-
-// Re-export all schema for convenient access
-export * from "./schema";

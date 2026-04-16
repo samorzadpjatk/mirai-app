@@ -79,13 +79,13 @@ export { REALTIME_CHANNEL_STATES } from "./supabase/types";
  *
  * ### Complete App Layer (Recommended)
  * ```typescript
- * import { makeAppLayer, AppLayerConfig } from "@mirai-app/frameworks";
+ * import { makeAppLayer, type AppLayerConfig } from "@mirai-app/frameworks";
+ * import { UserGatewayTag } from "@mirai-app/use-cases/ports/user/gateway";
  *
  * const appLayer = makeAppLayer({ supabase, db });
  *
  * const program = Effect.gen(function* () {
- *   const userRepo = yield* UserRepositoryTag;
- *   const auth = yield* AuthPortTag;
+ *   const userRepo = yield* UserGatewayTag;
  *   // ... use repos and services
  * }).pipe(Effect.provide(appLayer));
  * ```
@@ -93,10 +93,11 @@ export { REALTIME_CHANNEL_STATES } from "./supabase/types";
  * ### Individual Layers (Selective Composition)
  * ```typescript
  * import { makeRepositoryLayer, makeServiceLayer } from "@mirai-app/frameworks";
+ * import { Layer } from "effect";
  *
- * const repoLayer = makeRepositoryLayer(db);
- * const serviceLayer = makeServiceLayer({ supabase, db });
- * const combined = Layer.merge(repoLayer, serviceLayer);
+ * const repoLayer = makeRepositoryLayer({ db });
+ * const serviceLayer = makeServiceLayer({ supabase });
+ * const combined = repoLayer.pipe(Layer.merge(serviceLayer));
  * ```
  */
 export {
@@ -107,23 +108,35 @@ export {
   type AppLayerConfig,
   // Repository Layer
   makeRepositoryLayer,
-  makeUserDomainLayer,
-  makeTripRewardDomainLayer,
-  makeChallengeDomainLayer,
-  makeNotificationDomainLayer,
-  makeContentDomainLayer,
-  makeReportingDomainLayer,
+  makeUserRepositoryLayer,
+  makeTripRepositoryLayer,
+  makeGroupRepositoryLayer,
+  makeChallengeRepositoryLayer,
+  makeChallengeSubmissionRepositoryLayer,
+  makeChallengeVoteRepositoryLayer,
+  makeNotificationRepositoryLayer,
+  makeNotificationDeliveryRepositoryLayer,
+  makeNotificationScheduleRepositoryLayer,
+  makeLocationRepositoryLayer,
+  makeActivityFeedRepositoryLayer,
+  makeRewardRepositoryLayer,
+  makeCoinTransactionRepositoryLayer,
+  makeSponsorRepositoryLayer,
+  makeEventRepositoryLayer,
+  makeSubmissionReportRepositoryLayer,
+  type RepositoryLayerConfig,
   // Service Layer
   makeServiceLayer,
-  makeSupabaseServicesLayer,
-  makeTelemetryServiceLayer,
-  makePubSubServiceLayer,
   makeAuthLayer,
-  makeRealtimeLayer,
   makeStorageLayer,
-  makeSupabaseClientLayer,
+  makeRealtimeLayer,
+  makePubSubLayer,
+  AuthPortTag,
+  StoragePortTag,
+  RealtimePortTag,
+  PubSubServiceTag,
   type ServiceLayerConfig,
-} from "./layers";
+} from "./di";
 
 // =============================================================================
 // Test Utilities (Effect Layer-based)
@@ -136,51 +149,45 @@ export {
  * ```typescript
  * import { createTestLayer, runWithTestLayer } from "@mirai-app/frameworks";
  * import { Effect } from "effect";
- * import { UserRepositoryTag } from "@mirai-app/use-cases";
+ * import { UserGatewayTag } from "@mirai-app/use-cases/ports/user/gateway";
  *
  * const testLayer = createTestLayer();
  *
- * const result = await runWithTestLayer(testLayer,
+ * const result = await runWithTestLayer(
+ *   testLayer,
  *   Effect.gen(function* () {
- *     const repo = yield* UserRepositoryTag;
+ *     const repo = yield* UserGatewayTag;
  *     return yield* repo.findById("123");
  *   })
  * );
  * ```
  *
- * ### Individual Service Layers
+ * ### Mock Individual Services
  * ```typescript
- * import { createAuthTestLayer, createUserRepositoryTestLayer } from "@mirai-app/frameworks";
- * import { Layer } from "effect";
+ * import { mockLayerOf } from "@mirai-app/frameworks";
+ * import { UserGatewayTag } from "@mirai-app/use-cases/ports/user/gateway";
+ * import { Effect, Layer } from "effect";
  *
- * const authLayer = createAuthTestLayer();
- * const userLayer = createUserRepositoryTestLayer();
- * const combined = Layer.merge(authLayer, userLayer);
+ * const mockUserRepo = mockLayerOf(
+ *   UserGatewayTag,
+ *   {
+ *     findById: () => Effect.succeed(null),
+ *     save: (user) => Effect.succeed(user),
+ *   }
+ * );
  * ```
  */
 export {
   // Test Layer Creation
   createTestLayer,
-  createMinimalTestLayer,
-  createAuthTestLayer,
-  createRealtimeTestLayer,
-  createStorageTestLayer,
-  createUserRepositoryTestLayer,
-  // Mock Helpers
-  mockLayerOf,
-  mockLayers,
-  createMockAuthLayer,
-  createMockRepositoryLayer,
-  createMockPortLayer,
-  createTestLayerWithHelpers,
   // Test Execution
   runWithTestLayer,
+  // Mock Helpers
+  mockLayerOf,
   // Types
   type TestLayer,
   type TestLayerConfig,
-  type TestLayerOptions,
-  type TestLayerResult,
-} from "./di/test-layer";
+} from "./di/layer/test";
 
 // =============================================================================
 // Re-export Inner Layers (for convenience)

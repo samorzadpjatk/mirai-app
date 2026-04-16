@@ -38,16 +38,16 @@
     "@mirai-app/adapters": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "effect": "^3.14.0",
-    "pg": "^8.20.0",
     "@supabase/supabase-js": "^2.89.0",
     "hono": "^4.12.12",
     "graphql": "^16.13.2",
+    "graphql-scalars": "^1.25.0",
     "graphql-yoga": "^5.21.0",
     "@pothos/core": "^4.12.0",
     "@pothos/plugin-relay": "^4.7.0",
+    "@pothos/plugin-dataloader": "^4.4.3",
     "@pothos/plugin-scope-auth": "^4.1.6",
-    "@pothos/plugin-validation": "^4.2.0",
-    "zod": "^3.23.0",
+    "dataloader": "^2.1.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
@@ -57,6 +57,5 @@
   },
   "peerDependencies": {
     "react": "^19.1.0"
-  },
-  "// note": "Outermost layer - contains framework-specific configuration only"
+  }
 }
