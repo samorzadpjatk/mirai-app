@@ -318,18 +318,17 @@ export {
 } from "./system/errors";
 
 // =============================================================================
-// Coordinating Interactors (migrated from adapters layer)
+// Coordinating Interactors
 // =============================================================================
-export { GroupCoinsInteractor } from "./group/interactors/group-coins";
-export {
-  TripAccessChecker,
-  type GroupLeaderCheckResult,
-} from "./trip/interactors/access-checker";
-export { TripPointsCalculator } from "./trip/interactors/points-calculator";
-export {
-  RankingActivityInteractor,
-  type RankSnapshot,
-} from "./ranking/interactors/ranking-activity";
+// Note: The concrete implementations (DrizzleGroupCoinsService, DrizzleTripAccessChecker,
+// DrizzleTripPointsCalculator, DrizzleRankingActivityService) have been moved to
+// @mirai-app/adapters layer to comply with Clean Architecture.
+// The port interfaces remain here for dependency injection.
+// =============================================================================
+
+// Re-export RankSnapshot type for ranking activities
+export type { RankSnapshot } from "./ranking/ports/gateway";
+export type { GroupLeaderCheckResult } from "./trip/ports/gateway";
 // Notification Sender Use Cases
 export {
   trackDeliveryStartUseCase,
@@ -416,6 +415,14 @@ export {
   InvalidStatusTransitionError,
   ChallengeUpdateError,
 } from "./challenge/interactors/update-status";
+export {
+  deleteChallengeUseCase,
+  type DeleteChallengeInput,
+  type DeleteChallengeOutput,
+  ChallengeNotFoundError as DeleteChallengeNotFoundError,
+  ChallengeAlreadyActiveError,
+  ChallengeDeleteRepositoryError,
+} from "./challenge/interactors/delete";
 
 // Group Domain Use Cases (Effect-based)
 export {
