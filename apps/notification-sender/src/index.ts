@@ -39,7 +39,7 @@ import {
   type SendMobileNotificationsMutation,
   type TrackDeliveryCompleteMutation,
   type TrackDeliveryFailureMutation,
-} from "@mirai-app/graphql-client/urql";
+} from "@mirai-app/frameworks/graphql/urql";
 import { Effect, Console } from "effect";
 
 // =============================================================================
