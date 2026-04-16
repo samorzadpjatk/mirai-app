@@ -30,7 +30,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
     "format:check": "prettier --check src/",
-    "format:write": "prettier --write src/"
+    "format:write": "prettier --write src/",
+    "generate:schema": "bun run src/graphql/generate-schema.ts"
   },
   "dependencies": {
     "@mirai-app/domain": "workspace:*",

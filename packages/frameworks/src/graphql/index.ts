@@ -74,6 +74,14 @@
 export { builder, type BuilderType, type SchemaBuilderConfig } from "./builder";
 
 // =============================================================================
+// Unified Schema Assembly
+// =============================================================================
+
+export { schema } from "./schema";
+import { schema as _schema } from "./schema";
+export default _schema;
+
+// =============================================================================
 // Custom Scalars
 // =============================================================================
 

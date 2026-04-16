@@ -81,7 +81,7 @@ export type BuilderType = ReturnType<typeof createBuilder>;
  * });
  * ```
  */
-function createBuilder() {
+export function createBuilder() {
   return new SchemaBuilder<{
     // Context type for all resolvers
     Context: GraphQLContext;
@@ -127,7 +127,12 @@ function createBuilder() {
     // Relay plugin options
     Objects: {
       Node: {};
-      PageInfo: {};
+      PageInfo: {
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+        startCursor: string | null;
+        endCursor: string | null;
+      };
     };
     Interfaces: {
       Node: {};

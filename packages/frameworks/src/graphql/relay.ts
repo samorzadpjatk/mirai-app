@@ -8,9 +8,23 @@ import type { GraphQLObjectType, GraphQLInterfaceType } from "graphql";
 export const NodeInterface = builder.nodeInterfaceRef;
 
 /**
- * PageInfo type name for pagination
+ * PageInfo type name reference
  */
 export const PageInfoType = "PageInfo";
+
+/**
+ * PageInfo type for pagination - defined per Relay spec
+ * https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
+ */
+builder.objectType("PageInfo", {
+  description: "PageInfo for Relay-compliant pagination",
+  fields: (t) => ({
+    hasNextPage: t.exposeBoolean("hasNextPage"),
+    hasPreviousPage: t.exposeBoolean("hasPreviousPage"),
+    startCursor: t.exposeString("startCursor", { nullable: true }),
+    endCursor: t.exposeString("endCursor", { nullable: true }),
+  }),
+});
 
 /**
  * Relay Node type reference
