@@ -1,5 +1,5 @@
 import { Data, Effect } from "effect";
-import { ChallengeVote } from "@mirai-app/domain";
+import type { ChallengeVoteDTO } from "../../dto";
 import { ChallengeVoteGatewayTag } from "../../ports/vote/gateway";
 
 /**
@@ -105,9 +105,9 @@ export function getMyVotesUseCase(
         ),
       );
 
-    // Sort by position
+    // Sort by votePosition
     const sortedVotes = [...votes].sort(
-      (a, b) => a.position.value - b.position.value,
+      (a, b) => a.votePosition - b.votePosition,
     );
 
     return {
@@ -117,15 +117,15 @@ export function getMyVotesUseCase(
   });
 }
 
-function toDTO(vote: ChallengeVote): VoteDTO {
+function toDTO(vote: ChallengeVoteDTO): VoteDTO {
   return {
-    id: vote.id as string,
+    id: vote.id,
     challengeId: vote.challengeId,
     submissionId: vote.submissionId,
     voterId: vote.voterId,
-    votePosition: vote.position.value,
-    votePoints: vote.points,
-    normalizedWeight: vote.weight.value,
+    votePosition: vote.votePosition,
+    votePoints: vote.votePoints,
+    normalizedWeight: vote.normalizedWeight,
     votedAt: vote.votedAt,
   };
 }
