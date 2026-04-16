@@ -1,0 +1,544 @@
+# Evaluation Specification: Effect-Based Use Case Interactor Unit Tests
+# Reusable specification for LLM-as-Judge evaluation
+# Version: 1.0
+
+version: "1.0"
+evaluation_type: llm_as_judge
+
+# ============================================================================
+# OVERVIEW
+# ============================================================================
+# This specification evaluates unit tests for Effect-based use case interactors
+# across any domain (activity, challenge, coin, trip, user, group, etc.).
+# Tests must follow project conventions using bun:test, Effect.gen, Layer.succeed,
+# and the [UNIT] tagging pattern.
+#
+# APPLY TO: Any interactor.ts file in packages/use-cases/src/{domain}/interactors/
+# TEST FILE: Co-located as interactor.test.ts
+
+# ============================================================================
+# UNIVERSAL PATTERNS (Apply to all interactors)
+# ============================================================================
+required_patterns:
+  # --------------------------------------------------------------------------
+  # Test Framework Pattern
+  # --------------------------------------------------------------------------
+  test_framework:
+    description: "Must use bun:test framework exclusively"
+    required_imports:
+      - from: "bun:test"
+        imports: ["describe", "it", "expect"]
+    forbidden_imports:
+      - from: "jest"
+      - from: "vitest"
+      - from: "mocha"
+    check: |
+      Verify imports come ONLY from "bun:test". No other test frameworks allowed.
+
+  # --------------------------------------------------------------------------
+  # Effect Framework Pattern
+  # --------------------------------------------------------------------------
+  effect_framework:
+    description: "Must use Effect framework for async/dependency management"
+    required_imports:
+      - from: "effect"
+        imports: ["Effect", "Layer"]
+    required_patterns:
+      - "Layer.succeed(Tag, mockImplementation)" # For DI mocking
+      - "Effect.provide(mockLayer)" # For providing mocks
+      - "Effect.runPromise(program)" # For success case execution
+      - "Effect.runPromise(Effect.either(program))" # For error case execution
+    check: |
+      Verify Effect is imported and used for:
+      1. Creating mock layers with Layer.succeed()
+      2. Providing dependencies with Effect.provide()
+      3. Running effects with Effect.runPromise()
+      4. Testing errors with Effect.either()
+
+  # --------------------------------------------------------------------------
+  # Test Organization Pattern
+  # --------------------------------------------------------------------------
+  test_organization:
+    description: "Tests must be organized with [UNIT] tag and clear structure"
+    required_patterns:
+      - 'describe("[UNIT] {UseCaseName}", () => {' # Must have [UNIT] tag
+    forbidden_patterns:
+      - 'describe("{UseCaseName}"' # Without [UNIT] tag
+    check: |
+      At least one describe block MUST be tagged with [UNIT] prefix.
+      Example: describe("[UNIT] createActivityUseCase", () => {
+
+  # --------------------------------------------------------------------------
+  # Mock Gateway Pattern
+  # --------------------------------------------------------------------------
+  mock_gateway:
+    description: "Must create mock gateway implementing the port interface"
+    required_patterns:
+      - "function createMock{Domain}Gateway(" # Factory function pattern
+      - "return {" # Returns object with methods
+      - "Effect.succeed(" # Returns Effect successes
+      - "Effect.fail(" # Can return Effect failures
+    check: |
+      Verify mock gateway:
+      1. Is created via factory function (createMock{Domain}Gateway)
+      2. Returns object implementing all required gateway methods
+      3. Methods return Effect.succeed() for success paths
+      4. Can return Effect.fail() for error paths (via options)
+
+  # --------------------------------------------------------------------------
+  # Dependency Injection Pattern
+  # --------------------------------------------------------------------------
+  dependency_injection:
+    description: "Must use Context.Tag pattern with Layer.succeed"
+    required_patterns:
+      - "Layer.succeed({Tag}, mockGateway)" # Create mock layer
+      - ".pipe(Effect.provide(mockLayer))" # Provide to program
+    check: |
+      Verify DI pattern:
+      1. Mock layer created with Layer.succeed(Tag, mockImplementation)
+      2. Layer provided via .pipe(Effect.provide(mockLayer))
+
+  # --------------------------------------------------------------------------
+  # Success Case Pattern
+  # --------------------------------------------------------------------------
+  success_case:
+    description: "Must test happy path with Effect.runPromise"
+    required_patterns:
+      - "await Effect.runPromise(program)"
+    assertions:
+      - "expect(result).toBeDefined()" # Result exists
+      - "expect(result.id).toBe(" # Verify ID/identifier
+      - "expect(result.{property}).toBe(" # Verify specific properties
+    check: |
+      Success test must:
+      1. Create mock layer with successful gateway
+      2. Execute with Effect.runPromise(program)
+      3. Assert on returned DTO properties
+
+  # --------------------------------------------------------------------------
+  # Not-Found Error Pattern
+  # --------------------------------------------------------------------------
+  not_found_error:
+    description: "Must test not-found scenario with Effect.either"
+    required_patterns:
+      - "Effect.runPromise(Effect.either(program))"
+      - 'expect(either._tag).toBe("Left")'
+      - "{NotFoundError}" # Domain-specific not-found error
+    check: |
+      Not-found test must:
+      1. Configure mock to return null/not found
+      2. Use Effect.either to capture error
+      3. Assert either._tag === "Left"
+      4. Assert error is instance of correct NotFoundError class
+
+  # --------------------------------------------------------------------------
+  # Database/Operation Error Pattern
+  # --------------------------------------------------------------------------
+  database_error:
+    description: "Must test database/operation errors with Effect.either"
+    required_patterns:
+      - "Effect.runPromise(Effect.either(program))"
+      - 'expect(either._tag).toBe("Left")'
+      - "{Operation}Error OR DatabaseError"
+    check: |
+      Error test must:
+      1. Configure mock to return Effect.fail()
+      2. Use Effect.either to capture error
+      3. Assert either._tag === "Left"
+      4. Assert error is instance of correct error class
+
+  # --------------------------------------------------------------------------
+  # File Co-location Pattern
+  # --------------------------------------------------------------------------
+  file_colocation:
+    description: "Test file must be co-located with source file"
+    required_naming:
+      source: "{interactor}.ts"
+      test: "{interactor}.test.ts"
+    check: |
+      Test file must exist at same path with .test.ts suffix.
+      Example: create.ts → create.test.ts
+
+# ============================================================================
+# EVALUATION CRITERIA
+# ============================================================================
+evaluation_criteria:
+  # --------------------------------------------------------------------------
+  # Critical Checks (Must Pass - Binary)
+  # --------------------------------------------------------------------------
+  critical:
+    - criterion: test_file_exists
+      weight: 5
+      description: "Test file exists at co-located path"
+      check: |
+        Verify test file exists at: {domain}/interactors/{interactor}.test.ts
+
+    - criterion: uses_bun_test
+      weight: 5
+      description: "Uses bun:test framework (no jest/vitest)"
+      check: |
+        Verify imports: import { describe, it, expect } from "bun:test";
+        No imports from jest, vitest, or other frameworks.
+
+    - criterion: has_unit_tag
+      weight: 5
+      description: "Describe block tagged with [UNIT]"
+      check: |
+        Must find: describe("[UNIT] ...", () => {
+        Must NOT find untagged: describe("UseCaseName", () => {
+
+    - criterion: imports_effect
+      weight: 5
+      description: "Imports Effect and Layer from effect"
+      check: |
+        Verify: import { Effect, Layer } from "effect";
+
+    - criterion: has_mock_gateway_factory
+      weight: 5
+      description: "Creates mock gateway via factory function"
+      check: |
+        Must find function pattern: function createMock{Domain}Gateway(
+        Factory should return object implementing gateway interface.
+
+    - criterion: uses_layer_succeed
+      weight: 5
+      description: "Uses Layer.succeed for DI mocking"
+      check: |
+        Must find: Layer.succeed({Tag}, mockGateway)
+
+    - criterion: uses_effect_provide
+      weight: 5
+      description: "Uses Effect.provide to inject dependencies"
+      check: |
+        Must find: .pipe(Effect.provide(mockLayer))
+
+    - criterion: has_success_case
+      weight: 5
+      description: "Tests success case with Effect.runPromise"
+      check: |
+        Must have at least one test using: await Effect.runPromise(program)
+        Test should assert on returned DTO properties.
+
+    - criterion: has_not_found_error_case
+      weight: 5
+      description: "Tests not-found error with Effect.either"
+      check: |
+        Must have test using: Effect.runPromise(Effect.either(program))
+        Must assert: expect(either._tag).toBe("Left")
+        Must assert error is correct NotFoundError instance.
+
+    - criterion: has_database_error_case
+      weight: 5
+      description: "Tests database/operation error with Effect.either"
+      check: |
+        Must have test using: Effect.runPromise(Effect.either(program))
+        Mock should return Effect.fail() for error simulation.
+
+  # --------------------------------------------------------------------------
+  # Quality Checks (Weighted Scoring 0-X)
+  # --------------------------------------------------------------------------
+  quality:
+    - criterion: comprehensive_coverage
+      weight: 3
+      description: "Tests cover critical paths beyond minimum requirements"
+      check: |
+        Beyond the 3 required tests (success, not-found, error):
+        - Edge cases (null values, empty inputs)
+        - Validation errors
+        - Computed properties
+        - State transitions
+        Score based on thoroughness:
+        - 3: Comprehensive coverage with multiple edge cases
+        - 2: Good coverage with some edge cases
+        - 1: Basic coverage beyond minimum
+        - 0: Only minimum 3 tests
+
+    - criterion: clear_test_names
+      weight: 3
+      description: "Test names clearly describe scenario"
+      check: |
+        Good: "should return trip when found by ID"
+        Good: "should fail with TripNotFoundError when trip not found"
+        Bad: "test 1"
+        Bad: "it works"
+        Score:
+        - 3: All test names are descriptive
+        - 2: Most test names are clear
+        - 1: Some unclear names
+        - 0: Many vague names
+
+    - criterion: proper_assertions
+      weight: 3
+      description: "Assertions are specific and meaningful"
+      check: |
+        Good: expect(result.id).toBe("trip-123")
+        Good: expect(either.left).toBeInstanceOf(TripNotFoundError)
+        Bad: expect(true).toBe(true)
+        Bad: expect(result).toBeTruthy()
+        Score:
+        - 3: All assertions are specific
+        - 2: Most assertions are meaningful
+        - 1: Some weak assertions
+        - 0: Many generic assertions
+
+    - criterion: mock_completeness
+      weight: 2
+      description: "Mock gateway implements all required methods"
+      check: |
+        Mock should implement all methods from gateway interface.
+        Unused methods can return Effect.succeed() with default values.
+        Score:
+        - 2: Complete implementation
+        - 1: Missing some methods
+        - 0: Incomplete mock
+
+    - criterion: error_specificity
+      weight: 2
+      description: "Error tests verify specific error types"
+      check: |
+        Not-found tests should verify:
+        - expect(either.left).toBeInstanceOf({Domain}NotFoundError)
+        - Error includes entity ID (e.g., either.left.tripId)
+        Error tests should verify:
+        - Correct error class instance
+        - Error message if applicable
+        Score:
+        - 2: Comprehensive error verification
+        - 1: Basic error type check
+        - 0: No specific error verification
+
+    - criterion: type_safety
+      weight: 1
+      description: "Uses TypeScript types appropriately"
+      check: |
+        - Input types: type {UseCase}Input
+        - DTO types imported correctly
+        - Proper type annotations on mocks
+        Score:
+        - 1: Good type usage
+        - 0: Missing types or any usage
+
+# ============================================================================
+# DOMAIN-AGNOSTIC CHECKLIST
+# ============================================================================
+checklist:
+  structure:
+    - "Test file is co-located: {interactor}.ts → {interactor}.test.ts"
+    - "Imports bun:test (describe, it, expect)"
+    - "Imports Effect and Layer from effect"
+    - "Imports use case and error classes from source file"
+    - "Imports gateway tag and types from ports/gateway"
+
+  mock_creation:
+    - "Factory function: createMock{Domain}Gateway(options?)"
+    - "Options object for error simulation (shouldFailX: boolean)"
+    - "Returns object with all gateway methods"
+    - "Methods return Effect.succeed() or Effect.fail()"
+
+  success_test:
+    - "Creates mock gateway with success data"
+    - "Creates mock layer: Layer.succeed(Tag, mockGateway)"
+    - "Defines input with proper type annotation"
+    - "Pipes program with Effect.provide(mockLayer)"
+    - "Executes with: await Effect.runPromise(program)"
+    - "Asserts on specific result properties"
+
+  not_found_test:
+    - "Configures mock to return null/not found"
+    - "Uses: Effect.runPromise(Effect.either(program))"
+    - "Asserts: expect(either._tag).toBe('Left')"
+    - "Asserts: expect(either.left).toBeInstanceOf({NotFoundError})"
+
+  database_error_test:
+    - "Configures mock to return Effect.fail()"
+    - "Uses: Effect.runPromise(Effect.either(program))"
+    - "Asserts: expect(either._tag).toBe('Left')"
+    - "Asserts: expect(either.left).toBeInstanceOf({ErrorClass})"
+
+# ============================================================================
+# SCORING
+# ============================================================================
+scoring:
+  # Critical criteria are binary pass/fail
+  critical_threshold: 100 # All critical criteria must pass
+
+  # Quality criteria use weighted scoring (max 14 points)
+  quality_scale:
+    excellent: 12-14
+    good: 9-11
+    acceptable: 6-8
+    needs_improvement: 3-5
+    insufficient: 0-2
+
+  overall_threshold: 7.0 # Minimum quality score to pass
+
+# ============================================================================
+# EXAMPLE PATTERNS (Reference)
+# ============================================================================
+example_patterns:
+  # --------------------------------------------------------------------------
+  # Standard Mock Gateway Factory
+  # --------------------------------------------------------------------------
+  mock_factory: |
+    function createMock{Domain}Gateway(
+      entities: {Domain}DTO[] = [],
+      options: { shouldFail{Operation}?: boolean } = {},
+    ): {Domain}Gateway {
+      const entityMap = new Map(entities.map(e => [e.id, e]));
+
+      return {
+        findById: (id: string) => {
+          if (options.shouldFailFind) {
+            return Effect.fail(new DatabaseError({ ... }));
+          }
+          return Effect.succeed(entityMap.get(id) ?? null);
+        },
+        // ... other methods
+      };
+    }
+
+  # --------------------------------------------------------------------------
+  # Success Test Pattern
+  # --------------------------------------------------------------------------
+  success_test: |
+    it("should return {entity} when found by ID", async () => {
+      const mock{Domain} = createMock{Domain}DTO({ id: "{id}", ... });
+      const mockGateway = createMock{Domain}Gateway([mock{Domain}]);
+      const mockLayer = Layer.succeed({Domain}GatewayTag, mockGateway);
+
+      const input: {UseCase}Input = { {entity}Id: "{id}" };
+      const program = {useCaseFunction}(input).pipe(
+        Effect.provide(mockLayer),
+      );
+      const result = await Effect.runPromise(program);
+
+      expect(result.id).toBe("{id}");
+      expect(result.{property}).toBe({value});
+    });
+
+  # --------------------------------------------------------------------------
+  # Not-Found Error Test Pattern
+  # --------------------------------------------------------------------------
+  not_found_test: |
+    it("should fail with {Domain}NotFoundError when {entity} not found", async () => {
+      const mockGateway = createMock{Domain}Gateway([]);
+      const mockLayer = Layer.succeed({Domain}GatewayTag, mockGateway);
+
+      const input: {UseCase}Input = { {entity}Id: "non-existent" };
+      const program = {useCaseFunction}(input).pipe(
+        Effect.provide(mockLayer),
+      );
+      const either = await Effect.runPromise(Effect.either(program));
+
+      expect(either._tag).toBe("Left");
+      if (either._tag === "Left") {
+        expect(either.left).toBeInstanceOf({Domain}NotFoundError);
+      }
+    });
+    # Note: Use single quotes for _tag check to avoid YAML parsing issues
+
+  # --------------------------------------------------------------------------
+  # Database Error Test Pattern
+  # --------------------------------------------------------------------------
+  database_error_test: |
+    it("should fail with {ErrorClass} when database error occurs", async () => {
+      const mockGateway = createMock{Domain}Gateway([], { shouldFail{Operation}: true });
+      const mockLayer = Layer.succeed({Domain}GatewayTag, mockGateway);
+
+      const input: {UseCase}Input = { {entity}Id: "{id}" };
+      const program = {useCaseFunction}(input).pipe(
+        Effect.provide(mockLayer),
+      );
+      const either = await Effect.runPromise(Effect.either(program));
+
+      expect(either._tag).toBe("Left");
+      if (either._tag === "Left") {
+        expect(either.left).toBeInstanceOf({ErrorClass});
+      }
+    });
+
+# ============================================================================
+# JUDGE PROMPT
+# ============================================================================
+judge_prompt: |
+  You are evaluating unit tests for an Effect-based use case interactor.
+  The tests must follow project conventions using bun:test, Effect framework,
+  and specific patterns for mocking and error testing.
+
+  EVALUATION GUIDELINES:
+
+  1. CRITERIA VERIFICATION (Pass/Fail):
+     Check each critical criterion:
+     - Test file exists at co-located path
+     - Uses bun:test (import { describe, it, expect } from "bun:test")
+     - Has [UNIT] tag on describe block
+     - Imports Effect and Layer from "effect"
+     - Creates mock gateway via factory function
+     - Uses Layer.succeed for DI
+     - Uses Effect.provide to inject mocks
+     - Has success case with Effect.runPromise
+     - Has not-found error case with Effect.either
+     - Has database error case with Effect.either
+
+  2. If ANY critical criterion fails, mark as FAILED and list failures.
+
+  3. QUALITY SCORING (0-14 points):
+     Score each quality criterion:
+     - Comprehensive coverage (0-3): Beyond minimum 3 tests
+     - Clear test names (0-3): Descriptive, not vague
+     - Proper assertions (0-3): Specific, not generic
+     - Mock completeness (0-2): All gateway methods implemented
+     - Error specificity (0-2): Verifies error types, properties
+     - Type safety (0-1): Proper TypeScript types
+
+  4. Provide specific feedback on:
+     - Missing required tests
+     - Weak or generic assertions
+     - Incomplete mock implementations
+     - Missing error type verification
+
+  OUTPUT FORMAT:
+  {
+    "passed": true/false,
+    "critical_failures": ["list of failed criteria"],
+    "quality_score": 0-14,
+    "quality_breakdown": {
+      "comprehensive_coverage": 0-3,
+      "clear_test_names": 0-3,
+      "proper_assertions": 0-3,
+      "mock_completeness": 0-2,
+      "error_specificity": 0-2,
+      "type_safety": 0-1
+    },
+    "findings": {
+      "test_count": number,
+      "success_tests": ["names"],
+      "error_tests": ["names"],
+      "mock_methods_implemented": ["list"],
+      "issues": ["specific issues found"]
+    },
+    "summary": "Brief assessment and recommendations"
+  }
+
+  EXAMPLE EVALUATION:
+  {
+    "passed": true,
+    "critical_failures": [],
+    "quality_score": 12,
+    "quality_breakdown": {
+      "comprehensive_coverage": 3,
+      "clear_test_names": 3,
+      "proper_assertions": 3,
+      "mock_completeness": 2,
+      "error_specificity": 1,
+      "type_safety": 0
+    },
+    "findings": {
+      "test_count": 8,
+      "success_tests": ["should return trip when found", "should return correct computed properties"],
+      "error_tests": ["should fail when trip not found", "should handle database errors"],
+      "mock_methods_implemented": ["findById", "create", "update", "delete"],
+      "issues": ["Error test doesn't verify error message"]
+    },
+    "summary": "Well-structured tests following all Effect patterns. Good coverage with edge cases. Minor improvement: verify error properties in error tests."
+  }

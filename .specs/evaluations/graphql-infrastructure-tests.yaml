@@ -1,0 +1,344 @@
+# Evaluation Specification: GraphQL Infrastructure Unit Tests
+# Generated for Pothos Schema Reorganization - Core Infrastructure Files
+
+version: "1.0"
+evaluation_type: llm_as_judge
+
+# ============================================================================
+# OVERVIEW
+# ============================================================================
+# This specification evaluates unit tests for 5 core GraphQL infrastructure
+# files created during the Pothos schema modularization. Tests must follow
+# the project's established patterns using bun:test, printSchema() verification,
+# and [UNIT] tagging.
+
+# ============================================================================
+# TARGET FILES
+# ============================================================================
+targets:
+  - file: packages/frameworks/src/graphql/builder.ts
+    test_file: packages/frameworks/src/graphql/builder.test.ts
+    description: Pothos builder with Relay, DataLoader, and ScopeAuth plugins
+    critical_aspects:
+      - Builder exports a configured SchemaBuilder instance
+      - Plugins (Relay, DataLoader, ScopeAuth) are properly configured
+      - Scalars (DateTime, EmailAddress, UUID, etc.) are typed correctly
+      - Auth scopes are defined (public, authenticated, admin, owner, member)
+      - "Relay options are configured (clientMutationId: omit, cursorType: String)"
+
+  - file: packages/frameworks/src/graphql/relay.ts
+    test_file: packages/frameworks/src/graphql/relay.test.ts
+    description: PageInfo type and Relay pagination utilities
+    critical_aspects:
+      - PageInfo type is registered with Pothos builder
+      - PageInfo has correct fields (hasNextPage, hasPreviousPage, startCursor, endCursor)
+      - Node interface is exported
+      - Global ID encoding/decoding functions work correctly
+      - Helper functions exist (createEmptyConnection, createConnectionArgs)
+
+  - file: packages/frameworks/src/graphql/schema.ts
+    test_file: packages/frameworks/src/graphql/schema.test.ts
+    description: Central schema assembly point with side-effect imports
+    critical_aspects:
+      - Schema can be imported without errors
+      - printSchema() produces valid SDL output
+      - Query type is defined as root
+      - Domain modules are imported (user, event, sponsor, coinTransaction, notification)
+      - Scalars are registered before types
+      - Relay types are registered before domain types
+
+  - file: packages/frameworks/src/graphql/generate-schema.ts
+    test_file: packages/frameworks/src/graphql/generate-schema.test.ts
+    description: CLI script for schema SDL generation
+    critical_aspects:
+      - generateSchema function can be imported
+      - Schema generation logic is testable
+      - Error handling works correctly
+      - Output path and configuration are correct
+      - Console logging is implemented
+
+  - file: packages/frameworks/src/graphql/types/index.ts
+    test_file: packages/frameworks/src/graphql/types/index.test.ts
+    description: Barrel export for all domain modules
+    critical_aspects:
+      - All domain modules are re-exported
+      - Side-effect imports register types correctly
+      - Schema includes types from all exported domains
+      - No circular dependency issues
+
+# ============================================================================
+# TEST PATTERN REQUIREMENTS
+# ============================================================================
+test_pattern:
+  description: |
+    All tests MUST follow this exact pattern from existing tests:
+    1. Import the module being tested (triggers side-effect registration)
+    2. Import schema AFTER the module to verify assembly
+    3. Use printSchema() to convert schema to SDL string
+    4. Assert on SDL content using expect(sdl).toContain()
+    5. Tag describe blocks with [UNIT] prefix
+
+  required_imports:
+    - from: "bun:test"
+      imports: ["describe", "it", "expect"]
+    - from: "graphql"
+      imports: ["printSchema"]
+
+  example_pattern: |
+    import { describe, it, expect } from "bun:test";
+    import { printSchema } from "graphql";
+
+    // Import module under test (triggers side-effects)
+    import "./builder.js";
+
+    // Import schema after to verify assembly
+    import { schema } from "./schema.js";
+
+    function getSDL(): string {
+      return printSchema(schema);
+    }
+
+    describe("[UNIT] Builder", () => {
+      it("exports a configured builder instance", () => {
+        expect(schema).toBeDefined();
+        const sdl = getSDL();
+        expect(sdl).toContain("scalar DateTime");
+      });
+    });
+
+# ============================================================================
+# EVALUATION CRITERIA
+# ============================================================================
+evaluation_criteria:
+  # --------------------------------------------------------------------------
+  # Critical Checks (Must Pass)
+  # --------------------------------------------------------------------------
+  critical:
+    - criterion: test_file_exists
+      weight: 5
+      description: "Test file exists at the specified location"
+      check: |
+        Verify the test file exists at the expected path for each target file.
+
+    - criterion: correct_test_framework
+      weight: 5
+      description: "Uses bun:test for testing (not jest, vitest, etc.)"
+      check: |
+        All imports must come from "bun:test", not other testing frameworks.
+        Example: import { describe, it, expect } from "bun:test";
+
+    - criterion: unit_tag_present
+      weight: 5
+      description: "Describe blocks tagged with [UNIT] prefix"
+      check: |
+        At least one describe block must be tagged: describe("[UNIT] ...", () => { ... })
+
+    - criterion: imports_module_first
+      weight: 5
+      description: "Module under test is imported before schema"
+      check: |
+        The file being tested must be imported BEFORE schema.ts is imported.
+        This is critical for side-effect registration testing.
+        Example: import "./relay.js"; then import { schema } from "./schema.js";
+
+    - criterion: uses_print_schema
+      weight: 5
+      description: "Uses printSchema() to verify SDL output"
+      check: |
+        Tests must use printSchema() from graphql to convert schema to SDL string.
+        Assertions must check SDL content with expect(sdl).toContain().
+
+    - criterion: verifies_sdl_content
+      weight: 5
+      description: "SDL assertions verify actual GraphQL type definitions"
+      check: |
+        Tests must verify specific GraphQL SDL output, not just that schema exists.
+        Example: expect(sdl).toContain("type PageInfo") not just expect(schema).toBeDefined()
+
+  # --------------------------------------------------------------------------
+  # Quality Checks (Weighted Scoring)
+  # --------------------------------------------------------------------------
+  quality:
+    - criterion: comprehensive_coverage
+      weight: 3
+      description: "Tests cover all critical aspects of the target file"
+      check: |
+        For builder.ts: Tests verify scalars, plugins, auth scopes
+        For relay.ts: Tests verify PageInfo type and utility functions
+        For schema.ts: Tests verify schema assembly and type registration
+        For generate-schema.ts: Tests verify export and basic functionality
+        For types/index.ts: Tests verify all domain exports
+
+    - criterion: no_external_dependencies
+      weight: 3
+      description: "Tests do not require external services (DB, network, etc.)"
+      check: |
+        Tests should be pure unit tests with no database, API, or network calls.
+        Should only test the infrastructure code itself.
+
+    - criterion: clear_test_names
+      weight: 2
+      description: "Test names clearly describe what is being verified"
+      check: |
+        Test names should be descriptive: "registers PageInfo type with schema"
+        rather than "test 1" or "it works"
+
+    - criterion: proper_assertions
+      weight: 2
+      description: "Assertions are specific and meaningful"
+      check: |
+        Avoid generic assertions like expect(true).toBe(true).
+        Use specific SDL content checks: expect(sdl).toContain("hasNextPage: Boolean!")
+
+    - criterion: helper_functions
+      weight: 1
+      description: "Uses helper functions for repeated operations"
+      check: |
+        Tests should use a getSDL() helper function like the example pattern.
+
+# ============================================================================
+# FILE-SPECIFIC EXPECTATIONS
+# ============================================================================
+file_expectations:
+  builder:
+    required_sdl_checks:
+      - "scalar DateTime"
+      - "scalar EmailAddress"
+      - "scalar UUID"
+    description: "Tests for builder.ts should verify that the builder is properly configured with scalars and plugins. The SDL output should show registered scalars."
+
+  relay:
+    required_sdl_checks:
+      - "type PageInfo"
+      - "hasNextPage: Boolean"
+      - "hasPreviousPage: Boolean"
+    description: |
+      Tests for relay.ts must verify the PageInfo type is properly registered
+      with all four Relay pagination fields. Also tests should cover the
+      toGlobalId/fromGlobalId utility functions.
+
+  schema:
+    required_sdl_checks:
+      - "type Query"
+    description: |
+      Tests for schema.ts should verify that the schema can be assembled and
+      contains expected types from domain modules. At minimum, Query type
+      must exist. Optional: Check for domain types like User, Event.
+
+  generate_schema:
+    required_checks:
+      - "generateSchema function is exported"
+      - "Function can be called without crashing"
+    description: |
+      Tests for generate-schema.ts focus on export availability and basic
+      function structure. Full CLI testing may be limited but function
+      should be importable and callable.
+
+  types_index:
+    required_sdl_checks:
+      - "type User" # From user domain
+    description: |
+      Tests for types/index.ts verify that importing the barrel export
+      registers all domain types. At least one domain type (User) should
+      be verifiable in the SDL output.
+
+# ============================================================================
+# SCORING
+# ============================================================================
+scoring:
+  # Critical criteria are binary pass/fail (must all pass)
+  critical_threshold: 100 # All critical criteria must pass
+
+  # Quality criteria use weighted scoring
+  quality_scale:
+    excellent: 9-10
+    good: 7-8
+    acceptable: 5-6
+    needs_improvement: 3-4
+    insufficient: 0-2
+
+  overall_threshold: 7.0 # Minimum score to pass evaluation
+
+# ============================================================================
+# EXAMPLE TEST OUTPUT (Expected Quality)
+# ============================================================================
+example_quality:
+  file: packages/frameworks/src/graphql/builder.test.ts
+  expected_content: |
+    import { describe, it, expect } from "bun:test";
+    import { printSchema } from "graphql";
+
+    // Import builder to trigger side-effect registration
+    import "./builder.js";
+
+    // Import schema after builder
+    import { schema } from "./schema.js";
+
+    function getSDL(): string {
+      return printSchema(schema);
+    }
+
+    describe("[UNIT] GraphQL Builder", () => {
+      it("configures builder with required scalars", () => {
+        const sdl = getSDL();
+        expect(sdl).toContain("scalar DateTime");
+        expect(sdl).toContain("scalar EmailAddress");
+        expect(sdl).toContain("scalar UUID");
+      });
+
+      it("registers scalars with correct types", () => {
+        const sdl = getSDL();
+        expect(sdl).toContain("scalar JSONObject");
+        expect(sdl).toContain("scalar URL");
+        expect(sdl).toContain("scalar BigInt");
+      });
+    });
+
+# ============================================================================
+# JUDGE PROMPT
+# ============================================================================
+judge_prompt: |
+  You are evaluating unit tests for GraphQL infrastructure files in a Pothos-based
+  GraphQL schema. The tests must follow specific patterns using bun:test and
+  printSchema() for SDL verification.
+
+  EVALUATION GUIDELINES:
+
+  1. First verify all critical criteria are met:
+     - Test file exists at expected location
+     - Uses bun:test (not jest, vitest, etc.)
+     - Has [UNIT] tag on describe blocks
+     - Imports module under test BEFORE schema
+     - Uses printSchema() for assertions
+     - Verifies actual SDL content, not just existence
+
+  2. If any critical criterion fails, mark the evaluation as failed
+     and specify which critical checks failed.
+
+  3. For passing evaluations, score quality criteria:
+     - Comprehensive coverage (0-3 points)
+     - No external dependencies (0-3 points)
+     - Clear test names (0-2 points)
+     - Proper assertions (0-2 points)
+     - Helper functions (0-1 point)
+
+  4. Provide specific feedback on:
+     - Which SDL checks are present/missing for each file
+     - Whether the import order is correct
+     - Test naming quality
+     - Coverage gaps
+
+  OUTPUT FORMAT:
+  {
+    "passed": true/false,
+    "critical_failures": ["list of failed critical criteria"],
+    "quality_score": 0-10,
+    "per_file_analysis": {
+      "builder.ts": { "passed": true/false, "sdl_checks_found": [...], "issues": [...] },
+      "relay.ts": { "passed": true/false, "sdl_checks_found": [...], "issues": [...] },
+      "schema.ts": { "passed": true/false, "sdl_checks_found": [...], "issues": [...] },
+      "generate-schema.ts": { "passed": true/false, "issues": [...] },
+      "types/index.ts": { "passed": true/false, "sdl_checks_found": [...], "issues": [...] }
+    },
+    "summary": "Brief summary of overall quality and recommendations"
+  }
