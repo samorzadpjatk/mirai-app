@@ -15,6 +15,7 @@
     "./ports/notification/delivery/*.ts": "./src/notification/ports/delivery/*.ts",
     "./ports/notification/schedule/*.ts": "./src/notification/ports/schedule/*.ts",
     "./ports/notification/sender/*.ts": "./src/notification/ports/sender/*.ts",
+    "./ports/ranking/*.ts": "./src/ranking/ports/*.ts",
     "./interactors": "./src/interactors/index.ts",
     "./interactors/*": "./src/interactors/*.ts",
     "./dto/*": "./src/dto/*.ts",
