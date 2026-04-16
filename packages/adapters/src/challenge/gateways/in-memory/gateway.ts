@@ -194,11 +194,25 @@ export class InMemoryChallengeGateway
       return b.id.localeCompare(a.id);
     });
 
-    // Handle cursor if provided (object format from ChallengeConnectionArgs)
+    // Handle cursor if provided
     let startIndex = 0;
     if (args.after) {
-      const cursorId = args.after.id;
-      const cursorCreatedAt = new Date(args.after.createdAt);
+      // Decode cursor if it's a string (base64 encoded), otherwise use as object
+      let cursorId: string;
+      let cursorCreatedAt: Date;
+
+      if (typeof args.after === "string") {
+        // Decode base64 cursor string
+        const decoded = Buffer.from(args.after, "base64url").toString("utf-8");
+        const cursorData = JSON.parse(decoded);
+        cursorId = cursorData.id;
+        cursorCreatedAt = new Date(cursorData.createdAt);
+      } else {
+        // Use object format directly
+        cursorId = args.after.id;
+        cursorCreatedAt = new Date(args.after.createdAt);
+      }
+
       // Find position after cursor
       const cursorIndex = sortedItems.findIndex(
         (item) =>
@@ -213,10 +227,13 @@ export class InMemoryChallengeGateway
     // Get limit
     const limit = this.getPaginationLimit(args.first);
 
-    // Get page items (limit + 1 to detect hasNextPage)
-    const pageItems = sortedItems.slice(startIndex, startIndex + limit + 1);
-    const hasMore = pageItems.length > limit;
-    const items = pageItems.slice(0, limit);
+    // Get page items - take limit + 1 to detect hasNextPage
+    const itemsWithExtra = sortedItems.slice(
+      startIndex,
+      startIndex + limit + 1,
+    );
+    const hasMore = itemsWithExtra.length > limit;
+    const items = itemsWithExtra.slice(0, limit);
 
     // Build edges with base64-encoded cursor strings
     const edges: Edge<ChallengeDTO>[] = items.map((item) => ({

@@ -84,6 +84,40 @@ export class InMemoryPushSubscriptionGateway
   }
 
   /**
+   * Find push subscriptions for a user (non-paginated, sorted by createdAt, id)
+   */
+  findByUserId(
+    userId: string,
+  ): Effect.Effect<PushSubscriptionDTO[], DatabaseError, never> {
+    return Effect.sync(() => {
+      return this.getAllItems()
+        .filter((s) => s.userId === userId)
+        .sort((a, b) => {
+          const timeDiff = a.createdAt.getTime() - b.createdAt.getTime();
+          if (timeDiff !== 0) return timeDiff;
+          return a.id.localeCompare(b.id);
+        });
+    });
+  }
+
+  /**
+   * Find push subscriptions by platform (non-paginated, sorted by createdAt, id)
+   */
+  findByPlatform(
+    platform: string,
+  ): Effect.Effect<PushSubscriptionDTO[], DatabaseError, never> {
+    return Effect.sync(() => {
+      return this.getAllItems()
+        .filter((s) => s.platform === platform)
+        .sort((a, b) => {
+          const timeDiff = a.createdAt.getTime() - b.createdAt.getTime();
+          if (timeDiff !== 0) return timeDiff;
+          return a.id.localeCompare(b.id);
+        });
+    });
+  }
+
+  /**
    * Find push subscriptions for a user with cursor-based pagination
    * Uses (createdAt, id) sort order for stable pagination
    */

@@ -46,10 +46,11 @@ export class InMemoryNotificationScheduleGateway
   >();
 
   override reset(): Effect.Effect<void, never, never> {
-    return Effect.sync(() => {
-      super.reset();
-      this.executionStorage.clear();
-    });
+    return super.reset().pipe(
+      Effect.map(() => {
+        this.executionStorage.clear();
+      }),
+    );
   }
 
   override seed(

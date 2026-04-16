@@ -178,7 +178,7 @@ export class InMemoryGroupGateway
    */
   override reset(): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
-      super.reset();
+      this.storage.clear();
       this.participants.clear();
     });
   }

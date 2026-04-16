@@ -30,7 +30,8 @@ export class InMemorySponsorGateway
 
   override reset(): Effect.Effect<void, never, never> {
     return Effect.sync(() => {
-      super.reset();
+      // Execute parent's reset synchronously
+      this.storage.clear();
       this.tripLinks.clear();
       this.tripSponsorData.clear();
     });
@@ -64,11 +65,15 @@ export class InMemorySponsorGateway
         items = items.slice(0, options.limit);
       }
 
+      const offset = options?.offset ?? 0;
+      const limit = options?.limit ?? items.length;
+
       return {
         items,
         total,
-        limit: options?.limit ?? items.length,
-        offset: options?.offset ?? 0,
+        limit,
+        offset,
+        hasMore: offset + items.length < total,
       };
     });
   }

@@ -66,15 +66,16 @@ export class InMemoryNotificationGateway
   > {
     return Effect.gen(this, function* () {
       const items = yield* this.findAllGeneric(options);
-      const totalCount = this.storage.size;
+      const total = this.storage.size;
+      const limit = options?.limit ?? 50;
+      const offset = options?.offset ?? 0;
 
       return {
         items,
-        totalCount,
-        hasMore:
-          options?.offset !== undefined
-            ? options.offset + items.length < totalCount
-            : false,
+        total,
+        limit,
+        offset,
+        hasMore: offset + items.length < total,
       };
     });
   }
