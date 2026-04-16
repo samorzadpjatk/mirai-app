@@ -7,28 +7,25 @@
  */
 
 // Activity & Feed Domain
-export * from "./activity";
+export * from "../activity/enums";
 
 // Challenge & Submission Domain
-export * from "./challenge";
+export * from "../challenge/enums";
 
 // Group Domain
-export * from "./group";
+export * from "../group/enums";
 
 // Location Domain
-export * from "./location";
+export * from "../location/enums";
 
 // Notification Domain
-export * from "./notification";
+export * from "../notification/enums";
 
 // Reward Domain
-export * from "./reward";
+export * from "../reward/enums";
 
 // Trip Domain
-export * from "./trip";
+export * from "../trip/enums";
 
 // User Domain
-export * from "./user";
-
-// User Agent (System) Domain
-export * from "./user-agent";
+export * from "../user/enums";
