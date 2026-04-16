@@ -22,6 +22,18 @@ builder.queryType({
   fields: () => ({}),
 });
 
+// Define the Mutation type - domain modules add fields via side-effect imports
+builder.mutationType({
+  description: "Root Mutation type",
+  fields: () => ({}),
+});
+
+// Define the Subscription type - domain modules add fields via side-effect imports
+builder.subscriptionType({
+  description: "Root Subscription type",
+  fields: () => ({}),
+});
+
 // =============================================================================
 // Domain Module Imports (Side-Effect Registration)
 // =============================================================================
@@ -33,6 +45,12 @@ import "./types/event/index.js";
 import "./types/sponsor/index.js";
 import "./types/coinTransaction/index.js";
 import "./types/notification/index.js";
+import "./types/reward/index.js";
+import "./types/activity/index.js";
+import "./types/challenge/index.js";
+import "./types/group/index.js";
+import "./types/location/index.js";
+import "./types/trip/index.js";
 
 // =============================================================================
 // Schema Assembly

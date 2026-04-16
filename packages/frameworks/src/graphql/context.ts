@@ -1,5 +1,10 @@
 import type { YogaInitialContext } from "graphql-yoga";
 import type { Layer, Runtime } from "effect";
+import type {
+  ChallengeController,
+  ChallengeSubmissionController,
+  ChallengeVoteController,
+} from "@mirai-app/adapters";
 
 /**
  * Auth context from successful authentication
@@ -15,6 +20,15 @@ export interface AuthContext {
     refreshToken: string;
     expiresAt: number;
   };
+}
+
+/**
+ * Controllers interface for GraphQL context
+ */
+export interface GraphQLControllers {
+  challengeController: ChallengeController;
+  challengeSubmissionController: ChallengeSubmissionController;
+  challengeVoteController: ChallengeVoteController;
 }
 
 /**
@@ -57,6 +71,11 @@ export interface GraphQLContext {
    * Request timestamp
    */
   requestTime: Date;
+
+  /**
+   * Controllers for domain operations
+   */
+  controllers: GraphQLControllers;
 }
 
 /**
@@ -84,6 +103,11 @@ export interface GraphQLContextConfig {
    * Function to extract auth context from request
    */
   getAuthContext?: (request: Request) => Promise<AuthContext | undefined>;
+
+  /**
+   * Factory function to create controllers
+   */
+  createControllers: (appLayer: Layer.Layer<unknown>) => GraphQLControllers;
 }
 
 /**
@@ -131,6 +155,8 @@ export function createGraphQLContext(
       authContext = await config.getAuthContext(ctx.request);
     }
 
+    const controllers = config.createControllers(config.appLayer);
+
     return {
       appLayer: config.appLayer,
       runtime: config.runtime,
@@ -138,6 +164,7 @@ export function createGraphQLContext(
       authContext,
       requestId,
       requestTime,
+      controllers,
     };
   };
 }

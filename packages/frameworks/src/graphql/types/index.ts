@@ -21,3 +21,18 @@ export * from "./notification/index.js";
 
 // CoinTransaction domain
 export * from "./coinTransaction/index.js";
+
+// Location domain
+export * from "./location/index.js";
+
+// Challenge domain
+export * from "./challenge/index.js";
+
+// Activity domain
+export * from "./activity/index.js";
+
+// Group domain
+export * from "./group/index.js";
+
+// Reward domain
+export * from "./reward/index.js";

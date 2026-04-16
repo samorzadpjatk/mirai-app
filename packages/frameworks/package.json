@@ -31,7 +31,19 @@
     "lint": "eslint src/",
     "format:check": "prettier --check src/",
     "format:write": "prettier --write src/",
-    "generate:schema": "bun run src/graphql/generate-schema.ts"
+    "sync:schema": "bun run src/graphql/generate-schema.ts && graphql-codegen --config src/graphql/codegen.ts",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:migrate:dev": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:migrate:prod": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:push": "drizzle-kit push --config=drizzle.config.ts",
+    "db:push:dev": "drizzle-kit push --config=drizzle.config.ts",
+    "db:push:prod": "drizzle-kit push --config=drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config=drizzle.config.ts",
+    "db:studio:dev": "drizzle-kit studio --config=drizzle.config.ts",
+    "db:studio:prod": "drizzle-kit studio --config=drizzle.config.ts",
+    "db:check": "drizzle-kit check --config=drizzle.config.ts",
+    "db:drop": "drizzle-kit drop --config=drizzle.config.ts"
   },
   "dependencies": {
     "@mirai-app/domain": "workspace:*",
@@ -43,17 +55,26 @@
     "hono": "^4.12.12",
     "graphql": "^16.13.2",
     "graphql-scalars": "^1.25.0",
+    "graphql-tag": "^2.12.6",
     "graphql-yoga": "^5.21.0",
     "@pothos/core": "^4.12.0",
     "@pothos/plugin-relay": "^4.7.0",
     "@pothos/plugin-dataloader": "^4.4.3",
     "@pothos/plugin-scope-auth": "^4.1.6",
     "dataloader": "^2.1.0",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.11",
+    "urql": "^4.2.2",
+    "@urql/core": "^5.0.0",
+    "wonka": "^6.3.4"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/react": "~19.1.17",
+    "drizzle-kit": "^0.31.0",
+    "@graphql-codegen/cli": "^5.0.0",
+    "@graphql-codegen/typescript": "^4.0.1",
+    "@graphql-codegen/typescript-operations": "^4.0.1",
+    "@graphql-codegen/typescript-urql": "^4.0.0",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {

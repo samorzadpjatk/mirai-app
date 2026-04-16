@@ -15,7 +15,7 @@ import { schema } from "./schema.js";
 import { writeSchemaToFile } from "./schema-output.js";
 import { printSchema } from "graphql";
 
-const OUTPUT_PATH = "../../graphql-client/src/generated/graphql/schema.graphql";
+const OUTPUT_PATH = "./src/graphql/generated/graphql/schema.graphql";
 
 async function generateSchema(): Promise<void> {
   console.log("Generating GraphQL schema...");

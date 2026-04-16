@@ -1,0 +1,80 @@
+# ============================================
+# Notification Operations - Mirai App API
+# ============================================
+# This file contains GraphQL operations for the Notification domain.
+# Aligned with current Pothos schema - only includes queries that exist.
+#
+# Queries:
+#   - NotificationsByUser: Get paginated notifications for a user
+#   - UnreadNotificationsByUser: Get unread notifications for a user
+# ============================================
+
+# ============================================
+# FRAGMENTS
+# ============================================
+
+fragment NotificationFields on Notification {
+  id
+  content
+  createdAt
+  createdById
+  priority
+  scheduledAt
+  sentAt
+  status
+  title
+  tripId
+  type
+  updatedAt
+}
+
+fragment NotificationEdgeFields on NotificationEdge {
+  cursor
+  node {
+    ...NotificationFields
+  }
+}
+
+fragment NotificationConnectionFields on NotificationConnection {
+  edges {
+    ...NotificationEdgeFields
+  }
+  nodes {
+    ...NotificationFields
+  }
+  pageInfo {
+    endCursor
+    hasNextPage
+    hasPreviousPage
+    startCursor
+  }
+  totalCount
+}
+
+# ============================================
+# QUERIES
+# ============================================
+
+"""
+Get paginated notifications for a specific user.
+Requires: userId.
+Optional: first (limit), after (cursor for pagination).
+Returns: Paginated list of notifications.
+"""
+query NotificationsByUser($userId: ID!, $first: Int, $after: String) {
+  notificationsByUser(userId: $userId, first: $first, after: $after) {
+    ...NotificationConnectionFields
+  }
+}
+
+"""
+Get unread notifications for a specific user.
+Requires: userId.
+Optional: first (limit), after (cursor for pagination).
+Returns: Paginated list of unread notifications.
+"""
+query UnreadNotificationsByUser($userId: ID!, $first: Int, $after: String) {
+  unreadNotificationsByUser(userId: $userId, first: $first, after: $after) {
+    ...NotificationConnectionFields
+  }
+}

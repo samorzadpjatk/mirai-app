@@ -1,0 +1,1556 @@
+# GraphQL Schema - Mirai App API
+# Generated automatically from Pothos type definitions
+# Do not edit manually - changes will be overwritten
+
+"""An activity feed item in a trip"""
+type Activity {
+  activityType: ActivityType
+  content: String
+  createdAt: DateTime
+  hiddenAt: DateTime
+  hiddenByAdmin: ID
+  hiddenReason: String
+  id: ID
+  isHidden: Boolean
+  isPinned: Boolean
+  metadata: JSONObject
+  tripId: ID
+  updatedAt: DateTime
+  userId: ID
+}
+
+"""A connection of activities for Relay pagination"""
+type ActivityConnection {
+  edges: [ActivityEdge!]
+  nodes: [Activity!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in an activity connection"""
+type ActivityEdge {
+  cursor: String
+  node: Activity
+}
+
+"""A reaction on an activity feed item"""
+type ActivityReaction {
+  activityId: ID
+  createdAt: DateTime
+  id: ID
+  reactionType: ReactionType
+  userId: ID
+}
+
+"""The type of activity feed item"""
+enum ActivityType {
+  ANNOUNCEMENT
+  CHALLENGE
+  CUSTOM
+  GENERAL
+  RANK_CHANGE
+  SUBMISSION
+}
+
+"""Input for approving a challenge submission"""
+input ApproveChallengeSubmissionInput {
+  notes: String
+  score: Int
+  submissionId: ID!
+}
+
+"""Input for approving a group join request"""
+input ApproveGroupJoinRequestInput {
+  groupId: ID!
+  requestId: ID!
+  userId: ID!
+}
+
+"""Arbitrary precision integer"""
+scalar BigInt
+
+"""Input for cancelling a reward purchase"""
+input CancelRewardPurchaseInput {
+  purchaseId: ID!
+}
+
+"""A challenge in the system"""
+type Challenge {
+  allowVoting: Boolean
+  createdAt: DateTime
+  dailyEndTime: DateTime
+  dailyStartTime: DateTime
+  description: String
+  endTime: DateTime
+  id: ID
+  maxSubmissions: Int
+  name: String
+  points: Int
+  startTime: DateTime
+  status: ChallengeStatus
+  submissionType: SubmissionType
+  tripId: ID
+  type: SubmissionType
+  updatedAt: DateTime
+  votingEndTime: DateTime
+  votingStartTime: DateTime
+}
+
+"""A connection of challenges for Relay pagination"""
+type ChallengeConnection {
+  edges: [ChallengeEdge!]
+  nodes: [Challenge!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a challenge connection"""
+type ChallengeEdge {
+  cursor: String
+  node: Challenge
+}
+
+"""The status of a challenge"""
+enum ChallengeStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  HIDDEN
+  VISIBLE
+  VOTING_PHASE
+}
+
+"""A submission to a challenge"""
+type ChallengeSubmission {
+  challengeId: ID
+  content: String
+  createdAt: DateTime
+  groupId: ID
+  id: ID
+  mediaUrls: [String!]
+  score: Int
+  status: SubmissionStatus
+  updatedAt: DateTime
+  userId: ID
+  voteScore: Int
+}
+
+"""A connection of challenge submissions for Relay pagination"""
+type ChallengeSubmissionConnection {
+  edges: [ChallengeSubmissionEdge!]
+  nodes: [ChallengeSubmission!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a challenge submission connection"""
+type ChallengeSubmissionEdge {
+  cursor: String
+  node: ChallengeSubmission
+}
+
+"""A vote on a challenge submission"""
+type ChallengeVote {
+  challengeId: ID
+  createdAt: DateTime
+  id: ID
+  points: Int
+  position: Int
+  submissionId: ID
+  voterId: ID
+}
+
+"""A connection of challenge votes for Relay pagination"""
+type ChallengeVoteConnection {
+  edges: [ChallengeVoteEdge!]
+  nodes: [ChallengeVote!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a challenge vote connection"""
+type ChallengeVoteEdge {
+  cursor: String
+  node: ChallengeVote
+}
+
+"""A coin transaction in the system"""
+type CoinTransaction {
+  admin: CoinTransactionAdmin
+  adminId: ID
+  amount: Int
+  createdAt: DateTime
+  group: CoinTransactionGroup
+  groupId: ID
+  id: ID
+  reason: String
+  updatedAt: DateTime
+}
+
+"""Admin information for a coin transaction"""
+type CoinTransactionAdmin {
+  firstName: String
+  id: ID
+  lastName: String
+}
+
+"""A connection of coin transactions for Relay pagination"""
+type CoinTransactionConnection {
+  edges: [CoinTransactionEdge!]
+  nodes: [CoinTransaction!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a coin transaction connection"""
+type CoinTransactionEdge {
+  cursor: String
+  node: CoinTransaction
+}
+
+"""Group information for a coin transaction"""
+type CoinTransactionGroup {
+  coins: Int
+  id: ID
+  name: String
+}
+
+"""Input for creating a challenge"""
+input CreateChallengeInput {
+  autoApprove: Boolean
+  basePoints: Int
+
+  """Time in HH:MM format"""
+  dailyEndTime: String
+
+  """Time in HH:MM format"""
+  dailyStartTime: String
+  description: String
+  endTime: DateTime
+  expectedValue: String
+  firstPlacePoints: Int
+  image: String
+  isRecurring: Boolean
+  name: String!
+
+  """Scoring category: SPEED, UNLIMITED, JUDGED_STAFF, or PEER_VOTING"""
+  scoringCategory: ScoringCategory!
+  secondPlacePoints: Int
+  startTime: DateTime
+  status: ChallengeStatus
+
+  """Type of submission accepted: PHOTO, VIDEO, or TEXT"""
+  submissionType: SubmissionType!
+  targetLatitude: Float
+  targetLongitude: Float
+  thirdPlacePoints: Int
+  tripId: ID!
+}
+
+"""Input for creating a challenge submission"""
+input CreateChallengeSubmissionInput {
+  challengeId: ID!
+  content: String
+  groupId: ID
+  mediaUrls: [String!]
+}
+
+"""Input for creating a challenge vote"""
+input CreateChallengeVoteInput {
+  challengeId: ID!
+
+  """Points to award"""
+  points: Int
+
+  """Vote position (1, 2, 3, etc.)"""
+  position: Int!
+  submissionId: ID!
+}
+
+"""Input for creating a custom activity"""
+input CreateCustomActivityInput {
+  description: String
+  imageUrl: String
+  isPinned: Boolean
+  title: String!
+  tripId: ID!
+}
+
+"""Input for creating a new group"""
+input CreateGroupInput {
+  code: String!
+  coins: Int!
+  description: String
+  image: String
+  name: String!
+  organizerId: ID!
+  tripId: ID!
+}
+
+"""Input for creating a group join request"""
+input CreateGroupJoinRequestInput {
+  groupId: ID!
+  message: String
+  userId: ID!
+}
+
+"""Input for creating a notification"""
+input CreateNotificationInput {
+  body: String!
+  priority: NotificationPriority!
+  scheduledFor: DateTime
+  title: String!
+  tripId: ID
+  url: String
+}
+
+"""Input for creating a notification schedule"""
+input CreateNotificationScheduleInput {
+  endDate: DateTime!
+  hour: Int!
+  isActive: Boolean!
+  minute: Int!
+  name: String!
+  notificationBody: String
+  notificationTitle: String
+  notificationType: NotificationScheduleType!
+  notificationUrl: String
+  startDate: DateTime!
+  tripId: ID
+}
+
+"""Input for creating a reward"""
+input CreateRewardInput {
+  availableQuantity: Int!
+  coinCostPercentage: Int!
+  description: String
+  image: String
+  images: [String!]
+  isHidden: Boolean
+  name: String!
+  tripId: ID!
+}
+
+"""Input for creating a trip"""
+input CreateTripInput {
+  basePrice: Int
+  description: String
+  destination: String!
+  endDate: DateTime!
+  imageUrl: String
+  name: String!
+  registrationDeadline: DateTime
+  startDate: DateTime!
+  totalSpots: Int
+}
+
+"""ISO 8601 date time string"""
+scalar DateTime
+
+"""Result of deleting a trip"""
+type DeleteTripResult {
+  success: Boolean
+  tripId: ID
+}
+
+"""Status of a notification delivery"""
+enum DeliveryStatus {
+  FAILED
+  PENDING
+  RETRYING
+  SENT
+}
+
+"""RFC 5322 compliant email address"""
+scalar EmailAddress
+
+"""An event in the system"""
+type Event {
+  createdAt: DateTime
+  createdById: ID
+  description: String
+  endTime: DateTime
+  groupId: ID
+  id: ID
+  location: String
+  maxParticipants: Int
+  startTime: DateTime
+  status: String
+  title: String
+  tripId: ID
+  type: String
+  updatedAt: DateTime
+}
+
+"""A connection of events for Relay pagination"""
+type EventConnection {
+  edges: [EventEdge!]
+  nodes: [Event!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in an event connection"""
+type EventEdge {
+  cursor: String
+  node: Event
+}
+
+"""A friend's location for trip location sharing"""
+type FriendLocation {
+  accuracy: BigInt
+  isSharing: Boolean
+  lastUpdated: DateTime
+  latitude: BigInt
+  longitude: BigInt
+  user: User
+  userId: ID
+}
+
+"""A group within a trip"""
+type Group {
+  coins: Int
+  createdAt: DateTime
+  description: String
+  id: ID
+  imageUrl: String
+  isActive: Boolean
+  memberCount: Int
+  name: String
+  organizerId: ID
+  tripId: ID
+  updatedAt: DateTime
+}
+
+"""A connection of groups for Relay pagination"""
+type GroupConnection {
+  edges: [GroupEdge!]
+  nodes: [Group!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a group connection"""
+type GroupEdge {
+  cursor: String
+  node: Group
+}
+
+"""A request to join a group"""
+type GroupJoinRequest {
+  groupId: ID
+  id: ID
+  message: String
+  requestedAt: DateTime
+  status: JoinRequestStatus
+  userId: ID
+}
+
+"""A connection of group join requests for Relay pagination"""
+type GroupJoinRequestConnection {
+  edges: [GroupJoinRequestEdge!]
+  nodes: [GroupJoinRequest!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a group join request connection"""
+type GroupJoinRequestEdge {
+  cursor: String
+  node: GroupJoinRequest
+}
+
+"""A member of a group"""
+type GroupMember {
+  groupId: ID
+  id: ID
+  joinedAt: DateTime
+  role: GroupRole
+  user: User
+  userId: ID
+}
+
+"""A connection of group members for Relay pagination"""
+type GroupMemberConnection {
+  edges: [GroupMemberEdge!]
+  nodes: [GroupMember!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a group member connection"""
+type GroupMemberEdge {
+  cursor: String
+  node: GroupMember
+}
+
+"""Role of a member within a group"""
+enum GroupRole {
+  MEMBER
+  ORGANIZER
+}
+
+"""Result of hiding or unhiding an activity"""
+type HiddenActivityResult {
+  activity: Activity
+  message: String
+  success: Boolean
+}
+
+"""Input for hiding an activity"""
+input HideActivityInput {
+  activityId: ID!
+  reason: String!
+}
+
+"""Input for inviting someone to a trip"""
+input InviteToTripInput {
+  """Role to assign (MEMBER or LEADER)"""
+  role: TripParticipantRole
+  tripId: ID!
+  userId: ID!
+}
+
+"""Arbitrary JSON object"""
+scalar JSONObject
+
+"""Input for joining a group"""
+input JoinGroupInput {
+  groupId: ID!
+  userId: ID!
+}
+
+"""Status of a group join request"""
+enum JoinRequestStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+"""Input for joining a trip"""
+input JoinTripInput {
+  """Role in the trip (MEMBER or LEADER)"""
+  role: TripParticipantRole
+  tripId: ID!
+}
+
+"""Status of the last schedule execution"""
+enum LastRunStatus {
+  FAILURE
+  PARTIAL_FAILURE
+  SKIPPED
+  SUCCESS
+}
+
+"""Input for leaving a group"""
+input LeaveGroupInput {
+  groupId: ID!
+  userId: ID!
+}
+
+"""Result of leaving a trip"""
+type LeaveTripResult {
+  success: Boolean
+  tripId: ID
+}
+
+"""A location record for user location sharing"""
+type Location {
+  accuracy: BigInt
+  altitude: BigInt
+  altitudeAccuracy: BigInt
+  batteryLevel: Int
+  createdAt: DateTime
+  heading: BigInt
+  id: ID
+  isSharingLocation: Boolean
+  latitude: BigInt
+  longitude: BigInt
+  speed: BigInt
+  timestamp: DateTime
+  tripId: ID
+  userId: ID
+}
+
+"""A connection of locations for Relay pagination"""
+type LocationConnection {
+  edges: [LocationEdge!]
+  nodes: [Location!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a location connection"""
+type LocationEdge {
+  cursor: String
+  node: Location
+}
+
+"""Result of starting or stopping location sharing"""
+type LocationSharingResult {
+  isSharingLocation: Boolean
+  sharedWithCount: Int
+  success: Boolean
+}
+
+"""Root Mutation type"""
+type Mutation {
+  approveChallengeSubmission(input: ApproveChallengeSubmissionInput!): ChallengeSubmission
+  approveGroupJoinRequest(input: ApproveGroupJoinRequestInput!): GroupJoinRequest
+  cancelRewardPurchase(input: CancelRewardPurchaseInput!): RewardPurchase
+  createChallenge(input: CreateChallengeInput!): Challenge
+  createChallengeSubmission(input: CreateChallengeSubmissionInput!): ChallengeSubmission
+  createChallengeVote(input: CreateChallengeVoteInput!): ChallengeVote
+  createCustomActivity(input: CreateCustomActivityInput!): Activity
+  createGroup(input: CreateGroupInput!): Group
+  createGroupJoinRequest(input: CreateGroupJoinRequestInput!): GroupJoinRequest
+  createNotification(input: CreateNotificationInput!): Notification
+  createNotificationSchedule(input: CreateNotificationScheduleInput!): NotificationSchedule
+  createReward(input: CreateRewardInput!): Reward
+  createTrip(input: CreateTripInput!): Trip
+  deleteActivity(id: ID!): Boolean
+  deleteChallenge(id: ID!): Boolean
+  deleteGroup(id: ID!): Boolean
+  deleteNotification(id: ID!): Boolean
+  deleteNotificationSchedule(id: ID!): Boolean
+  deleteReward(id: ID!): Boolean
+  deleteTrip(id: ID!): DeleteTripResult
+  hideActivity(input: HideActivityInput!): HiddenActivityResult
+  inviteToTrip(input: InviteToTripInput!): TripParticipant
+  joinGroup(input: JoinGroupInput!): GroupMember
+  joinTrip(input: JoinTripInput!): TripParticipant
+  leaveGroup(input: LeaveGroupInput!): Boolean
+  leaveTrip(tripId: ID!): LeaveTripResult
+  markAllNotificationsRead: Boolean
+  markNotificationRead(id: ID!): Notification
+  purchaseReward(input: PurchaseRewardInput!): RewardPurchase
+  redeemReward(input: RedeemRewardInput!): RewardPurchase
+  rejectChallengeSubmission(input: RejectChallengeSubmissionInput!): ChallengeSubmission
+  rejectGroupJoinRequest(input: RejectGroupJoinRequestInput!): GroupJoinRequest
+  scheduleNotification(id: ID!, input: ScheduleNotificationInput!): Notification
+  setActivityPinned(input: SetActivityPinnedInput!): Activity
+
+  """Start sharing location with specified friends or all friends"""
+  startLocationSharing(input: StartLocationSharingInput!): LocationSharingResult
+
+  """Stop sharing location with all friends"""
+  stopLocationSharing(input: StopLocationSharingInput!): LocationSharingResult
+  toggleActivityReaction(input: ToggleActivityReactionInput!): Activity
+  toggleNotificationScheduleActive(id: ID!): NotificationSchedule
+  unhideActivity(id: ID!): HiddenActivityResult
+  updateActivity(id: ID!, input: UpdateActivityInput!): Activity
+  updateChallenge(id: ID!, input: UpdateChallengeInput!): Challenge
+  updateGroup(id: ID!, input: UpdateGroupInput!): Group
+
+  """Update the current user's location coordinates"""
+  updateLocation(input: UpdateLocationInput!): Location
+  updateNotification(id: ID!, input: UpdateNotificationInput!): Notification
+  updateNotificationSchedule(id: ID!, input: UpdateNotificationScheduleInput!): NotificationSchedule
+  updateNotificationStatus(id: ID!, input: UpdateNotificationStatusInput!): Notification
+  updateReward(id: ID!, input: UpdateRewardInput!): Reward
+  updateTrip(id: ID!, input: UpdateTripInput!): Trip
+  uploadTripResource(input: UploadTripResourceInput!): TripResource
+}
+
+"""A notification in the system"""
+type Notification {
+  content: String
+  createdAt: DateTime
+  createdById: ID
+  id: ID
+  priority: String
+  scheduledAt: DateTime
+  sentAt: DateTime
+  status: String
+  title: String
+  tripId: ID
+  type: String
+  updatedAt: DateTime
+}
+
+"""A connection of notifications for Relay pagination"""
+type NotificationConnection {
+  edges: [NotificationEdge!]
+  nodes: [Notification!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""A notification delivery record in the system"""
+type NotificationDelivery {
+  channel: String
+  createdAt: DateTime
+  deliveredAt: DateTime
+  errorMessage: String
+  failedAt: DateTime
+  id: ID
+  notificationId: ID
+  retryCount: Int
+  sentAt: DateTime
+  status: String
+  updatedAt: DateTime
+  userId: ID
+}
+
+"""A connection of notification deliveries for Relay pagination"""
+type NotificationDeliveryConnection {
+  edges: [NotificationDeliveryEdge!]
+  nodes: [NotificationDelivery!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a notification delivery connection"""
+type NotificationDeliveryEdge {
+  cursor: String
+  node: NotificationDelivery
+}
+
+"""An edge in a notification connection"""
+type NotificationEdge {
+  cursor: String
+  node: Notification
+}
+
+"""Priority levels for notifications"""
+enum NotificationPriority {
+  HIGH
+  LOW
+  NORMAL
+  URGENT
+}
+
+"""A notification schedule in the system"""
+type NotificationSchedule {
+  createdAt: DateTime
+  createdById: ID
+  endDate: DateTime
+  hour: Int
+  id: ID
+  isActive: Boolean
+  isRecurring: Boolean
+  lastRun: DateTime
+  minute: Int
+  name: String
+  nextRun: DateTime
+  notificationBody: String
+  notificationTitle: String
+  notificationType: String
+  recurrencePattern: String
+  startDate: DateTime
+  tripId: ID
+  updatedAt: DateTime
+}
+
+"""A connection of notification schedules for Relay pagination"""
+type NotificationScheduleConnection {
+  edges: [NotificationScheduleEdge!]
+  nodes: [NotificationSchedule!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a notification schedule connection"""
+type NotificationScheduleEdge {
+  cursor: String
+  node: NotificationSchedule
+}
+
+"""Types of notification schedules"""
+enum NotificationScheduleType {
+  ONE_TIME
+  RECURRING
+}
+
+"""Status workflow for notifications"""
+enum NotificationStatus {
+  CANCELLED
+  DRAFT
+  FAILED
+  READY
+  SENT
+}
+
+"""PageInfo for Relay-compliant pagination"""
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean
+  hasPreviousPage: Boolean
+  startCursor: String
+}
+
+"""Input for purchasing a reward"""
+input PurchaseRewardInput {
+  quantity: Int!
+  rewardId: ID!
+}
+
+"""Status of a reward purchase"""
+enum PurchaseStatus {
+  CANCELLED
+  COMPLETED
+  PENDING
+  REFUNDED
+}
+
+"""Root Query type"""
+type Query {
+  activitiesByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch activities for"""
+    tripId: ID!
+  ): ActivityConnection
+  activitiesByTripModeration(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch activities for moderation"""
+    tripId: ID!
+  ): ActivityConnection
+  activity(
+    """ID of the activity to fetch"""
+    id: ID!
+  ): ActivityConnection
+  allNotifications(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+  ): NotificationConnection
+  challenge(
+    """ID of the challenge to fetch"""
+    id: ID!
+  ): Challenge
+  challengeSubmissions(
+    """Returns elements after this cursor"""
+    after: String
+
+    """ID of the challenge to fetch submissions for"""
+    challengeId: ID!
+
+    """Returns the first n elements from the list"""
+    first: Int
+  ): ChallengeSubmissionConnection
+  challengeVotes(
+    """Returns elements after this cursor"""
+    after: String
+
+    """ID of the challenge to fetch votes for"""
+    challengeId: ID!
+
+    """Returns the first n elements from the list"""
+    first: Int
+  ): ChallengeVoteConnection
+  challengesByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch challenges for"""
+    tripId: ID!
+  ): ChallengeConnection
+  coinTransactions(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """Optional group ID to filter transactions"""
+    groupId: ID
+
+    """ID of the trip to fetch coin transactions for"""
+    tripId: ID!
+  ): CoinTransactionConnection
+  eventsByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch events for"""
+    tripId: ID!
+  ): EventConnection
+  friendLocations(
+    """ID of the trip to fetch friend locations for"""
+    tripId: ID!
+  ): [FriendLocation!]
+  group(
+    """ID of the group to fetch"""
+    id: ID!
+  ): Group
+  groupJoinRequests(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the group to fetch join requests for"""
+    groupId: ID!
+  ): GroupJoinRequestConnection
+  groupMembers(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the group to fetch members for"""
+    groupId: ID!
+  ): GroupMemberConnection
+  groupsByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch groups for"""
+    tripId: ID!
+  ): GroupConnection
+  myGroup(
+    """ID of the trip to fetch the user's group for"""
+    tripId: ID!
+  ): Group
+  myLocation: Location
+  myNotifications(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+  ): NotificationConnection
+  myPurchaseHistory(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+  ): RewardPurchaseConnection
+  notificationDeliveries(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """Filter by notification ID"""
+    notificationId: ID
+
+    """Filter by user ID"""
+    userId: ID
+  ): NotificationDeliveryConnection
+  notificationSchedule(
+    """ID of the notification schedule to fetch"""
+    id: ID!
+  ): NotificationSchedule
+  notificationSchedules(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """Filter by trip ID"""
+    tripId: ID
+  ): NotificationScheduleConnection
+  notificationsByUser(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the user to fetch notifications for"""
+    userId: ID!
+  ): NotificationConnection
+  ongoingEventsByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch ongoing events for"""
+    tripId: ID!
+  ): EventConnection
+  pastEventsByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch past events for"""
+    tripId: ID!
+  ): EventConnection
+  reward(
+    """ID of the reward to fetch"""
+    id: ID!
+  ): Reward
+  rewardsByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch rewards for"""
+    tripId: ID!
+  ): RewardConnection
+  sponsors(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+  ): SponsorConnection
+  sponsorsByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch sponsors for"""
+    tripId: ID!
+  ): TripSponsorConnection
+  totalAvailablePoints(
+    """ID of the trip to calculate points for"""
+    tripId: ID!
+  ): Int
+  trip(
+    """ID of the trip to fetch"""
+    id: ID!
+  ): Trip
+  tripParticipants(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch participants for"""
+    tripId: ID!
+  ): TripParticipantConnection
+  trips(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+  ): TripConnection
+  unreadNotificationsByUser(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the user to fetch unread notifications for"""
+    userId: ID!
+  ): NotificationConnection
+  upcomingEventsByTrip(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """ID of the trip to fetch upcoming events for"""
+    tripId: ID!
+  ): EventConnection
+  users(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+  ): UserConnection
+  usersByRole(
+    """Returns elements after this cursor"""
+    after: String
+
+    """Returns the first n elements from the list"""
+    first: Int
+
+    """Role to filter users by"""
+    role: String!
+  ): UserConnection
+}
+
+"""The type of reaction on an activity"""
+enum ReactionType {
+  CLAP
+  FIRE
+  HEART
+  STAR
+}
+
+"""Input for redeeming a reward purchase (mark as delivered)"""
+input RedeemRewardInput {
+  collectionMethod: String
+  purchaseId: ID!
+}
+
+"""Input for rejecting a challenge submission"""
+input RejectChallengeSubmissionInput {
+  reason: String!
+  submissionId: ID!
+}
+
+"""Input for rejecting a group join request"""
+input RejectGroupJoinRequestInput {
+  groupId: ID!
+  requestId: ID!
+  userId: ID!
+}
+
+"""A reward that users can purchase with points"""
+type Reward {
+  createdAt: DateTime
+  createdById: ID
+  description: String
+  id: ID
+  imageUrl: String
+  name: String
+  pointsCost: Int
+  quantityAvailable: Int
+  quantityTotal: Int
+  status: RewardStatus
+  tripId: ID
+  updatedAt: DateTime
+}
+
+"""A connection of rewards for Relay pagination"""
+type RewardConnection {
+  edges: [RewardEdge!]
+  nodes: [Reward!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a reward connection"""
+type RewardEdge {
+  cursor: String
+  node: Reward
+}
+
+"""A record of a reward purchase by a user"""
+type RewardPurchase {
+  groupId: ID
+  id: ID
+  notes: String
+  pointsSpent: Int
+  purchasedAt: DateTime
+  redeemedAt: DateTime
+  rewardId: ID
+  status: PurchaseStatus
+  userId: ID
+}
+
+"""A connection of reward purchases for Relay pagination"""
+type RewardPurchaseConnection {
+  edges: [RewardPurchaseEdge!]
+  nodes: [RewardPurchase!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a reward purchase connection"""
+type RewardPurchaseEdge {
+  cursor: String
+  node: RewardPurchase
+}
+
+"""Status of a reward"""
+enum RewardStatus {
+  ACTIVE
+  INACTIVE
+  SOLD_OUT
+}
+
+"""Input for scheduling a notification"""
+input ScheduleNotificationInput {
+  scheduledFor: DateTime!
+}
+
+"""Scoring category for challenges"""
+enum ScoringCategory {
+  JUDGED_STAFF
+  PEER_VOTING
+  SPEED
+  UNLIMITED
+}
+
+"""Input for setting an activity as pinned or unpinned"""
+input SetActivityPinnedInput {
+  activityId: ID!
+  isPinned: Boolean!
+}
+
+"""A sponsor in the system"""
+type Sponsor {
+  contactEmail: String
+  contactPhone: String
+  createdAt: DateTime
+  description: String
+  id: ID
+  logoUrl: String
+  name: String
+  updatedAt: DateTime
+  websiteUrl: String
+}
+
+"""A connection of sponsors for Relay pagination"""
+type SponsorConnection {
+  edges: [SponsorEdge!]
+  nodes: [Sponsor!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a sponsor connection"""
+type SponsorEdge {
+  cursor: String
+  node: Sponsor
+}
+
+"""Input for starting location sharing with friends"""
+input StartLocationSharingInput {
+  """
+  IDs of users to share location with (optional - if empty, shares with all friends)
+  """
+  userIds: [ID!]
+}
+
+"""Input for stopping location sharing"""
+input StopLocationSharingInput {
+  """If true, removes all shared users (default: true)"""
+  removeAll: Boolean
+}
+
+"""The status of a challenge submission"""
+enum SubmissionStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+"""The type of submission accepted for a challenge"""
+enum SubmissionType {
+  PHOTO
+  TEXT
+  VIDEO
+}
+
+"""Root Subscription type"""
+type Subscription {
+  friendLocationsUpdated(
+    """ID of the trip to subscribe to friend location updates for"""
+    tripId: ID!
+  ): [FriendLocation!]
+  locationUpdated(
+    """ID of the user to subscribe to location updates for"""
+    userId: ID!
+  ): Location
+}
+
+"""Input for toggling a reaction on an activity"""
+input ToggleActivityReactionInput {
+  activityId: ID!
+
+  """One of: heart, fire, clap, star"""
+  reactionType: String!
+}
+
+"""A trip in the system"""
+type Trip {
+  availableSpots: Int
+  basePrice: Int
+  createdAt: DateTime
+  description: String
+  destination: String
+  endDate: DateTime
+  id: ID
+  imageUrl: String
+  name: String
+  registrationDeadline: DateTime
+  startDate: DateTime
+  status: TripStatus
+  totalSpots: Int
+  updatedAt: DateTime
+}
+
+"""A connection of trips for Relay pagination"""
+type TripConnection {
+  edges: [TripEdge!]
+  nodes: [Trip!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a trip connection"""
+type TripEdge {
+  cursor: String
+  node: Trip
+}
+
+"""A participant of a trip"""
+type TripParticipant {
+  groupId: ID
+  id: ID
+  invitedById: ID
+  joinedAt: DateTime
+  leftAt: DateTime
+  role: TripParticipantRole
+  status: String
+  tripId: ID
+  userId: ID
+}
+
+"""A connection of trip participants for Relay pagination"""
+type TripParticipantConnection {
+  edges: [TripParticipantEdge!]
+  nodes: [TripParticipant!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a trip participant connection"""
+type TripParticipantEdge {
+  cursor: String
+  node: TripParticipant
+}
+
+"""The role of a trip participant"""
+enum TripParticipantRole {
+  LEADER
+  MEMBER
+}
+
+"""A resource attached to a trip"""
+type TripResource {
+  description: String
+  fileSize: Int
+  id: ID
+  mimeType: String
+  name: String
+  tripId: ID
+  type: String
+  uploadedAt: DateTime
+  uploadedById: ID
+  url: String
+}
+
+"""A sponsor linked to a trip"""
+type TripSponsor {
+  benefits: String
+  displayOrder: Int
+  id: ID
+  isActive: Boolean
+  linkedAt: DateTime
+  linkedById: ID
+  sponsor: Sponsor
+  sponsorId: ID
+  tier: String
+  tripId: ID
+}
+
+"""A connection of trip sponsors for Relay pagination"""
+type TripSponsorConnection {
+  edges: [TripSponsorEdge!]
+  nodes: [TripSponsor!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a trip sponsor connection"""
+type TripSponsorEdge {
+  cursor: String
+  node: TripSponsor
+}
+
+"""The status of a trip"""
+enum TripStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  PLANNING
+}
+
+"""RFC 3986 compliant URL"""
+scalar URL
+
+"""Universally unique identifier"""
+scalar UUID
+
+"""Input for updating an activity"""
+input UpdateActivityInput {
+  description: String
+  imageUrl: String
+  title: String
+}
+
+"""Input for updating a challenge"""
+input UpdateChallengeInput {
+  autoApprove: Boolean
+  basePoints: Int
+
+  """Time in HH:MM format"""
+  dailyEndTime: String
+
+  """Time in HH:MM format"""
+  dailyStartTime: String
+  description: String
+  endTime: DateTime
+  expectedValue: String
+  firstPlacePoints: Int
+  image: String
+  name: String
+  secondPlacePoints: Int
+  startTime: DateTime
+  targetLatitude: Float
+  targetLongitude: Float
+  thirdPlacePoints: Int
+}
+
+"""Input for updating a group"""
+input UpdateGroupInput {
+  description: String
+  image: String
+  name: String
+}
+
+"""Input for updating user's current location"""
+input UpdateLocationInput {
+  """Location accuracy in meters"""
+  accuracy: BigInt
+
+  """Altitude in meters above sea level"""
+  altitude: BigInt
+
+  """Altitude accuracy in meters"""
+  altitudeAccuracy: BigInt
+
+  """Heading in degrees (0-360)"""
+  heading: BigInt
+
+  """Latitude in microdegrees (multiply by 1e6 for precision)"""
+  latitude: BigInt!
+
+  """Longitude in microdegrees (multiply by 1e6 for precision)"""
+  longitude: BigInt!
+
+  """Speed in meters per second"""
+  speed: BigInt
+}
+
+"""Input for updating a notification"""
+input UpdateNotificationInput {
+  body: String
+  priority: NotificationPriority
+  title: String
+  url: String
+}
+
+"""Input for updating a notification schedule"""
+input UpdateNotificationScheduleInput {
+  endDate: DateTime
+  hour: Int
+  isActive: Boolean
+  minute: Int
+  name: String
+  notificationBody: String
+  notificationTitle: String
+  notificationUrl: String
+  startDate: DateTime
+}
+
+"""Input for updating notification status"""
+input UpdateNotificationStatusInput {
+  newStatus: NotificationStatus!
+}
+
+"""Input for updating a reward"""
+input UpdateRewardInput {
+  availableQuantity: Int
+  coinCostPercentage: Int
+  description: String
+  images: [String!]
+  name: String
+}
+
+"""Input for updating a trip"""
+input UpdateTripInput {
+  basePrice: Int
+  description: String
+  destination: String
+  endDate: DateTime
+  imageUrl: String
+  name: String
+  registrationDeadline: DateTime
+  startDate: DateTime
+  status: String
+  totalSpots: Int
+}
+
+"""Input for uploading a trip resource"""
+input UploadTripResourceInput {
+  description: String
+  fileSize: Int
+  mimeType: String
+  name: String!
+  tripId: ID!
+  type: String!
+  url: String!
+}
+
+"""A user in the system"""
+type User {
+  authUserId: ID
+  avatarUrl: String
+  bio: String
+  birthDate: DateTime
+  createdAt: DateTime
+  dietaryRequirements: String
+  email: String
+  firstName: String
+  groupId: ID
+  id: ID
+  lastName: String
+  medicalInfo: String
+  nickname: String
+  phone: String
+  role: String
+  shirtSize: String
+  status: String
+  updatedAt: DateTime
+}
+
+"""A connection of users for Relay pagination"""
+type UserConnection {
+  edges: [UserEdge!]
+  nodes: [User!]
+  pageInfo: PageInfo
+  totalCount: Int
+}
+
+"""An edge in a user connection"""
+type UserEdge {
+  cursor: String
+  node: User
+}
