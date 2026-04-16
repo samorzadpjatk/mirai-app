@@ -1,21 +1,21 @@
-// Zustand stores - imported from @mirai-app/frameworks
-export {
-  mapStore,
-  judgementStore,
-  useJudgementStore,
-} from "@mirai-app/frameworks/stores";
+// Zustand stores - local exports
+export { mapStore } from "./map";
 export type {
   MapStore,
   MapState,
   MapActions,
   MapTheme,
   MapUserLocation,
+} from "./map";
+
+export { judgementStore, useJudgementStore } from "./judgement";
+export type {
   JudgementState,
   JudgementActions,
   JudgementStore,
   ReviewStatus,
   Submission,
-} from "@mirai-app/frameworks/stores";
+} from "./judgement";
 
 // Location store (React Native specific - stays here)
 export { locationStore } from "./location";

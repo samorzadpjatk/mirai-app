@@ -1,3 +1,10 @@
-// Judgement store types imported from @mirai-app/frameworks
-export type { ReviewStatus, Submission } from "@mirai-app/frameworks/stores";
+// Judgement store - local exports
+export { judgementStore, useJudgementStore } from "./judgementStores";
+export type {
+  JudgementState,
+  JudgementActions,
+  JudgementStore,
+  ReviewStatus,
+  Submission,
+} from "./judgementStores";
 export { useJudgement } from "./useJudgement";

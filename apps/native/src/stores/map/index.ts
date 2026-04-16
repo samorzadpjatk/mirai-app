@@ -1,12 +1,12 @@
-// Map store imported from @mirai-app/frameworks
-export { mapStore } from "@mirai-app/frameworks/stores";
+// Map store - local export
+export { mapStore } from "./mapStore";
 export type {
   MapStore,
   MapState,
   MapActions,
   MapTheme,
   MapUserLocation,
-} from "@mirai-app/frameworks/stores";
+} from "./mapStore";
 export { useMapStore, useMapActions } from "./mapHooks";
 
 // Map overlay store (React Native specific - stays here)
