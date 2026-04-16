@@ -11,7 +11,6 @@
 
 import { readdir, readFile, stat } from "fs/promises";
 import { join, relative } from "path";
-import { serverLogger } from "@mirai-app/shared";
 
 // =============================================================================
 // Configuration
@@ -135,7 +134,7 @@ async function validateFile(
       }
     }
   } catch (error) {
-    serverLogger.error(`Error reading ${filePath}:`, error);
+    console.error(`Error reading ${filePath}:`, error);
   }
 
   return violations;
@@ -196,7 +195,7 @@ async function validateAll(projectRoot: string): Promise<ValidationResult> {
       }
     } catch (error) {
       // Directory might not exist
-      serverLogger.warn(`Warning: Could not scan ${fullDir}`);
+      console.warn(`Warning: Could not scan ${fullDir}`);
     }
   }
 
@@ -264,28 +263,28 @@ function formatSuccess(filesChecked: number): string {
 async function main() {
   const projectRoot = process.cwd();
 
-  serverLogger.info("🔍 Validating test file prefixes...\n");
-  serverLogger.info(`Project root: ${projectRoot}`);
-  serverLogger.info(`Scanning directories: ${SCAN_DIRECTORIES.join(", ")}`);
-  serverLogger.info(`Valid prefixes: ${VALID_PREFIXES.join(", ")}\n`);
+  console.info("🔍 Validating test file prefixes...\n");
+  console.info(`Project root: ${projectRoot}`);
+  console.info(`Scanning directories: ${SCAN_DIRECTORIES.join(", ")}`);
+  console.info(`Valid prefixes: ${VALID_PREFIXES.join(", ")}\n`);
 
   const result = await validateAll(projectRoot);
 
   if (result.violations.length > 0) {
-    serverLogger.error(formatViolations(result.violations));
-    serverLogger.error(
+    console.error(formatViolations(result.violations));
+    console.error(
       `\n❌ Found ${result.violations.length} violation(s) in ${result.testFilesFound} test files.`,
     );
     process.exit(1);
   } else {
-    serverLogger.info(formatSuccess(result.filesChecked));
-    serverLogger.info(
+    console.info(formatSuccess(result.filesChecked));
+    console.info(
       `📊 Summary: ${result.testFilesFound} test file(s) checked`,
     );
   }
 }
 
 main().catch((error) => {
-  serverLogger.error("Unexpected error:", error);
+  console.error("Unexpected error:", error);
   process.exit(1);
 });
