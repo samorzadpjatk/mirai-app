@@ -1,6 +1,7 @@
-import type { ActivityFeed, ActivityId } from "@mirai-app/domain";
+import type { ActivityId } from "@mirai-app/domain";
 import { Effect, Data } from "effect";
 import { ActivityFeedGatewayTag } from "../ports/gateway";
+import type { ActivityFeedDTO } from "../dto";
 
 /**
  * Input for UpdateActivity use case
@@ -93,29 +94,23 @@ export function updateActivityUseCase(
       );
     }
 
-    // Apply updates
-    let updated = existing;
-
-    if (input.title !== undefined || input.description !== undefined) {
-      updated = yield* updated
-        .updateContent({
-          ...(input.title !== undefined && { title: input.title }),
-          ...(input.description !== undefined && {
-            description: input.description,
-          }),
-        })
-        .pipe(
-          Effect.mapError((error) => {
-            return new UpdateActivityValidationError({
-              message: error.message,
-            });
-          }),
-        );
+    // Validate title if provided
+    if (input.title !== undefined && input.title.trim().length === 0) {
+      return yield* Effect.fail(
+        new UpdateActivityValidationError({ message: "Title cannot be empty" }),
+      );
     }
 
-    if (input.isPinned !== undefined) {
-      updated = input.isPinned ? updated.pin() : updated.unpin();
-    }
+    // Build updated DTO
+    const updated: ActivityFeedDTO = {
+      ...existing,
+      ...(input.title !== undefined && { content: input.title }),
+      ...(input.description !== undefined && {
+        metadata: { ...existing.metadata, description: input.description },
+      }),
+      ...(input.isPinned !== undefined && { isPinned: input.isPinned }),
+      updatedAt: new Date(),
+    };
 
     // Persist changes
     const saved = yield* activityRepo.update(updated).pipe(
@@ -131,14 +126,14 @@ export function updateActivityUseCase(
   });
 }
 
-function toOutput(activity: ActivityFeed): UpdateActivityOutput {
+function toOutput(activity: ActivityFeedDTO): UpdateActivityOutput {
   return {
     id: activity.id,
     tripId: activity.tripId,
     activityType: activity.activityType,
-    title: activity.title,
-    description: activity.description,
-    imageUrl: activity.imageUrl,
+    title: activity.content,
+    description: (activity.metadata?.description as string | null) ?? null,
+    imageUrl: (activity.metadata?.imageUrl as string | null) ?? null,
     isPinned: activity.isPinned,
     isHidden: activity.isHidden,
     updatedAt: activity.updatedAt,
