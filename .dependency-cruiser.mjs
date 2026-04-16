@@ -174,7 +174,9 @@ const config = {
       exportsFields: ["exports"],
       conditionNames: ["import", "default"],
     },
-    doNotFollow: { path: ["node_modules", "dist", "build", "\\.d\\.ts$"] },
+    doNotFollow: {
+      path: ["node_modules", "dist", "build", "\\.d\\.ts$", "storybook-static"],
+    },
     moduleSystems: ["es6"],
     reporterOptions: { dot: { collapsePattern: "node_modules/[^/]+" } },
   },
