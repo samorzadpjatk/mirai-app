@@ -8,8 +8,8 @@ export type {
   AuthContextValue,
 } from "./types";
 
-// Re-export from local stores for convenience
-export type { AuthUser } from "../stores/authStore";
+// Re-export from stores for convenience
+export type { AuthUser } from "../stores/auth/types";
 
 // Client-side hooks and store
 export * from "./client";

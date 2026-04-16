@@ -99,7 +99,6 @@ export interface TestLayerConfig {
  */
 export interface TestLayer {
   /** The Effect Layer for dependency injection */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   layer: Layer.Layer<any, never, never>;
   /** Direct access to mock instances for assertions */
   mocks: {

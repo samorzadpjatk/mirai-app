@@ -2,8 +2,8 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { authStore, type SupabaseClient } from "../../stores/authStore";
-import type { AuthUser } from "../../stores/authStore";
+import { authStore, type SupabaseClient } from "../../stores/auth";
+import type { AuthUser } from "../../stores/auth";
 
 export interface AuthStoreProviderProps {
   children: ReactNode;

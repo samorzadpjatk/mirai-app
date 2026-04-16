@@ -6,7 +6,7 @@ import {
   type AuthStore,
   type SupabaseSession,
   type AuthUser,
-} from "../../stores/authStore";
+} from "../../stores/auth";
 
 /**
  * Hook to access the full auth context (backward-compatible with useAuth).

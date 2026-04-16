@@ -138,6 +138,27 @@ export {
 } from "./relay";
 
 // =============================================================================
+// Connection Pagination Utilities
+// =============================================================================
+
+export type {
+  CursorDataWithDate,
+  ConnectionItem,
+  GatewayConnectionResult,
+  EncodeCursorFn,
+} from "./utils/connections";
+
+export {
+  decodeCursorWithDate,
+  buildConnectionResponse,
+  buildEdges,
+  buildPageInfo,
+  createEmptyConnection,
+  clampFirst,
+  PAGINATION_LIMITS,
+} from "./utils/connections";
+
+// =============================================================================
 // DataLoader Utilities
 // =============================================================================
 

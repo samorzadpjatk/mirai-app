@@ -14,16 +14,34 @@ export type {
   UseLoginFormResult,
 } from "./hooks/useLoginForm";
 
-// Zustand store (now in frameworks/stores)
-export { authStore } from "../stores/index.ts";
+// Zustand stores (split into core and provider-specific)
+export {
+  // Legacy combined store (backward compatibility)
+  authStore,
+  // Core state management (framework-agnostic)
+  coreAuthStore,
+  // Supabase integration (provider-specific)
+  supabaseAuthStore,
+} from "../stores/index.ts";
+
 export type {
+  // Legacy types (backward compatibility)
   AuthStore,
   AuthActions,
   AuthState,
   AuthUser,
   SupabaseClient,
   SupabaseSession,
+  // New split types
+  AuthProviderClient,
+  AuthSession,
+  CoreAuthStore,
+  CoreAuthActions,
+  CoreAuthState,
+  SupabaseAuthStore,
+  SupabaseAuthActions,
 } from "../stores/index.ts";
+
 export { AuthStoreProvider } from "./store/AuthStoreProvider";
 export type { AuthStoreProviderProps } from "./store/AuthStoreProvider";
 
