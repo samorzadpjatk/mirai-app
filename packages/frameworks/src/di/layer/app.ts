@@ -1,37 +1,18 @@
 /**
- * App Layer - Complete Dependency Injection Composition
+ * App Layer - Complete Application Layer Composition
  *
- * This module provides the unified application layer that combines
- * all repository and service layers into a single composable Layer.
- *
- * ## Usage
- *
- * ```typescript
- * import { makeAppLayer } from "./app";
- * import { createDrizzleClient } from "../../drizzle";
- * import { createSupabaseClient } from "../../supabase";
- *
- * const db = createDrizzleClient(process.env.DATABASE_URL);
- * const supabase = createSupabaseClient(url, key);
- *
- * const appLayer = makeAppLayer({ db, supabase });
- *
- * // Use in Effect programs
- * const program = Effect.gen(function* () {
- *   const userRepo = yield* UserGatewayTag;
- *   // ...
- * }).pipe(Effect.provide(appLayer));
- * ```
+ * Composes all repository and service layers into a unified Layer
+ * that can be provided to Effect programs.
  */
 
 import { Layer } from "effect";
-import type { DrizzleDb } from "../../drizzle/client";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import { makeRepositoryLayer, type RepositoryLayerConfig } from "./repository";
-import { makeServiceLayer, type ServiceLayerConfig } from "./service";
+import { makeServiceLayer, type ServiceLayerConfig } from "@mirai-app/adapters";
 
 /**
- * Configuration for the complete application layer
+ * Configuration for creating the complete App Layer
  */
 export interface AppLayerConfig {
   /** Drizzle database client */
@@ -41,58 +22,44 @@ export interface AppLayerConfig {
 }
 
 /**
- * Creates the complete application Layer with all dependencies
+ * Creates the complete application Layer with all repositories and services.
  *
- * This combines repository layers (domain gateways) and service layers
- * (infrastructure services) into a unified Layer that satisfies all
- * Context.Tag requirements for the application.
- *
- * @param config - Configuration containing db and supabase clients
- * @returns A Layer providing all application dependencies
+ * This Layer provides all Context.Tags required by use cases:
+ * - UserPortTag
+ * - TripPortTag
+ * - GroupPortTag
+ * - ChallengePortTag
+ * - And all other repository ports
  *
  * @example
  * ```typescript
- * const appLayer = makeAppLayer({
- *   db: createDrizzleClient(process.env.DATABASE_URL),
- *   supabase: createSupabaseClient(url, key)
- * });
+ * const appLayer = makeAppLayer({ db, supabase });
  *
- * // Run any program with full dependencies
- * const result = await Effect.runPromise(
- *   program.pipe(Effect.provide(appLayer))
- * );
+ * const program = Effect.gen(function* () {
+ *   const userRepo = yield* UserPortTag;
+ *   return yield* userRepo.findById("123");
+ * }).pipe(Effect.provide(appLayer));
  * ```
  */
 export const makeAppLayer = (config: AppLayerConfig) => {
-  const repositoryConfig: RepositoryLayerConfig = { db: config.db };
-  const serviceConfig: ServiceLayerConfig = { supabase: config.supabase };
+  const repoLayer = makeRepositoryLayer({ db: config.db });
+  const serviceLayer = makeServiceLayer({ supabase: config.supabase });
 
-  const repoLayer = makeRepositoryLayer(repositoryConfig);
-  const serviceLayer = makeServiceLayer(serviceConfig);
-
-  return repoLayer.pipe(Layer.merge(serviceLayer));
+  return Layer.merge(repoLayer, serviceLayer);
 };
 
 /**
- * Creates a repository-only Layer
- *
- * Use this when you only need database access without infrastructure services.
- * Useful for background jobs or simple CRUD operations.
- *
- * @param db - Drizzle database client
- * @returns A Layer providing only repository dependencies
+ * Creates a Layer with only repositories (no services).
+ * Useful when services are provided separately.
  */
-export const makeRepositoriesOnlyLayer = (db: DrizzleDb) =>
-  makeRepositoryLayer({ db });
+export const makeRepositoriesOnlyLayer = (config: { db: DrizzleDb }) => {
+  return makeRepositoryLayer(config);
+};
 
 /**
- * Creates a service-only Layer
- *
- * Use this when you only need infrastructure services without database access.
- * Rarely used directly; prefer makeAppLayer for complete composition.
- *
- * @param supabase - Supabase client
- * @returns A Layer providing only service dependencies
+ * Creates a Layer with only services (no repositories).
+ * Useful when repositories are provided separately.
  */
-export const makeServicesOnlyLayer = (supabase: SupabaseClient) =>
-  makeServiceLayer({ supabase });
+export const makeServicesOnlyLayer = (config: { supabase: SupabaseClient }) => {
+  return makeServiceLayer(config);
+};

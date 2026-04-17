@@ -122,7 +122,6 @@ export {
   makeRewardRepositoryLayer,
   makeCoinTransactionRepositoryLayer,
   makeSponsorRepositoryLayer,
-  makeEventRepositoryLayer,
   makeSubmissionReportRepositoryLayer,
   type RepositoryLayerConfig,
   // Service Layer

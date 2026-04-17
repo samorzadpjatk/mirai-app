@@ -103,3 +103,61 @@ export const tripParticipants = pgTable(
 
 export type TripParticipantInsert = typeof tripParticipants.$inferInsert;
 export type TripParticipantSelect = typeof tripParticipants.$inferSelect;
+
+/**
+ * Trip Insurance table
+ */
+export const tripInsurance = pgTable(
+  "TripInsurance",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tripId: uuid("tripId")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    provider: varchar("provider", { length: 255 }),
+    policyNumber: varchar("policyNumber", { length: 255 }),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("trip_insurance_trip_id_idx").on(table.tripId),
+    index("trip_insurance_created_at_id_idx").on(table.createdAt, table.id),
+  ],
+);
+
+export type TripInsuranceInsert = typeof tripInsurance.$inferInsert;
+export type TripInsuranceSelect = typeof tripInsurance.$inferSelect;
+
+/**
+ * Trip Insurance Steps table
+ */
+export const tripInsuranceSteps = pgTable(
+  "TripInsuranceStep",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    insuranceId: uuid("insuranceId")
+      .notNull()
+      .references(() => tripInsurance.id, { onDelete: "cascade" }),
+    stepNumber: integer("stepNumber").notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("trip_insurance_steps_insurance_id_idx").on(table.insuranceId),
+    index("trip_insurance_steps_step_number_idx").on(
+      table.insuranceId,
+      table.stepNumber,
+    ),
+    index("trip_insurance_steps_created_at_id_idx").on(
+      table.createdAt,
+      table.id,
+    ),
+  ],
+);
+
+export type TripInsuranceStepInsert = typeof tripInsuranceSteps.$inferInsert;
+export type TripInsuranceStepSelect = typeof tripInsuranceSteps.$inferSelect;

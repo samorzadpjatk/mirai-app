@@ -1,4 +1,6 @@
-import { drizzle } from 'drizzle-orm/bun-sql';
+import { drizzle } from "drizzle-orm/bun-sql";
+import * as schema from "./schema";
+
 /**
  * Create a Drizzle database client
  *
@@ -21,7 +23,7 @@ export function createDrizzleClient(connectionString?: string) {
     throw new Error("DATABASE_URL environment variable is required");
   }
 
-  return drizzle(databaseUrl);
+  return drizzle(databaseUrl, { schema });
 }
 
 /**

@@ -1,240 +1,315 @@
 /**
- * Repository Layers - Effect Layer bindings for Domain Gateways
+ * Repository Layer - Effect Layer Composition for All Domain Repositories
  *
- * This module creates Effect Layers that bind gateway implementations
- * to their respective Context.Tags from the use-cases layer.
+ * This module binds all Context.Tags from the use-cases layer to their
+ * concrete implementations from the adapters layer.
  */
 
 import { Layer } from "effect";
-import type { DrizzleDb } from "../../drizzle/client";
+import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 
-// Import Drizzle gateways from adapters (exported from main index)
+import { UserPortTag } from "@mirai-app/use-cases/user/ports/UserPort";
+import { TripParticipantPortTag } from "@mirai-app/use-cases/user/ports/TripParticipantPort";
+import { TripPortTag } from "@mirai-app/use-cases/trip/ports/TripPort";
+import { GroupPortTag } from "@mirai-app/use-cases/group/ports/GroupPort";
+import { GroupJoinRequestPortTag } from "@mirai-app/use-cases/group/ports/GroupJoinRequestPort";
+import { ChallengePortTag } from "@mirai-app/use-cases/challenge/ports/ChallengePort";
+import { ChallengeSubmissionPortTag } from "@mirai-app/use-cases/challenge-submission/ports/ChallengeSubmissionPort";
+import { ChallengeVotePortTag } from "@mirai-app/use-cases/challenge-vote/ports/ChallengeVotePort";
 import {
-  DrizzleUserGateway,
-  DrizzleTripGateway,
-  DrizzleGroupGateway,
-  DrizzleChallengeGateway,
-  DrizzleChallengeSubmissionGateway,
-  DrizzleChallengeVoteGateway,
-  DrizzleNotificationGateway,
-  DrizzleNotificationDeliveryGateway,
-  DrizzleNotificationScheduleGateway,
-  DrizzleLocationGateway,
-  DrizzleActivityFeedGateway,
-  DrizzleRewardGateway,
-  DrizzleCoinTransactionGateway,
-  DrizzleSponsorGateway,
-  DrizzleEventGateway,
-  DrizzleSubmissionReportGateway,
+  NotificationPortTag,
+  PushSubscriptionPortTag,
+} from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import {
+  LocationPortTag,
+  LocationSharingRequestPortTag,
+} from "@mirai-app/use-cases/location/ports";
+import {
+  ActivityFeedPortTag,
+  ActivityReactionPortTag,
+} from "@mirai-app/use-cases/activity-feed/ports";
+import {
+  RewardPortTag,
+  RewardPurchasePortTag,
+} from "@mirai-app/use-cases/reward/ports";
+import { CoinTransactionPortTag } from "@mirai-app/use-cases/coin/ports/CoinTransactionPort";
+import {
+  SponsorPortTag,
+  TripSponsorPortTag,
+} from "@mirai-app/use-cases/sponsor/ports";
+import { SubmissionReportPortTag } from "@mirai-app/use-cases/submission-report/ports/SubmissionReportPort";
+import {
+  StoragePathResolverPortTag,
+  StoragePortTag,
+} from "@mirai-app/use-cases/storage/ports";
+
+// Adapter implementations
+import {
+  UserDrizzleGateway,
+  TripParticipantDrizzleGateway,
+  TripDrizzleGateway,
+  GroupDrizzleGateway,
+  GroupJoinRequestDrizzleGateway,
+  ChallengeDrizzleGateway,
+  ChallengeSubmissionDrizzleGateway,
+  ChallengeVoteDrizzleGateway,
+  NotificationDrizzleGateway,
+  PushSubscriptionDrizzleGateway,
+  LocationDrizzleGateway,
+  ActivityFeedDrizzleGateway,
+  ActivityReactionDrizzleGateway,
+  RewardDrizzleGateway,
+  RewardPurchaseDrizzleGateway,
+  CoinTransactionDrizzleGateway,
+  SponsorDrizzleGateway,
+  TripSponsorDrizzleGateway,
+  SubmissionReportDrizzleGateway,
+  LocationSharingRequestDrizzleGateway,
+  SupabaseStorageGateway,
 } from "@mirai-app/adapters";
 
-// Import Context Tags from use-cases main index
-import {
-  UserGatewayTag,
-  TripGatewayTag,
-  GroupGatewayTag,
-  ChallengeGatewayTag,
-  ChallengeSubmissionGatewayTag,
-  ChallengeVoteGatewayTag,
-  NotificationGatewayTag,
-  NotificationDeliveryGatewayTag,
-  NotificationScheduleGatewayTag,
-  LocationGatewayTag,
-  ActivityFeedGatewayTag,
-  RewardGatewayTag,
-  CoinTransactionGatewayTag,
-  SponsorGatewayTag,
-  EventGatewayTag,
-  SubmissionReportGatewayTag,
-} from "@mirai-app/use-cases";
+// Storage path resolver implementation
+import { DefaultStoragePathResolver } from "./storage-path-resolver";
 
 /**
- * Configuration for repository layers
+ * Configuration for creating repository layers
  */
 export interface RepositoryLayerConfig {
   /** Drizzle database client */
   db: DrizzleDb;
+  /** Supabase client - required for storage operations */
+  supabase?: SupabaseClient;
 }
 
 /**
- * Creates a Layer that provides the UserGateway implementation
+ * Creates the complete repository Layer with all domain repositories.
+ *
+ * Binds all Context.Tags from use-cases to their Drizzle implementations.
+ *
+ * @example
+ * ```typescript
+ * const repoLayer = makeRepositoryLayer({ db });
+ *
+ * const program = Effect.gen(function* () {
+ *   const userRepo = yield* UserPortTag;
+ *   const tripRepo = yield* TripPortTag;
+ *   // ... all repositories available
+ * }).pipe(Effect.provide(repoLayer));
+ * ```
  */
-export const makeUserRepositoryLayer = (config: RepositoryLayerConfig) =>
-  Layer.succeed(UserGatewayTag, new DrizzleUserGateway(config.db));
+export const makeRepositoryLayer = (config: RepositoryLayerConfig) => {
+  return Layer.mergeAll(
+    makeUserRepositoryLayer(config),
+    makeTripRepositoryLayer(config),
+    makeGroupRepositoryLayer(config),
+    makeChallengeRepositoryLayer(config),
+    makeChallengeSubmissionRepositoryLayer(config),
+    makeChallengeVoteRepositoryLayer(config),
+    makeNotificationRepositoryLayer(config),
+    makeLocationRepositoryLayer(config),
+    makeActivityFeedRepositoryLayer(config),
+    makeRewardRepositoryLayer(config),
+    makeCoinTransactionRepositoryLayer(config),
+    makeSponsorRepositoryLayer(config),
+    makeSubmissionReportRepositoryLayer(config),
+    makeStorageRepositoryLayer(config),
+  );
+};
 
 /**
- * Creates a Layer that provides the TripGateway implementation
+ * Creates the User repository Layer.
  */
-export const makeTripRepositoryLayer = (config: RepositoryLayerConfig) =>
-  Layer.succeed(TripGatewayTag, new DrizzleTripGateway(config.db));
+export const makeUserRepositoryLayer = (config: RepositoryLayerConfig) => {
+  const userGateway = new UserDrizzleGateway(config.db);
+  const tripParticipantGateway = new TripParticipantDrizzleGateway(config.db);
+
+  return Layer.merge(
+    Layer.succeed(UserPortTag, userGateway),
+    Layer.succeed(TripParticipantPortTag, tripParticipantGateway),
+  );
+};
 
 /**
- * Creates a Layer that provides the GroupGateway implementation
+ * Creates the Trip repository Layer.
  */
-export const makeGroupRepositoryLayer = (config: RepositoryLayerConfig) =>
-  Layer.succeed(GroupGatewayTag, new DrizzleGroupGateway(config.db));
+export const makeTripRepositoryLayer = (config: RepositoryLayerConfig) => {
+  const tripGateway = new TripDrizzleGateway(config.db);
+
+  return Layer.succeed(TripPortTag, tripGateway);
+};
 
 /**
- * Creates a Layer that provides the ChallengeGateway implementation
+ * Creates the Group repository Layer.
  */
-export const makeChallengeRepositoryLayer = (config: RepositoryLayerConfig) =>
-  Layer.succeed(ChallengeGatewayTag, new DrizzleChallengeGateway(config.db));
+export const makeGroupRepositoryLayer = (config: RepositoryLayerConfig) => {
+  const groupGateway = new GroupDrizzleGateway(config.db);
+  const groupJoinRequestGateway = new GroupJoinRequestDrizzleGateway(config.db);
+
+  return Layer.merge(
+    Layer.succeed(GroupPortTag, groupGateway),
+    Layer.succeed(GroupJoinRequestPortTag, groupJoinRequestGateway),
+  );
+};
 
 /**
- * Creates a Layer that provides the ChallengeSubmissionGateway implementation
+ * Creates the Challenge repository Layer.
+ */
+export const makeChallengeRepositoryLayer = (config: RepositoryLayerConfig) => {
+  const challengeGateway = new ChallengeDrizzleGateway(config.db);
+
+  return Layer.succeed(ChallengePortTag, challengeGateway);
+};
+
+/**
+ * Creates the ChallengeSubmission repository Layer.
  */
 export const makeChallengeSubmissionRepositoryLayer = (
   config: RepositoryLayerConfig,
-) =>
-  Layer.succeed(
-    ChallengeSubmissionGatewayTag,
-    new DrizzleChallengeSubmissionGateway(config.db),
-  );
+) => {
+  const submissionGateway = new ChallengeSubmissionDrizzleGateway(config.db);
+
+  return Layer.succeed(ChallengeSubmissionPortTag, submissionGateway);
+};
 
 /**
- * Creates a Layer that provides the ChallengeVoteGateway implementation
+ * Creates the ChallengeVote repository Layer.
  */
 export const makeChallengeVoteRepositoryLayer = (
   config: RepositoryLayerConfig,
-) =>
-  Layer.succeed(
-    ChallengeVoteGatewayTag,
-    new DrizzleChallengeVoteGateway(config.db),
-  );
+) => {
+  const voteGateway = new ChallengeVoteDrizzleGateway(config.db);
+
+  return Layer.succeed(ChallengeVotePortTag, voteGateway);
+};
 
 /**
- * Creates a Layer that provides the NotificationGateway implementation
+ * Creates the Notification repository Layer.
  */
 export const makeNotificationRepositoryLayer = (
   config: RepositoryLayerConfig,
-) =>
-  Layer.succeed(
-    NotificationGatewayTag,
-    new DrizzleNotificationGateway(config.db),
+) => {
+  const notificationGateway = new NotificationDrizzleGateway(config.db);
+  const pushSubscriptionGateway = new PushSubscriptionDrizzleGateway(config.db);
+
+  return Layer.merge(
+    Layer.succeed(NotificationPortTag, notificationGateway),
+    Layer.succeed(PushSubscriptionPortTag, pushSubscriptionGateway),
+  );
+};
+
+/**
+ * Creates the Location repository Layer.
+ *
+ */
+export const makeLocationRepositoryLayer = (config: RepositoryLayerConfig) => {
+  const locationGateway = new LocationDrizzleGateway(config.db);
+  const locationSharingGateway = new LocationSharingRequestDrizzleGateway(
+    config.db,
   );
 
-/**
- * Creates a Layer that provides the NotificationDeliveryGateway implementation
- */
-export const makeNotificationDeliveryRepositoryLayer = (
-  config: RepositoryLayerConfig,
-) =>
-  Layer.succeed(
-    NotificationDeliveryGatewayTag,
-    new DrizzleNotificationDeliveryGateway(config.db),
+  return Layer.merge(
+    Layer.succeed(LocationPortTag, locationGateway),
+    Layer.succeed(LocationSharingRequestPortTag, locationSharingGateway),
   );
+};
 
 /**
- * Creates a Layer that provides the NotificationScheduleGateway implementation
- */
-export const makeNotificationScheduleRepositoryLayer = (
-  config: RepositoryLayerConfig,
-) =>
-  Layer.succeed(
-    NotificationScheduleGatewayTag,
-    new DrizzleNotificationScheduleGateway(config.db),
-  );
-
-/**
- * Creates a Layer that provides the LocationGateway implementation
- */
-export const makeLocationRepositoryLayer = (config: RepositoryLayerConfig) =>
-  Layer.succeed(LocationGatewayTag, new DrizzleLocationGateway(config.db));
-
-/**
- * Creates a Layer that provides the ActivityFeedGateway implementation
+ * Creates the ActivityFeed repository Layer.
+ *
  */
 export const makeActivityFeedRepositoryLayer = (
   config: RepositoryLayerConfig,
-) =>
-  Layer.succeed(
-    ActivityFeedGatewayTag,
-    new DrizzleActivityFeedGateway(config.db),
+) => {
+  const activityGateway = new ActivityFeedDrizzleGateway(config.db);
+  const activityReactionGateway = new ActivityReactionDrizzleGateway(config.db);
+
+  return Layer.merge(
+    Layer.succeed(ActivityFeedPortTag, activityGateway),
+    Layer.succeed(ActivityReactionPortTag, activityReactionGateway),
   );
+};
 
 /**
- * Creates a Layer that provides the RewardGateway implementation
+ * Creates the Reward repository Layer.
  */
-export const makeRewardRepositoryLayer = (config: RepositoryLayerConfig) =>
-  Layer.succeed(RewardGatewayTag, new DrizzleRewardGateway(config.db));
+export const makeRewardRepositoryLayer = (config: RepositoryLayerConfig) => {
+  const rewardGateway = new RewardDrizzleGateway(config.db);
+  const rewardPurchaseGateway = new RewardPurchaseDrizzleGateway(config.db);
+
+  return Layer.merge(
+    Layer.succeed(RewardPortTag, rewardGateway),
+    Layer.succeed(RewardPurchasePortTag, rewardPurchaseGateway),
+  );
+};
 
 /**
- * Creates a Layer that provides the CoinTransactionGateway implementation
+ * Creates the CoinTransaction repository Layer.
  */
 export const makeCoinTransactionRepositoryLayer = (
   config: RepositoryLayerConfig,
-) =>
-  Layer.succeed(
-    CoinTransactionGatewayTag,
-    new DrizzleCoinTransactionGateway(config.db),
+) => {
+  const coinGateway = new CoinTransactionDrizzleGateway(config.db);
+
+  return Layer.succeed(CoinTransactionPortTag, coinGateway);
+};
+
+/**
+ * Creates the Sponsor repository Layer.
+ */
+export const makeSponsorRepositoryLayer = (config: RepositoryLayerConfig) => {
+  const sponsorGateway = new SponsorDrizzleGateway(config.db);
+  const tripSponsorGateway = new TripSponsorDrizzleGateway(config.db);
+
+  return Layer.merge(
+    Layer.succeed(SponsorPortTag, sponsorGateway),
+    Layer.succeed(TripSponsorPortTag, tripSponsorGateway),
   );
+};
 
 /**
- * Creates a Layer that provides the SponsorGateway implementation
+ * Creates the TripSponsor repository Layer.
  */
-export const makeSponsorRepositoryLayer = (config: RepositoryLayerConfig) =>
-  Layer.succeed(SponsorGatewayTag, new DrizzleSponsorGateway(config.db));
+export const makeTripSponsorRepositoryLayer = (
+  config: RepositoryLayerConfig,
+) => {
+  const tripSponsorGateway = new TripSponsorDrizzleGateway(config.db);
+
+  return Layer.succeed(TripSponsorPortTag, tripSponsorGateway);
+};
 
 /**
- * Creates a Layer that provides the EventGateway implementation
- */
-export const makeEventRepositoryLayer = (config: RepositoryLayerConfig) =>
-  Layer.succeed(EventGatewayTag, new DrizzleEventGateway(config.db));
-
-/**
- * Creates a Layer that provides the SubmissionReportGateway implementation
+ * Creates the SubmissionReport repository Layer.
  */
 export const makeSubmissionReportRepositoryLayer = (
   config: RepositoryLayerConfig,
-) =>
-  Layer.succeed(
-    SubmissionReportGatewayTag,
-    new DrizzleSubmissionReportGateway(config.db),
-  );
+) => {
+  const reportGateway = new SubmissionReportDrizzleGateway(config.db);
+
+  return Layer.succeed(SubmissionReportPortTag, reportGateway);
+};
 
 /**
- * Creates a combined Layer with all repository implementations
+ * Creates the Storage repository Layer.
  *
- * This merges all individual repository layers into a single Layer
- * that can be provided to Effects requiring any repository.
+ * Provides StoragePathResolverPortTag always.
+ * Provides StoragePortTag when supabase is provided in config.
  */
-export const makeRepositoryLayer = (config: RepositoryLayerConfig) => {
-  const userLayer = makeUserRepositoryLayer(config);
-  const tripLayer = makeTripRepositoryLayer(config);
-  const groupLayer = makeGroupRepositoryLayer(config);
-  const challengeLayer = makeChallengeRepositoryLayer(config);
-  const challengeSubmissionLayer =
-    makeChallengeSubmissionRepositoryLayer(config);
-  const challengeVoteLayer = makeChallengeVoteRepositoryLayer(config);
-  const notificationLayer = makeNotificationRepositoryLayer(config);
-  const notificationDeliveryLayer =
-    makeNotificationDeliveryRepositoryLayer(config);
-  const notificationScheduleLayer =
-    makeNotificationScheduleRepositoryLayer(config);
-  const locationLayer = makeLocationRepositoryLayer(config);
-  const activityFeedLayer = makeActivityFeedRepositoryLayer(config);
-  const rewardLayer = makeRewardRepositoryLayer(config);
-  const coinTransactionLayer = makeCoinTransactionRepositoryLayer(config);
-  const sponsorLayer = makeSponsorRepositoryLayer(config);
-  const eventLayer = makeEventRepositoryLayer(config);
-  const submissionReportLayer = makeSubmissionReportRepositoryLayer(config);
-
-  // Combine using pipe to avoid issues with Layer.mergeAll
-  return userLayer.pipe(
-    Layer.merge(tripLayer),
-    Layer.merge(groupLayer),
-    Layer.merge(challengeLayer),
-    Layer.merge(challengeSubmissionLayer),
-    Layer.merge(challengeVoteLayer),
-    Layer.merge(notificationLayer),
-    Layer.merge(notificationDeliveryLayer),
-    Layer.merge(notificationScheduleLayer),
-    Layer.merge(locationLayer),
-    Layer.merge(activityFeedLayer),
-    Layer.merge(rewardLayer),
-    Layer.merge(coinTransactionLayer),
-    Layer.merge(sponsorLayer),
-    Layer.merge(eventLayer),
-    Layer.merge(submissionReportLayer),
+export const makeStorageRepositoryLayer = (config: RepositoryLayerConfig) => {
+  const pathResolver = new DefaultStoragePathResolver();
+  const pathResolverLayer = Layer.succeed(
+    StoragePathResolverPortTag,
+    pathResolver,
   );
+
+  // Provide full storage gateway when supabase is available
+  if (config.supabase) {
+    const storageGateway = new SupabaseStorageGateway(config.supabase);
+    const storageLayer = Layer.succeed(StoragePortTag, storageGateway);
+
+    return Layer.merge(pathResolverLayer, storageLayer);
+  }
+
+  // Otherwise only provide the path resolver
+  return pathResolverLayer;
 };

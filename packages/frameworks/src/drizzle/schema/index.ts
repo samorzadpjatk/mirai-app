@@ -23,9 +23,6 @@ export * from "./group";
 // Challenge and related schemas
 export * from "./challenge";
 
-// Event schemas
-export * from "./event";
-
 // Location schemas
 export * from "./location";
 
