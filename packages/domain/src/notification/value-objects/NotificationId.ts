@@ -30,3 +30,16 @@ export const PushSubscriptionId = createBrandedId("PushSubscriptionId", {
   validate: isValidCUID,
 });
 export type PushSubscriptionId = BrandedId<"PushSubscriptionId">;
+
+// NotificationPush uses CUID
+export const NotificationPushId = createBrandedId("NotificationPushId", {
+  validate: isValidCUID,
+});
+export type NotificationPushId = BrandedId<"NotificationPushId">;
+
+// NotificationScheduleExecution uses CUID
+export const NotificationScheduleExecutionId = createBrandedId(
+  "NotificationScheduleExecutionId",
+  { validate: isValidCUID },
+);
+export type NotificationScheduleExecutionId = BrandedId<"NotificationScheduleExecutionId">;
