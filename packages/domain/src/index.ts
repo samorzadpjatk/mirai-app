@@ -10,6 +10,12 @@ export type {
   CreateSignedUploadUrlResult,
   CreateSignedDownloadUrlInput,
   CreateSignedDownloadUrlResult,
+  IAuthServicePort,
+  AuthUserInfo,
+  BanStatus,
+  IStoragePathResolverPort,
+  ResolvedStoragePath,
+  StorageBucket,
 } from "./shared/services";
 
 // Domain modules
