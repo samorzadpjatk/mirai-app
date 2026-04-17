@@ -21,9 +21,3 @@ export const TripInsuranceStepId = createBrandedId("TripInsuranceStepId", {
   validate: isValidCUID,
 });
 export type TripInsuranceStepId = BrandedId<"TripInsuranceStepId">;
-
-// TripSponsor uses CUID
-export const TripSponsorId = createBrandedId("TripSponsorId", {
-  validate: isValidCUID,
-});
-export type TripSponsorId = BrandedId<"TripSponsorId">;

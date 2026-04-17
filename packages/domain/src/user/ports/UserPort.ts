@@ -22,9 +22,41 @@ export interface IUserPort {
   ): Effect.Effect<User | null, IPortError, never>;
 
   /**
+   * Find users by trip participant
+   */
+  findByTripId(tripId: string): Effect.Effect<User[], IPortError, never>;
+
+  /**
    * Find all users
    */
   findAll(): Effect.Effect<User[], IPortError, never>;
+
+  /**
+   * Find all users with pagination
+   */
+  findAllPaginated(params: {
+    limit: number;
+    offset: number;
+  }): Effect.Effect<User[], IPortError, never>;
+
+  /**
+   * Search users
+   */
+  search(params: {
+    tripId: string;
+    field: string;
+    searchTerm?: string;
+    limit: number;
+    offset: number;
+  }): Effect.Effect<
+    {
+      users: User[];
+      total: number;
+      hasMore: boolean;
+    },
+    IPortError,
+    never
+  >;
 
   /**
    * Create new user
@@ -45,4 +77,9 @@ export interface IUserPort {
    * Check if user exists
    */
   exists(id: UserId): Effect.Effect<boolean, IPortError, never>;
+
+  /**
+   * Count users
+   */
+  count(): Effect.Effect<number, IPortError, never>;
 }

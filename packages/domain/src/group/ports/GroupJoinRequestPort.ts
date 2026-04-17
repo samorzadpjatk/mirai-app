@@ -83,6 +83,14 @@ export interface IGroupJoinRequestPort {
   ): Effect.Effect<void, IPortError, never>;
 
   /**
+   * Delete all join requests for multiple users in a trip
+   */
+  deleteByUsersAndTrip(
+    userIds: UserId[],
+    tripId: TripId,
+  ): Effect.Effect<void, IPortError, never>;
+
+  /**
    * Check if join request exists
    */
   exists(id: GroupJoinRequestId): Effect.Effect<boolean, IPortError, never>;

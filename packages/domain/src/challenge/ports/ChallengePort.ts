@@ -29,6 +29,18 @@ export interface IChallengePort {
   ): Effect.Effect<Challenge[], IPortError, never>;
 
   /**
+   * Find paginated challenges by trip
+   */
+  findPaginatedByTripId(
+    tripId: TripId,
+    params: { limit: number; offset: number },
+  ): Effect.Effect<
+    { challenges: Challenge[]; total: number; hasMore: boolean },
+    IPortError,
+    never
+  >;
+
+  /**
    * Create new challenge
    */
   create(challenge: Challenge): Effect.Effect<Challenge, IPortError, never>;
@@ -47,4 +59,16 @@ export interface IChallengePort {
    * Check if challenge exists
    */
   exists(id: ChallengeId): Effect.Effect<boolean, IPortError, never>;
+
+  /**
+   * Count challenges by trip
+   */
+  countByTripId(tripId: TripId): Effect.Effect<number, IPortError, never>;
+
+  /**
+   * Activate visible challenges
+   */
+  activateVisibleChallenges(
+    tripId?: TripId,
+  ): Effect.Effect<void, IPortError, never>;
 }

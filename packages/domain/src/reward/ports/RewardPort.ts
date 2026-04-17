@@ -28,6 +28,30 @@ export interface IRewardPort {
   ): Effect.Effect<Reward[], IPortError, never>;
 
   /**
+   * Find paginated rewards by trip
+   */
+  findPaginatedByTripId(
+    tripId: TripId,
+    params: { limit: number; offset: number },
+  ): Effect.Effect<
+    { rewards: Reward[]; total: number; hasMore: boolean },
+    IPortError,
+    never
+  >;
+
+  /**
+   * Find all rewards paginated
+   */
+  findAllPaginated(params: {
+    limit: number;
+    offset: number;
+  }): Effect.Effect<
+    { rewards: Reward[]; total: number; hasMore: boolean },
+    IPortError,
+    never
+  >;
+
+  /**
    * Create new reward
    */
   create(reward: Reward): Effect.Effect<Reward, IPortError, never>;
@@ -46,4 +70,9 @@ export interface IRewardPort {
    * Check if reward exists
    */
   exists(id: RewardId): Effect.Effect<boolean, IPortError, never>;
+
+  /**
+   * Count rewards by trip
+   */
+  countByTripId(tripId: TripId): Effect.Effect<number, IPortError, never>;
 }

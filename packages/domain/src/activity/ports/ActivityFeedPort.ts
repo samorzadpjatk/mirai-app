@@ -39,6 +39,37 @@ export interface IActivityFeedPort {
   ): Effect.Effect<ActivityFeed[], IPortError, never>;
 
   /**
+   * Find paginated activities by trip
+   */
+  findByTripIdPaginated(
+    tripId: TripId,
+    params: {
+      limit: number;
+      cursor?: string | null;
+      includeHidden?: boolean;
+    },
+  ): Effect.Effect<
+    { activities: ActivityFeed[]; nextCursor: string | null; hasMore: boolean },
+    IPortError,
+    never
+  >;
+
+  /**
+   * Find activities for moderation
+   */
+  findByTripIdForModeration(
+    tripId: TripId,
+    params: {
+      limit: number;
+      cursor?: string | null;
+    },
+  ): Effect.Effect<
+    { activities: ActivityFeed[]; nextCursor: string | null; hasMore: boolean },
+    IPortError,
+    never
+  >;
+
+  /**
    * Create new activity
    */
   create(
@@ -56,4 +87,17 @@ export interface IActivityFeedPort {
    * Delete activity by ID
    */
   delete(id: ActivityFeedId): Effect.Effect<void, IPortError, never>;
+
+  /**
+   * Set activity pinned status
+   */
+  setPinned(
+    id: ActivityFeedId,
+    isPinned: boolean,
+  ): Effect.Effect<ActivityFeed, IPortError, never>;
+
+  /**
+   * Check if activity exists
+   */
+  exists(id: ActivityFeedId): Effect.Effect<boolean, IPortError, never>;
 }
