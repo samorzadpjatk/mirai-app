@@ -1,0 +1,1 @@
+export { InMemoryCoinTransactionGateway } from "./InMemoryCoinTransactionGateway";

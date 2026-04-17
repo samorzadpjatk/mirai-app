@@ -1,0 +1,1 @@
+export { ChallengeMapper } from "./ChallengeMapper";

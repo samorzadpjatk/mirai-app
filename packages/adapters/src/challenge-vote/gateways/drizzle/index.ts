@@ -1,0 +1,1 @@
+export { ChallengeVoteDrizzleGateway } from "./ChallengeVoteDrizzleGateway";

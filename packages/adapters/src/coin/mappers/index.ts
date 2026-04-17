@@ -1,0 +1,1 @@
+export { CoinTransactionMapper } from "./CoinTransactionMapper";

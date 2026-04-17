@@ -1,0 +1,1 @@
+export { InMemoryActivityFeedGateway } from "./InMemoryActivityFeedGateway";
