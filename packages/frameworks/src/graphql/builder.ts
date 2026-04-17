@@ -153,6 +153,7 @@ export function createBuilder() {
         public: true,
         authenticated: false,
         admin: false,
+        moderator: false,
         owner: false,
         member: false,
       }),

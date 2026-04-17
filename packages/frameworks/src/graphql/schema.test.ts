@@ -152,32 +152,6 @@ describe("[UNIT] Domain Module Registration", () => {
     });
   });
 
-  describe("Event Domain", () => {
-    it("registers Event type", () => {
-      const sdl = getSDL();
-      expect(sdl).toContain("type Event");
-      expect(sdl).toContain("id: ID");
-    });
-
-    it("registers EventConnection type", () => {
-      const sdl = getSDL();
-      expect(sdl).toContain("type EventConnection");
-    });
-
-    it("registers EventEdge type", () => {
-      const sdl = getSDL();
-      expect(sdl).toContain("type EventEdge");
-    });
-
-    it("registers event queries", () => {
-      const sdl = getSDL();
-      expect(sdl).toContain("eventsByTrip(");
-      expect(sdl).toContain("upcomingEventsByTrip(");
-      expect(sdl).toContain("ongoingEventsByTrip(");
-      expect(sdl).toContain("pastEventsByTrip(");
-    });
-  });
-
   describe("Sponsor Domain", () => {
     it("registers Sponsor type", () => {
       const sdl = getSDL();

@@ -41,7 +41,6 @@ builder.subscriptionType({
 // Domain modules register their types with Pothos via side-effect imports.
 // Uncomment each domain as it is migrated to the modular structure.
 import "./types/user/index.js";
-import "./types/event/index.js";
 import "./types/sponsor/index.js";
 import "./types/coinTransaction/index.js";
 import "./types/notification/index.js";
