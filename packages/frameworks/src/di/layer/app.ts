@@ -9,7 +9,7 @@ import { Layer } from "effect";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import { makeRepositoryLayer, type RepositoryLayerConfig } from "./repository";
-import { makeServiceLayer, type ServiceLayerConfig } from "@mirai-app/adapters";
+import { makeServiceLayer, type ServiceLayerConfig } from "./service";
 
 /**
  * Configuration for creating the complete App Layer

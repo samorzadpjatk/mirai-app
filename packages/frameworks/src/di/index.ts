@@ -100,7 +100,7 @@ export {
   makeStorageLayer,
   makeRealtimeLayer,
   type ServiceLayerConfig,
-} from "@mirai-app/adapters";
+} from "./layer/service";
 
 // =============================================================================
 // Service Context Tags - For direct service access
