@@ -287,10 +287,10 @@ export const AllElevations: Story = {
 export const ComplexContent: Story = {
   render: () => (
     <Card size="md" elevation="md" style={{ width: "300px" }}>
-      <Text fontSize="$xl" fontWeight="$medium" color="primary">
+      <Text fontSize="$xl" fontWeight="500" color="$primary">
         Card Title
       </Text>
-      <Text color="muted">
+      <Text color="$colorMuted">
         This card demonstrates complex content with multiple text elements and
         different colors.
       </Text>

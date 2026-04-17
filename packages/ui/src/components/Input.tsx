@@ -34,9 +34,8 @@ import {
   YStack,
   XStack,
   styled,
-  View,
 } from "tamagui";
-import type { InputProps as TamaguiInputProps } from "tamagui";
+import type { InputProps as TamaguiInputProps, TamaguiElement } from "tamagui";
 import React, { forwardRef } from "react";
 
 /**
@@ -339,7 +338,9 @@ Input.displayName = "Input";
  * Use this when you need a label separate from the Input component,
  * for example in complex form layouts.
  */
-export const InputLabel = StyledLabel;
+export const InputLabel: React.ForwardRefExoticComponent<
+  React.ComponentPropsWithRef<typeof TamaguiLabel>
+> = StyledLabel;
 
 /**
  * Standalone helper text component

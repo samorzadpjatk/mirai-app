@@ -9,6 +9,7 @@ import type {
   SupabaseClient,
   SupabaseSession,
 } from "./types";
+import type { CoreAuthState } from "./core";
 import { coreAuthStore, syncAuthState } from "./core";
 
 // Internal state not exposed in the store type but used within actions
@@ -19,7 +20,7 @@ let _onUserFetch:
 
 const fetchAndSetUser = async (
   authUserId: string,
-  setState: (state: Partial<import("./core").CoreAuthState>) => void,
+  setState: (state: Partial<CoreAuthState>) => void,
 ) => {
   if (!_onUserFetch) {
     setState({ isLoading: false });
@@ -56,8 +57,7 @@ export interface SupabaseAuthActions {
   setLoading: (loading: boolean) => void;
 }
 
-export type SupabaseAuthStore = import("./core").CoreAuthState &
-  SupabaseAuthActions;
+export type SupabaseAuthStore = CoreAuthState & SupabaseAuthActions;
 
 export const supabaseAuthStore = createStore<SupabaseAuthStore>()(
   (set, get) => ({

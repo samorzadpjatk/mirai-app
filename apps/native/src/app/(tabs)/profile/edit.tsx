@@ -6,6 +6,7 @@ import { useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useClient } from "urql";
+import type { Operation } from "@urql/core";
 import {
   GetCurrentUserDocument,
   UpdateUserDocument,
@@ -151,7 +152,7 @@ export default function EditProfileScreen() {
       context: {
         requestPolicy: "network-only",
       },
-    } as unknown as import("@urql/core").Operation);
+    } as unknown as Operation);
   }, [urqlClient]);
 
   const isUploading = uploadStatus === "uploading";

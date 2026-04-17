@@ -1,3 +1,7 @@
+# Temporary files
 *.tmp
 *.log
-scratchpad/
+
+# Scratchpad is cleaned regularly - keep empty
+scratchpad/*
+!scratchpad/.gitkeep

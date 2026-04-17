@@ -101,7 +101,7 @@ import { Text } from "@mirai-app/ui";
   args: {
     fontSize: "$base",
     color: "$color",
-    fontWeight: "$normal",
+    fontWeight: "400",
     textAlign: "left",
     fontFamily: "$body",
     children: "The quick brown fox jumps over the lazy dog",
@@ -128,7 +128,7 @@ export const HeadingHuge: Story = {
   name: "Heading - Huge",
   args: {
     fontSize: "$huge",
-    fontWeight: "$bold",
+    fontWeight: "700",
     fontFamily: "$heading",
     children: "Huge Heading (32px)",
   },
@@ -380,19 +380,19 @@ export const FontMono: Story = {
 export const AllHeadings: Story = {
   render: () => (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <Text fontSize="$huge" fontWeight="$bold" fontFamily="$heading">
+      <Text fontSize="$huge" fontWeight="700" fontFamily="$heading">
         Heading Huge (32px) - Space Grotesk Bold
       </Text>
-      <Text fontSize="$xxxl" fontWeight="$semibold" fontFamily="$heading">
+      <Text fontSize="$xxxl" fontWeight="600" fontFamily="$heading">
         Heading XXXL (28px) - Space Grotesk Semibold
       </Text>
-      <Text fontSize="$xxl" fontWeight="$semibold" fontFamily="$heading">
+      <Text fontSize="$xxl" fontWeight="600" fontFamily="$heading">
         Heading XXL (24px) - Space Grotesk Semibold
       </Text>
-      <Text fontSize="$xl" fontWeight="$medium" fontFamily="$heading">
+      <Text fontSize="$xl" fontWeight="500" fontFamily="$heading">
         Heading XL (20px) - Space Grotesk Medium
       </Text>
-      <Text fontSize="$lg" fontWeight="$medium" fontFamily="$heading">
+      <Text fontSize="$lg" fontWeight="500" fontFamily="$heading">
         Heading LG (18px) - Space Grotesk Medium
       </Text>
     </div>
@@ -451,16 +451,16 @@ export const TypographyScale: Story = {
               marginTop: "8px",
             }}
           >
-            <Text fontSize="$huge" fontWeight="$bold" fontFamily="$heading">
+            <Text fontSize="$huge" fontWeight="700" fontFamily="$heading">
               Huge (32px)
             </Text>
-            <Text fontSize="$xxxl" fontWeight="$semibold" fontFamily="$heading">
+            <Text fontSize="$xxxl" fontWeight="600" fontFamily="$heading">
               XXXL (28px)
             </Text>
-            <Text fontSize="$xxl" fontWeight="$semibold" fontFamily="$heading">
+            <Text fontSize="$xxl" fontWeight="600" fontFamily="$heading">
               XXL (24px)
             </Text>
-            <Text fontSize="$xl" fontWeight="$medium" fontFamily="$heading">
+            <Text fontSize="$xl" fontWeight="500" fontFamily="$heading">
               XL (20px)
             </Text>
           </div>

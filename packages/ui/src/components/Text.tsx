@@ -34,8 +34,8 @@ export const Text = styled(TamaguiText, {
   color: "$color",
   fontFamily: "$body",
   fontSize: "$base",
-  lineHeight: "$normal",
-  letterSpacing: "$normal",
+  lineHeight: 1.5,
+  letterSpacing: 0,
 
   // Variants for different typography use cases
   variants: {
@@ -45,44 +45,44 @@ export const Text = styled(TamaguiText, {
       h1: {
         fontFamily: "$heading",
         fontSize: "$huge",
-        fontWeight: "$bold",
-        lineHeight: "$tight",
-        letterSpacing: "$tight",
+        fontWeight: "700",
+        lineHeight: 1.2,
+        letterSpacing: -0.025,
       },
       h2: {
         fontFamily: "$heading",
         fontSize: "$xxxl",
-        fontWeight: "$semibold",
-        lineHeight: "$tight",
-        letterSpacing: "$tight",
+        fontWeight: "600",
+        lineHeight: 1.2,
+        letterSpacing: -0.025,
       },
       h3: {
         fontFamily: "$heading",
         fontSize: "$xxl",
-        fontWeight: "$semibold",
-        lineHeight: "$tight",
-        letterSpacing: "$tight",
+        fontWeight: "600",
+        lineHeight: 1.2,
+        letterSpacing: -0.025,
       },
       h4: {
         fontFamily: "$heading",
         fontSize: "$xl",
-        fontWeight: "$medium",
-        lineHeight: "$normal",
-        letterSpacing: "$normal",
+        fontWeight: "500",
+        lineHeight: 1.5,
+        letterSpacing: 0,
       },
       h5: {
         fontFamily: "$heading",
         fontSize: "$lg",
-        fontWeight: "$medium",
-        lineHeight: "$normal",
-        letterSpacing: "$normal",
+        fontWeight: "500",
+        lineHeight: 1.5,
+        letterSpacing: 0,
       },
       h6: {
         fontFamily: "$heading",
         fontSize: "$base",
-        fontWeight: "$medium",
-        lineHeight: "$normal",
-        letterSpacing: "$wide",
+        fontWeight: "500",
+        lineHeight: 1.5,
+        letterSpacing: 0.025,
         textTransform: "uppercase",
       },
 
@@ -90,114 +90,80 @@ export const Text = styled(TamaguiText, {
       body: {
         fontFamily: "$body",
         fontSize: "$base",
-        fontWeight: "$normal",
-        lineHeight: "$relaxed",
-        letterSpacing: "$normal",
+        fontWeight: "400",
+        lineHeight: 1.75,
+        letterSpacing: 0,
       },
       bodyLarge: {
         fontFamily: "$body",
         fontSize: "$lg",
-        fontWeight: "$normal",
-        lineHeight: "$relaxed",
-        letterSpacing: "$normal",
+        fontWeight: "400",
+        lineHeight: 1.75,
+        letterSpacing: 0,
       },
       bodySmall: {
         fontFamily: "$body",
         fontSize: "$sm",
-        fontWeight: "$normal",
-        lineHeight: "$normal",
-        letterSpacing: "$normal",
+        fontWeight: "400",
+        lineHeight: 1.5,
+        letterSpacing: 0,
       },
 
       // Specialized variants
       caption: {
         fontFamily: "$body",
         fontSize: "$xs",
-        fontWeight: "$normal",
-        lineHeight: "$normal",
-        letterSpacing: "$wide",
+        fontWeight: "400",
+        lineHeight: 1.5,
+        letterSpacing: 0.025,
       },
       label: {
         fontFamily: "$body",
         fontSize: "$sm",
-        fontWeight: "$medium",
-        lineHeight: "$normal",
-        letterSpacing: "$wide",
+        fontWeight: "500",
+        lineHeight: 1.5,
+        letterSpacing: 0.025,
       },
       button: {
         fontFamily: "$body",
         fontSize: "$base",
-        fontWeight: "$semibold",
-        lineHeight: "$normal",
-        letterSpacing: "$wide",
+        fontWeight: "600",
+        lineHeight: 1.5,
+        letterSpacing: 0.025,
       },
       code: {
         fontFamily: "$mono",
         fontSize: "$sm",
-        fontWeight: "$normal",
-        lineHeight: "$normal",
-        letterSpacing: "$normal",
+        fontWeight: "400",
+        lineHeight: 1.5,
+        letterSpacing: 0,
       },
       overline: {
         fontFamily: "$heading",
         fontSize: "$xs",
-        fontWeight: "$semibold",
-        lineHeight: "$normal",
-        letterSpacing: "$wider",
+        fontWeight: "600",
+        lineHeight: 1.5,
+        letterSpacing: 0.05,
         textTransform: "uppercase",
-      },
-    },
-
-    // Color variants using theme tokens
-    color: {
-      default: {
-        color: "$color",
-      },
-      primary: {
-        color: "$primary",
-      },
-      secondary: {
-        color: "$colorMuted",
-      },
-      muted: {
-        color: "$colorMuted",
-      },
-      tertiary: {
-        color: "$colorTertiary",
-      },
-      inverse: {
-        color: "$background",
-      },
-      success: {
-        color: "$success",
-      },
-      warning: {
-        color: "$warning",
-      },
-      danger: {
-        color: "$danger",
-      },
-      accent: {
-        color: "$accent",
       },
     },
 
     // Font weight variants (in addition to variant defaults)
     weight: {
       light: {
-        fontWeight: "$light",
+        fontWeight: "300",
       },
       normal: {
-        fontWeight: "$normal",
+        fontWeight: "400",
       },
       medium: {
-        fontWeight: "$medium",
+        fontWeight: "500",
       },
       semibold: {
-        fontWeight: "$semibold",
+        fontWeight: "600",
       },
       bold: {
-        fontWeight: "$bold",
+        fontWeight: "700",
       },
     },
 
@@ -274,7 +240,6 @@ export const Text = styled(TamaguiText, {
   // Default variant values
   defaultVariants: {
     variant: "body",
-    color: "default",
     weight: "normal",
     align: "left",
     wrap: true,
@@ -290,37 +255,35 @@ export type { TextProps };
 export { SizableText, Paragraph, Heading } from "tamagui";
 
 // Convenience exports for common text patterns
-export const H1 = Text.styleable((props) => <Text variant="h1" {...props} />);
+export const H1 = (props: TextProps) => <Text variant="h1" {...props} />;
 H1.displayName = "H1";
 
-export const H2 = Text.styleable((props) => <Text variant="h2" {...props} />);
+export const H2 = (props: TextProps) => <Text variant="h2" {...props} />;
 H2.displayName = "H2";
 
-export const H3 = Text.styleable((props) => <Text variant="h3" {...props} />);
+export const H3 = (props: TextProps) => <Text variant="h3" {...props} />;
 H3.displayName = "H3";
 
-export const H4 = Text.styleable((props) => <Text variant="h4" {...props} />);
+export const H4 = (props: TextProps) => <Text variant="h4" {...props} />;
 H4.displayName = "H4";
 
-export const H5 = Text.styleable((props) => <Text variant="h5" {...props} />);
+export const H5 = (props: TextProps) => <Text variant="h5" {...props} />;
 H5.displayName = "H5";
 
-export const H6 = Text.styleable((props) => <Text variant="h6" {...props} />);
+export const H6 = (props: TextProps) => <Text variant="h6" {...props} />;
 H6.displayName = "H6";
 
-export const Body = Text.styleable((props) => (
-  <Text variant="body" {...props} />
-));
+export const Body = (props: TextProps) => <Text variant="body" {...props} />;
 Body.displayName = "Body";
 
-export const Caption = Text.styleable((props) => (
+export const Caption = (props: TextProps) => (
   <Text variant="caption" {...props} />
-));
+);
 Caption.displayName = "Caption";
 
-export const LabelText = Text.styleable((props) => (
+export const LabelText = (props: TextProps) => (
   <Text variant="label" {...props} />
-));
+);
 LabelText.displayName = "LabelText";
 
 export default Text;

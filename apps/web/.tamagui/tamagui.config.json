@@ -36417,8 +36417,10 @@
           "stiffness": 120
         },
         "fade": {
-          "type": "timing",
-          "duration": 200
+          "type": "spring",
+          "damping": 30,
+          "mass": 1,
+          "stiffness": 400
         },
         "scale": {
           "type": "spring",

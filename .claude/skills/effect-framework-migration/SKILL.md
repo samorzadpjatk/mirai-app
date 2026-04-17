@@ -81,6 +81,19 @@ Research-backed guide for migrating from Promise-based architecture to Effect fr
 
 ## Replacing awilix with Effect Context/Layers
 
+> **Migration from awilix to pure Effect DI (Context.Tag + Layer patterns)**
+
+### Pattern Mapping Quick Reference
+
+| awilix Pattern                                | Effect Pattern                         | Notes                           |
+| --------------------------------------------- | -------------------------------------- | ------------------------------- |
+| `createStaticModule()`                        | `Layer.succeed()` + `Layer.mergeAll()` | Factory functions return Layers |
+| `container.register({ key: asClass(Class) })` | `Layer.succeed(Tag, new Class())`      | Direct instantiation            |
+| `container.resolve("key")`                    | `yield* Tag` in `Effect.gen`           | Tag becomes yieldable           |
+| `Lifetime.SINGLETON`                          | `Layer.succeed()`                      | Default behavior                |
+| `Lifetime.SCOPED`                             | `Layer.effect()` or runtime provision  | Per-request via context         |
+| `cradle.deps` injection                       | Tag requirements in Effect type        | Compile-time checked            |
+
 ### Before (awilix-modular)
 
 ```typescript
@@ -606,6 +619,12 @@ Effect.mapError((error) => new WrappedError({ cause: error }))
 
 ---
 
-**Last Updated**: 2026-04-14  
-**Effect Version**: 3.x  
+**Last Updated**: 2026-04-17
+**Effect Version**: 3.x
 **Compatibility**: Bun, Node.js, React Native
+
+---
+
+## Related Skills
+
+- `effect-patterns` - Day-to-day Effect coding patterns and use case implementations

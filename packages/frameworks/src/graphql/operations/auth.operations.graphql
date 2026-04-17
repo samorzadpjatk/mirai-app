@@ -1,0 +1,16 @@
+query CheckBanStatus {
+  checkBanStatus {
+    banned
+    bannedUntil
+    reason
+  }
+}
+
+query CheckBanStatusByEmail($email: String!) {
+  checkBanStatusByEmail(email: $email) {
+    exists
+    banned
+    bannedUntil
+    reason
+  }
+}

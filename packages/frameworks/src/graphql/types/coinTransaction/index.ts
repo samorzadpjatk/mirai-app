@@ -4,6 +4,7 @@
 // Side-effect imports for type registration
 import "./types.js";
 import "./queries.js";
+import "./mutations.js";
 
 // Re-export all types and helpers for use in other modules
 export {

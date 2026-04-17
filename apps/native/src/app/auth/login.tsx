@@ -15,9 +15,32 @@ import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { YStack, XStack, Text } from "@mirai-app/ui";
 import { useFileDownload } from "~/hooks/files";
+import { getUrqlClient } from "~/lib/urql-client";
 
 const PRIVACY_POLICY_STORAGE_PATH =
   "files-public/legal/PJApp_Privacy_Policy_PL.pdf";
+
+// GraphQL queries for ban status checks
+const CHECK_BAN_STATUS_QUERY = `
+  query CheckBanStatus {
+    checkBanStatus {
+      banned
+      bannedUntil
+      reason
+    }
+  }
+`;
+
+const CHECK_BAN_STATUS_BY_EMAIL_QUERY = `
+  query CheckBanStatusByEmail($email: String!) {
+    checkBanStatusByEmail(email: $email) {
+      exists
+      banned
+      bannedUntil
+      reason
+    }
+  }
+`;
 
 // Color values for React Native styles
 const colors = {
@@ -80,28 +103,75 @@ export default function LoginScreen() {
     ghostEmail.length > 0 && email.trim().toLowerCase() === ghostEmail;
   const isBusy = isLoading || passwordLoading;
 
-  // TODO: Migrate ban status check to GraphQL
-  // These queries need to be added to the GraphQL schema
-  // For now, returning non-banned status
+  /**
+   * Check ban status for the currently authenticated user via GraphQL
+   */
   const checkBanStatus = async () => {
-    // const { data } = await supabase.auth.getSession();
-    // const token = data.session?.access_token;
-    // TODO: Add GetBanStatus query to GraphQL and use graphqlClient
-    return {
-      banned: false,
-      bannedUntil: null as string | null,
-      reason: null as string | null,
-    };
+    try {
+      const client = getUrqlClient();
+      const result = await client.query(CHECK_BAN_STATUS_QUERY, {}).toPromise();
+
+      if (result.error) {
+        console.error("Error checking ban status:", result.error);
+        return {
+          banned: false,
+          bannedUntil: null as string | null,
+          reason: null as string | null,
+        };
+      }
+
+      const data = result.data?.checkBanStatus;
+      return {
+        banned: data?.banned ?? false,
+        bannedUntil: data?.bannedUntil ?? null,
+        reason: data?.reason ?? null,
+      };
+    } catch (error) {
+      console.error("Error checking ban status:", error);
+      return {
+        banned: false,
+        bannedUntil: null as string | null,
+        reason: null as string | null,
+      };
+    }
   };
 
-  const checkBanStatusByEmail = async () => {
-    // TODO: Add GetBanStatusByEmail query to GraphQL
-    return {
-      exists: true,
-      banned: false,
-      bannedUntil: null as string | null,
-      reason: null as string | null,
-    };
+  /**
+   * Check ban status by email via GraphQL (pre-login check)
+   */
+  const checkBanStatusByEmail = async (emailToCheck: string) => {
+    try {
+      const client = getUrqlClient();
+      const result = await client
+        .query(CHECK_BAN_STATUS_BY_EMAIL_QUERY, { email: emailToCheck })
+        .toPromise();
+
+      if (result.error) {
+        console.error("Error checking ban status by email:", result.error);
+        return {
+          exists: true,
+          banned: false,
+          bannedUntil: null as string | null,
+          reason: null as string | null,
+        };
+      }
+
+      const data = result.data?.checkBanStatusByEmail;
+      return {
+        exists: data?.exists ?? true,
+        banned: data?.banned ?? false,
+        bannedUntil: data?.bannedUntil ?? null,
+        reason: data?.reason ?? null,
+      };
+    } catch (error) {
+      console.error("Error checking ban status by email:", error);
+      return {
+        exists: true,
+        banned: false,
+        bannedUntil: null as string | null,
+        reason: null as string | null,
+      };
+    }
   };
 
   const handleBannedLogin = async (
@@ -176,7 +246,7 @@ export default function LoginScreen() {
     clearError();
 
     try {
-      const status = await checkBanStatusByEmail();
+      const status = await checkBanStatusByEmail(email);
       if (status?.exists === false) {
         clearSent();
         setPrecheckError(

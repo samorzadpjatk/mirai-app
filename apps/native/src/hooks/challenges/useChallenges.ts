@@ -51,7 +51,7 @@ export function useChallenges(tripId?: string | null) {
   useMemo(() => {
     const newChallenges =
       (challengesData?.challengesByTrip
-        ?.challenges as unknown as ChallengeSummaryChallenge[]) ?? [];
+        ?.challenges as ChallengeSummaryChallenge[]) ?? [];
 
     if (newChallenges.length === 0) return;
 

@@ -224,7 +224,10 @@ SelectItem.displayName = "Select.Item";
  * </Select.Group>
  * ```
  */
-const SelectGroup = React.forwardRef<
+const SelectGroup: React.ForwardRefExoticComponent<
+  React.ComponentPropsWithoutRef<typeof TamaguiSelect.Group> &
+    React.RefAttributes<React.ElementRef<typeof TamaguiSelect.Group>>
+> = React.forwardRef<
   React.ElementRef<typeof TamaguiSelect.Group>,
   React.ComponentPropsWithoutRef<typeof TamaguiSelect.Group>
 >(({ children, ...props }, ref) => {
@@ -600,5 +603,11 @@ type SelectComponent = React.FC<SelectProps> & {
 (Select as SelectComponent).Icon = TamaguiSelect.Icon;
 (Select as SelectComponent).Separator = Separator;
 
-export { Select };
+export {
+  Select,
+  SelectItem,
+  SelectGroup,
+  SelectLabel,
+  Separator as SelectSeparator,
+};
 export default Select;

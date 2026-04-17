@@ -1,0 +1,206 @@
+# Group Operations - Mirai App API
+# GraphQL operations for Group domain
+
+# ============================================
+# FRAGMENTS
+# ============================================
+
+fragment GroupFields on Group {
+  id
+  coins
+  createdAt
+  description
+  imageUrl
+  isActive
+  memberCount
+  name
+  organizerId
+  tripId
+  updatedAt
+}
+
+fragment GroupEdgeFields on GroupEdge {
+  cursor
+  node {
+    ...GroupFields
+  }
+}
+
+fragment PageInfoFields on PageInfo {
+  endCursor
+  hasNextPage
+  hasPreviousPage
+  startCursor
+}
+
+fragment GroupConnectionFields on GroupConnection {
+  edges {
+    ...GroupEdgeFields
+  }
+  nodes {
+    ...GroupFields
+  }
+  pageInfo {
+    ...PageInfoFields
+  }
+  totalCount
+}
+
+fragment GroupMemberFields on GroupMember {
+  id
+  groupId
+  userId
+  role
+  joinedAt
+  user {
+    id
+    authUserId
+    firstName
+    lastName
+    nickname
+    email
+    phone
+    avatarUrl
+    role
+    status
+    groupId
+    bio
+    birthDate
+    shirtSize
+    dietaryRequirements
+    medicalInfo
+    createdAt
+    updatedAt
+  }
+}
+
+fragment GroupMemberEdgeFields on GroupMemberEdge {
+  cursor
+  node {
+    ...GroupMemberFields
+  }
+}
+
+fragment GroupMemberConnectionFields on GroupMemberConnection {
+  edges {
+    ...GroupMemberEdgeFields
+  }
+  nodes {
+    ...GroupMemberFields
+  }
+  pageInfo {
+    ...PageInfoFields
+  }
+  totalCount
+}
+
+fragment GroupJoinRequestFields on GroupJoinRequest {
+  id
+  groupId
+  userId
+  status
+  message
+  requestedAt
+}
+
+fragment GroupJoinRequestEdgeFields on GroupJoinRequestEdge {
+  cursor
+  node {
+    ...GroupJoinRequestFields
+  }
+}
+
+fragment GroupJoinRequestConnectionFields on GroupJoinRequestConnection {
+  edges {
+    ...GroupJoinRequestEdgeFields
+  }
+  nodes {
+    ...GroupJoinRequestFields
+  }
+  pageInfo {
+    ...PageInfoFields
+  }
+  totalCount
+}
+
+# ============================================
+# QUERIES
+# ============================================
+
+query GetGroupsByTrip($tripId: ID!, $first: Int, $after: String) {
+  groupsByTrip(tripId: $tripId, first: $first, after: $after) {
+    ...GroupConnectionFields
+  }
+}
+
+query GetGroup($id: ID!) {
+  group(id: $id) {
+    ...GroupFields
+  }
+}
+
+query GetMyGroup($tripId: ID!) {
+  myGroup(tripId: $tripId) {
+    ...GroupFields
+  }
+}
+
+query GetGroupMembers($groupId: ID!, $first: Int, $after: String) {
+  groupMembers(groupId: $groupId, first: $first, after: $after) {
+    ...GroupMemberConnectionFields
+  }
+}
+
+query GetGroupJoinRequests($groupId: ID!, $first: Int, $after: String) {
+  groupJoinRequests(groupId: $groupId, first: $first, after: $after) {
+    ...GroupJoinRequestConnectionFields
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+mutation CreateGroup($input: CreateGroupInput!) {
+  createGroup(input: $input) {
+    ...GroupFields
+  }
+}
+
+mutation UpdateGroup($id: ID!, $input: UpdateGroupInput!) {
+  updateGroup(id: $id, input: $input) {
+    ...GroupFields
+  }
+}
+
+mutation DeleteGroup($id: ID!) {
+  deleteGroup(id: $id)
+}
+
+mutation JoinGroup($input: JoinGroupInput!) {
+  joinGroup(input: $input) {
+    ...GroupMemberFields
+  }
+}
+
+mutation LeaveGroup($input: LeaveGroupInput!) {
+  leaveGroup(input: $input)
+}
+
+mutation CreateGroupJoinRequest($input: CreateGroupJoinRequestInput!) {
+  createGroupJoinRequest(input: $input) {
+    ...GroupJoinRequestFields
+  }
+}
+
+mutation ApproveGroupJoinRequest($input: ApproveGroupJoinRequestInput!) {
+  approveGroupJoinRequest(input: $input) {
+    ...GroupJoinRequestFields
+  }
+}
+
+mutation RejectGroupJoinRequest($input: RejectGroupJoinRequestInput!) {
+  rejectGroupJoinRequest(input: $input) {
+    ...GroupJoinRequestFields
+  }
+}

@@ -1,0 +1,42 @@
+# Notification Subscriptions
+# GraphQL subscriptions for real-time notification updates
+# ============================================
+
+# Subscribe to new notifications as they are created
+# Used by the notification sender service to process notifications in real-time
+subscription NotificationCreated {
+  notificationCreated {
+    id
+    tripId
+    title
+    content
+    type
+    status
+    priority
+    scheduledAt
+    sentAt
+    createdById
+    createdAt
+    updatedAt
+  }
+}
+
+# Subscribe to notification status changes
+# Emits when a notification's status is updated (e.g., pending -> sent)
+# Optionally filter by specific notification ID
+subscription NotificationStatusChanged($notificationId: ID) {
+  notificationStatusChanged(notificationId: $notificationId) {
+    id
+    tripId
+    title
+    content
+    type
+    status
+    priority
+    scheduledAt
+    sentAt
+    createdById
+    createdAt
+    updatedAt
+  }
+}

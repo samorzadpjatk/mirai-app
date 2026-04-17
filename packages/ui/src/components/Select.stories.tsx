@@ -9,7 +9,13 @@
 
 import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
-import { Select } from "./Select";
+import {
+  Select,
+  SelectItem,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
+} from "./Select";
 
 /**
  * Storybook metadata for the Select component
@@ -132,12 +138,6 @@ const fruits = [
   { value: "orange", label: "Orange" },
   { value: "grape", label: "Grape" },
 ];
-
-// Access Select sub-components
-const SelectItem = Select.Item;
-const SelectGroup = Select.Group;
-const SelectLabel = Select.Label;
-const SelectSeparator = Select.Separator;
 
 /**
  * Interactive wrapper for controlled select stories

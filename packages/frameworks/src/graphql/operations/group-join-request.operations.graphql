@@ -1,0 +1,69 @@
+# Group Join Request Operations - Mirai App API
+# GraphQL operations for Group Join Request domain
+# Note: These operations are also available in group.operations.graphql
+# This file provides a focused view of join request operations
+# ============================================
+
+fragment GroupJoinRequestFields on GroupJoinRequest {
+  id
+  groupId
+  userId
+  status
+  message
+  requestedAt
+}
+
+fragment GroupJoinRequestEdgeFields on GroupJoinRequestEdge {
+  cursor
+  node {
+    ...GroupJoinRequestFields
+  }
+}
+
+fragment PageInfoFields on PageInfo {
+  endCursor
+  hasNextPage
+  hasPreviousPage
+  startCursor
+}
+
+fragment GroupJoinRequestConnectionFields on GroupJoinRequestConnection {
+  edges {
+    ...GroupJoinRequestEdgeFields
+  }
+  nodes {
+    ...GroupJoinRequestFields
+  }
+  pageInfo {
+    ...PageInfoFields
+  }
+  totalCount
+}
+
+# Get group join requests for a group
+query GetGroupJoinRequests($groupId: ID!, $first: Int, $after: String) {
+  groupJoinRequests(groupId: $groupId, first: $first, after: $after) {
+    ...GroupJoinRequestConnectionFields
+  }
+}
+
+# Create a join request
+mutation CreateGroupJoinRequest($input: CreateGroupJoinRequestInput!) {
+  createGroupJoinRequest(input: $input) {
+    ...GroupJoinRequestFields
+  }
+}
+
+# Approve a join request
+mutation ApproveGroupJoinRequest($input: ApproveGroupJoinRequestInput!) {
+  approveGroupJoinRequest(input: $input) {
+    ...GroupJoinRequestFields
+  }
+}
+
+# Reject a join request
+mutation RejectGroupJoinRequest($input: RejectGroupJoinRequestInput!) {
+  rejectGroupJoinRequest(input: $input) {
+    ...GroupJoinRequestFields
+  }
+}

@@ -64,8 +64,10 @@ const animationConfigs = {
 
   // Quick fade for overlays and backdrops
   fade: {
-    type: "timing" as const,
-    duration: 200,
+    type: "spring" as const,
+    damping: 30,
+    mass: 1,
+    stiffness: 400,
   },
 
   // Scale animation for pop-in effects

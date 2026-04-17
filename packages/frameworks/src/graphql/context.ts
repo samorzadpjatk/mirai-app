@@ -1,9 +1,11 @@
 import type { YogaInitialContext } from "graphql-yoga";
 import type { Layer, Runtime } from "effect";
+import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import type {
   ChallengeController,
   ChallengeSubmissionController,
   ChallengeVoteController,
+  CoinTransactionController,
 } from "@mirai-app/adapters";
 
 /**
@@ -29,6 +31,7 @@ export interface GraphQLControllers {
   challengeController: ChallengeController;
   challengeSubmissionController: ChallengeSubmissionController;
   challengeVoteController: ChallengeVoteController;
+  coinTransactionController: CoinTransactionController;
 }
 
 /**
@@ -56,6 +59,11 @@ export interface GraphQLContext {
    * The current HTTP request
    */
   request: Request;
+
+  /**
+   * Supabase client for authentication and database operations
+   */
+  supabase: SupabaseClient;
 
   /**
    * Authentication context if user is authenticated
@@ -98,6 +106,11 @@ export interface GraphQLContextConfig {
    * Pre-built Effect runtime
    */
   runtime: Runtime.Runtime<unknown>;
+
+  /**
+   * Supabase client for authentication
+   */
+  supabase: SupabaseClient;
 
   /**
    * Function to extract auth context from request
@@ -161,6 +174,7 @@ export function createGraphQLContext(
       appLayer: config.appLayer,
       runtime: config.runtime,
       request: ctx.request,
+      supabase: config.supabase,
       authContext,
       requestId,
       requestTime,

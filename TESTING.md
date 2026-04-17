@@ -140,13 +140,6 @@ const user = await Effect.runPromise(
   User.create({ id: "1", email: "test@example.com" }),
 );
 
-// Test error paths with Effect.either
-const either = await Effect.runPromise(Effect.either(effect));
-if (either._tag === "Right") {
-  expect(either.right).toBeDefined();
-} else {
-  expect(either.left._tag).toBe("ExpectedError");
-}
 ```
 
 ---
@@ -160,6 +153,7 @@ if (either._tag === "Right") {
 - **Mock ports via `Layer.succeed`**
 - **Provide dependencies with `Effect.provide`**
 - **Test with `Effect.runPromise`**
+- **Test errors with try/catch at the edge** (Effect.runPromise throws FiberFailure)
 
 ### Example with Layer-based DI
 
@@ -204,14 +198,12 @@ describe("[UNIT] CreateUserUseCase", () => {
     const useCase = new CreateUserUseCase();
     const effect = useCase.execute({ email: "test@example.com" });
 
-    // Test error case with Effect.either
-    const result = await Effect.runPromise(
-      Effect.either(effect.pipe(Effect.provide(TestLayer))),
-    );
-
-    expect(result._tag).toBe("Left");
-    if (result._tag === "Left") {
-      expect(result.left._tag).toBe("UserAlreadyExistsError");
+    // Test error case with try/catch at the edge
+    // Effect.runPromise throws FiberFailure - extract the original error
+    try {
+      await Effect.runPromise(effect.pipe(Effect.provide(TestLayer)));
+    } catch (error) {
+      expect(error).toBeInstanceOf(UserAlreadyExistsError);
     }
   });
 });

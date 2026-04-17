@@ -1,0 +1,53 @@
+# Community Operations - Mirai App API
+# GraphQL operations for Community domain (feed, rankings, avatars)
+# ============================================
+
+fragment GroupRankingFields on GroupRanking {
+  id
+  name
+  image
+  coins
+  participants {
+    id
+  }
+}
+
+fragment TripRankingsFields on TripRankings {
+  tripId
+  groups {
+    ...GroupRankingFields
+  }
+}
+
+fragment BatchRankingsResultFields on BatchRankingsResult {
+  rankings {
+    ...TripRankingsFields
+  }
+}
+
+fragment UserAvatarUrlFields on UserAvatarUrl {
+  userId
+  url
+}
+
+fragment BatchAvatarUrlsResultFields on BatchAvatarUrlsResult {
+  avatars {
+    ...UserAvatarUrlFields
+  }
+}
+
+# Batch query for fetching rankings for multiple trips at once
+# Used in: apps/native/src/hooks/community/useCommunityActivityData.ts
+query BatchRankings($tripIds: [ID!]!) {
+  batchRankings(tripIds: $tripIds) {
+    ...BatchRankingsResultFields
+  }
+}
+
+# Batch query for fetching avatar URLs for multiple users at once
+# Used in: apps/native/src/hooks/community/useCommunityActivityData.ts
+query BatchAvatarUrls($userIds: [ID!]!) {
+  batchAvatarUrls(userIds: $userIds) {
+    ...BatchAvatarUrlsResultFields
+  }
+}

@@ -209,7 +209,7 @@ export function Sheet({
       {/* Overlay - shows dimmed background when sheet is open */}
       {overlay && (
         <TamaguiSheet.Overlay
-          animation="quick"
+          animation="fast"
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
           opacity={0.6}
@@ -258,7 +258,7 @@ export function Sheet({
             borderBottomWidth={1}
             borderBottomColor="$borderColor"
           >
-            <Text variant="h3" color="default">
+            <Text variant="h3" color="$color">
               {title}
             </Text>
             <Button

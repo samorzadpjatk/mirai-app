@@ -127,7 +127,7 @@ export interface SpinnerProps extends Omit<
  * </XStack>
  * ```
  */
-export const Spinner = TamaguiSpinner;
+export const Spinner: React.FC<SpinnerProps> = TamaguiSpinner;
 
 // Default export for convenience
 export default Spinner;

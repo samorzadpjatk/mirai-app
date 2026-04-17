@@ -92,7 +92,7 @@ Is it pure business logic?
 
 ---
 
-## 9 Universal Rules
+## 11 Universal Rules
 
 1. **TDD first:** Write the failing test before implementation.
 2. **Effect-based:** Domain uses `Effect<T,E,never>`; orchestration uses `Effect.gen` + `Context.Tag`.
@@ -103,6 +103,8 @@ Is it pure business logic?
 7. **GraphQL workflow:** Never edit generated GraphQL clients, types, or operations in `packages/graphql-client/src/generated/`. Never edit `packages/graphql-client/codegen.ts`. Only edit Pothos schema files, then sync schema, then regenerate client.
 8. **TODO comments:** When fixing a TODO, implement the fix without rephrasing or removing the TODO comment. The TODO comment documents the original intent and should remain intact for reference.
 9. **Minimal comments:** Write self-explanatory code with clear naming, types, and structure. Avoid explanatory comments that describe what the code does; use comments only for _why_ (business rationale, non-obvious design decisions). If code needs a comment to explain what it does, refactor it to be clearer instead.
+10. **No inline type imports:** Use standard ES module imports at the top of the file. Never use inline type imports like `import("@mirai-app/domain").ActivityId`. If a type is needed, import it properly: `import type { ActivityId } from "@mirai-app/domain"`
+11. **No `as unknown as` casts:** Never use `as unknown as Type` type assertions. Fix the underlying type mismatch through proper type guards, type narrowing, or by correcting the type definitions. If external types are incorrect, use proper type declarations or wrapper functions instead of unsafe casting.
 
 ---
 
@@ -197,4 +199,4 @@ For comprehensive conventions, see **CLAUDE.md**:
 ---
 
 **Last Updated:** 2026-04-15
-**Version:** 2.3.0 (Added minimal comments rule)
+**Version:** 2.4.0 (Added no `as unknown as` cast rule)

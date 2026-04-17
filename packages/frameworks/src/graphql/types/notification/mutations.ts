@@ -11,6 +11,7 @@ import type {
   NotificationDTO,
   NotificationScheduleDTO,
 } from "@mirai-app/use-cases";
+import { publishNotificationCreated } from "./subscriptions.js";
 
 /**
  * Create Notification Input
@@ -302,6 +303,10 @@ builder.mutationFields((t) => ({
           extensions: { code: "INTERNAL_SERVER_ERROR" },
         });
       }
+
+      // Publish the notification created event for real-time subscriptions
+      // This triggers the notification-sender service to process the notification
+      publishNotificationCreated(result.data as NotificationDTO);
 
       return result.data;
     },

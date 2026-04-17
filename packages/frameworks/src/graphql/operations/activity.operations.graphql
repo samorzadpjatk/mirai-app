@@ -1,0 +1,111 @@
+# Activity Operations - Mirai App API
+# ============================================
+# GraphQL operations for Activity domain.
+# ============================================
+
+fragment ActivityFields on Activity {
+  id
+  activityType
+  content
+  createdAt
+  hiddenAt
+  hiddenByAdmin
+  hiddenReason
+  isHidden
+  isPinned
+  metadata
+  tripId
+  updatedAt
+  userId
+}
+
+fragment ActivityEdgeFields on ActivityEdge {
+  cursor
+  node {
+    ...ActivityFields
+  }
+}
+
+fragment PageInfoFields on PageInfo {
+  endCursor
+  hasNextPage
+  hasPreviousPage
+  startCursor
+}
+
+fragment ActivityConnectionFields on ActivityConnection {
+  edges {
+    ...ActivityEdgeFields
+  }
+  nodes {
+    ...ActivityFields
+  }
+  pageInfo {
+    ...PageInfoFields
+  }
+  totalCount
+}
+
+query GetActivitiesByTrip($tripId: ID!, $first: Int, $after: String) {
+  activitiesByTrip(tripId: $tripId, first: $first, after: $after) {
+    ...ActivityConnectionFields
+  }
+}
+
+query GetActivitiesByTripModeration($tripId: ID!, $first: Int, $after: String) {
+  activitiesByTripModeration(tripId: $tripId, first: $first, after: $after) {
+    ...ActivityConnectionFields
+  }
+}
+
+query GetActivity($id: ID!) {
+  activity(id: $id) {
+    ...ActivityConnectionFields
+  }
+}
+
+mutation CreateCustomActivity($input: CreateCustomActivityInput!) {
+  createCustomActivity(input: $input) {
+    ...ActivityFields
+  }
+}
+
+mutation UpdateActivity($id: ID!, $input: UpdateActivityInput!) {
+  updateActivity(id: $id, input: $input) {
+    ...ActivityFields
+  }
+}
+
+mutation DeleteActivity($id: ID!) {
+  deleteActivity(id: $id)
+}
+
+mutation SetActivityPinned($input: SetActivityPinnedInput!) {
+  setActivityPinned(input: $input) {
+    ...ActivityFields
+  }
+}
+
+mutation HideActivity($input: HideActivityInput!) {
+  hideActivity(input: $input) {
+    activity {
+      ...ActivityFields
+    }
+    success
+  }
+}
+
+mutation UnhideActivity($id: ID!) {
+  unhideActivity(id: $id) {
+    activity {
+      ...ActivityFields
+    }
+    success
+  }
+}
+
+mutation ToggleActivityReaction($input: ToggleActivityReactionInput!) {
+  toggleActivityReaction(input: $input) {
+    ...ActivityFields
+  }
+}

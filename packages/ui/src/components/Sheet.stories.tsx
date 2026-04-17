@@ -135,12 +135,18 @@ type Story = StoryObj<typeof meta>;
 /**
  * Interactive wrapper for controlled sheet stories
  */
-const InteractiveSheet = (props: React.ComponentProps<typeof Sheet>) => {
+const InteractiveSheet = (
+  props: Partial<React.ComponentProps<typeof Sheet>>,
+) => {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button onPress={() => setOpen(true)}>Open Sheet</Button>
-      <Sheet {...props} open={open} onOpenChange={setOpen}>
+      <Sheet
+        {...(props as React.ComponentProps<typeof Sheet>)}
+        open={open}
+        onOpenChange={setOpen}
+      >
         {props.children || <Text>Sheet content goes here.</Text>}
       </Sheet>
     </>
@@ -223,7 +229,7 @@ export const CustomSnapPoints: Story = {
     children: (
       <>
         <Text>Custom snap points at 50%, 75%, and 90%.</Text>
-        <Text fontSize="$sm" color="muted" marginTop="$4">
+        <Text fontSize="$sm" color="$colorMuted" marginTop="$4">
           Users can drag between these heights.
         </Text>
       </>
@@ -270,7 +276,7 @@ export const NonDismissible: Story = {
         <Text>
           This sheet cannot be dismissed by clicking overlay or swiping.
         </Text>
-        <Text fontSize="$sm" color="muted" marginTop="$4">
+        <Text fontSize="$sm" color="$colorMuted" marginTop="$4">
           Users must use the close button or complete an action.
         </Text>
       </>
@@ -340,7 +346,7 @@ export const FormExample: Story = {
               style={{ display: "flex", flexDirection: "column", gap: "16px" }}
             >
               <Text>Form content inside a sheet.</Text>
-              <Text fontSize="$sm" color="muted">
+              <Text fontSize="$sm" color="$colorMuted">
                 Form fields would go here in a real implementation.
               </Text>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

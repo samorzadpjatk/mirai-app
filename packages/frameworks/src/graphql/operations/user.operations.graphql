@@ -1,0 +1,98 @@
+# User Operations - Mirai App API
+# GraphQL operations for User domain
+
+# ============================================
+# FRAGMENTS
+# ============================================
+
+fragment UserFields on User {
+  id
+  authUserId
+  firstName
+  lastName
+  nickname
+  email
+  phone
+  avatarUrl
+  role
+  status
+  groupId
+  bio
+  birthDate
+  shirtSize
+  dietaryRequirements
+  medicalInfo
+  createdAt
+  updatedAt
+}
+
+fragment UserEdgeFields on UserEdge {
+  cursor
+  node {
+    ...UserFields
+  }
+}
+
+fragment PageInfoFields on PageInfo {
+  endCursor
+  hasNextPage
+  hasPreviousPage
+  startCursor
+}
+
+fragment UserConnectionFields on UserConnection {
+  edges {
+    ...UserEdgeFields
+  }
+  nodes {
+    ...UserFields
+  }
+  pageInfo {
+    ...PageInfoFields
+  }
+  totalCount
+}
+
+# ============================================
+# QUERIES
+# ============================================
+
+query GetUser($id: ID!) {
+  user(id: $id) {
+    ...UserFields
+  }
+}
+
+query GetCurrentUser {
+  currentUser {
+    ...UserFields
+  }
+}
+
+query GetUsers($first: Int, $after: String) {
+  users(first: $first, after: $after) {
+    ...UserConnectionFields
+  }
+}
+
+query GetUsersByRole($role: String!, $first: Int, $after: String) {
+  usersByRole(role: $role, first: $first, after: $after) {
+    ...UserConnectionFields
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+mutation CreateUser($input: CreateUserInput!) {
+  createUser(input: $input) {
+    ...UserFields
+  }
+}
+
+mutation UpdateUser($id: ID!, $input: UpdateUserInput!) {
+  updateUser(id: $id, input: $input) {
+    ...UserFields
+  }
+}

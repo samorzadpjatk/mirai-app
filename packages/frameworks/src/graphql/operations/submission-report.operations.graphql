@@ -1,0 +1,79 @@
+# Submission Report Operations - Mirai App API
+# GraphQL operations for reporting inappropriate submissions
+# ============================================
+# TODO: Backend implementation needed for submission report operations
+# These require Pothos schema definitions in packages/frameworks/src/graphql/types/submissionReport/
+# and corresponding controllers in packages/adapters/src/submission/
+
+# fragment SubmissionReportFields on SubmissionReport {
+#   id
+#   submissionId
+#   reporterId
+#   reason
+#   details
+#   status
+#   createdAt
+#   updatedAt
+# }
+
+# fragment SubmissionReportEdgeFields on SubmissionReportEdge {
+#   cursor
+#   node {
+#     ...SubmissionReportFields
+#   }
+# }
+
+# fragment PageInfoFields on PageInfo {
+#   endCursor
+#   hasNextPage
+#   hasPreviousPage
+#   startCursor
+# }
+
+# fragment SubmissionReportConnectionFields on SubmissionReportConnection {
+#   edges {
+#     ...SubmissionReportEdgeFields
+#   }
+#   nodes {
+#     ...SubmissionReportFields
+#   }
+#   pageInfo {
+#     ...PageInfoFields
+#   }
+#   totalCount
+# }
+
+# Get submission reports (admin/moderator only)
+# query GetSubmissionReports(
+#   $status: ReportStatus
+#   $first: Int
+#   $after: String
+# ) {
+#   submissionReports(status: $status, first: $first, after: $after) {
+#     ...SubmissionReportConnectionFields
+#   }
+# }
+
+# Get my submitted reports
+# query GetMySubmissionReports($first: Int, $after: String) {
+#   mySubmissionReports(first: $first, after: $after) {
+#     ...SubmissionReportConnectionFields
+#   }
+# }
+
+# Create a submission report
+# mutation CreateSubmissionReport($input: CreateSubmissionReportInput!) {
+#   createSubmissionReport(input: $input) {
+#     ...SubmissionReportFields
+#   }
+# }
+
+# Update report status (admin/moderator only)
+# mutation UpdateSubmissionReportStatus(
+#   $id: ID!
+#   $input: UpdateSubmissionReportStatusInput!
+# ) {
+#   updateSubmissionReportStatus(id: $id, input: $input) {
+#     ...SubmissionReportFields
+#   }
+# }

@@ -14,7 +14,12 @@
 
 import { describe, it, expect } from "bun:test";
 import { render } from "@testing-library/react";
-import { Spinner, type SpinnerProps } from "../../src/components/Spinner";
+import {
+  Spinner,
+  type SpinnerProps,
+  type SpinnerSize,
+  type SpinnerColor,
+} from "../../src/components/Spinner";
 import { TestWrapper } from "../TestWrapper";
 
 describe("[UNIT] Spinner", () => {
@@ -115,8 +120,8 @@ describe("[UNIT] Spinner", () => {
 
   it("exports type definitions", () => {
     // Type-only test - verifies types are exported
-    type TestSize = import("../../src/components/Spinner").SpinnerSize;
-    type TestColor = import("../../src/components/Spinner").SpinnerColor;
+    type TestSize = SpinnerSize;
+    type TestColor = SpinnerColor;
     expect(true).toBe(true); // Runtime assertion
   });
 });
