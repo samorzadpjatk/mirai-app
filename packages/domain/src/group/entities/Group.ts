@@ -1,0 +1,232 @@
+import type { GroupId } from "../value-objects/GroupId";
+import type { TripId } from "../../trip/value-objects/TripId";
+import type { UserId } from "../../user/value-objects/UserId";
+import {
+  ValidationError,
+  InsufficientResourcesError,
+} from "../../shared/errors/domain-errors";
+import { Effect } from "effect";
+
+/**
+ * Group Domain Entity
+ *
+ * Represents a group participating in a trip.
+ */
+export class Group {
+  private constructor(
+    readonly id: GroupId,
+    readonly tripId: TripId,
+    readonly name: string,
+    readonly description: string | null,
+    readonly image: string | null,
+    readonly organizerId: UserId,
+    readonly code: string,
+    readonly coins: number,
+    readonly isDeleted: boolean,
+    readonly createdAt: Date,
+    readonly updatedAt: Date,
+  ) {}
+
+  /**
+   * Factory method to create a Group entity
+   */
+  static create(props: {
+    id: GroupId;
+    tripId: TripId;
+    name: string;
+    description?: string | null;
+    image?: string | null;
+    organizerId: UserId;
+    code: string;
+    coins?: number;
+    isDeleted?: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Effect.Effect<Group, ValidationError, never> {
+    const trimmedName = props.name.trim();
+
+    if (trimmedName.length === 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "name",
+          message: "Group name is required",
+          value: props.name,
+        }),
+      );
+    }
+
+    if (trimmedName.length > 100) {
+      return Effect.fail(
+        new ValidationError({
+          field: "name",
+          message: "Group name must be at most 100 characters",
+          value: props.name,
+        }),
+      );
+    }
+
+    const trimmedCode = props.code.trim();
+    if (trimmedCode.length === 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "code",
+          message: "Group code is required",
+          value: props.code,
+        }),
+      );
+    }
+
+    if (trimmedCode.length > 20) {
+      return Effect.fail(
+        new ValidationError({
+          field: "code",
+          message: "Group code must be at most 20 characters",
+          value: props.code,
+        }),
+      );
+    }
+
+    if ((props.coins ?? 0) < 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "coins",
+          message: "Coins cannot be negative",
+          value: props.coins,
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      new Group(
+        props.id,
+        props.tripId,
+        trimmedName,
+        props.description ?? null,
+        props.image ?? null,
+        props.organizerId,
+        trimmedCode,
+        props.coins ?? 0,
+        props.isDeleted ?? false,
+        props.createdAt,
+        props.updatedAt,
+      ),
+    );
+  }
+
+  /**
+   * Add coins to the group
+   */
+  addCoins(amount: number): Effect.Effect<Group, ValidationError, never> {
+    if (amount <= 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "amount",
+          message: "Amount must be positive",
+          value: amount,
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      new Group(
+        this.id,
+        this.tripId,
+        this.name,
+        this.description,
+        this.image,
+        this.organizerId,
+        this.code,
+        this.coins + amount,
+        this.isDeleted,
+        this.createdAt,
+        new Date(),
+      ),
+    );
+  }
+
+  /**
+   * Subtract coins from the group
+   */
+  subtractCoins(
+    amount: number,
+  ): Effect.Effect<Group, InsufficientResourcesError | ValidationError, never> {
+    if (amount <= 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "amount",
+          message: "Amount must be positive",
+          value: amount,
+        }),
+      );
+    }
+
+    if (amount > this.coins) {
+      return Effect.fail(
+        new InsufficientResourcesError({
+          resource: "coins",
+          required: amount,
+          available: this.coins,
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      new Group(
+        this.id,
+        this.tripId,
+        this.name,
+        this.description,
+        this.image,
+        this.organizerId,
+        this.code,
+        this.coins - amount,
+        this.isDeleted,
+        this.createdAt,
+        new Date(),
+      ),
+    );
+  }
+
+  /**
+   * Soft delete the group
+   */
+  softDelete(): Group {
+    return new Group(
+      this.id,
+      this.tripId,
+      this.name,
+      this.description,
+      this.image,
+      this.organizerId,
+      this.code,
+      this.coins,
+      true,
+      this.createdAt,
+      new Date(),
+    );
+  }
+
+  /**
+   * Update group details
+   */
+  withDetails(props: {
+    name?: string;
+    description?: string | null;
+    image?: string | null;
+  }): Effect.Effect<Group, ValidationError, never> {
+    return Group.create({
+      id: this.id,
+      tripId: this.tripId,
+      name: props.name ?? this.name,
+      description:
+        props.description !== undefined ? props.description : this.description,
+      image: props.image !== undefined ? props.image : this.image,
+      organizerId: this.organizerId,
+      code: this.code,
+      coins: this.coins,
+      isDeleted: this.isDeleted,
+      createdAt: this.createdAt,
+      updatedAt: new Date(),
+    });
+  }
+}

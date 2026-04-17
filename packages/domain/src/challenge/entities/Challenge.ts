@@ -1,0 +1,333 @@
+import type { ChallengeId } from "../value-objects/ChallengeId";
+import type { TripId } from "../../trip/value-objects/TripId";
+import {
+  ValidationError,
+  TimeConstraintError,
+} from "../../shared/errors/domain-errors";
+import { Effect } from "effect";
+
+/**
+ * Submission Type Enum
+ */
+export type SubmissionType =
+  | "IMAGE"
+  | "MULTI_IMAGE"
+  | "VIDEO"
+  | "TEXT"
+  | "IMAGE_LOCATION"
+  | "LOCATION"
+  | "QR_CODE";
+
+/**
+ * Scoring Category Enum
+ */
+export type ScoringCategory =
+  | "SPEED"
+  | "UNLIMITED"
+  | "JUDGED_STAFF"
+  | "PEER_VOTING";
+
+/**
+ * Challenge Status Enum
+ */
+export type ChallengeStatus =
+  | "HIDDEN"
+  | "VISIBLE"
+  | "ACTIVE"
+  | "VOTING_PHASE"
+  | "COMPLETED"
+  | "CANCELLED";
+
+/**
+ * Challenge Domain Entity
+ *
+ * Represents a challenge within a trip with scoring and submission rules.
+ */
+export class Challenge {
+  private constructor(
+    readonly id: ChallengeId,
+    readonly tripId: TripId,
+    readonly name: string,
+    readonly description: string | null,
+    readonly image: string | null,
+    readonly submissionType: SubmissionType,
+    readonly scoringCategory: ScoringCategory,
+    readonly isRecurring: boolean,
+    readonly dailyStartTime: string | null,
+    readonly dailyEndTime: string | null,
+    readonly basePoints: number,
+    readonly firstPlacePoints: number | null,
+    readonly secondPlacePoints: number | null,
+    readonly thirdPlacePoints: number | null,
+    readonly status: ChallengeStatus,
+    readonly startTime: Date | null,
+    readonly endTime: Date | null,
+    readonly votingStartTime: Date | null,
+    readonly votingEndTime: Date | null,
+    readonly targetLatitude: number | null,
+    readonly targetLongitude: number | null,
+    readonly expectedValue: string | null,
+    readonly autoApprove: boolean,
+    readonly createdAt: Date,
+    readonly updatedAt: Date,
+  ) {}
+
+  /**
+   * Factory method to create a Challenge entity
+   */
+  static create(props: {
+    id: ChallengeId;
+    tripId: TripId;
+    name: string;
+    description?: string | null;
+    image?: string | null;
+    submissionType: SubmissionType;
+    scoringCategory: ScoringCategory;
+    isRecurring?: boolean;
+    dailyStartTime?: string | null;
+    dailyEndTime?: string | null;
+    basePoints?: number;
+    firstPlacePoints?: number | null;
+    secondPlacePoints?: number | null;
+    thirdPlacePoints?: number | null;
+    status?: ChallengeStatus;
+    startTime?: Date | null;
+    endTime?: Date | null;
+    votingStartTime?: Date | null;
+    votingEndTime?: Date | null;
+    targetLatitude?: number | null;
+    targetLongitude?: number | null;
+    expectedValue?: string | null;
+    autoApprove?: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Effect.Effect<Challenge, ValidationError, never> {
+    const trimmedName = props.name.trim();
+
+    if (trimmedName.length === 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "name",
+          message: "Challenge name is required",
+          value: props.name,
+        }),
+      );
+    }
+
+    if (trimmedName.length > 200) {
+      return Effect.fail(
+        new ValidationError({
+          field: "name",
+          message: "Challenge name must be at most 200 characters",
+          value: props.name,
+        }),
+      );
+    }
+
+    if ((props.basePoints ?? 0) < 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "basePoints",
+          message: "Base points cannot be negative",
+          value: props.basePoints,
+        }),
+      );
+    }
+
+    if (props.endTime && props.startTime && props.endTime < props.startTime) {
+      return Effect.fail(
+        new ValidationError({
+          field: "endTime",
+          message: "End time must be after start time",
+          value: props.endTime,
+        }),
+      );
+    }
+
+    // Validate coordinates if provided
+    if (props.targetLatitude !== null && props.targetLatitude !== undefined) {
+      if (props.targetLatitude < -90 || props.targetLatitude > 90) {
+        return Effect.fail(
+          new ValidationError({
+            field: "targetLatitude",
+            message: "Latitude must be between -90 and 90",
+            value: props.targetLatitude,
+          }),
+        );
+      }
+    }
+
+    if (props.targetLongitude !== null && props.targetLongitude !== undefined) {
+      if (props.targetLongitude < -180 || props.targetLongitude > 180) {
+        return Effect.fail(
+          new ValidationError({
+            field: "targetLongitude",
+            message: "Longitude must be between -180 and 180",
+            value: props.targetLongitude,
+          }),
+        );
+      }
+    }
+
+    return Effect.succeed(
+      new Challenge(
+        props.id,
+        props.tripId,
+        trimmedName,
+        props.description ?? null,
+        props.image ?? null,
+        props.submissionType,
+        props.scoringCategory,
+        props.isRecurring ?? false,
+        props.dailyStartTime ?? null,
+        props.dailyEndTime ?? null,
+        props.basePoints ?? 0,
+        props.firstPlacePoints ?? null,
+        props.secondPlacePoints ?? null,
+        props.thirdPlacePoints ?? null,
+        props.status ?? "HIDDEN",
+        props.startTime ?? null,
+        props.endTime ?? null,
+        props.votingStartTime ?? null,
+        props.votingEndTime ?? null,
+        props.targetLatitude ?? null,
+        props.targetLongitude ?? null,
+        props.expectedValue ?? null,
+        props.autoApprove ?? false,
+        props.createdAt,
+        props.updatedAt,
+      ),
+    );
+  }
+
+  /**
+   * Check if challenge is currently active
+   */
+  isActive(atDate: Date = new Date()): boolean {
+    if (this.status !== "ACTIVE") return false;
+    if (!this.startTime || !this.endTime) return true;
+    return atDate >= this.startTime && atDate <= this.endTime;
+  }
+
+  /**
+   * Check if challenge is in voting phase
+   */
+  isInVotingPhase(atDate: Date = new Date()): boolean {
+    if (this.status !== "VOTING_PHASE") return false;
+    if (!this.votingStartTime || !this.votingEndTime) return false;
+    return atDate >= this.votingStartTime && atDate <= this.votingEndTime;
+  }
+
+  /**
+   * Check if challenge accepts submissions at a given time
+   */
+  canAcceptSubmissions(atDate: Date = new Date()): boolean {
+    return this.isActive(atDate) && this.status === "ACTIVE";
+  }
+
+  /**
+   * Check if challenge has location requirement
+   */
+  hasLocationRequirement(): boolean {
+    return this.targetLatitude !== null && this.targetLongitude !== null;
+  }
+
+  /**
+   * Check if challenge requires QR code submission
+   */
+  requiresQrCode(): boolean {
+    return this.submissionType === "QR_CODE";
+  }
+
+  /**
+   * Update challenge status
+   */
+  withStatus(status: ChallengeStatus): Challenge {
+    return new Challenge(
+      this.id,
+      this.tripId,
+      this.name,
+      this.description,
+      this.image,
+      this.submissionType,
+      this.scoringCategory,
+      this.isRecurring,
+      this.dailyStartTime,
+      this.dailyEndTime,
+      this.basePoints,
+      this.firstPlacePoints,
+      this.secondPlacePoints,
+      this.thirdPlacePoints,
+      status,
+      this.startTime,
+      this.endTime,
+      this.votingStartTime,
+      this.votingEndTime,
+      this.targetLatitude,
+      this.targetLongitude,
+      this.expectedValue,
+      this.autoApprove,
+      this.createdAt,
+      new Date(),
+    );
+  }
+
+  /**
+   * Activate the challenge
+   */
+  activate(): Challenge {
+    return this.withStatus("ACTIVE");
+  }
+
+  /**
+   * Start voting phase
+   */
+  startVoting(): Challenge {
+    return this.withStatus("VOTING_PHASE");
+  }
+
+  /**
+   * Complete the challenge
+   */
+  complete(): Challenge {
+    return this.withStatus("COMPLETED");
+  }
+
+  /**
+   * Update challenge details
+   */
+  withDetails(props: {
+    name?: string;
+    description?: string | null;
+    image?: string | null;
+  }): Effect.Effect<Challenge, ValidationError, never> {
+    return Challenge.create({
+      id: this.id,
+      tripId: this.tripId,
+      name: props.name ?? this.name,
+      description:
+        props.description !== undefined ? props.description : this.description,
+      image: props.image !== undefined ? props.image : this.image,
+      submissionType: this.submissionType,
+      scoringCategory: this.scoringCategory,
+      isRecurring: this.isRecurring,
+      dailyStartTime: this.dailyStartTime,
+      dailyEndTime: this.dailyEndTime,
+      basePoints: this.basePoints,
+      firstPlacePoints: this.firstPlacePoints,
+      secondPlacePoints: this.secondPlacePoints,
+      thirdPlacePoints: this.thirdPlacePoints,
+      status: this.status,
+      startTime: this.startTime,
+      endTime: this.endTime,
+      votingStartTime: this.votingStartTime,
+      votingEndTime: this.votingEndTime,
+      targetLatitude: this.targetLatitude,
+      targetLongitude: this.targetLongitude,
+      expectedValue: this.expectedValue,
+      autoApprove: this.autoApprove,
+      createdAt: this.createdAt,
+      updatedAt: new Date(),
+    });
+  }
+}

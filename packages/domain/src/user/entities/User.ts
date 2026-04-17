@@ -1,0 +1,202 @@
+import { Data, Effect } from "effect";
+import type { UserId, AuthUserId } from "../value-objects/UserId";
+import { ValidationError } from "../../shared/errors/domain-errors";
+
+/**
+ * User Role Enum
+ */
+export type Role = "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
+
+/**
+ * User Domain Entity
+ *
+ * Represents a user in the system with their core profile information.
+ */
+export class User {
+  private constructor(
+    readonly id: UserId,
+    readonly authUserId: AuthUserId,
+    readonly firstName: string,
+    readonly lastName: string,
+    readonly hasAvatar: boolean,
+    readonly role: Role,
+    readonly lastSeenOn: Date | null,
+    readonly createdAt: Date,
+    readonly updatedAt: Date,
+  ) {}
+
+  /**
+   * Factory method to create a User entity
+   */
+  static create(props: {
+    id: UserId;
+    authUserId: AuthUserId;
+    firstName: string;
+    lastName: string;
+    hasAvatar?: boolean;
+    role?: Role;
+    lastSeenOn?: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Effect.Effect<User, ValidationError, never> {
+    const trimmedFirstName = props.firstName.trim();
+    const trimmedLastName = props.lastName.trim();
+
+    if (trimmedFirstName.length === 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "firstName",
+          message: "First name is required",
+          value: props.firstName,
+        }),
+      );
+    }
+
+    if (trimmedFirstName.length > 100) {
+      return Effect.fail(
+        new ValidationError({
+          field: "firstName",
+          message: "First name must be at most 100 characters",
+          value: props.firstName,
+        }),
+      );
+    }
+
+    if (trimmedLastName.length === 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "lastName",
+          message: "Last name is required",
+          value: props.lastName,
+        }),
+      );
+    }
+
+    if (trimmedLastName.length > 100) {
+      return Effect.fail(
+        new ValidationError({
+          field: "lastName",
+          message: "Last name must be at most 100 characters",
+          value: props.lastName,
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      new User(
+        props.id,
+        props.authUserId,
+        trimmedFirstName,
+        trimmedLastName,
+        props.hasAvatar ?? false,
+        props.role ?? "USER",
+        props.lastSeenOn ?? null,
+        props.createdAt,
+        props.updatedAt,
+      ),
+    );
+  }
+
+  /**
+   * Get full name of the user
+   */
+  getFullName(): string {
+    return `${this.firstName} ${this.lastName}`;
+  }
+
+  /**
+   * Check if user has a specific role
+   */
+  hasRole(role: Role): boolean {
+    return this.role === role;
+  }
+
+  /**
+   * Check if user is an admin
+   */
+  isAdmin(): boolean {
+    return this.role === "ADMIN" || this.role === "MODERATOR";
+  }
+
+  /**
+   * Update the user's avatar status
+   */
+  withAvatar(hasAvatar: boolean): User {
+    return new User(
+      this.id,
+      this.authUserId,
+      this.firstName,
+      this.lastName,
+      hasAvatar,
+      this.role,
+      this.lastSeenOn,
+      this.createdAt,
+      new Date(),
+    );
+  }
+
+  /**
+   * Update the user's role
+   */
+  withRole(role: Role): User {
+    return new User(
+      this.id,
+      this.authUserId,
+      this.firstName,
+      this.lastName,
+      this.hasAvatar,
+      role,
+      this.lastSeenOn,
+      this.createdAt,
+      new Date(),
+    );
+  }
+
+  /**
+   * Update the user's profile information
+   */
+  withProfile(props: {
+    firstName?: string;
+    lastName?: string;
+  }): Effect.Effect<User, ValidationError, never> {
+    const newFirstName = props.firstName?.trim() ?? this.firstName;
+    const newLastName = props.lastName?.trim() ?? this.lastName;
+
+    return User.create({
+      id: this.id,
+      authUserId: this.authUserId,
+      firstName: newFirstName,
+      lastName: newLastName,
+      hasAvatar: this.hasAvatar,
+      role: this.role,
+      lastSeenOn: this.lastSeenOn,
+      createdAt: this.createdAt,
+      updatedAt: new Date(),
+    });
+  }
+
+  /**
+   * Update last seen timestamp
+   */
+  withLastSeen(timestamp: Date): User {
+    return new User(
+      this.id,
+      this.authUserId,
+      this.firstName,
+      this.lastName,
+      this.hasAvatar,
+      this.role,
+      timestamp,
+      this.createdAt,
+      new Date(),
+    );
+  }
+}
+
+/**
+ * User Error for user-specific domain errors
+ */
+export class UserError extends Data.TaggedError("UserError")<{
+  message: string;
+  userId?: UserId;
+}> {}

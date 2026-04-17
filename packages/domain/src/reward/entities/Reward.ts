@@ -1,0 +1,199 @@
+import type { RewardId } from "../value-objects/RewardId";
+import type { TripId } from "../../trip/value-objects/TripId";
+import type { UserId } from "../../user/value-objects/UserId";
+import {
+  ValidationError,
+  InsufficientResourcesError,
+} from "../../shared/errors/domain-errors";
+import { Effect } from "effect";
+
+/**
+ * Reward Domain Entity
+ *
+ * Represents a reward that can be purchased by groups with coins.
+ */
+export class Reward {
+  private constructor(
+    readonly id: RewardId,
+    readonly name: string,
+    readonly description: string,
+    readonly availableQuantity: number,
+    readonly isHidden: boolean,
+    readonly image: string | null,
+    readonly coinCost: number,
+    readonly tripId: TripId,
+    readonly createdById: UserId,
+    readonly createdAt: Date,
+    readonly updatedAt: Date,
+  ) {}
+
+  /**
+   * Factory method to create a Reward entity
+   */
+  static create(props: {
+    id: RewardId;
+    name: string;
+    description: string;
+    availableQuantity: number;
+    isHidden?: boolean;
+    image?: string | null;
+    coinCost: number;
+    tripId: TripId;
+    createdById: UserId;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Effect.Effect<Reward, ValidationError, never> {
+    const trimmedName = props.name.trim();
+
+    if (trimmedName.length === 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "name",
+          message: "Reward name is required",
+          value: props.name,
+        }),
+      );
+    }
+
+    if (trimmedName.length > 200) {
+      return Effect.fail(
+        new ValidationError({
+          field: "name",
+          message: "Reward name must be at most 200 characters",
+          value: props.name,
+        }),
+      );
+    }
+
+    if (props.availableQuantity < 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "availableQuantity",
+          message: "Available quantity cannot be negative",
+          value: props.availableQuantity,
+        }),
+      );
+    }
+
+    if (props.coinCost < 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "coinCost",
+          message: "Coin cost cannot be negative",
+          value: props.coinCost,
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      new Reward(
+        props.id,
+        trimmedName,
+        props.description,
+        props.availableQuantity,
+        props.isHidden ?? false,
+        props.image ?? null,
+        props.coinCost,
+        props.tripId,
+        props.createdById,
+        props.createdAt,
+        props.updatedAt,
+      ),
+    );
+  }
+
+  /**
+   * Check if reward is available for purchase
+   */
+  isAvailable(): boolean {
+    return !this.isHidden && this.availableQuantity > 0;
+  }
+
+  /**
+   * Check if a group can afford this reward
+   */
+  canAfford(groupCoins: number): boolean {
+    return groupCoins >= this.coinCost;
+  }
+
+  /**
+   * Decrease available quantity
+   */
+  decreaseQuantity(
+    amount: number = 1,
+  ): Effect.Effect<Reward, ValidationError, never> {
+    if (amount <= 0) {
+      return Effect.fail(
+        new ValidationError({
+          field: "amount",
+          message: "Amount must be positive",
+          value: amount,
+        }),
+      );
+    }
+
+    if (amount > this.availableQuantity) {
+      return Effect.fail(
+        new ValidationError({
+          field: "amount",
+          message: "Not enough quantity available",
+          value: amount,
+        }),
+      );
+    }
+
+    return Effect.succeed(
+      new Reward(
+        this.id,
+        this.name,
+        this.description,
+        this.availableQuantity - amount,
+        this.isHidden,
+        this.image,
+        this.coinCost,
+        this.tripId,
+        this.createdById,
+        this.createdAt,
+        new Date(),
+      ),
+    );
+  }
+
+  /**
+   * Hide the reward
+   */
+  hide(): Reward {
+    return new Reward(
+      this.id,
+      this.name,
+      this.description,
+      this.availableQuantity,
+      true,
+      this.image,
+      this.coinCost,
+      this.tripId,
+      this.createdById,
+      this.createdAt,
+      new Date(),
+    );
+  }
+
+  /**
+   * Show the reward
+   */
+  show(): Reward {
+    return new Reward(
+      this.id,
+      this.name,
+      this.description,
+      this.availableQuantity,
+      false,
+      this.image,
+      this.coinCost,
+      this.tripId,
+      this.createdById,
+      this.createdAt,
+      new Date(),
+    );
+  }
+}
