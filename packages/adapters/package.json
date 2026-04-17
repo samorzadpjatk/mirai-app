@@ -6,27 +6,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./controllers/*": "./src/controllers/*.ts",
-    "./auth": "./src/controllers/auth/index.ts",
-    "./auth/authServer": "./src/controllers/auth/authServer.ts",
-    "./gateways": "./src/gateways/index.ts",
-    "./gateways/*": "./src/gateways/*/index.ts",
-    "./gateways/auth/*": "./src/gateways/auth/*.ts",
-    "./gateways/realtime/*": "./src/gateways/realtime/*.ts",
-    "./gateways/storage/*": "./src/gateways/storage/*.ts",
-    "./gateways/drizzle/*": "./src/gateways/drizzle/*.ts",
-    "./gateways/in-memory": "./src/gateways/in-memory/index.ts",
-    "./gateways/in-memory/*": "./src/gateways/in-memory/*.ts",
-    "./mappers/*": "./src/mappers/*.ts",
-    "./api/*": "./src/api/*.ts",
-    "./api": "./src/api/index.ts",
-    "./services": "./src/services/index.ts",
-    "./services/*": "./src/services/*.ts",
-    "./utils/*": "./src/utils/*.ts",
-    "./modules": "./src/modules/RepositoryModule.ts",
-    "./modules/*": "./src/modules/*.ts",
-    "./errors": "./src/errors/index.ts",
-    "./test": "./src/test/test-helpers.ts"
+    "./service-layer": "./src/system/service-layer.ts"
   },
   "scripts": {
     "test": "bun test",

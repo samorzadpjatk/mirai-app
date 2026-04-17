@@ -5,13 +5,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./entities/*": "./src/entities/*.ts",
-    "./value-objects/*": "./src/value-objects/*.ts",
-    "./utils/*": "./src/utils/*.ts",
-    "./errors": "./src/errors/index.ts",
-    "./ports": "./src/ports/index.ts",
-    "./ports/*": "./src/ports/*.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "test": "bun test",
