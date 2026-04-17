@@ -1,3 +1,4 @@
 export * from "./entities/ActivityFeed";
+export * from "./entities/ActivityReaction";
 export * from "./value-objects";
-export type { IActivityFeedPort } from "./ports/ActivityFeedPort";
+export * from "./ports";

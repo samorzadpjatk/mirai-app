@@ -1,3 +1,5 @@
 export * from "./entities/Challenge";
+export * from "./entities/ChallengeSubmission";
+export * from "./entities/ChallengeVote";
 export * from "./value-objects";
-export type { IChallengePort } from "./ports/ChallengePort";
+export * from "./ports";
