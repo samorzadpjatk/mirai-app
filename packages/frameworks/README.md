@@ -89,7 +89,7 @@ Use `makeAppLayer()` for the complete dependency injection setup:
 import {
   makeAppLayer,
   type AppLayerConfig,
-} from "@mirai-app/frameworks/layers";
+} from "@mirai-app/frameworks/di";
 import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase/client";
 import { Effect } from "effect";
@@ -126,7 +126,7 @@ The `RepositoryLayer` binds 17 repository Context.Tags to their Drizzle implemen
 import {
   makeRepositoryLayer,
   makeUserDomainLayer,
-} from "@mirai-app/frameworks/layers";
+} from "@mirai-app/frameworks/di";
 import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
 
 const db = createDrizzleClient(databaseUrl);
@@ -165,7 +165,7 @@ The `ServiceLayer` binds 5 service Context.Tags to their adapter implementations
 import {
   makeServiceLayer,
   makeSupabaseServicesLayer,
-} from "@mirai-app/frameworks/layers";
+} from "@mirai-app/frameworks/di";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase/client";
 import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
 
@@ -201,7 +201,7 @@ const program = Effect.gen(function* () {
 
 ### Factory Functions Reference
 
-All layer factories are exported from `@mirai-app/frameworks/layers`:
+All layer factories are exported from `@mirai-app/frameworks/di`:
 
 ```typescript
 // Complete application layer

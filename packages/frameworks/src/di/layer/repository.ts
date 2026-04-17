@@ -69,8 +69,8 @@ import {
   SupabaseStorageGateway,
 } from "@mirai-app/adapters";
 
-// Storage path resolver implementation
-import { DefaultStoragePathResolver } from "./storage-path-resolver";
+// Storage path resolver implementation from adapters
+import { DefaultStoragePathResolver } from "@mirai-app/adapters";
 
 /**
  * Configuration for creating repository layers

@@ -128,12 +128,10 @@ export {
 } from "./layer/test";
 
 // =============================================================================
-// Infrastructure Layers - Database, Logger, etc.
+// Infrastructure Layers - Database, etc.
 // =============================================================================
 
 export {
   makeDatabaseLayer,
-  makeLoggerLayer,
   type DatabaseLayerConfig,
-  type LoggerLayerConfig,
 } from "./layer/infrastructure";
