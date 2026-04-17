@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { ChallengeSubmissionId, UserId } from "@mirai-app/domain";
 import { SubmissionReportPortTag } from "../ports/SubmissionReportPort";
 import { ChallengeSubmissionPortTag } from "../../challenge-submission/ports/ChallengeSubmissionPort";
@@ -17,13 +16,7 @@ import type {
  * Returns reports with reporter information including email.
  */
 export class GetReportsBySubmissionUseCase {
-  execute(
-    input: GetReportsBySubmissionInputDTO,
-  ): Effect.Effect<
-    GetReportsBySubmissionResultDTO,
-    SubmissionNotFoundError | ApplicationError,
-    SubmissionReportPortTag | ChallengeSubmissionPortTag
-  > {
+  execute(input: GetReportsBySubmissionInputDTO) {
     return Effect.gen(function* () {
       const reportPort = yield* SubmissionReportPortTag;
       const submissionPort = yield* ChallengeSubmissionPortTag;

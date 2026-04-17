@@ -1,7 +1,7 @@
+import type { TripId } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { TripSponsorPort } from "../ports/TripSponsorPort";
 import type { SponsorDTO } from "../dto/SponsorDTOs";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
 
 /**
  * Input for GetSponsorsByTripUseCase
@@ -16,9 +16,7 @@ export interface GetSponsorsByTripInput {
  * Retrieves all active sponsors associated with a specific trip.
  */
 export class GetSponsorsByTripUseCase {
-  execute(
-    input: GetSponsorsByTripInput,
-  ): Effect.Effect<SponsorDTO[], ApplicationError, TripSponsorPort> {
+  execute(input: GetSponsorsByTripInput) {
     return Effect.gen(function* () {
       const tripSponsorPort = yield* TripSponsorPort;
 

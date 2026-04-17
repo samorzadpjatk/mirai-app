@@ -1,5 +1,5 @@
 import { Context, Effect } from "effect";
-import type { DatabaseError } from "@mirai-app/domain";
+import type { IPortError } from "@mirai-app/domain";
 import type { ActivityReactionDTO } from "../dto/ActivityFeedDTOs";
 
 /**
@@ -8,29 +8,29 @@ import type { ActivityReactionDTO } from "../dto/ActivityFeedDTOs";
 export interface IActivityReactionPort {
   findById(
     id: string,
-  ): Effect.Effect<ActivityReaction | null, DatabaseError, never>;
+  ): Effect.Effect<ActivityReaction | null, IPortError, never>;
   findByActivityId(
     activityId: string,
-  ): Effect.Effect<ActivityReaction[], DatabaseError, never>;
+  ): Effect.Effect<ActivityReaction[], IPortError, never>;
   findByActivityIdAndUserId(
     activityId: string,
     userId: string,
-  ): Effect.Effect<ActivityReaction | null, DatabaseError, never>;
+  ): Effect.Effect<ActivityReaction | null, IPortError, never>;
   create(
     reaction: ActivityReaction,
-  ): Effect.Effect<ActivityReaction, DatabaseError, never>;
-  delete(id: string): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<ActivityReaction, IPortError, never>;
+  delete(id: string): Effect.Effect<void, IPortError, never>;
   deleteByActivityAndUser(
     activityId: string,
     userId: string,
-  ): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<void, IPortError, never>;
   countByActivityId(
     activityId: string,
-  ): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<number, IPortError, never>;
   countByActivityIdAndType(
     activityId: string,
     reactionType: ActivityReactionType,
-  ): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<number, IPortError, never>;
 }
 
 export class ActivityReactionPortTag extends Context.Tag(

@@ -7,7 +7,6 @@ import {
   StorageObjectNotFoundError,
   SignedUrlCreationError,
 } from "../errors/StorageErrors";
-import type { ApplicationError } from "@mirai-app/domain";
 
 /**
  * Input for CreateDownloadUrlUseCase
@@ -38,16 +37,7 @@ const MIN_EXPIRES_IN_SECONDS = 60;
  * Creates a signed download URL for temporary access to a storage object.
  */
 export class CreateDownloadUrlUseCase {
-  execute(
-    input: CreateDownloadUrlInput,
-  ): Effect.Effect<
-    StorageDownloadUrlDTO,
-    | StoragePathResolutionError
-    | StorageObjectNotFoundError
-    | SignedUrlCreationError
-    | ApplicationError,
-    StoragePortTag | StoragePathResolverPortTag
-  > {
+  execute(input: CreateDownloadUrlInput) {
     return Effect.gen(function* () {
       const storagePort = yield* StoragePortTag;
       const pathResolver = yield* StoragePathResolverPortTag;

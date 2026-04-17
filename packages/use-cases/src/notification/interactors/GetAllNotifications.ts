@@ -1,7 +1,5 @@
-import { Effect, Data } from "effect";
+import { Data, Effect } from "effect";
 import { NotificationPortTag } from "../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { PaginatedAdminNotificationsDTO } from "../dto/NotificationDTOs";
 
 /**
  * Invalid pagination error
@@ -28,13 +26,7 @@ export interface GetAllNotificationsInput {
  * Retrieves all notifications with pagination for admin users.
  */
 export class GetAllNotificationsUseCase {
-  execute(
-    input: GetAllNotificationsInput,
-  ): Effect.Effect<
-    PaginatedAdminNotificationsDTO,
-    ApplicationError | InvalidPaginationError,
-    NotificationPortTag
-  > {
+  execute(input: GetAllNotificationsInput) {
     return Effect.gen(function* () {
       const notificationPort = yield* NotificationPortTag;
 

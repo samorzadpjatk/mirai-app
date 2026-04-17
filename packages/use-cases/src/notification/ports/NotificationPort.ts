@@ -1,61 +1,59 @@
 import { Context, Effect } from "effect";
-import type { DatabaseError } from "@mirai-app/domain";
+import type { IPortError } from "@mirai-app/domain";
 
 /**
  * Notification Port - Repository interface with Context.Tag for Effect DI
  */
 export interface INotificationPort {
-  findById(
-    id: string,
-  ): Effect.Effect<Notification | null, DatabaseError, never>;
+  findById(id: string): Effect.Effect<Notification | null, IPortError, never>;
   findByUserId(
     userId: string,
-  ): Effect.Effect<Notification[], DatabaseError, never>;
+  ): Effect.Effect<Notification[], IPortError, never>;
   findPaginatedByUserId(
     userId: string,
     params: { page: number; pageSize: number },
   ): Effect.Effect<
     { notifications: Notification[]; total: number; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
   findByTripId(
     tripId: string,
-  ): Effect.Effect<Notification[], DatabaseError, never>;
+  ): Effect.Effect<Notification[], IPortError, never>;
   findPaginated(params: {
     tripId?: string;
     limit: number;
     offset: number;
   }): Effect.Effect<
     { notifications: Notification[]; total: number; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
   create(
     notification: Notification,
-  ): Effect.Effect<Notification, DatabaseError, never>;
+  ): Effect.Effect<Notification, IPortError, never>;
   update(
     notification: Notification,
-  ): Effect.Effect<Notification, DatabaseError, never>;
-  delete(id: string): Effect.Effect<void, DatabaseError, never>;
-  markAsSent(id: string): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<Notification, IPortError, never>;
+  delete(id: string): Effect.Effect<void, IPortError, never>;
+  markAsSent(id: string): Effect.Effect<void, IPortError, never>;
   markAsFailed(
     id: string,
     reason: string,
-  ): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<void, IPortError, never>;
   findWithPushes(
     notificationId: string,
   ): Effect.Effect<
     { notification: Notification; pushes: NotificationPush[] } | null,
-    DatabaseError,
+    IPortError,
     never
   >;
   getFailedPushes(
     notificationId: string,
-  ): Effect.Effect<NotificationPush[], DatabaseError, never>;
+  ): Effect.Effect<NotificationPush[], IPortError, never>;
   resetFailedPushes(
     notificationId: string,
-  ): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<void, IPortError, never>;
 }
 
 export class NotificationPortTag extends Context.Tag("NotificationPort")<
@@ -95,29 +93,27 @@ export interface NotificationPush {
 export interface IPushSubscriptionPort {
   findByUserId(
     userId: string,
-  ): Effect.Effect<PushSubscription[], DatabaseError, never>;
+  ): Effect.Effect<PushSubscription[], IPortError, never>;
   findByToken(
     token: string,
-  ): Effect.Effect<PushSubscription | null, DatabaseError, never>;
+  ): Effect.Effect<PushSubscription | null, IPortError, never>;
   findByUserIdAndToken(
     userId: string,
     token: string,
-  ): Effect.Effect<PushSubscription | null, DatabaseError, never>;
+  ): Effect.Effect<PushSubscription | null, IPortError, never>;
   create(
     subscription: PushSubscription,
-  ): Effect.Effect<PushSubscription, DatabaseError, never>;
+  ): Effect.Effect<PushSubscription, IPortError, never>;
   update(
     subscription: PushSubscription,
-  ): Effect.Effect<PushSubscription, DatabaseError, never>;
-  delete(id: string): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<PushSubscription, IPortError, never>;
+  delete(id: string): Effect.Effect<void, IPortError, never>;
   deleteByTokenAndUserId(
     token: string,
     userId: string,
-  ): Effect.Effect<number, DatabaseError, never>;
-  deleteAllByUserId(
-    userId: string,
-  ): Effect.Effect<number, DatabaseError, never>;
-  findAll(): Effect.Effect<PushSubscription[], DatabaseError, never>;
+  ): Effect.Effect<number, IPortError, never>;
+  deleteAllByUserId(userId: string): Effect.Effect<number, IPortError, never>;
+  findAll(): Effect.Effect<PushSubscription[], IPortError, never>;
 }
 
 export class PushSubscriptionPortTag extends Context.Tag(
@@ -154,41 +150,41 @@ export interface INotificationSchedulePort {
       total: number;
       hasMore: boolean;
     },
-    DatabaseError,
+    IPortError,
     never
   >;
-  findActive(): Effect.Effect<NotificationSchedule[], DatabaseError, never>;
+  findActive(): Effect.Effect<NotificationSchedule[], IPortError, never>;
   findUpcoming(
     days: number,
-  ): Effect.Effect<NotificationSchedule[], DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule[], IPortError, never>;
   findById(
     id: string,
-  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule | null, IPortError, never>;
   findByTripIdAndName(
     tripId: string,
     name: string,
-  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule | null, IPortError, never>;
   create(
     schedule: NotificationSchedule,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule, IPortError, never>;
   update(
     schedule: NotificationSchedule,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never>;
-  delete(id: string): Effect.Effect<void, DatabaseError, never>;
-  deleteMany(ids: string[]): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule, IPortError, never>;
+  delete(id: string): Effect.Effect<void, IPortError, never>;
+  deleteMany(ids: string[]): Effect.Effect<number, IPortError, never>;
   toggleActive(
     id: string,
     isActive: boolean,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule, IPortError, never>;
   toggleMany(
     ids: string[],
     isActive: boolean,
-  ): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<number, IPortError, never>;
   updateLastRun(
     id: string,
     lastRun: Date,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never>;
-  countExecutions(id: string): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<NotificationSchedule, IPortError, never>;
+  countExecutions(id: string): Effect.Effect<number, IPortError, never>;
 }
 
 export class NotificationSchedulePortTag extends Context.Tag(
@@ -224,13 +220,13 @@ export interface INotificationScheduleExecutionPort {
   findByScheduleId(
     scheduleId: string,
     limit: number,
-  ): Effect.Effect<NotificationScheduleExecution[], DatabaseError, never>;
+  ): Effect.Effect<NotificationScheduleExecution[], IPortError, never>;
   findByNotificationId(
     notificationId: string,
-  ): Effect.Effect<NotificationScheduleExecution | null, DatabaseError, never>;
+  ): Effect.Effect<NotificationScheduleExecution | null, IPortError, never>;
   create(
     execution: NotificationScheduleExecution,
-  ): Effect.Effect<NotificationScheduleExecution, DatabaseError, never>;
+  ): Effect.Effect<NotificationScheduleExecution, IPortError, never>;
 }
 
 export class NotificationScheduleExecutionPortTag extends Context.Tag(
@@ -264,12 +260,12 @@ export interface INotificationDeliveryPort {
       deliveries: NotificationDelivery[];
       total: number;
     },
-    DatabaseError,
+    IPortError,
     never
   >;
   findByNotificationId(
     notificationId: string,
-  ): Effect.Effect<NotificationDelivery | null, DatabaseError, never>;
+  ): Effect.Effect<NotificationDelivery | null, IPortError, never>;
   findFailed(params: {
     tripId?: string;
     limit: number;
@@ -279,7 +275,7 @@ export interface INotificationDeliveryPort {
       deliveries: NotificationDelivery[];
       total: number;
     },
-    DatabaseError,
+    IPortError,
     never
   >;
   getStats(params: {
@@ -287,13 +283,13 @@ export interface INotificationDeliveryPort {
     startDate?: Date;
     endDate?: Date;
     scheduleId?: string;
-  }): Effect.Effect<NotificationDeliveryStats, DatabaseError, never>;
+  }): Effect.Effect<NotificationDeliveryStats, IPortError, never>;
   create(
     delivery: NotificationDelivery,
-  ): Effect.Effect<NotificationDelivery, DatabaseError, never>;
+  ): Effect.Effect<NotificationDelivery, IPortError, never>;
   update(
     delivery: NotificationDelivery,
-  ): Effect.Effect<NotificationDelivery, DatabaseError, never>;
+  ): Effect.Effect<NotificationDelivery, IPortError, never>;
 }
 
 export class NotificationDeliveryPortTag extends Context.Tag(
@@ -348,7 +344,7 @@ export interface INotificationServicePort {
       notificationId: string;
       recipientCount: number;
     },
-    DatabaseError,
+    IPortError,
     never
   >;
   sendMobileNotifications(notificationId: string): Effect.Effect<
@@ -358,7 +354,7 @@ export interface INotificationServicePort {
       failed: number;
       total: number;
     },
-    DatabaseError,
+    IPortError,
     never
   >;
   sendRankingUpdate(params: {
@@ -370,7 +366,7 @@ export interface INotificationServicePort {
       notificationId: string;
       recipientCount: number;
     },
-    DatabaseError,
+    IPortError,
     never
   >;
   createCoinsAddedNotification(

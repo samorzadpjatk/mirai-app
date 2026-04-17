@@ -1,7 +1,5 @@
 import { Effect } from "effect";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { NotificationScheduleDTO } from "../../dto/NotificationDTOs";
 
 /**
  * Get Active Schedules Use Case
@@ -9,11 +7,7 @@ import type { NotificationScheduleDTO } from "../../dto/NotificationDTOs";
  * Retrieves all currently active notification schedules.
  */
 export class GetActiveSchedulesUseCase {
-  execute(): Effect.Effect<
-    NotificationScheduleDTO[],
-    ApplicationError,
-    NotificationSchedulePortTag
-  > {
+  execute() {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 

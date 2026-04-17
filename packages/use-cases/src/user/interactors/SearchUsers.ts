@@ -1,8 +1,7 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { PaginatedUsersDTO, UserWithTripInfoDTO } from "../dto/UserDTOs";
 
 /**
@@ -28,17 +27,11 @@ export interface SearchUsersInput {
  * Searches users with pagination and filtering.
  */
 export class SearchUsersUseCase {
-  execute(
-    input: SearchUsersInput,
-  ): Effect.Effect<
-    PaginatedUsersDTO,
-    ApplicationError,
-    UserPortTag | TripParticipantPort | AuthServicePort
-  > {
+  execute(input: SearchUsersInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const participantPort = yield* TripParticipantPort;
-      const authService = yield* AuthServicePort;
+      const participantPort = yield* TripParticipantPortTag;
+      const authService = yield* AuthServicePortTag;
 
       // Calculate pagination
       const currentPage = Math.floor(input.offset / input.limit) + 1;
@@ -132,7 +125,7 @@ export class SearchUsersUseCase {
       // For other fields, we already have paginated results
       // Get auth info for all users
       const authUserIds = users
-        .map((u) => u.authUserId as unknown as string)
+        .map((u) => u.authUserId.toString())
         .filter((id) => id !== null && id !== undefined && id !== "");
       const authInfos = yield* authService.getUserInfosByAuthIds(authUserIds);
 

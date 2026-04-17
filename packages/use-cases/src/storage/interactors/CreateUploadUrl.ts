@@ -10,7 +10,6 @@ import {
   SignedUrlCreationError,
   StorageConfigurationError,
 } from "../errors/StorageErrors";
-import type { ApplicationError } from "@mirai-app/domain";
 
 /**
  * Input for CreateUploadUrlUseCase
@@ -26,16 +25,7 @@ export interface CreateUploadUrlInput {
  * Creates a signed upload URL for resumable file uploads.
  */
 export class CreateUploadUrlUseCase {
-  execute(
-    input: CreateUploadUrlInput,
-  ): Effect.Effect<
-    StorageUploadUrlDTO,
-    | StoragePathResolutionError
-    | SignedUrlCreationError
-    | StorageConfigurationError
-    | ApplicationError,
-    StoragePortTag | StoragePathResolverPortTag
-  > {
+  execute(input: CreateUploadUrlInput) {
     return Effect.gen(function* () {
       const storagePort = yield* StoragePortTag;
       const pathResolver = yield* StoragePathResolverPortTag;

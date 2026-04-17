@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { PushSubscriptionPortTag } from "../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { SubscriptionStatusDTO } from "../dto/NotificationDTOs";
 
 /**
@@ -16,13 +15,7 @@ export interface GetSubscriptionStatusInput {
  * Get the subscription status for a user.
  */
 export class GetSubscriptionStatusUseCase {
-  execute(
-    input: GetSubscriptionStatusInput,
-  ): Effect.Effect<
-    SubscriptionStatusDTO,
-    ApplicationError,
-    PushSubscriptionPortTag
-  > {
+  execute(input: GetSubscriptionStatusInput) {
     return Effect.gen(function* () {
       const subscriptionPort = yield* PushSubscriptionPortTag;
 

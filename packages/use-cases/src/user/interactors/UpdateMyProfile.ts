@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { ApplicationError, ValidationError } from "@mirai-app/domain";
+import type { ValidationError } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
 import type { UserProfileDTO } from "../dto/UserDTOs";
 import { UserNotFoundError } from "../errors/UserErrors";
@@ -19,13 +19,7 @@ export interface UpdateMyProfileInput {
  * Updates the current user's profile (first/last name).
  */
 export class UpdateMyProfileUseCase {
-  execute(
-    input: UpdateMyProfileInput,
-  ): Effect.Effect<
-    UserProfileDTO,
-    ApplicationError | UserNotFoundError | ValidationError,
-    UserPortTag
-  > {
+  execute(input: UpdateMyProfileInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
 

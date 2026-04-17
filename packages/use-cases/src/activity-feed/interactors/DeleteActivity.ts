@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { ActivityReactionPortTag } from "../ports/ActivityReactionPort";
-import type { ApplicationError, ActivityFeedId } from "@mirai-app/domain";
+import type { ActivityFeedId } from "@mirai-app/domain";
 import type { DeleteActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import { ActivityNotFoundError } from "../errors/ActivityFeedErrors";
 
@@ -18,13 +18,7 @@ export interface DeleteActivityInput {
  * Deletes an activity and all its reactions.
  */
 export class DeleteActivityUseCase {
-  execute(
-    input: DeleteActivityInput,
-  ): Effect.Effect<
-    DeleteActivityResultDTO,
-    ActivityNotFoundError | ApplicationError,
-    ActivityFeedPortTag | ActivityReactionPortTag
-  > {
+  execute(input: DeleteActivityInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const reactionPort = yield* ActivityReactionPortTag;

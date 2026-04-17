@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
 import type { AdminNameDTO } from "../dto/UserDTOs";
 
@@ -9,7 +8,7 @@ import type { AdminNameDTO } from "../dto/UserDTOs";
  * Retrieves names of all admin users.
  */
 export class GetAllAdminsNamesUseCase {
-  execute(): Effect.Effect<AdminNameDTO[], ApplicationError, UserPortTag> {
+  execute() {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
 

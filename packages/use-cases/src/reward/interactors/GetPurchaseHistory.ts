@@ -1,11 +1,11 @@
 import { Effect } from "effect";
-import type { ApplicationError, TripId, GroupId } from "@mirai-app/domain";
+import type { TripId, GroupId } from "@mirai-app/domain";
 import {
   TripId as TripIdFactory,
   GroupId as GroupIdFactory,
 } from "@mirai-app/domain";
-import { RewardPurchasePort } from "../ports/RewardPurchasePort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import type {
   PaginatedPurchasesDTO,
   RewardPurchaseDTO,
@@ -30,16 +30,10 @@ export interface GetPurchaseHistoryInput {
  * Staff can see all purchases, regular users only see their group's purchases.
  */
 export class GetPurchaseHistoryUseCase {
-  execute(
-    input: GetPurchaseHistoryInput,
-  ): Effect.Effect<
-    PaginatedPurchasesDTO,
-    ApplicationError | TripNotFoundError,
-    RewardPurchasePort | TripParticipantPort
-  > {
+  execute(input: GetPurchaseHistoryInput) {
     return Effect.gen(function* () {
-      const purchasePort = yield* RewardPurchasePort;
-      const participantPort = yield* TripParticipantPort;
+      const purchasePort = yield* RewardPurchasePortTag;
+      const participantPort = yield* TripParticipantPortTag;
 
       const tripId = TripIdFactory.unsafeCreate(input.tripId);
       const limit = input.limit ?? 30;

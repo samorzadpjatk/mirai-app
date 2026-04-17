@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
-import type { ApplicationError, ActivityFeedId } from "@mirai-app/domain";
+import type { ActivityFeedId } from "@mirai-app/domain";
 import type { UpdateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import { ActivityNotFoundError } from "../errors/ActivityFeedErrors";
 
@@ -20,13 +20,7 @@ export interface UpdateActivityInput {
  * Updates an existing activity's content.
  */
 export class UpdateActivityUseCase {
-  execute(
-    input: UpdateActivityInput,
-  ): Effect.Effect<
-    UpdateActivityResultDTO,
-    ActivityNotFoundError | ApplicationError,
-    ActivityFeedPortTag
-  > {
+  execute(input: UpdateActivityInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
 

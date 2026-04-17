@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { ActivityReactionPortTag } from "../ports/ActivityReactionPort";
-import type { ApplicationError, ActivityFeedId, UserId } from "@mirai-app/domain";
+import type { ActivityFeedId, UserId } from "@mirai-app/domain";
 import type { ToggleReactionResultDTO } from "../dto/ActivityFeedDTOs";
 import type { ActivityReactionType } from "../ports/ActivityReactionPort";
 import {
@@ -32,13 +32,7 @@ const VALID_REACTION_TYPES: ActivityReactionType[] = [
  * removes the reaction. Otherwise, adds the reaction.
  */
 export class ToggleActivityReactionUseCase {
-  execute(
-    input: ToggleActivityReactionInput,
-  ): Effect.Effect<
-    ToggleReactionResultDTO,
-    ActivityNotFoundError | InvalidReactionTypeError | ApplicationError,
-    ActivityFeedPortTag | ActivityReactionPortTag
-  > {
+  execute(input: ToggleActivityReactionInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const reactionPort = yield* ActivityReactionPortTag;

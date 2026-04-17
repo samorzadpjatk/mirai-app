@@ -3,7 +3,6 @@ import {
   NotificationDeliveryPortTag,
   NotificationScheduleExecutionPortTag,
 } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 
 export interface TrackDeliveryFailureInput {
   notificationId: string;
@@ -11,13 +10,7 @@ export interface TrackDeliveryFailureInput {
 }
 
 export class TrackDeliveryFailureUseCase {
-  execute(
-    input: TrackDeliveryFailureInput,
-  ): Effect.Effect<
-    void,
-    ApplicationError,
-    NotificationDeliveryPortTag | NotificationScheduleExecutionPortTag
-  > {
+  execute(input: TrackDeliveryFailureInput) {
     return Effect.gen(function* () {
       const deliveryPort = yield* NotificationDeliveryPortTag;
       const executionPort = yield* NotificationScheduleExecutionPortTag;

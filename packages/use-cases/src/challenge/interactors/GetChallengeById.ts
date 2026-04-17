@@ -1,5 +1,4 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
 import { ChallengeNotFoundError } from "../errors/ChallengeErrors";
 import type { ChallengeDTO } from "../dto/ChallengeDTOs";
@@ -20,13 +19,7 @@ export interface GetChallengeByIdInput {
  * Resolves recurring challenge IDs for non-admin users.
  */
 export class GetChallengeByIdUseCase {
-  execute(
-    input: GetChallengeByIdInput,
-  ): Effect.Effect<
-    ChallengeDTO,
-    ChallengeNotFoundError | ApplicationError,
-    ChallengePortTag
-  > {
+  execute(input: GetChallengeByIdInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
 

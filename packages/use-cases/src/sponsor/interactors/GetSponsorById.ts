@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { SponsorPort } from "../ports/SponsorPort";
 import { SponsorNotFoundError } from "../errors/SponsorErrors";
 import type { SponsorDTO } from "../dto/SponsorDTOs";
-import type { ApplicationError, SponsorId } from "@mirai-app/domain";
+import type { SponsorId } from "@mirai-app/domain";
 
 /**
  * Input for GetSponsorByIdUseCase
@@ -17,13 +17,7 @@ export interface GetSponsorByIdInput {
  * Retrieves a sponsor by its ID.
  */
 export class GetSponsorByIdUseCase {
-  execute(
-    input: GetSponsorByIdInput,
-  ): Effect.Effect<
-    SponsorDTO,
-    ApplicationError | SponsorNotFoundError,
-    SponsorPort
-  > {
+  execute(input: GetSponsorByIdInput) {
     return Effect.gen(function* () {
       const sponsorPort = yield* SponsorPort;
 

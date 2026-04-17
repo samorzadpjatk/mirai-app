@@ -1,7 +1,7 @@
 import { Context, Effect } from "effect";
 import type {
   GroupJoinRequest,
-  DatabaseError,
+  IPortError,
   IGroupJoinRequestPort,
 } from "@mirai-app/domain";
 
@@ -12,43 +12,43 @@ import type {
 export interface GroupJoinRequestUseCasePort extends IGroupJoinRequestPort {
   findById(
     id: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
   findByUserAndTrip(
     userId: string,
     tripId: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
   findByUserTripAndGroup(
     userId: string,
     tripId: string,
     groupId: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
   findPendingByGroupId(
     groupId: string,
-  ): Effect.Effect<GroupJoinRequest[], DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest[], IPortError, never>;
   findByGroupId(
     groupId: string,
-  ): Effect.Effect<GroupJoinRequest[], DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest[], IPortError, never>;
   create(
     request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest, IPortError, never>;
   update(
     request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, DatabaseError, never>;
-  delete(id: string): Effect.Effect<void, DatabaseError, never>;
-  deleteByGroupId(groupId: string): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest, IPortError, never>;
+  delete(id: string): Effect.Effect<void, IPortError, never>;
+  deleteByGroupId(groupId: string): Effect.Effect<void, IPortError, never>;
   deleteByUserAndTrip(
     userId: string,
     tripId: string,
-  ): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<void, IPortError, never>;
   deleteByUsersAndTrip(
     userIds: string[],
     tripId: string,
-  ): Effect.Effect<void, DatabaseError, never>;
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never>;
+  ): Effect.Effect<void, IPortError, never>;
+  exists(id: string): Effect.Effect<boolean, IPortError, never>;
   hasPendingRequest(
     userId: string,
     tripId: string,
-  ): Effect.Effect<boolean, DatabaseError, never>;
+  ): Effect.Effect<boolean, IPortError, never>;
 }
 
 export class GroupJoinRequestPortTag extends Context.Tag(

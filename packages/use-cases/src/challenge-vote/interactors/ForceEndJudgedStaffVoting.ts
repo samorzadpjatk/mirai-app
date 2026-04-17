@@ -1,5 +1,4 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import { ChallengeVotePort } from "../ports/ChallengeVotePort";
 import {
@@ -31,13 +30,7 @@ export interface ForceEndJudgedStaffVotingResult extends JudgedStaffProgressResu
  * Forces the end of judged staff voting for a challenge.
  */
 export class ForceEndJudgedStaffVotingUseCase {
-  execute(
-    input: ForceEndJudgedStaffVotingInput,
-  ): Effect.Effect<
-    ForceEndJudgedStaffVotingResult,
-    NotJudgedStaffChallengeError | StaffVotingNotStartedError | ApplicationError,
-    ChallengePortTag | ChallengeVotePort
-  > {
+  execute(input: ForceEndJudgedStaffVotingInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
 

@@ -1,7 +1,5 @@
 import { Effect } from "effect";
 import { NotificationPortTag } from "../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { PaginatedNotificationsDTO } from "../dto/NotificationDTOs";
 
 /**
  * Input for GetAllMyNotificationsUseCase
@@ -18,13 +16,7 @@ export interface GetAllMyNotificationsInput {
  * Retrieves paginated notifications for the current user.
  */
 export class GetAllMyNotificationsUseCase {
-  execute(
-    input: GetAllMyNotificationsInput,
-  ): Effect.Effect<
-    PaginatedNotificationsDTO,
-    ApplicationError,
-    NotificationPortTag
-  > {
+  execute(input: GetAllMyNotificationsInput) {
     return Effect.gen(function* () {
       const notificationPort = yield* NotificationPortTag;
 

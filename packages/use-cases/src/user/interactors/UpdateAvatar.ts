@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
 import type { AvatarUpdateDTO } from "../dto/UserDTOs";
 import { UserNotFoundError } from "../errors/UserErrors";
@@ -18,13 +17,7 @@ export interface UpdateAvatarInput {
  * Updates the user's avatar status.
  */
 export class UpdateAvatarUseCase {
-  execute(
-    input: UpdateAvatarInput,
-  ): Effect.Effect<
-    AvatarUpdateDTO,
-    ApplicationError | UserNotFoundError,
-    UserPortTag
-  > {
+  execute(input: UpdateAvatarInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
 

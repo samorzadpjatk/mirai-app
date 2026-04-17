@@ -1,7 +1,7 @@
-import type { User, TripParticipant, ApplicationError } from "@mirai-app/domain";
+import type { User, TripParticipant, UserId } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { UserPortTag } from "../ports/UserPort";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
 import type { UserWithTripInfoDTO } from "../dto/UserDTOs";
 
 /**
@@ -18,21 +18,13 @@ export interface GetUserByIdInput {
  * Retrieves a user by their ID, optionally with trip participant information.
  */
 export class GetUserByIdUseCase {
-  execute(
-    input: GetUserByIdInput,
-  ): Effect.Effect<
-    UserWithTripInfoDTO | null,
-    ApplicationError,
-    UserPortTag | TripParticipantPort
-  > {
+  execute(input: GetUserByIdInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Find user by ID
-      const user = yield* userPort.findById(
-        input.userId as unknown as import("@mirai-app/domain").UserId,
-      );
+      const user = yield* userPort.findById(input.userId as UserId);
 
       if (!user) {
         return null;
@@ -49,7 +41,7 @@ export class GetUserByIdUseCase {
 
       // Map to DTO
       const result: UserWithTripInfoDTO = {
-        id: (user as unknown as { id: { value: string } }).id.value,
+        id: user.id.toString(),
         firstName: user.firstName,
         lastName: user.lastName,
         email: null, // Will be hydrated by adapter layer with auth info
@@ -57,9 +49,7 @@ export class GetUserByIdUseCase {
         hasAvatar: user.hasAvatar,
         wristNumber: participant?.wristNumber ?? null,
         houseNumber: participant?.houseNumber ?? null,
-        groupId: participant?.groupId
-          ? (participant.groupId as unknown as { value: string }).value
-          : null,
+        groupId: participant?.groupId ? participant.groupId.toString() : null,
         groupName: null, // Will be hydrated by adapter layer
         tripId: input.tripId ?? "",
         isBanned: false, // Will be hydrated by adapter layer

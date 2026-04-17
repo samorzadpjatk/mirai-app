@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import type { TripId } from "@mirai-app/domain";
 import { TripId as TripIdFactory } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import { TripNotFoundError } from "../errors/RewardErrors";
@@ -25,13 +25,7 @@ export interface GetTotalAvailablePointsResult {
  * Used for dynamic reward pricing.
  */
 export class GetTotalAvailablePointsUseCase {
-  execute(
-    input: GetTotalAvailablePointsInput,
-  ): Effect.Effect<
-    GetTotalAvailablePointsResult,
-    ApplicationError | TripNotFoundError,
-    ChallengePortTag
-  > {
+  execute(input: GetTotalAvailablePointsInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
 

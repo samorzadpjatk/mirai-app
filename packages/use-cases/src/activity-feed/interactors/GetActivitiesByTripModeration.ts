@@ -3,7 +3,6 @@ import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { ActivityReactionPortTag } from "../ports/ActivityReactionPort";
 import { TripId } from "@mirai-app/domain";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { PaginatedActivitiesForModerationDTO } from "../dto/ActivityFeedDTOs";
 import {
   TripNotFoundError,
@@ -26,13 +25,7 @@ export interface GetActivitiesByTripModerationInput {
  * Used by moderators and admins.
  */
 export class GetActivitiesByTripModerationUseCase {
-  execute(
-    input: GetActivitiesByTripModerationInput,
-  ): Effect.Effect<
-    PaginatedActivitiesForModerationDTO,
-    TripNotFoundError | InvalidCursorError | ApplicationError,
-    ActivityFeedPortTag | TripPortTag | ActivityReactionPortTag
-  > {
+  execute(input: GetActivitiesByTripModerationInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const tripPort = yield* TripPortTag;

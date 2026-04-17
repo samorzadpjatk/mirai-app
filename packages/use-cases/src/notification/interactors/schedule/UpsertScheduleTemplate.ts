@@ -1,11 +1,6 @@
 import { Effect } from "effect";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
 import { TripPortTag } from "../../../trip/ports/TripPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type {
-  NotificationScheduleWithRelationsDTO,
-  UpsertTemplateResultDTO,
-} from "../../dto/NotificationDTOs";
 import { TripNotFoundError } from "../../../trip/errors/TripErrors";
 
 /**
@@ -39,13 +34,7 @@ const TEMPLATES: Record<
  * Upsert Schedule Template Use Case
  */
 export class UpsertScheduleTemplateUseCase {
-  execute(
-    input: UpsertScheduleTemplateInput,
-  ): Effect.Effect<
-    UpsertTemplateResultDTO,
-    ApplicationError | TripNotFoundError,
-    NotificationSchedulePortTag | TripPortTag
-  > {
+  execute(input: UpsertScheduleTemplateInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
       const tripPort = yield* TripPortTag;

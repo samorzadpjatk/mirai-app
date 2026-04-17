@@ -7,7 +7,7 @@ import {
   SponsorAlreadyAssociatedError,
 } from "../errors/SponsorErrors";
 import type { TripSponsorDTO } from "../dto/SponsorDTOs";
-import type { ApplicationError, SponsorId, TripId } from "@mirai-app/domain";
+import type { SponsorId, TripId } from "@mirai-app/domain";
 import { TripSponsorId } from "@mirai-app/domain";
 
 /**
@@ -24,16 +24,7 @@ export interface AddSponsorToTripInput {
  * Associates an existing sponsor with a trip.
  */
 export class AddSponsorToTripUseCase {
-  execute(
-    input: AddSponsorToTripInput,
-  ): Effect.Effect<
-    TripSponsorDTO,
-    | ApplicationError
-    | SponsorNotFoundError
-    | TripNotFoundError
-    | SponsorAlreadyAssociatedError,
-    SponsorPort | TripSponsorPort
-  > {
+  execute(input: AddSponsorToTripInput) {
     return Effect.gen(function* () {
       const sponsorPort = yield* SponsorPort;
       const tripSponsorPort = yield* TripSponsorPort;

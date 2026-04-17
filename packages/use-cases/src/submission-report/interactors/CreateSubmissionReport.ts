@@ -1,5 +1,5 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError, ChallengeSubmissionId } from "@mirai-app/domain";
+import type { ChallengeSubmissionId } from "@mirai-app/domain";
 import {
   ChallengeSubmissionId as ChallengeSubmissionIdType,
   TripId,
@@ -32,22 +32,7 @@ import type { SubmissionReportId } from "@mirai-app/domain";
  * - User has not already reported this submission
  */
 export class CreateSubmissionReportUseCase {
-  execute(
-    input: CreateSubmissionReportInputDTO,
-  ): Effect.Effect<
-    CreateSubmissionReportResultDTO,
-    | SubmissionNotFoundError
-    | TripNotFoundError
-    | TripHasEndedError
-    | NotTripParticipantError
-    | AlreadyReportedError
-    | InvalidReportReasonError
-    | ApplicationError,
-    | SubmissionReportPortTag
-    | ChallengeSubmissionPortTag
-    | TripPortTag
-    | TripParticipantPortTag
-  > {
+  execute(input: CreateSubmissionReportInputDTO) {
     return Effect.gen(function* () {
       const reportPort = yield* SubmissionReportPortTag;
       const submissionPort = yield* ChallengeSubmissionPortTag;

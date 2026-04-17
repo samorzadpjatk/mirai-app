@@ -1,13 +1,6 @@
 import { Effect } from "effect";
 import type { ApplicationError, ValidationError } from "@mirai-app/domain";
-import {
-  User,
-  TripParticipant,
-  UserId,
-  AuthUserId,
-  TripParticipantId,
-  TripId,
-} from "@mirai-app/domain";
+import { User, TripParticipant, AuthUserId, TripId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
 import { TripParticipantPort } from "../ports/TripParticipantPort";
 import { AuthServicePort } from "../ports/AuthServicePort";
@@ -55,12 +48,10 @@ export class CreateUserUseCase {
       if (existingUser) {
         user = existingUser;
       } else {
-        // Create domain user using factory
-        const userId = UserId.generate();
+        // Create domain user using factory - ID will be auto-generated
         const authUserId = AuthUserId.unsafeCreate(authUser.id);
 
         const userEffect = User.create({
-          id: userId,
           authUserId: authUserId,
           firstName: input.firstName,
           lastName: input.lastName,
@@ -75,14 +66,11 @@ export class CreateUserUseCase {
         user = yield* userPort.create(newUser);
       }
 
-      // Create trip participant
-      const participantId = TripParticipantId.generate();
+      // Create trip participant - ID will be auto-generated
       const tripId = TripId.unsafeCreate(input.tripId);
-      const userId = UserId.unsafeCreate(user.id);
 
       const participantEffect = TripParticipant.create({
-        id: participantId,
-        userId: userId,
+        userId: user.id,
         tripId: tripId,
         groupId: null,
         wristNumber: null,

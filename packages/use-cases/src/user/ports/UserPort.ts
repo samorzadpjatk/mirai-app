@@ -1,5 +1,5 @@
 import { Context, Effect } from "effect";
-import type { User, DatabaseError } from "@mirai-app/domain";
+import type { User, IPortError } from "@mirai-app/domain";
 import type { UserId } from "@mirai-app/domain";
 
 /**
@@ -13,19 +13,19 @@ export interface IUserPort {
    * Find user by ID
    * @returns User or null if not found
    */
-  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never>;
+  findById(id: UserId): Effect.Effect<User | null, IPortError, never>;
 
   /**
    * Find user by auth user ID
    */
   findByAuthUserId(
     authUserId: string,
-  ): Effect.Effect<User | null, DatabaseError, never>;
+  ): Effect.Effect<User | null, IPortError, never>;
 
   /**
    * Find users by trip participant
    */
-  findByTripId(tripId: string): Effect.Effect<User[], DatabaseError, never>;
+  findByTripId(tripId: string): Effect.Effect<User[], IPortError, never>;
 
   /**
    * Find all users with pagination
@@ -33,7 +33,7 @@ export interface IUserPort {
   findAll(params: {
     limit: number;
     offset: number;
-  }): Effect.Effect<User[], DatabaseError, never>;
+  }): Effect.Effect<User[], IPortError, never>;
 
   /**
    * Search users
@@ -50,34 +50,34 @@ export interface IUserPort {
       total: number;
       hasMore: boolean;
     },
-    DatabaseError,
+    IPortError,
     never
   >;
 
   /**
    * Create new user
    */
-  create(user: User): Effect.Effect<User, DatabaseError, never>;
+  create(user: User): Effect.Effect<User, IPortError, never>;
 
   /**
    * Update existing user
    */
-  update(user: User): Effect.Effect<User, DatabaseError, never>;
+  update(user: User): Effect.Effect<User, IPortError, never>;
 
   /**
    * Delete user by ID
    */
-  delete(id: UserId): Effect.Effect<void, DatabaseError, never>;
+  delete(id: UserId): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if user exists
    */
-  exists(id: UserId): Effect.Effect<boolean, DatabaseError, never>;
+  exists(id: UserId): Effect.Effect<boolean, IPortError, never>;
 
   /**
    * Count users
    */
-  count(): Effect.Effect<number, DatabaseError, never>;
+  count(): Effect.Effect<number, IPortError, never>;
 }
 
 /**

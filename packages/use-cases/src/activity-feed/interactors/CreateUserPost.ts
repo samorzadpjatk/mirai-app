@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { ActivityFeed } from "@mirai-app/domain";
 import type { ApplicationError, TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import {
@@ -61,10 +62,11 @@ export class CreateUserPostUseCase {
       }
 
       const now = new Date();
-      const activity = {
-        id: "", // Will be assigned by repository
+
+      // Create activity entity - ID will be auto-generated
+      const activityEffect = ActivityFeed.create({
         tripId: input.tripId,
-        activityType: "USER_POST" as const,
+        activityType: "USER_POST",
         title: input.title,
         description: input.description ?? null,
         imageUrl: input.imageUrl ?? null,
@@ -76,7 +78,9 @@ export class CreateUserPostUseCase {
         createdByAdmin: null,
         createdAt: now,
         updatedAt: now,
-      };
+      });
+
+      const activity = yield* activityEffect;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

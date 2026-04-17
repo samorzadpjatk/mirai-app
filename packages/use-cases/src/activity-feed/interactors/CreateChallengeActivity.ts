@@ -2,7 +2,8 @@ import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import { ActivityFeed } from "@mirai-app/domain";
+import type { TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import {
   TripNotFoundError,
@@ -24,13 +25,7 @@ export interface CreateChallengeActivityInput {
  * Creates an activity for challenge events (started, ended, voting started).
  */
 export class CreateChallengeActivityUseCase {
-  execute(
-    input: CreateChallengeActivityInput,
-  ): Effect.Effect<
-    CreateActivityResultDTO,
-    TripNotFoundError | ChallengeNotFoundError | ApplicationError,
-    ActivityFeedPortTag | TripPortTag | ChallengePortTag
-  > {
+  execute(input: CreateChallengeActivityInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const tripPort = yield* TripPortTag;
@@ -70,10 +65,10 @@ export class CreateChallengeActivityUseCase {
           title = `Challenge update: ${challenge.name}`;
       }
 
-      const activity = {
-        id: "", // Will be assigned by repository
+      // Create activity entity - ID will be auto-generated
+      const activityEffect = ActivityFeed.create({
         tripId: input.tripId,
-        activityType: "CHALLENGE" as const,
+        activityType: "CHALLENGE",
         title: title,
         description: challenge.description,
         imageUrl: null,
@@ -85,7 +80,9 @@ export class CreateChallengeActivityUseCase {
         createdByAdmin: null,
         createdAt: now,
         updatedAt: now,
-      };
+      });
+
+      const activity = yield* activityEffect;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

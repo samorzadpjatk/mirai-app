@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { NotificationPortTag } from "../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { DeleteNotificationResultDTO } from "../dto/NotificationDTOs";
 
 /**
@@ -16,13 +15,7 @@ export interface DeleteNotificationInput {
  * Deletes a notification by ID.
  */
 export class DeleteNotificationUseCase {
-  execute(
-    input: DeleteNotificationInput,
-  ): Effect.Effect<
-    DeleteNotificationResultDTO,
-    ApplicationError,
-    NotificationPortTag
-  > {
+  execute(input: DeleteNotificationInput) {
     return Effect.gen(function* () {
       const notificationPort = yield* NotificationPortTag;
 

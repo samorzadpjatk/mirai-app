@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { PushSubscriptionPortTag } from "../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { SubscribeResultDTO } from "../dto/NotificationDTOs";
 
 /**
@@ -17,9 +16,7 @@ export interface SubscribeInput {
  * Subscribe to push notifications by creating or updating a push subscription.
  */
 export class SubscribeUseCase {
-  execute(
-    input: SubscribeInput,
-  ): Effect.Effect<SubscribeResultDTO, ApplicationError, PushSubscriptionPortTag> {
+  execute(input: SubscribeInput) {
     return Effect.gen(function* () {
       const subscriptionPort = yield* PushSubscriptionPortTag;
 

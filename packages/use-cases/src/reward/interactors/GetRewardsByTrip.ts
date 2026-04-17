@@ -1,10 +1,13 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError, TripId, UserId, GroupId } from "@mirai-app/domain";
+import type {
+  TripId,
+  UserId,
+  GroupId} from "@mirai-app/domain";
 import { TripId as TripIdFactory } from "@mirai-app/domain";
-import { RewardPort } from "../ports/RewardPort";
-import { RewardPurchasePort } from "../ports/RewardPurchasePort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { GroupPort } from "../../group/ports/GroupPort";
+import { RewardPortTag } from "../ports/RewardPort";
+import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import type { RewardWithAvailabilityDTO } from "../dto/RewardDTOs";
 import { RewardNotFoundError, TripNotFoundError } from "../errors/RewardErrors";
@@ -52,22 +55,12 @@ export interface GetRewardsByTripResult {
  * and user-specific eligibility information.
  */
 export class GetRewardsByTripUseCase {
-  execute(
-    input: GetRewardsByTripInput,
-  ): Effect.Effect<
-    GetRewardsByTripResult,
-    ApplicationError | RewardNotFoundError | TripNotFoundError,
-    | RewardPort
-    | RewardPurchasePort
-    | TripParticipantPort
-    | GroupPort
-    | ChallengePortTag
-  > {
+  execute(input: GetRewardsByTripInput) {
     return Effect.gen(function* () {
-      const rewardPort = yield* RewardPort;
+      const rewardPort = yield* RewardPortTag;
       const challengePort = yield* ChallengePortTag;
-      const participantPort = yield* TripParticipantPort;
-      const groupPort = yield* GroupPort;
+      const participantPort = yield* TripParticipantPortTag;
+      const groupPort = yield* GroupPortTag;
 
       const isAllTrips = input.tripId === "all";
       const tripId = isAllTrips
@@ -141,7 +134,7 @@ export class GetRewardsByTripUseCase {
               : [];
 
             // Get purchase count
-            const purchaseCount = yield* RewardPurchasePort.pipe(
+            const purchaseCount = yield* RewardPurchasePortTag.pipe(
               Effect.flatMap((port) => port.countByRewardId(reward.id)),
             );
 

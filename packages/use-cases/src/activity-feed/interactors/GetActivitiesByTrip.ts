@@ -4,7 +4,6 @@ import { TripPortTag } from "../../trip/ports/TripPort";
 import { ActivityReactionPortTag } from "../ports/ActivityReactionPort";
 import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
 import { TripId } from "@mirai-app/domain";
-import type { ApplicationError } from "@mirai-app/domain";
 import type {
   PaginatedActivitiesDTO,
   ActivityCursor,
@@ -31,16 +30,7 @@ export interface GetActivitiesByTripInput {
  * Returns activities sorted by isPinned DESC, createdAt DESC, id DESC.
  */
 export class GetActivitiesByTripUseCase {
-  execute(
-    input: GetActivitiesByTripInput,
-  ): Effect.Effect<
-    PaginatedActivitiesDTO,
-    TripNotFoundError | InvalidCursorError | ApplicationError,
-    | ActivityFeedPortTag
-    | TripPortTag
-    | ActivityReactionPortTag
-    | TripParticipantPort
-  > {
+  execute(input: GetActivitiesByTripInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const tripPort = yield* TripPortTag;

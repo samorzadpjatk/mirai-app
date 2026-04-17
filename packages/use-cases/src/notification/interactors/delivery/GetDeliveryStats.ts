@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { NotificationDeliveryPortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { DeliveryStatsDTO } from "../../dto/NotificationDTOs";
 
 export interface GetDeliveryStatsInput {
@@ -11,13 +10,7 @@ export interface GetDeliveryStatsInput {
 }
 
 export class GetDeliveryStatsUseCase {
-  execute(
-    input: GetDeliveryStatsInput,
-  ): Effect.Effect<
-    DeliveryStatsDTO,
-    ApplicationError,
-    NotificationDeliveryPortTag
-  > {
+  execute(input: GetDeliveryStatsInput) {
     return Effect.gen(function* () {
       const deliveryPort = yield* NotificationDeliveryPortTag;
 

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { TripPortTag } from "../ports/TripPort";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import type { TripId } from "@mirai-app/domain";
 import { TripNotFoundError } from "../errors/TripErrors";
 
 /**
@@ -24,13 +24,7 @@ export interface DeleteTripResultDTO {
  * Deletes a trip by ID.
  */
 export class DeleteTripUseCase {
-  execute(
-    input: DeleteTripInput,
-  ): Effect.Effect<
-    DeleteTripResultDTO,
-    ApplicationError | TripNotFoundError,
-    TripPortTag
-  > {
+  execute(input: DeleteTripInput) {
     return Effect.gen(function* () {
       const tripPort = yield* TripPortTag;
 

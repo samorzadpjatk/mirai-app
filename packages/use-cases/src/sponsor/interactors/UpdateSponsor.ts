@@ -7,10 +7,8 @@ import {
 } from "../errors/SponsorErrors";
 import type { UpdateSponsorResultDTO } from "../dto/SponsorDTOs";
 import type {
-  ApplicationError,
   ValidationError,
-  SponsorId,
-} from "@mirai-app/domain";
+  SponsorId} from "@mirai-app/domain";
 
 /**
  * Input for UpdateSponsorUseCase
@@ -32,16 +30,7 @@ export interface UpdateSponsorInput {
  * Updates an existing sponsor's details.
  */
 export class UpdateSponsorUseCase {
-  execute(
-    input: UpdateSponsorInput,
-  ): Effect.Effect<
-    UpdateSponsorResultDTO,
-    | ApplicationError
-    | ValidationError
-    | SponsorNotFoundError
-    | InvalidSponsorDataError,
-    SponsorPort
-  > {
+  execute(input: UpdateSponsorInput) {
     return Effect.gen(function* () {
       const sponsorPort = yield* SponsorPort;
 

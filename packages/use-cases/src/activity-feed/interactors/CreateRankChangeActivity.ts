@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { GroupPort } from "../../group/ports/GroupPort";
+import { ActivityFeed } from "@mirai-app/domain";
 import type { ApplicationError, TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import {
@@ -67,10 +68,10 @@ export class CreateRankChangeActivityUseCase {
         title = `${group.name} maintained rank ${input.newRank}`;
       }
 
-      const activity = {
-        id: "", // Will be assigned by repository
+      // Create activity entity - ID will be auto-generated
+      const activityEffect = ActivityFeed.create({
         tripId: input.tripId,
-        activityType: "RANK_CHANGE" as const,
+        activityType: "RANK_CHANGE",
         title: title,
         description: null,
         imageUrl: null,
@@ -82,7 +83,9 @@ export class CreateRankChangeActivityUseCase {
         createdByAdmin: null,
         createdAt: now,
         updatedAt: now,
-      };
+      });
+
+      const activity = yield* activityEffect;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

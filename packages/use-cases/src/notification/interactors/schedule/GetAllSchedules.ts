@@ -1,8 +1,6 @@
 import { Effect } from "effect";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type {
-  PaginatedNotificationSchedulesDTO,
   NotificationScheduleFilterDTO,
   PaginationParamsDTO,
 } from "../../dto/NotificationDTOs";
@@ -21,13 +19,7 @@ export interface GetAllSchedulesInput {
  * Retrieves all notification schedules with filtering and pagination.
  */
 export class GetAllSchedulesUseCase {
-  execute(
-    input: GetAllSchedulesInput,
-  ): Effect.Effect<
-    PaginatedNotificationSchedulesDTO,
-    ApplicationError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: GetAllSchedulesInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 

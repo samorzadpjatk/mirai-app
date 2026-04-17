@@ -1,17 +1,15 @@
 import { Effect } from "effect";
 import type {
-  ApplicationError,
   RewardPurchaseId,
   UserId,
-  ValidationError,
-} from "@mirai-app/domain";
+  ValidationError} from "@mirai-app/domain";
 import {
   RewardPurchaseId as RewardPurchaseIdFactory,
   UserId as UserIdFactory,
 } from "@mirai-app/domain";
-import { RewardPurchasePort } from "../ports/RewardPurchasePort";
-import { GroupPort } from "../../group/ports/GroupPort";
-import { RewardPort } from "../ports/RewardPort";
+import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { RewardPortTag } from "../ports/RewardPort";
 import type {
   RewardPurchaseDTO,
   RewardPurchaseStatus,
@@ -22,7 +20,7 @@ import {
   NotGroupLeaderError,
   InvalidPurchaseStatusError,
 } from "../errors/RewardErrors";
-import { CoinTransactionPort } from "../../coin/ports/CoinTransactionPort";
+import { CoinTransactionPortTag } from "../../coin/ports/CoinTransactionPort";
 
 /**
  * Input for UpdateMyPurchaseStatusUseCase
@@ -40,22 +38,12 @@ export interface UpdateMyPurchaseStatusInput {
  * Can only mark as IN_DELIVERY (if ACCEPTED) or CANCEL (if BOUGHT).
  */
 export class UpdateMyPurchaseStatusUseCase {
-  execute(
-    input: UpdateMyPurchaseStatusInput,
-  ): Effect.Effect<
-    RewardPurchaseDTO,
-    | ApplicationError
-    | ValidationError
-    | RewardPurchaseNotFoundError
-    | NotGroupLeaderError
-    | InvalidPurchaseStatusError,
-    RewardPurchasePort | GroupPort | RewardPort | CoinTransactionPort
-  > {
+  execute(input: UpdateMyPurchaseStatusInput) {
     return Effect.gen(function* () {
-      const purchasePort = yield* RewardPurchasePort;
-      const groupPort = yield* GroupPort;
-      const rewardPort = yield* RewardPort;
-      const coinTransactionPort = yield* CoinTransactionPort;
+      const purchasePort = yield* RewardPurchasePortTag;
+      const groupPort = yield* GroupPortTag;
+      const rewardPort = yield* RewardPortTag;
+      const coinTransactionPort = yield* CoinTransactionPortTag;
 
       const purchaseId = RewardPurchaseIdFactory.unsafeCreate(input.purchaseId);
       const userId = UserIdFactory.unsafeCreate(input.userId);

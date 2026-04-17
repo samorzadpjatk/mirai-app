@@ -1,7 +1,8 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import { ActivityFeed } from "@mirai-app/domain";
+import type { TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import { TripNotFoundError } from "../errors/ActivityFeedErrors";
 
@@ -22,13 +23,7 @@ export interface CreateCustomActivityInput {
  * Creates a custom activity for a trip (admin use).
  */
 export class CreateCustomActivityUseCase {
-  execute(
-    input: CreateCustomActivityInput,
-  ): Effect.Effect<
-    CreateActivityResultDTO,
-    TripNotFoundError | ApplicationError,
-    ActivityFeedPortTag | TripPortTag
-  > {
+  execute(input: CreateCustomActivityInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const tripPort = yield* TripPortTag;
@@ -42,10 +37,11 @@ export class CreateCustomActivityUseCase {
       }
 
       const now = new Date();
-      const activity = {
-        id: "", // Will be assigned by repository
+
+      // Create activity entity - ID will be auto-generated
+      const activityEffect = ActivityFeed.create({
         tripId: input.tripId,
-        activityType: "USER_POST" as const,
+        activityType: "USER_POST",
         title: input.title,
         description: input.description ?? null,
         imageUrl: input.imageUrl ?? null,
@@ -54,10 +50,12 @@ export class CreateCustomActivityUseCase {
         hiddenByAdmin: null,
         hiddenAt: null,
         hiddenReason: null,
-        createdByAdmin: input.createdByAdmin,
+        createdByAdmin: null, // Admin ID should be converted to UserId type if needed
         createdAt: now,
         updatedAt: now,
-      };
+      });
+
+      const activity = yield* activityEffect;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

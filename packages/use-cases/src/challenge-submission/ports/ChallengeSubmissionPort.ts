@@ -1,5 +1,5 @@
 import { Context, Effect } from "effect";
-import type { DatabaseError } from "@mirai-app/domain";
+import type { IPortError } from "@mirai-app/domain";
 
 /**
  * ChallengeSubmission Port - Repository interface with Context.Tag for Effect DI
@@ -7,30 +7,30 @@ import type { DatabaseError } from "@mirai-app/domain";
 export interface IChallengeSubmissionPort {
   findById(
     id: string,
-  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never>;
+  ): Effect.Effect<ChallengeSubmission | null, IPortError, never>;
   findByChallengeId(
     challengeId: string,
-  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
+  ): Effect.Effect<ChallengeSubmission[], IPortError, never>;
   findByChallengeAndGroup(
     challengeId: string,
     groupId: string,
-  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never>;
+  ): Effect.Effect<ChallengeSubmission | null, IPortError, never>;
   findByGroupId(
     groupId: string,
-  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never>;
+  ): Effect.Effect<ChallengeSubmission[], IPortError, never>;
   create(
     submission: ChallengeSubmission,
-  ): Effect.Effect<ChallengeSubmission, DatabaseError, never>;
+  ): Effect.Effect<ChallengeSubmission, IPortError, never>;
   update(
     submission: ChallengeSubmission,
-  ): Effect.Effect<ChallengeSubmission, DatabaseError, never>;
-  delete(id: string): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<ChallengeSubmission, IPortError, never>;
+  delete(id: string): Effect.Effect<void, IPortError, never>;
   countByChallengeId(
     challengeId: string,
-  ): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<number, IPortError, never>;
   countPendingByChallengeId(
     challengeId: string,
-  ): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<number, IPortError, never>;
 }
 
 export class ChallengeSubmissionPortTag extends Context.Tag(

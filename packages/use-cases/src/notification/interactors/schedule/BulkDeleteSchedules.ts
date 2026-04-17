@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { BulkDeleteSchedulesResultDTO } from "../../dto/NotificationDTOs";
 
 export interface BulkDeleteSchedulesInput {
@@ -8,13 +7,7 @@ export interface BulkDeleteSchedulesInput {
 }
 
 export class BulkDeleteSchedulesUseCase {
-  execute(
-    input: BulkDeleteSchedulesInput,
-  ): Effect.Effect<
-    BulkDeleteSchedulesResultDTO,
-    ApplicationError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: BulkDeleteSchedulesInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 

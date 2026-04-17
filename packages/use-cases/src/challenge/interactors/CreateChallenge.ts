@@ -1,11 +1,6 @@
 import { Effect, Data } from "effect";
-import type {
-  ApplicationError,
-  Challenge,
-  ChallengeId,
-  TripId,
-} from "@mirai-app/domain";
-import { Challenge as ChallengeEntity } from "@mirai-app/domain";
+import type { Challenge } from "@mirai-app/domain";
+import { Challenge as ChallengeEntity, TripId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
 import {
   ChallengeValidationError,
@@ -61,16 +56,7 @@ const HOUR_MS = 60 * 60 * 1000;
  * Creates a new challenge with validation for peer voting and recurring configurations.
  */
 export class CreateChallengeUseCase {
-  execute(
-    input: CreateChallengeInput,
-  ): Effect.Effect<
-    ChallengeDTO,
-    | ChallengeValidationError
-    | InvalidPeerVotingConfigError
-    | InvalidRecurringConfigError
-    | ApplicationError,
-    ChallengePortTag
-  > {
+  execute(input: CreateChallengeInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
       const now = new Date();
@@ -224,17 +210,11 @@ export class CreateChallengeUseCase {
         autoApprove = false;
       }
 
-      // Create challenge entity
-      const challengeId = yield* Effect.promise(() =>
-        Promise.resolve("" as unknown as ChallengeId),
-      );
-      const tripId = yield* Effect.promise(() =>
-        Promise.resolve(input.tripId as unknown as TripId),
-      );
+      // Create challenge entity - ID will be auto-generated
+      const tripId = TripId.unsafeCreate(input.tripId);
 
       const challengeEffect = ChallengeEntity.create({
-        id: challengeId,
-        tripId: tripId,
+        tripId,
         name: input.name,
         description: input.description ?? null,
         image: input.image ?? null,

@@ -3,8 +3,6 @@ import {
   NotificationSchedulePortTag,
   NotificationScheduleExecutionPortTag,
 } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { ScheduleExecutionHistoryDTO } from "../../dto/NotificationDTOs";
 
 /**
  * Input for GetScheduleExecutionHistoryUseCase
@@ -20,13 +18,7 @@ export interface GetScheduleExecutionHistoryInput {
  * Retrieves execution history for a notification schedule.
  */
 export class GetScheduleExecutionHistoryUseCase {
-  execute(
-    input: GetScheduleExecutionHistoryInput,
-  ): Effect.Effect<
-    ScheduleExecutionHistoryDTO,
-    ApplicationError,
-    NotificationSchedulePortTag | NotificationScheduleExecutionPortTag
-  > {
+  execute(input: GetScheduleExecutionHistoryInput) {
     return Effect.gen(function* () {
       const executionPort = yield* NotificationScheduleExecutionPortTag;
 

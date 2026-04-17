@@ -1,18 +1,16 @@
 import { Effect } from "effect";
 import type {
-  ApplicationError,
   RewardPurchaseId,
   UserId,
-  ValidationError,
-} from "@mirai-app/domain";
+  ValidationError} from "@mirai-app/domain";
 import {
   RewardPurchaseId as RewardPurchaseIdFactory,
   UserId as UserIdFactory,
 } from "@mirai-app/domain";
-import { RewardPurchasePort } from "../ports/RewardPurchasePort";
-import { GroupPort } from "../../group/ports/GroupPort";
-import { RewardPort } from "../ports/RewardPort";
-import { CoinTransactionPort } from "../../coin/ports/CoinTransactionPort";
+import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { RewardPortTag } from "../ports/RewardPort";
+import { CoinTransactionPortTag } from "../../coin/ports/CoinTransactionPort";
 import type {
   RewardPurchaseDTO,
   RewardPurchaseStatus,
@@ -52,22 +50,12 @@ export interface UpdatePurchaseStatusInput {
  * Validates status transitions and handles refunds on cancellation.
  */
 export class UpdatePurchaseStatusUseCase {
-  execute(
-    input: UpdatePurchaseStatusInput,
-  ): Effect.Effect<
-    RewardPurchaseDTO,
-    | ApplicationError
-    | ValidationError
-    | RewardPurchaseNotFoundError
-    | PurchaseStatusTransitionError
-    | CollectionMethodRequiredError,
-    RewardPurchasePort | GroupPort | RewardPort | CoinTransactionPort
-  > {
+  execute(input: UpdatePurchaseStatusInput) {
     return Effect.gen(function* () {
-      const purchasePort = yield* RewardPurchasePort;
-      const groupPort = yield* GroupPort;
-      const rewardPort = yield* RewardPort;
-      const coinTransactionPort = yield* CoinTransactionPort;
+      const purchasePort = yield* RewardPurchasePortTag;
+      const groupPort = yield* GroupPortTag;
+      const rewardPort = yield* RewardPortTag;
+      const coinTransactionPort = yield* CoinTransactionPortTag;
 
       const purchaseId = RewardPurchaseIdFactory.unsafeCreate(input.purchaseId);
       const userId = UserIdFactory.unsafeCreate(input.userId);

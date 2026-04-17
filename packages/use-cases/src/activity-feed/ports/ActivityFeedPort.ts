@@ -1,5 +1,5 @@
 import { Context, Effect } from "effect";
-import type { DatabaseError, ActivityFeedId, TripId } from "@mirai-app/domain";
+import type { IPortError, ActivityFeedId, TripId } from "@mirai-app/domain";
 
 /**
  * ActivityFeed Port - Repository interface with Context.Tag for Effect DI
@@ -7,10 +7,10 @@ import type { DatabaseError, ActivityFeedId, TripId } from "@mirai-app/domain";
 export interface IActivityFeedPort {
   findById(
     id: ActivityFeedId,
-  ): Effect.Effect<ActivityFeed | null, DatabaseError, never>;
+  ): Effect.Effect<ActivityFeed | null, IPortError, never>;
   findByTripId(
     tripId: TripId,
-  ): Effect.Effect<ActivityFeed[], DatabaseError, never>;
+  ): Effect.Effect<ActivityFeed[], IPortError, never>;
   findByTripIdPaginated(
     tripId: TripId,
     params: {
@@ -20,7 +20,7 @@ export interface IActivityFeedPort {
     },
   ): Effect.Effect<
     { activities: ActivityFeed[]; nextCursor: string | null; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
   findByTripIdForModeration(
@@ -31,21 +31,21 @@ export interface IActivityFeedPort {
     },
   ): Effect.Effect<
     { activities: ActivityFeed[]; nextCursor: string | null; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
   create(
     activity: ActivityFeed,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never>;
+  ): Effect.Effect<ActivityFeed, IPortError, never>;
   update(
     activity: ActivityFeed,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never>;
-  delete(id: ActivityFeedId): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<ActivityFeed, IPortError, never>;
+  delete(id: ActivityFeedId): Effect.Effect<void, IPortError, never>;
   setPinned(
     id: ActivityFeedId,
     isPinned: boolean,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never>;
-  exists(id: ActivityFeedId): Effect.Effect<boolean, DatabaseError, never>;
+  ): Effect.Effect<ActivityFeed, IPortError, never>;
+  exists(id: ActivityFeedId): Effect.Effect<boolean, IPortError, never>;
 }
 
 export class ActivityFeedPortTag extends Context.Tag("ActivityFeedPort")<

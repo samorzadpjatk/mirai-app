@@ -1,7 +1,5 @@
 import { Effect } from "effect";
 import { NotificationDeliveryPortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { PaginatedDeliveriesDTO } from "../../dto/NotificationDTOs";
 
 export interface GetFailedDeliveriesInput {
   tripId?: string;
@@ -10,13 +8,7 @@ export interface GetFailedDeliveriesInput {
 }
 
 export class GetFailedDeliveriesUseCase {
-  execute(
-    input: GetFailedDeliveriesInput,
-  ): Effect.Effect<
-    PaginatedDeliveriesDTO,
-    ApplicationError,
-    NotificationDeliveryPortTag
-  > {
+  execute(input: GetFailedDeliveriesInput) {
     return Effect.gen(function* () {
       const deliveryPort = yield* NotificationDeliveryPortTag;
 

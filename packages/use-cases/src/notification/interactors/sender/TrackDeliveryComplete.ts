@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { NotificationDeliveryPortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 
 export interface TrackDeliveryCompleteInput {
   notificationId: string;
@@ -11,9 +10,7 @@ export interface TrackDeliveryCompleteInput {
 }
 
 export class TrackDeliveryCompleteUseCase {
-  execute(
-    input: TrackDeliveryCompleteInput,
-  ): Effect.Effect<void, ApplicationError, NotificationDeliveryPortTag> {
+  execute(input: TrackDeliveryCompleteInput) {
     return Effect.gen(function* () {
       const deliveryPort = yield* NotificationDeliveryPortTag;
 

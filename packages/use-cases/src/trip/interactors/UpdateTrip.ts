@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { TripPortTag } from "../ports/TripPort";
 import type { UpdateTripResultDTO } from "../dto/TripDTOs";
-import type { ApplicationError, ValidationError, TripId } from "@mirai-app/domain";
+import type { ValidationError, TripId } from "@mirai-app/domain";
 import { TripNotFoundError } from "../errors/TripErrors";
 
 /**
@@ -22,13 +22,7 @@ export interface UpdateTripInput {
  * Updates an existing trip.
  */
 export class UpdateTripUseCase {
-  execute(
-    input: UpdateTripInput,
-  ): Effect.Effect<
-    UpdateTripResultDTO,
-    ApplicationError | ValidationError | TripNotFoundError,
-    TripPortTag
-  > {
+  execute(input: UpdateTripInput) {
     return Effect.gen(function* () {
       const tripPort = yield* TripPortTag;
 

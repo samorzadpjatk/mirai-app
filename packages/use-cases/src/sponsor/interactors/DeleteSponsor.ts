@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { SponsorPort } from "../ports/SponsorPort";
 import { SponsorNotFoundError } from "../errors/SponsorErrors";
-import type { ApplicationError, SponsorId } from "@mirai-app/domain";
+import type { SponsorId } from "@mirai-app/domain";
 
 /**
  * Input for DeleteSponsorUseCase
@@ -16,9 +16,7 @@ export interface DeleteSponsorInput {
  * Permanently deletes a sponsor from the system.
  */
 export class DeleteSponsorUseCase {
-  execute(
-    input: DeleteSponsorInput,
-  ): Effect.Effect<void, ApplicationError | SponsorNotFoundError, SponsorPort> {
+  execute(input: DeleteSponsorInput) {
     return Effect.gen(function* () {
       const sponsorPort = yield* SponsorPort;
 

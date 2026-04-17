@@ -3,7 +3,7 @@ import type {
   SponsorId,
   TripId,
   TripSponsorId,
-  DatabaseError,
+  IPortError,
 } from "@mirai-app/domain";
 import type { SponsorDTO } from "../dto/SponsorDTOs";
 
@@ -14,29 +14,29 @@ import type { SponsorDTO } from "../dto/SponsorDTOs";
 export interface ITripSponsorPort {
   findById(
     id: TripSponsorId,
-  ): Effect.Effect<TripSponsorWithSponsor | null, DatabaseError, never>;
+  ): Effect.Effect<TripSponsorWithSponsor | null, IPortError, never>;
   findByTripId(
     tripId: TripId,
-  ): Effect.Effect<TripSponsorWithSponsor[], DatabaseError, never>;
+  ): Effect.Effect<TripSponsorWithSponsor[], IPortError, never>;
   findBySponsorId(
     sponsorId: SponsorId,
-  ): Effect.Effect<TripSponsor[], DatabaseError, never>;
+  ): Effect.Effect<TripSponsor[], IPortError, never>;
   findByTripIdAndSponsorId(
     tripId: TripId,
     sponsorId: SponsorId,
-  ): Effect.Effect<TripSponsor | null, DatabaseError, never>;
+  ): Effect.Effect<TripSponsor | null, IPortError, never>;
   create(
     tripSponsor: TripSponsor,
-  ): Effect.Effect<TripSponsor, DatabaseError, never>;
-  delete(id: TripSponsorId): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<TripSponsor, IPortError, never>;
+  delete(id: TripSponsorId): Effect.Effect<void, IPortError, never>;
   deleteByTripIdAndSponsorId(
     tripId: TripId,
     sponsorId: SponsorId,
-  ): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<void, IPortError, never>;
   existsByTripIdAndSponsorId(
     tripId: TripId,
     sponsorId: SponsorId,
-  ): Effect.Effect<boolean, DatabaseError, never>;
+  ): Effect.Effect<boolean, IPortError, never>;
 }
 
 /**
@@ -60,3 +60,13 @@ export class TripSponsorPortTag extends Context.Tag("TripSponsorPort")<
   TripSponsorPortTag,
   ITripSponsorPort
 >() {}
+
+/**
+ * @deprecated Use TripSponsorPortTag instead. Kept for backward compatibility.
+ */
+export const TripSponsorPort = TripSponsorPortTag;
+
+/**
+ * @deprecated Use ITripSponsorPort instead. Kept for backward compatibility.
+ */
+export type TripSponsorPort = typeof TripSponsorPortTag;

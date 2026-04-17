@@ -1,13 +1,11 @@
 import { Effect } from "effect";
 import type {
-  ApplicationError,
   RewardId,
   UserId,
-  RewardPurchase,
-} from "@mirai-app/domain";
+  RewardPurchase} from "@mirai-app/domain";
 import { RewardId as RewardIdFactory } from "@mirai-app/domain";
-import { RewardPort } from "../ports/RewardPort";
-import { RewardPurchasePort } from "../ports/RewardPurchasePort";
+import { RewardPortTag } from "../ports/RewardPort";
+import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import type {
   RewardWithAvailabilityDTO,
@@ -67,17 +65,11 @@ export interface GetRewardByIdResult extends RewardWithAvailabilityDTO {
  * Staff can see hidden rewards, regular users cannot.
  */
 export class GetRewardByIdUseCase {
-  execute(
-    input: GetRewardByIdInput,
-  ): Effect.Effect<
-    GetRewardByIdResult,
-    ApplicationError | RewardNotFoundError | RewardHiddenError,
-    RewardPort | RewardPurchasePort | ChallengePortTag
-  > {
+  execute(input: GetRewardByIdInput) {
     return Effect.gen(function* () {
-      const rewardPort = yield* RewardPort;
+      const rewardPort = yield* RewardPortTag;
       const challengePort = yield* ChallengePortTag;
-      const purchasePort = yield* RewardPurchasePort;
+      const purchasePort = yield* RewardPurchasePortTag;
 
       const rewardId = RewardIdFactory.unsafeCreate(input.rewardId);
 

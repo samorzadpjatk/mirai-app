@@ -1,11 +1,9 @@
 import { Effect } from "effect";
 import type {
-  ApplicationError,
   RewardId,
-  ValidationError,
-} from "@mirai-app/domain";
+  ValidationError} from "@mirai-app/domain";
 import { Reward, RewardId as RewardIdFactory } from "@mirai-app/domain";
-import { RewardPort } from "../ports/RewardPort";
+import { RewardPortTag } from "../ports/RewardPort";
 import type { UpdateRewardResultDTO } from "../dto/RewardDTOs";
 import {
   RewardNotFoundError,
@@ -31,18 +29,9 @@ export interface UpdateRewardInput {
  * Updates an existing reward. Only staff (admin/moderator) can update rewards.
  */
 export class UpdateRewardUseCase {
-  execute(
-    input: UpdateRewardInput,
-  ): Effect.Effect<
-    UpdateRewardResultDTO,
-    | ApplicationError
-    | ValidationError
-    | RewardNotFoundError
-    | RewardValidationError,
-    RewardPort
-  > {
+  execute(input: UpdateRewardInput) {
     return Effect.gen(function* () {
-      const rewardPort = yield* RewardPort;
+      const rewardPort = yield* RewardPortTag;
 
       const rewardId = RewardIdFactory.unsafeCreate(input.rewardId);
 

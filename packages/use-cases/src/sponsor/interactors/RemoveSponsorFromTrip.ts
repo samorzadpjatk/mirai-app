@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { TripSponsorPort } from "../ports/TripSponsorPort";
 import { TripSponsorNotFoundError } from "../errors/SponsorErrors";
-import type { ApplicationError, SponsorId, TripId } from "@mirai-app/domain";
+import type { SponsorId, TripId } from "@mirai-app/domain";
 
 /**
  * Input for RemoveSponsorFromTripUseCase
@@ -17,13 +17,7 @@ export interface RemoveSponsorFromTripInput {
  * Removes the association between a sponsor and a trip.
  */
 export class RemoveSponsorFromTripUseCase {
-  execute(
-    input: RemoveSponsorFromTripInput,
-  ): Effect.Effect<
-    void,
-    ApplicationError | TripSponsorNotFoundError,
-    TripSponsorPort
-  > {
+  execute(input: RemoveSponsorFromTripInput) {
     return Effect.gen(function* () {
       const tripSponsorPort = yield* TripSponsorPort;
 

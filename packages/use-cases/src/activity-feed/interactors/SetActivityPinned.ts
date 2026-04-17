@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
-import type { ApplicationError, ActivityFeedId } from "@mirai-app/domain";
+import type { ActivityFeedId } from "@mirai-app/domain";
 import type { UpdateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import { ActivityNotFoundError } from "../errors/ActivityFeedErrors";
 
@@ -18,13 +18,7 @@ export interface SetActivityPinnedInput {
  * Pins or unpins an activity.
  */
 export class SetActivityPinnedUseCase {
-  execute(
-    input: SetActivityPinnedInput,
-  ): Effect.Effect<
-    UpdateActivityResultDTO,
-    ActivityNotFoundError | ApplicationError,
-    ActivityFeedPortTag
-  > {
+  execute(input: SetActivityPinnedInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
 

@@ -1,7 +1,7 @@
 import { Context, Effect } from "effect";
 import type {
   RewardPurchase,
-  DatabaseError,
+  IPortError,
   TripId,
   RewardId,
   GroupId,
@@ -14,22 +14,22 @@ import type {
 export interface IRewardPurchasePort {
   findById(
     id: RewardPurchaseId,
-  ): Effect.Effect<RewardPurchase | null, DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase | null, IPortError, never>;
   findByRewardId(
     rewardId: RewardId,
-  ): Effect.Effect<RewardPurchase[], DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase[], IPortError, never>;
   findByGroupId(
     groupId: GroupId,
-  ): Effect.Effect<RewardPurchase[], DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase[], IPortError, never>;
   findByTripId(
     tripId: TripId,
-  ): Effect.Effect<RewardPurchase[], DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase[], IPortError, never>;
   findPaginatedByTripId(
     tripId: TripId,
     params: { limit: number; offset: number },
   ): Effect.Effect<
     { purchases: RewardPurchase[]; total: number; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
   findPaginatedByTripIdAndGroupId(
@@ -38,21 +38,19 @@ export interface IRewardPurchasePort {
     params: { limit: number; offset: number },
   ): Effect.Effect<
     { purchases: RewardPurchase[]; total: number; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
   create(
     purchase: RewardPurchase,
-  ): Effect.Effect<RewardPurchase, DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase, IPortError, never>;
   update(
     purchase: RewardPurchase,
-  ): Effect.Effect<RewardPurchase, DatabaseError, never>;
-  delete(id: RewardPurchaseId): Effect.Effect<void, DatabaseError, never>;
-  exists(id: RewardPurchaseId): Effect.Effect<boolean, DatabaseError, never>;
-  countByRewardId(
-    rewardId: RewardId,
-  ): Effect.Effect<number, DatabaseError, never>;
-  countByTripId(tripId: TripId): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase, IPortError, never>;
+  delete(id: RewardPurchaseId): Effect.Effect<void, IPortError, never>;
+  exists(id: RewardPurchaseId): Effect.Effect<boolean, IPortError, never>;
+  countByRewardId(rewardId: RewardId): Effect.Effect<number, IPortError, never>;
+  countByTripId(tripId: TripId): Effect.Effect<number, IPortError, never>;
 }
 
 export class RewardPurchasePortTag extends Context.Tag("RewardPurchasePort")<

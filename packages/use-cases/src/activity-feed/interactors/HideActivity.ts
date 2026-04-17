@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
-import type { ApplicationError, ActivityFeedId, UserId } from "@mirai-app/domain";
+import type { ActivityFeedId, UserId } from "@mirai-app/domain";
 import type { HideActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import { ActivityNotFoundError } from "../errors/ActivityFeedErrors";
 
@@ -19,13 +19,7 @@ export interface HideActivityInput {
  * Hides an activity (moderator/admin action).
  */
 export class HideActivityUseCase {
-  execute(
-    input: HideActivityInput,
-  ): Effect.Effect<
-    HideActivityResultDTO,
-    ActivityNotFoundError | ApplicationError,
-    ActivityFeedPortTag
-  > {
+  execute(input: HideActivityInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
 

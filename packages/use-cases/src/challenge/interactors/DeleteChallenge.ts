@@ -1,5 +1,4 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
 import { ChallengeNotFoundError } from "../errors/ChallengeErrors";
 
@@ -24,13 +23,7 @@ export interface DeleteChallengeResult {
  * Deletes a challenge by ID.
  */
 export class DeleteChallengeUseCase {
-  execute(
-    input: DeleteChallengeInput,
-  ): Effect.Effect<
-    DeleteChallengeResult,
-    ChallengeNotFoundError | ApplicationError,
-    ChallengePortTag
-  > {
+  execute(input: DeleteChallengeInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
 

@@ -1,5 +1,5 @@
 import { Context, Effect } from "effect";
-import type { TripParticipant, DatabaseError } from "@mirai-app/domain";
+import type { TripParticipant, IPortError } from "@mirai-app/domain";
 
 /**
  * TripParticipant Port - Repository interface with Context.Tag for Effect DI
@@ -11,52 +11,52 @@ export interface ITripParticipantPort {
   findByUserAndTrip(
     userId: string,
     tripId: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never>;
+  ): Effect.Effect<TripParticipant | null, IPortError, never>;
 
   /**
    * Find all participants for a trip
    */
   findByTripId(
     tripId: string,
-  ): Effect.Effect<TripParticipant[], DatabaseError, never>;
+  ): Effect.Effect<TripParticipant[], IPortError, never>;
 
   /**
    * Find all participants for a user
    */
   findByUserId(
     userId: string,
-  ): Effect.Effect<TripParticipant[], DatabaseError, never>;
+  ): Effect.Effect<TripParticipant[], IPortError, never>;
 
   /**
    * Find participant by ID
    */
   findById(
     id: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never>;
+  ): Effect.Effect<TripParticipant | null, IPortError, never>;
 
   /**
    * Create or update participant
    */
   upsert(
     participant: TripParticipant,
-  ): Effect.Effect<TripParticipant, DatabaseError, never>;
+  ): Effect.Effect<TripParticipant, IPortError, never>;
 
   /**
    * Update participant
    */
   update(
     participant: TripParticipant,
-  ): Effect.Effect<TripParticipant, DatabaseError, never>;
+  ): Effect.Effect<TripParticipant, IPortError, never>;
 
   /**
    * Delete participant
    */
-  delete(id: string): Effect.Effect<void, DatabaseError, never>;
+  delete(id: string): Effect.Effect<void, IPortError, never>;
 
   /**
    * Count participants for a trip
    */
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never>;
+  countByTripId(tripId: string): Effect.Effect<number, IPortError, never>;
 
   /**
    * Check if user is participant of trip
@@ -64,7 +64,7 @@ export interface ITripParticipantPort {
   isParticipant(
     userId: string,
     tripId: string,
-  ): Effect.Effect<boolean, DatabaseError, never>;
+  ): Effect.Effect<boolean, IPortError, never>;
 
   /**
    * Find participant by wrist number in a trip
@@ -73,7 +73,7 @@ export interface ITripParticipantPort {
     tripId: string,
     wristNumber: string,
     excludeUserId?: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never>;
+  ): Effect.Effect<TripParticipant | null, IPortError, never>;
 
   /**
    * Find participant by user and trip with all relations (group, trip)
@@ -87,7 +87,7 @@ export interface ITripParticipantPort {
       group: { id: string; name: string } | null;
       trip: { id: string; name: string } | null;
     } | null,
-    DatabaseError,
+    IPortError,
     never
   >;
 
@@ -106,7 +106,7 @@ export interface ITripParticipantPort {
       };
       group: { id: string; name: string } | null;
     }[],
-    DatabaseError,
+    IPortError,
     never
   >;
 }

@@ -1,10 +1,6 @@
 import { Effect } from "effect";
 import { NotificationServicePortTag } from "../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type {
-  CreateNotificationResultDTO,
-  SendRankingUpdateInputDTO,
-} from "../dto/NotificationDTOs";
+import type { SendRankingUpdateInputDTO } from "../dto/NotificationDTOs";
 
 /**
  * Input for SendRankingUpdateToGroupsUseCase
@@ -17,13 +13,7 @@ export interface SendRankingUpdateToGroupsInput extends SendRankingUpdateInputDT
  * Sends ranking update notifications to all groups in a trip.
  */
 export class SendRankingUpdateToGroupsUseCase {
-  execute(
-    input: SendRankingUpdateToGroupsInput,
-  ): Effect.Effect<
-    CreateNotificationResultDTO,
-    ApplicationError,
-    NotificationServicePortTag
-  > {
+  execute(input: SendRankingUpdateToGroupsInput) {
     return Effect.gen(function* () {
       const notificationService = yield* NotificationServicePortTag;
 

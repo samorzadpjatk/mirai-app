@@ -1,7 +1,7 @@
 import { Context, Effect } from "effect";
 import type {
   Trip,
-  DatabaseError,
+  IPortError,
   TripId,
   TripResourceId,
   TripInsuranceId,
@@ -9,36 +9,37 @@ import type {
 
 /**
  * Trip Port - Repository interface with Context.Tag for Effect DI
+ * Note: This extends the domain ITripPort with additional use-case specific methods
  */
 export interface ITripPort {
-  findById(id: TripId): Effect.Effect<Trip | null, DatabaseError, never>;
-  findByUserId(userId: string): Effect.Effect<Trip[], DatabaseError, never>;
-  findAll(): Effect.Effect<Trip[], DatabaseError, never>;
+  findById(id: TripId): Effect.Effect<Trip | null, IPortError, never>;
+  findByUserId(userId: string): Effect.Effect<Trip[], IPortError, never>;
+  findAll(): Effect.Effect<Trip[], IPortError, never>;
   findPaginated(params: {
     userId: string;
     limit: number;
     offset: number;
   }): Effect.Effect<
     { trips: Trip[]; total: number; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
-  create(trip: Trip): Effect.Effect<Trip, DatabaseError, never>;
-  update(trip: Trip): Effect.Effect<Trip, DatabaseError, never>;
-  delete(id: TripId): Effect.Effect<void, DatabaseError, never>;
-  exists(id: TripId): Effect.Effect<boolean, DatabaseError, never>;
+  create(trip: Trip): Effect.Effect<Trip, IPortError, never>;
+  update(trip: Trip): Effect.Effect<Trip, IPortError, never>;
+  delete(id: TripId): Effect.Effect<void, IPortError, never>;
+  exists(id: TripId): Effect.Effect<boolean, IPortError, never>;
   hasUserAccess(
     tripId: string,
     userId: string,
-  ): Effect.Effect<boolean, DatabaseError, never>;
+  ): Effect.Effect<boolean, IPortError, never>;
 
   // Trip resources
   findResourcesByTripId(
     tripId: string,
-  ): Effect.Effect<TripResource[], DatabaseError, never>;
+  ): Effect.Effect<TripResource[], IPortError, never>;
   findInsuranceByTripId(
     tripId: string,
-  ): Effect.Effect<TripInsurance | null, DatabaseError, never>;
+  ): Effect.Effect<TripInsurance | null, IPortError, never>;
 }
 
 export class TripPortTag extends Context.Tag("TripPort")<

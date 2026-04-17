@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import type { ApplicationError, TripId, UserId } from "@mirai-app/domain";
 import { TripId as TripIdFactory } from "@mirai-app/domain";
-import { RewardPort } from "../ports/RewardPort";
-import { RewardPurchasePort } from "../ports/RewardPurchasePort";
+import { RewardPortTag } from "../ports/RewardPort";
+import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import type {
   RewardWithAvailabilityDTO,
@@ -49,18 +49,16 @@ interface AdminRewardResult extends RewardWithAvailabilityDTO {
  * For admin/moderator use.
  */
 export class GetRewardsByTripAdminUseCase {
-  execute(
-    input: GetRewardsByTripAdminInput,
-  ): Effect.Effect<
+  execute(input: GetRewardsByTripAdminInput): Effect.Effect<
     {
       rewards: AdminRewardResult[];
       pagination: PaginatedRewardsDTO["pagination"];
     },
     ApplicationError | TripNotFoundError,
-    RewardPort | RewardPurchasePort | ChallengePortTag
+    RewardPortTag | RewardPurchasePortTag | ChallengePortTag
   > {
     return Effect.gen(function* () {
-      const rewardPort = yield* RewardPort;
+      const rewardPort = yield* RewardPortTag;
       const challengePort = yield* ChallengePortTag;
 
       const isAllTrips = input.tripId === "all";
@@ -114,7 +112,7 @@ export class GetRewardsByTripAdminUseCase {
               : [];
 
             // Get purchase count
-            const purchaseCount = yield* RewardPurchasePort.pipe(
+            const purchaseCount = yield* RewardPurchasePortTag.pipe(
               Effect.flatMap((port) => port.countByRewardId(reward.id)),
             );
 

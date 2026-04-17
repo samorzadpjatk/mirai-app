@@ -1,5 +1,4 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
 import type { ChallengeDTO } from "../dto/ChallengeDTOs";
 
@@ -17,9 +16,7 @@ export interface GetAllChallengesInput {
  * Activates visible challenges before returning.
  */
 export class GetAllChallengesUseCase {
-  execute(
-    input: GetAllChallengesInput = {},
-  ): Effect.Effect<ChallengeDTO[], ApplicationError, ChallengePortTag> {
+  execute(input: GetAllChallengesInput = {}) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
 

@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import { TripPortTag } from "../ports/TripPort";
 import type { CreateTripResultDTO } from "../dto/TripDTOs";
-import type { ApplicationError, ValidationError, TripId } from "@mirai-app/domain";
-import { Trip, TripId as TripIdFactory } from "@mirai-app/domain";
+import type { ValidationError } from "@mirai-app/domain";
+import { Trip } from "@mirai-app/domain";
 
 /**
  * Input for CreateTripUseCase
@@ -21,22 +21,14 @@ export interface CreateTripInput {
  * Creates a new trip.
  */
 export class CreateTripUseCase {
-  execute(
-    input: CreateTripInput,
-  ): Effect.Effect<
-    CreateTripResultDTO,
-    ApplicationError | ValidationError,
-    TripPortTag
-  > {
+  execute(input: CreateTripInput) {
     return Effect.gen(function* () {
       const tripPort = yield* TripPortTag;
 
       const now = new Date();
-      const tripId = TripIdFactory.generate();
 
-      // Create trip entity
+      // Create trip entity - ID will be auto-generated
       const tripEffect = Trip.create({
-        id: tripId,
         name: input.name,
         description: input.description ?? null,
         startDate: input.startDate,

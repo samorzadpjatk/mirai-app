@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { PushSubscriptionPortTag } from "../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { UnsubscribeResultDTO } from "../dto/NotificationDTOs";
 
 /**
@@ -16,13 +15,7 @@ export interface UnsubscribeAllInput {
  * Unsubscribe all push notifications for a user.
  */
 export class UnsubscribeAllUseCase {
-  execute(
-    input: UnsubscribeAllInput,
-  ): Effect.Effect<
-    UnsubscribeResultDTO,
-    ApplicationError,
-    PushSubscriptionPortTag
-  > {
+  execute(input: UnsubscribeAllInput) {
     return Effect.gen(function* () {
       const subscriptionPort = yield* PushSubscriptionPortTag;
 

@@ -1,5 +1,4 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
 import {
   ChallengeNotFoundError,
@@ -24,16 +23,7 @@ export interface ForceCloseVotingInput {
  * Only available for peer voting challenges in voting phase.
  */
 export class ForceCloseVotingUseCase {
-  execute(
-    input: ForceCloseVotingInput,
-  ): Effect.Effect<
-    ChallengeDTO,
-    | ChallengeNotFoundError
-    | NotPeerVotingChallengeError
-    | ChallengeNotInVotingPhaseError
-    | ApplicationError,
-    ChallengePortTag
-  > {
+  execute(input: ForceCloseVotingInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
 

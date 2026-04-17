@@ -1,8 +1,7 @@
+import { TripId as TripIdFactory } from "@mirai-app/domain";
 import { Effect } from "effect";
 import { TripPortTag } from "../ports/TripPort";
 import type { PaginatedTripsDTO, TripDTO } from "../dto/TripDTOs";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
-import { TripId as TripIdFactory } from "@mirai-app/domain";
 
 /**
  * Input for GetAllTripsUseCase
@@ -21,9 +20,7 @@ export interface GetAllTripsInput {
  * Retrieves paginated trips for a user.
  */
 export class GetAllTripsUseCase {
-  execute(
-    input: GetAllTripsInput,
-  ): Effect.Effect<PaginatedTripsDTO, ApplicationError, TripPortTag> {
+  execute(input: GetAllTripsInput) {
     return Effect.gen(function* () {
       const tripPort = yield* TripPortTag;
 

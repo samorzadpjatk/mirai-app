@@ -1,12 +1,10 @@
 import { Effect } from "effect";
 import type {
-  ApplicationError,
   RewardId,
   UserId,
   GroupId,
   ValidationError,
-  InsufficientResourcesError,
-} from "@mirai-app/domain";
+  InsufficientResourcesError} from "@mirai-app/domain";
 import {
   RewardId as RewardIdFactory,
   UserId as UserIdFactory,
@@ -16,13 +14,13 @@ import {
   CoinTransaction,
   RewardPurchase as RewardPurchaseEntity,
 } from "@mirai-app/domain";
-import { RewardPort } from "../ports/RewardPort";
-import { RewardPurchasePort } from "../ports/RewardPurchasePort";
-import { GroupPort } from "../../group/ports/GroupPort";
+import { RewardPortTag } from "../ports/RewardPort";
+import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import type { PurchaseRewardResultDTO } from "../dto/RewardDTOs";
-import { CoinTransactionPort } from "../../coin/ports/CoinTransactionPort";
+import { CoinTransactionPortTag } from "../../coin/ports/CoinTransactionPort";
 import {
   RewardNotFoundError,
   RewardHiddenError,
@@ -51,37 +49,14 @@ export interface PurchaseRewardInput {
  * Allows a group leader to purchase a reward for their group.
  */
 export class PurchaseRewardUseCase {
-  execute(
-    input: PurchaseRewardInput,
-  ): Effect.Effect<
-    PurchaseRewardResultDTO,
-    | ApplicationError
-    | ValidationError
-    | InsufficientResourcesError
-    | RewardNotFoundError
-    | RewardHiddenError
-    | RewardOutOfStockError
-    | InsufficientCoinsError
-    | NotGroupLeaderError
-    | GroupNotFoundError
-    | TripNotFoundError
-    | TripEndedError
-    | GroupNotInTripError,
-    | RewardPort
-    | RewardPurchasePort
-    | GroupPort
-    | TripPortTag
-    | TripParticipantPort
-    | CoinTransactionPort
-    | ChallengePortTag
-  > {
+  execute(input: PurchaseRewardInput) {
     return Effect.gen(function* () {
-      const rewardPort = yield* RewardPort;
-      const purchasePort = yield* RewardPurchasePort;
-      const groupPort = yield* GroupPort;
+      const rewardPort = yield* RewardPortTag;
+      const purchasePort = yield* RewardPurchasePortTag;
+      const groupPort = yield* GroupPortTag;
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
-      const coinTransactionPort = yield* CoinTransactionPort;
+      const participantPort = yield* TripParticipantPortTag;
+      const coinTransactionPort = yield* CoinTransactionPortTag;
       const challengePort = yield* ChallengePortTag;
 
       // Find reward

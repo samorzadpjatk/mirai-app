@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { BulkToggleSchedulesResultDTO } from "../../dto/NotificationDTOs";
 
 export interface BulkToggleSchedulesActiveInput {
@@ -9,13 +8,7 @@ export interface BulkToggleSchedulesActiveInput {
 }
 
 export class BulkToggleSchedulesActiveUseCase {
-  execute(
-    input: BulkToggleSchedulesActiveInput,
-  ): Effect.Effect<
-    BulkToggleSchedulesResultDTO,
-    ApplicationError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: BulkToggleSchedulesActiveInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 

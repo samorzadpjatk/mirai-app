@@ -1,7 +1,5 @@
 import { Effect } from "effect";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { NotificationScheduleDTO } from "../../dto/NotificationDTOs";
 
 /**
  * Input for GetUpcomingSchedulesUseCase
@@ -16,13 +14,7 @@ export interface GetUpcomingSchedulesInput {
  * Retrieves upcoming notification schedules within specified days.
  */
 export class GetUpcomingSchedulesUseCase {
-  execute(
-    input: GetUpcomingSchedulesInput,
-  ): Effect.Effect<
-    NotificationScheduleDTO[],
-    ApplicationError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: GetUpcomingSchedulesInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 

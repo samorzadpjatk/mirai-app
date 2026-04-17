@@ -1,6 +1,6 @@
 import { Context, Effect } from "effect";
 import type {
-  DatabaseError,
+  IPortError,
   SubmissionReportId,
   ChallengeSubmissionId,
 } from "@mirai-app/domain";
@@ -41,21 +41,21 @@ export interface ISubmissionReportPort {
    */
   findById(
     id: SubmissionReportId,
-  ): Effect.Effect<SubmissionReport | null, DatabaseError, never>;
+  ): Effect.Effect<SubmissionReport | null, IPortError, never>;
 
   /**
    * Find all reports for a submission
    */
   findBySubmissionId(
     submissionId: ChallengeSubmissionId,
-  ): Effect.Effect<SubmissionReportWithReporter[], DatabaseError, never>;
+  ): Effect.Effect<SubmissionReportWithReporter[], IPortError, never>;
 
   /**
    * Create a new report
    */
   create(
     report: Omit<SubmissionReport, "id" | "createdAt">,
-  ): Effect.Effect<SubmissionReport, DatabaseError, never>;
+  ): Effect.Effect<SubmissionReport, IPortError, never>;
 
   /**
    * Check if user already reported a submission
@@ -63,14 +63,14 @@ export interface ISubmissionReportPort {
   existsBySubmissionAndReporter(
     submissionId: ChallengeSubmissionId,
     reporterId: string,
-  ): Effect.Effect<boolean, DatabaseError, never>;
+  ): Effect.Effect<boolean, IPortError, never>;
 
   /**
    * Count reports for a submission
    */
   countBySubmissionId(
     submissionId: ChallengeSubmissionId,
-  ): Effect.Effect<number, DatabaseError, never>;
+  ): Effect.Effect<number, IPortError, never>;
 }
 
 /**

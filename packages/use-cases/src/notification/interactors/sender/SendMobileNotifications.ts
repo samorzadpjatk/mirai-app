@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { NotificationServicePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { MobileNotificationResultDTO } from "../../dto/NotificationDTOs";
 
 export interface SendMobileNotificationsInput {
@@ -8,13 +7,7 @@ export interface SendMobileNotificationsInput {
 }
 
 export class SendMobileNotificationsUseCase {
-  execute(
-    input: SendMobileNotificationsInput,
-  ): Effect.Effect<
-    MobileNotificationResultDTO,
-    ApplicationError,
-    NotificationServicePortTag
-  > {
+  execute(input: SendMobileNotificationsInput) {
     return Effect.gen(function* () {
       const servicePort = yield* NotificationServicePortTag;
 

@@ -1,14 +1,10 @@
 import { Effect } from "effect";
-import { CoinTransactionPort } from "../ports/CoinTransactionPort";
+import { CoinTransactionPortTag } from "../ports/CoinTransactionPort";
 import type {
   PaginatedCoinTransactionsDTO,
   CoinTransactionDTO,
 } from "../dto/CoinDTOs";
-import type {
-  ApplicationError,
-  CoinTransactionId,
-  GroupId,
-} from "@mirai-app/domain";
+import type { UserId } from "@mirai-app/domain";
 import {
   CoinTransactionId as CoinTransactionIdFactory,
   GroupId as GroupIdFactory,
@@ -31,15 +27,9 @@ export interface GetAllCoinTransactionsInput {
  * Retrieves paginated coin transactions for a trip.
  */
 export class GetAllCoinTransactionsUseCase {
-  execute(
-    input: GetAllCoinTransactionsInput,
-  ): Effect.Effect<
-    PaginatedCoinTransactionsDTO,
-    ApplicationError,
-    CoinTransactionPort
-  > {
+  execute(input: GetAllCoinTransactionsInput) {
     return Effect.gen(function* () {
-      const coinPort = yield* CoinTransactionPort;
+      const coinPort = yield* CoinTransactionPortTag;
 
       const limit = input.pagination?.limit ?? 50;
       const offset = input.pagination?.offset ?? 0;
@@ -55,9 +45,7 @@ export class GetAllCoinTransactionsUseCase {
           groupId: GroupIdFactory.unsafeCreate(t.groupId),
           amount: t.amount,
           reason: t.reason,
-          adminId: t.adminId
-            ? (t.adminId as import("@mirai-app/domain").UserId)
-            : ("" as import("@mirai-app/domain").UserId),
+          adminId: t.adminId ? (t.adminId as UserId) : ("" as UserId),
           createdAt: t.createdAt,
         }),
       );

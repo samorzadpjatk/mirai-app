@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
-import type { ApplicationError, ActivityFeedId } from "@mirai-app/domain";
+import type { ActivityFeedId } from "@mirai-app/domain";
 import type { UnhideActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import { ActivityNotFoundError } from "../errors/ActivityFeedErrors";
 
@@ -17,13 +17,7 @@ export interface UnhideActivityInput {
  * Unhides a previously hidden activity.
  */
 export class UnhideActivityUseCase {
-  execute(
-    input: UnhideActivityInput,
-  ): Effect.Effect<
-    UnhideActivityResultDTO,
-    ActivityNotFoundError | ApplicationError,
-    ActivityFeedPortTag
-  > {
+  execute(input: UnhideActivityInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
 

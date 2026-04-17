@@ -4,6 +4,7 @@ import { TripPortTag } from "../../trip/ports/TripPort";
 import { ChallengeSubmissionPort } from "../../challenge-submission/ports/ChallengeSubmissionPort";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import { GroupPort } from "../../group/ports/GroupPort";
+import { ActivityFeed } from "@mirai-app/domain";
 import type { ApplicationError, TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import {
@@ -87,10 +88,11 @@ export class CreateSubmissionActivityUseCase {
       const now = new Date();
       const title =
         input.title ?? `Submission approved for challenge: ${challenge.name}`;
-      const activity = {
-        id: "", // Will be assigned by repository
+
+      // Create activity entity - ID will be auto-generated
+      const activityEffect = ActivityFeed.create({
         tripId: input.tripId,
-        activityType: "SUBMISSION" as const,
+        activityType: "SUBMISSION",
         title: title,
         description: null,
         imageUrl: null, // Will be hydrated by adapter from submission
@@ -102,7 +104,9 @@ export class CreateSubmissionActivityUseCase {
         createdByAdmin: null,
         createdAt: now,
         updatedAt: now,
-      };
+      });
+
+      const activity = yield* activityEffect;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

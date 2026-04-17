@@ -1,9 +1,9 @@
 import { Effect } from "effect";
-import { Sponsor, SponsorId } from "@mirai-app/domain";
+import { Sponsor } from "@mirai-app/domain";
 import { SponsorPort } from "../ports/SponsorPort";
 import { InvalidSponsorDataError } from "../errors/SponsorErrors";
 import type { CreateSponsorResultDTO } from "../dto/SponsorDTOs";
-import type { ApplicationError, ValidationError } from "@mirai-app/domain";
+import type { ValidationError } from "@mirai-app/domain";
 
 /**
  * Input for CreateSponsorUseCase
@@ -24,13 +24,7 @@ export interface CreateSponsorInput {
  * Creates a new sponsor with the provided details.
  */
 export class CreateSponsorUseCase {
-  execute(
-    input: CreateSponsorInput,
-  ): Effect.Effect<
-    CreateSponsorResultDTO,
-    ApplicationError | ValidationError | InvalidSponsorDataError,
-    SponsorPort
-  > {
+  execute(input: CreateSponsorInput) {
     return Effect.gen(function* () {
       const sponsorPort = yield* SponsorPort;
 
@@ -64,9 +58,8 @@ export class CreateSponsorUseCase {
 
       const now = new Date();
 
-      // Create the sponsor entity using domain factory
+      // Create the sponsor entity - ID will be auto-generated
       const sponsorEffect = Sponsor.create({
-        id: SponsorId.generate(),
         name: input.name.trim(),
         description: input.description.trim(),
         logoPath: input.logoPath.trim(),

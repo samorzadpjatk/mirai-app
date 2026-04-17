@@ -1,7 +1,6 @@
 import { Effect } from "effect";
 import { SponsorPort } from "../ports/SponsorPort";
 import type { SponsorDTO } from "../dto/SponsorDTOs";
-import type { ApplicationError } from "@mirai-app/domain";
 
 /**
  * Get All Sponsors Use Case
@@ -9,7 +8,7 @@ import type { ApplicationError } from "@mirai-app/domain";
  * Retrieves all active sponsors ordered by creation date.
  */
 export class GetAllSponsorsUseCase {
-  execute(): Effect.Effect<SponsorDTO[], ApplicationError, SponsorPort> {
+  execute() {
     return Effect.gen(function* () {
       const sponsorPort = yield* SponsorPort;
 

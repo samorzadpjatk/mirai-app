@@ -1,7 +1,7 @@
 import { Effect } from "effect";
-import type { ApplicationError, RewardId } from "@mirai-app/domain";
+import type { RewardId } from "@mirai-app/domain";
 import { RewardId as RewardIdFactory } from "@mirai-app/domain";
-import { RewardPort } from "../ports/RewardPort";
+import { RewardPortTag } from "../ports/RewardPort";
 import type { RewardDTO } from "../dto/RewardDTOs";
 import { RewardNotFoundError } from "../errors/RewardErrors";
 
@@ -19,11 +19,9 @@ export interface SetRewardHiddenInput {
  * Sets the hidden status of a reward. Only staff (admin/moderator) can do this.
  */
 export class SetRewardHiddenUseCase {
-  execute(
-    input: SetRewardHiddenInput,
-  ): Effect.Effect<RewardDTO, ApplicationError | RewardNotFoundError, RewardPort> {
+  execute(input: SetRewardHiddenInput) {
     return Effect.gen(function* () {
-      const rewardPort = yield* RewardPort;
+      const rewardPort = yield* RewardPortTag 
 
       const rewardId = RewardIdFactory.unsafeCreate(input.rewardId);
 
