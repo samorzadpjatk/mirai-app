@@ -46,4 +46,18 @@ export default tseslint.config(
       "space-infix-ops": "off",
     },
   },
+  {
+    files: ["packages/use-cases/src/**/*.ts"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": [
+        "warn",
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
+          allowOverrideWithoutType: true,
+        },
+      ],
+    },
+  },
 );

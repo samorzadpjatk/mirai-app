@@ -210,7 +210,55 @@ export class GetUserWithTripsUseCase {
 
 ---
 
-## Use Case Template
+## Inference-First Convention
+
+Use cases follow the **inference-first** convention for return type annotations:
+
+### Principles
+
+1. **Port interfaces use explicit types** - contracts must be clear
+2. **Use case implementations use inference** - let TypeScript infer from Effect.gen
+3. **Error unions form naturally** - no need to manually construct union types
+
+### Example
+
+```ts
+// Port interface (explicit - in domain layer)
+export interface IUserPort {
+  findById(id: string): Effect.Effect<User | null, IPortError, never>;
+}
+
+// Use case implementation (inferred - in use-cases layer)
+export class GetUserUseCase {
+  // No explicit return type
+  execute(userId: string) {
+    return Effect.gen(function* () {
+      const userRepo = yield* UserPortTag;
+      const user = yield* userRepo.findById(userId);
+      // Inferred: Effect<User | null, UserNotFoundError | IPortError, UserPortTag>
+      if (!user) {
+        return yield* Effect.fail(new UserNotFoundError({ userId }));
+      }
+      return user;
+    });
+  }
+}
+```
+
+### When to Use Explicit vs Inferred
+
+| Context                         | Use Explicit | Use Inferred |
+| ------------------------------- | ------------ | ------------ |
+| Port interfaces (Domain)        | ✅ Always    | ❌ Never     |
+| Port implementations (Adapters) | ❌ Never     | ✅ Always    |
+| Use case interactors            | ❌ Never     | ✅ Always    |
+| Effect.gen functions            | ❌ Never     | ✅ Always    |
+
+---
+
+## Use Case Template (Inference-First)
+
+Use cases orchestrate domain operations using Effect.gen. Use **type inference** - do not add explicit return type annotations on the execute method.
 
 ```ts
 // packages/use-cases/src/{domain}/interactors/DoSomething.ts
@@ -222,9 +270,9 @@ export class EntityNotFoundError extends Data.TaggedError(
 )<{ entityId: string }>() {}
 
 export class DoSomethingUseCase {
-  execute(
-    input: DoSomethingInput,
-  ): Effect.Effect<SomethingResultDTO, EntityNotFoundError, MyEntityPortTag> {
+  // No explicit return type - TypeScript infers from implementation
+  // Inferred: Effect<SomethingResultDTO, EntityNotFoundError | IPortError, MyEntityPortTag>
+  execute(input: DoSomethingInput) {
     return Effect.gen(function* () {
       const repo = yield* MyEntityPortTag; // Use Tag suffix
 
@@ -242,6 +290,13 @@ export class DoSomethingUseCase {
 }
 ```
 
+**Key rules:**
+
+- No explicit return type annotations on use case methods
+- Let TypeScript infer from `Effect.gen` implementation
+- Error types naturally compose from port errors + use case errors
+- Dependencies declared implicitly via `yield* PortTag`
+
 ---
 
 ## Test Template with Layer.provide
@@ -250,7 +305,7 @@ Mock dependencies using `Layer.succeed` and `Effect.provide`:
 
 ```ts
 import { describe, it, expect } from "bun:test";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Either } from "effect";
 import { DoSomethingUseCase } from "./DoSomething";
 import { MyEntityPortTag } from "../ports/MyEntityPort";
 
@@ -288,7 +343,10 @@ describe("[UNIT] DoSomethingUseCase", () => {
       .pipe(Effect.provide(failingLayer));
 
     const either = await Effect.runPromise(Effect.either(program));
-    expect(either._tag).toBe("Left");
+    expect(Either.isLeft(either)).toBe(true);
+    if (Either.isLeft(either)) {
+      expect(either.left).toBeInstanceOf(EntityNotFoundError);
+    }
   });
 });
 ```
@@ -328,13 +386,14 @@ describe("[UNIT] DoSomethingUseCase", () => {
 
 ## Deep Reference
 
-For comprehensive use case patterns, see CLAUDE.md:
+For comprehensive use case patterns, see **AGENTS.md** and **TESTING.md**:
 
-- §5.3: Use Cases Layer — Effect.gen orchestration, Context.Tags
-- §10.4: Layer Composition and DI Integration
-- §10.5.2: Testing Use Cases — Mock layers with Layer.provide
-- §10.7: Effect Pattern Quick Reference
+- `packages/use-cases/AGENTS.md` (this file) — Effect.gen orchestration, Context.Tags
+- `packages/frameworks/AGENTS.md` — Layer Composition and DI Integration
+- `TESTING.md` — Testing Use Cases with Mock layers
+- Root `AGENTS.md` — Effect Pattern Quick Reference
 
 ---
 
-**Last Updated:** 2026-04-17 (Updated with Port naming pattern - Tag suffix for Context.Tag classes)
+**Last Updated:** 2026-04-18  
+**Version:** 1.3.0 (Updated with inference-first convention, Either testing patterns, and Tag suffix documentation)
