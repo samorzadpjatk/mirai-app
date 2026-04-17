@@ -1,0 +1,35 @@
+import { Context } from "effect";
+import type { IAuthPort, IStoragePort, IRealtimePort } from "@mirai-app/domain";
+
+/**
+ * Auth Port Tag - Context Tag for Effect DI
+ *
+ * Use this tag to access the AuthPort implementation in Effect workflows:
+ *   const auth = yield* AuthPortTag;
+ */
+export class AuthPortTag extends Context.Tag("AuthPort")<
+  AuthPortTag,
+  IAuthPort
+>() {}
+
+/**
+ * Storage Port Tag - Context Tag for Effect DI
+ *
+ * Use this tag to access the StoragePort implementation in Effect workflows:
+ *   const storage = yield* StoragePortTag;
+ */
+export class StoragePortTag extends Context.Tag("StoragePort")<
+  StoragePortTag,
+  IStoragePort
+>() {}
+
+/**
+ * Realtime Port Tag - Context Tag for Effect DI
+ *
+ * Use this tag to access the RealtimePort implementation in Effect workflows:
+ *   const realtime = yield* RealtimePortTag;
+ */
+export class RealtimePortTag extends Context.Tag("RealtimePort")<
+  RealtimePortTag,
+  IRealtimePort
+>() {}

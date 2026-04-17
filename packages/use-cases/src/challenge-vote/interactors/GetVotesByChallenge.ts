@@ -1,0 +1,41 @@
+import { Effect, Data } from "effect";
+import type { ApplicationError } from "@mirai-app/domain";
+import { ChallengeVotePort } from "../ports/ChallengeVotePort";
+import type { ChallengeVoteDTO } from "../dto/ChallengeVoteDTOs";
+
+/**
+ * Input for GetVotesByChallengeUseCase
+ */
+export interface GetVotesByChallengeInput {
+  challengeId: string;
+}
+
+/**
+ * Get Votes By Challenge Use Case
+ *
+ * Retrieves all votes for a challenge (admin/moderator view).
+ */
+export class GetVotesByChallengeUseCase {
+  execute(
+    input: GetVotesByChallengeInput,
+  ): Effect.Effect<ChallengeVoteDTO[], ApplicationError, ChallengeVotePort> {
+    return Effect.gen(function* () {
+      const votePort = yield* ChallengeVotePort;
+
+      // Get all votes
+      const votes = yield* votePort.findByChallengeId(input.challengeId);
+
+      // Map to DTOs
+      return votes.map(
+        (vote): ChallengeVoteDTO => ({
+          id: vote.id,
+          submissionId: vote.submissionId,
+          userId: vote.voterId,
+          score: vote.votePoints * vote.normalizedWeight,
+          createdAt: vote.votedAt,
+          updatedAt: vote.votedAt,
+        }),
+      );
+    });
+  }
+}

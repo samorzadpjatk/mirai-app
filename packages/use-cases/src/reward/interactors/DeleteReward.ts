@@ -1,0 +1,64 @@
+import { Effect } from "effect";
+import type { ApplicationError, RewardId } from "@mirai-app/domain";
+import { RewardId as RewardIdFactory } from "@mirai-app/domain";
+import { RewardPort } from "../ports/RewardPort";
+import { RewardPurchasePort } from "../ports/RewardPurchasePort";
+import {
+  RewardNotFoundError,
+  RewardHasPurchasesError,
+} from "../errors/RewardErrors";
+
+/**
+ * Input for DeleteRewardUseCase
+ */
+export interface DeleteRewardInput {
+  rewardId: string;
+}
+
+/**
+ * Delete Reward Use Case
+ *
+ * Deletes a reward if it has no purchases. Only staff (admin/moderator) can delete rewards.
+ */
+export class DeleteRewardUseCase {
+  execute(
+    input: DeleteRewardInput,
+  ): Effect.Effect<
+    { success: boolean },
+    ApplicationError | RewardNotFoundError | RewardHasPurchasesError,
+    RewardPort | RewardPurchasePort
+  > {
+    return Effect.gen(function* () {
+      const rewardPort = yield* RewardPort;
+      const purchasePort = yield* RewardPurchasePort;
+
+      const rewardId = RewardIdFactory.unsafeCreate(input.rewardId);
+
+      // Find existing reward
+      const existingReward = yield* rewardPort.findById(rewardId);
+
+      if (!existingReward) {
+        return yield* Effect.fail(
+          new RewardNotFoundError({ rewardId: input.rewardId }),
+        );
+      }
+
+      // Check if reward has purchases
+      const purchaseCount = yield* purchasePort.countByRewardId(rewardId);
+
+      if (purchaseCount > 0) {
+        return yield* Effect.fail(
+          new RewardHasPurchasesError({
+            rewardId: input.rewardId,
+            purchaseCount,
+          }),
+        );
+      }
+
+      // Delete the reward
+      yield* rewardPort.delete(rewardId);
+
+      return { success: true };
+    });
+  }
+}

@@ -1,0 +1,130 @@
+import { Effect } from "effect";
+import type {
+  ApplicationError,
+  TripId,
+  UserId,
+  ValidationError,
+} from "@mirai-app/domain";
+import {
+  Reward,
+  TripId as TripIdFactory,
+  UserId as UserIdFactory,
+} from "@mirai-app/domain";
+import { RewardId } from "@mirai-app/domain";
+import { RewardPort } from "../ports/RewardPort";
+import type { CreateRewardResultDTO } from "../dto/RewardDTOs";
+import {
+  TripNotFoundError,
+  RewardValidationError,
+} from "../errors/RewardErrors";
+
+/**
+ * Input for CreateRewardUseCase
+ */
+export interface CreateRewardInput {
+  name: string;
+  description: string;
+  availableQuantity: number;
+  images: string[];
+  coinCost: number;
+  isHidden?: boolean;
+  tripId: string;
+  createdById: string;
+}
+
+/**
+ * Create Reward Use Case
+ *
+ * Creates a new reward for a trip. Only staff (admin/moderator) can create rewards.
+ */
+export class CreateRewardUseCase {
+  execute(
+    input: CreateRewardInput,
+  ): Effect.Effect<
+    CreateRewardResultDTO,
+    ApplicationError | ValidationError | TripNotFoundError | RewardValidationError,
+    RewardPort
+  > {
+    return Effect.gen(function* () {
+      const rewardPort = yield* RewardPort;
+
+      // Validate inputs
+      if (input.name.trim().length === 0) {
+        return yield* Effect.fail(
+          new RewardValidationError({
+            field: "name",
+            message: "Reward name is required",
+          }),
+        );
+      }
+
+      if (input.description.trim().length === 0) {
+        return yield* Effect.fail(
+          new RewardValidationError({
+            field: "description",
+            message: "Reward description is required",
+          }),
+        );
+      }
+
+      if (input.availableQuantity < 0) {
+        return yield* Effect.fail(
+          new RewardValidationError({
+            field: "availableQuantity",
+            message: "Available quantity cannot be negative",
+          }),
+        );
+      }
+
+      if (input.coinCost < 1) {
+        return yield* Effect.fail(
+          new RewardValidationError({
+            field: "coinCost",
+            message: "Coin cost must be at least 1",
+          }),
+        );
+      }
+
+      const tripId = TripIdFactory.unsafeCreate(input.tripId);
+      const createdById = UserIdFactory.unsafeCreate(input.createdById);
+      const now = new Date();
+
+      // Serialize images
+      const image =
+        input.images.length > 0
+          ? input.images.length === 1
+            ? input.images[0]
+            : JSON.stringify(input.images)
+          : null;
+
+      // Create the reward entity
+      const rewardId = RewardId.generate();
+      const rewardEffect = Reward.create({
+        id: rewardId,
+        name: input.name.trim(),
+        description: input.description.trim(),
+        availableQuantity: input.availableQuantity,
+        isHidden: input.isHidden ?? false,
+        image,
+        coinCost: input.coinCost,
+        tripId,
+        createdById,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const reward = yield* rewardEffect;
+
+      // Save to repository
+      const savedReward = yield* rewardPort.create(reward);
+
+      return {
+        id: savedReward.id,
+        name: savedReward.name,
+        coinCost: savedReward.coinCost,
+        tripId: savedReward.tripId,
+        createdAt: savedReward.createdAt,
+      };
+    });
+  }
+}
