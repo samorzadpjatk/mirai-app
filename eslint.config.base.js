@@ -28,6 +28,15 @@ const config = defineConfig({
     "space-infix-ops": ["error", { int32Hint: false }],
     // Prevent console.log in production code (allow in tests and scripts)
     "no-console": ["warn", { allow: ["error"] }],
+    // Require explicit return types on functions with flexible allowances
+    "@typescript-eslint/explicit-function-return-type": [
+      "warn",
+      {
+        allowExpressions: true,
+        allowTypedFunctionExpressions: true,
+        allowHigherOrderFunctions: true,
+      },
+    ],
   },
 
   linterOptions: {
