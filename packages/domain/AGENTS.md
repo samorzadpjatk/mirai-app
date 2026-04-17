@@ -192,7 +192,7 @@ import type { DatabaseError } from "../../errors/unified-errors";
  * This interface defines what operations the application needs
  * from any ActivityFeed storage implementation.
  */
-export interface ActivityFeedPort {
+export interface IActivityFeedPort {
   /**
    * Find feed by ID
    * @returns Feed or null if not found
@@ -232,7 +232,7 @@ export interface ActivityFeedPort {
 
 **Naming conventions:**
 
-- Interface name: `*Port` (e.g., `ActivityFeedPort`, `UserProfilePort`)
+- Interface name: `I` + `*Port` (e.g., `IActivityFeedPort`, `IUserProfilePort`)
 - Methods: `findBy*`, `create`, `update`, `delete`, `exists`, `countBy*`
 - Return type: Always `Effect<T, DatabaseError, never>`
 - Find methods: Return `T | null` for single items, `T[]` for collections
@@ -243,12 +243,12 @@ Ports are now organized within their domain folders:
 
 ```ts
 // packages/domain/src/activity/ports/index.ts
-export type { ActivityFeedPort } from "./ActivityFeedPort";
-export type { ActivityItemPort } from "./ActivityItemPort";
+export type { IActivityFeedPort } from "./ActivityFeedPort";
+export type { IActivityItemPort } from "./ActivityItemPort";
 
 // packages/domain/src/user/ports/index.ts
-export type { UserProfilePort } from "./UserProfilePort";
-export type { UserPreferencesPort } from "./UserPreferencesPort";
+export type { IUserProfilePort } from "./UserProfilePort";
+export type { IUserPreferencesPort } from "./UserPreferencesPort";
 ```
 
 Each domain manages its own ports barrel export. The main domain index then exports from each domain:
@@ -265,6 +265,7 @@ export * from "./user/ports";
 - No implementation logic - pure interfaces only
 - No imports from adapters or frameworks
 - Use `DatabaseError` for all error returns
+- **Always use I-prefix** for domain port interfaces to avoid declaration merging
 
 ---
 
@@ -313,5 +314,5 @@ For comprehensive domain patterns, see **CLAUDE.md**:
 
 ---
 
-**Last Updated:** 2026-04-16  
-**Version:** 1.2.0 (Updated for domain-based folder structure)
+**Last Updated:** 2026-04-17  
+**Version:** 1.3.0 (Updated with I-prefix naming convention for domain ports)

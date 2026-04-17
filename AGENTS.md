@@ -61,7 +61,7 @@ Is it pure business logic?
 - **RED:** Write failing test first; watch it fail for the right reason.
 - **GREEN:** Minimal code to pass the test.
 - **REFACTOR:** Clean up while tests stay green.
-- **Effect Testing:** See TESTING.md and CLAUDE.md §10.5 for Effect-based testing patterns.
+- **Effect Testing:** See TESTING.md for Effect-based testing patterns. Use `Effect.either` with `Either.isLeft()`/`Either.isRight()` for type-safe error testing.
 
 ### SADD: Subagent-driven development
 
@@ -85,10 +85,151 @@ Is it pure business logic?
 | [`packages/use-cases/AGENTS.md`](./packages/use-cases/AGENTS.md)             | Effect orchestration      | `Effect.gen`, `yield*`, `Context.Tag`, `Layer.provide` testing |
 | [`packages/adapters/AGENTS.md`](./packages/adapters/AGENTS.md)               | DI, controllers, gateways | awilix-modular, `Effect.tryPromise`, auth helpers              |
 | [`packages/frameworks/AGENTS.md`](./packages/frameworks/AGENTS.md)           | Layer composition         | `Layer.mergeAll`, `Layer.toRuntime`, Effect Runtime            |
+| [`packages/frameworks/src/di`](./packages/frameworks/src/di)                 | Effect DI patterns        | `makeAppLayer`, `createTestLayer`, type inference              |
 | [`apps/backend-server/AGENTS.md`](./apps/backend-server/AGENTS.md)           | GraphQL resolvers, auth   | Container resolution, `Effect.runPromise` at boundaries        |
 | [`apps/native/AGENTS.md`](./apps/native/AGENTS.md)                           | Mobile testing            | Jest patterns, spike cleanup                                   |
 | [`apps/web/AGENTS.md`](./apps/web/AGENTS.md)                                 | Frontend patterns         | Component testing, Effect patterns                             |
 | [`apps/notification-sender/AGENTS.md`](./apps/notification-sender/AGENTS.md) | Background jobs           | Parallel workflows, PDCA                                       |
+
+---
+
+## Package Export Patterns
+
+Keep package exports minimal and intentional. Avoid backward compatibility re-exports.
+
+### Domain Package (@mirai-app/domain)
+
+**Structure:** Single root export only.
+
+```json
+{
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
+```
+
+**index.ts pattern:**
+
+```typescript
+// Shared utilities
+export * from "./shared/errors/domain-errors";
+export * from "./shared/value-objects/branded-id";
+export type { IAuthPort, IStoragePort, IRealtimePort } from "./shared/services";
+
+// Domain modules (barrel exports)
+export * from "./user";
+export * from "./trip";
+// ... etc
+```
+
+### Use-Cases Package (@mirai-app/use-cases)
+
+**Structure:** Namespace exports + specific port patterns.
+
+```json
+{
+  "exports": {
+    ".": "./src/index.ts",
+    "./user": "./src/user/index.ts",
+    "./user/ports/*": "./src/user/ports/*.ts",
+    "./trip": "./src/trip/index.ts",
+    "./trip/ports/*": "./src/trip/ports/*.ts",
+    "./shared/ports": "./src/shared/ports/index.ts"
+  }
+}
+```
+
+**index.ts pattern:**
+
+```typescript
+// Namespace exports
+export * as user from "./user";
+export * as trip from "./trip";
+
+// Shared service ports
+export { AuthPortTag, StoragePortTag, RealtimePortTag } from "./shared/ports";
+```
+
+**Usage:**
+
+```typescript
+// Import namespace
+import { user } from "@mirai-app/use-cases";
+const program = Effect.gen(function* () {
+  const repo = yield* user.UserPortTag;
+});
+
+// Import specific port (for DI wiring)
+import { UserPortTag } from "@mirai-app/use-cases/user/ports/UserPort";
+```
+
+### Adapters Package (@mirai-app/adapters)
+
+**Structure:** Root export only. All gateways accessed through main index.
+
+```json
+{
+  "exports": {
+    ".": "./src/index.ts",
+    "./service-layer": "./src/system/service-layer.ts"
+  }
+}
+```
+
+**index.ts pattern:**
+
+```typescript
+// Service layer composition
+export {
+  makeServiceLayer,
+  makeAuthLayer,
+  type ServiceLayerConfig,
+} from "./system/service-layer";
+
+// Service gateways
+export { SupabaseAuthGateway } from "./auth/gateways/supabase/SupabaseAuthGateway";
+export { SupabaseStorageGateway } from "./storage/gateways/supabase/SupabaseStorageGateway";
+
+// Domain gateways (organized by domain)
+export { UserDrizzleGateway } from "./user/gateways/drizzle";
+export { GroupDrizzleGateway } from "./group/gateways/drizzle";
+// ... etc
+```
+
+### Anti-patterns to Avoid
+
+**Don't:** Multiple redundant export patterns
+
+```json
+// Bad - redundant patterns
+"./user/ports/*": "./src/user/ports/*.ts",
+"./user/ports/*.ts": "./src/user/ports/*.ts",
+"./ports/user/*.ts": "./src/user/ports/*.ts"
+```
+
+**Don't:** Deep re-export chains in index.ts
+
+```typescript
+// Bad - index.ts shouldn't re-export from other packages
+export type { IGroupPort } from "@mirai-app/domain"; // Don't do this
+export { GroupPortTag } from "./group/ports/GroupPort"; // Already exported via namespace
+```
+
+**Don't:** Non-existent paths in package.json
+
+```json
+// Bad - verify paths exist
+"./controllers/*": "./src/controllers/*.ts" // Only if dir exists
+```
+
+### Principles
+
+1. **Single root export** for domain package (pure, no subpaths needed)
+2. **Namespace + port patterns** for use-cases (clean access + DI needs)
+3. **Root + minimal subpaths** for adapters (gateways via main index)
+4. **No backward compatibility** re-exports - update imports instead
+5. **Verify paths exist** before adding to package.json exports
 
 ---
 
@@ -105,6 +246,164 @@ Is it pure business logic?
 9. **Minimal comments:** Write self-explanatory code with clear naming, types, and structure. Avoid explanatory comments that describe what the code does; use comments only for _why_ (business rationale, non-obvious design decisions). If code needs a comment to explain what it does, refactor it to be clearer instead.
 10. **No inline type imports:** Use standard ES module imports at the top of the file. Never use inline type imports like `import("@mirai-app/domain").ActivityId`. If a type is needed, import it properly: `import type { ActivityId } from "@mirai-app/domain"`
 11. **No `as unknown as` casts:** Never use `as unknown as Type` type assertions. Fix the underlying type mismatch through proper type guards, type narrowing, or by correcting the type definitions. If external types are incorrect, use proper type declarations or wrapper functions instead of unsafe casting.
+12. **Port naming convention:** Domain interfaces use I-prefix (`IUserPort`), Context.Tag classes use Tag suffix (`UserPortTag`). Never use declaration merging between interfaces and classes.
+
+---
+
+## Port Naming Pattern (Effect DI)
+
+### Rule: No Declaration Merging
+
+Never use the same name for both an interface and a class (this triggers ESLint's `no-unsafe-declaration-merging`).
+
+### Naming Convention
+
+| Layer         | Pattern              | Example                      |
+| ------------- | -------------------- | ---------------------------- |
+| **Domain**    | `I` + `XxxPort`      | `IUserPort`, `ITripPort`     |
+| **Use-Cases** | `XxxPortTag`         | `UserPortTag`, `TripPortTag` |
+| **Gateways**  | Implement `IXxxPort` | `implements IUserPort`       |
+
+### Code Pattern
+
+**Domain layer (`packages/domain/src/user/ports/UserPort.ts`):**
+
+```typescript
+export interface IUserPort {
+  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never>;
+  create(user: User): Effect.Effect<User, DatabaseError, never>;
+  // ... other methods
+}
+```
+
+**Use-cases layer (`packages/use-cases/src/user/ports/UserPort.ts`):**
+
+```typescript
+import type { IUserPort } from "@mirai-app/domain";
+
+export class UserPortTag extends Context.Tag("UserPort")<
+  UserPortTag,
+  IUserPort
+>() {}
+```
+
+**Adapter layer (`packages/adapters/src/user/gateways/drizzle/UserDrizzleGateway.ts`):**
+
+```typescript
+import type { IUserPort } from "@mirai-app/domain";
+
+export class UserDrizzleGateway implements IUserPort {
+  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never> {
+    return Effect.tryPromise({ ... });
+  }
+  // ... implement all interface methods
+}
+```
+
+**Usage in interactors:**
+
+```typescript
+import { UserPortTag } from "../ports/UserPort";
+
+const program = Effect.gen(function* () {
+  const userPort = yield* UserPortTag; // Use Tag suffix
+  const user = yield* userPort.findById(id);
+});
+```
+
+---
+
+## Return Type Annotation Guidelines
+
+### Rule: Inference-First for Implementations
+
+Explicit return type annotations are **not required** when TypeScript can infer types correctly. Use explicit types only for:
+
+- Interface/port definitions (contracts)
+- When inference produces `any`, `unknown`, or overly broad types
+- Public API boundaries where clarity is critical
+
+### Abstract Error Interface
+
+Use `IPortError` interface to enable concrete error composition:
+
+```typescript
+// packages/domain/src/shared/errors/ports.ts
+export interface IPortError {
+  readonly _tag: string;
+  readonly message: string;
+}
+
+// Concrete errors implement the interface
+export class DatabaseError
+  extends Data.TaggedError("DatabaseError")<{
+    cause: unknown;
+  }>
+  implements IPortError
+{
+  readonly message = "Database operation failed";
+}
+```
+
+### Code Pattern
+
+**Interface (explicit with abstract error):**
+
+```typescript
+// packages/domain/src/user/ports/UserPort.ts
+export interface IUserPort {
+  findById(id: UserId): Effect.Effect<User | null, IPortError, never>;
+  create(user: User): Effect.Effect<User, IPortError, never>;
+}
+```
+
+**Implementation (inferred):**
+
+```typescript
+// packages/adapters/src/user/gateways/drizzle/UserDrizzleGateway.ts
+export class UserDrizzleGateway implements IUserPort {
+  // Inferred: Effect<User | null, DatabaseError | NotFoundError, never>
+  findById(id: UserId) {
+    return Effect.gen(function* () {
+      const result = yield* Effect.tryPromise({
+        try: () => this.db.query.users.findFirst({ where: eq(users.id, id) }),
+        catch: (error) => new DatabaseError({ cause: error }),
+      });
+
+      if (!result) {
+        return yield* Effect.fail(new NotFoundError({ entity: "User", id }));
+      }
+
+      return this.mapper.toDomain(result);
+    });
+  }
+
+  // Inferred: Effect<User, DatabaseError, never>
+  create(user: User) {
+    return Effect.tryPromise({
+      try: () => this.db.insert(users).values(this.mapper.toInsert(user)),
+      catch: (error) => new DatabaseError({ cause: error }),
+    }).pipe(Effect.map(() => user));
+  }
+}
+```
+
+### ESLint Configuration
+
+```javascript
+// eslint.config.mjs - Require explicit only when not implementing interface
+{
+  files: ['packages/adapters/src/**/*.ts', 'packages/use-cases/src/**/*.ts'],
+  rules: {
+    '@typescript-eslint/explicit-function-return-type': ['error', {
+      allowExpressions: true,
+      allowTypedFunctionExpressions: true,
+      allowHigherOrderFunctions: true,
+      allowOverrideWithoutType: true, // Allow inference for interface impls
+    }],
+  },
+}
+```
 
 ---
 
@@ -123,6 +422,8 @@ Is it pure business logic?
 | Parallel ops      | `yield* Effect.all([e1, e2])`        | Concurrent execution              |
 | External calls    | `Effect.tryPromise({ try, catch })`  | Wrap external APIs                |
 | Error recovery    | `Effect.catchTag("Error", handler)`  | Handle specific errors            |
+| Error testing     | `Effect.either` + `Either.isLeft`    | Type-safe error testing           |
+| Pattern match     | `Either.match({ onLeft, onRight })`  | Handle both cases cleanly         |
 | Provide deps      | `Effect.provide(Layer)`              | Inject dependencies               |
 | Run Effect        | `Effect.runPromise(effect)`          | Execute at boundaries             |
 | **Logging**       | `yield* EffectLogger.info(msg, ctx)` | Observability in Effect workflows |
@@ -148,6 +449,76 @@ await Runtime.runPromise(runtime)(program);
 
 ---
 
+## DI Layer Patterns (packages/frameworks/di)
+
+### Module Structure
+
+The DI module provides Effect Layer compositions for dependency injection:
+
+```
+packages/frameworks/src/di/
+├── index.ts                 # Main exports
+└── layer/
+    ├── app.ts              # Complete app layer (repositories + services)
+    ├── repository.ts       # All domain repository Layers
+    ├── service.ts          # Supabase service Layers
+    ├── service-tags.ts     # Context.Tags for services
+    ├── infrastructure.ts   # Database/logger configuration
+    ├── test.ts            # Test utilities and mock layers
+    └── storage-path-resolver.ts
+```
+
+### Creating Layers
+
+**Complete App Layer:**
+
+```typescript
+import { makeAppLayer } from "@mirai-app/frameworks/di";
+import { UserPortTag } from "@mirai-app/use-cases/user/ports/UserPort";
+import { Effect } from "effect";
+
+const appLayer = makeAppLayer({ db, supabase });
+
+const program = Effect.gen(function* () {
+  const userRepo = yield* UserPortTag;
+  return yield* userRepo.findById("123");
+}).pipe(Effect.provide(appLayer));
+```
+
+**Individual Repository Layer:**
+
+```typescript
+import { makeUserRepositoryLayer } from "@mirai-app/frameworks/di";
+
+const userLayer = makeUserRepositoryLayer({ db });
+```
+
+### Test Layer Utilities
+
+```typescript
+import { createTestLayer, runWithTestLayer } from "@mirai-app/frameworks/di";
+
+const testLayer = createTestLayer();
+
+const result = await runWithTestLayer(
+  testLayer,
+  Effect.gen(function* () {
+    const repo = yield* UserPortTag;
+    return yield* repo.findById("123");
+  }),
+);
+```
+
+### Key Principles
+
+1. **Type inference over explicit annotations** - Let TypeScript infer Layer types; only add explicit types when necessary
+2. **No `as unknown as` casts** - Use proper gateway implementations; avoid unsafe type assertions
+3. **Check existing implementations** - Before creating placeholders, verify if gateways already exist in adapters
+4. **Layer composition** - Use `Layer.mergeAll()` for combining multiple repository layers
+5. **Service separation** - Repository layers (db) and service layers (supabase) can be created independently
+
+---
+
 ## Test execution
 
 | Command                | Purpose           |
@@ -159,10 +530,33 @@ await Runtime.runPromise(runtime)(program);
 
 **Tagging:** `[UNIT]` for pure logic, `[INTEGRATION]` for DB/APIs.
 
-**Effect Testing:** See TESTING.md for comprehensive Effect testing patterns including:
+**Effect Testing:** Use standard Effect patterns:
 
-- Testing with `Effect.runSync` and `Effect.runPromise`
-- Error testing with `Effect.either`
+```typescript
+// Error testing with Either.isLeft and instanceof
+const either = await Effect.runPromise(Effect.either(effect));
+expect(Either.isLeft(either)).toBe(true);
+if (Either.isLeft(either)) {
+  expect(either.left).toBeInstanceOf(NotFoundError);
+}
+
+// Success testing with Either.isRight
+expect(Either.isRight(either)).toBe(true);
+if (Either.isRight(either)) {
+  expect(either.right.id).toBe("valid-id");
+}
+
+// Pattern matching with Either.match
+return Either.match(either, {
+  onLeft: (error) => `Error: ${error._tag}`,
+  onRight: (value) => `Success: ${value.id}`,
+});
+```
+
+See TESTING.md for comprehensive Effect testing patterns including:
+
+- `Effect.runSync` and `Effect.runPromise`
+- `Effect.either` with `Either.isLeft`/`Either.isRight`
 - Mock layers with `Layer.succeed`
 - Dependency injection with `Effect.provide`
 
@@ -198,5 +592,5 @@ For comprehensive conventions, see **CLAUDE.md**:
 
 ---
 
-**Last Updated:** 2026-04-15
-**Version:** 2.4.0 (Added no `as unknown as` cast rule)
+**Last Updated:** 2026-04-17
+**Version:** 2.8.1 (Updated testing patterns to use instanceof for error type verification)

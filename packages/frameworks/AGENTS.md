@@ -15,20 +15,84 @@
 
 ## Layer Composition (Effect)
 
-The Frameworks layer composes Effect Layers for dependency injection:
+The Frameworks layer composes Effect Layers for dependency injection in `packages/frameworks/src/di/`.
 
-```ts
-// packages/frameworks/src/di/layer/app.ts
-import { Layer } from "effect";
-import { RepositoryLive } from "@mirai-app/adapters";
-import { DatabaseLive, LoggerLive } from "./infrastructure";
+### Module Structure
 
-// Compose layers from right to left (inner → outer)
-export const AppLayer = RepositoryLive.pipe(
-  Layer.provide(DatabaseLive),
-  Layer.provide(LoggerLive),
+```
+packages/frameworks/src/di/
+├── index.ts                 # Main exports
+└── layer/
+    ├── app.ts              # Complete app layer (repositories + services)
+    ├── repository.ts       # All domain repository Layers
+    ├── service.ts          # Supabase service Layers
+    ├── service-tags.ts     # Context.Tags for services
+    ├── infrastructure.ts   # Database/logger configuration
+    ├── test.ts            # Test utilities and mock layers
+    └── storage-path-resolver.ts
+```
+
+### Creating Layers
+
+**Complete App Layer:**
+
+```typescript
+import { makeAppLayer } from "@mirai-app/frameworks/di";
+import { UserPortTag } from "@mirai-app/use-cases/user/ports/UserPort";
+import { Effect } from "effect";
+
+const appLayer = makeAppLayer({ db, supabase });
+
+const program = Effect.gen(function* () {
+  const userRepo = yield* UserPortTag;
+  return yield* userRepo.findById("123");
+}).pipe(Effect.provide(appLayer));
+```
+
+**Individual Repository Layer:**
+
+```typescript
+import { makeUserRepositoryLayer } from "@mirai-app/frameworks/di";
+
+const userLayer = makeUserRepositoryLayer({ db });
+```
+
+**Service Layer (Supabase):**
+
+```typescript
+import { makeServiceLayer, AuthPortTag } from "@mirai-app/frameworks/di";
+
+const serviceLayer = makeServiceLayer({ supabase });
+
+const program = Effect.gen(function* () {
+  const auth = yield* AuthPortTag;
+  return yield* auth.getSession();
+}).pipe(Effect.provide(serviceLayer));
+```
+
+### Test Utilities
+
+```typescript
+import { createTestLayer, runWithTestLayer } from "@mirai-app/frameworks/di";
+
+const testLayer = createTestLayer();
+
+const result = await runWithTestLayer(
+  testLayer,
+  Effect.gen(function* () {
+    const repo = yield* UserPortTag;
+    return yield* repo.findById("123");
+  }),
 );
 ```
+
+### Key Principles
+
+1. **Type inference over explicit annotations** - Let TypeScript infer Layer types
+2. **No `as unknown as` casts** - Use proper gateway implementations
+3. **Check existing implementations** - Before creating placeholders, verify if gateways exist in adapters
+4. **Layer composition** - Use `Layer.mergeAll()` for combining multiple layers
+5. **Service separation** - Repository layers (db) and service layers (supabase) are independent
 
 **Key rule:** Frameworks layer wires infrastructure, never contains business logic.
 
@@ -334,5 +398,5 @@ For comprehensive framework patterns, see **CLAUDE.md**:
 
 ---
 
-**Last Updated:** 2026-04-16  
-**Version:** 1.1.0 (Added GraphQL domain module documentation)
+**Last Updated:** 2026-04-17  
+**Version:** 1.2.0 (Updated DI Layer patterns - Effect Layer composition with type inference, no unsafe casts, proper gateway discovery)

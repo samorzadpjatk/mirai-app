@@ -71,16 +71,13 @@ Define repository/service interfaces as Context.Tags:
 ```ts
 // packages/use-cases/src/{domain}/ports/MyEntityPort.ts
 import { Context, Effect } from "effect";
-import type { MyEntity } from "@mirai-app/domain";
+import type { IMyEntityPort } from "@mirai-app/domain";
 
-export interface MyEntityPort {
-  findById(id: string): Effect.Effect<MyEntity | null, never, never>;
-  save(entity: MyEntity): Effect.Effect<MyEntity, never, never>;
-  delete(id: string): Effect.Effect<void, never, never>;
-}
-
-// Create the Context.Tag for dependency injection
-export const MyEntityPort = Context.Tag<MyEntityPort>("MyEntityPort");
+// Context.Tag for dependency injection - uses Tag suffix
+export class MyEntityPortTag extends Context.Tag("MyEntityPort")<
+  MyEntityPortTag,
+  IMyEntityPort
+>() {}
 ```
 
 ---
@@ -144,19 +141,14 @@ const user = yield * repo.findById(id);
 
 ```ts
 // packages/use-cases/src/user/ports/UserPort.ts
-import type { User } from "@mirai-app/domain";
+import type { IUserPort } from "@mirai-app/domain";
 import { Context, Effect } from "effect";
-import { DatabaseError } from "../errors";
 
-// Interface (matches domain port)
-export interface UserPort {
-  findById(id: string): Effect.Effect<User | null, DatabaseError, never>;
-  create(user: User): Effect.Effect<User, DatabaseError, never>;
-  // ... other methods
-}
-
-// Context.Tag for dependency injection
-export class UserPort extends Context.Tag("UserPort")<UserPort, UserPort>() {}
+// Context.Tag for dependency injection - Tag suffix
+export class UserPortTag extends Context.Tag("UserPort")<
+  UserPortTag,
+  IUserPort
+>() {}
 ```
 
 ### Clean Architecture Flow
@@ -183,8 +175,8 @@ Framework Integration (DI container registration)
 ```ts
 // packages/use-cases/src/user/interactors/GetUserWithTrips.ts
 import { Effect, Data } from "effect";
-import { UserPort } from "../ports/UserPort";
-import { TripPort } from "../../trip/ports/TripPort";
+import { UserPortTag } from "../ports/UserPort";
+import { TripPortTag } from "../../trip/ports/TripPort";
 
 export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   userId: string;
@@ -193,9 +185,9 @@ export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
 export class GetUserWithTripsUseCase {
   execute(userId: string) {
     return Effect.gen(function* () {
-      // Get repositories from context
-      const userRepo = yield* UserPort;
-      const tripRepo = yield* TripPort;
+      // Get repositories from context - use Tag suffix
+      const userRepo = yield* UserPortTag;
+      const tripRepo = yield* TripPortTag;
 
       // Orchestrate domain operations
       const user = yield* userRepo.findById(userId);
@@ -223,7 +215,7 @@ export class GetUserWithTripsUseCase {
 ```ts
 // packages/use-cases/src/{domain}/interactors/DoSomething.ts
 import { Effect, Data } from "effect";
-import { MyEntityPort } from "../ports/MyEntityPort";
+import { MyEntityPortTag } from "../ports/MyEntityPort";
 
 export class EntityNotFoundError extends Data.TaggedError(
   "EntityNotFoundError",
@@ -232,9 +224,9 @@ export class EntityNotFoundError extends Data.TaggedError(
 export class DoSomethingUseCase {
   execute(
     input: DoSomethingInput,
-  ): Effect.Effect<SomethingResultDTO, EntityNotFoundError, MyEntityPort> {
+  ): Effect.Effect<SomethingResultDTO, EntityNotFoundError, MyEntityPortTag> {
     return Effect.gen(function* () {
-      const repo = yield* MyEntityPort;
+      const repo = yield* MyEntityPortTag; // Use Tag suffix
 
       const entity = yield* repo.findById(input.entityId);
       if (!entity) {
@@ -260,11 +252,11 @@ Mock dependencies using `Layer.succeed` and `Effect.provide`:
 import { describe, it, expect } from "bun:test";
 import { Effect, Layer } from "effect";
 import { DoSomethingUseCase } from "./DoSomething";
-import { MyEntityPort } from "../ports/MyEntityPort";
+import { MyEntityPortTag } from "../ports/MyEntityPort";
 
 // Create mock repository layer
 const createMockRepoLayer = () =>
-  Layer.succeed(MyEntityPort, {
+  Layer.succeed(MyEntityPortTag, {
     findById: (id: string) => Effect.succeed(null),
     save: (entity: MyEntity) => Effect.succeed(entity),
     delete: (id: string) => Effect.succeed(void 0),
@@ -285,7 +277,7 @@ describe("[UNIT] DoSomethingUseCase", () => {
 
   it("fails with EntityNotFoundError", async () => {
     const useCase = new DoSomethingUseCase();
-    const failingLayer = Layer.succeed(MyEntityPort, {
+    const failingLayer = Layer.succeed(MyEntityPortTag, {
       findById: () => Effect.succeed(null), // Returns null
       save: (e: MyEntity) => Effect.succeed(e),
       delete: () => Effect.succeed(void 0),
@@ -345,4 +337,4 @@ For comprehensive use case patterns, see CLAUDE.md:
 
 ---
 
-**Last Updated:** 2026-04-15
+**Last Updated:** 2026-04-17 (Updated with Port naming pattern - Tag suffix for Context.Tag classes)

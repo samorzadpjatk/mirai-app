@@ -169,23 +169,40 @@ const program = Effect.gen(function* () {
 
 Wrap external calls (Drizzle ORM, Supabase, HTTP APIs) with `Effect.tryPromise`:
 
-```ts
-import { Effect } from "effect";
+### Gateway Implementation Pattern
 
-// Gateway method pattern
-findById(id: string): Effect.Effect<User | null, DatabaseError, never> {
-  return Effect.tryPromise({
-    try: () => this.db.query.users.findFirst({ where: eq(users.id, id) }),
-    catch: (error) => new DatabaseError({ cause: error }),
-  }).pipe(
-    Effect.map((dbUser) =>
-      dbUser ? this.mapper.toDomain(dbUser) : null
-    )
-  );
+Gateways implement the domain `IXxxPort` interface directly:
+
+```ts
+// packages/adapters/src/user/gateways/drizzle/UserDrizzleGateway.ts
+import type { IUserPort } from "@mirai-app/domain";
+import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
+
+export class UserDrizzleGateway
+  extends BaseDrizzleGateway
+  implements IUserPort
+{
+  // Implement I-prefix interface from domain
+  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never> {
+    return Effect.tryPromise({
+      try: () => this.db.query.users.findFirst({ where: eq(users.id, id) }),
+      catch: (error) => new DatabaseError({ cause: error }),
+    }).pipe(
+      Effect.map((dbUser) => (dbUser ? this.mapper.toDomain(dbUser) : null)),
+    );
+  }
+
+  // ... implement all IUserPort methods
 }
 ```
 
-Convert errors at boundaries — never let database errors leak into use cases.
+### Key Points
+
+- Implement `IXxxPort` interface from `@mirai-app/domain`
+- Extend `BaseDrizzleGateway` for consistent error handling
+- Use `Effect.tryPromise` to wrap database calls
+- Convert errors at boundaries — never let database errors leak into use cases
+- Map database records to domain entities using mappers
 
 ---
 
@@ -200,6 +217,40 @@ The shared base gateway (`BaseDrizzleGateway` in `system/shared/gateways/drizzle
 
 ---
 
+## Port Naming Pattern Reference
+
+### Cross-Layer Naming Conventions
+
+| Layer         | Pattern              | Example                      |
+| ------------- | -------------------- | ---------------------------- |
+| **Domain**    | `I` + `XxxPort`      | `IUserPort`, `ITripPort`     |
+| **Use-Cases** | `XxxPortTag`         | `UserPortTag`, `TripPortTag` |
+| **Adapters**  | Implement `IXxxPort` | `implements IUserPort`       |
+
+### Example: User Domain
+
+```typescript
+// Domain (packages/domain/src/user/ports/UserPort.ts)
+export interface IUserPort {
+  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never>;
+}
+
+// Use-Cases (packages/use-cases/src/user/ports/UserPort.ts)
+export class UserPortTag extends Context.Tag("UserPort")<
+  UserPortTag,
+  IUserPort
+>() {}
+
+// Adapters (packages/adapters/src/user/gateways/drizzle/UserDrizzleGateway.ts)
+export class UserDrizzleGateway implements IUserPort {
+  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never> {
+    // Implementation
+  }
+}
+```
+
+---
+
 ## Deep Reference
 
 For comprehensive adapter patterns, see CLAUDE.md:
@@ -209,3 +260,7 @@ For comprehensive adapter patterns, see CLAUDE.md:
 - §5.5 Authentication & Authorization: Controller patterns
 - §10.5.3: Adapter/Gateway testing patterns
 - §10.7: Effect Pattern Quick Reference — tryPromise, runPromise
+
+---
+
+**Last Updated:** 2026-04-17 (Added Port naming pattern documentation)
