@@ -82,7 +82,7 @@ const user = await context.controllers.userController.getById({ id: "123" });
 
 ```typescript
 import { createControllers } from "@mirai-app/adapters/controllers";
-import { makeAppLayer } from "@mirai-app/frameworks/layers";
+import { makeAppLayer } from "@mirai-app/frameworks/di";
 
 // 1. Create the Effect Layer (24 bindings: 19 repos + 5 services)
 const appLayer = makeAppLayer({ supabase, db });
@@ -476,7 +476,7 @@ describe("DrizzleUserGateway", () => {
 ### Controller Testing
 
 ```typescript
-import { makeAppLayer } from "@mirai-app/frameworks/layers";
+import { makeAppLayer } from "@mirai-app/frameworks/di";
 import { createControllers } from "@mirai-app/adapters/controllers";
 
 describe("GroupController", () => {

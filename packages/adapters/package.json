@@ -6,7 +6,8 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./service-layer": "./src/system/service-layer.ts"
+    "./service-layer": "./src/system/service-layer.ts",
+    "./storage": "./src/storage/index.ts"
   },
   "scripts": {
     "test": "bun test",

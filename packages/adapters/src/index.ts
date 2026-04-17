@@ -8,6 +8,17 @@ export { SupabaseRealtimeGateway } from "./realtime/gateways/supabase/SupabaseRe
 // Storage gateways
 export { SupabaseStorageAdapter } from "./storage/gateways/supabase/SupabaseStorageAdapter";
 export { InMemoryStorageGateway } from "./storage/gateways/in-memory/InMemoryStorageGateway";
+export { DefaultStoragePathResolver } from "./storage/gateways/default/DefaultStoragePathResolver";
+
+// Storage utilities
+export {
+  STANDARD_BUCKETS,
+  normalizeStoragePath,
+  normalizeBucketName,
+  createStoragePath,
+  parseStoragePath,
+  type StandardBucket,
+} from "./storage/utils";
 
 // User domain
 export {
