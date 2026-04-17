@@ -1,5 +1,6 @@
 // Shared utilities and errors
 export * from "./shared/errors/domain-errors";
+export type { IPortError } from "./shared/errors/ports";
 export * from "./shared/value-objects/branded-id";
 export type {
   IAuthPort,
@@ -21,3 +22,4 @@ export * from "./activity";
 export * from "./notification";
 export * from "./location";
 export * from "./sponsor";
+export * from "./coin";
