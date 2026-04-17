@@ -1,5 +1,5 @@
 import type { Effect } from "effect";
-import type { ApplicationError } from "../errors/domain-errors";
+import type { IPortError } from "../errors/ports";
 
 /**
  * Interface for authentication operations via Supabase
@@ -11,7 +11,7 @@ export interface IAuthPort {
     password: string,
   ): Effect.Effect<
     { user: { id: string; email: string }; session: { accessToken: string } },
-    ApplicationError,
+    IPortError,
     never
   >;
 
@@ -21,7 +21,7 @@ export interface IAuthPort {
     otp: string,
   ): Effect.Effect<
     { user: { id: string; email: string }; session: { accessToken: string } },
-    ApplicationError,
+    IPortError,
     never
   >;
 
@@ -31,24 +31,24 @@ export interface IAuthPort {
     password: string,
   ): Effect.Effect<
     { user: { id: string; email: string } | null },
-    ApplicationError,
+    IPortError,
     never
   >;
 
   /** Sign out the current user */
-  signOut(): Effect.Effect<void, ApplicationError, never>;
+  signOut(): Effect.Effect<void, IPortError, never>;
 
   /** Get the current session */
   getSession(): Effect.Effect<
     { user: { id: string; email: string } | null; accessToken: string | null },
-    ApplicationError,
+    IPortError,
     never
   >;
 
   /** Refresh the current session */
   refreshSession(): Effect.Effect<
     { session: { accessToken: string } | null },
-    ApplicationError,
+    IPortError,
     never
   >;
 }
@@ -96,7 +96,7 @@ export interface IStoragePort {
     file: File | Blob,
   ): Effect.Effect<
     { path: string; publicUrl: string | null },
-    ApplicationError,
+    IPortError,
     never
   >;
 
@@ -104,32 +104,29 @@ export interface IStoragePort {
   download(
     bucket: string,
     path: string,
-  ): Effect.Effect<Blob, ApplicationError, never>;
+  ): Effect.Effect<Blob, IPortError, never>;
 
   /** Get a public URL for a file */
   getPublicUrl(bucket: string, path: string): string;
 
   /** Delete a file from storage */
-  delete(
-    bucket: string,
-    path: string,
-  ): Effect.Effect<void, ApplicationError, never>;
+  delete(bucket: string, path: string): Effect.Effect<void, IPortError, never>;
 
   /** List files in a bucket */
   list(
     bucket: string,
     path?: string,
-  ): Effect.Effect<string[], ApplicationError, never>;
+  ): Effect.Effect<string[], IPortError, never>;
 
   /** Create a signed upload URL for resumable uploads */
   createSignedUploadUrl(
     input: CreateSignedUploadUrlInput,
-  ): Effect.Effect<CreateSignedUploadUrlResult, ApplicationError, never>;
+  ): Effect.Effect<CreateSignedUploadUrlResult, IPortError, never>;
 
   /** Create a signed download URL for temporary access */
   createSignedDownloadUrl(
     input: CreateSignedDownloadUrlInput,
-  ): Effect.Effect<CreateSignedDownloadUrlResult, ApplicationError, never>;
+  ): Effect.Effect<CreateSignedDownloadUrlResult, IPortError, never>;
 }
 
 /**
@@ -140,12 +137,12 @@ export interface IRealtimePort {
   subscribe(
     channel: string,
     callback: (payload: unknown) => void,
-  ): Effect.Effect<{ unsubscribe: () => void }, ApplicationError, never>;
+  ): Effect.Effect<{ unsubscribe: () => void }, IPortError, never>;
 
   /** Broadcast a message to a channel */
   broadcast(
     channel: string,
     event: string,
     payload: unknown,
-  ): Effect.Effect<void, ApplicationError, never>;
+  ): Effect.Effect<void, IPortError, never>;
 }

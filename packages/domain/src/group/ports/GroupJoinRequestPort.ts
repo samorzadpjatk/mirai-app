@@ -1,5 +1,5 @@
 import type { Effect } from "effect";
-import type { DatabaseError } from "../../shared/errors/domain-errors";
+import type { IPortError } from "../../shared/errors/ports";
 import type { GroupJoinRequest } from "../entities/GroupJoinRequest";
 import type { GroupJoinRequestId } from "../value-objects/GroupJoinRequestId";
 import type { GroupId } from "../value-objects/GroupId";
@@ -17,7 +17,7 @@ export interface IGroupJoinRequestPort {
    */
   findById(
     id: GroupJoinRequestId,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
 
   /**
    * Find join request by user and trip
@@ -25,7 +25,7 @@ export interface IGroupJoinRequestPort {
   findByUserAndTrip(
     userId: UserId,
     tripId: TripId,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
 
   /**
    * Find join request by user, trip, and group
@@ -34,45 +34,45 @@ export interface IGroupJoinRequestPort {
     userId: UserId,
     tripId: TripId,
     groupId: GroupId,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
 
   /**
    * Find all pending join requests for a group
    */
   findPendingByGroupId(
     groupId: GroupId,
-  ): Effect.Effect<GroupJoinRequest[], DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest[], IPortError, never>;
 
   /**
    * Find all join requests for a group
    */
   findByGroupId(
     groupId: GroupId,
-  ): Effect.Effect<GroupJoinRequest[], DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest[], IPortError, never>;
 
   /**
    * Create new join request
    */
   create(
     request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest, IPortError, never>;
 
   /**
    * Update join request
    */
   update(
     request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, DatabaseError, never>;
+  ): Effect.Effect<GroupJoinRequest, IPortError, never>;
 
   /**
    * Delete join request by ID
    */
-  delete(id: GroupJoinRequestId): Effect.Effect<void, DatabaseError, never>;
+  delete(id: GroupJoinRequestId): Effect.Effect<void, IPortError, never>;
 
   /**
    * Delete all join requests for a group
    */
-  deleteByGroupId(groupId: GroupId): Effect.Effect<void, DatabaseError, never>;
+  deleteByGroupId(groupId: GroupId): Effect.Effect<void, IPortError, never>;
 
   /**
    * Delete all join requests for a user in a trip
@@ -80,12 +80,12 @@ export interface IGroupJoinRequestPort {
   deleteByUserAndTrip(
     userId: UserId,
     tripId: TripId,
-  ): Effect.Effect<void, DatabaseError, never>;
+  ): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if join request exists
    */
-  exists(id: GroupJoinRequestId): Effect.Effect<boolean, DatabaseError, never>;
+  exists(id: GroupJoinRequestId): Effect.Effect<boolean, IPortError, never>;
 
   /**
    * Check if user has pending request for any group in trip
@@ -93,5 +93,5 @@ export interface IGroupJoinRequestPort {
   hasPendingRequest(
     userId: UserId,
     tripId: TripId,
-  ): Effect.Effect<boolean, DatabaseError, never>;
+  ): Effect.Effect<boolean, IPortError, never>;
 }

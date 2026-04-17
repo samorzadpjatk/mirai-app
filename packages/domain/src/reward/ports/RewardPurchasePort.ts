@@ -1,5 +1,5 @@
 import type { Effect } from "effect";
-import type { DatabaseError } from "../../shared/errors/domain-errors";
+import type { IPortError } from "../../shared/errors/ports";
 import type { RewardPurchase } from "../entities/RewardPurchase";
 import type { RewardPurchaseId } from "../value-objects/RewardId";
 import type { RewardId } from "../value-objects/RewardId";
@@ -17,28 +17,28 @@ export interface IRewardPurchasePort {
    */
   findById(
     id: RewardPurchaseId,
-  ): Effect.Effect<RewardPurchase | null, DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase | null, IPortError, never>;
 
   /**
    * Find purchases by reward
    */
   findByRewardId(
     rewardId: RewardId,
-  ): Effect.Effect<RewardPurchase[], DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase[], IPortError, never>;
 
   /**
    * Find purchases by group
    */
   findByGroupId(
     groupId: GroupId,
-  ): Effect.Effect<RewardPurchase[], DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase[], IPortError, never>;
 
   /**
    * Find purchases by trip
    */
   findByTripId(
     tripId: TripId,
-  ): Effect.Effect<RewardPurchase[], DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase[], IPortError, never>;
 
   /**
    * Find paginated purchases by trip
@@ -48,7 +48,7 @@ export interface IRewardPurchasePort {
     params: { limit: number; offset: number },
   ): Effect.Effect<
     { purchases: RewardPurchase[]; total: number; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
 
@@ -61,7 +61,7 @@ export interface IRewardPurchasePort {
     params: { limit: number; offset: number },
   ): Effect.Effect<
     { purchases: RewardPurchase[]; total: number; hasMore: boolean },
-    DatabaseError,
+    IPortError,
     never
   >;
 
@@ -70,34 +70,32 @@ export interface IRewardPurchasePort {
    */
   create(
     purchase: RewardPurchase,
-  ): Effect.Effect<RewardPurchase, DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase, IPortError, never>;
 
   /**
    * Update existing purchase
    */
   update(
     purchase: RewardPurchase,
-  ): Effect.Effect<RewardPurchase, DatabaseError, never>;
+  ): Effect.Effect<RewardPurchase, IPortError, never>;
 
   /**
    * Delete purchase by ID
    */
-  delete(id: RewardPurchaseId): Effect.Effect<void, DatabaseError, never>;
+  delete(id: RewardPurchaseId): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if purchase exists
    */
-  exists(id: RewardPurchaseId): Effect.Effect<boolean, DatabaseError, never>;
+  exists(id: RewardPurchaseId): Effect.Effect<boolean, IPortError, never>;
 
   /**
    * Count purchases by reward
    */
-  countByRewardId(
-    rewardId: RewardId,
-  ): Effect.Effect<number, DatabaseError, never>;
+  countByRewardId(rewardId: RewardId): Effect.Effect<number, IPortError, never>;
 
   /**
    * Count purchases by trip
    */
-  countByTripId(tripId: TripId): Effect.Effect<number, DatabaseError, never>;
+  countByTripId(tripId: TripId): Effect.Effect<number, IPortError, never>;
 }

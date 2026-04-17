@@ -1,5 +1,5 @@
 import type { Effect } from "effect";
-import type { DatabaseError } from "../../shared/errors/domain-errors";
+import type { IPortError } from "../../shared/errors/ports";
 import type { User } from "../entities/User";
 import type { UserId } from "../value-objects/UserId";
 
@@ -12,37 +12,37 @@ export interface IUserPort {
   /**
    * Find user by ID
    */
-  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never>;
+  findById(id: UserId): Effect.Effect<User | null, IPortError, never>;
 
   /**
    * Find user by auth user ID
    */
   findByAuthUserId(
     authUserId: string,
-  ): Effect.Effect<User | null, DatabaseError, never>;
+  ): Effect.Effect<User | null, IPortError, never>;
 
   /**
    * Find all users
    */
-  findAll(): Effect.Effect<User[], DatabaseError, never>;
+  findAll(): Effect.Effect<User[], IPortError, never>;
 
   /**
    * Create new user
    */
-  create(user: User): Effect.Effect<User, DatabaseError, never>;
+  create(user: User): Effect.Effect<User, IPortError, never>;
 
   /**
    * Update existing user
    */
-  update(user: User): Effect.Effect<User, DatabaseError, never>;
+  update(user: User): Effect.Effect<User, IPortError, never>;
 
   /**
    * Delete user by ID
    */
-  delete(id: UserId): Effect.Effect<void, DatabaseError, never>;
+  delete(id: UserId): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if user exists
    */
-  exists(id: UserId): Effect.Effect<boolean, DatabaseError, never>;
+  exists(id: UserId): Effect.Effect<boolean, IPortError, never>;
 }

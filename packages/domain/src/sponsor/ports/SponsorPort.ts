@@ -1,5 +1,5 @@
 import type { Effect } from "effect";
-import type { DatabaseError } from "../../shared/errors/domain-errors";
+import type { IPortError } from "../../shared/errors/ports";
 import type { Sponsor } from "../entities/Sponsor";
 import type { SponsorId } from "../value-objects/SponsorId";
 
@@ -12,35 +12,35 @@ export interface ISponsorPort {
   /**
    * Find sponsor by ID
    */
-  findById(id: SponsorId): Effect.Effect<Sponsor | null, DatabaseError, never>;
+  findById(id: SponsorId): Effect.Effect<Sponsor | null, IPortError, never>;
 
   /**
    * Find all sponsors
    */
-  findAll(): Effect.Effect<Sponsor[], DatabaseError, never>;
+  findAll(): Effect.Effect<Sponsor[], IPortError, never>;
 
   /**
    * Find active sponsors
    */
-  findActive(): Effect.Effect<Sponsor[], DatabaseError, never>;
+  findActive(): Effect.Effect<Sponsor[], IPortError, never>;
 
   /**
    * Create new sponsor
    */
-  create(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never>;
+  create(sponsor: Sponsor): Effect.Effect<Sponsor, IPortError, never>;
 
   /**
    * Update existing sponsor
    */
-  update(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never>;
+  update(sponsor: Sponsor): Effect.Effect<Sponsor, IPortError, never>;
 
   /**
    * Delete sponsor by ID
    */
-  delete(id: SponsorId): Effect.Effect<void, DatabaseError, never>;
+  delete(id: SponsorId): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if sponsor exists
    */
-  exists(id: SponsorId): Effect.Effect<boolean, DatabaseError, never>;
+  exists(id: SponsorId): Effect.Effect<boolean, IPortError, never>;
 }
