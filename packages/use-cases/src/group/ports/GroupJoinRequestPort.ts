@@ -1,56 +1,24 @@
-import { Context, Effect } from "effect";
-import type {
-  GroupJoinRequest,
-  IPortError,
-  IGroupJoinRequestPort,
-} from "@mirai-app/domain";
+import { Context } from "effect";
+import type { IGroupJoinRequestPort, GroupJoinRequest } from "@mirai-app/domain";
 
 /**
- * GroupJoinRequest Port - Repository interface with Context.Tag for Effect DI
- * Extends domain IGroupJoinRequestPort with use-case specific methods
+ * GroupJoinRequest Port - Context.Tag for Effect DI
  */
-export interface GroupJoinRequestUseCasePort extends IGroupJoinRequestPort {
-  findById(
-    id: string,
-  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
-  findByUserAndTrip(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
-  findByUserTripAndGroup(
-    userId: string,
-    tripId: string,
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest | null, IPortError, never>;
-  findPendingByGroupId(
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest[], IPortError, never>;
-  findByGroupId(
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest[], IPortError, never>;
-  create(
-    request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, IPortError, never>;
-  update(
-    request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, IPortError, never>;
-  delete(id: string): Effect.Effect<void, IPortError, never>;
-  deleteByGroupId(groupId: string): Effect.Effect<void, IPortError, never>;
-  deleteByUserAndTrip(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<void, IPortError, never>;
-  deleteByUsersAndTrip(
-    userIds: string[],
-    tripId: string,
-  ): Effect.Effect<void, IPortError, never>;
-  exists(id: string): Effect.Effect<boolean, IPortError, never>;
-  hasPendingRequest(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<boolean, IPortError, never>;
-}
-
 export class GroupJoinRequestPortTag extends Context.Tag(
   "GroupJoinRequestPort",
-)<GroupJoinRequestPortTag, GroupJoinRequestUseCasePort>() {}
+)<GroupJoinRequestPortTag, IGroupJoinRequestPort>() {}
+
+/**
+ * Re-export types from domain for backward compatibility
+ */
+export type { IGroupJoinRequestPort, GroupJoinRequest };
+
+/**
+ * @deprecated Use GroupJoinRequestPortTag instead. Kept for backward compatibility.
+ */
+export const GroupJoinRequestPort = GroupJoinRequestPortTag;
+
+/**
+ * @deprecated Use IGroupJoinRequestPort instead. Kept for backward compatibility.
+ */
+export type GroupJoinRequestPort = typeof GroupJoinRequestPortTag;

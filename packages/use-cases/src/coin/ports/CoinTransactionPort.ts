@@ -13,6 +13,21 @@ export class CoinTransactionPortTag extends Context.Tag("CoinTransactionPort")<
 >() {}
 
 /**
+ * Re-export types from domain for backward compatibility
+ */
+export type { ICoinTransactionPort, CoinTransactionDTO };
+
+/**
  * CoinTransaction DTO (alias for backward compatibility)
  */
 export type CoinTransaction = CoinTransactionDTO;
+
+/**
+ * @deprecated Use CoinTransactionPortTag instead. Kept for backward compatibility.
+ */
+export const CoinTransactionPort = CoinTransactionPortTag;
+
+/**
+ * @deprecated Use ICoinTransactionPort instead. Kept for backward compatibility.
+ */
+export type CoinTransactionPort = typeof CoinTransactionPortTag;
