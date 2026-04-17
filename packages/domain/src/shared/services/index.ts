@@ -146,3 +146,82 @@ export interface IRealtimePort {
     payload: unknown,
   ): Effect.Effect<void, IPortError, never>;
 }
+
+/**
+ * Auth User Info returned from external auth service
+ */
+export interface AuthUserInfo {
+  id: string;
+  email: string | null;
+  bannedUntil: string | null;
+  banReason: string | null;
+  isBanned: boolean;
+  role: string | null;
+}
+
+/**
+ * Ban status returned from auth service
+ */
+export interface BanStatus {
+  banned: boolean;
+  bannedUntil: string | null;
+  reason: string | null;
+}
+
+/**
+ * Auth Service Port
+ * Interface for interacting with the external authentication service (Supabase Auth)
+ */
+export interface IAuthServicePort {
+  getCurrentUserBanStatus(
+    accessToken: string,
+  ): Effect.Effect<BanStatus, IPortError, never>;
+  getBanStatusByEmail(email: string): Effect.Effect<
+    {
+      exists: boolean;
+    } & BanStatus,
+    IPortError,
+    never
+  >;
+  getUserInfoByAuthId(
+    authUserId: string,
+  ): Effect.Effect<AuthUserInfo | null, IPortError, never>;
+  getUserInfosByAuthIds(
+    authUserIds: string[],
+  ): Effect.Effect<Map<string, AuthUserInfo>, IPortError, never>;
+  createAuthUser(params: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  }): Effect.Effect<{ id: string; email: string }, IPortError, never>;
+  deleteAuthUser(authUserId: string): Effect.Effect<void, IPortError, never>;
+  banUser(params: {
+    authUserId: string;
+    bannedUntilMs: number;
+    reason?: string;
+  }): Effect.Effect<{ bannedUntil: string }, IPortError, never>;
+}
+
+/**
+ * Valid storage buckets
+ */
+export type StorageBucket = "images" | "files" | "files-public" | "avatar";
+
+/**
+ * Result of resolving a storage path
+ */
+export interface ResolvedStoragePath {
+  bucket: StorageBucket;
+  path: string;
+  storagePath: string;
+}
+
+/**
+ * Storage Path Resolver Port
+ * Parses and validates storage path references
+ */
+export interface IStoragePathResolverPort {
+  resolvePath(
+    storagePath: string,
+  ): Effect.Effect<ResolvedStoragePath, never, never>;
+}
