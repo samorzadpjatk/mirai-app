@@ -579,18 +579,14 @@ See TESTING.md for comprehensive Effect testing patterns including:
 
 ## Deep reference
 
-For comprehensive conventions, see **CLAUDE.md**:
+For comprehensive conventions, see **AGENTS.md** (this file) and per-package AGENTS.md files:
 
-- §1: CEK Five Pillars Overview
-- §2: Clean Architecture (Effect Edition)
-- §3: SDD Conventions
-- §4: TDD Conventions (Effect Edition)
-- §5: Layer Patterns (Domain, Use Cases, Adapters, Frameworks)
-- §7: SADD Conventions
-- §8: Kaizen Conventions
-- §10: Effect Framework Patterns & Migration Guide
+- `packages/domain/AGENTS.md` — Domain layer patterns, entities, value objects
+- `packages/use-cases/AGENTS.md` — Effect orchestration, Context.Tags
+- `packages/adapters/AGENTS.md` — DI, controllers, gateways
+- `packages/frameworks/AGENTS.md` — Layer composition, Effect Runtime
 
 ---
 
-**Last Updated:** 2026-04-17
-**Version:** 2.8.1 (Updated testing patterns to use instanceof for error type verification)
+**Last Updated:** 2026-04-18
+**Version:** 2.9.0 (Added inference-first convention documentation with IPortError, updated per-package AGENTS.md files)

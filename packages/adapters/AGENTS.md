@@ -165,44 +165,73 @@ const program = Effect.gen(function* () {
 
 ---
 
-## Gateway Patterns with Effect.tryPromise
+## Gateway Patterns with Effect.tryPromise (Inference-First)
 
-Wrap external calls (Drizzle ORM, Supabase, HTTP APIs) with `Effect.tryPromise`:
+Wrap external calls (Drizzle ORM, Supabase, HTTP APIs) with `Effect.tryPromise`. Gateway implementations use **type inference** - do not add explicit return type annotations.
 
 ### Gateway Implementation Pattern
 
-Gateways implement the domain `IXxxPort` interface directly:
+Gateways implement the domain `IXxxPort` interface with **inferred return types**:
 
 ```ts
 // packages/adapters/src/user/gateways/drizzle/UserDrizzleGateway.ts
 import type { IUserPort } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
+import { Effect } from "effect";
 
 export class UserDrizzleGateway
   extends BaseDrizzleGateway
   implements IUserPort
 {
-  // Implement I-prefix interface from domain
-  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never> {
-    return Effect.tryPromise({
-      try: () => this.db.query.users.findFirst({ where: eq(users.id, id) }),
-      catch: (error) => new DatabaseError({ cause: error }),
-    }).pipe(
-      Effect.map((dbUser) => (dbUser ? this.mapper.toDomain(dbUser) : null)),
-    );
+  // No explicit return type - TypeScript infers from interface
+  // Inferred: Effect<User | null, DatabaseError | NotFoundError, never>
+  findById(id: UserId) {
+    return Effect.gen(function* () {
+      const result = yield* Effect.tryPromise({
+        try: () => this.db.query.users.findFirst({ where: eq(users.id, id) }),
+        catch: (error) => new DatabaseError({ cause: error }),
+      });
+
+      if (!result) {
+        return yield* Effect.fail(new NotFoundError({ entity: "User", id }));
+      }
+
+      return this.mapper.toDomain(result);
+    });
   }
 
-  // ... implement all IUserPort methods
+  // Inferred: Effect<User, DatabaseError, never>
+  create(user: User) {
+    return Effect.tryPromise({
+      try: () => this.db.insert(users).values(this.mapper.toInsert(user)),
+      catch: (error) => new DatabaseError({ cause: error }),
+    }).pipe(Effect.map(() => user));
+  }
+
+  // ... implement all IUserPort methods without explicit return types
 }
 ```
 
-### Key Points
+### Key Points (Inference-First Convention)
 
 - Implement `IXxxPort` interface from `@mirai-app/domain`
+- **No explicit return types** - let TypeScript infer from interface
 - Extend `BaseDrizzleGateway` for consistent error handling
 - Use `Effect.tryPromise` to wrap database calls
+- Use `Effect.gen` for sequential operations with multiple error types
 - Convert errors at boundaries — never let database errors leak into use cases
 - Map database records to domain entities using mappers
+- Error unions form naturally: `DatabaseError | NotFoundError | ValidationError`
+
+### When to Use Explicit vs Inferred Types
+
+| Context                 | Use Explicit                         | Use Inferred       |
+| ----------------------- | ------------------------------------ | ------------------ |
+| Port interfaces         | ✅ Always explicit with `IPortError` | ❌ Never           |
+| Gateway implementations | ❌ Never                             | ✅ Always inferred |
+| Use case interactors    | ❌ Never                             | ✅ Always inferred |
+| Effect.gen functions    | ❌ Never                             | ✅ Always inferred |
+| Pure domain functions   | Use judgment                         | Prefer inferred    |
 
 ---
 
@@ -263,4 +292,5 @@ For comprehensive adapter patterns, see CLAUDE.md:
 
 ---
 
-**Last Updated:** 2026-04-17 (Added Port naming pattern documentation)
+**Last Updated:** 2026-04-18  
+**Version:** 1.2.0 (Updated with inference-first convention for gateway implementations)

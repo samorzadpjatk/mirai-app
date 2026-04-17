@@ -143,7 +143,7 @@ Domain tests use pure Effects without dependency injection:
 
 ```ts
 import { describe, it, expect } from "bun:test";
-import { Effect } from "effect";
+import { Effect, Either } from "effect";
 import { MyEntity, ValidationError } from "./MyEntity";
 
 describe("[UNIT] MyEntity", () => {
@@ -165,10 +165,11 @@ describe("[UNIT] MyEntity", () => {
       createdAt: new Date(),
     });
 
-    const result = await Effect.runPromise(Effect.either(effect));
-    expect(result._tag).toBe("Left");
-    if (result._tag === "Left") {
-      expect(result.left._tag).toBe("ValidationError");
+    // Use Effect.either with Either.isLeft for type-safe error testing
+    const either = await Effect.runPromise(Effect.either(effect));
+    expect(Either.isLeft(either)).toBe(true);
+    if (Either.isLeft(either)) {
+      expect(either.left).toBeInstanceOf(ValidationError);
     }
   });
 });
@@ -176,57 +177,56 @@ describe("[UNIT] MyEntity", () => {
 
 ---
 
-## Repository Port Definition Template
+## Repository Port Definition Template (Inference-First Convention)
 
-Define repository ports (interfaces) for domain entities:
+Define repository ports (interfaces) for domain entities using the **inference-first convention**:
 
 ```ts
 // packages/domain/src/activity/ports/ActivityFeedPort.ts
 import type { ActivityFeed } from "../entities/ActivityFeed";
 import type { Effect } from "effect";
-import type { DatabaseError } from "../../errors/unified-errors";
+import type { IPortError } from "../../shared/errors/ports";
 
 /**
  * ActivityFeed Port
  *
  * This interface defines what operations the application needs
  * from any ActivityFeed storage implementation.
+ * Uses IPortError for natural error union composition in implementations.
  */
 export interface IActivityFeedPort {
   /**
    * Find feed by ID
    * @returns Feed or null if not found
    */
-  findById(
-    id: string,
-  ): Effect.Effect<ActivityFeed | null, DatabaseError, never>;
+  findById(id: string): Effect.Effect<ActivityFeed | null, IPortError, never>;
 
   /**
    * Find all feeds for a user
    */
   findByUserId(
     userId: string,
-  ): Effect.Effect<ActivityFeed[], DatabaseError, never>;
+  ): Effect.Effect<ActivityFeed[], IPortError, never>;
 
   /**
    * Create new feed
    */
-  create(feed: ActivityFeed): Effect.Effect<ActivityFeed, DatabaseError, never>;
+  create(feed: ActivityFeed): Effect.Effect<ActivityFeed, IPortError, never>;
 
   /**
    * Update existing feed
    */
-  update(feed: ActivityFeed): Effect.Effect<ActivityFeed, DatabaseError, never>;
+  update(feed: ActivityFeed): Effect.Effect<ActivityFeed, IPortError, never>;
 
   /**
    * Delete feed by ID
    */
-  delete(id: string): Effect.Effect<void, DatabaseError, never>;
+  delete(id: string): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if feed exists
    */
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never>;
+  exists(id: string): Effect.Effect<boolean, IPortError, never>;
 }
 ```
 
@@ -234,8 +234,14 @@ export interface IActivityFeedPort {
 
 - Interface name: `I` + `*Port` (e.g., `IActivityFeedPort`, `IUserProfilePort`)
 - Methods: `findBy*`, `create`, `update`, `delete`, `exists`, `countBy*`
-- Return type: Always `Effect<T, DatabaseError, never>`
+- Return type: Always `Effect<T, IPortError, never>` (use abstract error interface)
 - Find methods: Return `T | null` for single items, `T[]` for collections
+
+**Inference-First Convention:**
+
+1. **Interfaces use explicit types with `IPortError`** - contracts must be clear
+2. **Implementations use type inference** - let TypeScript infer from the interface
+3. **Error unions form naturally** - `DatabaseError | NotFoundError` instead of locked single type
 
 **Barrel exports (domain-based):**
 
@@ -262,36 +268,64 @@ export * from "./user/ports";
 **Key rules:**
 
 - Import `Effect` as `type` only: `import type { Effect } from "effect"`
+- Import `IPortError` for error types: `import type { IPortError } from "../../shared/errors/ports"`
 - No implementation logic - pure interfaces only
 - No imports from adapters or frameworks
-- Use `DatabaseError` for all error returns
 - **Always use I-prefix** for domain port interfaces to avoid declaration merging
+- Use `IPortError` (not concrete `DatabaseError`) for error returns
 
 ---
 
-## DatabaseError Usage
+## IPortError and Error Classes
 
-All repository ports use `DatabaseError` for consistent error handling:
+All repository ports use `IPortError` interface for consistent error handling:
 
 ```ts
-import { DatabaseError } from "@mirai-app/domain/ports";
+// packages/domain/src/shared/errors/ports.ts
+/**
+ * Base interface for all port errors.
+ * Enables concrete error implementations to compose naturally via union types.
+ */
+export interface IPortError {
+  readonly _tag: string;
+  readonly message: string;
+}
+```
 
-// In adapter implementations (not in domain)
-import { Effect } from "effect";
+Error classes implement `IPortError`:
 
-findById(id: string) {
-  return Effect.tryPromise({
-    try: () => db.query.entities.findFirst({ where: eq(entities.id, id) }),
-    catch: (error) => new DatabaseError({ operation: "findById", id, cause: error }),
-  });
+```ts
+// packages/domain/src/shared/errors/domain-errors.ts
+import { Data } from "effect";
+import type { IPortError } from "./ports";
+
+export class DatabaseError
+  extends Data.TaggedError("DatabaseError")<{
+    cause: unknown;
+  }>
+  implements IPortError
+{
+  readonly message = "Database operation failed";
+}
+
+export class NotFoundError
+  extends Data.TaggedError("NotFoundError")<{
+    entity: string;
+    id: string;
+  }>
+  implements IPortError
+{
+  readonly message = `${entity} not found`;
 }
 ```
 
 **Key points:**
 
-- `DatabaseError` is re-exported from `../errors/unified-errors`
-- Use for all database operation failures in adapters
-- Enables type-safe error matching with `Effect.catchTag`
+- `IPortError` interface has `_tag: string` and `message: string` properties
+- All error classes implement `IPortError` for natural union composition
+- Port interfaces use `IPortError` (not concrete `DatabaseError`)
+- Gateway implementations infer concrete error unions (e.g., `DatabaseError | NotFoundError`)
+- Enables type-safe error matching with `Effect.catchTag` and `instanceof`
 
 ---
 
@@ -314,5 +348,5 @@ For comprehensive domain patterns, see **CLAUDE.md**:
 
 ---
 
-**Last Updated:** 2026-04-17  
-**Version:** 1.3.0 (Updated with I-prefix naming convention for domain ports)
+**Last Updated:** 2026-04-18  
+**Version:** 1.4.0 (Updated with inference-first convention, IPortError interface, and Either testing patterns)
