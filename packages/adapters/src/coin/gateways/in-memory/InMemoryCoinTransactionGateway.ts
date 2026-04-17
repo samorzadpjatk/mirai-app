@@ -1,9 +1,9 @@
 import { Effect } from "effect";
-import { DatabaseError, GroupId } from "@mirai-app/domain";
-import {
-  type ICoinTransactionPort,
-  type CoinTransaction,
-} from "@mirai-app/use-cases";
+import { GroupId } from "@mirai-app/domain";
+import type {
+  ICoinTransactionPort,
+  CoinTransactionDTO,
+} from "@mirai-app/domain";
 
 /**
  * In-Memory CoinTransaction Gateway
@@ -11,17 +11,13 @@ import {
  * Implements ICoinTransactionPort using in-memory Map storage for testing.
  */
 export class InMemoryCoinTransactionGateway implements ICoinTransactionPort {
-  private transactions: Map<string, CoinTransaction> = new Map();
+  private transactions: Map<string, CoinTransactionDTO> = new Map();
 
-  findById(
-    id: string,
-  ): Effect.Effect<CoinTransaction | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.succeed(this.transactions.get(id) ?? null);
   }
 
-  findByGroupId(
-    groupId: string,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
+  findByGroupId(groupId: string) {
     const result = Array.from(this.transactions.values()).filter(
       (t) => t.groupId === groupId,
     );
@@ -30,9 +26,7 @@ export class InMemoryCoinTransactionGateway implements ICoinTransactionPort {
     );
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     const result = Array.from(this.transactions.values()).filter(
       (t) => t.tripId === tripId,
     );
@@ -44,11 +38,7 @@ export class InMemoryCoinTransactionGateway implements ICoinTransactionPort {
   findByTripIdPaginated(
     tripId: string,
     params: { limit: number; offset: number },
-  ): Effect.Effect<
-    { transactions: CoinTransaction[]; total: number },
-    DatabaseError,
-    never
-  > {
+  ) {
     const allForTrip = Array.from(this.transactions.values()).filter(
       (t) => t.tripId === tripId,
     );
@@ -62,10 +52,7 @@ export class InMemoryCoinTransactionGateway implements ICoinTransactionPort {
     });
   }
 
-  findByTripIdAndGroupId(
-    tripId: string,
-    groupId: string,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
+  findByTripIdAndGroupId(tripId: string, groupId: string) {
     const result = Array.from(this.transactions.values()).filter(
       (t) => t.tripId === tripId && t.groupId === groupId,
     );
@@ -74,59 +61,45 @@ export class InMemoryCoinTransactionGateway implements ICoinTransactionPort {
     );
   }
 
-  create(
-    transaction: CoinTransaction,
-  ): Effect.Effect<CoinTransaction, DatabaseError, never> {
+  create(transaction: CoinTransactionDTO) {
     this.transactions.set(transaction.id, transaction);
     return Effect.succeed(transaction);
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     this.transactions.delete(id);
     return Effect.succeed(undefined);
   }
 
-  sumByGroupId(groupId: string): Effect.Effect<number, DatabaseError, never> {
+  sumByGroupId(groupId: string) {
     const total = Array.from(this.transactions.values())
       .filter((t) => t.groupId === groupId)
       .reduce((sum, t) => sum + t.amount, 0);
     return Effect.succeed(total);
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string) {
     const count = Array.from(this.transactions.values()).filter(
       (t) => t.tripId === tripId,
     ).length;
     return Effect.succeed(count);
   }
 
-  sumPositiveByTripId(
-    tripId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  sumPositiveByTripId(tripId: string) {
     const total = Array.from(this.transactions.values())
       .filter((t) => t.tripId === tripId && t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
     return Effect.succeed(total);
   }
 
-  sumNegativeByTripId(
-    tripId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  sumNegativeByTripId(tripId: string) {
     const total = Array.from(this.transactions.values())
       .filter((t) => t.tripId === tripId && t.amount < 0)
       .reduce((sum, t) => sum + t.amount, 0);
     return Effect.succeed(total);
   }
 
-  getMostActiveAdminStats(tripId: string): Effect.Effect<
-    Array<{
-      adminId: string;
-      totalAmount: number;
-      transactionCount: number;
-    }>,
-    DatabaseError,
-    never
-  > {
+  getMostActiveAdminStats(tripId: string) {
     const tripTransactions = Array.from(this.transactions.values()).filter(
       (t) => t.tripId === tripId && t.adminId !== null,
     );
@@ -157,13 +130,7 @@ export class InMemoryCoinTransactionGateway implements ICoinTransactionPort {
     return Effect.succeed(result);
   }
 
-  getRichestGroup(
-    tripId: string,
-  ): Effect.Effect<
-    { groupId: GroupId; totalCoins: number } | null,
-    DatabaseError,
-    never
-  > {
+  getRichestGroup(tripId: string) {
     const tripTransactions = Array.from(this.transactions.values()).filter(
       (t) => t.tripId === tripId,
     );
@@ -177,17 +144,14 @@ export class InMemoryCoinTransactionGateway implements ICoinTransactionPort {
     let richestGroup: { groupId: GroupId; totalCoins: number } | null = null;
     for (const [groupId, totalCoins] of groupTotals.entries()) {
       if (!richestGroup || totalCoins > richestGroup.totalCoins) {
-        richestGroup = { groupId: groupId as GroupId, totalCoins };
+        richestGroup = { groupId: GroupId.unsafeCreate(groupId), totalCoins };
       }
     }
 
     return Effect.succeed(richestGroup);
   }
 
-  findRecentByTripId(
-    tripId: string,
-    limit: number,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
+  findRecentByTripId(tripId: string, limit: number) {
     const result = Array.from(this.transactions.values())
       .filter((t) => t.tripId === tripId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
@@ -200,23 +164,23 @@ export class InMemoryCoinTransactionGateway implements ICoinTransactionPort {
     this.transactions.clear();
   }
 
-  seed(transactions: CoinTransaction[]): void {
+  seed(transactions: CoinTransactionDTO[]): void {
     for (const transaction of transactions) {
       this.transactions.set(transaction.id, transaction);
     }
   }
 
-  getAll(): CoinTransaction[] {
+  getAll(): CoinTransactionDTO[] {
     return Array.from(this.transactions.values());
   }
 
-  getByGroupId(groupId: string): CoinTransaction[] {
+  getByGroupId(groupId: string): CoinTransactionDTO[] {
     return Array.from(this.transactions.values()).filter(
       (t) => t.groupId === groupId,
     );
   }
 
-  getByTripId(tripId: string): CoinTransaction[] {
+  getByTripId(tripId: string): CoinTransactionDTO[] {
     return Array.from(this.transactions.values()).filter(
       (t) => t.tripId === tripId,
     );

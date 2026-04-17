@@ -6,12 +6,13 @@ import {
   type ActivityFeedSelect,
 } from "@mirai-app/frameworks/drizzle";
 import {
-  ActivityFeed,
-  ActivityFeedId,
+  type ActivityFeed,
+  type ActivityFeedId,
+  ActivityFeedIdFactory,
   TripId,
   DatabaseError,
 } from "@mirai-app/domain";
-import type { IActivityFeedPort } from "@mirai-app/use-cases";
+import { type IActivityFeedPort } from "@mirai-app/use-cases/activity-feed/ports";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { activityFeedMapper } from "../../mappers/ActivityFeedMapper";
 
@@ -28,10 +29,8 @@ export class ActivityFeedDrizzleGateway
     super(db);
   }
 
-  findById(
-    id: ActivityFeedId,
-  ): Effect.Effect<ActivityFeed | null, DatabaseError, never> {
-    const idStr = ActivityFeedId.toString(id);
+  findById(id: ActivityFeedId) {
+    const idStr = ActivityFeedIdFactory.toString(id);
     return this.tryPromise(
       "findById",
       async () => {
@@ -46,24 +45,13 @@ export class ActivityFeedDrizzleGateway
     ).pipe(
       Effect.flatMap((dbActivity: ActivityFeedSelect | null) =>
         dbActivity
-          ? activityFeedMapper.toDomain(dbActivity).pipe(
-              Effect.mapError(
-                (validationError) =>
-                  new DatabaseError({
-                    operation: "findById",
-                    id: idStr,
-                    cause: validationError,
-                  }),
-              ),
-            )
+          ? activityFeedMapper.toDomain(dbActivity)
           : Effect.succeed(null),
       ),
     );
   }
 
-  findByTripId(
-    tripId: TripId,
-  ): Effect.Effect<ActivityFeed[], DatabaseError, never> {
+  findByTripId(tripId: TripId) {
     const tripIdStr = TripId.toString(tripId);
     return this.tryPromise(
       "findByTripId",
@@ -79,16 +67,7 @@ export class ActivityFeedDrizzleGateway
     ).pipe(
       Effect.flatMap((dbActivities: ActivityFeedSelect[]) =>
         Effect.forEach(dbActivities, (dbActivity) =>
-          activityFeedMapper.toDomain(dbActivity).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findByTripId",
-                  id: tripIdStr,
-                  cause: validationError,
-                }),
-            ),
-          ),
+          activityFeedMapper.toDomain(dbActivity),
         ),
       ),
     );
@@ -101,11 +80,7 @@ export class ActivityFeedDrizzleGateway
       cursor?: string | null;
       includeHidden?: boolean;
     },
-  ): Effect.Effect<
-    { activities: ActivityFeed[]; nextCursor: string | null; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     const tripIdStr = TripId.toString(tripId);
     const limit = params.limit;
     const includeHidden = params.includeHidden ?? false;
@@ -142,16 +117,7 @@ export class ActivityFeedDrizzleGateway
           : dbActivities;
 
         return Effect.forEach(activitiesToReturn, (dbActivity) =>
-          activityFeedMapper.toDomain(dbActivity).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findByTripIdPaginated",
-                  id: tripIdStr,
-                  cause: validationError,
-                }),
-            ),
-          ),
+          activityFeedMapper.toDomain(dbActivity),
         ).pipe(
           Effect.map((domainActivities) => {
             const lastActivity =
@@ -178,11 +144,7 @@ export class ActivityFeedDrizzleGateway
       limit: number;
       cursor?: string | null;
     },
-  ): Effect.Effect<
-    { activities: ActivityFeed[]; nextCursor: string | null; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     const tripIdStr = TripId.toString(tripId);
     const limit = params.limit;
 
@@ -214,16 +176,7 @@ export class ActivityFeedDrizzleGateway
           : dbActivities;
 
         return Effect.forEach(activitiesToReturn, (dbActivity) =>
-          activityFeedMapper.toDomain(dbActivity).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findByTripIdForModeration",
-                  id: tripIdStr,
-                  cause: validationError,
-                }),
-            ),
-          ),
+          activityFeedMapper.toDomain(dbActivity),
         ).pipe(
           Effect.map((domainActivities) => {
             const lastActivity =
@@ -244,9 +197,7 @@ export class ActivityFeedDrizzleGateway
     );
   }
 
-  create(
-    activity: ActivityFeed,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
+  create(activity: ActivityFeed) {
     const insertData = activityFeedMapper.toInsert(activity);
     return this.tryPromise(
       "create",
@@ -258,26 +209,15 @@ export class ActivityFeedDrizzleGateway
         if (!result) throw new Error("Failed to create activity");
         return result;
       },
-      ActivityFeedId.toString(activity.id),
+      ActivityFeedIdFactory.toString(activity.id),
     ).pipe(
       Effect.flatMap((dbActivity: ActivityFeedSelect) =>
-        activityFeedMapper.toDomain(dbActivity).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "create",
-                id: ActivityFeedId.toString(activity.id),
-                cause: validationError,
-              }),
-          ),
-        ),
+        activityFeedMapper.toDomain(dbActivity),
       ),
     );
   }
 
-  update(
-    activity: ActivityFeed,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
+  update(activity: ActivityFeed) {
     const updateData = activityFeedMapper.toUpdate(activity);
     return this.tryPromise(
       "update",
@@ -285,30 +225,23 @@ export class ActivityFeedDrizzleGateway
         const [result] = await this.db
           .update(activityFeed)
           .set(updateData)
-          .where(eq(activityFeed.id, ActivityFeedId.toString(activity.id)))
+          .where(
+            eq(activityFeed.id, ActivityFeedIdFactory.toString(activity.id)),
+          )
           .returning();
         if (!result) throw new Error("Failed to update activity");
         return result;
       },
-      ActivityFeedId.toString(activity.id),
+      ActivityFeedIdFactory.toString(activity.id),
     ).pipe(
       Effect.flatMap((dbActivity: ActivityFeedSelect) =>
-        activityFeedMapper.toDomain(dbActivity).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "update",
-                id: ActivityFeedId.toString(activity.id),
-                cause: validationError,
-              }),
-          ),
-        ),
+        activityFeedMapper.toDomain(dbActivity),
       ),
     );
   }
 
-  delete(id: ActivityFeedId): Effect.Effect<void, DatabaseError, never> {
-    const idStr = ActivityFeedId.toString(id);
+  delete(id: ActivityFeedId) {
+    const idStr = ActivityFeedIdFactory.toString(id);
     return this.tryPromise(
       "delete",
       async () => {
@@ -318,11 +251,8 @@ export class ActivityFeedDrizzleGateway
     );
   }
 
-  setPinned(
-    id: ActivityFeedId,
-    isPinned: boolean,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
-    const idStr = ActivityFeedId.toString(id);
+  setPinned(id: ActivityFeedId, isPinned: boolean) {
+    const idStr = ActivityFeedIdFactory.toString(id);
     return this.tryPromise(
       "setPinned",
       async () => {
@@ -337,22 +267,13 @@ export class ActivityFeedDrizzleGateway
       idStr,
     ).pipe(
       Effect.flatMap((dbActivity: ActivityFeedSelect) =>
-        activityFeedMapper.toDomain(dbActivity).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "setPinned",
-                id: idStr,
-                cause: validationError,
-              }),
-          ),
-        ),
+        activityFeedMapper.toDomain(dbActivity),
       ),
     );
   }
 
-  exists(id: ActivityFeedId): Effect.Effect<boolean, DatabaseError, never> {
-    const idStr = ActivityFeedId.toString(id);
+  exists(id: ActivityFeedId) {
+    const idStr = ActivityFeedIdFactory.toString(id);
     return this.tryPromise(
       "exists",
       async () => {

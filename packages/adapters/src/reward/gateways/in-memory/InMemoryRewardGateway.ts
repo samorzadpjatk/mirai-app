@@ -10,14 +10,14 @@ import type { IRewardPort } from "@mirai-app/domain";
 export class InMemoryRewardGateway implements IRewardPort {
   private rewards: Map<string, Reward> = new Map();
 
-  findById(id: RewardId): Effect.Effect<Reward | null, DatabaseError, never> {
+  findById(id: RewardId) {
     return Effect.sync(() => {
       const reward = this.rewards.get(RewardId.toString(id));
       return reward ?? null;
     });
   }
 
-  findByTripId(tripId: TripId): Effect.Effect<Reward[], DatabaseError, never> {
+  findByTripId(tripId: TripId) {
     return Effect.sync(() => {
       return Array.from(this.rewards.values())
         .filter(
@@ -28,9 +28,7 @@ export class InMemoryRewardGateway implements IRewardPort {
     });
   }
 
-  findAvailableByTripId(
-    tripId: TripId,
-  ): Effect.Effect<Reward[], DatabaseError, never> {
+  findAvailableByTripId(tripId: TripId) {
     return Effect.sync(() => {
       return Array.from(this.rewards.values())
         .filter((reward) => {
@@ -43,27 +41,27 @@ export class InMemoryRewardGateway implements IRewardPort {
     });
   }
 
-  create(reward: Reward): Effect.Effect<Reward, DatabaseError, never> {
+  create(reward: Reward) {
     return Effect.sync(() => {
       this.rewards.set(RewardId.toString(reward.id), reward);
       return reward;
     });
   }
 
-  update(reward: Reward): Effect.Effect<Reward, DatabaseError, never> {
+  update(reward: Reward) {
     return Effect.sync(() => {
       this.rewards.set(RewardId.toString(reward.id), reward);
       return reward;
     });
   }
 
-  delete(id: RewardId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: RewardId) {
     return Effect.sync(() => {
       this.rewards.delete(RewardId.toString(id));
     });
   }
 
-  exists(id: RewardId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: RewardId) {
     return Effect.sync(() => {
       return this.rewards.has(RewardId.toString(id));
     });

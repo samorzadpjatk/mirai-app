@@ -1,9 +1,8 @@
 import { Effect } from "effect";
-import { DatabaseError } from "@mirai-app/domain";
 import type {
   IChallengeVotePort,
   ChallengeVote,
-} from "@mirai-app/use-cases/challenge-vote";
+} from "@mirai-app/use-cases/challenge-vote/ports/ChallengeVotePort";
 
 /**
  * In-Memory ChallengeVote Gateway
@@ -13,18 +12,14 @@ import type {
 export class InMemoryChallengeVoteGateway implements IChallengeVotePort {
   private votes: Map<string, ChallengeVote> = new Map();
 
-  findById(
-    id: string,
-  ): Effect.Effect<ChallengeVote | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.sync(() => {
       const vote = this.votes.get(id);
       return vote ?? null;
     });
   }
 
-  findByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never> {
+  findByChallengeId(challengeId: string) {
     return Effect.sync(() => {
       return Array.from(this.votes.values())
         .filter((vote) => vote.challengeId === challengeId)
@@ -32,10 +27,7 @@ export class InMemoryChallengeVoteGateway implements IChallengeVotePort {
     });
   }
 
-  findByChallengeAndVoter(
-    challengeId: string,
-    voterId: string,
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never> {
+  findByChallengeAndVoter(challengeId: string, voterId: string) {
     return Effect.sync(() => {
       return Array.from(this.votes.values())
         .filter(
@@ -46,18 +38,14 @@ export class InMemoryChallengeVoteGateway implements IChallengeVotePort {
     });
   }
 
-  create(
-    vote: ChallengeVote,
-  ): Effect.Effect<ChallengeVote, DatabaseError, never> {
+  create(vote: ChallengeVote) {
     return Effect.sync(() => {
       this.votes.set(vote.id, vote);
       return vote;
     });
   }
 
-  createMany(
-    votes: ChallengeVote[],
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never> {
+  createMany(votes: ChallengeVote[]) {
     return Effect.sync(() => {
       for (const vote of votes) {
         this.votes.set(vote.id, vote);
@@ -66,16 +54,13 @@ export class InMemoryChallengeVoteGateway implements IChallengeVotePort {
     });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return Effect.sync(() => {
       this.votes.delete(id);
     });
   }
 
-  deleteByChallengeAndVoter(
-    challengeId: string,
-    voterId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByChallengeAndVoter(challengeId: string, voterId: string) {
     return Effect.sync(() => {
       for (const [id, vote] of this.votes.entries()) {
         if (vote.challengeId === challengeId && vote.voterId === voterId) {
@@ -85,9 +70,7 @@ export class InMemoryChallengeVoteGateway implements IChallengeVotePort {
     });
   }
 
-  countByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countByChallengeId(challengeId: string) {
     return Effect.sync(() => {
       return Array.from(this.votes.values()).filter(
         (vote) => vote.challengeId === challengeId,

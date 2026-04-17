@@ -24,9 +24,7 @@ export class PushSubscriptionDrizzleGateway
     super(db);
   }
 
-  findByUserId(
-    userId: string,
-  ): Effect.Effect<PushSubscription[], DatabaseError, never> {
+  findByUserId(userId: string) {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.findByUserId",
       async () => {
@@ -38,9 +36,7 @@ export class PushSubscriptionDrizzleGateway
     );
   }
 
-  findByToken(
-    token: string,
-  ): Effect.Effect<PushSubscription | null, DatabaseError, never> {
+  findByToken(token: string) {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.findByToken",
       async () => {
@@ -52,10 +48,7 @@ export class PushSubscriptionDrizzleGateway
     );
   }
 
-  findByUserIdAndToken(
-    userId: string,
-    token: string,
-  ): Effect.Effect<PushSubscription | null, DatabaseError, never> {
+  findByUserIdAndToken(userId: string, token: string) {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.findByUserIdAndToken",
       async () => {
@@ -70,9 +63,7 @@ export class PushSubscriptionDrizzleGateway
     );
   }
 
-  create(
-    subscription: PushSubscription,
-  ): Effect.Effect<PushSubscription, DatabaseError, never> {
+  create(subscription: PushSubscription) {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.create",
       async () => {
@@ -88,9 +79,7 @@ export class PushSubscriptionDrizzleGateway
     );
   }
 
-  update(
-    subscription: PushSubscription,
-  ): Effect.Effect<PushSubscription, DatabaseError, never> {
+  update(subscription: PushSubscription) {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.update",
       async () => {
@@ -108,7 +97,7 @@ export class PushSubscriptionDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.delete",
       async () => {
@@ -120,10 +109,7 @@ export class PushSubscriptionDrizzleGateway
     );
   }
 
-  deleteByTokenAndUserId(
-    token: string,
-    userId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  deleteByTokenAndUserId(token: string, userId: string) {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.deleteByTokenAndUserId",
       async () => {
@@ -141,9 +127,7 @@ export class PushSubscriptionDrizzleGateway
     );
   }
 
-  deleteAllByUserId(
-    userId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  deleteAllByUserId(userId: string) {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.deleteAllByUserId",
       async () => {
@@ -156,7 +140,7 @@ export class PushSubscriptionDrizzleGateway
     );
   }
 
-  findAll(): Effect.Effect<PushSubscription[], DatabaseError, never> {
+  findAll() {
     return this.tryPromise(
       "PushSubscriptionDrizzleGateway.findAll",
       async () => {

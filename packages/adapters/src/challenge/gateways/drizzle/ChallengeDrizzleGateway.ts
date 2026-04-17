@@ -23,7 +23,7 @@ export class ChallengeDrizzleGateway
     super(db);
   }
 
-  findById(id: string): Effect.Effect<Challenge | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "findById",
       async () => {
@@ -38,24 +38,13 @@ export class ChallengeDrizzleGateway
     ).pipe(
       Effect.flatMap((dbChallenge: ChallengeSelect | null) =>
         dbChallenge
-          ? challengeMapper.toDomain(dbChallenge).pipe(
-              Effect.mapError(
-                (validationError) =>
-                  new DatabaseError({
-                    operation: "findById",
-                    id,
-                    cause: validationError,
-                  }),
-              ),
-            )
+          ? challengeMapper.toDomain(dbChallenge)
           : Effect.succeed(null),
       ),
     );
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<Challenge[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return this.tryPromise(
       "findByTripId",
       async () => {
@@ -70,25 +59,13 @@ export class ChallengeDrizzleGateway
     ).pipe(
       Effect.flatMap((dbChallenges: ChallengeSelect[]) =>
         Effect.forEach(dbChallenges, (dbChallenge) =>
-          challengeMapper.toDomain(dbChallenge).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findByTripId",
-                  id: tripId,
-                  cause: validationError,
-                }),
-            ),
-          ),
+          challengeMapper.toDomain(dbChallenge),
         ),
       ),
     );
   }
 
-  findActiveByTripId(
-    tripId: string,
-    atDate?: Date,
-  ): Effect.Effect<Challenge[], DatabaseError, never> {
+  findActiveByTripId(tripId: string, atDate?: Date) {
     const checkDate = atDate ?? new Date();
 
     return this.tryPromise(
@@ -112,16 +89,7 @@ export class ChallengeDrizzleGateway
     ).pipe(
       Effect.flatMap((dbChallenges: ChallengeSelect[]) =>
         Effect.forEach(dbChallenges, (dbChallenge) =>
-          challengeMapper.toDomain(dbChallenge).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findActiveByTripId",
-                  id: tripId,
-                  cause: validationError,
-                }),
-            ),
-          ),
+          challengeMapper.toDomain(dbChallenge),
         ),
       ),
     );
@@ -130,11 +98,7 @@ export class ChallengeDrizzleGateway
   findPaginatedByTripId(
     tripId: string,
     params: { limit: number; offset: number },
-  ): Effect.Effect<
-    { challenges: Challenge[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     return this.tryPromise(
       "findPaginatedByTripId",
       async () => {
@@ -158,18 +122,7 @@ export class ChallengeDrizzleGateway
     ).pipe(
       Effect.flatMap(
         ({ items, total }: { items: ChallengeSelect[]; total: number }) =>
-          Effect.forEach(items, (item) =>
-            challengeMapper.toDomain(item).pipe(
-              Effect.mapError(
-                (validationError) =>
-                  new DatabaseError({
-                    operation: "findPaginatedByTripId",
-                    id: tripId,
-                    cause: validationError,
-                  }),
-              ),
-            ),
-          ).pipe(
+          Effect.forEach(items, (item) => challengeMapper.toDomain(item)).pipe(
             Effect.map((domainChallenges) => ({
               challenges: domainChallenges,
               total,
@@ -180,7 +133,7 @@ export class ChallengeDrizzleGateway
     );
   }
 
-  create(challenge: Challenge): Effect.Effect<Challenge, DatabaseError, never> {
+  create(challenge: Challenge) {
     const insertData = challengeMapper.toInsert(challenge);
     return this.tryPromise(
       "create",
@@ -195,21 +148,12 @@ export class ChallengeDrizzleGateway
       ChallengeId.toString(challenge.id),
     ).pipe(
       Effect.flatMap((dbChallenge: ChallengeSelect) =>
-        challengeMapper.toDomain(dbChallenge).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "create",
-                id: ChallengeId.toString(challenge.id),
-                cause: validationError,
-              }),
-          ),
-        ),
+        challengeMapper.toDomain(dbChallenge),
       ),
     );
   }
 
-  update(challenge: Challenge): Effect.Effect<Challenge, DatabaseError, never> {
+  update(challenge: Challenge) {
     const updateData = challengeMapper.toUpdate(challenge);
     return this.tryPromise(
       "update",
@@ -225,21 +169,12 @@ export class ChallengeDrizzleGateway
       ChallengeId.toString(challenge.id),
     ).pipe(
       Effect.flatMap((dbChallenge: ChallengeSelect) =>
-        challengeMapper.toDomain(dbChallenge).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "update",
-                id: ChallengeId.toString(challenge.id),
-                cause: validationError,
-              }),
-          ),
-        ),
+        challengeMapper.toDomain(dbChallenge),
       ),
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "delete",
       async () => {
@@ -249,7 +184,7 @@ export class ChallengeDrizzleGateway
     );
   }
 
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: string) {
     return this.tryPromise(
       "exists",
       async () => {
@@ -263,7 +198,7 @@ export class ChallengeDrizzleGateway
     );
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string) {
     return this.tryPromise(
       "countByTripId",
       async () => {
@@ -277,9 +212,7 @@ export class ChallengeDrizzleGateway
     );
   }
 
-  activateVisibleChallenges(
-    tripId?: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  activateVisibleChallenges(tripId?: string) {
     return this.tryPromise(
       "activateVisibleChallenges",
       async () => {

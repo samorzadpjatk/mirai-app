@@ -15,7 +15,7 @@ export class UserDrizzleGateway
   extends BaseDrizzleGateway
   implements IUserPort
 {
-  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never> {
+  findById(id: UserId) {
     return this.tryPromise(
       "UserDrizzleGateway.findById",
       async () => {
@@ -29,9 +29,7 @@ export class UserDrizzleGateway
     );
   }
 
-  findByAuthUserId(
-    authUserId: string,
-  ): Effect.Effect<User | null, DatabaseError, never> {
+  findByAuthUserId(authUserId: string) {
     return this.tryPromise(
       "UserDrizzleGateway.findByAuthUserId",
       async () => {
@@ -45,7 +43,7 @@ export class UserDrizzleGateway
     );
   }
 
-  findByTripId(tripId: string): Effect.Effect<User[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return this.tryPromise(
       "UserDrizzleGateway.findByTripId",
       async () => {
@@ -76,10 +74,7 @@ export class UserDrizzleGateway
     );
   }
 
-  findAll(params: {
-    limit: number;
-    offset: number;
-  }): Effect.Effect<User[], DatabaseError, never> {
+  findAll(params: { limit: number; offset: number }) {
     return this.tryPromise("UserDrizzleGateway.findAll", async () => {
       const results = await this.db.query.users.findMany({
         limit: params.limit,
@@ -102,15 +97,7 @@ export class UserDrizzleGateway
     searchTerm?: string;
     limit: number;
     offset: number;
-  }): Effect.Effect<
-    {
-      users: User[];
-      total: number;
-      hasMore: boolean;
-    },
-    DatabaseError,
-    never
-  > {
+  }) {
     return this.tryPromise(
       "UserDrizzleGateway.search",
       async () => {
@@ -183,7 +170,7 @@ export class UserDrizzleGateway
     );
   }
 
-  create(user: User): Effect.Effect<User, DatabaseError, never> {
+  create(user: User) {
     return this.tryPromise(
       "UserDrizzleGateway.create",
       async () => {
@@ -195,7 +182,7 @@ export class UserDrizzleGateway
     );
   }
 
-  update(user: User): Effect.Effect<User, DatabaseError, never> {
+  update(user: User) {
     return this.tryPromise(
       "UserDrizzleGateway.update",
       async () => {
@@ -210,7 +197,7 @@ export class UserDrizzleGateway
     );
   }
 
-  delete(id: UserId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: UserId) {
     return this.tryPromise(
       "UserDrizzleGateway.delete",
       async () => {
@@ -220,7 +207,7 @@ export class UserDrizzleGateway
     );
   }
 
-  exists(id: UserId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: UserId) {
     return this.tryPromise(
       "UserDrizzleGateway.exists",
       async () => {
@@ -234,7 +221,7 @@ export class UserDrizzleGateway
     );
   }
 
-  count(): Effect.Effect<number, DatabaseError, never> {
+  count() {
     return this.tryPromise("UserDrizzleGateway.count", async () => {
       const result = await this.db.select({ count: count() }).from(users);
       return result[0]?.count ?? 0;

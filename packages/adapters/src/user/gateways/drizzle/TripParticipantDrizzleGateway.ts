@@ -26,10 +26,7 @@ export class TripParticipantDrizzleGateway
   extends BaseDrizzleGateway
   implements ITripParticipantPort
 {
-  findByUserAndTrip(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never> {
+  findByUserAndTrip(userId: string, tripId: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.findByUserAndTrip",
       async () => {
@@ -46,9 +43,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<TripParticipant[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.findByTripId",
       async () => {
@@ -69,9 +64,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  findByUserId(
-    userId: string,
-  ): Effect.Effect<TripParticipant[], DatabaseError, never> {
+  findByUserId(userId: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.findByUserId",
       async () => {
@@ -92,9 +85,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.findById",
       async () => {
@@ -108,9 +99,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  upsert(
-    participant: TripParticipant,
-  ): Effect.Effect<TripParticipant, DatabaseError, never> {
+  upsert(participant: TripParticipant) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.upsert",
       async () => {
@@ -136,9 +125,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  update(
-    participant: TripParticipant,
-  ): Effect.Effect<TripParticipant, DatabaseError, never> {
+  update(participant: TripParticipant) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.update",
       async () => {
@@ -155,7 +142,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.delete",
       async () => {
@@ -167,7 +154,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.countByTripId",
       async () => {
@@ -181,10 +168,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  isParticipant(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  isParticipant(userId: string, tripId: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.isParticipant",
       async () => {
@@ -207,7 +191,7 @@ export class TripParticipantDrizzleGateway
     tripId: string,
     wristNumber: string,
     excludeUserId?: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never> {
+  ) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.findByWristNumber",
       async () => {
@@ -237,18 +221,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  findByUserAndTripWithRelations(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<
-    {
-      participant: TripParticipant;
-      group: { id: string; name: string } | null;
-      trip: { id: string; name: string } | null;
-    } | null,
-    DatabaseError,
-    never
-  > {
+  findByUserAndTripWithRelations(userId: string, tripId: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.findByUserAndTripWithRelations",
       async () => {
@@ -300,21 +273,7 @@ export class TripParticipantDrizzleGateway
     );
   }
 
-  findByTripIdWithRelations(tripId: string): Effect.Effect<
-    {
-      participant: TripParticipant;
-      user: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        role: string;
-        authUserId: string | null;
-      };
-      group: { id: string; name: string } | null;
-    }[],
-    DatabaseError,
-    never
-  > {
+  findByTripIdWithRelations(tripId: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.findByTripIdWithRelations",
       async () => {

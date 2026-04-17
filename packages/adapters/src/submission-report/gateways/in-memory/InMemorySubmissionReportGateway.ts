@@ -1,26 +1,18 @@
 import { Effect } from "effect";
-import {
-  SubmissionReportId,
-  ChallengeSubmissionId,
-  DatabaseError,
-} from "@mirai-app/domain";
-import type {
-  ISubmissionReportPort,
-  SubmissionReport,
-  SubmissionReportWithReporter,
-} from "@mirai-app/use-cases";
+import { SubmissionReportId, ChallengeSubmissionId } from "@mirai-app/domain";
+import type { submissionReport } from "@mirai-app/use-cases";
 
 /**
  * In-Memory Submission Report Gateway
  *
  * Implements ISubmissionReportPort using in-memory Map storage for testing.
  */
-export class InMemorySubmissionReportGateway implements ISubmissionReportPort {
-  private reports: Map<string, SubmissionReport> = new Map();
+export class InMemorySubmissionReportGateway
+  implements submissionReport.ISubmissionReportPort
+{
+  private reports: Map<string, submissionReport.SubmissionReport> = new Map();
 
-  findById(
-    id: SubmissionReportId,
-  ): Effect.Effect<SubmissionReport | null, DatabaseError, never> {
+  findById(id: SubmissionReportId) {
     return Effect.sync(() => {
       const idString = SubmissionReportId.toString(id);
       const report = this.reports.get(idString);
@@ -28,9 +20,7 @@ export class InMemorySubmissionReportGateway implements ISubmissionReportPort {
     });
   }
 
-  findBySubmissionId(
-    submissionId: ChallengeSubmissionId,
-  ): Effect.Effect<SubmissionReportWithReporter[], DatabaseError, never> {
+  findBySubmissionId(submissionId: ChallengeSubmissionId) {
     return Effect.sync(() => {
       const submissionIdString = ChallengeSubmissionId.toString(submissionId);
       return Array.from(this.reports.values())
@@ -46,13 +36,11 @@ export class InMemorySubmissionReportGateway implements ISubmissionReportPort {
     });
   }
 
-  create(
-    report: Omit<SubmissionReport, "id" | "createdAt">,
-  ): Effect.Effect<SubmissionReport, DatabaseError, never> {
+  create(report: Omit<submissionReport.SubmissionReport, "id" | "createdAt">) {
     return Effect.sync(() => {
       const id = SubmissionReportId.generate();
       const createdAt = new Date();
-      const newReport: SubmissionReport = {
+      const newReport: submissionReport.SubmissionReport = {
         id,
         submissionId: report.submissionId,
         reporterId: report.reporterId,
@@ -68,7 +56,7 @@ export class InMemorySubmissionReportGateway implements ISubmissionReportPort {
   existsBySubmissionAndReporter(
     submissionId: ChallengeSubmissionId,
     reporterId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  ) {
     return Effect.sync(() => {
       const submissionIdString = ChallengeSubmissionId.toString(submissionId);
       return Array.from(this.reports.values()).some(
@@ -79,9 +67,7 @@ export class InMemorySubmissionReportGateway implements ISubmissionReportPort {
     });
   }
 
-  countBySubmissionId(
-    submissionId: ChallengeSubmissionId,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countBySubmissionId(submissionId: ChallengeSubmissionId) {
     return Effect.sync(() => {
       const submissionIdString = ChallengeSubmissionId.toString(submissionId);
       return Array.from(this.reports.values()).filter(
@@ -95,7 +81,7 @@ export class InMemorySubmissionReportGateway implements ISubmissionReportPort {
   /**
    * Helper method to add a report (for testing)
    */
-  addReport(report: SubmissionReport): void {
+  addReport(report: submissionReport.SubmissionReport): void {
     this.reports.set(SubmissionReportId.toString(report.id), report);
   }
 

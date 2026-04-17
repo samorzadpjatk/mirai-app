@@ -12,17 +12,15 @@ export class InMemoryUserGateway implements IUserPort {
   private usersByAuthId = new Map<string, User>();
   private usersByTripId = new Map<string, Set<string>>();
 
-  findById(id: UserId): Effect.Effect<User | null, DatabaseError, never> {
+  findById(id: UserId) {
     return Effect.sync(() => this.users.get(UserId.toString(id)) ?? null);
   }
 
-  findByAuthUserId(
-    authUserId: string,
-  ): Effect.Effect<User | null, DatabaseError, never> {
+  findByAuthUserId(authUserId: string) {
     return Effect.sync(() => this.usersByAuthId.get(authUserId) ?? null);
   }
 
-  findByTripId(tripId: string): Effect.Effect<User[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return Effect.sync(() => {
       const userIds = this.usersByTripId.get(tripId);
       if (!userIds) return [];
@@ -38,10 +36,7 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  findAll(params: {
-    limit: number;
-    offset: number;
-  }): Effect.Effect<User[], DatabaseError, never> {
+  findAll(params: { limit: number; offset: number }) {
     return Effect.sync(() => {
       const allUsers = Array.from(this.users.values());
       return allUsers.slice(params.offset, params.offset + params.limit);
@@ -54,15 +49,7 @@ export class InMemoryUserGateway implements IUserPort {
     searchTerm?: string;
     limit: number;
     offset: number;
-  }): Effect.Effect<
-    {
-      users: User[];
-      total: number;
-      hasMore: boolean;
-    },
-    DatabaseError,
-    never
-  > {
+  }) {
     return Effect.sync(() => {
       const userIds = this.usersByTripId.get(params.tripId);
       if (!userIds) {
@@ -100,7 +87,7 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  create(user: User): Effect.Effect<User, DatabaseError, never> {
+  create(user: User) {
     return Effect.sync(() => {
       this.users.set(UserId.toString(user.id), user);
       this.usersByAuthId.set(AuthUserId.toString(user.authUserId), user);
@@ -108,7 +95,7 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  update(user: User): Effect.Effect<User, DatabaseError, never> {
+  update(user: User) {
     return Effect.sync(() => {
       const existing = this.users.get(UserId.toString(user.id));
       if (existing) {
@@ -120,7 +107,7 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  delete(id: UserId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: UserId) {
     return Effect.sync(() => {
       const user = this.users.get(UserId.toString(id));
       if (user) {
@@ -130,11 +117,11 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  exists(id: UserId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: UserId) {
     return Effect.sync(() => this.users.has(UserId.toString(id)));
   }
 
-  count(): Effect.Effect<number, DatabaseError, never> {
+  count() {
     return Effect.sync(() => this.users.size);
   }
 

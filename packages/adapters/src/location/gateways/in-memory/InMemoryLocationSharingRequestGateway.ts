@@ -1,7 +1,6 @@
 import { Effect } from "effect";
 import {
   type LocationSharingRequest,
-  ApplicationError,
   type UserId,
   type LocationSharingRequestId,
   UserId as UserIdFactory,
@@ -18,9 +17,7 @@ import type { ILocationSharingRequestPort } from "@mirai-app/use-cases/location/
 export class InMemoryLocationSharingRequestGateway implements ILocationSharingRequestPort {
   private sharingRequests: Map<string, LocationSharingRequest> = new Map();
 
-  findById(
-    id: LocationSharingRequestId,
-  ): Effect.Effect<LocationSharingRequest | null, ApplicationError, never> {
+  findById(id: LocationSharingRequestId) {
     return Effect.sync(() => {
       const request = this.sharingRequests.get(
         LocationSharingRequestIdFactory.toString(id),
@@ -29,10 +26,7 @@ export class InMemoryLocationSharingRequestGateway implements ILocationSharingRe
     });
   }
 
-  findBySenderAndReceiver(
-    senderId: UserId,
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest | null, ApplicationError, never> {
+  findBySenderAndReceiver(senderId: UserId, receiverId: UserId) {
     return Effect.sync(() => {
       for (const request of this.sharingRequests.values()) {
         if (
@@ -46,9 +40,7 @@ export class InMemoryLocationSharingRequestGateway implements ILocationSharingRe
     });
   }
 
-  findPendingByReceiver(
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], ApplicationError, never> {
+  findPendingByReceiver(receiverId: UserId) {
     return Effect.sync(() => {
       return Array.from(this.sharingRequests.values()).filter(
         (request) =>
@@ -58,9 +50,7 @@ export class InMemoryLocationSharingRequestGateway implements ILocationSharingRe
     });
   }
 
-  findBySender(
-    senderId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], ApplicationError, never> {
+  findBySender(senderId: UserId) {
     return Effect.sync(() => {
       return Array.from(this.sharingRequests.values()).filter((request) =>
         UserIdFactory.equals(request.senderId, senderId),
@@ -68,9 +58,7 @@ export class InMemoryLocationSharingRequestGateway implements ILocationSharingRe
     });
   }
 
-  findByReceiver(
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], ApplicationError, never> {
+  findByReceiver(receiverId: UserId) {
     return Effect.sync(() => {
       return Array.from(this.sharingRequests.values()).filter((request) =>
         UserIdFactory.equals(request.receiverId, receiverId),
@@ -78,9 +66,7 @@ export class InMemoryLocationSharingRequestGateway implements ILocationSharingRe
     });
   }
 
-  create(
-    request: LocationSharingRequest,
-  ): Effect.Effect<LocationSharingRequest, ApplicationError, never> {
+  create(request: LocationSharingRequest) {
     return Effect.sync(() => {
       this.sharingRequests.set(
         LocationSharingRequestIdFactory.toString(request.id),
@@ -90,9 +76,7 @@ export class InMemoryLocationSharingRequestGateway implements ILocationSharingRe
     });
   }
 
-  update(
-    request: LocationSharingRequest,
-  ): Effect.Effect<LocationSharingRequest, ApplicationError, never> {
+  update(request: LocationSharingRequest) {
     return Effect.sync(() => {
       this.sharingRequests.set(
         LocationSharingRequestIdFactory.toString(request.id),
@@ -102,9 +86,7 @@ export class InMemoryLocationSharingRequestGateway implements ILocationSharingRe
     });
   }
 
-  delete(
-    id: LocationSharingRequestId,
-  ): Effect.Effect<void, ApplicationError, never> {
+  delete(id: LocationSharingRequestId) {
     return Effect.sync(() => {
       this.sharingRequests.delete(LocationSharingRequestIdFactory.toString(id));
     });

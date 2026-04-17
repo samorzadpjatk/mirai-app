@@ -6,7 +6,7 @@ import {
   UserId,
   DatabaseError,
 } from "@mirai-app/domain";
-import type { IGroupPort } from "@mirai-app/use-cases";
+import type { IGroupPort } from "@mirai-app/domain";
 
 /**
  * In-Memory Group Gateway
@@ -16,18 +16,18 @@ import type { IGroupPort } from "@mirai-app/use-cases";
 export class InMemoryGroupGateway implements IGroupPort {
   private groups: Map<string, Group> = new Map();
 
-  findById(id: string): Effect.Effect<Group | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.succeed(this.groups.get(id) ?? null);
   }
 
-  findByCode(code: string): Effect.Effect<Group | null, DatabaseError, never> {
+  findByCode(code: string) {
     const result = Array.from(this.groups.values()).find(
       (g) => g.code === code && !g.isDeleted,
     );
     return Effect.succeed(result ?? null);
   }
 
-  findByTripId(tripId: string): Effect.Effect<Group[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     const result = Array.from(this.groups.values()).filter(
       (g) => TripId.toString(g.tripId) === tripId && !g.isDeleted,
     );
@@ -37,11 +37,7 @@ export class InMemoryGroupGateway implements IGroupPort {
   findByTripIdPaginated(
     tripId: string,
     params: { limit: number; offset: number },
-  ): Effect.Effect<
-    { groups: Group[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     const allGroups = Array.from(this.groups.values()).filter(
       (g) => TripId.toString(g.tripId) === tripId && !g.isDeleted,
     );
@@ -54,31 +50,29 @@ export class InMemoryGroupGateway implements IGroupPort {
     return Effect.succeed({ groups: paginated, total, hasMore });
   }
 
-  findByOrganizerId(
-    organizerId: string,
-  ): Effect.Effect<Group[], DatabaseError, never> {
+  findByOrganizerId(organizerId: string) {
     const result = Array.from(this.groups.values()).filter(
       (g) => UserId.toString(g.organizerId) === organizerId && !g.isDeleted,
     );
     return Effect.succeed(result);
   }
 
-  create(group: Group): Effect.Effect<Group, DatabaseError, never> {
+  create(group: Group) {
     this.groups.set(GroupId.toString(group.id), group);
     return Effect.succeed(group);
   }
 
-  update(group: Group): Effect.Effect<Group, DatabaseError, never> {
+  update(group: Group) {
     this.groups.set(GroupId.toString(group.id), group);
     return Effect.succeed(group);
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     this.groups.delete(id);
     return Effect.succeed(undefined);
   }
 
-  softDelete(id: string): Effect.Effect<void, DatabaseError, never> {
+  softDelete(id: string) {
     const group = this.groups.get(id);
     if (group) {
       this.groups.set(id, group.softDelete());
@@ -86,22 +80,19 @@ export class InMemoryGroupGateway implements IGroupPort {
     return Effect.succeed(undefined);
   }
 
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: string) {
     const group = this.groups.get(id);
     return Effect.succeed(group != null && !group.isDeleted);
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string) {
     const count = Array.from(this.groups.values()).filter(
       (g) => TripId.toString(g.tripId) === tripId && !g.isDeleted,
     ).length;
     return Effect.succeed(count);
   }
 
-  addCoins(
-    groupId: string,
-    amount: number,
-  ): Effect.Effect<Group, DatabaseError, never> {
+  addCoins(groupId: string, amount: number) {
     const group = this.groups.get(groupId);
     if (!group) {
       return Effect.fail(
@@ -120,10 +111,7 @@ export class InMemoryGroupGateway implements IGroupPort {
     });
   }
 
-  subtractCoins(
-    groupId: string,
-    amount: number,
-  ): Effect.Effect<Group, DatabaseError, never> {
+  subtractCoins(groupId: string, amount: number) {
     const group = this.groups.get(groupId);
     if (!group) {
       return Effect.fail(
@@ -142,7 +130,7 @@ export class InMemoryGroupGateway implements IGroupPort {
     });
   }
 
-  getRanking(tripId: string): Effect.Effect<Group[], DatabaseError, never> {
+  getRanking(tripId: string) {
     const result = Array.from(this.groups.values())
       .filter((g) => TripId.toString(g.tripId) === tripId && !g.isDeleted)
       .sort((a, b) => b.coins - a.coins);

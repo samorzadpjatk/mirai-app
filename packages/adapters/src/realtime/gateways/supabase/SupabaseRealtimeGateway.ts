@@ -11,20 +11,17 @@ import { ApplicationError } from "@mirai-app/domain";
 export class SupabaseRealtimeGateway implements IRealtimePort {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  subscribe(
-    channel: string,
-    callback: (payload: unknown) => void,
-  ): Effect.Effect<{ unsubscribe: () => void }, ApplicationError, never> {
-    return Effect.tryPromise({
-      try: async () => {
+  subscribe(channel: string, callback: (payload: unknown) => void) {
+    return Effect.try({
+      try: () => {
         const subscription = this.supabase
           .channel(channel)
           .on("broadcast", { event: "*" }, (payload) => callback(payload))
           .subscribe();
 
         return {
-          unsubscribe: () => {
-            subscription.unsubscribe();
+          unsubscribe: async () => {
+            await subscription.unsubscribe();
           },
         };
       },
@@ -36,11 +33,7 @@ export class SupabaseRealtimeGateway implements IRealtimePort {
     });
   }
 
-  broadcast(
-    channel: string,
-    event: string,
-    payload: unknown,
-  ): Effect.Effect<void, ApplicationError, never> {
+  broadcast(channel: string, event: string, payload: unknown) {
     return Effect.tryPromise({
       try: async () => {
         const response = await this.supabase.channel(channel).send({

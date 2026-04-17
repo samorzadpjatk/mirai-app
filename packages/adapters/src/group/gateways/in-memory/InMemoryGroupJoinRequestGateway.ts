@@ -7,7 +7,7 @@ import {
   UserId,
   DatabaseError,
 } from "@mirai-app/domain";
-import type { IGroupJoinRequestPort } from "@mirai-app/use-cases";
+import type { IGroupJoinRequestPort } from "@mirai-app/domain";
 
 /**
  * In-Memory GroupJoinRequest Gateway
@@ -17,16 +17,11 @@ import type { IGroupJoinRequestPort } from "@mirai-app/use-cases";
 export class InMemoryGroupJoinRequestGateway implements IGroupJoinRequestPort {
   private requests: Map<string, GroupJoinRequest> = new Map();
 
-  findById(
-    id: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.succeed(this.requests.get(id) ?? null);
   }
 
-  findByUserAndTrip(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never> {
+  findByUserAndTrip(userId: string, tripId: string) {
     const result = Array.from(this.requests.values()).find(
       (r) =>
         UserId.toString(r.userId) === userId &&
@@ -35,11 +30,7 @@ export class InMemoryGroupJoinRequestGateway implements IGroupJoinRequestPort {
     return Effect.succeed(result ?? null);
   }
 
-  findByUserTripAndGroup(
-    userId: string,
-    tripId: string,
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never> {
+  findByUserTripAndGroup(userId: string, tripId: string, groupId: string) {
     const result = Array.from(this.requests.values()).find(
       (r) =>
         UserId.toString(r.userId) === userId &&
@@ -49,44 +40,36 @@ export class InMemoryGroupJoinRequestGateway implements IGroupJoinRequestPort {
     return Effect.succeed(result ?? null);
   }
 
-  findPendingByGroupId(
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest[], DatabaseError, never> {
+  findPendingByGroupId(groupId: string) {
     const result = Array.from(this.requests.values()).filter(
       (r) => GroupId.toString(r.groupId) === groupId && r.isPending(),
     );
     return Effect.succeed(result);
   }
 
-  findByGroupId(
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest[], DatabaseError, never> {
+  findByGroupId(groupId: string) {
     const result = Array.from(this.requests.values()).filter(
       (r) => GroupId.toString(r.groupId) === groupId,
     );
     return Effect.succeed(result);
   }
 
-  create(
-    request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, DatabaseError, never> {
+  create(request: GroupJoinRequest) {
     this.requests.set(GroupJoinRequestId.toString(request.id), request);
     return Effect.succeed(request);
   }
 
-  update(
-    request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, DatabaseError, never> {
+  update(request: GroupJoinRequest) {
     this.requests.set(GroupJoinRequestId.toString(request.id), request);
     return Effect.succeed(request);
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     this.requests.delete(id);
     return Effect.succeed(undefined);
   }
 
-  deleteByGroupId(groupId: string): Effect.Effect<void, DatabaseError, never> {
+  deleteByGroupId(groupId: string) {
     for (const [id, request] of this.requests.entries()) {
       if (GroupId.toString(request.groupId) === groupId) {
         this.requests.delete(id);
@@ -95,10 +78,7 @@ export class InMemoryGroupJoinRequestGateway implements IGroupJoinRequestPort {
     return Effect.succeed(undefined);
   }
 
-  deleteByUserAndTrip(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByUserAndTrip(userId: string, tripId: string) {
     for (const [id, request] of this.requests.entries()) {
       if (
         UserId.toString(request.userId) === userId &&
@@ -110,10 +90,7 @@ export class InMemoryGroupJoinRequestGateway implements IGroupJoinRequestPort {
     return Effect.succeed(undefined);
   }
 
-  deleteByUsersAndTrip(
-    userIds: string[],
-    tripId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByUsersAndTrip(userIds: string[], tripId: string) {
     for (const [id, request] of this.requests.entries()) {
       if (
         userIds.includes(UserId.toString(request.userId)) &&
@@ -125,14 +102,11 @@ export class InMemoryGroupJoinRequestGateway implements IGroupJoinRequestPort {
     return Effect.succeed(undefined);
   }
 
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: string) {
     return Effect.succeed(this.requests.has(id));
   }
 
-  hasPendingRequest(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  hasPendingRequest(userId: string, tripId: string) {
     const hasPending = Array.from(this.requests.values()).some(
       (r) =>
         UserId.toString(r.userId) === userId &&

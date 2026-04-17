@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import {
   type Location,
   type LocationSharingRequest,
-  DatabaseError,
+  type ILocationPort,
   type UserId,
   type LocationId,
   type LocationSharingRequestId,
@@ -10,7 +10,6 @@ import {
   UserId as UserIdFactory,
   LocationSharingRequestId as LocationSharingRequestIdFactory,
 } from "@mirai-app/domain";
-import type { ILocationPort } from "@mirai-app/use-cases";
 import { locationMapper } from "../../mappers/LocationMapper";
 import { locationSharingRequestMapper } from "../../mappers/LocationSharingRequestMapper";
 
@@ -30,18 +29,14 @@ export class InMemoryLocationGateway implements ILocationPort {
   // Location Operations
   // ============================================================================
 
-  findById(
-    id: LocationId,
-  ): Effect.Effect<Location | null, DatabaseError, never> {
+  findById(id: LocationId) {
     return Effect.sync(() => {
       const location = this.locations.get(LocationIdFactory.toString(id));
       return location ?? null;
     });
   }
 
-  findByUserId(
-    userId: UserId,
-  ): Effect.Effect<Location | null, DatabaseError, never> {
+  findByUserId(userId: UserId) {
     return Effect.sync(() => {
       for (const location of this.locations.values()) {
         if (UserIdFactory.equals(location.userId, userId)) {
@@ -52,7 +47,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  findSharing(): Effect.Effect<Location[], DatabaseError, never> {
+  findSharing() {
     return Effect.sync(() => {
       return Array.from(this.locations.values()).filter(
         (location) => location.isSharingLocation,
@@ -60,9 +55,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  findByUserInSharingList(
-    userId: UserId,
-  ): Effect.Effect<Location[], DatabaseError, never> {
+  findByUserInSharingList(userId: UserId) {
     return Effect.sync(() => {
       const userIdStr = UserIdFactory.toString(userId);
       const result: Location[] = [];
@@ -79,28 +72,28 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  create(location: Location): Effect.Effect<Location, DatabaseError, never> {
+  create(location: Location) {
     return Effect.sync(() => {
       this.locations.set(LocationIdFactory.toString(location.id), location);
       return location;
     });
   }
 
-  update(location: Location): Effect.Effect<Location, DatabaseError, never> {
+  update(location: Location) {
     return Effect.sync(() => {
       this.locations.set(LocationIdFactory.toString(location.id), location);
       return location;
     });
   }
 
-  upsert(location: Location): Effect.Effect<Location, DatabaseError, never> {
+  upsert(location: Location) {
     return Effect.sync(() => {
       this.locations.set(LocationIdFactory.toString(location.id), location);
       return location;
     });
   }
 
-  delete(id: LocationId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: LocationId) {
     return Effect.sync(() => {
       this.locations.delete(LocationIdFactory.toString(id));
       // Clean up sharing list for this location owner
@@ -117,9 +110,7 @@ export class InMemoryLocationGateway implements ILocationPort {
   // Location Sharing Request Operations
   // ============================================================================
 
-  findSharingRequestById(
-    id: LocationSharingRequestId,
-  ): Effect.Effect<LocationSharingRequest | null, DatabaseError, never> {
+  findSharingRequestById(id: LocationSharingRequestId) {
     return Effect.sync(() => {
       const request = this.sharingRequests.get(
         LocationSharingRequestIdFactory.toString(id),
@@ -128,10 +119,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  findSharingRequestBySenderAndReceiver(
-    senderId: UserId,
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest | null, DatabaseError, never> {
+  findSharingRequestBySenderAndReceiver(senderId: UserId, receiverId: UserId) {
     return Effect.sync(() => {
       for (const request of this.sharingRequests.values()) {
         if (
@@ -145,9 +133,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  findPendingSharingRequestsByReceiver(
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], DatabaseError, never> {
+  findPendingSharingRequestsByReceiver(receiverId: UserId) {
     return Effect.sync(() => {
       return Array.from(this.sharingRequests.values()).filter(
         (request) =>
@@ -157,9 +143,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  findSharingRequestsBySender(
-    senderId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], DatabaseError, never> {
+  findSharingRequestsBySender(senderId: UserId) {
     return Effect.sync(() => {
       return Array.from(this.sharingRequests.values()).filter((request) =>
         UserIdFactory.equals(request.senderId, senderId),
@@ -167,9 +151,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  findSharingRequestsByReceiver(
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], DatabaseError, never> {
+  findSharingRequestsByReceiver(receiverId: UserId) {
     return Effect.sync(() => {
       return Array.from(this.sharingRequests.values()).filter((request) =>
         UserIdFactory.equals(request.receiverId, receiverId),
@@ -177,9 +159,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  createSharingRequest(
-    request: LocationSharingRequest,
-  ): Effect.Effect<LocationSharingRequest, DatabaseError, never> {
+  createSharingRequest(request: LocationSharingRequest) {
     return Effect.sync(() => {
       this.sharingRequests.set(
         LocationSharingRequestIdFactory.toString(request.id),
@@ -189,9 +169,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  updateSharingRequest(
-    request: LocationSharingRequest,
-  ): Effect.Effect<LocationSharingRequest, DatabaseError, never> {
+  updateSharingRequest(request: LocationSharingRequest) {
     return Effect.sync(() => {
       this.sharingRequests.set(
         LocationSharingRequestIdFactory.toString(request.id),
@@ -205,10 +183,7 @@ export class InMemoryLocationGateway implements ILocationPort {
   // Sharing List Operations
   // ============================================================================
 
-  connectUserToSharing(
-    locationOwnerId: UserId,
-    userIdToShareWith: UserId,
-  ): Effect.Effect<void, DatabaseError, never> {
+  connectUserToSharing(locationOwnerId: UserId, userIdToShareWith: UserId) {
     return Effect.sync(() => {
       const ownerIdStr = UserIdFactory.toString(locationOwnerId);
       const userIdStr = UserIdFactory.toString(userIdToShareWith);
@@ -221,10 +196,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  disconnectUserFromSharing(
-    locationOwnerId: UserId,
-    userIdToRemove: UserId,
-  ): Effect.Effect<void, DatabaseError, never> {
+  disconnectUserFromSharing(locationOwnerId: UserId, userIdToRemove: UserId) {
     return Effect.sync(() => {
       const ownerIdStr = UserIdFactory.toString(locationOwnerId);
       const userIdStr = UserIdFactory.toString(userIdToRemove);
@@ -233,10 +205,7 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
-  setUsersToShareWith(
-    locationOwnerId: UserId,
-    userIds: UserId[],
-  ): Effect.Effect<void, DatabaseError, never> {
+  setUsersToShareWith(locationOwnerId: UserId, userIds: UserId[]) {
     return Effect.sync(() => {
       const ownerIdStr = UserIdFactory.toString(locationOwnerId);
       const userIdStrs = userIds.map((id) => UserIdFactory.toString(id));

@@ -9,7 +9,7 @@ import { DatabaseError } from "@mirai-app/domain";
 import type {
   ChallengeSubmission,
   IChallengeSubmissionPort,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/use-cases/challenge-submission/ports/ChallengeSubmissionPort";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { ChallengeSubmissionMapper } from "../../mappers/ChallengeSubmissionMapper";
 
@@ -26,9 +26,7 @@ export class ChallengeSubmissionDrizzleGateway
     super(db);
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "findById",
       async () => {
@@ -47,9 +45,7 @@ export class ChallengeSubmissionDrizzleGateway
     );
   }
 
-  findByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never> {
+  findByChallengeId(challengeId: string) {
     return this.tryPromise(
       "findByChallengeId",
       async () => {
@@ -70,10 +66,7 @@ export class ChallengeSubmissionDrizzleGateway
     );
   }
 
-  findByChallengeAndGroup(
-    challengeId: string,
-    groupId: string,
-  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never> {
+  findByChallengeAndGroup(challengeId: string, groupId: string) {
     return this.tryPromise(
       "findByChallengeAndGroup",
       async () => {
@@ -97,9 +90,7 @@ export class ChallengeSubmissionDrizzleGateway
     );
   }
 
-  findByGroupId(
-    groupId: string,
-  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never> {
+  findByGroupId(groupId: string) {
     return this.tryPromise(
       "findByGroupId",
       async () => {
@@ -120,9 +111,7 @@ export class ChallengeSubmissionDrizzleGateway
     );
   }
 
-  create(
-    submission: ChallengeSubmission,
-  ): Effect.Effect<ChallengeSubmission, DatabaseError, never> {
+  create(submission: ChallengeSubmission) {
     return this.tryPromise(
       "create",
       async () => {
@@ -161,9 +150,7 @@ export class ChallengeSubmissionDrizzleGateway
     );
   }
 
-  update(
-    submission: ChallengeSubmission,
-  ): Effect.Effect<ChallengeSubmission, DatabaseError, never> {
+  update(submission: ChallengeSubmission) {
     return this.tryPromise(
       "update",
       async () => {
@@ -201,7 +188,7 @@ export class ChallengeSubmissionDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "delete",
       async () => {
@@ -213,9 +200,7 @@ export class ChallengeSubmissionDrizzleGateway
     );
   }
 
-  countByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countByChallengeId(challengeId: string) {
     return this.tryPromise(
       "countByChallengeId",
       async () => {
@@ -229,9 +214,7 @@ export class ChallengeSubmissionDrizzleGateway
     );
   }
 
-  countPendingByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countPendingByChallengeId(challengeId: string) {
     return this.tryPromise(
       "countPendingByChallengeId",
       async () => {

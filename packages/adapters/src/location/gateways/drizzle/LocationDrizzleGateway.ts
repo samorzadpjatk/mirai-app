@@ -1,4 +1,4 @@
-import { Effect, Data } from "effect";
+import { Effect } from "effect";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   locations,
@@ -13,7 +13,6 @@ import {
   type UserId,
   type LocationId,
   type LocationSharingRequestId,
-  type ValidationError,
   LocationId as LocationIdFactory,
   UserId as UserIdFactory,
   LocationSharingRequestId as LocationSharingRequestIdFactory,
@@ -22,18 +21,6 @@ import type { ILocationPort } from "@mirai-app/use-cases/location/ports";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { locationMapper } from "../../mappers/LocationMapper";
 import { locationSharingRequestMapper } from "../../mappers/LocationSharingRequestMapper";
-
-/**
- * Converts ValidationError to DatabaseError for port interface compliance
- */
-const mapValidationToDatabaseError = (
-  validationError: ValidationError,
-  operation: string,
-): DatabaseError =>
-  new DatabaseError({
-    operation,
-    cause: validationError,
-  });
 
 /**
  * Location Drizzle Gateway
@@ -59,9 +46,7 @@ export class LocationDrizzleGateway
   // Location Operations
   // ============================================================================
 
-  findById(
-    id: LocationId,
-  ): Effect.Effect<Location | null, DatabaseError, never> {
+  findById(id: LocationId) {
     const idStr = LocationIdFactory.toString(id);
     return this.tryPromise(
       "findLocationById",
@@ -76,20 +61,10 @@ export class LocationDrizzleGateway
       Effect.flatMap((dbLocation) =>
         dbLocation ? locationMapper.toDomain(dbLocation) : Effect.succeed(null),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findLocationById",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  findByUserId(
-    userId: UserId,
-  ): Effect.Effect<Location | null, DatabaseError, never> {
+  findByUserId(userId: UserId) {
     const userIdStr = UserIdFactory.toString(userId);
     return this.tryPromise(
       "findLocationByUserId",
@@ -104,18 +79,10 @@ export class LocationDrizzleGateway
       Effect.flatMap((dbLocation) =>
         dbLocation ? locationMapper.toDomain(dbLocation) : Effect.succeed(null),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findLocationByUserId",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  findSharing(): Effect.Effect<Location[], DatabaseError, never> {
+  findSharing() {
     return this.tryPromise("findSharingLocations", async () => {
       return await this.db.query.locations.findMany({
         where: eq(locations.isSharingLocation, true),
@@ -124,20 +91,10 @@ export class LocationDrizzleGateway
       Effect.flatMap((dbLocations) =>
         Effect.all(dbLocations.map((loc) => locationMapper.toDomain(loc))),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findSharingLocations",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  findByUserInSharingList(
-    userId: UserId,
-  ): Effect.Effect<Location[], DatabaseError, never> {
+  findByUserInSharingList(userId: UserId) {
     const userIdStr = UserIdFactory.toString(userId);
     return this.tryPromise(
       "findLocationsByUserInSharingList",
@@ -167,18 +124,10 @@ export class LocationDrizzleGateway
       Effect.flatMap((dbLocations) =>
         Effect.all(dbLocations.map((loc) => locationMapper.toDomain(loc))),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findLocationsByUserInSharingList",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  create(location: Location): Effect.Effect<Location, DatabaseError, never> {
+  create(location: Location) {
     const insert = locationMapper.toInsert(location);
     const idStr = LocationIdFactory.toString(location.id);
     return this.tryPromise(
@@ -195,24 +144,10 @@ export class LocationDrizzleGateway
         return dbLocation;
       },
       idStr,
-    ).pipe(
-      Effect.flatMap((dbLocation) => locationMapper.toDomain(dbLocation)),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "createLocation",
-            )
-          : new DatabaseError({
-              operation: "createLocation",
-              cause: error,
-              id: idStr,
-            }),
-      ),
-    );
+    ).pipe(Effect.flatMap((dbLocation) => locationMapper.toDomain(dbLocation)));
   }
 
-  update(location: Location): Effect.Effect<Location, DatabaseError, never> {
+  update(location: Location) {
     const update = locationMapper.toUpdate(location);
     const idStr = LocationIdFactory.toString(location.id);
     return this.tryPromise(
@@ -230,24 +165,10 @@ export class LocationDrizzleGateway
         return dbLocation;
       },
       idStr,
-    ).pipe(
-      Effect.flatMap((dbLocation) => locationMapper.toDomain(dbLocation)),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "updateLocation",
-            )
-          : new DatabaseError({
-              operation: "updateLocation",
-              cause: error,
-              id: idStr,
-            }),
-      ),
-    );
+    ).pipe(Effect.flatMap((dbLocation) => locationMapper.toDomain(dbLocation)));
   }
 
-  upsert(location: Location): Effect.Effect<Location, DatabaseError, never> {
+  upsert(location: Location) {
     const idStr = LocationIdFactory.toString(location.id);
     return this.tryPromise(
       "upsertLocation",
@@ -289,24 +210,10 @@ export class LocationDrizzleGateway
         }
       },
       idStr,
-    ).pipe(
-      Effect.flatMap((dbLocation) => locationMapper.toDomain(dbLocation)),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "upsertLocation",
-            )
-          : new DatabaseError({
-              operation: "upsertLocation",
-              cause: error,
-              id: idStr,
-            }),
-      ),
-    );
+    ).pipe(Effect.flatMap((dbLocation) => locationMapper.toDomain(dbLocation)));
   }
 
-  delete(id: LocationId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: LocationId) {
     const idStr = LocationIdFactory.toString(id);
     return this.tryPromise(
       "deleteLocation",
@@ -321,9 +228,7 @@ export class LocationDrizzleGateway
   // Location Sharing Request Operations
   // ============================================================================
 
-  findSharingRequestById(
-    id: LocationSharingRequestId,
-  ): Effect.Effect<LocationSharingRequest | null, DatabaseError, never> {
+  findSharingRequestById(id: LocationSharingRequestId) {
     const idStr = LocationSharingRequestIdFactory.toString(id);
     return this.tryPromise(
       "findSharingRequestById",
@@ -340,21 +245,10 @@ export class LocationDrizzleGateway
           ? locationSharingRequestMapper.toDomain(dbRequest)
           : Effect.succeed(null),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findSharingRequestById",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  findSharingRequestBySenderAndReceiver(
-    senderId: UserId,
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest | null, DatabaseError, never> {
+  findSharingRequestBySenderAndReceiver(senderId: UserId, receiverId: UserId) {
     const senderIdStr = UserIdFactory.toString(senderId);
     const receiverIdStr = UserIdFactory.toString(receiverId);
     return this.tryPromise(
@@ -374,20 +268,10 @@ export class LocationDrizzleGateway
           ? locationSharingRequestMapper.toDomain(dbRequest)
           : Effect.succeed(null),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findSharingRequestBySenderAndReceiver",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  findPendingSharingRequestsByReceiver(
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], DatabaseError, never> {
+  findPendingSharingRequestsByReceiver(receiverId: UserId) {
     const receiverIdStr = UserIdFactory.toString(receiverId);
     return this.tryPromise("findPendingSharingRequestsByReceiver", async () => {
       return await this.db.query.locationSharingRequests.findMany({
@@ -402,20 +286,10 @@ export class LocationDrizzleGateway
           dbRequests.map((req) => locationSharingRequestMapper.toDomain(req)),
         ),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findPendingSharingRequestsByReceiver",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  findSharingRequestsBySender(
-    senderId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], DatabaseError, never> {
+  findSharingRequestsBySender(senderId: UserId) {
     const senderIdStr = UserIdFactory.toString(senderId);
     return this.tryPromise("findSharingRequestsBySender", async () => {
       return await this.db.query.locationSharingRequests.findMany({
@@ -427,20 +301,10 @@ export class LocationDrizzleGateway
           dbRequests.map((req) => locationSharingRequestMapper.toDomain(req)),
         ),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findSharingRequestsBySender",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  findSharingRequestsByReceiver(
-    receiverId: UserId,
-  ): Effect.Effect<LocationSharingRequest[], DatabaseError, never> {
+  findSharingRequestsByReceiver(receiverId: UserId) {
     const receiverIdStr = UserIdFactory.toString(receiverId);
     return this.tryPromise("findSharingRequestsByReceiver", async () => {
       return await this.db.query.locationSharingRequests.findMany({
@@ -452,20 +316,10 @@ export class LocationDrizzleGateway
           dbRequests.map((req) => locationSharingRequestMapper.toDomain(req)),
         ),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "findSharingRequestsByReceiver",
-            )
-          : (error as DatabaseError),
-      ),
     );
   }
 
-  createSharingRequest(
-    request: LocationSharingRequest,
-  ): Effect.Effect<LocationSharingRequest, DatabaseError, never> {
+  createSharingRequest(request: LocationSharingRequest) {
     const insert = locationSharingRequestMapper.toInsert(request);
     const idStr = LocationSharingRequestIdFactory.toString(request.id);
     return this.tryPromise(
@@ -486,24 +340,10 @@ export class LocationDrizzleGateway
       Effect.flatMap((dbRequest) =>
         locationSharingRequestMapper.toDomain(dbRequest),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "createSharingRequest",
-            )
-          : new DatabaseError({
-              operation: "createSharingRequest",
-              cause: error,
-              id: idStr,
-            }),
-      ),
     );
   }
 
-  updateSharingRequest(
-    request: LocationSharingRequest,
-  ): Effect.Effect<LocationSharingRequest, DatabaseError, never> {
+  updateSharingRequest(request: LocationSharingRequest) {
     const update = locationSharingRequestMapper.toUpdate(request);
     const idStr = LocationSharingRequestIdFactory.toString(request.id);
     return this.tryPromise(
@@ -525,18 +365,6 @@ export class LocationDrizzleGateway
       Effect.flatMap((dbRequest) =>
         locationSharingRequestMapper.toDomain(dbRequest),
       ),
-      Effect.mapError((error) =>
-        error._tag === "ValidationError"
-          ? mapValidationToDatabaseError(
-              error as ValidationError,
-              "updateSharingRequest",
-            )
-          : new DatabaseError({
-              operation: "updateSharingRequest",
-              cause: error,
-              id: idStr,
-            }),
-      ),
     );
   }
 
@@ -544,10 +372,7 @@ export class LocationDrizzleGateway
   // Sharing List Operations
   // ============================================================================
 
-  connectUserToSharing(
-    locationOwnerId: UserId,
-    userIdToShareWith: UserId,
-  ): Effect.Effect<void, DatabaseError, never> {
+  connectUserToSharing(locationOwnerId: UserId, userIdToShareWith: UserId) {
     return this.tryPromise("connectUserToSharing", async () => {
       const ownerId = UserIdFactory.toString(locationOwnerId);
       const userId = UserIdFactory.toString(userIdToShareWith);
@@ -563,10 +388,7 @@ export class LocationDrizzleGateway
     });
   }
 
-  disconnectUserFromSharing(
-    locationOwnerId: UserId,
-    userIdToRemove: UserId,
-  ): Effect.Effect<void, DatabaseError, never> {
+  disconnectUserFromSharing(locationOwnerId: UserId, userIdToRemove: UserId) {
     return this.tryPromise("disconnectUserFromSharing", async () => {
       const ownerId = UserIdFactory.toString(locationOwnerId);
       const userId = UserIdFactory.toString(userIdToRemove);
@@ -583,10 +405,7 @@ export class LocationDrizzleGateway
     });
   }
 
-  setUsersToShareWith(
-    locationOwnerId: UserId,
-    userIds: UserId[],
-  ): Effect.Effect<void, DatabaseError, never> {
+  setUsersToShareWith(locationOwnerId: UserId, userIds: UserId[]) {
     return this.tryPromise("setUsersToShareWith", async () => {
       const ownerId = UserIdFactory.toString(locationOwnerId);
       const userIdStrs = userIds.map((id) => UserIdFactory.toString(id));

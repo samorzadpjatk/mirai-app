@@ -18,15 +18,7 @@ import { ApplicationError } from "@mirai-app/domain";
 export class SupabaseStorageAdapter implements IStoragePort {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  upload(
-    bucket: string,
-    path: string,
-    file: File | Blob,
-  ): Effect.Effect<
-    { path: string; publicUrl: string | null },
-    ApplicationError,
-    never
-  > {
+  upload(bucket: string, path: string, file: File | Blob) {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.storage
@@ -46,10 +38,7 @@ export class SupabaseStorageAdapter implements IStoragePort {
     });
   }
 
-  download(
-    bucket: string,
-    path: string,
-  ): Effect.Effect<Blob, ApplicationError, never> {
+  download(bucket: string, path: string) {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.storage
@@ -73,10 +62,7 @@ export class SupabaseStorageAdapter implements IStoragePort {
     return publicUrl;
   }
 
-  delete(
-    bucket: string,
-    path: string,
-  ): Effect.Effect<void, ApplicationError, never> {
+  delete(bucket: string, path: string) {
     return Effect.tryPromise({
       try: async () => {
         const { error } = await this.supabase.storage
@@ -92,10 +78,7 @@ export class SupabaseStorageAdapter implements IStoragePort {
     });
   }
 
-  list(
-    bucket: string,
-    path?: string,
-  ): Effect.Effect<string[], ApplicationError, never> {
+  list(bucket: string, path?: string) {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.storage
@@ -112,9 +95,7 @@ export class SupabaseStorageAdapter implements IStoragePort {
     });
   }
 
-  createSignedUploadUrl(
-    input: CreateSignedUploadUrlInput,
-  ): Effect.Effect<CreateSignedUploadUrlResult, ApplicationError, never> {
+  createSignedUploadUrl(input: CreateSignedUploadUrlInput) {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.storage
@@ -142,9 +123,7 @@ export class SupabaseStorageAdapter implements IStoragePort {
     });
   }
 
-  createSignedDownloadUrl(
-    input: CreateSignedDownloadUrlInput,
-  ): Effect.Effect<CreateSignedDownloadUrlResult, ApplicationError, never> {
+  createSignedDownloadUrl(input: CreateSignedDownloadUrlInput) {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.storage

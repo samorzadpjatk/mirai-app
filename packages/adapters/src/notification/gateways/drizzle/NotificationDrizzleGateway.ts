@@ -9,7 +9,7 @@ import {
   type INotificationPort,
   type Notification,
   type NotificationPush,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/use-cases/notification/ports/NotificationPort";
 import { DatabaseError } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { notificationMapper } from "../../mappers/NotificationMapper";
@@ -28,9 +28,7 @@ export class NotificationDrizzleGateway
     super(db);
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<Notification | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.findById",
       async () => {
@@ -43,9 +41,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  findByUserId(
-    userId: string,
-  ): Effect.Effect<Notification[], DatabaseError, never> {
+  findByUserId(userId: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.findByUserId",
       async () => {
@@ -61,11 +57,7 @@ export class NotificationDrizzleGateway
   findPaginatedByUserId(
     userId: string,
     params: { page: number; pageSize: number },
-  ): Effect.Effect<
-    { notifications: Notification[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     return this.tryPromise(
       "NotificationDrizzleGateway.findPaginatedByUserId",
       async () => {
@@ -97,9 +89,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<Notification[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.findByTripId",
       async () => {
@@ -112,15 +102,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  findPaginated(params: {
-    tripId?: string;
-    limit: number;
-    offset: number;
-  }): Effect.Effect<
-    { notifications: Notification[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  findPaginated(params: { tripId?: string; limit: number; offset: number }) {
     return this.tryPromise(
       "NotificationDrizzleGateway.findPaginated",
       async () => {
@@ -155,9 +137,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  create(
-    notification: Notification,
-  ): Effect.Effect<Notification, DatabaseError, never> {
+  create(notification: Notification) {
     return this.tryPromise(
       "NotificationDrizzleGateway.create",
       async () => {
@@ -173,9 +153,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  update(
-    notification: Notification,
-  ): Effect.Effect<Notification, DatabaseError, never> {
+  update(notification: Notification) {
     return this.tryPromise(
       "NotificationDrizzleGateway.update",
       async () => {
@@ -193,7 +171,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.delete",
       async () => {
@@ -203,7 +181,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  markAsSent(id: string): Effect.Effect<void, DatabaseError, never> {
+  markAsSent(id: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.markAsSent",
       async () => {
@@ -220,10 +198,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  markAsFailed(
-    id: string,
-    reason: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  markAsFailed(id: string, reason: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.markAsFailed",
       async () => {
@@ -240,13 +215,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  findWithPushes(
-    notificationId: string,
-  ): Effect.Effect<
-    { notification: Notification; pushes: NotificationPush[] } | null,
-    DatabaseError,
-    never
-  > {
+  findWithPushes(notificationId: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.findWithPushes",
       async () => {
@@ -273,9 +242,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  getFailedPushes(
-    notificationId: string,
-  ): Effect.Effect<NotificationPush[], DatabaseError, never> {
+  getFailedPushes(notificationId: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.getFailedPushes",
       async () => {
@@ -303,9 +270,7 @@ export class NotificationDrizzleGateway
     );
   }
 
-  resetFailedPushes(
-    notificationId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  resetFailedPushes(notificationId: string) {
     return this.tryPromise(
       "NotificationDrizzleGateway.resetFailedPushes",
       async () => {

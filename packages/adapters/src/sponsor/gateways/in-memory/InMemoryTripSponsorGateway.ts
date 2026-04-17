@@ -22,9 +22,7 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
   private tripSponsors: Map<string, TripSponsor> = new Map();
   private sponsors: Map<string, Sponsor> = new Map();
 
-  findById(
-    id: TripSponsorId,
-  ): Effect.Effect<TripSponsorWithSponsor | null, DatabaseError, never> {
+  findById(id: TripSponsorId) {
     return Effect.sync(() => {
       const tripSponsor = this.tripSponsors.get(TripSponsorId.toString(id));
       if (!tripSponsor) return null;
@@ -41,9 +39,7 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
     });
   }
 
-  findByTripId(
-    tripId: TripId,
-  ): Effect.Effect<TripSponsorWithSponsor[], DatabaseError, never> {
+  findByTripId(tripId: TripId) {
     return Effect.sync(() => {
       const tripIdStr = TripId.toString(tripId);
       return Array.from(this.tripSponsors.values())
@@ -64,9 +60,7 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
     });
   }
 
-  findBySponsorId(
-    sponsorId: SponsorId,
-  ): Effect.Effect<TripSponsor[], DatabaseError, never> {
+  findBySponsorId(sponsorId: SponsorId) {
     return Effect.sync(() => {
       const sponsorIdStr = SponsorId.toString(sponsorId);
       return Array.from(this.tripSponsors.values())
@@ -75,10 +69,7 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
     });
   }
 
-  findByTripIdAndSponsorId(
-    tripId: TripId,
-    sponsorId: SponsorId,
-  ): Effect.Effect<TripSponsor | null, DatabaseError, never> {
+  findByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
     return Effect.sync(() => {
       const tripIdStr = TripId.toString(tripId);
       const sponsorIdStr = SponsorId.toString(sponsorId);
@@ -91,9 +82,7 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
     });
   }
 
-  create(
-    tripSponsor: TripSponsor,
-  ): Effect.Effect<TripSponsor, DatabaseError, never> {
+  create(tripSponsor: TripSponsor) {
     return Effect.sync(() => {
       this.tripSponsors.set(
         TripSponsorId.toString(tripSponsor.id),
@@ -103,16 +92,13 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
     });
   }
 
-  delete(id: TripSponsorId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: TripSponsorId) {
     return Effect.sync(() => {
       this.tripSponsors.delete(TripSponsorId.toString(id));
     });
   }
 
-  deleteByTripIdAndSponsorId(
-    tripId: TripId,
-    sponsorId: SponsorId,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
     return Effect.sync(() => {
       const tripIdStr = TripId.toString(tripId);
       const sponsorIdStr = SponsorId.toString(sponsorId);
@@ -127,10 +113,7 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
     });
   }
 
-  existsByTripIdAndSponsorId(
-    tripId: TripId,
-    sponsorId: SponsorId,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  existsByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
     return Effect.sync(() => {
       const tripIdStr = TripId.toString(tripId);
       const sponsorIdStr = SponsorId.toString(sponsorId);

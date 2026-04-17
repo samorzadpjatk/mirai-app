@@ -15,16 +15,14 @@ import type { IChallengePort } from "@mirai-app/domain";
 export class InMemoryChallengeGateway implements IChallengePort {
   private challenges: Map<string, Challenge> = new Map();
 
-  findById(id: string): Effect.Effect<Challenge | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.sync(() => {
       const challenge = this.challenges.get(id);
       return challenge ?? null;
     });
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<Challenge[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return Effect.sync(() => {
       return Array.from(this.challenges.values())
         .filter((challenge) => TripId.toString(challenge.tripId) === tripId)
@@ -32,10 +30,7 @@ export class InMemoryChallengeGateway implements IChallengePort {
     });
   }
 
-  findActiveByTripId(
-    tripId: string,
-    atDate?: Date,
-  ): Effect.Effect<Challenge[], DatabaseError, never> {
+  findActiveByTripId(tripId: string, atDate?: Date) {
     const checkDate = atDate ?? new Date();
 
     return Effect.sync(() => {
@@ -55,11 +50,7 @@ export class InMemoryChallengeGateway implements IChallengePort {
   findPaginatedByTripId(
     tripId: string,
     params: { limit: number; offset: number },
-  ): Effect.Effect<
-    { challenges: Challenge[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     return Effect.sync(() => {
       const allForTrip = Array.from(this.challenges.values())
         .filter((challenge) => TripId.toString(challenge.tripId) === tripId)
@@ -79,33 +70,33 @@ export class InMemoryChallengeGateway implements IChallengePort {
     });
   }
 
-  create(challenge: Challenge): Effect.Effect<Challenge, DatabaseError, never> {
+  create(challenge: Challenge) {
     return Effect.sync(() => {
       this.challenges.set(ChallengeId.toString(challenge.id), challenge);
       return challenge;
     });
   }
 
-  update(challenge: Challenge): Effect.Effect<Challenge, DatabaseError, never> {
+  update(challenge: Challenge) {
     return Effect.sync(() => {
       this.challenges.set(ChallengeId.toString(challenge.id), challenge);
       return challenge;
     });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return Effect.sync(() => {
       this.challenges.delete(id);
     });
   }
 
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: string) {
     return Effect.sync(() => {
       return this.challenges.has(id);
     });
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string) {
     return Effect.sync(() => {
       return Array.from(this.challenges.values()).filter(
         (challenge) => TripId.toString(challenge.tripId) === tripId,
@@ -113,9 +104,7 @@ export class InMemoryChallengeGateway implements IChallengePort {
     });
   }
 
-  activateVisibleChallenges(
-    tripId?: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  activateVisibleChallenges(tripId?: string) {
     return Effect.sync(() => {
       for (const challenge of this.challenges.values()) {
         const shouldUpdate =

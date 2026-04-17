@@ -24,11 +24,7 @@ export class InMemoryNotificationDeliveryGateway {
     endDate?: Date;
     limit: number;
     offset: number;
-  }): Effect.Effect<
-    { deliveries: NotificationDelivery[]; total: number },
-    DatabaseError,
-    never
-  > {
+  }) {
     return Effect.sync(() => {
       const { tripId, status, scheduleId, startDate, endDate, limit, offset } =
         params;
@@ -84,9 +80,7 @@ export class InMemoryNotificationDeliveryGateway {
     });
   }
 
-  findByNotificationId(
-    notificationId: string,
-  ): Effect.Effect<NotificationDelivery | null, DatabaseError, never> {
+  findByNotificationId(notificationId: string) {
     return Effect.sync(() => {
       const delivery = Array.from(this.deliveries.values()).find(
         (d) => d.notificationId === notificationId,
@@ -95,15 +89,7 @@ export class InMemoryNotificationDeliveryGateway {
     });
   }
 
-  findFailed(params: {
-    tripId?: string;
-    limit: number;
-    offset: number;
-  }): Effect.Effect<
-    { deliveries: NotificationDelivery[]; total: number },
-    DatabaseError,
-    never
-  > {
+  findFailed(params: { tripId?: string; limit: number; offset: number }) {
     return Effect.sync(() => {
       const { tripId, limit, offset } = params;
 
@@ -140,7 +126,7 @@ export class InMemoryNotificationDeliveryGateway {
     startDate?: Date;
     endDate?: Date;
     scheduleId?: string;
-  }): Effect.Effect<NotificationDeliveryStats, DatabaseError, never> {
+  }) {
     return Effect.sync(() => {
       const { tripId, startDate, endDate, scheduleId } = params;
 
@@ -214,18 +200,14 @@ export class InMemoryNotificationDeliveryGateway {
     });
   }
 
-  create(
-    delivery: NotificationDelivery,
-  ): Effect.Effect<NotificationDelivery, DatabaseError, never> {
+  create(delivery: NotificationDelivery) {
     return Effect.sync(() => {
       this.deliveries.set(delivery.id, delivery);
       return delivery;
     });
   }
 
-  update(
-    delivery: NotificationDelivery,
-  ): Effect.Effect<NotificationDelivery, DatabaseError, never> {
+  update(delivery: NotificationDelivery) {
     return Effect.sync(() => {
       const existing = this.deliveries.get(delivery.id);
       if (!existing) {

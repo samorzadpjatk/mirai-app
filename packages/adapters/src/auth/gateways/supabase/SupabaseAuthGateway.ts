@@ -11,14 +11,7 @@ import { ApplicationError } from "@mirai-app/domain";
 export class SupabaseAuthGateway implements IAuthPort {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  signInWithPassword(
-    email: string,
-    password: string,
-  ): Effect.Effect<
-    { user: { id: string; email: string }; session: { accessToken: string } },
-    ApplicationError,
-    never
-  > {
+  signInWithPassword(email: string, password: string) {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.auth.signInWithPassword({
@@ -42,14 +35,7 @@ export class SupabaseAuthGateway implements IAuthPort {
     });
   }
 
-  signInWithOtp(
-    email: string,
-    otp: string,
-  ): Effect.Effect<
-    { user: { id: string; email: string }; session: { accessToken: string } },
-    ApplicationError,
-    never
-  > {
+  signInWithOtp(email: string, otp: string) {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.auth.verifyOtp({
@@ -76,14 +62,7 @@ export class SupabaseAuthGateway implements IAuthPort {
     });
   }
 
-  signUp(
-    email: string,
-    password: string,
-  ): Effect.Effect<
-    { user: { id: string; email: string } | null },
-    ApplicationError,
-    never
-  > {
+  signUp(email: string, password: string) {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.auth.signUp({
@@ -105,7 +84,7 @@ export class SupabaseAuthGateway implements IAuthPort {
     });
   }
 
-  signOut(): Effect.Effect<void, ApplicationError, never> {
+  signOut() {
     return Effect.tryPromise({
       try: async () => {
         const { error } = await this.supabase.auth.signOut();
@@ -119,11 +98,7 @@ export class SupabaseAuthGateway implements IAuthPort {
     });
   }
 
-  getSession(): Effect.Effect<
-    { user: { id: string; email: string } | null; accessToken: string | null },
-    ApplicationError,
-    never
-  > {
+  getSession() {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.auth.getSession();
@@ -143,11 +118,7 @@ export class SupabaseAuthGateway implements IAuthPort {
     });
   }
 
-  refreshSession(): Effect.Effect<
-    { session: { accessToken: string } | null },
-    ApplicationError,
-    never
-  > {
+  refreshSession() {
     return Effect.tryPromise({
       try: async () => {
         const { data, error } = await this.supabase.auth.refreshSession();

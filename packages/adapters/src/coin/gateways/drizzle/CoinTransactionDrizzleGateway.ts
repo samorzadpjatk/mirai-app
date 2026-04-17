@@ -2,11 +2,11 @@ import { Effect } from "effect";
 import { eq, and, desc, sql, count, sum, gte, lte } from "drizzle-orm";
 import { coinTransactions } from "@mirai-app/frameworks/drizzle";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { DatabaseError, GroupId } from "@mirai-app/domain";
-import {
-  type ICoinTransactionPort,
-  type CoinTransaction,
-} from "@mirai-app/use-cases";
+import { GroupId } from "@mirai-app/domain";
+import type {
+  ICoinTransactionPort,
+  CoinTransactionDTO,
+} from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { coinTransactionMapper } from "../../mappers/CoinTransactionMapper";
 
@@ -19,9 +19,7 @@ export class CoinTransactionDrizzleGateway
   extends BaseDrizzleGateway
   implements ICoinTransactionPort
 {
-  findById(
-    id: string,
-  ): Effect.Effect<CoinTransaction | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findById",
       async () => {
@@ -34,9 +32,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  findByGroupId(
-    groupId: string,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
+  findByGroupId(groupId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findByGroupId",
       async () => {
@@ -50,9 +46,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findByTripId",
       async () => {
@@ -69,11 +63,7 @@ export class CoinTransactionDrizzleGateway
   findByTripIdPaginated(
     tripId: string,
     params: { limit: number; offset: number },
-  ): Effect.Effect<
-    { transactions: CoinTransaction[]; total: number },
-    DatabaseError,
-    never
-  > {
+  ) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findByTripIdPaginated",
       async () => {
@@ -100,10 +90,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  findByTripIdAndGroupId(
-    tripId: string,
-    groupId: string,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
+  findByTripIdAndGroupId(tripId: string, groupId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findByTripIdAndGroupId",
       async () => {
@@ -120,9 +107,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  create(
-    transaction: CoinTransaction,
-  ): Effect.Effect<CoinTransaction, DatabaseError, never> {
+  create(transaction: CoinTransactionDTO) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.create",
       async () => {
@@ -134,7 +119,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.delete",
       async () => {
@@ -146,7 +131,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  sumByGroupId(groupId: string): Effect.Effect<number, DatabaseError, never> {
+  sumByGroupId(groupId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.sumByGroupId",
       async () => {
@@ -162,7 +147,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.countByTripId",
       async () => {
@@ -176,9 +161,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  sumPositiveByTripId(
-    tripId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  sumPositiveByTripId(tripId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.sumPositiveByTripId",
       async () => {
@@ -199,9 +182,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  sumNegativeByTripId(
-    tripId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  sumNegativeByTripId(tripId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.sumNegativeByTripId",
       async () => {
@@ -222,15 +203,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  getMostActiveAdminStats(tripId: string): Effect.Effect<
-    Array<{
-      adminId: string;
-      totalAmount: number;
-      transactionCount: number;
-    }>,
-    DatabaseError,
-    never
-  > {
+  getMostActiveAdminStats(tripId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.getMostActiveAdminStats",
       async () => {
@@ -264,13 +237,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  getRichestGroup(
-    tripId: string,
-  ): Effect.Effect<
-    { groupId: GroupId; totalCoins: number } | null,
-    DatabaseError,
-    never
-  > {
+  getRichestGroup(tripId: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.getRichestGroup",
       async () => {
@@ -306,10 +273,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  findRecentByTripId(
-    tripId: string,
-    limit: number,
-  ): Effect.Effect<CoinTransaction[], DatabaseError, never> {
+  findRecentByTripId(tripId: string, limit: number) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findRecentByTripId",
       async () => {

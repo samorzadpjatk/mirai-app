@@ -1,11 +1,5 @@
 import type { GroupSelect } from "@mirai-app/frameworks/drizzle";
-import {
-  Group,
-  GroupId,
-  TripId,
-  UserId,
-  ApplicationError,
-} from "@mirai-app/domain";
+import { Group, GroupId, TripId, UserId } from "@mirai-app/domain";
 import { Effect } from "effect";
 
 /**
@@ -17,7 +11,7 @@ export class GroupMapper {
   /**
    * Convert database record to domain entity
    */
-  toDomain(dbGroup: GroupSelect): Effect.Effect<Group, ApplicationError, never> {
+  toDomain(dbGroup: GroupSelect) {
     return Group.create({
       id: GroupId.unsafeCreate(dbGroup.id),
       tripId: TripId.unsafeCreate(dbGroup.tripId),
@@ -30,16 +24,7 @@ export class GroupMapper {
       isDeleted: dbGroup.isDeleted,
       createdAt: dbGroup.createdAt,
       updatedAt: dbGroup.updatedAt,
-    }).pipe(
-      Effect.mapError(
-        (error) =>
-          new ApplicationError({
-            operation: "toDomain",
-            id: dbGroup.id,
-            cause: error,
-          }),
-      ),
-    );
+    });
   }
 
   /**

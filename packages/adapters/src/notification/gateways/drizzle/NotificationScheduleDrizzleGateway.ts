@@ -48,11 +48,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     search?: string;
     limit: number;
     offset: number;
-  }): Effect.Effect<
-    { schedules: NotificationSchedule[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  }) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.findAll",
       async () => {
@@ -153,7 +149,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  findActive(): Effect.Effect<NotificationSchedule[], DatabaseError, never> {
+  findActive() {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.findActive",
       async () => {
@@ -171,9 +167,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  findUpcoming(
-    days: number,
-  ): Effect.Effect<NotificationSchedule[], DatabaseError, never> {
+  findUpcoming(days: number) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.findUpcoming",
       async () => {
@@ -196,9 +190,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.findById",
       async () => {
@@ -211,10 +203,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  findByTripIdAndName(
-    tripId: string,
-    name: string,
-  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never> {
+  findByTripIdAndName(tripId: string, name: string) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.findByTripIdAndName",
       async () => {
@@ -229,9 +218,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  create(
-    schedule: NotificationSchedule,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+  create(schedule: NotificationSchedule) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.create",
       async () => {
@@ -247,9 +234,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  update(
-    schedule: NotificationSchedule,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+  update(schedule: NotificationSchedule) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.update",
       async () => {
@@ -267,7 +252,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.delete",
       async () => {
@@ -279,7 +264,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  deleteMany(ids: string[]): Effect.Effect<number, DatabaseError, never> {
+  deleteMany(ids: string[]) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.deleteMany",
       async () => {
@@ -295,10 +280,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  toggleActive(
-    id: string,
-    isActive: boolean,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+  toggleActive(id: string, isActive: boolean) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.toggleActive",
       async () => {
@@ -324,10 +306,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  toggleMany(
-    ids: string[],
-    isActive: boolean,
-  ): Effect.Effect<number, DatabaseError, never> {
+  toggleMany(ids: string[], isActive: boolean) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.toggleMany",
       async () => {
@@ -351,10 +330,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  updateLastRun(
-    id: string,
-    lastRun: Date,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+  updateLastRun(id: string, lastRun: Date) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.updateLastRun",
       async () => {
@@ -376,7 +352,7 @@ export class NotificationScheduleDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  countExecutions(id: string): Effect.Effect<number, DatabaseError, never> {
+  countExecutions(id: string) {
     return this.tryPromise(
       "NotificationScheduleDrizzleGateway.countExecutions",
       async () => {

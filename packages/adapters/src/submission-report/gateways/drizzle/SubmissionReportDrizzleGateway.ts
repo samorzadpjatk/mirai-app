@@ -5,18 +5,9 @@ import {
   submissionReports,
   users,
   type SubmissionReportSelect,
-  type UserSelect,
 } from "@mirai-app/frameworks/drizzle";
-import {
-  SubmissionReportId,
-  ChallengeSubmissionId,
-  DatabaseError,
-} from "@mirai-app/domain";
-import type {
-  ISubmissionReportPort,
-  SubmissionReport,
-  SubmissionReportWithReporter,
-} from "@mirai-app/use-cases";
+import { SubmissionReportId, ChallengeSubmissionId } from "@mirai-app/domain";
+import type { submissionReport } from "@mirai-app/use-cases";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 
 /**
@@ -26,15 +17,13 @@ import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base
  */
 export class SubmissionReportDrizzleGateway
   extends BaseDrizzleGateway
-  implements ISubmissionReportPort
+  implements submissionReport.ISubmissionReportPort
 {
   constructor(db: DrizzleDb) {
     super(db);
   }
 
-  findById(
-    id: SubmissionReportId,
-  ): Effect.Effect<SubmissionReport | null, DatabaseError, never> {
+  findById(id: SubmissionReportId) {
     const idString = SubmissionReportId.toString(id);
     return this.tryPromise(
       "findById",
@@ -54,9 +43,7 @@ export class SubmissionReportDrizzleGateway
     );
   }
 
-  findBySubmissionId(
-    submissionId: ChallengeSubmissionId,
-  ): Effect.Effect<SubmissionReportWithReporter[], DatabaseError, never> {
+  findBySubmissionId(submissionId: ChallengeSubmissionId) {
     const submissionIdString = ChallengeSubmissionId.toString(submissionId);
     return this.tryPromise(
       "findBySubmissionId",
@@ -93,9 +80,7 @@ export class SubmissionReportDrizzleGateway
     );
   }
 
-  create(
-    report: Omit<SubmissionReport, "id" | "createdAt">,
-  ): Effect.Effect<SubmissionReport, DatabaseError, never> {
+  create(report: Omit<submissionReport.SubmissionReport, "id" | "createdAt">) {
     return this.tryPromise(
       "create",
       async () => {
@@ -120,7 +105,7 @@ export class SubmissionReportDrizzleGateway
   existsBySubmissionAndReporter(
     submissionId: ChallengeSubmissionId,
     reporterId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  ) {
     const submissionIdString = ChallengeSubmissionId.toString(submissionId);
     return this.tryPromise(
       "existsBySubmissionAndReporter",
@@ -140,9 +125,7 @@ export class SubmissionReportDrizzleGateway
     );
   }
 
-  countBySubmissionId(
-    submissionId: ChallengeSubmissionId,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countBySubmissionId(submissionId: ChallengeSubmissionId) {
     const submissionIdString = ChallengeSubmissionId.toString(submissionId);
     return this.tryPromise(
       "countBySubmissionId",
@@ -160,7 +143,9 @@ export class SubmissionReportDrizzleGateway
   /**
    * Convert database record to domain entity
    */
-  private toDomain(dbReport: SubmissionReportSelect): SubmissionReport {
+  private toDomain(
+    dbReport: SubmissionReportSelect,
+  ): submissionReport.SubmissionReport {
     return {
       id: SubmissionReportId.unsafeCreate(dbReport.id),
       submissionId: ChallengeSubmissionId.unsafeCreate(dbReport.submissionId),

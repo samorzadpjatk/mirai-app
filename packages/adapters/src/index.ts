@@ -1,14 +1,5 @@
 // Main adapters package exports
 
-// Service Layer composition
-export {
-  makeServiceLayer,
-  makeAuthLayer,
-  makeStorageLayer,
-  makeRealtimeLayer,
-  type ServiceLayerConfig,
-} from "./system/service-layer";
-
 // Service gateways (Supabase)
 export { SupabaseAuthGateway } from "./auth/gateways/supabase/SupabaseAuthGateway";
 export { SupabaseStorageGateway } from "./storage/gateways/supabase/SupabaseStorageGateway";

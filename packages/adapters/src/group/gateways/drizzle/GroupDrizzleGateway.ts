@@ -3,7 +3,7 @@ import { eq, and, inArray, desc, sql, count } from "drizzle-orm";
 import { groups } from "@mirai-app/frameworks/drizzle";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { Group, GroupId, DatabaseError } from "@mirai-app/domain";
-import type { IGroupPort } from "@mirai-app/use-cases";
+import type { IGroupPort } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { groupMapper } from "../../mappers/GroupMapper";
 
@@ -16,7 +16,7 @@ export class GroupDrizzleGateway
   extends BaseDrizzleGateway
   implements IGroupPort
 {
-  findById(id: string): Effect.Effect<Group | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.findById",
       async () => {
@@ -30,7 +30,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  findByCode(code: string): Effect.Effect<Group | null, DatabaseError, never> {
+  findByCode(code: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.findByCode",
       async () => {
@@ -44,7 +44,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  findByTripId(tripId: string): Effect.Effect<Group[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.findByTripId",
       async () => {
@@ -67,11 +67,7 @@ export class GroupDrizzleGateway
   findByTripIdPaginated(
     tripId: string,
     params: { limit: number; offset: number },
-  ): Effect.Effect<
-    { groups: Group[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     return this.tryPromise(
       "GroupDrizzleGateway.findByTripIdPaginated",
       async () => {
@@ -104,9 +100,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  findByOrganizerId(
-    organizerId: string,
-  ): Effect.Effect<Group[], DatabaseError, never> {
+  findByOrganizerId(organizerId: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.findByOrganizerId",
       async () => {
@@ -129,7 +123,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  create(group: Group): Effect.Effect<Group, DatabaseError, never> {
+  create(group: Group) {
     return this.tryPromise(
       "GroupDrizzleGateway.create",
       async () => {
@@ -141,7 +135,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  update(group: Group): Effect.Effect<Group, DatabaseError, never> {
+  update(group: Group) {
     return this.tryPromise(
       "GroupDrizzleGateway.update",
       async () => {
@@ -156,7 +150,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.delete",
       async () => {
@@ -166,7 +160,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  softDelete(id: string): Effect.Effect<void, DatabaseError, never> {
+  softDelete(id: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.softDelete",
       async () => {
@@ -179,7 +173,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.exists",
       async () => {
@@ -193,7 +187,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.countByTripId",
       async () => {
@@ -207,10 +201,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  addCoins(
-    groupId: string,
-    amount: number,
-  ): Effect.Effect<Group, DatabaseError, never> {
+  addCoins(groupId: string, amount: number) {
     return this.tryPromise(
       "GroupDrizzleGateway.addCoins",
       async () => {
@@ -233,10 +224,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  subtractCoins(
-    groupId: string,
-    amount: number,
-  ): Effect.Effect<Group, DatabaseError, never> {
+  subtractCoins(groupId: string, amount: number) {
     return this.tryPromise(
       "GroupDrizzleGateway.subtractCoins",
       async () => {
@@ -259,7 +247,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  getRanking(tripId: string): Effect.Effect<Group[], DatabaseError, never> {
+  getRanking(tripId: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.getRanking",
       async () => {

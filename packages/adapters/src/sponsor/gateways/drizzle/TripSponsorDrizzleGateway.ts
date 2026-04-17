@@ -8,6 +8,7 @@ import {
   type SponsorSelect,
 } from "@mirai-app/frameworks/drizzle";
 import {
+  type Sponsor,
   SponsorId,
   TripId,
   TripSponsorId,
@@ -35,9 +36,7 @@ export class TripSponsorDrizzleGateway
     super(db);
   }
 
-  findById(
-    id: TripSponsorId,
-  ): Effect.Effect<TripSponsorWithSponsor | null, DatabaseError, never> {
+  findById(id: TripSponsorId) {
     const idStr = TripSponsorId.toString(id);
     return this.tryPromise(
       "findById",
@@ -56,7 +55,7 @@ export class TripSponsorDrizzleGateway
       idStr,
     ).pipe(
       Effect.flatMap((row) => {
-        if (!row || !row.tripSponsor || !row.sponsor) {
+        if (!row?.tripSponsor || !row.sponsor) {
           return Effect.succeed(null);
         }
         return this.mapTripSponsorWithSponsor(row.tripSponsor, row.sponsor);
@@ -64,9 +63,7 @@ export class TripSponsorDrizzleGateway
     );
   }
 
-  findByTripId(
-    tripId: TripId,
-  ): Effect.Effect<TripSponsorWithSponsor[], DatabaseError, never> {
+  findByTripId(tripId: TripId) {
     const tripIdStr = TripId.toString(tripId);
     return this.tryPromise(
       "findByTripId",
@@ -101,9 +98,7 @@ export class TripSponsorDrizzleGateway
     );
   }
 
-  findBySponsorId(
-    sponsorId: SponsorId,
-  ): Effect.Effect<TripSponsor[], DatabaseError, never> {
+  findBySponsorId(sponsorId: SponsorId) {
     const sponsorIdStr = SponsorId.toString(sponsorId);
     return this.tryPromise(
       "findBySponsorId",
@@ -125,10 +120,7 @@ export class TripSponsorDrizzleGateway
     );
   }
 
-  findByTripIdAndSponsorId(
-    tripId: TripId,
-    sponsorId: SponsorId,
-  ): Effect.Effect<TripSponsor | null, DatabaseError, never> {
+  findByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
     const tripIdStr = TripId.toString(tripId);
     const sponsorIdStr = SponsorId.toString(sponsorId);
     return this.tryPromise(
@@ -156,9 +148,7 @@ export class TripSponsorDrizzleGateway
     );
   }
 
-  create(
-    tripSponsor: TripSponsor,
-  ): Effect.Effect<TripSponsor, DatabaseError, never> {
+  create(tripSponsor: TripSponsor) {
     const insertData = {
       id: TripSponsorId.toString(tripSponsor.id),
       tripId: TripId.toString(tripSponsor.tripId),
@@ -183,7 +173,7 @@ export class TripSponsorDrizzleGateway
     );
   }
 
-  delete(id: TripSponsorId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: TripSponsorId) {
     const idStr = TripSponsorId.toString(id);
     return this.tryPromise(
       "delete",
@@ -194,10 +184,7 @@ export class TripSponsorDrizzleGateway
     );
   }
 
-  deleteByTripIdAndSponsorId(
-    tripId: TripId,
-    sponsorId: SponsorId,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
     const tripIdStr = TripId.toString(tripId);
     const sponsorIdStr = SponsorId.toString(sponsorId);
     return this.tryPromise(
@@ -216,10 +203,7 @@ export class TripSponsorDrizzleGateway
     );
   }
 
-  existsByTripIdAndSponsorId(
-    tripId: TripId,
-    sponsorId: SponsorId,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  existsByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
     const tripIdStr = TripId.toString(tripId);
     const sponsorIdStr = SponsorId.toString(sponsorId);
     return this.tryPromise(
@@ -252,7 +236,7 @@ export class TripSponsorDrizzleGateway
   private mapTripSponsorWithSponsor(
     dbTripSponsor: TripSponsorSelect,
     dbSponsor: SponsorSelect,
-  ): Effect.Effect<TripSponsorWithSponsor, DatabaseError, never> {
+  ) {
     return sponsorMapper.toDomain(dbSponsor).pipe(
       Effect.map((sponsor) => ({
         id: TripSponsorId.unsafeCreate(dbTripSponsor.id),
@@ -261,19 +245,10 @@ export class TripSponsorDrizzleGateway
         createdAt: dbTripSponsor.createdAt,
         sponsor: this.toSponsorDTO(sponsor),
       })),
-      Effect.mapError(
-        (validationError) =>
-          new DatabaseError({
-            operation: "mapTripSponsorWithSponsor",
-            cause: validationError,
-          }),
-      ),
     );
   }
 
-  private toSponsorDTO(
-    sponsor: import("@mirai-app/domain").Sponsor,
-  ): SponsorDTO {
+  private toSponsorDTO(sponsor: Sponsor): SponsorDTO {
     return {
       id: sponsor.id,
       name: sponsor.name,

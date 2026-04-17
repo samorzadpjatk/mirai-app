@@ -22,11 +22,7 @@ export class InMemoryNotificationScheduleGateway {
     search?: string;
     limit: number;
     offset: number;
-  }): Effect.Effect<
-    { schedules: NotificationSchedule[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  }) {
     return Effect.sync(() => {
       const {
         tripId,
@@ -99,7 +95,7 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  findActive(): Effect.Effect<NotificationSchedule[], DatabaseError, never> {
+  findActive() {
     return Effect.sync(() => {
       return Array.from(this.schedules.values())
         .filter((s) => s.isActive && s.lastRun === null)
@@ -107,9 +103,7 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  findUpcoming(
-    days: number,
-  ): Effect.Effect<NotificationSchedule[], DatabaseError, never> {
+  findUpcoming(days: number) {
     return Effect.sync(() => {
       const now = new Date();
       const futureDate = new Date(now);
@@ -127,19 +121,14 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.sync(() => {
       const schedule = this.schedules.get(id);
       return schedule ?? null;
     });
   }
 
-  findByTripIdAndName(
-    tripId: string,
-    name: string,
-  ): Effect.Effect<NotificationSchedule | null, DatabaseError, never> {
+  findByTripIdAndName(tripId: string, name: string) {
     return Effect.sync(() => {
       const schedule = Array.from(this.schedules.values()).find(
         (s) => s.tripId === tripId && s.name === name,
@@ -148,18 +137,14 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  create(
-    schedule: NotificationSchedule,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+  create(schedule: NotificationSchedule) {
     return Effect.sync(() => {
       this.schedules.set(schedule.id, schedule);
       return schedule;
     });
   }
 
-  update(
-    schedule: NotificationSchedule,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+  update(schedule: NotificationSchedule) {
     return Effect.sync(() => {
       const existing = this.schedules.get(schedule.id);
       if (!existing) {
@@ -176,13 +161,13 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return Effect.sync(() => {
       this.schedules.delete(id);
     });
   }
 
-  deleteMany(ids: string[]): Effect.Effect<number, DatabaseError, never> {
+  deleteMany(ids: string[]) {
     return Effect.sync(() => {
       let count = 0;
       for (const id of ids) {
@@ -194,10 +179,7 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  toggleActive(
-    id: string,
-    isActive: boolean,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+  toggleActive(id: string, isActive: boolean) {
     return Effect.sync(() => {
       const schedule = this.schedules.get(id);
       if (!schedule) {
@@ -215,10 +197,7 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  toggleMany(
-    ids: string[],
-    isActive: boolean,
-  ): Effect.Effect<number, DatabaseError, never> {
+  toggleMany(ids: string[], isActive: boolean) {
     return Effect.sync(() => {
       let count = 0;
       for (const id of ids) {
@@ -236,10 +215,7 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  updateLastRun(
-    id: string,
-    lastRun: Date,
-  ): Effect.Effect<NotificationSchedule, DatabaseError, never> {
+  updateLastRun(id: string, lastRun: Date) {
     return Effect.sync(() => {
       const schedule = this.schedules.get(id);
       if (!schedule) {
@@ -257,7 +233,7 @@ export class InMemoryNotificationScheduleGateway {
     });
   }
 
-  countExecutions(id: string): Effect.Effect<number, DatabaseError, never> {
+  countExecutions(id: string) {
     return Effect.sync(() => {
       // In-memory implementation tracks executions in a separate map
       // For simplicity, we check if the schedule has a lastRun set

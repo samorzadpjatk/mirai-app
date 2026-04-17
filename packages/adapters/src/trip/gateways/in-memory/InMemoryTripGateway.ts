@@ -1,6 +1,5 @@
 import { Effect } from "effect";
-import { Trip, TripId, DatabaseError } from "@mirai-app/domain";
-import type { ITripPort } from "@mirai-app/use-cases";
+import { Trip, TripId, DatabaseError, type ITripPort } from "@mirai-app/domain";
 
 /**
  * TripResource DTO interface (from TripPort)
@@ -53,14 +52,27 @@ export class InMemoryTripGateway implements ITripPort {
   private tripResources: Map<string, TripResource[]> = new Map();
   private tripInsurances: Map<string, TripInsurance> = new Map();
 
-  findById(id: TripId): Effect.Effect<Trip | null, DatabaseError, never> {
+  /**
+   * Find active trips at a given date
+   *
+   * Returns trips where startDate <= atDate <= endDate
+   */
+  findActive(atDate: Date) {
+    return Effect.sync(() => {
+      return Array.from(this.trips.values())
+        .filter((trip) => trip.startDate <= atDate && trip.endDate >= atDate)
+        .sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+    });
+  }
+
+  findById(id: TripId) {
     return Effect.sync(() => {
       const trip = this.trips.get(TripId.toString(id));
       return trip ?? null;
     });
   }
 
-  findByUserId(userId: string): Effect.Effect<Trip[], DatabaseError, never> {
+  findByUserId(userId: string) {
     return Effect.sync(() => {
       const userTripIds = this.getUserTripIds(userId);
       return userTripIds
@@ -70,7 +82,7 @@ export class InMemoryTripGateway implements ITripPort {
     });
   }
 
-  findAll(): Effect.Effect<Trip[], DatabaseError, never> {
+  findAll() {
     return Effect.sync(() => {
       return Array.from(this.trips.values()).sort(
         (a, b) => b.startDate.getTime() - a.startDate.getTime(),
@@ -78,15 +90,7 @@ export class InMemoryTripGateway implements ITripPort {
     });
   }
 
-  findPaginated(params: {
-    userId: string;
-    limit: number;
-    offset: number;
-  }): Effect.Effect<
-    { trips: Trip[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  findPaginated(params: { userId: string; limit: number; offset: number }) {
     return Effect.sync(() => {
       const userTripIds = this.getUserTripIds(params.userId);
       const total = userTripIds.length;
@@ -109,21 +113,21 @@ export class InMemoryTripGateway implements ITripPort {
     });
   }
 
-  create(trip: Trip): Effect.Effect<Trip, DatabaseError, never> {
+  create(trip: Trip) {
     return Effect.sync(() => {
       this.trips.set(TripId.toString(trip.id), trip);
       return trip;
     });
   }
 
-  update(trip: Trip): Effect.Effect<Trip, DatabaseError, never> {
+  update(trip: Trip) {
     return Effect.sync(() => {
       this.trips.set(TripId.toString(trip.id), trip);
       return trip;
     });
   }
 
-  delete(id: TripId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: TripId) {
     return Effect.sync(() => {
       this.trips.delete(TripId.toString(id));
       this.tripParticipants.delete(TripId.toString(id));
@@ -132,25 +136,20 @@ export class InMemoryTripGateway implements ITripPort {
     });
   }
 
-  exists(id: TripId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: TripId) {
     return Effect.sync(() => {
       return this.trips.has(TripId.toString(id));
     });
   }
 
-  hasUserAccess(
-    tripId: string,
-    userId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  hasUserAccess(tripId: string, userId: string) {
     return Effect.sync(() => {
       const participants = this.tripParticipants.get(tripId);
       return participants?.has(userId) ?? false;
     });
   }
 
-  findResourcesByTripId(
-    tripId: string,
-  ): Effect.Effect<TripResource[], DatabaseError, never> {
+  findResourcesByTripId(tripId: string) {
     return Effect.sync(() => {
       const resources = this.tripResources.get(tripId);
       return resources
@@ -164,9 +163,7 @@ export class InMemoryTripGateway implements ITripPort {
    *
    * Returns the stored TripInsurance or null if not found.
    */
-  findInsuranceByTripId(
-    tripId: string,
-  ): Effect.Effect<TripInsurance | null, DatabaseError, never> {
+  findInsuranceByTripId(tripId: string) {
     return Effect.sync(() => {
       return this.tripInsurances.get(tripId) ?? null;
     });

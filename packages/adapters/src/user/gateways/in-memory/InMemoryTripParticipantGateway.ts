@@ -23,10 +23,7 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     return `${userId}:${tripId}`;
   }
 
-  findByUserAndTrip(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never> {
+  findByUserAndTrip(userId: string, tripId: string) {
     return Effect.sync(() => {
       const key = this.createKey(userId, tripId);
       const participantId = this.participantsByUserAndTrip.get(key);
@@ -35,9 +32,7 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<TripParticipant[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return Effect.sync(() => {
       const participantIds = this.participantsByTripId.get(tripId);
       if (!participantIds) return [];
@@ -53,9 +48,7 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
-  findByUserId(
-    userId: string,
-  ): Effect.Effect<TripParticipant[], DatabaseError, never> {
+  findByUserId(userId: string) {
     return Effect.sync(() => {
       const participantIds = this.participantsByUserId.get(userId);
       if (!participantIds) return [];
@@ -71,15 +64,11 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.sync(() => this.participants.get(id) ?? null);
   }
 
-  upsert(
-    participant: TripParticipant,
-  ): Effect.Effect<TripParticipant, DatabaseError, never> {
+  upsert(participant: TripParticipant) {
     return Effect.sync(() => {
       const id = TripParticipantId.toString(participant.id);
       const userIdStr = UserId.toString(participant.userId);
@@ -103,9 +92,7 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
-  update(
-    participant: TripParticipant,
-  ): Effect.Effect<TripParticipant, DatabaseError, never> {
+  update(participant: TripParticipant) {
     return Effect.sync(() => {
       const id = TripParticipantId.toString(participant.id);
       this.participants.set(id, participant);
@@ -113,7 +100,7 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return Effect.sync(() => {
       const participant = this.participants.get(id);
       if (participant) {
@@ -143,17 +130,14 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
-  countByTripId(tripId: string): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: string) {
     return Effect.sync(() => {
       const participantIds = this.participantsByTripId.get(tripId);
       return participantIds?.size ?? 0;
     });
   }
 
-  isParticipant(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  isParticipant(userId: string, tripId: string) {
     return Effect.sync(() => {
       const key = this.createKey(userId, tripId);
       return this.participantsByUserAndTrip.has(key);
@@ -164,7 +148,7 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     tripId: string,
     wristNumber: string,
     excludeUserId?: string,
-  ): Effect.Effect<TripParticipant | null, DatabaseError, never> {
+  ) {
     return Effect.sync(() => {
       const participantIds = this.participantsByTripId.get(tripId);
       if (!participantIds) return null;
@@ -183,18 +167,7 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
-  findByUserAndTripWithRelations(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<
-    {
-      participant: TripParticipant;
-      group: { id: string; name: string } | null;
-      trip: { id: string; name: string } | null;
-    } | null,
-    DatabaseError,
-    never
-  > {
+  findByUserAndTripWithRelations(userId: string, tripId: string) {
     return Effect.sync(() => {
       const key = this.createKey(userId, tripId);
       const participantId = this.participantsByUserAndTrip.get(key);
@@ -211,21 +184,7 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
-  findByTripIdWithRelations(tripId: string): Effect.Effect<
-    {
-      participant: TripParticipant;
-      user: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        role: string;
-        authUserId: string | null;
-      };
-      group: { id: string; name: string } | null;
-    }[],
-    DatabaseError,
-    never
-  > {
+  findByTripIdWithRelations(tripId: string) {
     return Effect.sync(() => {
       const participantIds = this.participantsByTripId.get(tripId);
       if (!participantIds) return [];

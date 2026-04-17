@@ -32,11 +32,7 @@ export class NotificationDeliveryDrizzleGateway extends BaseDrizzleGateway {
     endDate?: Date;
     limit: number;
     offset: number;
-  }): Effect.Effect<
-    { deliveries: NotificationDelivery[]; total: number },
-    DatabaseError,
-    never
-  > {
+  }) {
     return this.tryPromise(
       "NotificationDeliveryDrizzleGateway.findAll",
       async () => {
@@ -113,9 +109,7 @@ export class NotificationDeliveryDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  findByNotificationId(
-    notificationId: string,
-  ): Effect.Effect<NotificationDelivery | null, DatabaseError, never> {
+  findByNotificationId(notificationId: string) {
     return this.tryPromise(
       "NotificationDeliveryDrizzleGateway.findByNotificationId",
       async () => {
@@ -128,15 +122,7 @@ export class NotificationDeliveryDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  findFailed(params: {
-    tripId?: string;
-    limit: number;
-    offset: number;
-  }): Effect.Effect<
-    { deliveries: NotificationDelivery[]; total: number },
-    DatabaseError,
-    never
-  > {
+  findFailed(params: { tripId?: string; limit: number; offset: number }) {
     return this.tryPromise(
       "NotificationDeliveryDrizzleGateway.findFailed",
       async () => {
@@ -181,7 +167,7 @@ export class NotificationDeliveryDrizzleGateway extends BaseDrizzleGateway {
     startDate?: Date;
     endDate?: Date;
     scheduleId?: string;
-  }): Effect.Effect<NotificationDeliveryStats, DatabaseError, never> {
+  }) {
     return this.tryPromise(
       "NotificationDeliveryDrizzleGateway.getStats",
       async () => {
@@ -267,9 +253,7 @@ export class NotificationDeliveryDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  create(
-    delivery: NotificationDelivery,
-  ): Effect.Effect<NotificationDelivery, DatabaseError, never> {
+  create(delivery: NotificationDelivery) {
     return this.tryPromise(
       "NotificationDeliveryDrizzleGateway.create",
       async () => {
@@ -285,9 +269,7 @@ export class NotificationDeliveryDrizzleGateway extends BaseDrizzleGateway {
     );
   }
 
-  update(
-    delivery: NotificationDelivery,
-  ): Effect.Effect<NotificationDelivery, DatabaseError, never> {
+  update(delivery: NotificationDelivery) {
     return this.tryPromise(
       "NotificationDeliveryDrizzleGateway.update",
       async () => {

@@ -10,14 +10,14 @@ import type { ISponsorPort } from "@mirai-app/domain";
 export class InMemorySponsorGateway implements ISponsorPort {
   private sponsors: Map<string, Sponsor> = new Map();
 
-  findById(id: SponsorId): Effect.Effect<Sponsor | null, DatabaseError, never> {
+  findById(id: SponsorId) {
     return Effect.sync(() => {
       const sponsor = this.sponsors.get(SponsorId.toString(id));
       return sponsor ?? null;
     });
   }
 
-  findAll(): Effect.Effect<Sponsor[], DatabaseError, never> {
+  findAll() {
     return Effect.sync(() => {
       return Array.from(this.sponsors.values()).sort(
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
@@ -25,7 +25,7 @@ export class InMemorySponsorGateway implements ISponsorPort {
     });
   }
 
-  findActive(): Effect.Effect<Sponsor[], DatabaseError, never> {
+  findActive() {
     return Effect.sync(() => {
       return Array.from(this.sponsors.values())
         .filter((sponsor) => sponsor.isActive)
@@ -33,27 +33,27 @@ export class InMemorySponsorGateway implements ISponsorPort {
     });
   }
 
-  create(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never> {
+  create(sponsor: Sponsor) {
     return Effect.sync(() => {
       this.sponsors.set(SponsorId.toString(sponsor.id), sponsor);
       return sponsor;
     });
   }
 
-  update(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never> {
+  update(sponsor: Sponsor) {
     return Effect.sync(() => {
       this.sponsors.set(SponsorId.toString(sponsor.id), sponsor);
       return sponsor;
     });
   }
 
-  delete(id: SponsorId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: SponsorId) {
     return Effect.sync(() => {
       this.sponsors.delete(SponsorId.toString(id));
     });
   }
 
-  exists(id: SponsorId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: SponsorId) {
     return Effect.sync(() => {
       return this.sponsors.has(SponsorId.toString(id));
     });

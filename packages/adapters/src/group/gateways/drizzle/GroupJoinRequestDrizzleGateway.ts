@@ -7,7 +7,7 @@ import {
   GroupJoinRequestId,
   DatabaseError,
 } from "@mirai-app/domain";
-import type { IGroupJoinRequestPort } from "@mirai-app/use-cases";
+import type { IGroupJoinRequestPort } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { groupJoinRequestMapper } from "../../mappers/GroupJoinRequestMapper";
 
@@ -20,9 +20,7 @@ export class GroupJoinRequestDrizzleGateway
   extends BaseDrizzleGateway
   implements IGroupJoinRequestPort
 {
-  findById(
-    id: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.findById",
       async () => {
@@ -36,10 +34,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  findByUserAndTrip(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never> {
+  findByUserAndTrip(userId: string, tripId: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.findByUserAndTrip",
       async () => {
@@ -56,11 +51,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  findByUserTripAndGroup(
-    userId: string,
-    tripId: string,
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest | null, DatabaseError, never> {
+  findByUserTripAndGroup(userId: string, tripId: string, groupId: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.findByUserTripAndGroup",
       async () => {
@@ -78,9 +69,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  findPendingByGroupId(
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest[], DatabaseError, never> {
+  findPendingByGroupId(groupId: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.findPendingByGroupId",
       async () => {
@@ -102,9 +91,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  findByGroupId(
-    groupId: string,
-  ): Effect.Effect<GroupJoinRequest[], DatabaseError, never> {
+  findByGroupId(groupId: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.findByGroupId",
       async () => {
@@ -126,9 +113,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  create(
-    request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, DatabaseError, never> {
+  create(request: GroupJoinRequest) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.create",
       async () => {
@@ -140,9 +125,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  update(
-    request: GroupJoinRequest,
-  ): Effect.Effect<GroupJoinRequest, DatabaseError, never> {
+  update(request: GroupJoinRequest) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.update",
       async () => {
@@ -158,7 +141,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.delete",
       async () => {
@@ -170,7 +153,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  deleteByGroupId(groupId: string): Effect.Effect<void, DatabaseError, never> {
+  deleteByGroupId(groupId: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.deleteByGroupId",
       async () => {
@@ -182,10 +165,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  deleteByUserAndTrip(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByUserAndTrip(userId: string, tripId: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.deleteByUserAndTrip",
       async () => {
@@ -202,10 +182,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  deleteByUsersAndTrip(
-    userIds: string[],
-    tripId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByUsersAndTrip(userIds: string[], tripId: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.deleteByUsersAndTrip",
       async () => {
@@ -222,7 +199,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  exists(id: string): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.exists",
       async () => {
@@ -237,10 +214,7 @@ export class GroupJoinRequestDrizzleGateway
     );
   }
 
-  hasPendingRequest(
-    userId: string,
-    tripId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  hasPendingRequest(userId: string, tripId: string) {
     return this.tryPromise(
       "GroupJoinRequestDrizzleGateway.hasPendingRequest",
       async () => {

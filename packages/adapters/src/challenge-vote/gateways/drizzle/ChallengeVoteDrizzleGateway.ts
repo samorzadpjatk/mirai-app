@@ -10,7 +10,7 @@ import { DatabaseError } from "@mirai-app/domain";
 import type {
   IChallengeVotePort,
   ChallengeVote,
-} from "@mirai-app/use-cases/challenge-vote";
+} from "@mirai-app/use-cases/challenge-vote/ports/ChallengeVotePort";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 
 /**
@@ -26,9 +26,7 @@ export class ChallengeVoteDrizzleGateway
     super(db);
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<ChallengeVote | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "findById",
       async () => {
@@ -47,9 +45,7 @@ export class ChallengeVoteDrizzleGateway
     );
   }
 
-  findByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never> {
+  findByChallengeId(challengeId: string) {
     return this.tryPromise(
       "findByChallengeId",
       async () => {
@@ -68,10 +64,7 @@ export class ChallengeVoteDrizzleGateway
     );
   }
 
-  findByChallengeAndVoter(
-    challengeId: string,
-    voterId: string,
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never> {
+  findByChallengeAndVoter(challengeId: string, voterId: string) {
     return this.tryPromise(
       "findByChallengeAndVoter",
       async () => {
@@ -95,9 +88,7 @@ export class ChallengeVoteDrizzleGateway
     );
   }
 
-  create(
-    vote: ChallengeVote,
-  ): Effect.Effect<ChallengeVote, DatabaseError, never> {
+  create(vote: ChallengeVote) {
     const insertData = this.toInsert(vote);
     return this.tryPromise(
       "create",
@@ -113,9 +104,7 @@ export class ChallengeVoteDrizzleGateway
     ).pipe(Effect.map((dbVote: ChallengeVoteSelect) => this.toDomain(dbVote)));
   }
 
-  createMany(
-    votes: ChallengeVote[],
-  ): Effect.Effect<ChallengeVote[], DatabaseError, never> {
+  createMany(votes: ChallengeVote[]) {
     if (votes.length === 0) {
       return Effect.succeed([]);
     }
@@ -138,7 +127,7 @@ export class ChallengeVoteDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "delete",
       async () => {
@@ -148,10 +137,7 @@ export class ChallengeVoteDrizzleGateway
     );
   }
 
-  deleteByChallengeAndVoter(
-    challengeId: string,
-    voterId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByChallengeAndVoter(challengeId: string, voterId: string) {
     return this.tryPromise(
       "deleteByChallengeAndVoter",
       async () => {
@@ -168,9 +154,7 @@ export class ChallengeVoteDrizzleGateway
     );
   }
 
-  countByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countByChallengeId(challengeId: string) {
     return this.tryPromise(
       "countByChallengeId",
       async () => {

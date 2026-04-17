@@ -24,7 +24,7 @@ export class SponsorDrizzleGateway
     super(db);
   }
 
-  findById(id: SponsorId): Effect.Effect<Sponsor | null, DatabaseError, never> {
+  findById(id: SponsorId) {
     const idStr = SponsorId.toString(id);
     return this.tryPromise(
       "findById",
@@ -39,23 +39,12 @@ export class SponsorDrizzleGateway
       idStr,
     ).pipe(
       Effect.flatMap((dbSponsor: SponsorSelect | null) =>
-        dbSponsor
-          ? sponsorMapper.toDomain(dbSponsor).pipe(
-              Effect.mapError(
-                (validationError) =>
-                  new DatabaseError({
-                    operation: "findById",
-                    id: idStr,
-                    cause: validationError,
-                  }),
-              ),
-            )
-          : Effect.succeed(null),
+        dbSponsor ? sponsorMapper.toDomain(dbSponsor) : Effect.succeed(null),
       ),
     );
   }
 
-  findAll(): Effect.Effect<Sponsor[], DatabaseError, never> {
+  findAll() {
     return this.tryPromise("findAll", async () => {
       const results = await this.db
         .select()
@@ -65,21 +54,13 @@ export class SponsorDrizzleGateway
     }).pipe(
       Effect.flatMap((dbSponsors: SponsorSelect[]) =>
         Effect.forEach(dbSponsors, (dbSponsor) =>
-          sponsorMapper.toDomain(dbSponsor).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findAll",
-                  cause: validationError,
-                }),
-            ),
-          ),
+          sponsorMapper.toDomain(dbSponsor),
         ),
       ),
     );
   }
 
-  findActive(): Effect.Effect<Sponsor[], DatabaseError, never> {
+  findActive() {
     return this.tryPromise("findActive", async () => {
       const results = await this.db
         .select()
@@ -90,21 +71,13 @@ export class SponsorDrizzleGateway
     }).pipe(
       Effect.flatMap((dbSponsors: SponsorSelect[]) =>
         Effect.forEach(dbSponsors, (dbSponsor) =>
-          sponsorMapper.toDomain(dbSponsor).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findActive",
-                  cause: validationError,
-                }),
-            ),
-          ),
+          sponsorMapper.toDomain(dbSponsor),
         ),
       ),
     );
   }
 
-  create(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never> {
+  create(sponsor: Sponsor) {
     const insertData = sponsorMapper.toInsert(sponsor);
     return this.tryPromise(
       "create",
@@ -119,21 +92,12 @@ export class SponsorDrizzleGateway
       SponsorId.toString(sponsor.id),
     ).pipe(
       Effect.flatMap((dbSponsor: SponsorSelect) =>
-        sponsorMapper.toDomain(dbSponsor).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "create",
-                id: SponsorId.toString(sponsor.id),
-                cause: validationError,
-              }),
-          ),
-        ),
+        sponsorMapper.toDomain(dbSponsor),
       ),
     );
   }
 
-  update(sponsor: Sponsor): Effect.Effect<Sponsor, DatabaseError, never> {
+  update(sponsor: Sponsor) {
     const updateData = sponsorMapper.toUpdate(sponsor);
     return this.tryPromise(
       "update",
@@ -149,21 +113,12 @@ export class SponsorDrizzleGateway
       SponsorId.toString(sponsor.id),
     ).pipe(
       Effect.flatMap((dbSponsor: SponsorSelect) =>
-        sponsorMapper.toDomain(dbSponsor).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "update",
-                id: SponsorId.toString(sponsor.id),
-                cause: validationError,
-              }),
-          ),
-        ),
+        sponsorMapper.toDomain(dbSponsor),
       ),
     );
   }
 
-  delete(id: SponsorId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: SponsorId) {
     const idStr = SponsorId.toString(id);
     return this.tryPromise(
       "delete",
@@ -174,7 +129,7 @@ export class SponsorDrizzleGateway
     );
   }
 
-  exists(id: SponsorId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: SponsorId) {
     const idStr = SponsorId.toString(id);
     return this.tryPromise(
       "exists",

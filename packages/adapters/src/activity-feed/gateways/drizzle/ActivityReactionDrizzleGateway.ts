@@ -26,9 +26,7 @@ export class ActivityReactionDrizzleGateway
     super(db);
   }
 
-  findById(
-    id: string,
-  ): Effect.Effect<ActivityReaction | null, DatabaseError, never> {
+  findById(id: string) {
     return this.tryPromise(
       "findById",
       async () => {
@@ -47,9 +45,7 @@ export class ActivityReactionDrizzleGateway
     );
   }
 
-  findByActivityId(
-    activityId: string,
-  ): Effect.Effect<ActivityReaction[], DatabaseError, never> {
+  findByActivityId(activityId: string) {
     return this.tryPromise(
       "findByActivityId",
       async () => {
@@ -68,10 +64,7 @@ export class ActivityReactionDrizzleGateway
     );
   }
 
-  findByActivityIdAndUserId(
-    activityId: string,
-    userId: string,
-  ): Effect.Effect<ActivityReaction | null, DatabaseError, never> {
+  findByActivityIdAndUserId(activityId: string, userId: string) {
     return this.tryPromise(
       "findByActivityIdAndUserId",
       async () => {
@@ -95,9 +88,7 @@ export class ActivityReactionDrizzleGateway
     );
   }
 
-  create(
-    reaction: ActivityReaction,
-  ): Effect.Effect<ActivityReaction, DatabaseError, never> {
+  create(reaction: ActivityReaction) {
     return this.tryPromise(
       "create",
       async () => {
@@ -122,7 +113,7 @@ export class ActivityReactionDrizzleGateway
     );
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return this.tryPromise(
       "delete",
       async () => {
@@ -134,10 +125,7 @@ export class ActivityReactionDrizzleGateway
     );
   }
 
-  deleteByActivityAndUser(
-    activityId: string,
-    userId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  deleteByActivityAndUser(activityId: string, userId: string) {
     return this.tryPromise(
       "deleteByActivityAndUser",
       async () => {
@@ -154,9 +142,7 @@ export class ActivityReactionDrizzleGateway
     );
   }
 
-  countByActivityId(
-    activityId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countByActivityId(activityId: string) {
     return this.tryPromise(
       "countByActivityId",
       async () => {
@@ -173,7 +159,7 @@ export class ActivityReactionDrizzleGateway
   countByActivityIdAndType(
     activityId: string,
     reactionType: ActivityReactionType,
-  ): Effect.Effect<number, DatabaseError, never> {
+  ) {
     return this.tryPromise(
       "countByActivityIdAndType",
       async () => {

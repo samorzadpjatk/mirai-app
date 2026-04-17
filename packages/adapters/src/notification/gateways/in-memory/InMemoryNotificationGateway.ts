@@ -3,7 +3,7 @@ import {
   type INotificationPort,
   type Notification,
   type NotificationPush,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/use-cases/notification/ports/NotificationPort";
 import { DatabaseError } from "@mirai-app/domain";
 
 /**
@@ -15,18 +15,14 @@ export class InMemoryNotificationGateway implements INotificationPort {
   private notifications: Map<string, Notification> = new Map();
   private notificationPushes: Map<string, NotificationPush[]> = new Map();
 
-  findById(
-    id: string,
-  ): Effect.Effect<Notification | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.sync(() => {
       const notification = this.notifications.get(id);
       return notification ?? null;
     });
   }
 
-  findByUserId(
-    userId: string,
-  ): Effect.Effect<Notification[], DatabaseError, never> {
+  findByUserId(userId: string) {
     return Effect.sync(() => {
       return Array.from(this.notifications.values())
         .filter((n) => n.createdById === userId)
@@ -37,11 +33,7 @@ export class InMemoryNotificationGateway implements INotificationPort {
   findPaginatedByUserId(
     userId: string,
     params: { page: number; pageSize: number },
-  ): Effect.Effect<
-    { notifications: Notification[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     return Effect.sync(() => {
       const { page, pageSize } = params;
       const offset = (page - 1) * pageSize;
@@ -65,9 +57,7 @@ export class InMemoryNotificationGateway implements INotificationPort {
     });
   }
 
-  findByTripId(
-    tripId: string,
-  ): Effect.Effect<Notification[], DatabaseError, never> {
+  findByTripId(tripId: string) {
     return Effect.sync(() => {
       return Array.from(this.notifications.values())
         .filter((n) => n.tripId === tripId)
@@ -75,15 +65,7 @@ export class InMemoryNotificationGateway implements INotificationPort {
     });
   }
 
-  findPaginated(params: {
-    tripId?: string;
-    limit: number;
-    offset: number;
-  }): Effect.Effect<
-    { notifications: Notification[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  findPaginated(params: { tripId?: string; limit: number; offset: number }) {
     return Effect.sync(() => {
       const { tripId, limit, offset } = params;
 
@@ -113,18 +95,14 @@ export class InMemoryNotificationGateway implements INotificationPort {
     });
   }
 
-  create(
-    notification: Notification,
-  ): Effect.Effect<Notification, DatabaseError, never> {
+  create(notification: Notification) {
     return Effect.sync(() => {
       this.notifications.set(notification.id, notification);
       return notification;
     });
   }
 
-  update(
-    notification: Notification,
-  ): Effect.Effect<Notification, DatabaseError, never> {
+  update(notification: Notification) {
     return Effect.sync(() => {
       const existing = this.notifications.get(notification.id);
       if (!existing) {
@@ -141,14 +119,14 @@ export class InMemoryNotificationGateway implements INotificationPort {
     });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return Effect.sync(() => {
       this.notifications.delete(id);
       this.notificationPushes.delete(id);
     });
   }
 
-  markAsSent(id: string): Effect.Effect<void, DatabaseError, never> {
+  markAsSent(id: string) {
     return Effect.sync(() => {
       const notification = this.notifications.get(id);
       if (notification) {
@@ -160,10 +138,7 @@ export class InMemoryNotificationGateway implements INotificationPort {
     });
   }
 
-  markAsFailed(
-    id: string,
-    reason: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  markAsFailed(id: string, reason: string) {
     return Effect.sync(() => {
       const notification = this.notifications.get(id);
       if (notification) {
@@ -175,13 +150,7 @@ export class InMemoryNotificationGateway implements INotificationPort {
     });
   }
 
-  findWithPushes(
-    notificationId: string,
-  ): Effect.Effect<
-    { notification: Notification; pushes: NotificationPush[] } | null,
-    DatabaseError,
-    never
-  > {
+  findWithPushes(notificationId: string) {
     return Effect.sync(() => {
       const notification = this.notifications.get(notificationId);
       if (!notification) {
@@ -193,18 +162,14 @@ export class InMemoryNotificationGateway implements INotificationPort {
     });
   }
 
-  getFailedPushes(
-    notificationId: string,
-  ): Effect.Effect<NotificationPush[], DatabaseError, never> {
+  getFailedPushes(notificationId: string) {
     return Effect.sync(() => {
       const pushes = this.notificationPushes.get(notificationId) ?? [];
       return pushes.filter((p) => p.status === "failed");
     });
   }
 
-  resetFailedPushes(
-    notificationId: string,
-  ): Effect.Effect<void, DatabaseError, never> {
+  resetFailedPushes(notificationId: string) {
     return Effect.sync(() => {
       const pushes = this.notificationPushes.get(notificationId) ?? [];
       const resetPushes = pushes.map((p) =>

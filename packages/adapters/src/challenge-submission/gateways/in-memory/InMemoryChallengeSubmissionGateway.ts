@@ -1,9 +1,8 @@
 import { Effect } from "effect";
-import { DatabaseError } from "@mirai-app/domain";
 import type {
   ChallengeSubmission,
   IChallengeSubmissionPort,
-} from "@mirai-app/use-cases";
+} from "@mirai-app/use-cases/challenge-submission/ports/ChallengeSubmissionPort";
 
 /**
  * In-Memory ChallengeSubmission Gateway
@@ -13,18 +12,14 @@ import type {
 export class InMemoryChallengeSubmissionGateway implements IChallengeSubmissionPort {
   private submissions: Map<string, ChallengeSubmission> = new Map();
 
-  findById(
-    id: string,
-  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never> {
+  findById(id: string) {
     return Effect.sync(() => {
       const submission = this.submissions.get(id);
       return submission ?? null;
     });
   }
 
-  findByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never> {
+  findByChallengeId(challengeId: string) {
     return Effect.sync(() => {
       return Array.from(this.submissions.values())
         .filter((submission) => submission.challengeId === challengeId)
@@ -35,10 +30,7 @@ export class InMemoryChallengeSubmissionGateway implements IChallengeSubmissionP
     });
   }
 
-  findByChallengeAndGroup(
-    challengeId: string,
-    groupId: string,
-  ): Effect.Effect<ChallengeSubmission | null, DatabaseError, never> {
+  findByChallengeAndGroup(challengeId: string, groupId: string) {
     return Effect.sync(() => {
       const submission = Array.from(this.submissions.values()).find(
         (s) => s.challengeId === challengeId && s.groupId === groupId,
@@ -47,9 +39,7 @@ export class InMemoryChallengeSubmissionGateway implements IChallengeSubmissionP
     });
   }
 
-  findByGroupId(
-    groupId: string,
-  ): Effect.Effect<ChallengeSubmission[], DatabaseError, never> {
+  findByGroupId(groupId: string) {
     return Effect.sync(() => {
       return Array.from(this.submissions.values())
         .filter((submission) => submission.groupId === groupId)
@@ -60,33 +50,27 @@ export class InMemoryChallengeSubmissionGateway implements IChallengeSubmissionP
     });
   }
 
-  create(
-    submission: ChallengeSubmission,
-  ): Effect.Effect<ChallengeSubmission, DatabaseError, never> {
+  create(submission: ChallengeSubmission) {
     return Effect.sync(() => {
       this.submissions.set(submission.id, submission);
       return submission;
     });
   }
 
-  update(
-    submission: ChallengeSubmission,
-  ): Effect.Effect<ChallengeSubmission, DatabaseError, never> {
+  update(submission: ChallengeSubmission) {
     return Effect.sync(() => {
       this.submissions.set(submission.id, submission);
       return submission;
     });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return Effect.sync(() => {
       this.submissions.delete(id);
     });
   }
 
-  countByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countByChallengeId(challengeId: string) {
     return Effect.sync(() => {
       return Array.from(this.submissions.values()).filter(
         (submission) => submission.challengeId === challengeId,
@@ -94,9 +78,7 @@ export class InMemoryChallengeSubmissionGateway implements IChallengeSubmissionP
     });
   }
 
-  countPendingByChallengeId(
-    challengeId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  countPendingByChallengeId(challengeId: string) {
     return Effect.sync(() => {
       return Array.from(this.submissions.values()).filter(
         (submission) =>

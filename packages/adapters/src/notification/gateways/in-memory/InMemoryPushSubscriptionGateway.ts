@@ -13,9 +13,7 @@ import { DatabaseError } from "@mirai-app/domain";
 export class InMemoryPushSubscriptionGateway implements IPushSubscriptionPort {
   private subscriptions: Map<string, PushSubscription> = new Map();
 
-  findByUserId(
-    userId: string,
-  ): Effect.Effect<PushSubscription[], DatabaseError, never> {
+  findByUserId(userId: string) {
     return Effect.sync(() => {
       return Array.from(this.subscriptions.values()).filter(
         (s) => s.userId === userId,
@@ -23,9 +21,7 @@ export class InMemoryPushSubscriptionGateway implements IPushSubscriptionPort {
     });
   }
 
-  findByToken(
-    token: string,
-  ): Effect.Effect<PushSubscription | null, DatabaseError, never> {
+  findByToken(token: string) {
     return Effect.sync(() => {
       const subscription = Array.from(this.subscriptions.values()).find(
         (s) => s.token === token,
@@ -34,10 +30,7 @@ export class InMemoryPushSubscriptionGateway implements IPushSubscriptionPort {
     });
   }
 
-  findByUserIdAndToken(
-    userId: string,
-    token: string,
-  ): Effect.Effect<PushSubscription | null, DatabaseError, never> {
+  findByUserIdAndToken(userId: string, token: string) {
     return Effect.sync(() => {
       const subscription = Array.from(this.subscriptions.values()).find(
         (s) => s.userId === userId && s.token === token,
@@ -46,18 +39,14 @@ export class InMemoryPushSubscriptionGateway implements IPushSubscriptionPort {
     });
   }
 
-  create(
-    subscription: PushSubscription,
-  ): Effect.Effect<PushSubscription, DatabaseError, never> {
+  create(subscription: PushSubscription) {
     return Effect.sync(() => {
       this.subscriptions.set(subscription.id, subscription);
       return subscription;
     });
   }
 
-  update(
-    subscription: PushSubscription,
-  ): Effect.Effect<PushSubscription, DatabaseError, never> {
+  update(subscription: PushSubscription) {
     return Effect.sync(() => {
       const existing = this.subscriptions.get(subscription.id);
       if (!existing) {
@@ -74,16 +63,13 @@ export class InMemoryPushSubscriptionGateway implements IPushSubscriptionPort {
     });
   }
 
-  delete(id: string): Effect.Effect<void, DatabaseError, never> {
+  delete(id: string) {
     return Effect.sync(() => {
       this.subscriptions.delete(id);
     });
   }
 
-  deleteByTokenAndUserId(
-    token: string,
-    userId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  deleteByTokenAndUserId(token: string, userId: string) {
     return Effect.sync(() => {
       let deletedCount = 0;
       for (const [id, subscription] of this.subscriptions.entries()) {
@@ -96,9 +82,7 @@ export class InMemoryPushSubscriptionGateway implements IPushSubscriptionPort {
     });
   }
 
-  deleteAllByUserId(
-    userId: string,
-  ): Effect.Effect<number, DatabaseError, never> {
+  deleteAllByUserId(userId: string) {
     return Effect.sync(() => {
       let deletedCount = 0;
       for (const [id, subscription] of this.subscriptions.entries()) {
@@ -111,7 +95,7 @@ export class InMemoryPushSubscriptionGateway implements IPushSubscriptionPort {
     });
   }
 
-  findAll(): Effect.Effect<PushSubscription[], DatabaseError, never> {
+  findAll() {
     return Effect.sync(() => {
       return Array.from(this.subscriptions.values());
     });

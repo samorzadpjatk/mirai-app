@@ -4,7 +4,8 @@ import type {
 } from "@mirai-app/frameworks/drizzle";
 import {
   ActivityFeed,
-  ActivityFeedId,
+  type ActivityFeedId,
+  ActivityFeedIdFactory,
   TripId,
   UserId,
   type ValidationError,
@@ -25,7 +26,7 @@ export class ActivityFeedMapper {
     dbActivity: ActivityFeedSelect,
   ): Effect.Effect<ActivityFeed, ValidationError, never> {
     return ActivityFeed.create({
-      id: ActivityFeedId.unsafeCreate(dbActivity.id),
+      id: ActivityFeedIdFactory.unsafeCreate(dbActivity.id),
       tripId: TripId.unsafeCreate(dbActivity.tripId),
       activityType: dbActivity.activityType as ActivityType,
       title: dbActivity.title,
@@ -51,7 +52,7 @@ export class ActivityFeedMapper {
    */
   toInsert(activity: ActivityFeed): ActivityFeedInsert {
     return {
-      id: ActivityFeedId.toString(activity.id),
+      id: ActivityFeedIdFactory.toString(activity.id),
       tripId: TripId.toString(activity.tripId),
       activityType: activity.activityType,
       title: activity.title,

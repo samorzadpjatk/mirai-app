@@ -20,7 +20,7 @@ export class RewardDrizzleGateway
     super(db);
   }
 
-  findById(id: RewardId): Effect.Effect<Reward | null, DatabaseError, never> {
+  findById(id: RewardId) {
     const idStr = RewardId.toString(id);
 
     return Effect.tryPromise({
@@ -43,21 +43,12 @@ export class RewardDrizzleGateway
         if (!dbReward) {
           return Effect.succeed(null);
         }
-        return rewardMapper.toDomain(dbReward).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "findById",
-                id: idStr,
-                cause: validationError,
-              }),
-          ),
-        );
+        return rewardMapper.toDomain(dbReward);
       }),
     );
   }
 
-  findByTripId(tripId: TripId): Effect.Effect<Reward[], DatabaseError, never> {
+  findByTripId(tripId: TripId) {
     const tripIdStr = TripId.toString(tripId);
 
     return Effect.tryPromise({
@@ -78,24 +69,13 @@ export class RewardDrizzleGateway
     }).pipe(
       Effect.flatMap((dbRewards: RewardSelect[]) =>
         Effect.forEach(dbRewards, (dbReward) =>
-          rewardMapper.toDomain(dbReward).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findByTripId",
-                  id: tripIdStr,
-                  cause: validationError,
-                }),
-            ),
-          ),
+          rewardMapper.toDomain(dbReward),
         ),
       ),
     );
   }
 
-  findAvailableByTripId(
-    tripId: TripId,
-  ): Effect.Effect<Reward[], DatabaseError, never> {
+  findAvailableByTripId(tripId: TripId) {
     const tripIdStr = TripId.toString(tripId);
 
     return Effect.tryPromise({
@@ -122,22 +102,13 @@ export class RewardDrizzleGateway
     }).pipe(
       Effect.flatMap((dbRewards: RewardSelect[]) =>
         Effect.forEach(dbRewards, (dbReward) =>
-          rewardMapper.toDomain(dbReward).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findAvailableByTripId",
-                  id: tripIdStr,
-                  cause: validationError,
-                }),
-            ),
-          ),
+          rewardMapper.toDomain(dbReward),
         ),
       ),
     );
   }
 
-  create(reward: Reward): Effect.Effect<Reward, DatabaseError, never> {
+  create(reward: Reward) {
     const insertData = rewardMapper.toInsert(reward);
     const idStr = RewardId.toString(reward.id);
 
@@ -158,21 +129,12 @@ export class RewardDrizzleGateway
         }),
     }).pipe(
       Effect.flatMap((dbReward: RewardSelect) =>
-        rewardMapper.toDomain(dbReward).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "create",
-                id: idStr,
-                cause: validationError,
-              }),
-          ),
-        ),
+        rewardMapper.toDomain(dbReward),
       ),
     );
   }
 
-  update(reward: Reward): Effect.Effect<Reward, DatabaseError, never> {
+  update(reward: Reward) {
     const updateData = rewardMapper.toUpdate(reward);
     const idStr = RewardId.toString(reward.id);
 
@@ -194,21 +156,12 @@ export class RewardDrizzleGateway
         }),
     }).pipe(
       Effect.flatMap((dbReward: RewardSelect) =>
-        rewardMapper.toDomain(dbReward).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "update",
-                id: idStr,
-                cause: validationError,
-              }),
-          ),
-        ),
+        rewardMapper.toDomain(dbReward),
       ),
     );
   }
 
-  delete(id: RewardId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: RewardId) {
     const idStr = RewardId.toString(id);
 
     return Effect.tryPromise({
@@ -224,7 +177,7 @@ export class RewardDrizzleGateway
     });
   }
 
-  exists(id: RewardId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: RewardId) {
     const idStr = RewardId.toString(id);
 
     return Effect.tryPromise({
@@ -247,11 +200,7 @@ export class RewardDrizzleGateway
   findPaginatedByTripId(
     tripId: TripId,
     params: { limit: number; offset: number },
-  ): Effect.Effect<
-    { rewards: Reward[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     const tripIdStr = TripId.toString(tripId);
 
     return Effect.tryPromise({
@@ -281,18 +230,7 @@ export class RewardDrizzleGateway
     }).pipe(
       Effect.flatMap(
         ({ items, total }: { items: RewardSelect[]; total: number }) =>
-          Effect.forEach(items, (item) =>
-            rewardMapper.toDomain(item).pipe(
-              Effect.mapError(
-                (validationError) =>
-                  new DatabaseError({
-                    operation: "findPaginatedByTripId",
-                    id: tripIdStr,
-                    cause: validationError,
-                  }),
-              ),
-            ),
-          ).pipe(
+          Effect.forEach(items, (item) => rewardMapper.toDomain(item)).pipe(
             Effect.map((domainRewards) => ({
               rewards: domainRewards,
               total,
@@ -303,14 +241,7 @@ export class RewardDrizzleGateway
     );
   }
 
-  findAllPaginated(params: {
-    limit: number;
-    offset: number;
-  }): Effect.Effect<
-    { rewards: Reward[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  findAllPaginated(params: { limit: number; offset: number }) {
     return Effect.tryPromise({
       try: async () => {
         const [items, totalResult] = await Promise.all([
@@ -333,17 +264,7 @@ export class RewardDrizzleGateway
     }).pipe(
       Effect.flatMap(
         ({ items, total }: { items: RewardSelect[]; total: number }) =>
-          Effect.forEach(items, (item) =>
-            rewardMapper.toDomain(item).pipe(
-              Effect.mapError(
-                (validationError) =>
-                  new DatabaseError({
-                    operation: "findAllPaginated",
-                    cause: validationError,
-                  }),
-              ),
-            ),
-          ).pipe(
+          Effect.forEach(items, (item) => rewardMapper.toDomain(item)).pipe(
             Effect.map((domainRewards) => ({
               rewards: domainRewards,
               total,
@@ -354,7 +275,7 @@ export class RewardDrizzleGateway
     );
   }
 
-  countByTripId(tripId: TripId): Effect.Effect<number, DatabaseError, never> {
+  countByTripId(tripId: TripId) {
     const tripIdStr = TripId.toString(tripId);
 
     return Effect.tryPromise({

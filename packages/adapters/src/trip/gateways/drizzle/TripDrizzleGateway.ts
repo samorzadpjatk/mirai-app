@@ -12,8 +12,7 @@ import {
   type TripInsuranceSelect,
   type TripInsuranceStepSelect,
 } from "@mirai-app/frameworks/drizzle";
-import { Trip, TripId, DatabaseError } from "@mirai-app/domain";
-import type { ITripPort } from "@mirai-app/use-cases";
+import { Trip, TripId, DatabaseError, type ITripPort } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { tripMapper } from "../../mappers/TripMapper";
 import { tripResourceMapper } from "../../mappers/TripResourceMapper";
@@ -72,7 +71,32 @@ export class TripDrizzleGateway
     super(db);
   }
 
-  findById(id: TripId): Effect.Effect<Trip | null, DatabaseError, never> {
+  /**
+   * Find active trips at a given date
+   *
+   * Returns trips where startDate <= atDate <= endDate
+   */
+  findActive(atDate: Date) {
+    return this.tryPromise("findActive", async () => {
+      const results = await this.db
+        .select()
+        .from(trips)
+        .where(
+          and(
+            sql`${trips.startDate} <= ${atDate.toISOString()}`,
+            sql`${trips.endDate} >= ${atDate.toISOString()}`,
+          ),
+        )
+        .orderBy(sql`${trips.startDate} DESC`);
+      return results;
+    }).pipe(
+      Effect.flatMap((dbTrips: TripSelect[]) =>
+        Effect.forEach(dbTrips, (dbTrip) => tripMapper.toDomain(dbTrip)),
+      ),
+    );
+  }
+
+  findById(id: TripId) {
     return this.tryPromise(
       "findById",
       async () => {
@@ -86,23 +110,12 @@ export class TripDrizzleGateway
       TripId.toString(id),
     ).pipe(
       Effect.flatMap((dbTrip: TripSelect | null) =>
-        dbTrip
-          ? tripMapper.toDomain(dbTrip).pipe(
-              Effect.mapError(
-                (validationError) =>
-                  new DatabaseError({
-                    operation: "findById",
-                    id: TripId.toString(id),
-                    cause: validationError,
-                  }),
-              ),
-            )
-          : Effect.succeed(null),
+        dbTrip ? tripMapper.toDomain(dbTrip) : Effect.succeed(null),
       ),
     );
   }
 
-  findByUserId(userId: string): Effect.Effect<Trip[], DatabaseError, never> {
+  findByUserId(userId: string) {
     return this.tryPromise(
       "findByUserId",
       async () => {
@@ -124,23 +137,12 @@ export class TripDrizzleGateway
       userId,
     ).pipe(
       Effect.flatMap((dbTrips: TripSelect[]) =>
-        Effect.forEach(dbTrips, (dbTrip) =>
-          tripMapper.toDomain(dbTrip).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findByUserId",
-                  id: userId,
-                  cause: validationError,
-                }),
-            ),
-          ),
-        ),
+        Effect.forEach(dbTrips, (dbTrip) => tripMapper.toDomain(dbTrip)),
       ),
     );
   }
 
-  findAll(): Effect.Effect<Trip[], DatabaseError, never> {
+  findAll() {
     return this.tryPromise("findAll", async () => {
       const results = await this.db
         .select()
@@ -149,30 +151,12 @@ export class TripDrizzleGateway
       return results;
     }).pipe(
       Effect.flatMap((dbTrips: TripSelect[]) =>
-        Effect.forEach(dbTrips, (dbTrip) =>
-          tripMapper.toDomain(dbTrip).pipe(
-            Effect.mapError(
-              (validationError) =>
-                new DatabaseError({
-                  operation: "findAll",
-                  cause: validationError,
-                }),
-            ),
-          ),
-        ),
+        Effect.forEach(dbTrips, (dbTrip) => tripMapper.toDomain(dbTrip)),
       ),
     );
   }
 
-  findPaginated(params: {
-    userId: string;
-    limit: number;
-    offset: number;
-  }): Effect.Effect<
-    { trips: Trip[]; total: number; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  findPaginated(params: { userId: string; limit: number; offset: number }) {
     return this.tryPromise(
       "findPaginated",
       async () => {
@@ -206,18 +190,7 @@ export class TripDrizzleGateway
     ).pipe(
       Effect.flatMap(
         ({ items, total }: { items: TripSelect[]; total: number }) =>
-          Effect.forEach(items, (item) =>
-            tripMapper.toDomain(item).pipe(
-              Effect.mapError(
-                (validationError) =>
-                  new DatabaseError({
-                    operation: "findPaginated",
-                    id: params.userId,
-                    cause: validationError,
-                  }),
-              ),
-            ),
-          ).pipe(
+          Effect.forEach(items, (item) => tripMapper.toDomain(item)).pipe(
             Effect.map((domainTrips) => ({
               trips: domainTrips,
               total,
@@ -228,7 +201,7 @@ export class TripDrizzleGateway
     );
   }
 
-  create(trip: Trip): Effect.Effect<Trip, DatabaseError, never> {
+  create(trip: Trip) {
     const insertData = tripMapper.toInsert(trip);
     return this.tryPromise(
       "create",
@@ -241,23 +214,10 @@ export class TripDrizzleGateway
         return result;
       },
       TripId.toString(trip.id),
-    ).pipe(
-      Effect.flatMap((dbTrip: TripSelect) =>
-        tripMapper.toDomain(dbTrip).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "create",
-                id: TripId.toString(trip.id),
-                cause: validationError,
-              }),
-          ),
-        ),
-      ),
-    );
+    ).pipe(Effect.flatMap((dbTrip: TripSelect) => tripMapper.toDomain(dbTrip)));
   }
 
-  update(trip: Trip): Effect.Effect<Trip, DatabaseError, never> {
+  update(trip: Trip) {
     const updateData = tripMapper.toUpdate(trip);
     return this.tryPromise(
       "update",
@@ -271,23 +231,10 @@ export class TripDrizzleGateway
         return result;
       },
       TripId.toString(trip.id),
-    ).pipe(
-      Effect.flatMap((dbTrip: TripSelect) =>
-        tripMapper.toDomain(dbTrip).pipe(
-          Effect.mapError(
-            (validationError) =>
-              new DatabaseError({
-                operation: "update",
-                id: TripId.toString(trip.id),
-                cause: validationError,
-              }),
-          ),
-        ),
-      ),
-    );
+    ).pipe(Effect.flatMap((dbTrip: TripSelect) => tripMapper.toDomain(dbTrip)));
   }
 
-  delete(id: TripId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: TripId) {
     return this.tryPromise(
       "delete",
       async () => {
@@ -297,7 +244,7 @@ export class TripDrizzleGateway
     );
   }
 
-  exists(id: TripId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: TripId) {
     return this.tryPromise(
       "exists",
       async () => {
@@ -311,10 +258,7 @@ export class TripDrizzleGateway
     );
   }
 
-  hasUserAccess(
-    tripId: string,
-    userId: string,
-  ): Effect.Effect<boolean, DatabaseError, never> {
+  hasUserAccess(tripId: string, userId: string) {
     return this.tryPromise(
       "hasUserAccess",
       async () => {
@@ -333,9 +277,7 @@ export class TripDrizzleGateway
     );
   }
 
-  findResourcesByTripId(
-    tripId: string,
-  ): Effect.Effect<TripResource[], DatabaseError, never> {
+  findResourcesByTripId(tripId: string) {
     return this.tryPromise(
       "findResourcesByTripId",
       async () => {
@@ -360,9 +302,7 @@ export class TripDrizzleGateway
    * Queries the tripInsurance table and associated tripInsuranceSteps
    * to build the complete TripInsurance DTO with nested steps.
    */
-  findInsuranceByTripId(
-    tripId: string,
-  ): Effect.Effect<TripInsurance | null, DatabaseError, never> {
+  findInsuranceByTripId(tripId: string) {
     return this.tryPromise(
       "findInsuranceByTripId",
       async () => {

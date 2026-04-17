@@ -6,8 +6,8 @@ import {
   TripId,
   UserId,
   type JoinRequestStatus,
-  ApplicationError,
 } from "@mirai-app/domain";
+import type { IPortError } from "@mirai-app/domain";
 import { Effect } from "effect";
 
 /**
@@ -21,7 +21,7 @@ export class GroupJoinRequestMapper {
    */
   toDomain(
     dbRequest: GroupJoinRequestSelect,
-  ): Effect.Effect<GroupJoinRequest, ApplicationError, never> {
+  ): Effect.Effect<GroupJoinRequest, IPortError, never> {
     return GroupJoinRequest.create({
       id: GroupJoinRequestId.unsafeCreate(dbRequest.id),
       groupId: GroupId.unsafeCreate(dbRequest.groupId),
@@ -31,16 +31,7 @@ export class GroupJoinRequestMapper {
       requestedAt: dbRequest.createdAt,
       decidedAt: null,
       decidedBy: null,
-    }).pipe(
-      Effect.mapError(
-        (error) =>
-          new ApplicationError({
-            operation: "toDomain",
-            id: dbRequest.id,
-            cause: error,
-          }),
-      ),
-    );
+    });
   }
 
   /**

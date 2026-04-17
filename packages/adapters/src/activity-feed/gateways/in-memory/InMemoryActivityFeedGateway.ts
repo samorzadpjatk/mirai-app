@@ -1,11 +1,12 @@
 import { Effect } from "effect";
 import {
   ActivityFeed,
-  ActivityFeedId,
+  type ActivityFeedId,
+  ActivityFeedIdFactory,
   TripId,
   DatabaseError,
 } from "@mirai-app/domain";
-import type { IActivityFeedPort } from "@mirai-app/use-cases";
+import type { IActivityFeedPort } from "@mirai-app/use-cases/activity-feed/ports";
 
 /**
  * In-Memory ActivityFeed Gateway
@@ -15,18 +16,14 @@ import type { IActivityFeedPort } from "@mirai-app/use-cases";
 export class InMemoryActivityFeedGateway implements IActivityFeedPort {
   private activities: Map<string, ActivityFeed> = new Map();
 
-  findById(
-    id: ActivityFeedId,
-  ): Effect.Effect<ActivityFeed | null, DatabaseError, never> {
+  findById(id: ActivityFeedId) {
     return Effect.sync(() => {
-      const activity = this.activities.get(ActivityFeedId.toString(id));
+      const activity = this.activities.get(ActivityFeedIdFactory.toString(id));
       return activity ?? null;
     });
   }
 
-  findByTripId(
-    tripId: TripId,
-  ): Effect.Effect<ActivityFeed[], DatabaseError, never> {
+  findByTripId(tripId: TripId) {
     return Effect.sync(() => {
       const tripIdStr = TripId.toString(tripId);
       return Array.from(this.activities.values())
@@ -48,11 +45,7 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
       cursor?: string | null;
       includeHidden?: boolean;
     },
-  ): Effect.Effect<
-    { activities: ActivityFeed[]; nextCursor: string | null; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     return Effect.sync(() => {
       const tripIdStr = TripId.toString(tripId);
       const limit = params.limit;
@@ -102,11 +95,7 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
       limit: number;
       cursor?: string | null;
     },
-  ): Effect.Effect<
-    { activities: ActivityFeed[]; nextCursor: string | null; hasMore: boolean },
-    DatabaseError,
-    never
-  > {
+  ) {
     return Effect.sync(() => {
       const tripIdStr = TripId.toString(tripId);
       const limit = params.limit;
@@ -140,36 +129,35 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
     });
   }
 
-  create(
-    activity: ActivityFeed,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
+  create(activity: ActivityFeed) {
     return Effect.sync(() => {
-      this.activities.set(ActivityFeedId.toString(activity.id), activity);
+      this.activities.set(
+        ActivityFeedIdFactory.toString(activity.id),
+        activity,
+      );
       return activity;
     });
   }
 
-  update(
-    activity: ActivityFeed,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
+  update(activity: ActivityFeed) {
     return Effect.sync(() => {
-      this.activities.set(ActivityFeedId.toString(activity.id), activity);
+      this.activities.set(
+        ActivityFeedIdFactory.toString(activity.id),
+        activity,
+      );
       return activity;
     });
   }
 
-  delete(id: ActivityFeedId): Effect.Effect<void, DatabaseError, never> {
+  delete(id: ActivityFeedId) {
     return Effect.sync(() => {
-      this.activities.delete(ActivityFeedId.toString(id));
+      this.activities.delete(ActivityFeedIdFactory.toString(id));
     });
   }
 
-  setPinned(
-    id: ActivityFeedId,
-    isPinned: boolean,
-  ): Effect.Effect<ActivityFeed, DatabaseError, never> {
+  setPinned(id: ActivityFeedId, isPinned: boolean) {
     return Effect.sync(() => {
-      const idStr = ActivityFeedId.toString(id);
+      const idStr = ActivityFeedIdFactory.toString(id);
       const activity = this.activities.get(idStr);
       if (!activity) {
         throw new Error(`Activity not found: ${idStr}`);
@@ -181,9 +169,9 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
     });
   }
 
-  exists(id: ActivityFeedId): Effect.Effect<boolean, DatabaseError, never> {
+  exists(id: ActivityFeedId) {
     return Effect.sync(() => {
-      return this.activities.has(ActivityFeedId.toString(id));
+      return this.activities.has(ActivityFeedIdFactory.toString(id));
     });
   }
 
@@ -191,7 +179,7 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
    * Helper method to add an activity (for testing)
    */
   addActivity(activity: ActivityFeed): void {
-    this.activities.set(ActivityFeedId.toString(activity.id), activity);
+    this.activities.set(ActivityFeedIdFactory.toString(activity.id), activity);
   }
 
   /**
