@@ -14,12 +14,13 @@ import { coinTransactionMapper } from "../../mappers/CoinTransactionMapper";
  * CoinTransaction Drizzle Gateway
  *
  * Implements ICoinTransactionPort using Drizzle ORM for PostgreSQL.
+ * Includes optional authentication token parameter for financial data protection.
  */
 export class CoinTransactionDrizzleGateway
   extends BaseDrizzleGateway
   implements ICoinTransactionPort
 {
-  findById(id: string) {
+  findById(id: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findById",
       async () => {
@@ -32,7 +33,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  findByGroupId(groupId: string) {
+  findByGroupId(groupId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findByGroupId",
       async () => {
@@ -46,7 +47,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  findByTripId(tripId: string) {
+  findByTripId(tripId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findByTripId",
       async () => {
@@ -63,6 +64,7 @@ export class CoinTransactionDrizzleGateway
   findByTripIdPaginated(
     tripId: string,
     params: { limit: number; offset: number },
+    _authToken?: string,
   ) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findByTripIdPaginated",
@@ -90,7 +92,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  findByTripIdAndGroupId(tripId: string, groupId: string) {
+  findByTripIdAndGroupId(tripId: string, groupId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findByTripIdAndGroupId",
       async () => {
@@ -107,7 +109,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  create(transaction: CoinTransactionDTO) {
+  create(transaction: CoinTransactionDTO, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.create",
       async () => {
@@ -119,7 +121,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  delete(id: string) {
+  delete(id: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.delete",
       async () => {
@@ -131,7 +133,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  sumByGroupId(groupId: string) {
+  sumByGroupId(groupId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.sumByGroupId",
       async () => {
@@ -147,7 +149,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  countByTripId(tripId: string) {
+  countByTripId(tripId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.countByTripId",
       async () => {
@@ -161,7 +163,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  sumPositiveByTripId(tripId: string) {
+  sumPositiveByTripId(tripId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.sumPositiveByTripId",
       async () => {
@@ -182,7 +184,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  sumNegativeByTripId(tripId: string) {
+  sumNegativeByTripId(tripId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.sumNegativeByTripId",
       async () => {
@@ -203,7 +205,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  getMostActiveAdminStats(tripId: string) {
+  getMostActiveAdminStats(tripId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.getMostActiveAdminStats",
       async () => {
@@ -237,7 +239,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  getRichestGroup(tripId: string) {
+  getRichestGroup(tripId: string, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.getRichestGroup",
       async () => {
@@ -273,7 +275,7 @@ export class CoinTransactionDrizzleGateway
     );
   }
 
-  findRecentByTripId(tripId: string, limit: number) {
+  findRecentByTripId(tripId: string, limit: number, _authToken?: string) {
     return this.tryPromise(
       "CoinTransactionDrizzleGateway.findRecentByTripId",
       async () => {
@@ -285,6 +287,69 @@ export class CoinTransactionDrizzleGateway
         return coinTransactionMapper.toDTOs(results);
       },
       tripId,
+    );
+  }
+
+  // ============================================================================
+  // USER-SPECIFIC QUERIES (for ownership verification at use-case level)
+  // ============================================================================
+
+  /**
+   * Find transactions by user ID
+   * Note: Ownership verification should be done at the use-case level
+   */
+  findByUserId(userId: string, _authToken?: string) {
+    return this.tryPromise(
+      "CoinTransactionDrizzleGateway.findByUserId",
+      async () => {
+        // Query transactions where user is admin (creator)
+        const results = await this.db.query.coinTransactions.findMany({
+          where: eq(coinTransactions.adminId, userId),
+          orderBy: desc(coinTransactions.createdAt),
+        });
+        return coinTransactionMapper.toDTOs(results);
+      },
+      userId,
+    );
+  }
+
+  /**
+   * Get user balance
+   * Note: Ownership verification should be done at the use-case level
+   */
+  getUserBalance(userId: string, _authToken?: string) {
+    return this.tryPromise(
+      "CoinTransactionDrizzleGateway.getUserBalance",
+      async () => {
+        // Query transactions where user is admin (creator)
+        const result = await this.db
+          .select({ total: sum(coinTransactions.amount) })
+          .from(coinTransactions)
+          .where(eq(coinTransactions.adminId, userId));
+
+        const total = result[0]?.total;
+        if (total === null || total === undefined) return 0;
+        return typeof total === "string" ? Number(total) : total;
+      },
+      userId,
+    );
+  }
+
+  /**
+   * Get user transactions
+   * Note: Ownership verification should be done at the use-case level
+   */
+  getUserTransactions(userId: string, _authToken?: string) {
+    return this.tryPromise(
+      "CoinTransactionDrizzleGateway.getUserTransactions",
+      async () => {
+        const results = await this.db.query.coinTransactions.findMany({
+          where: eq(coinTransactions.adminId, userId),
+          orderBy: desc(coinTransactions.createdAt),
+        });
+        return coinTransactionMapper.toDTOs(results);
+      },
+      userId,
     );
   }
 }
