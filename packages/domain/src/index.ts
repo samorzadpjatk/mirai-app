@@ -6,7 +6,6 @@ export * from "./shared/events";
 export type {
   IAuthPort,
   IStoragePort,
-  IRealtimePort,
   CreateSignedUploadUrlInput,
   CreateSignedUploadUrlResult,
   CreateSignedDownloadUrlInput,

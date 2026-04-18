@@ -130,24 +130,6 @@ export interface IStoragePort {
 }
 
 /**
- * Interface for realtime operations via Supabase Realtime
- */
-export interface IRealtimePort {
-  /** Subscribe to a channel */
-  subscribe(
-    channel: string,
-    callback: (payload: unknown) => void,
-  ): Effect.Effect<{ unsubscribe: () => void }, IPortError, never>;
-
-  /** Broadcast a message to a channel */
-  broadcast(
-    channel: string,
-    event: string,
-    payload: unknown,
-  ): Effect.Effect<void, IPortError, never>;
-}
-
-/**
  * Auth User Info returned from external auth service
  */
 export interface AuthUserInfo {
