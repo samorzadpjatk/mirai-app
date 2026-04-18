@@ -1,5 +1,5 @@
 import { Context } from "effect";
-import type { IAuthPort, IEventBusPort, IStoragePort, IRealtimePort } from "@mirai-app/domain";
+import type { IAuthPort, IEventBusPort, IStoragePort } from "@mirai-app/domain";
 
 /**
  * Auth Port Tag - Context Tag for Effect DI
@@ -21,17 +21,6 @@ export class AuthPortTag extends Context.Tag("AuthPort")<
 export class StoragePortTag extends Context.Tag("StoragePort")<
   StoragePortTag,
   IStoragePort
->() {}
-
-/**
- * Realtime Port Tag - Context Tag for Effect DI
- *
- * Use this tag to access the RealtimePort implementation in Effect workflows:
- *   const realtime = yield* RealtimePortTag;
- */
-export class RealtimePortTag extends Context.Tag("RealtimePort")<
-  RealtimePortTag,
-  IRealtimePort
 >() {}
 
 /**
