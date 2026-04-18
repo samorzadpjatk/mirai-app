@@ -128,11 +128,9 @@ export {
   makeServiceLayer,
   makeAuthLayer,
   makeStorageLayer,
-  makeRealtimeLayer,
   makePubSubLayer,
   AuthPortTag,
   StoragePortTag,
-  RealtimePortTag,
   PubSubServiceTag,
   type ServiceLayerConfig,
 } from "./di";
