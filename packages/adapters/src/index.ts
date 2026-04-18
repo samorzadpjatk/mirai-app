@@ -3,7 +3,6 @@
 // Service gateways (Supabase)
 export { SupabaseAuthGateway } from "./auth/gateways/supabase/SupabaseAuthGateway";
 export { SupabaseStorageGateway } from "./storage/gateways/supabase/SupabaseStorageGateway";
-export { SupabaseRealtimeGateway } from "./realtime/gateways/supabase/SupabaseRealtimeGateway";
 export { SupabaseRealtimeEventBusGateway } from "./shared/gateways/SupabaseRealtimeEventBusGateway";
 export { InProcessEventBusGateway } from "./shared/gateways/InProcessEventBusGateway";
 
