@@ -225,3 +225,9 @@ export interface IStoragePathResolverPort {
     storagePath: string,
   ): Effect.Effect<ResolvedStoragePath, never, never>;
 }
+
+// ThrottleService exports
+export {
+  makeThrottleService,
+  type Coordinates,
+} from "./ThrottleService";

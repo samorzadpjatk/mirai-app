@@ -1,8 +1,4 @@
 export * from "./entities/Trip";
+export * from "./entities/TripParticipant";
 export * from "./value-objects";
-export type {
-  ITripPort,
-  TripResource,
-  TripInsurance,
-  InsuranceStep,
-} from "./ports/TripPort";
+export type { ITripPort, ITripParticipantPort } from "./ports";

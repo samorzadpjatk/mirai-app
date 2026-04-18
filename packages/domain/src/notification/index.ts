@@ -7,3 +7,4 @@ export * from "./entities/NotificationDelivery";
 export * from "./entities/NotificationDeliveryStats";
 export * from "./value-objects";
 export * from "./ports";
+export * from "./events";

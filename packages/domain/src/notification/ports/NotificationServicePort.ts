@@ -1,6 +1,8 @@
 import type { Effect } from "effect";
 import type { IPortError } from "../../shared/errors/ports";
 import type { NotificationId } from "../value-objects/NotificationId";
+import type { IPushSubscriptionPort } from "./PushSubscriptionPort";
+import type { INotificationPort } from "./NotificationPort";
 
 /**
  * Notification result from sending a notification
