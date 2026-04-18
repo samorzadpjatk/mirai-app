@@ -1,256 +1,143 @@
 import { Effect } from "effect";
-import { type NotificationSchedule } from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import type {
+  INotificationSchedulePort,
+  NotificationSchedule,
+  NotificationScheduleListResult,
+} from "@mirai-app/domain";
 import { DatabaseError } from "@mirai-app/domain";
 
 /**
  * In-Memory Notification Schedule Gateway
  *
- * Implements NotificationSchedulePort using in-memory Map storage for testing.
- *
- * Note: This implements all methods from NotificationSchedulePort interface
- * but does not formally implement it due to Context.Tag properties.
+ * Implements INotificationSchedulePort for testing and development.
+ * Stores notification schedules in memory.
  */
-export class InMemoryNotificationScheduleGateway {
+export class InMemoryNotificationScheduleGateway
+  implements INotificationSchedulePort
+{
   private schedules: Map<string, NotificationSchedule> = new Map();
 
-  findAll(params: {
-    tripId?: string | null;
-    notificationType?: string;
-    isActive?: boolean;
-    startDateFrom?: Date;
-    startDateTo?: Date;
-    search?: string;
-    limit: number;
-    offset: number;
-  }) {
-    return Effect.sync(() => {
-      const {
-        tripId,
-        notificationType,
-        isActive,
-        startDateFrom,
-        startDateTo,
-        search,
-        limit,
-        offset,
-      } = params;
-
-      let filteredSchedules = Array.from(this.schedules.values());
-
-      // Apply filters
-      if (tripId !== undefined && tripId !== null) {
-        filteredSchedules = filteredSchedules.filter(
-          (s) => s.tripId === tripId,
-        );
-      }
-
-      if (notificationType) {
-        filteredSchedules = filteredSchedules.filter(
-          (s) => s.notificationType === notificationType,
-        );
-      }
-
-      if (isActive !== undefined) {
-        filteredSchedules = filteredSchedules.filter(
-          (s) => s.isActive === isActive,
-        );
-      }
-
-      if (startDateFrom) {
-        filteredSchedules = filteredSchedules.filter(
-          (s) => s.startDate >= startDateFrom,
-        );
-      }
-
-      if (startDateTo) {
-        filteredSchedules = filteredSchedules.filter(
-          (s) => s.startDate <= startDateTo,
-        );
-      }
-
-      if (search) {
-        const searchLower = search.toLowerCase();
-        filteredSchedules = filteredSchedules.filter(
-          (s) =>
-            s.name.toLowerCase().includes(searchLower) ||
-            s.notificationTitle.toLowerCase().includes(searchLower) ||
-            s.notificationBody.toLowerCase().includes(searchLower),
-        );
-      }
-
-      // Sort by createdAt desc
-      const sortedSchedules = filteredSchedules.sort(
-        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-      );
-
-      const total = sortedSchedules.length;
-      const paginatedSchedules = sortedSchedules.slice(offset, offset + limit);
-      const hasMore = offset + paginatedSchedules.length < total;
-
-      return {
-        schedules: paginatedSchedules,
-        total,
-        hasMore,
-      };
-    });
-  }
-
-  findActive() {
-    return Effect.sync(() => {
-      return Array.from(this.schedules.values())
-        .filter((s) => s.isActive && s.lastRun === null)
-        .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-    });
-  }
-
-  findUpcoming(days: number) {
-    return Effect.sync(() => {
-      const now = new Date();
-      const futureDate = new Date(now);
-      futureDate.setDate(futureDate.getDate() + days);
-
-      return Array.from(this.schedules.values())
-        .filter(
-          (s) =>
-            s.startDate >= now &&
-            s.startDate <= futureDate &&
-            s.lastRun === null &&
-            s.isActive,
-        )
-        .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-    });
-  }
-
   findById(id: string) {
-    return Effect.sync(() => {
+    return Effect.gen(() => {
       const schedule = this.schedules.get(id);
       return schedule ?? null;
     });
   }
 
-  findByTripIdAndName(tripId: string, name: string) {
-    return Effect.sync(() => {
-      const schedule = Array.from(this.schedules.values()).find(
-        (s) => s.tripId === tripId && s.name === name,
+  findAll(params: {
+    tripId?: string;
+    isActive?: boolean;
+    isTemplate?: boolean;
+    scheduleType?: string;
+    limit: number;
+    offset: number;
+  }) {
+    return Effect.gen(() => {
+      let results = Array.from(this.schedules.values());
+
+      if (params.tripId) {
+        results = results.filter((s) => s.tripId === params.tripId);
+      }
+
+      if (params.isActive !== undefined) {
+        results = results.filter((s) => s.isActive === params.isActive);
+      }
+
+      if (params.isTemplate !== undefined) {
+        results = results.filter((s) => s.isTemplate === params.isTemplate);
+      }
+
+      if (params.scheduleType) {
+        results = results.filter((s) => s.scheduleType === params.scheduleType);
+      }
+
+      const total = results.length;
+      const paginated = results.slice(
+        params.offset,
+        params.offset + params.limit,
       );
-      return schedule ?? null;
+
+      return {
+        schedules: paginated,
+        total,
+      };
+    });
+  }
+
+  findActiveSchedules(now: Date) {
+    return Effect.gen(() => {
+      const results = Array.from(this.schedules.values()).filter(
+        (s) => s.isActive && s.scheduledFor <= now,
+      );
+      return results;
+    });
+  }
+
+  findTemplates() {
+    return Effect.gen(() => {
+      const results = Array.from(this.schedules.values()).filter(
+        (s) => s.isTemplate,
+      );
+      return results;
     });
   }
 
   create(schedule: NotificationSchedule) {
-    return Effect.sync(() => {
+    return Effect.gen(() => {
       this.schedules.set(schedule.id, schedule);
       return schedule;
     });
   }
 
   update(schedule: NotificationSchedule) {
-    return Effect.sync(() => {
-      const existing = this.schedules.get(schedule.id);
-      if (!existing) {
-        throw new Error(`Notification schedule not found: ${schedule.id}`);
+    return Effect.gen(() => {
+      if (!this.schedules.has(schedule.id)) {
+        return null;
       }
-
-      const updatedSchedule: NotificationSchedule = {
-        ...schedule,
-        updatedAt: new Date(),
-      };
-
-      this.schedules.set(schedule.id, updatedSchedule);
-      return updatedSchedule;
+      this.schedules.set(schedule.id, schedule);
+      return schedule;
     });
   }
 
   delete(id: string) {
-    return Effect.sync(() => {
+    return Effect.gen(() => {
       this.schedules.delete(id);
     });
   }
 
-  deleteMany(ids: string[]) {
-    return Effect.sync(() => {
-      let count = 0;
-      for (const id of ids) {
-        if (this.schedules.delete(id)) {
-          count++;
-        }
-      }
-      return count;
-    });
-  }
-
-  toggleActive(id: string, isActive: boolean) {
-    return Effect.sync(() => {
+  updateLastRun(id: string, lastRunAt: Date, lastRunStatus: string) {
+    return Effect.gen(() => {
       const schedule = this.schedules.get(id);
       if (!schedule) {
-        throw new Error(`Notification schedule not found: ${id}`);
+        return null;
       }
-
-      const updatedSchedule: NotificationSchedule = {
+      const updated = {
         ...schedule,
-        isActive,
-        updatedAt: new Date(),
+        lastRunAt,
+        lastRunStatus,
+        runCount: (schedule.runCount ?? 0) + 1,
       };
-
-      this.schedules.set(id, updatedSchedule);
-      return updatedSchedule;
+      this.schedules.set(id, updated);
+      return updated;
     });
   }
 
-  toggleMany(ids: string[], isActive: boolean) {
-    return Effect.sync(() => {
-      let count = 0;
-      for (const id of ids) {
-        const schedule = this.schedules.get(id);
-        if (schedule) {
-          this.schedules.set(id, {
-            ...schedule,
-            isActive,
-            updatedAt: new Date(),
-          });
-          count++;
-        }
-      }
-      return count;
-    });
-  }
-
-  updateLastRun(id: string, lastRun: Date) {
-    return Effect.sync(() => {
+  duplicate(id: string, newId: string) {
+    return Effect.gen(() => {
       const schedule = this.schedules.get(id);
       if (!schedule) {
-        throw new Error(`Notification schedule not found: ${id}`);
+        return null;
       }
-
-      const updatedSchedule: NotificationSchedule = {
+      const duplicated = {
         ...schedule,
-        lastRun,
+        id: newId,
+        name: `${schedule.name} (Copy)`,
+        isTemplate: false,
+        createdAt: new Date(),
         updatedAt: new Date(),
       };
-
-      this.schedules.set(id, updatedSchedule);
-      return updatedSchedule;
+      this.schedules.set(newId, duplicated);
+      return duplicated;
     });
-  }
-
-  countExecutions(id: string) {
-    return Effect.sync(() => {
-      // In-memory implementation tracks executions in a separate map
-      // For simplicity, we check if the schedule has a lastRun set
-      const schedule = this.schedules.get(id);
-      if (!schedule) return 0;
-      return schedule.lastRun ? 1 : 0;
-    });
-  }
-
-  // Test helper methods
-  clear(): void {
-    this.schedules.clear();
-  }
-
-  seed(schedules: NotificationSchedule[]): void {
-    for (const schedule of schedules) {
-      this.schedules.set(schedule.id, schedule);
-    }
   }
 }
