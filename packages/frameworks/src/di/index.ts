@@ -110,6 +110,7 @@ export {
   AuthPortTag,
   StoragePortTag,
   RealtimePortTag,
+  EventBusTag,
 } from "@mirai-app/use-cases";
 
 export type { IAuthPort, IStoragePort, IRealtimePort } from "@mirai-app/domain";

@@ -5,11 +5,17 @@
  * that can be provided to Effect programs.
  */
 
-import { Layer } from "effect";
+import { Layer, Effect } from "effect";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
-import { makeRepositoryLayer, type RepositoryLayerConfig } from "./repository";
-import { makeServiceLayer, type ServiceLayerConfig } from "./service";
+import { NotificationServicePortTag } from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import {
+  NotificationPortTag,
+  PushSubscriptionPortTag,
+} from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import { NotificationServiceGateway } from "@mirai-app/adapters";
+import { makeRepositoryLayer } from "./repository";
+import { makeServiceLayer } from "./service";
 
 /**
  * Configuration for creating the complete App Layer
@@ -30,6 +36,8 @@ export interface AppLayerConfig {
  * - GroupPortTag
  * - ChallengePortTag
  * - And all other repository ports
+ * - EventBusTag (via service layer)
+ * - NotificationServicePortTag (requires repository ports)
  *
  * @example
  * ```typescript
@@ -45,7 +53,17 @@ export const makeAppLayer = (config: AppLayerConfig) => {
   const repoLayer = makeRepositoryLayer({ db: config.db });
   const serviceLayer = makeServiceLayer({ supabase: config.supabase });
 
-  return Layer.merge(repoLayer, serviceLayer);
+  // NotificationServiceGateway requires repository ports from repoLayer context
+  const notificationServiceLayer = Layer.effect(
+    NotificationServicePortTag,
+    Effect.gen(function* () {
+      const notificationPort = yield* NotificationPortTag;
+      const pushSubscriptionPort = yield* PushSubscriptionPortTag;
+      return new NotificationServiceGateway(notificationPort, pushSubscriptionPort);
+    }),
+  );
+
+  return Layer.mergeAll(repoLayer, serviceLayer, notificationServiceLayer);
 };
 
 /**

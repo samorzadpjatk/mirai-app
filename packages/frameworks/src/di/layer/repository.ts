@@ -20,6 +20,8 @@ import { ChallengeVotePortTag } from "@mirai-app/use-cases/challenge-vote/ports/
 import {
   NotificationPortTag,
   PushSubscriptionPortTag,
+  NotificationDeliveryPortTag,
+  NotificationSchedulePortTag,
 } from "@mirai-app/use-cases/notification/ports/NotificationPort";
 import {
   LocationPortTag,
@@ -56,6 +58,8 @@ import {
   ChallengeVoteDrizzleGateway,
   NotificationDrizzleGateway,
   PushSubscriptionDrizzleGateway,
+  NotificationDeliveryDrizzleGateway,
+  NotificationScheduleDrizzleGateway,
   LocationDrizzleGateway,
   ActivityFeedDrizzleGateway,
   ActivityReactionDrizzleGateway,
@@ -191,10 +195,14 @@ export const makeNotificationRepositoryLayer = (
 ) => {
   const notificationGateway = new NotificationDrizzleGateway(config.db);
   const pushSubscriptionGateway = new PushSubscriptionDrizzleGateway(config.db);
+  const notificationDeliveryGateway = new NotificationDeliveryDrizzleGateway(config.db);
+  const notificationScheduleGateway = new NotificationScheduleDrizzleGateway(config.db);
 
-  return Layer.merge(
+  return Layer.mergeAll(
     Layer.succeed(NotificationPortTag, notificationGateway),
     Layer.succeed(PushSubscriptionPortTag, pushSubscriptionGateway),
+    Layer.succeed(NotificationDeliveryPortTag, notificationDeliveryGateway),
+    Layer.succeed(NotificationSchedulePortTag, notificationScheduleGateway),
   );
 };
 

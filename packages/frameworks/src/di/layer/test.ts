@@ -14,11 +14,13 @@ import {
 } from "@mirai-app/use-cases/user/ports/UserPort";
 import {
   GroupPortTag,
-  type GroupUseCasePort,
+  type IGroupPort,
 } from "@mirai-app/use-cases/group/ports/GroupPort";
+import { EventBusTag } from "@mirai-app/use-cases";
 
 // In-memory implementations for testing
-import { InMemoryUserGateway, InMemoryGroupGateway } from "@mirai-app/adapters";
+import { InMemoryUserGateway, InMemoryGroupGateway, InProcessEventBusGateway } from "@mirai-app/adapters";
+import type { IEventBusPort } from "@mirai-app/domain";
 
 /**
  * Configuration for creating test layers
@@ -29,7 +31,9 @@ export interface TestLayerConfig {
   /** Optional custom user port implementation */
   userPort?: IUserPort;
   /** Optional custom group port implementation */
-  groupPort?: GroupUseCasePort;
+  groupPort?: IGroupPort;
+  /** Optional custom event bus implementation */
+  eventBus?: IEventBusPort;
 }
 
 /**
@@ -62,7 +66,11 @@ export const createTestLayer = (config: TestLayerConfig = {}) => {
     ? Layer.succeed(GroupPortTag, config.groupPort)
     : Layer.succeed(GroupPortTag, new InMemoryGroupGateway());
 
-  return Layer.merge(userLayer, groupLayer);
+  const eventBusLayer = config.eventBus
+    ? Layer.succeed(EventBusTag, config.eventBus)
+    : Layer.succeed(EventBusTag, new InProcessEventBusGateway());
+
+  return Layer.mergeAll(userLayer, groupLayer, eventBusLayer);
 };
 
 /**
@@ -76,12 +84,10 @@ export const createTestLayer = (config: TestLayerConfig = {}) => {
  * });
  * ```
  */
-export const mockLayerOf = <Tag extends Context.Tag<any, any>>(
-  tag: Tag,
-  implementation: Tag extends Context.Tag<infer _Self, infer Service>
-    ? Service
-    : never,
-) => {
+export const mockLayerOf = <Self, Service>(
+  tag: Context.Tag<Self, Service>,
+  implementation: Service,
+): Layer.Layer<Self> => {
   return Layer.succeed(tag, implementation);
 };
 
