@@ -98,7 +98,6 @@ export {
   makeServiceLayer,
   makeAuthLayer,
   makeStorageLayer,
-  makeRealtimeLayer,
   type ServiceLayerConfig,
 } from "./layer/service";
 
@@ -109,11 +108,10 @@ export {
 export {
   AuthPortTag,
   StoragePortTag,
-  RealtimePortTag,
   EventBusTag,
 } from "@mirai-app/use-cases";
 
-export type { IAuthPort, IStoragePort, IRealtimePort } from "@mirai-app/domain";
+export type { IAuthPort, IStoragePort } from "@mirai-app/domain";
 
 // =============================================================================
 // Test Utilities - Mock layers and test helpers

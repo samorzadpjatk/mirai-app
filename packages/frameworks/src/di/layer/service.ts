@@ -11,13 +11,11 @@ import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import {
   AuthPortTag,
   StoragePortTag,
-  RealtimePortTag,
   EventBusTag,
 } from "@mirai-app/use-cases";
 import {
   SupabaseAuthGateway,
   SupabaseStorageGateway,
-  SupabaseRealtimeGateway,
   SupabaseRealtimeEventBusGateway,
 } from "@mirai-app/adapters";
 
@@ -35,7 +33,6 @@ export interface ServiceLayerConfig {
  * Provides:
  * - AuthPortTag - Authentication operations
  * - StoragePortTag - File storage operations
- * - RealtimePortTag - Realtime subscription operations
  * - EventBusTag - Event bus for notifications
  *
  * Note: NotificationServicePortTag is created separately in makeAppLayer
@@ -60,10 +57,6 @@ export const makeServiceLayer = (config: ServiceLayerConfig) => {
     StoragePortTag,
     new SupabaseStorageGateway(config.supabase),
   );
-  const realtimeLayer = Layer.succeed(
-    RealtimePortTag,
-    new SupabaseRealtimeGateway(config.supabase),
-  );
   const eventBusLayer = Layer.succeed(
     EventBusTag,
     new SupabaseRealtimeEventBusGateway(config.supabase),
@@ -72,7 +65,6 @@ export const makeServiceLayer = (config: ServiceLayerConfig) => {
   return Layer.mergeAll(
     authLayer,
     storageLayer,
-    realtimeLayer,
     eventBusLayer,
   );
 };
@@ -91,9 +83,4 @@ export const makeStorageLayer = (supabase: SupabaseClient) => {
   return Layer.succeed(StoragePortTag, new SupabaseStorageGateway(supabase));
 };
 
-/**
- * Creates only the Realtime service Layer.
- */
-export const makeRealtimeLayer = (supabase: SupabaseClient) => {
-  return Layer.succeed(RealtimePortTag, new SupabaseRealtimeGateway(supabase));
-};
+
