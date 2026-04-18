@@ -1,27 +1,18 @@
 import type { Effect } from "effect";
 import type { IPortError } from "../../shared/errors/ports";
-import type { TripId } from "../../trip/value-objects/TripId";
-import type { UserId } from "../value-objects/UserId";
-
-/**
- * TripParticipant entity interface
- * Represents a user's participation in a trip
- */
-export interface TripParticipant {
-  id: string;
-  userId: UserId;
-  tripId: TripId;
-  wristNumber: string | null;
-  groupId: string | null;
-  joinedAt: Date;
-  updatedAt: Date;
-}
+import type { TripParticipant } from "../entities/TripParticipant";
+import type { TripParticipantId } from "../value-objects/TripParticipantId";
+import type { TripId } from "../value-objects/TripId";
+import type { UserId } from "../../user/value-objects/UserId";
 
 /**
  * TripParticipant Port
  * Defines repository operations for trip participants
  */
 export interface ITripParticipantPort {
+  findById(
+    id: TripParticipantId,
+  ): Effect.Effect<TripParticipant | null, IPortError, never>;
   findByUserAndTrip(
     userId: UserId,
     tripId: TripId,
@@ -32,16 +23,13 @@ export interface ITripParticipantPort {
   findByUserId(
     userId: UserId,
   ): Effect.Effect<TripParticipant[], IPortError, never>;
-  findById(
-    id: string,
-  ): Effect.Effect<TripParticipant | null, IPortError, never>;
-  upsert(
+  create(
     participant: TripParticipant,
   ): Effect.Effect<TripParticipant, IPortError, never>;
   update(
     participant: TripParticipant,
   ): Effect.Effect<TripParticipant, IPortError, never>;
-  delete(id: string): Effect.Effect<void, IPortError, never>;
+  delete(id: TripParticipantId): Effect.Effect<void, IPortError, never>;
   countByTripId(tripId: TripId): Effect.Effect<number, IPortError, never>;
   isParticipant(
     userId: UserId,
