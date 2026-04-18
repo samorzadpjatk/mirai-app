@@ -143,4 +143,12 @@ export interface ILocationPort {
     locationOwnerId: UserId,
     userIds: UserId[],
   ): Effect.Effect<void, IPortError, never>;
+
+  /**
+   * Get the list of users that a location owner is sharing with
+   * Returns the userIds of users who should receive location updates from the owner
+   */
+  getSharingListForUser(
+    locationOwnerId: UserId,
+  ): Effect.Effect<UserId[], IPortError, never>;
 }
