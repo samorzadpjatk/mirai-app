@@ -35,16 +35,6 @@ export interface LocationWithUserDTO extends LocationDTO {
 }
 
 /**
- * DTO for friend location update event
- */
-export interface FriendLocationEventDTO {
-  id: string;
-  type: "upsert" | "delete";
-  location: LocationWithUserDTO | null;
-  userId: UserId | null;
-}
-
-/**
  * DTO for location sharing settings
  */
 export interface LocationSharingSettingsDTO {

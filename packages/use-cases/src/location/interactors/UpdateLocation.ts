@@ -1,9 +1,17 @@
 import { Effect } from "effect";
-import { Location, LocationId, ValidationError } from "@mirai-app/domain";
+import {
+  Location,
+  LocationId,
+  ValidationError,
+  LocationUpdated,
+  type Coordinates,
+} from "@mirai-app/domain";
 import { UserId, TripId } from "@mirai-app/domain";
 import { LocationPort } from "../ports/LocationPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { EventBusTag } from "../../shared/ports/EventBusPort";
+import { ThrottleServiceTag } from "../ports/ThrottleServicePort";
 import type { LocationUpdateResultDTO } from "../dto/LocationDTOs";
 import type { ApplicationError } from "@mirai-app/domain";
 import {
@@ -30,22 +38,15 @@ export interface UpdateLocationInput {
  * Update Location Use Case
  *
  * Updates the current user's location. Validates the user is in an active trip.
+ * After saving, publishes LocationUpdated event to EventBus with throttling.
  */
 export class UpdateLocationUseCase {
-  execute(
-    input: UpdateLocationInput,
-  ): Effect.Effect<
-    LocationUpdateResultDTO,
-    | ApplicationError
-    | NotTripParticipantError
-    | TripHasEndedError
-    | ValidationError,
-    LocationPort | TripPortTag | TripParticipantPort
-  > {
+  execute(input: UpdateLocationInput) {
     return Effect.gen(function* () {
       const locationPort = yield* LocationPort;
       const tripPort = yield* TripPortTag;
       const participantPort = yield* TripParticipantPort;
+      const eventBus = yield* EventBusTag;
 
       // Check if user is in an active trip
       const participants = yield* participantPort.findByUserId(input.userId);
@@ -145,6 +146,49 @@ export class UpdateLocationUseCase {
         location = yield* createEffect;
         location = yield* locationPort.create(location);
       }
+
+      // Fire-and-forget event publishing after successful save
+      // This runs in background and doesn't block the response
+      const publishEvent = Effect.gen(function* () {
+        // Get throttle service from DI context
+        const throttleService = yield* ThrottleServiceTag;
+
+        // Query sharing list: get users who should receive this location update
+        // This is the list of users that the location owner is sharing with
+        const sharingList = yield* locationPort.getSharingListForUser(userId);
+
+        // Check throttle before publishing
+        const shouldPublish = yield* throttleService.shouldPublish(userId, {
+          lat: input.latitude,
+          lng: input.longitude,
+        });
+
+        if (shouldPublish) {
+          const eventId = crypto.randomUUID();
+          const event = new LocationUpdated(
+            eventId,
+            userId,
+            input.latitude,
+            input.longitude,
+            input.accuracy ?? null,
+            location.timestamp,
+            sharingList,
+          );
+
+          yield* eventBus.publish(event);
+        }
+      }).pipe(
+        // Error isolation: publish failures don't block response
+        Effect.catchAll((error) =>
+          Effect.logError("Failed to publish location update event").pipe(
+            Effect.annotateLogs({ error })
+          )
+        ),
+        Effect.forkDaemon,
+      );
+
+      // Start publish in background (fire-and-forget)
+      yield* publishEvent;
 
       return {
         success: true,

@@ -15,10 +15,6 @@ export { RequestLocationSharingUseCase } from "./RequestLocationSharing";
 export { AcceptLocationSharingRequestUseCase } from "./AcceptLocationSharingRequest";
 export { RejectLocationSharingRequestUseCase } from "./RejectLocationSharingRequest";
 
-// Streaming Use Cases
-export { UpdateLocationStreamUseCase } from "./UpdateLocationStream";
-export { GetFriendsLocationsStreamUseCase } from "./GetFriendsLocationsStream";
-
 // Input types
 export type { UpdateLocationInput } from "./UpdateLocation";
 export type { UpdateSharingSettingsInput } from "./UpdateSharingSettings";
@@ -33,5 +29,3 @@ export type { AcceptLocationSharingRequestInput } from "./AcceptLocationSharingR
 export type { RejectLocationSharingRequestInput } from "./RejectLocationSharingRequest";
 export type { GetPendingLocationSharingRequestsInput } from "./GetPendingLocationSharingRequests";
 export type { GetMyLocationSharingRequestsInput } from "./GetMyLocationSharingRequests";
-export type { UpdateLocationStreamInput } from "./UpdateLocationStream";
-export type { GetFriendsLocationsStreamInput } from "./GetFriendsLocationsStream";

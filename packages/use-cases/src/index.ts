@@ -15,4 +15,4 @@ export * as trip from "./trip";
 export * as user from "./user";
 
 // Export shared service ports
-export { AuthPortTag, StoragePortTag, RealtimePortTag } from "./shared/ports";
+export { AuthPortTag, StoragePortTag, RealtimePortTag, EventBusTag } from "./shared/ports";
