@@ -6,7 +6,20 @@ import type {
   INotificationScheduleExecutionPort,
   INotificationDeliveryPort,
   INotificationServicePort,
+  Notification,
+  NotificationPush,
+  PushSubscription,
+  NotificationDelivery,
+  NotificationDeliveryStats,
+  NotificationSchedule,
+  NotificationScheduleExecution,
 } from "@mirai-app/domain";
+
+// Re-export types for consumers
+export type { INotificationPort, Notification, NotificationPush };
+export type { IPushSubscriptionPort, PushSubscription };
+export type { NotificationDelivery, NotificationDeliveryStats };
+export type { NotificationSchedule, NotificationScheduleExecution };
 
 /**
  * Notification Port - Context.Tag for Effect DI

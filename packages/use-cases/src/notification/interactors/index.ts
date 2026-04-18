@@ -130,3 +130,6 @@ export type { TrackDeliveryCompleteInput } from "./sender/TrackDeliveryComplete"
 
 export { TrackDeliveryFailureUseCase } from "./sender/TrackDeliveryFailure";
 export type { TrackDeliveryFailureInput } from "./sender/TrackDeliveryFailure";
+
+// Event handlers
+export { NotificationSendHandler } from "../handlers/NotificationSendHandler";
