@@ -1,4 +1,4 @@
-import type { CoinTransactionSelect } from "@mirai-app/frameworks/drizzle";
+import type { CoinTransactionSelect } from "../../infrastructure/drizzle";
 import type { CoinTransaction } from "@mirai-app/use-cases/coin/ports/CoinTransactionPort";
 
 /**

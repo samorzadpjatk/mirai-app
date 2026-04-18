@@ -8,16 +8,17 @@ import type { TripId } from "../../trip/value-objects/TripId";
  * Reward Repository Port
  *
  * Defines the interface for reward persistence operations.
+ * AuthContext is used for authorization instead of token parameters.
+ *
+ * Note: Methods may require AuthContextTag and AuthZPortTag in the Effect context
+ * for authorization checks. Use Effect.provide() to supply these dependencies.
  */
 export interface IRewardPort {
   /**
    * Find reward by ID
-   * @param authToken - Optional auth token for access verification (participants can view)
+   * Authorization via AuthContext (participants can view)
    */
-  findById(
-    id: RewardId,
-    authToken?: string,
-  ): Effect.Effect<Reward | null, IPortError, never>;
+  findById(id: RewardId): Effect.Effect<Reward | null, IPortError, unknown>;
 
   /**
    * Find rewards by trip
@@ -57,32 +58,25 @@ export interface IRewardPort {
 
   /**
    * Create new reward
-   * @param authToken - Optional auth token for access verification (organizers only)
+   * Authorization via AuthContext (organizers only)
    */
-  create(
-    reward: Reward,
-    authToken?: string,
-  ): Effect.Effect<Reward, IPortError, never>;
+  create(reward: Reward): Effect.Effect<Reward, IPortError, unknown>;
 
   /**
    * Update existing reward
-   * @param authToken - Optional auth token for access verification (organizers only)
+   * Authorization via AuthContext (organizers only)
    */
-  update(
-    reward: Reward,
-    authToken?: string,
-  ): Effect.Effect<Reward, IPortError, never>;
+  update(reward: Reward): Effect.Effect<Reward, IPortError, unknown>;
 
   /**
    * Delete reward by ID
    * @param tripId - Trip ID for auth verification
-   * @param authToken - Optional auth token for access verification (organizers only)
+   * Authorization via AuthContext (organizers only)
    */
   delete(
     id: RewardId,
     tripId: TripId,
-    authToken?: string,
-  ): Effect.Effect<void, IPortError, never>;
+  ): Effect.Effect<void, IPortError, unknown>;
 
   /**
    * Check if reward exists

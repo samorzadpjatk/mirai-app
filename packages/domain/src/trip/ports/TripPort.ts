@@ -51,11 +51,9 @@ export interface TripInsurance {
 export interface ITripPort {
   /**
    * Find trip by ID
-   * @param authToken - Optional auth token for access verification
    */
   findById(
     id: TripId,
-    authToken?: string,
   ): Effect.Effect<Trip | null, IPortError, never>;
 
   /**
@@ -88,21 +86,18 @@ export interface ITripPort {
 
   /**
    * Create new trip
-   * @param authToken - Optional auth token for access verification
    */
-  create(trip: Trip, authToken?: string): Effect.Effect<Trip, IPortError, never>;
+  create(trip: Trip): Effect.Effect<Trip, IPortError, never>;
 
   /**
    * Update existing trip
-   * @param authToken - Optional auth token for access verification
    */
-  update(trip: Trip, authToken?: string): Effect.Effect<Trip, IPortError, never>;
+  update(trip: Trip): Effect.Effect<Trip, IPortError, never>;
 
   /**
    * Delete trip by ID
-   * @param authToken - Optional auth token for access verification
    */
-  delete(id: TripId, authToken?: string): Effect.Effect<void, IPortError, never>;
+  delete(id: TripId): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if trip exists

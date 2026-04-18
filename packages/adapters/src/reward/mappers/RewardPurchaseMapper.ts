@@ -1,7 +1,7 @@
 import type {
   RewardPurchaseSelect,
   RewardPurchaseInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import {
   RewardPurchase,
   RewardPurchaseId,

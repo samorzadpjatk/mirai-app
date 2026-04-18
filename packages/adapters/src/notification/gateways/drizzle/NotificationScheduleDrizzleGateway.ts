@@ -11,12 +11,12 @@ import {
   sql,
   inArray,
 } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   notificationSchedules,
   notificationScheduleExecutions,
   type NotificationScheduleSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import type { NotificationSchedule } from "@mirai-app/use-cases/notification/ports/NotificationPort";
 import { DatabaseError } from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";

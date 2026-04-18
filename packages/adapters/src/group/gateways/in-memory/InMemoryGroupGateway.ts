@@ -16,8 +16,9 @@ import type { IGroupPort } from "@mirai-app/domain";
 export class InMemoryGroupGateway implements IGroupPort {
   private groups: Map<string, Group> = new Map();
 
-  findById(id: string) {
-    return Effect.succeed(this.groups.get(id) ?? null);
+  findById(id: GroupId) {
+    const idStr = GroupId.toString(id);
+    return Effect.succeed(this.groups.get(idStr) ?? null);
   }
 
   findByCode(code: string) {
@@ -27,9 +28,10 @@ export class InMemoryGroupGateway implements IGroupPort {
     return Effect.succeed(result ?? null);
   }
 
-  findByTripId(tripId: string) {
+  findByTripId(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
     const result = Array.from(this.groups.values()).filter(
-      (g) => TripId.toString(g.tripId) === tripId && !g.isDeleted,
+      (g) => TripId.toString(g.tripId) === tripIdStr && !g.isDeleted,
     );
     return Effect.succeed(result);
   }
@@ -67,38 +69,43 @@ export class InMemoryGroupGateway implements IGroupPort {
     return Effect.succeed(group);
   }
 
-  delete(id: string) {
-    this.groups.delete(id);
+  delete(id: GroupId) {
+    const idStr = GroupId.toString(id);
+    this.groups.delete(idStr);
     return Effect.succeed(undefined);
   }
 
-  softDelete(id: string) {
-    const group = this.groups.get(id);
+  softDelete(id: GroupId) {
+    const idStr = GroupId.toString(id);
+    const group = this.groups.get(idStr);
     if (group) {
-      this.groups.set(id, group.softDelete());
+      this.groups.set(idStr, group.softDelete());
     }
     return Effect.succeed(undefined);
   }
 
-  exists(id: string) {
-    const group = this.groups.get(id);
+  exists(id: GroupId) {
+    const idStr = GroupId.toString(id);
+    const group = this.groups.get(idStr);
     return Effect.succeed(group != null && !group.isDeleted);
   }
 
-  countByTripId(tripId: string) {
+  countByTripId(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
     const count = Array.from(this.groups.values()).filter(
-      (g) => TripId.toString(g.tripId) === tripId && !g.isDeleted,
+      (g) => TripId.toString(g.tripId) === tripIdStr && !g.isDeleted,
     ).length;
     return Effect.succeed(count);
   }
 
-  addCoins(groupId: string, amount: number) {
-    const group = this.groups.get(groupId);
+  addCoins(groupId: GroupId, amount: number) {
+    const groupIdStr = GroupId.toString(groupId);
+    const group = this.groups.get(groupIdStr);
     if (!group) {
       return Effect.fail(
         new DatabaseError({
           operation: "addCoins",
-          id: groupId,
+          id: groupIdStr,
           cause: new Error("Group not found"),
         }),
       );
@@ -106,18 +113,19 @@ export class InMemoryGroupGateway implements IGroupPort {
 
     return Effect.gen(this, function* () {
       const updated = yield* group.addCoins(amount);
-      this.groups.set(groupId, updated);
+      this.groups.set(groupIdStr, updated);
       return updated;
     });
   }
 
-  subtractCoins(groupId: string, amount: number) {
-    const group = this.groups.get(groupId);
+  subtractCoins(groupId: GroupId, amount: number) {
+    const groupIdStr = GroupId.toString(groupId);
+    const group = this.groups.get(groupIdStr);
     if (!group) {
       return Effect.fail(
         new DatabaseError({
           operation: "subtractCoins",
-          id: groupId,
+          id: groupIdStr,
           cause: new Error("Group not found"),
         }),
       );
@@ -125,14 +133,15 @@ export class InMemoryGroupGateway implements IGroupPort {
 
     return Effect.gen(this, function* () {
       const updated = yield* group.subtractCoins(amount);
-      this.groups.set(groupId, updated);
+      this.groups.set(groupIdStr, updated);
       return updated;
     });
   }
 
-  getRanking(tripId: string) {
+  getRanking(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
     const result = Array.from(this.groups.values())
-      .filter((g) => TripId.toString(g.tripId) === tripId && !g.isDeleted)
+      .filter((g) => TripId.toString(g.tripId) === tripIdStr && !g.isDeleted)
       .sort((a, b) => b.coins - a.coins);
     return Effect.succeed(result);
   }

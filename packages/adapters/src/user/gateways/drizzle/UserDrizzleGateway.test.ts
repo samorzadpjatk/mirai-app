@@ -2,8 +2,7 @@
  * UserDrizzleGateway Tests
  *
  * Tests for the Drizzle ORM implementation of IUserPort.
- * Uses Either pattern with Effect.either, Either.isLeft/isRight, and instanceof
- * for type-safe error verification.
+ * Uses AuthContext pattern with Effect.gen and Layer.provide for auth dependencies.
  *
  * ## Test Tagging
  *
@@ -12,9 +11,47 @@
  */
 
 import { describe, it, expect, beforeEach } from "bun:test";
-import { Effect, Either } from "effect";
+import { Effect, Either, Layer } from "effect";
 import { InMemoryUserGateway } from "../in-memory/InMemoryUserGateway";
 import { User, UserId, AuthUserId, DatabaseError } from "@mirai-app/domain";
+import { AuthContextTag, type AuthContext } from "../../../infrastructure/effect";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import type { IAuthZPort } from "@mirai-app/domain";
+
+// ============================================================================
+// Mock AuthContext Helper
+// ============================================================================
+
+/**
+ * Creates a mock AuthContext for testing
+ *
+ * @param overrides - Optional overrides for AuthContext properties
+ * @returns AuthContext with test data
+ */
+const createMockAuthContext = (overrides?: Partial<AuthContext>): AuthContext => ({
+  userId: overrides?.userId ?? "user-test",
+  role: overrides?.role ?? "USER",
+  tripRoles: overrides?.tripRoles ?? {},
+  isAuthenticated: overrides?.isAuthenticated ?? true,
+  accessToken: overrides?.accessToken ?? "mock-access-token",
+});
+
+/**
+ * Creates a mock IAuthZPort that always allows access
+ */
+const createMockAuthZPort = (): IAuthZPort => ({
+  verifyAccess: () => Effect.succeed(void 0),
+  checkRolePermission: () => Effect.succeed(true),
+});
+
+/**
+ * Creates a test layer with mocked AuthContext and AuthZPort
+ */
+const createTestLayer = (authContext?: AuthContext) =>
+  Layer.mergeAll(
+    Layer.succeed(AuthContextTag, authContext ?? createMockAuthContext()),
+    Layer.succeed(AuthZPortTag, createMockAuthZPort()),
+  );
 
 // Test data factory - creates User entities using the factory method
 const createTestUser = (
@@ -50,102 +87,82 @@ const createTestUser = (
 
 describe("[UNIT] InMemoryUserGateway", () => {
   let gateway: InMemoryUserGateway;
+  let testLayer: Layer.Layer<typeof AuthZPortTag | typeof AuthContextTag>;
 
   beforeEach(() => {
     gateway = new InMemoryUserGateway();
+    testLayer = createTestLayer();
   });
 
   describe("findById", () => {
     it("should return null when user not found", async () => {
       const userId = UserId.unsafeCreate("nonexistent-id");
-      const effect = gateway.findById(userId);
+      const effect = gateway.findById(userId).pipe(Effect.provide(testLayer));
 
-      const either = await Effect.runPromise(Effect.either(effect));
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toBeNull();
-      }
+      const result = await Effect.runPromise(effect);
+      expect(result).toBeNull();
     });
 
     it("should return user when found", async () => {
       const user = createTestUser("user-123");
-      await Effect.runPromise(gateway.create(user));
+      await Effect.runPromise(gateway.create(user).pipe(Effect.provide(testLayer)));
 
-      const effect = gateway.findById(user.id);
-      const either = await Effect.runPromise(Effect.either(effect));
+      const effect = gateway.findById(user.id).pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).not.toBeNull();
-        if (either.right) {
-          expect(either.right.id).toEqual(user.id);
-          expect(either.right.firstName).toBe("Test");
-        }
-      }
+      expect(result).not.toBeNull();
+      expect(result?.id).toEqual(user.id);
+      expect(result?.firstName).toBe("Test");
     });
   });
 
   describe("findByAuthUserId", () => {
     it("should return null when auth user not found", async () => {
-      const effect = gateway.findByAuthUserId("nonexistent-auth-id");
+      const effect = gateway.findByAuthUserId("nonexistent-auth-id").pipe(Effect.provide(testLayer));
 
-      const either = await Effect.runPromise(Effect.either(effect));
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toBeNull();
-      }
+      const result = await Effect.runPromise(effect);
+      expect(result).toBeNull();
     });
 
     it("should return user by auth ID when found", async () => {
       const user = createTestUser("user-456");
-      await Effect.runPromise(gateway.create(user));
+      await Effect.runPromise(gateway.create(user).pipe(Effect.provide(testLayer)));
 
       const effect = gateway.findByAuthUserId(
         AuthUserId.toString(user.authUserId),
-      );
-      const either = await Effect.runPromise(Effect.either(effect));
+      ).pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).not.toBeNull();
-        if (either.right) {
-          expect(either.right.id).toEqual(user.id);
-        }
-      }
+      expect(result).not.toBeNull();
+      expect(result?.id).toEqual(user.id);
     });
   });
 
   describe("findByTripId", () => {
     it("should return empty array when no users for trip", async () => {
-      const effect = gateway.findByTripId("trip-123");
+      const effect = gateway.findByTripId("trip-123").pipe(Effect.provide(testLayer));
 
-      const either = await Effect.runPromise(Effect.either(effect));
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toEqual([]);
-      }
+      const result = await Effect.runPromise(effect);
+      expect(result).toEqual([]);
     });
 
     it("should return users associated with trip", async () => {
       const user1 = createTestUser("user-1", { firstName: "Alice" });
       const user2 = createTestUser("user-2", { firstName: "Bob" });
 
-      await Effect.runPromise(gateway.create(user1));
-      await Effect.runPromise(gateway.create(user2));
+      await Effect.runPromise(gateway.create(user1).pipe(Effect.provide(testLayer)));
+      await Effect.runPromise(gateway.create(user2).pipe(Effect.provide(testLayer)));
       gateway.associateWithTrip(UserId.toString(user1.id), "trip-abc");
       gateway.associateWithTrip(UserId.toString(user2.id), "trip-abc");
 
-      const effect = gateway.findByTripId("trip-abc");
-      const either = await Effect.runPromise(Effect.either(effect));
+      const effect = gateway.findByTripId("trip-abc").pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toHaveLength(2);
-        expect(either.right.map((u) => u.firstName).sort()).toEqual([
-          "Alice",
-          "Bob",
-        ]);
-      }
+      expect(result).toHaveLength(2);
+      expect(result.map((u) => u.firstName).sort()).toEqual([
+        "Alice",
+        "Bob",
+      ]);
     });
   });
 
@@ -155,33 +172,27 @@ describe("[UNIT] InMemoryUserGateway", () => {
       const user2 = createTestUser("user-2");
       const user3 = createTestUser("user-3");
 
-      await Effect.runPromise(gateway.create(user1));
-      await Effect.runPromise(gateway.create(user2));
-      await Effect.runPromise(gateway.create(user3));
+      await Effect.runPromise(gateway.create(user1).pipe(Effect.provide(testLayer)));
+      await Effect.runPromise(gateway.create(user2).pipe(Effect.provide(testLayer)));
+      await Effect.runPromise(gateway.create(user3).pipe(Effect.provide(testLayer)));
 
-      const effect = gateway.findAllPaginated({ limit: 2, offset: 0 });
-      const either = await Effect.runPromise(Effect.either(effect));
+      const effect = gateway.findAllPaginated({ limit: 2, offset: 0 }).pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toHaveLength(2);
-      }
+      expect(result).toHaveLength(2);
     });
 
     it("should respect offset parameter", async () => {
       const user1 = createTestUser("user-1");
       const user2 = createTestUser("user-2");
 
-      await Effect.runPromise(gateway.create(user1));
-      await Effect.runPromise(gateway.create(user2));
+      await Effect.runPromise(gateway.create(user1).pipe(Effect.provide(testLayer)));
+      await Effect.runPromise(gateway.create(user2).pipe(Effect.provide(testLayer)));
 
-      const effect = gateway.findAllPaginated({ limit: 10, offset: 1 });
-      const either = await Effect.runPromise(Effect.either(effect));
+      const effect = gateway.findAllPaginated({ limit: 10, offset: 1 }).pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toHaveLength(1);
-      }
+      expect(result).toHaveLength(1);
     });
   });
 
@@ -192,15 +203,12 @@ describe("[UNIT] InMemoryUserGateway", () => {
         field: "name",
         limit: 10,
         offset: 0,
-      });
+      }).pipe(Effect.provide(testLayer));
 
-      const either = await Effect.runPromise(Effect.either(effect));
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right.users).toEqual([]);
-        expect(either.right.total).toBe(0);
-        expect(either.right.hasMore).toBe(false);
-      }
+      const result = await Effect.runPromise(effect);
+      expect(result.users).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(result.hasMore).toBe(false);
     });
 
     it("should search users by name", async () => {
@@ -213,8 +221,8 @@ describe("[UNIT] InMemoryUserGateway", () => {
         lastName: "Jones",
       });
 
-      await Effect.runPromise(gateway.create(user1));
-      await Effect.runPromise(gateway.create(user2));
+      await Effect.runPromise(gateway.create(user1).pipe(Effect.provide(testLayer)));
+      await Effect.runPromise(gateway.create(user2).pipe(Effect.provide(testLayer)));
       gateway.associateWithTrip("user-1", "trip-search");
       gateway.associateWithTrip("user-2", "trip-search");
 
@@ -224,34 +232,26 @@ describe("[UNIT] InMemoryUserGateway", () => {
         searchTerm: "Alice",
         limit: 10,
         offset: 0,
-      });
+      }).pipe(Effect.provide(testLayer));
 
-      const either = await Effect.runPromise(Effect.either(effect));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right.users).toHaveLength(1);
-        if (either.right.users[0]) {
-          expect(either.right.users[0].firstName).toBe("Alice");
-        }
-        expect(either.right.total).toBe(1);
-      }
+      expect(result.users).toHaveLength(1);
+      expect(result.users[0]?.firstName).toBe("Alice");
+      expect(result.total).toBe(1);
     });
   });
 
   describe("create", () => {
     it("should create and return user", async () => {
       const user = createTestUser("new-user");
-      const effect = gateway.create(user);
+      const effect = gateway.create(user).pipe(Effect.provide(testLayer));
 
-      const either = await Effect.runPromise(Effect.either(effect));
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right.id).toEqual(user.id);
-      }
+      const result = await Effect.runPromise(effect);
+      expect(result.id).toEqual(user.id);
 
       // Verify it was stored
-      const found = await Effect.runPromise(gateway.findById(user.id));
+      const found = await Effect.runPromise(gateway.findById(user.id).pipe(Effect.provide(testLayer)));
       expect(found).not.toBeNull();
     });
   });
@@ -259,22 +259,19 @@ describe("[UNIT] InMemoryUserGateway", () => {
   describe("update", () => {
     it("should update existing user", async () => {
       const user = createTestUser("update-user", { firstName: "Original" });
-      await Effect.runPromise(gateway.create(user));
+      await Effect.runPromise(gateway.create(user).pipe(Effect.provide(testLayer)));
 
       // Create updated version using withProfile method
       const updatedEffect = user.withProfile({ firstName: "Updated" });
       const updated = await Effect.runPromise(updatedEffect);
 
-      const effect = gateway.update(updated);
-      const either = await Effect.runPromise(Effect.either(effect));
+      const effect = gateway.update(updated).pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right.firstName).toBe("Updated");
-      }
+      expect(result.firstName).toBe("Updated");
 
       // Verify update persisted
-      const found = await Effect.runPromise(gateway.findById(user.id));
+      const found = await Effect.runPromise(gateway.findById(user.id).pipe(Effect.provide(testLayer)));
       expect(found?.firstName).toBe("Updated");
     });
   });
@@ -282,18 +279,17 @@ describe("[UNIT] InMemoryUserGateway", () => {
   describe("delete", () => {
     it("should delete user", async () => {
       const user = createTestUser("delete-user");
-      await Effect.runPromise(gateway.create(user));
+      await Effect.runPromise(gateway.create(user).pipe(Effect.provide(testLayer)));
 
       // Verify exists
-      let found = await Effect.runPromise(gateway.findById(user.id));
+      let found = await Effect.runPromise(gateway.findById(user.id).pipe(Effect.provide(testLayer)));
       expect(found).not.toBeNull();
 
-      const effect = gateway.delete(user.id);
-      const either = await Effect.runPromise(Effect.either(effect));
-      expect(Either.isRight(either)).toBe(true);
+      const effect = gateway.delete(user.id).pipe(Effect.provide(testLayer));
+      await Effect.runPromise(effect);
 
       // Verify deleted
-      found = await Effect.runPromise(gateway.findById(user.id));
+      found = await Effect.runPromise(gateway.findById(user.id).pipe(Effect.provide(testLayer)));
       expect(found).toBeNull();
     });
   });
@@ -301,62 +297,81 @@ describe("[UNIT] InMemoryUserGateway", () => {
   describe("exists", () => {
     it("should return false for non-existent user", async () => {
       const userId = UserId.unsafeCreate("nonexistent");
-      const effect = gateway.exists(userId);
+      const effect = gateway.exists(userId).pipe(Effect.provide(testLayer));
 
-      const either = await Effect.runPromise(Effect.either(effect));
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toBe(false);
-      }
+      const result = await Effect.runPromise(effect);
+      expect(result).toBe(false);
     });
 
     it("should return true for existing user", async () => {
       const user = createTestUser("existing-user");
-      await Effect.runPromise(gateway.create(user));
+      await Effect.runPromise(gateway.create(user).pipe(Effect.provide(testLayer)));
 
-      const effect = gateway.exists(user.id);
-      const either = await Effect.runPromise(Effect.either(effect));
+      const effect = gateway.exists(user.id).pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toBe(true);
-      }
+      expect(result).toBe(true);
     });
   });
 
   describe("count", () => {
     it("should return zero for empty gateway", async () => {
-      const effect = gateway.count();
-      const either = await Effect.runPromise(Effect.either(effect));
+      const effect = gateway.count().pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toBe(0);
-      }
+      expect(result).toBe(0);
     });
 
     it("should return correct count", async () => {
-      await Effect.runPromise(gateway.create(createTestUser("c1")));
-      await Effect.runPromise(gateway.create(createTestUser("c2")));
-      await Effect.runPromise(gateway.create(createTestUser("c3")));
+      await Effect.runPromise(gateway.create(createTestUser("c1")).pipe(Effect.provide(testLayer)));
+      await Effect.runPromise(gateway.create(createTestUser("c2")).pipe(Effect.provide(testLayer)));
+      await Effect.runPromise(gateway.create(createTestUser("c3")).pipe(Effect.provide(testLayer)));
 
-      const effect = gateway.count();
-      const either = await Effect.runPromise(Effect.either(effect));
+      const effect = gateway.count().pipe(Effect.provide(testLayer));
+      const result = await Effect.runPromise(effect);
 
-      expect(Either.isRight(either)).toBe(true);
-      if (Either.isRight(either)) {
-        expect(either.right).toBe(3);
-      }
+      expect(result).toBe(3);
+    });
+  });
+
+  describe("AuthContext pattern", () => {
+    it("should use AuthContext with Layer.provide", async () => {
+      // Create a custom auth context for testing
+      const customAuthContext = createMockAuthContext({
+        userId: "custom-user",
+        role: "ADMIN",
+        tripRoles: { "trip-123": "LEADER" },
+      });
+      const customLayer = createTestLayer(customAuthContext);
+
+      const user = createTestUser("auth-test-user");
+      const effect = gateway.create(user).pipe(Effect.provide(customLayer));
+
+      const result = await Effect.runPromise(effect);
+      expect(result.id).toEqual(user.id);
+    });
+
+    it("should work with unauthenticated context for public operations", async () => {
+      const unauthenticatedContext = createMockAuthContext({
+        userId: "",
+        role: "USER",
+        isAuthenticated: false,
+      });
+      const publicLayer = createTestLayer(unauthenticatedContext);
+
+      const user = createTestUser("public-test-user");
+      // For in-memory gateway, unauthenticated access should still work
+      const effect = gateway.create(user).pipe(Effect.provide(publicLayer));
+
+      const result = await Effect.runPromise(effect);
+      expect(result.id).toEqual(user.id);
     });
   });
 
   describe("Error handling with Either pattern", () => {
     it("should demonstrate Either.isLeft for error cases", async () => {
-      // This test demonstrates the Either.isLeft pattern
-      // In in-memory gateway, errors are rare, but this shows the pattern
-
       const user = createTestUser("error-test");
-      const effect = gateway.create(user);
+      const effect = gateway.create(user).pipe(Effect.provide(testLayer));
 
       // For success cases, isRight is true
       const either = await Effect.runPromise(Effect.either(effect));
@@ -375,7 +390,7 @@ describe("[UNIT] InMemoryUserGateway", () => {
 
     it("should use Either.match for handling both cases", async () => {
       const user = createTestUser("match-test");
-      const effect = gateway.create(user);
+      const effect = gateway.create(user).pipe(Effect.provide(testLayer));
 
       const message = await Effect.runPromise(
         Effect.gen(function* () {

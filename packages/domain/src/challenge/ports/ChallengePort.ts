@@ -8,19 +8,17 @@ import type { TripId } from "../../trip/value-objects/TripId";
  * Challenge Repository Port
  *
  * Defines the interface for challenge persistence operations.
- * Methods with auth support can accept an optional authToken.
- * The context type R will be inferred from the implementation.
+ * Auth verification uses AuthContextTag and AuthZPortTag in the Effect context.
+ *
+ * Note: Methods may require AuthContextTag and AuthZPortTag in the Effect context
+ * for authorization checks. Use Effect.provide() to supply these dependencies.
  */
 export interface IChallengePort {
   /**
    * Find challenge by ID
-   * @param id - Challenge ID
-   * @param authToken - Optional auth token for access verification
+   * Authorization via AuthContext (participants can view)
    */
-  findById(
-    id: ChallengeId,
-    authToken?: string,
-  ): Effect.Effect<Challenge | null, IPortError, never>;
+  findById(id: ChallengeId): Effect.Effect<Challenge | null, IPortError, unknown>;
 
   /**
    * Find challenges by trip
@@ -49,30 +47,21 @@ export interface IChallengePort {
 
   /**
    * Create new challenge
-   * @param challenge - Challenge to create
-   * @param authToken - Optional auth token for access verification
+   * Authorization via AuthContext (organizers only)
    */
-  create(
-    challenge: Challenge,
-    authToken?: string,
-  ): Effect.Effect<Challenge, IPortError, never>;
+  create(challenge: Challenge): Effect.Effect<Challenge, IPortError, unknown>;
 
   /**
    * Update existing challenge
-   * @param challenge - Challenge to update
-   * @param authToken - Optional auth token for access verification
+   * Authorization via AuthContext (organizers only)
    */
-  update(
-    challenge: Challenge,
-    authToken?: string,
-  ): Effect.Effect<Challenge, IPortError, never>;
+  update(challenge: Challenge): Effect.Effect<Challenge, IPortError, unknown>;
 
   /**
    * Delete challenge by ID
-   * @param id - Challenge ID
-   * @param authToken - Optional auth token for access verification
+   * Authorization via AuthContext (organizers only)
    */
-  delete(id: ChallengeId, authToken?: string): Effect.Effect<void, IPortError, never>;
+  delete(id: ChallengeId): Effect.Effect<void, IPortError, unknown>;
 
   /**
    * Check if challenge exists
@@ -87,10 +76,9 @@ export interface IChallengePort {
   /**
    * Activate visible challenges
    * @param tripId - Optional trip ID to limit activation to specific trip
-   * @param authToken - Optional auth token for access verification
+   * Authorization via AuthContext (organizers only)
    */
   activateVisibleChallenges(
     tripId?: TripId,
-    authToken?: string,
-  ): Effect.Effect<void, IPortError, never>;
+  ): Effect.Effect<void, IPortError, unknown>;
 }

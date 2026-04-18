@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { eq, and, inArray, desc } from "drizzle-orm";
-import { groupJoinRequests } from "@mirai-app/frameworks/drizzle";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import { groupJoinRequests } from "../../../infrastructure/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   GroupJoinRequest,
   GroupJoinRequestId,

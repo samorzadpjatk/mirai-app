@@ -38,8 +38,8 @@ export const ServerProgram = Effect.gen(function* () {
   // Register shutdown handlers before starting server
   yield* registerShutdownHandlers();
 
-  // Start the server with the app layer
-  yield* startServer({ port: config.port, appLayer });
+    // Start the server with the app layer, db, and supabase
+    yield* startServer({ port: config.port, appLayer, db, supabase });
 
   // Keep the program running
   yield* Effect.never;

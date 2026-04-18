@@ -1,7 +1,7 @@
 import type {
   NotificationSelect,
   NotificationInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import type {
   Notification,
   NotificationPush,

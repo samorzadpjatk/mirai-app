@@ -1,4 +1,4 @@
-import type { GroupJoinRequestSelect } from "@mirai-app/frameworks/drizzle";
+import type { GroupJoinRequestSelect } from "../../infrastructure/drizzle";
 import {
   GroupJoinRequest,
   GroupJoinRequestId,

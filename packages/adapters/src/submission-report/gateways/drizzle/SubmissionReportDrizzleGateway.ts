@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import { eq, and, count } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   submissionReports,
   users,
   type SubmissionReportSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import { SubmissionReportId, ChallengeSubmissionId } from "@mirai-app/domain";
 import type { submissionReport } from "@mirai-app/use-cases";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";

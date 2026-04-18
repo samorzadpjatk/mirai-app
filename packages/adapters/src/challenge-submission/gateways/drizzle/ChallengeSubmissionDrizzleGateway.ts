@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { eq, count, and } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   challengeSubmissions,
   type ChallengeSubmissionSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import { DatabaseError } from "@mirai-app/domain";
 import type {
   ChallengeSubmission,

@@ -5,7 +5,7 @@ import {
   locationSharingRequests,
   locationUsersShareWith,
   type DrizzleDb,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import {
   type Location,
   type LocationSharingRequest,

@@ -1,4 +1,4 @@
-import type { GroupSelect } from "@mirai-app/frameworks/drizzle";
+import type { GroupSelect } from "../../infrastructure/drizzle";
 import { Group, GroupId, TripId, UserId } from "@mirai-app/domain";
 import { Effect } from "effect";
 

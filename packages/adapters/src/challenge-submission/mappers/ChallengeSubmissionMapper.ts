@@ -1,4 +1,4 @@
-import type { ChallengeSubmissionSelect } from "@mirai-app/frameworks/drizzle";
+import type { ChallengeSubmissionSelect } from "../../infrastructure/drizzle";
 import type { ChallengeSubmission } from "@mirai-app/use-cases";
 
 /**

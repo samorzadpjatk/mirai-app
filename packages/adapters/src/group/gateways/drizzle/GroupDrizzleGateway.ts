@@ -1,37 +1,82 @@
-import { Effect } from "effect";
+import { Effect, Context } from "effect";
 import { eq, and, inArray, desc, sql, count } from "drizzle-orm";
-import { groups } from "@mirai-app/frameworks/drizzle";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { Group, GroupId, DatabaseError } from "@mirai-app/domain";
+import { groups } from "../../../infrastructure/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
+import {
+  Group,
+  GroupId,
+  TripId,
+  DatabaseError,
+  EntityNotFoundError,
+} from "@mirai-app/domain";
 import type { IGroupPort } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { groupMapper } from "../../mappers/GroupMapper";
 
 /**
  * Group Drizzle Gateway
  *
- * Implements GroupPort using Drizzle ORM for PostgreSQL.
+ * Implements IGroupPort using Drizzle ORM for PostgreSQL.
  *
- * Note: Auth verification is handled at the use case layer, not in the gateway.
- * The authToken parameter is passed through for compatibility with the interface
- * and for future use cases that may need to pass auth context to the database layer.
+ * Authorization Pattern:
+ * This gateway uses the AuthContext pattern for authorization. Protected methods
+ * access authentication context via `yield* AuthContextTag` and perform authorization
+ * checks via `yield* AuthZPortTag.verifyAccess()` before executing database operations.
+ *
+ * This approach provides:
+ * - Clean separation between authentication and authorization
+ * - Type-safe dependency injection through Effect context
+ * - No explicit authToken parameters in the interface
  */
 export class GroupDrizzleGateway
   extends BaseDrizzleGateway
   implements IGroupPort
 {
-  findById(id: GroupId, _authToken?: string) {
-    return this.tryPromise(
-      "GroupDrizzleGateway.findById",
-      async () => {
-        const result = await this.db.query.groups.findFirst({
-          where: eq(groups.id, GroupId.toString(id)),
+  findById(id: GroupId) {
+    const self = this;
+    const idStr = GroupId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext to check if authenticated
+      const authCtx = yield* AuthContextTag;
+
+      // First get the group from database
+      const dbGroup = yield* Effect.tryPromise({
+        try: async () => {
+          const result = await self.db.query.groups.findFirst({
+            where: eq(groups.id, idStr),
+          });
+          return result ?? null;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "findById",
+            id: idStr,
+            cause: error,
+          }),
+      });
+
+      // If authenticated and group exists, verify access
+      if (authCtx.isAuthenticated && dbGroup) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: dbGroup.tripId,
+          requiredPermission: "read",
         });
-        if (!result) return null;
-        return await Effect.runPromise(groupMapper.toDomain(result));
-      },
-      GroupId.toString(id),
-    );
+      }
+
+      if (!dbGroup) {
+        return null;
+      }
+
+      return yield* groupMapper.toDomain(dbGroup);
+    });
   }
 
   findByCode(code: string) {
@@ -48,12 +93,14 @@ export class GroupDrizzleGateway
     );
   }
 
-  findByTripId(tripId: string) {
+  findByTripId(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
+
     return this.tryPromise(
       "GroupDrizzleGateway.findByTripId",
       async () => {
         const results = await this.db.query.groups.findMany({
-          where: and(eq(groups.tripId, tripId), eq(groups.isDeleted, false)),
+          where: and(eq(groups.tripId, tripIdStr), eq(groups.isDeleted, false)),
           orderBy: desc(groups.createdAt),
         });
 
@@ -64,20 +111,25 @@ export class GroupDrizzleGateway
         }
         return domainGroups;
       },
-      tripId,
+      tripIdStr,
     );
   }
 
   findByTripIdPaginated(
-    tripId: string,
+    tripId: TripId,
     params: { limit: number; offset: number },
   ) {
+    const tripIdStr = TripId.toString(tripId);
+
     return this.tryPromise(
       "GroupDrizzleGateway.findByTripIdPaginated",
       async () => {
         const [results, totalResult] = await Promise.all([
           this.db.query.groups.findMany({
-            where: and(eq(groups.tripId, tripId), eq(groups.isDeleted, false)),
+            where: and(
+              eq(groups.tripId, tripIdStr),
+              eq(groups.isDeleted, false),
+            ),
             orderBy: desc(groups.createdAt),
             limit: params.limit,
             offset: params.offset,
@@ -85,7 +137,9 @@ export class GroupDrizzleGateway
           this.db
             .select({ count: count() })
             .from(groups)
-            .where(and(eq(groups.tripId, tripId), eq(groups.isDeleted, false)))
+            .where(
+              and(eq(groups.tripId, tripIdStr), eq(groups.isDeleted, false)),
+            )
             .then((r) => r[0]?.count ?? 0),
         ]);
 
@@ -100,7 +154,7 @@ export class GroupDrizzleGateway
 
         return { groups: domainGroups, total, hasMore };
       },
-      tripId,
+      tripIdStr,
     );
   }
 
@@ -127,54 +181,202 @@ export class GroupDrizzleGateway
     );
   }
 
-  create(group: Group, _authToken?: string) {
-    return this.tryPromise(
-      "GroupDrizzleGateway.create",
-      async () => {
-        const insertData = groupMapper.toInsert(group);
-        await this.db.insert(groups).values(insertData);
-        return group;
-      },
-      GroupId.toString(group.id),
-    );
+  create(group: Group) {
+    const insertData = groupMapper.toInsert(group);
+    const idStr = GroupId.toString(group.id);
+    const tripIdStr = TripId.toString(group.tripId);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await self.db.insert(groups).values(insertData);
+          return group;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "create",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    });
   }
 
-  update(group: Group, _authToken?: string) {
-    return this.tryPromise(
-      "GroupDrizzleGateway.update",
-      async () => {
-        const updateData = groupMapper.toUpdate(group);
-        await this.db
-          .update(groups)
-          .set({ ...updateData, updatedAt: new Date() })
-          .where(eq(groups.id, GroupId.toString(group.id)));
-        return group;
-      },
-      GroupId.toString(group.id),
-    );
+  update(group: Group) {
+    const updateData = groupMapper.toUpdate(group);
+    const idStr = GroupId.toString(group.id);
+    const tripIdStr = TripId.toString(group.tripId);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await self.db
+            .update(groups)
+            .set({ ...updateData, updatedAt: new Date() })
+            .where(eq(groups.id, idStr));
+          return group;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "update",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    });
   }
 
-  delete(id: GroupId, _authToken?: string) {
-    return this.tryPromise(
-      "GroupDrizzleGateway.delete",
-      async () => {
-        await this.db.delete(groups).where(eq(groups.id, GroupId.toString(id)));
-      },
-      GroupId.toString(id),
-    );
+  delete(id: GroupId) {
+    const idStr = GroupId.toString(id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // First get the group to determine the tripId
+      const dbGroup = yield* Effect.tryPromise({
+        try: async () => {
+          const result = await self.db.query.groups.findFirst({
+            where: eq(groups.id, idStr),
+          });
+          return result ?? null;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "delete",
+            id: idStr,
+            cause: error,
+          }),
+      });
+
+      // If group not found, fail with EntityNotFoundError
+      if (!dbGroup) {
+        return yield* Effect.fail(
+          new EntityNotFoundError({ entityType: "Group", identifier: idStr }),
+        );
+      }
+
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "group",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await self.db.delete(groups).where(eq(groups.id, idStr));
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "delete",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    });
   }
 
-  softDelete(id: GroupId, _authToken?: string) {
-    return this.tryPromise(
-      "GroupDrizzleGateway.softDelete",
-      async () => {
-        await this.db
-          .update(groups)
-          .set({ isDeleted: true, updatedAt: new Date() })
-          .where(eq(groups.id, GroupId.toString(id)));
-      },
-      GroupId.toString(id),
-    );
+  softDelete(id: GroupId) {
+    const idStr = GroupId.toString(id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // First get the group to determine the tripId
+      const dbGroup = yield* Effect.tryPromise({
+        try: async () => {
+          const result = await self.db.query.groups.findFirst({
+            where: eq(groups.id, idStr),
+          });
+          return result ?? null;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "softDelete",
+            id: idStr,
+            cause: error,
+          }),
+      });
+
+      // If group not found, fail with EntityNotFoundError
+      if (!dbGroup) {
+        return yield* Effect.fail(
+          new EntityNotFoundError({ entityType: "Group", identifier: idStr }),
+        );
+      }
+
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "group",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await self.db
+            .update(groups)
+            .set({ isDeleted: true, updatedAt: new Date() })
+            .where(eq(groups.id, idStr));
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "softDelete",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    });
   }
 
   exists(id: GroupId) {
@@ -196,72 +398,178 @@ export class GroupDrizzleGateway
     );
   }
 
-  countByTripId(tripId: string) {
+  countByTripId(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
+
     return this.tryPromise(
       "GroupDrizzleGateway.countByTripId",
       async () => {
         const result = await this.db
           .select({ count: count() })
           .from(groups)
-          .where(and(eq(groups.tripId, tripId), eq(groups.isDeleted, false)));
+          .where(
+            and(eq(groups.tripId, tripIdStr), eq(groups.isDeleted, false)),
+          );
         return result[0]?.count ?? 0;
       },
-      tripId,
+      tripIdStr,
     );
   }
 
-  addCoins(groupId: GroupId, amount: number, _authToken?: string) {
-    return this.tryPromise(
-      "GroupDrizzleGateway.addCoins",
-      async () => {
-        const result = await this.db
-          .update(groups)
-          .set({
-            coins: sql`${groups.coins} + ${amount}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(groups.id, GroupId.toString(groupId)))
-          .returning();
+  addCoins(groupId: GroupId, amount: number) {
+    const idStr = GroupId.toString(groupId);
+    const self = this;
 
-        if (!result[0]) {
-          throw new Error("Group not found after update");
-        }
+    return Effect.gen(function* () {
+      // First get the group to determine the tripId
+      const dbGroup = yield* Effect.tryPromise({
+        try: async () => {
+          const result = await self.db.query.groups.findFirst({
+            where: eq(groups.id, idStr),
+          });
+          return result ?? null;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "addCoins",
+            id: idStr,
+            cause: error,
+          }),
+      });
 
-        return await Effect.runPromise(groupMapper.toDomain(result[0]));
-      },
-      GroupId.toString(groupId),
-    );
+      // If group not found, fail with EntityNotFoundError
+      if (!dbGroup) {
+        return yield* Effect.fail(
+          new EntityNotFoundError({ entityType: "Group", identifier: idStr }),
+        );
+      }
+
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: dbGroup.tripId,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      const result = yield* Effect.tryPromise({
+        try: async () => {
+          const updateResult = await self.db
+            .update(groups)
+            .set({
+              coins: sql`${groups.coins} + ${amount}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(groups.id, idStr))
+            .returning();
+
+          if (!updateResult[0]) {
+            throw new Error("Group not found after update");
+          }
+
+          return updateResult[0];
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "addCoins",
+            id: idStr,
+            cause: error,
+          }),
+      });
+
+      return yield* groupMapper.toDomain(result);
+    });
   }
 
-  subtractCoins(groupId: GroupId, amount: number, _authToken?: string) {
-    return this.tryPromise(
-      "GroupDrizzleGateway.subtractCoins",
-      async () => {
-        const result = await this.db
-          .update(groups)
-          .set({
-            coins: sql`${groups.coins} - ${amount}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(groups.id, GroupId.toString(groupId)))
-          .returning();
+  subtractCoins(groupId: GroupId, amount: number) {
+    const idStr = GroupId.toString(groupId);
+    const self = this;
 
-        if (!result[0]) {
-          throw new Error("Group not found after update");
-        }
+    return Effect.gen(function* () {
+      // First get the group to determine the tripId
+      const dbGroup = yield* Effect.tryPromise({
+        try: async () => {
+          const result = await self.db.query.groups.findFirst({
+            where: eq(groups.id, idStr),
+          });
+          return result ?? null;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "subtractCoins",
+            id: idStr,
+            cause: error,
+          }),
+      });
 
-        return await Effect.runPromise(groupMapper.toDomain(result[0]));
-      },
-      GroupId.toString(groupId),
-    );
+      // If group not found, fail with EntityNotFoundError
+      if (!dbGroup) {
+        return yield* Effect.fail(
+          new EntityNotFoundError({ entityType: "Group", identifier: idStr }),
+        );
+      }
+
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: dbGroup.tripId,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      const result = yield* Effect.tryPromise({
+        try: async () => {
+          const updateResult = await self.db
+            .update(groups)
+            .set({
+              coins: sql`${groups.coins} - ${amount}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(groups.id, idStr))
+            .returning();
+
+          if (!updateResult[0]) {
+            throw new Error("Group not found after update");
+          }
+
+          return updateResult[0];
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "subtractCoins",
+            id: idStr,
+            cause: error,
+          }),
+      });
+
+      return yield* groupMapper.toDomain(result);
+    });
   }
 
-  getRanking(tripId: string) {
+  getRanking(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
+
     return this.tryPromise(
       "GroupDrizzleGateway.getRanking",
       async () => {
         const results = await this.db.query.groups.findMany({
-          where: and(eq(groups.tripId, tripId), eq(groups.isDeleted, false)),
+          where: and(eq(groups.tripId, tripIdStr), eq(groups.isDeleted, false)),
           orderBy: desc(groups.coins),
         });
 
@@ -272,7 +580,7 @@ export class GroupDrizzleGateway
         }
         return domainGroups;
       },
-      tripId,
+      tripIdStr,
     );
   }
 }

@@ -1,7 +1,7 @@
 import type {
   TripInsuranceSelect,
   TripInsuranceStepSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 
 /**
  * Insurance Step interface (from TripPort)

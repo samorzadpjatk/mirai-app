@@ -13,7 +13,7 @@ import {
   trips,
   groups,
   users,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { tripParticipantMapper } from "../../mappers/TripParticipantMapper";
 

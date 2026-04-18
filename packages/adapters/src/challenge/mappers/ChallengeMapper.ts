@@ -1,7 +1,7 @@
 import type {
   ChallengeSelect,
   ChallengeInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import {
   Challenge,
   ChallengeId,

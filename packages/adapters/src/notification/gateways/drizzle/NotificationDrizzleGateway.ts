@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { eq, and, desc, count, sql } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   notifications,
   type NotificationSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import {
   type INotificationPort,
   type Notification,

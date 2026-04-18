@@ -3,6 +3,8 @@ import { createHonoApp } from "./hono";
 import { createYogaServer, mountGraphQLEndpoint } from "./graphql";
 import { createBunServer } from "./bun-server";
 import { serverState } from "../state";
+import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 
 /**
  * Server configuration
@@ -10,6 +12,8 @@ import { serverState } from "../state";
 export interface ServerConfig {
   port: number;
   appLayer: Layer.Layer<unknown, never, never>;
+  db: DrizzleDb;
+  supabase: SupabaseClient;
 }
 
 /**
@@ -18,7 +22,11 @@ export interface ServerConfig {
 export const startServer = (config: ServerConfig) =>
   Effect.gen(function* () {
     const app = yield* createHonoApp();
-    const yoga = yield* createYogaServer({ appLayer: config.appLayer });
+    const yoga = yield* createYogaServer({
+      appLayer: config.appLayer,
+      db: config.db,
+      supabase: config.supabase,
+    });
     yield* mountGraphQLEndpoint(app, yoga);
 
     const server = yield* createBunServer({ port: config.port, app });

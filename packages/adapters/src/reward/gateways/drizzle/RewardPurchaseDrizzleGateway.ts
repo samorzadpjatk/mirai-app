@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import { eq, count, sql, and } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   rewardPurchases,
   rewards,
   type RewardPurchaseSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import {
   RewardPurchase,
   RewardPurchaseId,

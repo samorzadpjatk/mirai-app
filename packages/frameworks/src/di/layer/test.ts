@@ -28,6 +28,9 @@ import {
 import { InMemoryUserGateway, InMemoryGroupGateway, InProcessEventBusGateway } from "@mirai-app/adapters";
 import type { IEventBusPort } from "@mirai-app/domain";
 
+// AuthContext from adapters layer
+import { AuthContextTag, type AuthContext, type TripRole } from "@mirai-app/adapters/infrastructure/effect";
+
 /**
  * Configuration for creating test layers
  */
@@ -428,12 +431,140 @@ export const createConditionalMockAuthZ = (
 });
 
 /**
- * Creates a mock AuthZ layer for testing.
+ * Creates a mock auth layer for testing.
  * The mock auth layer provides an IAuthZPort that always succeeds.
  */
 export const createMockAuthZLayer = () => {
   return Layer.succeed(AuthZPortTag, createAlwaysAllowMockAuthZ());
 };
+
+// ============================================================================
+// AuthContext Mock Helpers
+// ============================================================================
+
+/**
+ * Creates a mock AuthContext for testing.
+ *
+ * This helper creates a complete AuthContext object with sensible defaults
+ * for testing. Use the overrides parameter to customize specific properties.
+ *
+ * @example
+ * ```typescript
+ * // Default mock context (authenticated as USER)
+ * const mockAuth = createMockAuthContext();
+ *
+ * // Custom mock context (admin user)
+ * const adminAuth = createMockAuthContext({
+ *   userId: "admin-123",
+ *   role: "ADMIN",
+ *   tripRoles: { "trip-456": "LEADER" },
+ * });
+ *
+ * // Unauthenticated context
+ * const publicAuth = createMockAuthContext({
+ *   userId: "",
+ *   isAuthenticated: false,
+ * });
+ * ```
+ *
+ * @param overrides - Optional overrides for AuthContext properties
+ * @returns A complete AuthContext object
+ */
+export const createMockAuthContext = (overrides?: Partial<AuthContext>): AuthContext => ({
+  userId: overrides?.userId ?? "user-test-123",
+  role: overrides?.role ?? "USER",
+  tripRoles: overrides?.tripRoles ?? {},
+  isAuthenticated: overrides?.isAuthenticated ?? true,
+  accessToken: overrides?.accessToken ?? "mock-jwt-token",
+});
+
+/**
+ * Creates a mock AuthContext for an admin user.
+ *
+ * @example
+ * ```typescript
+ * const adminLayer = Layer.succeed(
+ *   AuthContextTag,
+ *   createMockAdminContext({ userId: "admin-456" })
+ * );
+ * ```
+ */
+export const createMockAdminContext = (overrides?: Partial<AuthContext>): AuthContext =>
+  createMockAuthContext({
+    userId: overrides?.userId ?? "admin-test",
+    role: "ADMIN",
+    ...overrides,
+  });
+
+/**
+ * Creates a mock AuthContext for a moderator user.
+ */
+export const createMockModeratorContext = (overrides?: Partial<AuthContext>): AuthContext =>
+  createMockAuthContext({
+    userId: overrides?.userId ?? "moderator-test",
+    role: "MODERATOR",
+    ...overrides,
+  });
+
+/**
+ * Creates a mock AuthContext for an unauthenticated/public user.
+ */
+export const createMockPublicContext = (overrides?: Partial<AuthContext>): AuthContext =>
+  createMockAuthContext({
+    userId: overrides?.userId ?? "",
+    role: "USER",
+    isAuthenticated: false,
+    accessToken: undefined,
+    ...overrides,
+  });
+
+/**
+ * Creates a mock AuthContext with specific trip roles.
+ *
+ * @example
+ * ```typescript
+ * const leaderContext = createMockTripLeaderContext("trip-123");
+ * const memberContext = createMockTripMemberContext("trip-456");
+ * ```
+ */
+export const createMockTripLeaderContext = (
+  tripId: string,
+  overrides?: Partial<AuthContext>,
+): AuthContext =>
+  createMockAuthContext({
+    tripRoles: { [tripId]: "LEADER" },
+    ...overrides,
+  });
+
+export const createMockTripMemberContext = (
+  tripId: string,
+  overrides?: Partial<AuthContext>,
+): AuthContext =>
+  createMockAuthContext({
+    tripRoles: { [tripId]: "MEMBER" },
+    ...overrides,
+  });
+
+/**
+ * Creates a Layer with mocked AuthContext for testing.
+ *
+ * @example
+ * ```typescript
+ * const authLayer = createMockAuthContextLayer({
+ *   userId: "custom-user",
+ *   role: "ADMIN",
+ * });
+ * const testLayer = Layer.mergeAll(authLayer, repoLayer, authZLayer);
+ * ```
+ */
+export const createMockAuthContextLayer = (overrides?: Partial<AuthContext>) => {
+  return Layer.succeed(AuthContextTag, createMockAuthContext(overrides));
+};
+
+/**
+ * Re-export AuthContextTag and types for convenience
+ */
+export { AuthContextTag, type AuthContext, type TripRole };
 
 export const createTestLayer = (config: TestLayerConfig = {}) => {
   // Legacy auth layer (backward compatibility)

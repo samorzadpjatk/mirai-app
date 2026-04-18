@@ -13,10 +13,52 @@
  */
 
 import { describe, it, expect, beforeEach } from "bun:test";
-import { Effect, Either } from "effect";
+import { Effect, Either, Layer } from "effect";
 import { SupabaseAuthGateway } from "./SupabaseAuthGateway";
 import { ApplicationError } from "@mirai-app/domain";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+import type { SupabaseClient } from "../../../infrastructure/supabase";
+import { AuthContextTag, type AuthContext } from "../../../infrastructure/effect";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import type { IAuthZPort } from "@mirai-app/domain";
+
+// ============================================================================
+// Mock AuthContext Helper
+// ============================================================================
+
+/**
+ * Creates a mock AuthContext for testing
+ *
+ * @param overrides - Optional overrides for AuthContext properties
+ * @returns AuthContext with test data
+ */
+const createMockAuthContext = (overrides?: Partial<AuthContext>): AuthContext => ({
+  userId: overrides?.userId ?? "user-test",
+  role: overrides?.role ?? "USER",
+  tripRoles: overrides?.tripRoles ?? {},
+  isAuthenticated: overrides?.isAuthenticated ?? true,
+  accessToken: overrides?.accessToken ?? "mock-access-token",
+});
+
+// ============================================================================
+// Mock Auth Layer Helpers
+// ============================================================================
+
+/**
+ * Creates a mock IAuthZPort that always allows access
+ */
+const createMockAuthZPort = (): IAuthZPort => ({
+  verifyAccess: () => Effect.succeed(void 0),
+  checkRolePermission: () => Effect.succeed(true),
+});
+
+/**
+ * Creates a test layer with mocked AuthContext and AuthZPort
+ */
+const createAuthTestLayer = (authContext?: AuthContext) =>
+  Layer.mergeAll(
+    Layer.succeed(AuthContextTag, authContext ?? createMockAuthContext()),
+    Layer.succeed(AuthZPortTag, createMockAuthZPort()),
+  );
 
 // ============================================================================
 // Mock Supabase Client Factory

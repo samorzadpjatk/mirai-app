@@ -21,7 +21,8 @@
     "./supabase": "./src/supabase/index.ts",
     "./di": "./src/di/index.ts",
     "./graphql": "./src/graphql/index.ts",
-    "./location": "./src/location/index.ts"
+    "./location": "./src/location/index.ts",
+    "./effect": "./src/effect/index.ts"
   },
   "scripts": {
     "test": "bun test",

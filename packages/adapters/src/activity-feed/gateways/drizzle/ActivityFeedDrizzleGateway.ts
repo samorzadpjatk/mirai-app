@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import { eq, and, desc, gt, sql } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   activityFeed,
   type ActivityFeedSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import {
   type ActivityFeed,
   type ActivityFeedId,

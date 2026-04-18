@@ -1,7 +1,7 @@
 import type {
   NotificationScheduleSelect,
   NotificationScheduleExecutionSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import type {
   NotificationSchedule,
   NotificationScheduleExecution,

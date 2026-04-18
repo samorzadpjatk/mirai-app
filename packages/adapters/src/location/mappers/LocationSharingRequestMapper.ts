@@ -1,7 +1,7 @@
 import type {
   LocationSharingRequestSelect,
   LocationSharingRequestInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import {
   LocationSharingRequest,
   LocationSharingRequestId,

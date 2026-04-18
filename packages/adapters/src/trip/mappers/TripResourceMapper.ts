@@ -1,4 +1,4 @@
-import type { TripResourceSelect } from "@mirai-app/frameworks/drizzle";
+import type { TripResourceSelect } from "../../infrastructure/drizzle";
 
 /**
  * TripResource DTO interface (from TripPort)

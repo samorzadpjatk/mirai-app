@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { eq, count, and, sql, inArray, asc } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   trips,
   tripResources,
@@ -11,13 +11,15 @@ import {
   type TripResourceSelect,
   type TripInsuranceSelect,
   type TripInsuranceStepSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import {
   Trip,
   TripId,
   DatabaseError,
   type ITripPort,
 } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { tripMapper } from "../../mappers/TripMapper";
 import { tripResourceMapper } from "../../mappers/TripResourceMapper";
@@ -67,6 +69,7 @@ interface TripInsurance {
  * Trip Drizzle Gateway
  *
  * Implements TripPort using Drizzle ORM for database operations.
+ * Uses AuthContext and AuthZPortTag for authorization.
  */
 export class TripDrizzleGateway
   extends BaseDrizzleGateway
@@ -101,19 +104,47 @@ export class TripDrizzleGateway
     );
   }
 
-  findById(id: TripId, _authToken?: string) {
-    return this.tryPromise(
-      "findById",
-      async () => {
-        const result = await this.db
-          .select()
-          .from(trips)
-          .where(eq(trips.id, TripId.toString(id)))
-          .limit(1);
-        return result[0] ?? null;
-      },
-      TripId.toString(id),
-    ).pipe(
+  findById(id: TripId) {
+    const idStr = TripId.toString(id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext to check if authenticated
+      const authCtx = yield* AuthContextTag;
+
+      // First get the trip
+      const tripResult = yield* Effect.tryPromise({
+        try: async () => {
+          const result = await self.db
+            .select()
+            .from(trips)
+            .where(eq(trips.id, idStr))
+            .limit(1);
+          return result[0] ?? null;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "findById",
+            id: idStr,
+            cause: error,
+          }),
+      });
+
+      // If authenticated and trip exists, verify access
+      if (authCtx.isAuthenticated && tripResult) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: idStr,
+          requiredPermission: "read",
+        });
+      }
+
+      return tripResult;
+    }).pipe(
       Effect.flatMap((dbTrip: TripSelect | null) =>
         dbTrip ? tripMapper.toDomain(dbTrip) : Effect.succeed(null),
       ),
@@ -206,47 +237,122 @@ export class TripDrizzleGateway
     );
   }
 
-  create(trip: Trip, _authToken?: string) {
+  create(trip: Trip) {
     const insertData = tripMapper.toInsert(trip);
-    return this.tryPromise(
-      "create",
-      async () => {
-        const [result] = await this.db
-          .insert(trips)
-          .values(insertData)
-          .returning();
-        if (!result) throw new Error("Failed to create trip");
-        return result;
-      },
-      TripId.toString(trip.id),
-    ).pipe(Effect.flatMap((dbTrip: TripSelect) => tripMapper.toDomain(dbTrip)));
+    const idStr = TripId.toString(trip.id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const [result] = await self.db
+            .insert(trips)
+            .values(insertData)
+            .returning();
+          if (!result) throw new Error("Failed to create trip");
+          return result;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "create",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    }).pipe(Effect.flatMap((dbTrip: TripSelect) => tripMapper.toDomain(dbTrip)));
   }
 
-  update(trip: Trip, _authToken?: string) {
+  update(trip: Trip) {
     const updateData = tripMapper.toUpdate(trip);
-    return this.tryPromise(
-      "update",
-      async () => {
-        const [result] = await this.db
-          .update(trips)
-          .set(updateData)
-          .where(eq(trips.id, TripId.toString(trip.id)))
-          .returning();
-        if (!result) throw new Error("Failed to update trip");
-        return result;
-      },
-      TripId.toString(trip.id),
-    ).pipe(Effect.flatMap((dbTrip: TripSelect) => tripMapper.toDomain(dbTrip)));
+    const idStr = TripId.toString(trip.id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const [result] = await self.db
+            .update(trips)
+            .set(updateData)
+            .where(eq(trips.id, idStr))
+            .returning();
+          if (!result) throw new Error("Failed to update trip");
+          return result;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "update",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    }).pipe(Effect.flatMap((dbTrip: TripSelect) => tripMapper.toDomain(dbTrip)));
   }
 
-  delete(id: TripId, _authToken?: string) {
-    return this.tryPromise(
-      "delete",
-      async () => {
-        await this.db.delete(trips).where(eq(trips.id, TripId.toString(id)));
-      },
-      TripId.toString(id),
-    );
+  delete(id: TripId) {
+    const idStr = TripId.toString(id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await self.db.delete(trips).where(eq(trips.id, idStr));
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "delete",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    });
   }
 
   exists(id: TripId) {

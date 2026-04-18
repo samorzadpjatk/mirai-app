@@ -1,4 +1,4 @@
-import type { RewardSelect, RewardInsert } from "@mirai-app/frameworks/drizzle";
+import type { RewardSelect, RewardInsert } from "../../infrastructure/drizzle";
 import {
   Reward,
   RewardId,

@@ -3,7 +3,7 @@ import { eq, and } from "drizzle-orm";
 import {
   locationSharingRequests,
   type DrizzleDb,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import {
   type LocationSharingRequest,
   DatabaseError,

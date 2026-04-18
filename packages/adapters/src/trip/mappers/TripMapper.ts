@@ -1,4 +1,4 @@
-import type { TripSelect } from "@mirai-app/frameworks/drizzle";
+import type { TripSelect } from "../../infrastructure/drizzle";
 import { Trip, TripId } from "@mirai-app/domain";
 import type { ValidationError } from "@mirai-app/domain";
 import type { Effect } from "effect";

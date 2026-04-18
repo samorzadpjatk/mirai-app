@@ -1,7 +1,7 @@
 import type {
   LocationSelect,
   LocationInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import { Location, LocationId, UserId } from "@mirai-app/domain";
 import type { ValidationError } from "@mirai-app/domain";
 import type { Effect } from "effect";

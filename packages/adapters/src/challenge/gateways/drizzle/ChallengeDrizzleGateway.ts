@@ -1,19 +1,19 @@
 import { Effect } from "effect";
 import { eq, count, and, sql } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   challenges,
-  tripParticipants,
   type ChallengeSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import {
   Challenge,
   ChallengeId,
   TripId,
   DatabaseError,
-  PermissionDeniedError,
   type IChallengePort,
 } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { challengeMapper } from "../../mappers/ChallengeMapper";
 
@@ -21,8 +21,8 @@ import { challengeMapper } from "../../mappers/ChallengeMapper";
  * Challenge Drizzle Gateway
  *
  * Implements IChallengePort using Drizzle ORM for database operations.
- * Supports optional auth token for protected operations.
- * Auth verification uses direct database queries to check trip membership.
+ * Auth verification uses AuthContextTag and AuthZPortTag from Effect context.
+ * Trip membership checks use tripRoles from AuthContext.
  */
 export class ChallengeDrizzleGateway
   extends BaseDrizzleGateway
@@ -32,54 +32,15 @@ export class ChallengeDrizzleGateway
     super(db);
   }
 
-  /**
-   * Verify trip membership from auth token
-   * Extracts user ID from token and checks if they're a trip participant
-   */
-  private verifyTripMembership(
-    authToken: string,
-    tripId: string,
-  ): Effect.Effect<void, PermissionDeniedError | DatabaseError, never> {
-    const self = this;
-
-    return Effect.gen(function* () {
-      // Extract user ID from token (last 36 chars for UUID)
-      const userId = authToken.length > 36 ? authToken.slice(-36) : authToken;
-
-      // Check if user is a trip participant
-      const participant = yield* Effect.tryPromise({
-        try: () =>
-          self.db.query.tripParticipants.findFirst({
-            where: and(
-              eq(tripParticipants.tripId, tripId),
-              eq(tripParticipants.userId, userId),
-            ),
-          }),
-        catch: (error) =>
-          new DatabaseError({
-            operation: "ChallengeDrizzleGateway.verifyTripMembership",
-            cause: error,
-          }),
-      });
-
-      if (!participant) {
-        return yield* Effect.fail(
-          new PermissionDeniedError({
-            action: "access:challenge",
-            resource: `trip:${tripId}`,
-            userId,
-          }),
-        );
-      }
-    });
-  }
-
-  findById(id: ChallengeId, authToken?: string) {
+  findById(id: ChallengeId) {
     const challengeIdStr = ChallengeId.toString(id);
     const self = this;
 
     return Effect.gen(function* () {
-      // First, fetch the challenge to get tripId for auth check
+      // Get AuthContext to check if authenticated
+      const authCtx = yield* AuthContextTag;
+
+      // First, fetch the challenge
       const dbChallenge = yield* Effect.tryPromise({
         try: () =>
           self.db
@@ -100,9 +61,17 @@ export class ChallengeDrizzleGateway
         return null;
       }
 
-      // Verify auth if token provided - check trip membership
-      if (authToken) {
-        yield* self.verifyTripMembership(authToken, dbChallenge.tripId);
+      // If authenticated, verify access using tripRoles from context
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: dbChallenge.tripId,
+          requiredPermission: "read",
+        });
       }
 
       return yield* challengeMapper.toDomain(dbChallenge);
@@ -203,17 +172,25 @@ export class ChallengeDrizzleGateway
     );
   }
 
-  create(challenge: Challenge, authToken?: string) {
+  create(challenge: Challenge) {
     const insertData = challengeMapper.toInsert(challenge);
     const tripIdStr = TripId.toString(challenge.tripId);
     const self = this;
 
     return Effect.gen(function* () {
-      // Verify auth if token provided - check trip membership (organizer+ required)
-      if (authToken) {
-        yield* self.verifyTripMembership(authToken, tripIdStr);
-        // Note: Additional role check (organizer+) would be done at use case layer
-        // The gateway only verifies trip membership
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
       }
 
       const dbChallenge = yield* Effect.tryPromise({
@@ -238,17 +215,26 @@ export class ChallengeDrizzleGateway
     });
   }
 
-  update(challenge: Challenge, authToken?: string) {
+  update(challenge: Challenge) {
     const updateData = challengeMapper.toUpdate(challenge);
     const challengeIdStr = ChallengeId.toString(challenge.id);
     const tripIdStr = TripId.toString(challenge.tripId);
     const self = this;
 
     return Effect.gen(function* () {
-      // Verify auth if token provided - check trip membership (organizer+ required)
-      if (authToken) {
-        yield* self.verifyTripMembership(authToken, tripIdStr);
-        // Note: Additional role check (organizer+) would be done at use case layer
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
       }
 
       const dbChallenge = yield* Effect.tryPromise({
@@ -274,7 +260,7 @@ export class ChallengeDrizzleGateway
     });
   }
 
-  delete(id: ChallengeId, authToken?: string) {
+  delete(id: ChallengeId) {
     const challengeIdStr = ChallengeId.toString(id);
     const self = this;
 
@@ -300,10 +286,19 @@ export class ChallengeDrizzleGateway
         return;
       }
 
-      // Verify auth if token provided - check trip membership (organizer+ required)
-      if (authToken) {
-        yield* self.verifyTripMembership(authToken, dbChallenge.tripId);
-        // Note: Additional role check (organizer+) would be done at use case layer
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: dbChallenge.tripId,
+          requiredPermission: "write",
+        });
       }
 
       yield* Effect.tryPromise({
@@ -353,18 +348,27 @@ export class ChallengeDrizzleGateway
     );
   }
 
-  activateVisibleChallenges(tripId?: TripId, authToken?: string) {
+  activateVisibleChallenges(tripId?: TripId) {
     const tripIdStr = tripId ? TripId.toString(tripId) : undefined;
     const self = this;
 
     return Effect.gen(function* () {
-      // Verify auth if token provided - check trip membership (admin required for this operation)
-      if (authToken && tripIdStr) {
-        yield* self.verifyTripMembership(authToken, tripIdStr);
-        // Note: Additional admin role check would be done at use case layer
-      }
-
+      // Get AuthContext and verify write permission if tripId provided
       if (tripIdStr) {
+        const authCtx = yield* AuthContextTag;
+
+        if (authCtx.isAuthenticated) {
+          const authZPort = yield* AuthZPortTag;
+          yield* authZPort.verifyAccess({
+            userId: authCtx.userId,
+            role: authCtx.role,
+            tripRoles: authCtx.tripRoles,
+            resourceType: "trip",
+            resourceId: tripIdStr,
+            requiredPermission: "write",
+          });
+        }
+
         yield* Effect.tryPromise({
           try: () =>
             self.db

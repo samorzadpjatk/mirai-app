@@ -1,4 +1,4 @@
-import type { TripParticipantSelect } from "@mirai-app/frameworks/drizzle";
+import type { TripParticipantSelect } from "../../infrastructure/drizzle";
 import {
   TripParticipant,
   TripParticipantId,

@@ -1,7 +1,7 @@
 import type {
   PushSubscriptionSelect,
   PushSubscriptionInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import type { PushSubscription } from "@mirai-app/use-cases/notification/ports/NotificationPort";
 
 /**

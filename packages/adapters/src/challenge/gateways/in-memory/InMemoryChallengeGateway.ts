@@ -4,39 +4,69 @@ import {
   ChallengeId,
   TripId,
   DatabaseError,
+  type IChallengePort,
 } from "@mirai-app/domain";
-import type { IChallengePort } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 
 /**
  * In-Memory Challenge Gateway
  *
  * Implements IChallengePort using in-memory Map storage for testing.
+ * Auth verification uses AuthContextTag and AuthZPortTag from Effect context.
  */
 export class InMemoryChallengeGateway implements IChallengePort {
   private challenges: Map<string, Challenge> = new Map();
 
-  findById(id: string) {
-    return Effect.sync(() => {
-      const challenge = this.challenges.get(id);
-      return challenge ?? null;
+  findById(id: ChallengeId) {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext to check if authenticated
+      const authCtx = yield* AuthContextTag;
+
+      const challengeIdStr = ChallengeId.toString(id);
+      const challenge = self.challenges.get(challengeIdStr) ?? null;
+
+      if (!challenge) {
+        return null;
+      }
+
+      // If authenticated, verify access using tripRoles from context
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(challenge.tripId),
+          requiredPermission: "read",
+        });
+      }
+
+      return challenge;
     });
   }
 
-  findByTripId(tripId: string) {
+  findByTripId(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
+
     return Effect.sync(() => {
       return Array.from(this.challenges.values())
-        .filter((challenge) => TripId.toString(challenge.tripId) === tripId)
+        .filter((challenge) => TripId.toString(challenge.tripId) === tripIdStr)
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     });
   }
 
-  findActiveByTripId(tripId: string, atDate?: Date) {
+  findActiveByTripId(tripId: TripId, atDate?: Date) {
+    const tripIdStr = TripId.toString(tripId);
     const checkDate = atDate ?? new Date();
 
     return Effect.sync(() => {
       return Array.from(this.challenges.values())
         .filter((challenge) => {
-          const matchesTrip = TripId.toString(challenge.tripId) === tripId;
+          const matchesTrip = TripId.toString(challenge.tripId) === tripIdStr;
           const isActive = challenge.status === "ACTIVE";
           const isWithinTimeRange =
             (!challenge.startTime || challenge.startTime <= checkDate) &&
@@ -48,12 +78,14 @@ export class InMemoryChallengeGateway implements IChallengePort {
   }
 
   findPaginatedByTripId(
-    tripId: string,
+    tripId: TripId,
     params: { limit: number; offset: number },
   ) {
+    const tripIdStr = TripId.toString(tripId);
+
     return Effect.sync(() => {
       const allForTrip = Array.from(this.challenges.values())
-        .filter((challenge) => TripId.toString(challenge.tripId) === tripId)
+        .filter((challenge) => TripId.toString(challenge.tripId) === tripIdStr)
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       const total = allForTrip.length;
@@ -71,49 +103,131 @@ export class InMemoryChallengeGateway implements IChallengePort {
   }
 
   create(challenge: Challenge) {
-    return Effect.sync(() => {
-      this.challenges.set(ChallengeId.toString(challenge.id), challenge);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(challenge.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      self.challenges.set(ChallengeId.toString(challenge.id), challenge);
       return challenge;
     });
   }
 
   update(challenge: Challenge) {
-    return Effect.sync(() => {
-      this.challenges.set(ChallengeId.toString(challenge.id), challenge);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(challenge.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      self.challenges.set(ChallengeId.toString(challenge.id), challenge);
       return challenge;
     });
   }
 
-  delete(id: string) {
-    return Effect.sync(() => {
-      this.challenges.delete(id);
+  delete(id: ChallengeId) {
+    const self = this;
+
+    return Effect.gen(function* () {
+      const challengeIdStr = ChallengeId.toString(id);
+      const challenge = self.challenges.get(challengeIdStr);
+
+      if (!challenge) {
+        return;
+      }
+
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(challenge.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      self.challenges.delete(challengeIdStr);
     });
   }
 
-  exists(id: string) {
+  exists(id: ChallengeId) {
+    const challengeIdStr = ChallengeId.toString(id);
+
     return Effect.sync(() => {
-      return this.challenges.has(id);
+      return this.challenges.has(challengeIdStr);
     });
   }
 
-  countByTripId(tripId: string) {
+  countByTripId(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
+
     return Effect.sync(() => {
       return Array.from(this.challenges.values()).filter(
-        (challenge) => TripId.toString(challenge.tripId) === tripId,
+        (challenge) => TripId.toString(challenge.tripId) === tripIdStr,
       ).length;
     });
   }
 
-  activateVisibleChallenges(tripId?: string) {
-    return Effect.sync(() => {
-      for (const challenge of this.challenges.values()) {
+  activateVisibleChallenges(tripId?: TripId) {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission if tripId provided
+      if (tripId) {
+        const tripIdStr = TripId.toString(tripId);
+        const authCtx = yield* AuthContextTag;
+
+        if (authCtx.isAuthenticated) {
+          const authZPort = yield* AuthZPortTag;
+          yield* authZPort.verifyAccess({
+            userId: authCtx.userId,
+            role: authCtx.role,
+            tripRoles: authCtx.tripRoles,
+            resourceType: "trip",
+            resourceId: tripIdStr,
+            requiredPermission: "write",
+          });
+        }
+      }
+
+      for (const challenge of self.challenges.values()) {
         const shouldUpdate =
           challenge.status === "VISIBLE" &&
-          (!tripId || TripId.toString(challenge.tripId) === tripId);
+          (!tripId || TripId.toString(challenge.tripId) === TripId.toString(tripId));
 
         if (shouldUpdate) {
           const activated = challenge.activate();
-          this.challenges.set(ChallengeId.toString(challenge.id), activated);
+          self.challenges.set(ChallengeId.toString(challenge.id), activated);
         }
       }
     });

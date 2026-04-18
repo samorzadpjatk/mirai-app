@@ -1,7 +1,7 @@
 import type {
   ActivityFeedSelect,
   ActivityFeedInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import {
   ActivityFeed,
   type ActivityFeedId,

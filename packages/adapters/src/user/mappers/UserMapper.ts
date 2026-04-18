@@ -1,4 +1,4 @@
-import type { UserSelect } from "@mirai-app/frameworks/drizzle";
+import type { UserSelect } from "../../infrastructure/drizzle";
 import { User, UserId, AuthUserId } from "@mirai-app/domain";
 import type { ValidationError } from "@mirai-app/domain";
 import type { Effect } from "effect";

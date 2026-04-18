@@ -9,11 +9,11 @@ import {
   type ResourceType,
   type PermissionLevel,
   type Role,
-  AuthSessionExpiredError,
+  type TripRole,
   PermissionDeniedError,
-  TokenMissingError,
+  EntityNotFoundError,
 } from "@mirai-app/domain";
-import { users, tripParticipants } from "@mirai-app/frameworks/drizzle";
+import { users, tripParticipants } from "../../../infrastructure/drizzle";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { userMapper } from "../../mappers/UserMapper";
 
@@ -21,14 +21,13 @@ import { userMapper } from "../../mappers/UserMapper";
  * User Drizzle Gateway
  *
  * Implements UserPort using Drizzle ORM for database operations.
- * Supports optional auth token for protected operations.
- * Also implements IAuthZPort for authorization checks.
+ * Also implements IAuthZPort for authorization checks using AuthContext.
  */
 export class UserDrizzleGateway
   extends BaseDrizzleGateway
   implements IUserPort, IAuthZPort
 {
-  findById(id: UserId, _authToken?: string) {
+  findById(id: UserId) {
     return this.tryPromise(
       "UserDrizzleGateway.findById",
       async () => {
@@ -42,7 +41,7 @@ export class UserDrizzleGateway
     );
   }
 
-  findByAuthUserId(authUserId: string, _authToken?: string) {
+  findByAuthUserId(authUserId: string) {
     return this.tryPromise(
       "UserDrizzleGateway.findByAuthUserId",
       async () => {
@@ -56,7 +55,7 @@ export class UserDrizzleGateway
     );
   }
 
-  findByTripId(tripId: string, _authToken?: string) {
+  findByTripId(tripId: string) {
     return this.tryPromise(
       "UserDrizzleGateway.findByTripId",
       async () => {
@@ -87,7 +86,7 @@ export class UserDrizzleGateway
     );
   }
 
-  findAll(_authToken?: string) {
+  findAll() {
     return this.tryPromise("UserDrizzleGateway.findAll", async () => {
       const results = await this.db.query.users.findMany({
         orderBy: (usersTable) => [usersTable.createdAt],
@@ -104,7 +103,6 @@ export class UserDrizzleGateway
 
   findAllPaginated(
     params: { limit: number; offset: number },
-    _authToken?: string,
   ) {
     return this.tryPromise("UserDrizzleGateway.findAllPaginated", async () => {
       const results = await this.db.query.users.findMany({
@@ -130,7 +128,6 @@ export class UserDrizzleGateway
       limit: number;
       offset: number;
     },
-    _authToken?: string,
   ) {
     return this.tryPromise(
       "UserDrizzleGateway.search",
@@ -204,7 +201,7 @@ export class UserDrizzleGateway
     );
   }
 
-  create(user: User, _authToken?: string) {
+  create(user: User) {
     return this.tryPromise(
       "UserDrizzleGateway.create",
       async () => {
@@ -216,7 +213,7 @@ export class UserDrizzleGateway
     );
   }
 
-  update(user: User, _authToken?: string) {
+  update(user: User) {
     return this.tryPromise(
       "UserDrizzleGateway.update",
       async () => {
@@ -231,7 +228,7 @@ export class UserDrizzleGateway
     );
   }
 
-  delete(id: UserId, _authToken?: string) {
+  delete(id: UserId) {
     return this.tryPromise(
       "UserDrizzleGateway.delete",
       async () => {
@@ -241,7 +238,7 @@ export class UserDrizzleGateway
     );
   }
 
-  exists(id: UserId, _authToken?: string) {
+  exists(id: UserId) {
     return this.tryPromise(
       "UserDrizzleGateway.exists",
       async () => {
@@ -255,7 +252,7 @@ export class UserDrizzleGateway
     );
   }
 
-  count(_authToken?: string) {
+  count() {
     return this.tryPromise("UserDrizzleGateway.count", async () => {
       const result = await this.db.select({ count: count() }).from(users);
       return result[0]?.count ?? 0;
@@ -266,34 +263,58 @@ export class UserDrizzleGateway
    * IAuthZPort Implementation
    *
    * Authorization checks using role-based access control (RBAC).
-   * Queries trip_participants table for user roles on specific trips.
+   * Uses AuthContext data (userId, role, tripRoles) for clean separation
+   * between AuthN (authentication) and AuthZ (authorization).
    */
 
   /**
    * Verify access to a resource with role-based authorization
    *
    * Validates the user's role and checks if they have the required permissions
-   * for the specified resource. For trip resources, queries the trip_participants
-   * table to get the user's role in that specific trip.
+   * for the specified resource. Uses AuthContext data which assumes authentication
+   * has already been performed.
    *
-   * SECURITY: Token values are never logged - only token substring is used for lookup.
+   * For trip resources, checks tripRoles map from AuthContext first, then falls back
+   * to querying the trip_participants table.
+   *
+   * SECURITY: No token handling here - AuthContext data is safe to log.
    */
   verifyAccess(request: AccessCheckRequest) {
-    const extractUserId = (token: string): string => {
-      return token.length > 36 ? token.slice(-36) : token;
-    };
+    // Use AuthContext data directly - no token extraction needed
+    const { userId, role, tripRoles } = request;
 
-    // Handle missing token
-    if (!request.token || request.token.trim().length === 0) {
-      return Effect.fail(
-        new TokenMissingError({ operation: `access:${request.resourceType}` }),
-      );
-    }
-
-    const userId = extractUserId(request.token);
-
-    // For trip resources, look up user role in trip_participants table
+    // For trip resources, check trip-specific role first
     if (request.resourceType === "trip") {
+      // Check if user has a trip-specific role in AuthContext
+      const tripRole = tripRoles[request.resourceId];
+
+      if (tripRole) {
+        // Map trip role to system role and check permission
+        const systemRole = this.mapTripRoleToSystemRole(tripRole);
+        return this.checkRolePermission(
+          userId,
+          systemRole,
+          tripRoles,
+          request.resourceType,
+          request.resourceId,
+          request.requiredPermission,
+        ).pipe(
+          Effect.flatMap((hasPermission) => {
+            if (!hasPermission) {
+              return Effect.fail(
+                new PermissionDeniedError({
+                  action: request.requiredPermission,
+                  resource: `${request.resourceType}:${request.resourceId}`,
+                  userId,
+                }),
+              );
+            }
+            return Effect.succeed(void 0);
+          }),
+        );
+      }
+
+      // Fallback: query trip_participants table
       return Effect.tryPromise({
         try: () =>
           this.db.query.tripParticipants.findFirst({
@@ -302,9 +323,10 @@ export class UserDrizzleGateway
               eq(tripParticipants.userId, userId),
             ),
           }),
-        catch: (_error) =>
-          new AuthSessionExpiredError({
-            expiredAt: new Date(),
+        catch: (error) =>
+          new EntityNotFoundError({
+            entityType: "TripParticipant",
+            identifier: `${request.resourceId}:${userId}`,
           }),
       }).pipe(
         Effect.flatMap((participant) => {
@@ -313,6 +335,7 @@ export class UserDrizzleGateway
               new PermissionDeniedError({
                 action: request.requiredPermission,
                 resource: `${request.resourceType}:${request.resourceId}`,
+                userId,
               }),
             );
           }
@@ -322,9 +345,11 @@ export class UserDrizzleGateway
 
           // Check if role has required permission
           return this.checkRolePermission(
-            participant.userId,
+            userId,
             userRole,
+            tripRoles,
             request.resourceType,
+            request.resourceId,
             request.requiredPermission,
           ).pipe(
             Effect.flatMap((hasPermission) => {
@@ -333,7 +358,7 @@ export class UserDrizzleGateway
                   new PermissionDeniedError({
                     action: request.requiredPermission,
                     resource: `${request.resourceType}:${request.resourceId}`,
-                    userId: participant.userId,
+                    userId,
                   }),
                 );
               }
@@ -344,46 +369,26 @@ export class UserDrizzleGateway
       );
     }
 
-    // For non-trip resources, check user's global role from users table
-    return Effect.tryPromise({
-      try: () =>
-        this.db.query.users.findFirst({
-          where: eq(users.id, userId),
-        }),
-      catch: (error) =>
-        new AuthSessionExpiredError({
-          expiredAt: new Date(),
-        }),
-    }).pipe(
-      Effect.flatMap((user) => {
-        if (!user) {
+    // For non-trip resources, use global role from AuthContext
+    return this.checkRolePermission(
+      userId,
+      role,
+      tripRoles,
+      request.resourceType,
+      request.resourceId,
+      request.requiredPermission,
+    ).pipe(
+      Effect.flatMap((hasPermission) => {
+        if (!hasPermission) {
           return Effect.fail(
             new PermissionDeniedError({
               action: request.requiredPermission,
               resource: `${request.resourceType}:${request.resourceId}`,
+              userId,
             }),
           );
         }
-
-        return this.checkRolePermission(
-          user.id,
-          user.role as Role,
-          request.resourceType,
-          request.requiredPermission,
-        ).pipe(
-          Effect.flatMap((hasPermission) => {
-            if (!hasPermission) {
-              return Effect.fail(
-                new PermissionDeniedError({
-                  action: request.requiredPermission,
-                  resource: `${request.resourceType}:${request.resourceId}`,
-                  userId: user.id,
-                }),
-              );
-            }
-            return Effect.succeed(void 0);
-          }),
-        );
+        return Effect.succeed(void 0);
       }),
     );
   }
@@ -396,11 +401,20 @@ export class UserDrizzleGateway
    * - MODERATOR: Has read/write permissions, limited admin access
    * - USER: Standard permissions, resource ownership required for some operations
    * - SERVICE: System-level operations only
+   *
+   * @param _userId - User ID (for logging/tracking, not used in role checks)
+   * @param role - User's global role
+   * @param _tripRoles - Map of tripId to user's trip-specific role (for trip-scoped checks)
+   * @param _resourceType - Type of resource being accessed
+   * @param _resourceId - Resource ID being accessed
+   * @param requiredPermission - Required permission level
    */
   checkRolePermission(
     _userId: string,
     role: Role,
+    _tripRoles: Record<string, TripRole>,
     _resourceType: ResourceType,
+    _resourceId: string,
     requiredPermission: PermissionLevel,
   ) {
     // Role hierarchy: ADMIN has all permissions
@@ -435,10 +449,14 @@ export class UserDrizzleGateway
    *
    * tripParticipants.role can be: MEMBER, ORGANIZER, LEAD, etc.
    * System Role is: USER, ADMIN, MODERATOR, SERVICE
+   *
+   * @param tripRole - The trip-specific role (from AuthContext or trip_participants)
+   * @returns The corresponding system Role
    */
   private mapTripRoleToSystemRole(tripRole: string): Role {
     switch (tripRole.toUpperCase()) {
       case "LEAD":
+      case "LEADER":
       case "ORGANIZER":
         return "MODERATOR";
       case "ADMIN":

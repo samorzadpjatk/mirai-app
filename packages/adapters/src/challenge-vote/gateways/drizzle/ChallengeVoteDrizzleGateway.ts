@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import { eq, count, and, inArray } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   challengeVotes,
   type ChallengeVoteSelect,
   type ChallengeVoteInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import { DatabaseError } from "@mirai-app/domain";
 import type {
   IChallengeVotePort,

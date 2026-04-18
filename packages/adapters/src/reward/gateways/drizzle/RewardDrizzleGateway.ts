@@ -1,10 +1,11 @@
 import { Effect } from "effect";
 import { eq, count, and, sql } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { rewards, type RewardSelect } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
+import { rewards, type RewardSelect } from "../../../infrastructure/drizzle";
 import { Reward, RewardId, TripId, DatabaseError } from "@mirai-app/domain";
 import type { IRewardPort } from "@mirai-app/domain";
-import { AuthZPortTag } from "@mirai-app/use-cases/auth/ports/AuthZPort";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { rewardMapper } from "../../mappers/RewardMapper";
 
@@ -21,48 +22,18 @@ export class RewardDrizzleGateway
     super(db);
   }
 
-  findById(id: RewardId, authToken?: string) {
+  findById(id: RewardId) {
     const idStr = RewardId.toString(id);
+    const self = this;
 
     return Effect.gen(function* () {
-      // Verify auth if token provided (read permission for participants)
-      if (authToken) {
-        const authZPort = yield* AuthZPortTag;
+      // Get AuthContext to check if authenticated
+      const authCtx = yield* AuthContextTag;
 
-        // First get the reward to check tripId
-        const rewardResult = yield* Effect.tryPromise({
-          try: async () => {
-            const result = await this.db
-              .select()
-              .from(rewards)
-              .where(eq(rewards.id, idStr))
-              .limit(1);
-            return result[0] ?? null;
-          },
-          catch: (error) =>
-            new DatabaseError({
-              operation: "findById",
-              id: idStr,
-              cause: error,
-            }),
-        });
-
-        if (rewardResult) {
-          yield* authZPort.verifyAccess({
-            token: authToken,
-            resourceType: "trip",
-            resourceId: rewardResult.tripId,
-            requiredPermission: "read",
-          });
-        }
-
-        return rewardResult;
-      }
-
-      // No auth token - proceed without verification (backward compatibility)
-      return yield* Effect.tryPromise({
+      // First get the reward
+      const rewardResult = yield* Effect.tryPromise({
         try: async () => {
-          const result = await this.db
+          const result = await self.db
             .select()
             .from(rewards)
             .where(eq(rewards.id, idStr))
@@ -76,6 +47,21 @@ export class RewardDrizzleGateway
             cause: error,
           }),
       });
+
+      // If authenticated and reward exists, verify access
+      if (authCtx.isAuthenticated && rewardResult) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: rewardResult.tripId,
+          requiredPermission: "read",
+        });
+      }
+
+      return rewardResult;
     }).pipe(
       Effect.flatMap((dbReward: RewardSelect | null) => {
         if (!dbReward) {
@@ -146,17 +132,22 @@ export class RewardDrizzleGateway
     );
   }
 
-  create(reward: Reward, authToken?: string) {
+  create(reward: Reward) {
     const insertData = rewardMapper.toInsert(reward);
     const idStr = RewardId.toString(reward.id);
     const tripIdStr = TripId.toString(reward.tripId);
+    const self = this;
 
     return Effect.gen(function* () {
-      // Verify auth if token provided (write permission for organizers)
-      if (authToken) {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
         const authZPort = yield* AuthZPortTag;
         yield* authZPort.verifyAccess({
-          token: authToken,
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
           resourceType: "trip",
           resourceId: tripIdStr,
           requiredPermission: "write",
@@ -166,7 +157,7 @@ export class RewardDrizzleGateway
       // Proceed with database operation
       return yield* Effect.tryPromise({
         try: async () => {
-          const [result] = await this.db
+          const [result] = await self.db
             .insert(rewards)
             .values(insertData)
             .returning();
@@ -187,17 +178,22 @@ export class RewardDrizzleGateway
     );
   }
 
-  update(reward: Reward, authToken?: string) {
+  update(reward: Reward) {
     const updateData = rewardMapper.toUpdate(reward);
     const idStr = RewardId.toString(reward.id);
     const tripIdStr = TripId.toString(reward.tripId);
+    const self = this;
 
     return Effect.gen(function* () {
-      // Verify auth if token provided (write permission for organizers)
-      if (authToken) {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
         const authZPort = yield* AuthZPortTag;
         yield* authZPort.verifyAccess({
-          token: authToken,
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
           resourceType: "trip",
           resourceId: tripIdStr,
           requiredPermission: "write",
@@ -207,7 +203,7 @@ export class RewardDrizzleGateway
       // Proceed with database operation
       return yield* Effect.tryPromise({
         try: async () => {
-          const [result] = await this.db
+          const [result] = await self.db
             .update(rewards)
             .set(updateData)
             .where(eq(rewards.id, idStr))
@@ -229,16 +225,21 @@ export class RewardDrizzleGateway
     );
   }
 
-  delete(id: RewardId, tripId: TripId, authToken?: string) {
+  delete(id: RewardId, tripId: TripId) {
     const idStr = RewardId.toString(id);
     const tripIdStr = TripId.toString(tripId);
+    const self = this;
 
     return Effect.gen(function* () {
-      // Verify auth if token provided (write permission for organizers)
-      if (authToken) {
+      // Get AuthContext and verify write permission
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
         const authZPort = yield* AuthZPortTag;
         yield* authZPort.verifyAccess({
-          token: authToken,
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
           resourceType: "trip",
           resourceId: tripIdStr,
           requiredPermission: "write",
@@ -248,7 +249,7 @@ export class RewardDrizzleGateway
       // Proceed with database operation
       return yield* Effect.tryPromise({
         try: async () => {
-          await this.db.delete(rewards).where(eq(rewards.id, idStr));
+          await self.db.delete(rewards).where(eq(rewards.id, idStr));
         },
         catch: (error) =>
           new DatabaseError({

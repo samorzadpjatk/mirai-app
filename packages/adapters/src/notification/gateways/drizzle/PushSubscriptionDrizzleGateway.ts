@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { eq, and, count } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { pushSubscriptions } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
+import { pushSubscriptions } from "../../../infrastructure/drizzle";
 import {
   type IPushSubscriptionPort,
   type PushSubscription,

@@ -1,12 +1,12 @@
 import { Effect } from "effect";
 import { eq, and, sql } from "drizzle-orm";
-import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import type { DrizzleDb } from "../../../infrastructure/drizzle";
 import {
   tripSponsors,
   sponsors,
   type TripSponsorSelect,
   type SponsorSelect,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../../infrastructure/drizzle";
 import {
   type Sponsor,
   SponsorId,

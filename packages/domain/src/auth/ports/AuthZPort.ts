@@ -1,6 +1,6 @@
 import type { Effect } from "effect";
 import type { IPortError } from "../../shared/errors/ports";
-import type { AccessCheckRequest, PermissionLevel, ResourceType } from "../types";
+import type { AccessCheckRequest, PermissionLevel, ResourceType, TripRole } from "../types";
 import type { Role } from "../../user/entities/User";
 
 /**
@@ -16,9 +16,12 @@ import type { Role } from "../../user/entities/User";
  *
  * Implemented by UserDrizzleGateway in the adapters layer (has Role data access).
  *
+ * Uses AuthContext data instead of raw token for clean separation:
+ * - AuthN (authentication) happens before AuthContext is created
+ * - AuthZ (authorization) uses userId, role, tripRoles from AuthContext
+ *
  * SECURITY: Implementations must ensure:
- * - Token values are never logged or exposed in error messages
- * - Use sanitizeAccessCheckRequest() or accessCheckRequestToString() for logging
+ * - All fields from AccessCheckRequest are safe to log (no token present)
  * - Role checks should consider inheritance (ADMIN/MODERATOR hierarchy)
  */
 export interface IAuthZPort {
@@ -26,15 +29,13 @@ export interface IAuthZPort {
    * Verify access to a resource with role-based authorization
    *
    * Validates the user's role and checks if they have the required permissions
-   * for the specified resource. This method combines authentication token
-   * validation with role-based authorization checks.
+   * for the specified resource. Uses AuthContext data (userId, role, tripRoles)
+   * which assumes authentication has already been performed.
    *
    * PERFORMANCE TARGET: < 30ms for local operations (database role lookups)
    *
-   * SECURITY: Implementations must never log the full token value.
-   * Use token.substring(0, 8) + "..." pattern or [REDACTED] placeholder.
-   *
-   * @param request - Access check request containing token, resource info, and required permissions
+   * @param request - Access check request containing AuthContext data (userId, role, tripRoles),
+   *                   resource info, and required permissions
    * @returns Effect that succeeds if access is granted, fails with IPortError otherwise
    */
   verifyAccess(
@@ -44,8 +45,8 @@ export interface IAuthZPort {
   /**
    * Check if a user with a specific role has permission for an operation
    *
-   * Performs role-based permission checking without requiring a full token validation.
-   * Useful for internal service operations or when the user context is already established.
+   * Performs role-based permission checking using AuthContext data.
+   * Useful for internal service operations or when AuthContext is already available.
    *
    * Role hierarchy consideration:
    * - ADMIN: Has all permissions implicitly
@@ -53,16 +54,20 @@ export interface IAuthZPort {
    * - USER: Standard permissions, resource ownership required for some operations
    * - SERVICE: System-level operations only
    *
-   * @param userId - The unique identifier of the user
-   * @param role - The user's role in the system
+   * @param userId - The unique identifier of the user (from AuthContext)
+   * @param role - The user's global role in the system (from AuthContext)
+   * @param tripRoles - Map of tripId to user's role within each trip (from AuthContext)
    * @param resourceType - Type of resource being accessed
+   * @param resourceId - Unique identifier of the resource being accessed
    * @param requiredPermission - Required permission level (read, write, admin)
    * @returns Effect that resolves to true if permission is granted, false otherwise
    */
   checkRolePermission(
     userId: string,
     role: Role,
+    tripRoles: Record<string, TripRole>,
     resourceType: ResourceType,
+    resourceId: string,
     requiredPermission: PermissionLevel,
   ): Effect.Effect<boolean, IPortError, never>;
 }
@@ -70,5 +75,5 @@ export interface IAuthZPort {
 /**
  * Re-export supporting types for convenience
  */
-export type { AccessCheckRequest, PermissionLevel, ResourceType } from "../types";
+export type { AccessCheckRequest, PermissionLevel, ResourceType, TripRole } from "../types";
 export type { Role } from "../../user/entities/User";

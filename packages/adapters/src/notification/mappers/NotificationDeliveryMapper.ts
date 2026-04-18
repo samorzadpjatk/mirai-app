@@ -1,4 +1,4 @@
-import type { NotificationDeliverySelect } from "@mirai-app/frameworks/drizzle";
+import type { NotificationDeliverySelect } from "../../infrastructure/drizzle";
 import type { NotificationDelivery } from "@mirai-app/use-cases/notification/ports/NotificationPort";
 
 /**

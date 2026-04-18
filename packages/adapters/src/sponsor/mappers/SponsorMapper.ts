@@ -1,7 +1,7 @@
 import type {
   SponsorSelect,
   SponsorInsert,
-} from "@mirai-app/frameworks/drizzle";
+} from "../../infrastructure/drizzle";
 import { Sponsor, SponsorId } from "@mirai-app/domain";
 import type { Effect } from "effect";
 import type { ValidationError } from "@mirai-app/domain";

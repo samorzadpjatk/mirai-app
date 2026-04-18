@@ -13,7 +13,7 @@ import { Effect, Either } from "effect";
 import { SupabaseRealtimeEventBusGateway } from "./SupabaseRealtimeEventBusGateway";
 import { ApplicationError } from "@mirai-app/domain";
 import type { IDomainEvent } from "@mirai-app/domain";
-import type { SupabaseClient } from "@mirai-app/frameworks";
+import type { SupabaseClient } from "../../infrastructure/supabase";
 
 // Mock domain event for testing
 class TestEvent implements IDomainEvent {

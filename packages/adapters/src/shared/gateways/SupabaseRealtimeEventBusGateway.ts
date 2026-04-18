@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { SupabaseClient } from "@mirai-app/frameworks";
+import type { SupabaseClient } from "../../infrastructure/supabase";
 import type { IEventBusPort, IDomainEvent } from "@mirai-app/domain";
 import { ApplicationError } from "@mirai-app/domain";
 

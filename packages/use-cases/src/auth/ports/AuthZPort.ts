@@ -1,6 +1,6 @@
 import { Context } from "effect";
 import type { IAuthZPort } from "@mirai-app/domain";
-import type { AccessCheckRequest, PermissionLevel, ResourceType } from "@mirai-app/domain";
+import type { AccessCheckRequest, PermissionLevel, ResourceType, TripRole } from "@mirai-app/domain";
 import type { Role } from "@mirai-app/domain";
 
 /**
@@ -23,4 +23,4 @@ export class AuthZPortTag extends Context.Tag("AuthZ")<
 /**
  * Re-export types from domain for convenience
  */
-export type { IAuthZPort, AccessCheckRequest, PermissionLevel, ResourceType, Role };
+export type { IAuthZPort, AccessCheckRequest, PermissionLevel, ResourceType, Role, TripRole };

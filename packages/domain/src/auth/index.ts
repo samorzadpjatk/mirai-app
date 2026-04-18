@@ -6,6 +6,7 @@ export type {
   IAuthPort,
   PermissionLevel,
   ResourceType,
+  TripRole,
 } from "./types";
 export {
   sanitizeAccessCheckRequest,
