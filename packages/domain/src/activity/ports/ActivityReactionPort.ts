@@ -3,6 +3,7 @@ import type { IPortError } from "../../shared/errors/ports";
 import type { UserId } from "../../user/value-objects/UserId";
 import type { ActivityFeedId } from "../value-objects/ActivityId";
 import type { ActivityReactionId } from "../value-objects/ActivityId";
+import type { ActivityReaction } from "../entities/ActivityReaction";
 
 /**
  * Activity reaction type
@@ -16,17 +17,17 @@ export type ActivityReactionType = "heart" | "fire" | "clap" | "star";
 export interface IActivityReactionPort {
   findById(
     id: ActivityReactionId,
-  ): Effect.Effect<import("../entities/ActivityReaction").ActivityReaction | null, IPortError, never>;
+  ): Effect.Effect<ActivityReaction | null, IPortError, never>;
   findByActivityId(
     activityId: ActivityFeedId,
-  ): Effect.Effect<import("../entities/ActivityReaction").ActivityReaction[], IPortError, never>;
+  ): Effect.Effect<ActivityReaction[], IPortError, never>;
   findByActivityIdAndUserId(
     activityId: ActivityFeedId,
     userId: UserId,
-  ): Effect.Effect<import("../entities/ActivityReaction").ActivityReaction | null, IPortError, never>;
+  ): Effect.Effect<ActivityReaction | null, IPortError, never>;
   create(
-    reaction: import("../entities/ActivityReaction").ActivityReaction,
-  ): Effect.Effect<import("../entities/ActivityReaction").ActivityReaction, IPortError, never>;
+    reaction: ActivityReaction,
+  ): Effect.Effect<ActivityReaction, IPortError, never>;
   delete(id: ActivityReactionId): Effect.Effect<void, IPortError, never>;
   deleteByActivityAndUser(
     activityId: ActivityFeedId,

@@ -1,9 +1,10 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import type { UserId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
 import type { UserWithGroupInfoDTO, GroupInfoDTO } from "../dto/UserDTOs";
-import { UserNotFoundError } from "../errors/UserErrors";
+import { UserNotFoundError } from "../errors";
 
 /**
  * Input for GetUserWithGroupUseCase
@@ -21,20 +22,17 @@ export interface GetUserWithGroupInput {
 export class GetUserWithGroupUseCase {
   execute(
     input: GetUserWithGroupInput,
-  ): Effect.Effect<
-    UserWithGroupInfoDTO | null,
-    ApplicationError | UserNotFoundError,
-    UserPortTag | TripParticipantPort
-  > {
+  ) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
+      const groupPort = yield* GroupPortTag;
 
       // Find user by ID
-      const user = yield* userPort.findById(input.userId);
+      const user = yield* userPort.findById(input.userId as UserId);
 
       if (!user) {
-        return null;
+        return Effect.fail(UserNotFoundError);
       }
 
       // Find participant with relations
@@ -52,8 +50,17 @@ export class GetUserWithGroupUseCase {
           }
         : null;
 
-      // TODO: Get organizer group info - this would need a GroupPort
-      const organizerGroup: GroupInfoDTO | null = null;
+      // Get groups where user is an organizer for this trip
+      const organizerGroups = yield* groupPort.findByOrganizerId(input.userId);
+      const organizerGroupForTrip = organizerGroups.find(
+        (group) => group.tripId === input.tripId,
+      );
+      const organizerGroup: GroupInfoDTO | null = organizerGroupForTrip
+        ? {
+            id: organizerGroupForTrip.id,
+            name: organizerGroupForTrip.name,
+          }
+        : null;
 
       const result: UserWithGroupInfoDTO = {
         id: user.id,

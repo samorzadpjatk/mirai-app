@@ -2,6 +2,7 @@
 export * from "./shared/errors/domain-errors";
 export type { IPortError } from "./shared/errors/ports";
 export * from "./shared/value-objects/branded-id";
+export * from "./shared/events";
 export type {
   IAuthPort,
   IStoragePort,
@@ -17,6 +18,7 @@ export type {
   ResolvedStoragePath,
   StorageBucket,
 } from "./shared/services";
+export { makeThrottleService, type Coordinates } from "./shared/services";
 
 // Domain modules
 export * from "./user";

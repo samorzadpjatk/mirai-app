@@ -1,5 +1,8 @@
 import { Context } from "effect";
-import type { ITripParticipantPort, TripParticipant } from "@mirai-app/domain";
+import type {
+  ITripParticipantPort,
+  TripParticipant,
+} from "@mirai-app/domain/trip";
 
 /**
  * TripParticipant Port - Context.Tag for Effect DI
@@ -9,9 +12,6 @@ export class TripParticipantPortTag extends Context.Tag("TripParticipantPort")<
   ITripParticipantPort
 >() {}
 
-/**
- * Re-export types from domain for backward compatibility
- */
 export type { ITripParticipantPort, TripParticipant };
 
 /**
