@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import type { IUserPort } from "@mirai-app/use-cases/user";
-import { User, UserId, AuthUserId, DatabaseError } from "@mirai-app/domain";
+import { type User, UserId, AuthUserId } from "@mirai-app/domain";
 
 /**
  * In-Memory User Gateway
@@ -36,10 +36,16 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  findAll(params: { limit: number; offset: number }) {
+  findAllPaginated(params: { limit: number; offset: number }) {
     return Effect.sync(() => {
       const allUsers = Array.from(this.users.values());
       return allUsers.slice(params.offset, params.offset + params.limit);
+    });
+  }
+
+  findAll() {
+    return Effect.sync(() => {
+      return Array.from(this.users.values());
     });
   }
 

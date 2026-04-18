@@ -432,4 +432,19 @@ export class LocationDrizzleGateway
       });
     });
   }
+
+  getSharingListForUser(locationOwnerId: UserId) {
+    return this.tryPromise("getSharingListForUser", async () => {
+      const ownerId = UserIdFactory.toString(locationOwnerId);
+
+      // Query junction table for all users that owner shares with
+      const results = await this.db
+        .select({ B: locationUsersShareWith.B })
+        .from(locationUsersShareWith)
+        .where(eq(locationUsersShareWith.A, ownerId));
+
+      // Convert userId strings to UserId branded types
+      return results.map((row) => UserIdFactory.unsafeCreate(row.B));
+    });
+  }
 }

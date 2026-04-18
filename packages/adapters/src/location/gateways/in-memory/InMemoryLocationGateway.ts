@@ -213,6 +213,21 @@ export class InMemoryLocationGateway implements ILocationPort {
       this.sharingLists.set(ownerIdStr, new Set(userIdStrs));
     });
   }
+
+  getSharingListForUser(locationOwnerId: UserId) {
+    return Effect.sync(() => {
+      const ownerIdStr = UserIdFactory.toString(locationOwnerId);
+      const sharingSet = this.sharingLists.get(ownerIdStr);
+
+      if (!sharingSet) {
+        return [];
+      }
+
+      return Array.from(sharingSet).map((userIdStr) =>
+        UserIdFactory.unsafeCreate(userIdStr),
+      );
+    });
+  }
 }
 
 export const inMemoryLocationGateway = new InMemoryLocationGateway();

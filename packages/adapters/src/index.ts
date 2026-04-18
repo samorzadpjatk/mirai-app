@@ -4,9 +4,10 @@
 export { SupabaseAuthGateway } from "./auth/gateways/supabase/SupabaseAuthGateway";
 export { SupabaseStorageGateway } from "./storage/gateways/supabase/SupabaseStorageGateway";
 export { SupabaseRealtimeGateway } from "./realtime/gateways/supabase/SupabaseRealtimeGateway";
+export { SupabaseRealtimeEventBusGateway } from "./shared/gateways/SupabaseRealtimeEventBusGateway";
+export { InProcessEventBusGateway } from "./shared/gateways/InProcessEventBusGateway";
 
-// Storage gateways
-export { SupabaseStorageAdapter } from "./storage/gateways/supabase/SupabaseStorageAdapter";
+// In-memory storage gateway
 export { InMemoryStorageGateway } from "./storage/gateways/in-memory/InMemoryStorageGateway";
 export { DefaultStoragePathResolver } from "./storage/gateways/default/DefaultStoragePathResolver";
 
@@ -69,15 +70,25 @@ export {
 export {
   NotificationDrizzleGateway,
   PushSubscriptionDrizzleGateway,
+  NotificationDeliveryDrizzleGateway,
+  NotificationScheduleDrizzleGateway,
 } from "./notification/gateways/drizzle";
 export {
   InMemoryNotificationGateway,
   InMemoryPushSubscriptionGateway,
+  InMemoryNotificationDeliveryGateway,
+  InMemoryNotificationScheduleGateway,
 } from "./notification/gateways/in-memory";
 export {
   NotificationMapper,
   PushSubscriptionMapper,
+  NotificationDeliveryMapper,
+  NotificationScheduleMapper,
 } from "./notification/mappers";
+
+// Notification service
+export { ExpoNotificationServiceGateway as NotificationServiceGateway } from "./notification/gateways/expo/ExpoNotificationServiceGateway";
+export { InMemoryNotificationServiceGateway } from "./notification/gateways/in-memory/InMemoryNotificationServiceGateway";
 
 // Challenge domain
 export { ChallengeDrizzleGateway } from "./challenge/gateways/drizzle";
