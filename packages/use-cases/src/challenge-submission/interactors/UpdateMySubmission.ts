@@ -1,5 +1,6 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import { ChallengeSubmissionId, TripId } from "@mirai-app/domain";
+import { UserId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import {
   ChallengeSubmissionPort,
@@ -36,19 +37,7 @@ export interface UpdateMySubmissionInput {
  * Updates the current user's submission if not yet approved.
  */
 export class UpdateMySubmissionUseCase {
-  execute(
-    input: UpdateMySubmissionInput,
-  ): Effect.Effect<
-    SubmissionWithDetailsDTO,
-    | SubmissionNotFoundError
-    | CannotEditApprovedSubmissionError
-    | ChallengeNotActiveError
-    | SubmissionWindowClosedError
-    | NotGroupMemberError
-    | MissingRequiredMediaError
-    | ApplicationError,
-    ChallengePortTag | ChallengeSubmissionPort | TripParticipantPort
-  > {
+  execute(input: UpdateMySubmissionInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
       const submissionPort = yield* ChallengeSubmissionPort;
@@ -56,8 +45,8 @@ export class UpdateMySubmissionUseCase {
 
       // Get participant info
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        UserId.unsafeCreate(input.userId),
+        TripId.unsafeCreate(input.tripId),
       );
 
       if (!participant?.groupId) {
@@ -70,7 +59,7 @@ export class UpdateMySubmissionUseCase {
       }
 
       // Find submission
-      const submission = yield* submissionPort.findById(input.submissionId);
+      const submission = yield* submissionPort.findById(ChallengeSubmissionId.unsafeCreate(input.submissionId));
 
       if (!submission) {
         return yield* Effect.fail(
@@ -146,7 +135,7 @@ export class UpdateMySubmissionUseCase {
         rejectionReason: saved.rejectionReason,
         awardedPoints: saved.awardedPoints ?? 0,
         bonusPoints: saved.bonusPoints ?? 0,
-        ranking: saved.ranking,
+        ranking: saved.ranking as 1 | 2 | 3 | null,
         voteCount: saved.voteCount,
         voteScore: saved.voteScore,
         createdAt: saved.createdAt,
@@ -154,7 +143,7 @@ export class UpdateMySubmissionUseCase {
         group: null,
         reviewedBy: null,
         challenge: null,
-      };
+      } satisfies SubmissionWithDetailsDTO;
     });
   }
 }

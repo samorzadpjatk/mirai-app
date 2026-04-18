@@ -1,0 +1,116 @@
+# =============================================================================
+# Group Mutations
+# =============================================================================
+
+#import "../../fragments/group.graphql"
+
+mutation CreateGroup($input: CreateGroupInput!) {
+  createGroup(input: $input) {
+    id
+    name
+    description
+    code
+    image
+    coins
+    organizer {
+      id
+      firstName
+      lastName
+      email
+    }
+  }
+}
+
+mutation UpdateGroup($input: UpdateGroupInput!) {
+  updateGroup(input: $input) {
+    id
+    name
+    description
+    image
+    organizerId
+  }
+}
+
+mutation DeleteGroup($input: DeleteGroupInput!) {
+  deleteGroup(input: $input) {
+    left
+    reassignedOrganizerId
+    groupDeleted
+  }
+}
+
+mutation DeleteMyGroup($groupId: String!) {
+  deleteMyGroup(groupId: $groupId) {
+    left
+    reassignedOrganizerId
+    groupDeleted
+  }
+}
+
+mutation JoinGroup($input: JoinGroupInput!) {
+  joinGroup(input: $input) {
+    success
+    groupId
+  }
+}
+
+mutation LeaveGroup($groupId: String!) {
+  leaveGroup(groupId: $groupId) {
+    left
+    reassignedOrganizerId
+    groupDeleted
+  }
+}
+
+mutation RequestJoinGroup($input: RequestJoinGroupInput!) {
+  requestJoinGroup(input: $input) {
+    success
+    groupId
+  }
+}
+
+mutation CancelJoinRequest($groupId: String!) {
+  cancelJoinRequest(groupId: $groupId) {
+    left
+    reassignedOrganizerId
+    groupDeleted
+  }
+}
+
+mutation RespondToJoinRequest($input: RespondJoinRequestInput!) {
+  respondToJoinRequest(input: $input) {
+    status
+  }
+}
+
+mutation RemoveUserFromGroup($userId: String!, $tripId: String!) {
+  removeUserFromGroup(userId: $userId, tripId: $tripId) {
+    success
+    groupId
+  }
+}
+
+mutation BulkAssignUsers($input: BulkAssignUsersInput!) {
+  bulkAssignUsers(input: $input) {
+    count
+    participants {
+      id
+      joinedAt
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+    }
+  }
+}
+
+mutation AddGroupCoins($input: AddGroupCoinsInput!) {
+  addGroupCoins(input: $input) {
+    groupId
+    amount
+    newCoins
+    previousCoins
+  }
+}

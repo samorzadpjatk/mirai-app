@@ -2,10 +2,12 @@ import { Effect } from "effect";
 import type {
   RewardPurchaseId,
   UserId,
-  ValidationError} from "@mirai-app/domain";
+  ValidationError,
+  CoinTransactionDTO} from "@mirai-app/domain";
 import {
   RewardPurchaseId as RewardPurchaseIdFactory,
   UserId as UserIdFactory,
+  TripId,
 } from "@mirai-app/domain";
 import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
 import { GroupPortTag } from "../../group/ports/GroupPort";
@@ -110,10 +112,11 @@ export class UpdatePurchaseStatusUseCase {
       }
 
       const now = new Date();
-      let updatedPurchase: typeof purchase;
+      let updatedPurchase: import("@mirai-app/domain").RewardPurchase;
 
       // Handle cancellation refund
       if (nextStatus === "CANCELLED" && currentStatus !== "CANCELLED") {
+        let tripId: import("@mirai-app/domain").TripId | null = null;
         const group = yield* groupPort.findById(purchase.groupId);
 
         if (group) {
@@ -133,14 +136,24 @@ export class UpdatePurchaseStatusUseCase {
             createdAt: now,
           });
           const transaction = yield* transactionEffect;
-          yield* coinTransactionPort.create(transaction);
-        }
 
-        // Restore reward quantity
-        const reward = yield* rewardPort.findById(purchase.rewardId);
-        if (reward) {
-          // Note: Quantity restoration needs to be handled at repository level
-          // or entity needs to support adding quantity
+          // Get tripId from reward for the transaction DTO
+          const reward = yield* rewardPort.findById(purchase.rewardId);
+          if (reward) {
+            tripId = reward.tripId;
+          }
+
+          // Convert to DTO with tripId for persistence
+          const transactionDTO: CoinTransactionDTO = {
+            id: transaction.id,
+            tripId: tripId ? TripId.toString(tripId) : "",
+            groupId: transaction.groupId,
+            amount: transaction.amount,
+            reason: transaction.reason,
+            adminId: transaction.adminId,
+            createdAt: transaction.createdAt,
+          };
+          yield* coinTransactionPort.create(transactionDTO);
         }
 
         const cancelResult = yield* purchase.cancel(userId);

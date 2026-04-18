@@ -25,7 +25,7 @@ packages/frameworks/src/di/
 └── layer/
     ├── app.ts              # Complete app layer (repositories + services)
     ├── repository.ts       # All domain repository Layers
-    ├── service.ts          # Supabase service Layers
+    ├── service.ts          # Service Layers (Better Auth, SeaweedFS Storage, Redis EventBus)
     ├── service-tags.ts     # Context.Tags for services
     ├── infrastructure.ts   # Database/logger configuration
     ├── test.ts            # Test utilities and mock layers
@@ -41,7 +41,7 @@ import { makeAppLayer } from "@mirai-app/frameworks/di";
 import { UserPortTag } from "@mirai-app/use-cases/user/ports/UserPort";
 import { Effect } from "effect";
 
-const appLayer = makeAppLayer({ db, supabase });
+const appLayer = makeAppLayer({ db });
 
 const program = Effect.gen(function* () {
   const userRepo = yield* UserPortTag;
@@ -57,16 +57,17 @@ import { makeUserRepositoryLayer } from "@mirai-app/frameworks/di";
 const userLayer = makeUserRepositoryLayer({ db });
 ```
 
-**Service Layer (Supabase):**
+**Service Layer (Better Auth + SeaweedFS + Redis EventBus):**
 
 ```typescript
-import { makeServiceLayer, AuthPortTag } from "@mirai-app/frameworks/di";
+import { makeServiceLayer, AuthNPortTag, EventBusTag } from "@mirai-app/frameworks/di";
 
-const serviceLayer = makeServiceLayer({ supabase });
+const serviceLayer = makeServiceLayer({ db });
 
 const program = Effect.gen(function* () {
-  const auth = yield* AuthPortTag;
-  return yield* auth.getSession();
+  const authN = yield* AuthNPortTag;
+  const eventBus = yield* EventBusTag;
+  return yield* authN.getSession();
 }).pipe(Effect.provide(serviceLayer));
 ```
 
@@ -92,7 +93,7 @@ const result = await runWithTestLayer(
 2. **No `as unknown as` casts** - Use proper gateway implementations
 3. **Check existing implementations** - Before creating placeholders, verify if gateways exist in adapters
 4. **Layer composition** - Use `Layer.mergeAll()` for combining multiple layers
-5. **Service separation** - Repository layers (db) and service layers (supabase) are independent
+5. **Service separation** - Repository layers (db) and service layers (Better Auth, SeaweedFS, Redis EventBus) are independent
 
 **Key rule:** Frameworks layer wires infrastructure, never contains business logic.
 
@@ -360,11 +361,50 @@ export * from "./product";
 ### Key Patterns
 
 - **Type definition**: Use `builder.node()` with Relay plugin for global IDs
-- **Connections**: Use `builder.connection()` for paginated lists
+- **Connections**: Use `builder.connectionObject()` for paginated lists (Relay pattern)
 - **Authorization**: Use Scope Auth plugin with `authScopes: { authenticated: true }`
 - **Error handling**: Use `mapDomainErrorToGraphQL()` in resolvers
 - **Controller access**: Access via `ctx.controllers.{domain}Controller`
-- **Pagination**: Use `clampFirst()` and `decodeCursorWithDate()` for Relay pagination
+- **Pagination**: Use `normalizePaginationArgs()` and `buildConnection()` from `utils/connections`
+
+### Pagination Pattern (Relay Connection)
+
+```typescript
+// In types.ts - Create Connection type
+export const TripConnectionType = builder.connectionObject(
+  { name: "TripConnection", type: TripType },
+  { name: "TripEdge" }
+);
+
+// In queries.ts - Use connection utilities
+import { normalizePaginationArgs, buildConnection, encodeCursor } from "../../utils/connections";
+
+builder.queryFields((t) => ({
+  trips: t.field({
+    type: TripConnectionType,
+    args: {
+      first: t.arg.int(),
+      after: t.arg.string(),
+    },
+    resolve: async (_parent, args, ctx) => {
+      const { limit, after } = normalizePaginationArgs(args);
+      const result = await ctx.controllers.tripController.findMany({ 
+        first: limit, 
+        after: after ? decodeCursor(after) : null 
+      });
+      
+      return buildConnection({
+        items: result.items,
+        hasMore: result.hasMore,
+        getCursor: (trip) => encodeCursor(trip.id),
+        totalCount: result.total,
+      });
+    },
+  }),
+}));
+```
+
+**Note:** Legacy offset-based pagination (`PaginationInput`, `PaginatedTrips`, etc.) has been removed. All pagination now uses Relay cursor-based pattern.
 
 ---
 
@@ -398,5 +438,5 @@ For comprehensive framework patterns, see **CLAUDE.md**:
 
 ---
 
-**Last Updated:** 2026-04-17  
-**Version:** 1.2.0 (Updated DI Layer patterns - Effect Layer composition with type inference, no unsafe casts, proper gateway discovery)
+**Last Updated:** 2026-04-19
+**Version:** 1.3.0 (Migrated to Relay cursor-based pagination - removed legacy offset pagination)

@@ -1,8 +1,7 @@
 import { Effect } from "effect";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
 import { UserId } from "@mirai-app/domain";
 import type { LocationSharingSettingsDTO } from "../dto/LocationDTOs";
-import type { ApplicationError } from "@mirai-app/domain";
 
 /**
  * Input for GetMySharingSettingsUseCase
@@ -17,11 +16,9 @@ export interface GetMySharingSettingsInput {
  * Retrieves the user's location sharing settings.
  */
 export class GetMySharingSettingsUseCase {
-  execute(
-    input: GetMySharingSettingsInput,
-  ): Effect.Effect<LocationSharingSettingsDTO, ApplicationError, LocationPort> {
+  execute(input: GetMySharingSettingsInput) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
 
       const userId = UserId.unsafeCreate(input.userId);
       const location = yield* locationPort.findByUserId(userId);

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import type { ApplicationError, ValidationError } from "@mirai-app/domain";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
+import { UserId, TripId } from "@mirai-app/domain";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
 import type { ParticipantNumberUpdateDTO } from "../dto/UserDTOs";
 import { UserNotInTripError } from "../errors/UserErrors";
 
@@ -8,8 +8,8 @@ import { UserNotInTripError } from "../errors/UserErrors";
  * Input for RemoveHouseNumberUseCase
  */
 export interface RemoveHouseNumberInput {
-  userId: string;
-  tripId: string;
+  userId: UserId;
+  tripId: TripId;
 }
 
 /**
@@ -18,15 +18,9 @@ export interface RemoveHouseNumberInput {
  * Removes the house number from a trip participant.
  */
 export class RemoveHouseNumberUseCase {
-  execute(
-    input: RemoveHouseNumberInput,
-  ): Effect.Effect<
-    ParticipantNumberUpdateDTO,
-    ApplicationError | UserNotInTripError | ValidationError,
-    TripParticipantPort
-  > {
+  execute(input: RemoveHouseNumberInput) {
     return Effect.gen(function* () {
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Find participant
       const participant = yield* participantPort.findByUserAndTrip(
@@ -37,8 +31,8 @@ export class RemoveHouseNumberUseCase {
       if (!participant) {
         return yield* Effect.fail(
           new UserNotInTripError({
-            userId: input.userId,
-            tripId: input.tripId,
+            userId: UserId.toString(input.userId),
+            tripId: TripId.toString(input.tripId),
           }),
         );
       }
@@ -52,8 +46,8 @@ export class RemoveHouseNumberUseCase {
         yield* participantPort.update(updatedParticipant);
 
       const result: ParticipantNumberUpdateDTO = {
-        userId: input.userId,
-        tripId: input.tripId,
+        userId: UserId.toString(input.userId),
+        tripId: TripId.toString(input.tripId),
         wristNumber: savedParticipant.wristNumber,
         houseNumber: savedParticipant.houseNumber,
       };

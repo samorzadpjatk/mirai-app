@@ -1,63 +1,70 @@
 #!/usr/bin/env bun
+// =============================================================================
+// GraphQL Schema Generator
+// =============================================================================
+
 /**
- * Schema Generation Script
+ * Generates GraphQL SDL schema from Pothos builder
  *
- * Generates GraphQL SDL from the Pothos schema and writes it to the
- * graphql-client package for codegen consumption.
- *
- * Usage:
- *   bun run packages/frameworks/src/graphql/generate-schema.ts
- *   # or from root:
- *   bun packages/frameworks/src/graphql/generate-schema.ts
+ * This script:
+ * 1. Imports the Pothos schema
+ * 2. Prints it to GraphQL SDL format
+ * 3. Saves it to schema.graphql for codegen
  */
 
-import { schema } from "./schema.js";
-import { writeSchemaToFile } from "./schema-output.js";
+import { writeFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { printSchema } from "graphql";
 
-const OUTPUT_PATH = "./src/graphql/generated/graphql/schema.graphql";
+// Import the schema from Pothos
+import { schema } from "./schema.js";
 
-async function generateSchema(): Promise<void> {
-  console.log("Generating GraphQL schema...");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+/**
+ * Generate and save schema
+ */
+async function generateSchema() {
+  console.log("Generating GraphQL schema from Pothos...");
 
   try {
-    // First verify schema can be built
+    // Convert schema to SDL
     const sdl = printSchema(schema);
-    console.log(`Schema generated successfully (${sdl.length} characters)`);
-
-    // Count types in schema
-    const typeCount = (sdl.match(/^type\s+\w+/gm) || []).length;
-    const inputCount = (sdl.match(/^input\s+\w+/gm) || []).length;
-    const enumCount = (sdl.match(/^enum\s+\w+/gm) || []).length;
-    const scalarCount = (sdl.match(/^scalar\s+\w+/gm) || []).length;
-
-    console.log(`  - Types: ${typeCount}`);
-    console.log(`  - Inputs: ${inputCount}`);
-    console.log(`  - Enums: ${enumCount}`);
-    console.log(`  - Scalars: ${scalarCount}`);
 
     // Write to file
-    await writeSchemaToFile(schema, {
-      path: OUTPUT_PATH,
-      header: [
-        "GraphQL Schema - Mirai App API",
-        "Generated automatically from Pothos type definitions",
-        "Do not edit manually - changes will be overwritten",
-      ].join("\n"),
-      includeDescriptions: true,
-    });
+    const outputPath = join(__dirname, "schema.graphql");
+    writeFileSync(outputPath, sdl, "utf-8");
 
-    console.log(`\nSchema written to: ${OUTPUT_PATH}`);
-    console.log("Schema generation complete!");
+    console.log(`✅ Schema generated: ${outputPath}`);
+    console.log(`   Schema has ${Object.keys(schema.getTypeMap()).length} types`);
+    
+    // Print query types for verification
+    const queryType = schema.getQueryType();
+    if (queryType) {
+      const fields = Object.keys(queryType.getFields());
+      console.log(`   Queries: ${fields.length} fields`);
+    }
+    
+    const mutationType = schema.getMutationType();
+    if (mutationType) {
+      const fields = Object.keys(mutationType.getFields());
+      console.log(`   Mutations: ${fields.length} fields`);
+    }
+    
+    const subscriptionType = schema.getSubscriptionType();
+    if (subscriptionType) {
+      const fields = Object.keys(subscriptionType.getFields());
+      console.log(`   Subscriptions: ${fields.length} fields`);
+    }
+
+    return true;
   } catch (error) {
-    console.error("Failed to generate schema:", error);
+    console.error("❌ Failed to generate schema:", error);
     process.exit(1);
   }
 }
 
-// Run if called directly
-if (import.meta.main) {
-  generateSchema();
-}
-
-export { generateSchema };
+// Run generation
+generateSchema();

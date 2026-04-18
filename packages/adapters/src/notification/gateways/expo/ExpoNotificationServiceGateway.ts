@@ -8,6 +8,8 @@ import type {
 } from "@mirai-app/domain";
 import type { NotificationId } from "@mirai-app/domain";
 import type { IPortError } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 
 /**
  * Error for notification service failures
@@ -26,6 +28,10 @@ export class NotificationServiceError
  *
  * Implements INotificationServicePort for sending push notifications.
  * Uses Expo Push Notification Service via expo-server-sdk.
+ *
+ * This gateway uses the AuthContext pattern for authorization. Send operations
+ * verify trip write access via `AuthContextTag` and `AuthZPortTag`.
+ * Content builder methods (create*Notification) are pure functions and don't require auth.
  */
 export class ExpoNotificationServiceGateway implements INotificationServicePort {
   private expo: Expo;
@@ -40,6 +46,8 @@ export class ExpoNotificationServiceGateway implements INotificationServicePort 
 
   /**
    * Send notification to multiple users
+   *
+   * Requires trip write access for the specified tripId.
    */
   sendNotification(params: {
     userIds: string[];
@@ -49,11 +57,26 @@ export class ExpoNotificationServiceGateway implements INotificationServicePort 
     tripId: string;
     createdById: string;
   }) {
-    const { userIds, title, body, url } = params;
+    const { userIds, title, body, url, tripId } = params;
     const pushSubscriptionPort = this.pushSubscriptionPort;
     const expo = this.expo;
 
     return Effect.gen(function* () {
+      // Get AuthContext and verify trip write access
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripId,
+          requiredPermission: "write",
+        });
+      }
+
       // Fetch push subscriptions for target users
       const tokens: string[] = [];
       const userByToken = new Map<string, string>();
@@ -134,6 +157,8 @@ export class ExpoNotificationServiceGateway implements INotificationServicePort 
 
   /**
    * Send mobile push notifications for a notification
+   *
+   * Requires admin or trip write access for the notification's trip.
    */
   sendMobileNotifications(notificationId: NotificationId) {
     const notificationPort = this.notificationPort;
@@ -141,7 +166,10 @@ export class ExpoNotificationServiceGateway implements INotificationServicePort 
     const expo = this.expo;
 
     return Effect.gen(function* () {
-      // Fetch the notification with pushes
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Fetch the notification with pushes first to get tripId
       const notificationResult = yield* notificationPort.findWithPushes(
         notificationId,
       );
@@ -156,6 +184,19 @@ export class ExpoNotificationServiceGateway implements INotificationServicePort 
       }
 
       const { notification, pushes } = notificationResult;
+
+      // Verify trip write access if authenticated and trip context exists
+      if (authCtx.isAuthenticated && notification.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: notification.tripId,
+          requiredPermission: "write",
+        });
+      }
 
       // Filter pending pushes
       const pendingPushes = pushes.filter((p) => p.status === "pending");
@@ -319,16 +360,35 @@ export class ExpoNotificationServiceGateway implements INotificationServicePort 
 
   /**
    * Send ranking update notification
+   *
+   * Requires trip write access for the specified tripId.
    */
   sendRankingUpdate(params: { tripId: string; createdById: string }) {
+    const { tripId } = params;
+
     return Effect.gen(function* () {
+      // Get AuthContext and verify trip write access
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripId,
+          requiredPermission: "write",
+        });
+      }
+
       // Ranking update notifications are sent via the same mechanism
       // as regular notifications. This is a placeholder for future
       // ranking-specific notification logic.
 
       return {
         success: true,
-        notificationId: params.tripId as unknown as NotificationId,
+        notificationId: tripId as NotificationId,
         recipientCount: 0,
       };
     });

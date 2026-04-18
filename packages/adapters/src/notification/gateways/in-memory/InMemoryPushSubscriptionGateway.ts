@@ -30,6 +30,12 @@ export class InMemoryPushSubscriptionGateway implements IPushSubscriptionPort {
     });
   }
 
+  findById(id: string) {
+    return Effect.sync(() => {
+      return this.subscriptions.get(id) ?? null;
+    });
+  }
+
   findByUserIdAndToken(userId: string, token: string) {
     return Effect.sync(() => {
       const subscription = Array.from(this.subscriptions.values()).find(

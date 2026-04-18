@@ -26,17 +26,11 @@ const config = defineConfig({
       { checksVoidReturn: { attributes: false } },
     ],
     "space-infix-ops": ["error", { int32Hint: false }],
-    // Prevent console.log in production code (allow in tests and scripts)
+    // Allow this aliasing for Effect.gen pattern where 'this' is shadowed with local variables like 'db'
+    "@typescript-eslint/no-this-alias": "off",
     "no-console": ["warn", { allow: ["error"] }],
-    // Require explicit return types on functions with flexible allowances
-    "@typescript-eslint/explicit-function-return-type": [
-      "warn",
-      {
-        allowExpressions: true,
-        allowTypedFunctionExpressions: true,
-        allowHigherOrderFunctions: true,
-      },
-    ],
+    // Disable - we follow inference-first pattern; explicit types only needed for error composition
+    "@typescript-eslint/explicit-function-return-type": "off",
   },
 
   linterOptions: {

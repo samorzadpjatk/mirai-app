@@ -1,7 +1,7 @@
-export { GroupPortTag, type GroupUseCasePort } from "./ports/GroupPort";
+export { GroupPortTag, type IGroupPort } from "./ports/GroupPort";
 export {
   GroupJoinRequestPortTag,
-  type GroupJoinRequestUseCasePort,
+  type IGroupJoinRequestPort,
 } from "./ports/GroupJoinRequestPort";
 export * from "./dto";
 export * from "./errors";

@@ -6,7 +6,7 @@
 
 import { Layer, Effect, Context, Data } from "effect";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import type { IAuthPort, IAuthNPort, IAuthZPort, IPortError } from "@mirai-app/domain";
+import type { IAuthPort, IAuthNPort, IAuthZPort, IPortError, AccessCheckRequest } from "@mirai-app/domain";
 
 // Use-cases ports - using available exports
 import {
@@ -102,6 +102,7 @@ export const createAlwaysAllowMockAuth = (): IAuthPort => ({
       user: { id: "test-user-id", email: "test@example.com" },
       session: { accessToken: "mock-token" },
     }),
+  sendSignInOtp: () => Effect.succeed(void 0),
   signInWithOtp: () =>
     Effect.succeed({
       user: { id: "test-user-id", email: "test@example.com" },
@@ -142,6 +143,7 @@ export const createAlwaysAllowMockAuth = (): IAuthPort => ({
  */
 export const createAlwaysDenyMockAuth = (error: IPortError): IAuthPort => ({
   signInWithPassword: () => Effect.fail(error),
+  sendSignInOtp: () => Effect.fail(error),
   signInWithOtp: () => Effect.fail(error),
   signUp: () => Effect.fail(error),
   signOut: () => Effect.fail(error),
@@ -186,6 +188,7 @@ export const createConditionalMockAuth = (
       }
       return Effect.fail(config.error);
     },
+    sendSignInOtp: () => Effect.succeed(void 0),
     signInWithOtp: (email, otp) => {
       if (config.isAllowed(`${email}:${otp}`)) {
         return Effect.succeed({
@@ -264,6 +267,7 @@ export const createMockAuthLayer = () => {
         user: { id: "test-user-id", email: "test@example.com" },
         session: { accessToken: "mock-token" },
       }),
+    sendSignInOtp: () => Effect.succeed(void 0),
     signInWithOtp: () =>
       Effect.succeed({
         user: { id: "test-user-id", email: "test@example.com" },
@@ -297,6 +301,7 @@ export const createMockAuthPort = (): IAuthPort => ({
       user: { id: "test-user-id", email: "test@example.com" },
       session: { accessToken: "mock-token" },
     }),
+  sendSignInOtp: () => Effect.succeed(void 0),
   signInWithOtp: () =>
     Effect.succeed({
       user: { id: "test-user-id", email: "test@example.com" },
@@ -414,7 +419,7 @@ export const createAlwaysDenyMockAuthZ = (error: IPortError): IAuthZPort => ({
  * Useful for testing role-based access or conditional authorization.
  */
 export interface ConditionalMockAuthZConfig {
-  isAllowed: (token: string | undefined, resourceType?: string, resourceId?: string) => boolean;
+  isAllowed: (request: AccessCheckRequest) => boolean;
   error: IPortError;
 }
 
@@ -422,7 +427,7 @@ export const createConditionalMockAuthZ = (
   config: ConditionalMockAuthZConfig,
 ): IAuthZPort => ({
   verifyAccess: (request) => {
-    if (config.isAllowed(request.token, request.resourceType, request.resourceId)) {
+    if (config.isAllowed(request)) {
       return Effect.succeed(void 0);
     }
     return Effect.fail(config.error);

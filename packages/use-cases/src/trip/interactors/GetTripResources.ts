@@ -1,11 +1,11 @@
 import { Effect } from "effect";
 import { TripPortTag } from "../ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import type { TripId } from "@mirai-app/domain";
+import type { UserId } from "@mirai-app/domain";
 import {
   TripNotFoundError,
   NotTripParticipantError,
-  TripResourceNotFoundError,
 } from "../errors/TripErrors";
 import type { TripResource, TripInsurance } from "../ports/TripPort";
 
@@ -14,7 +14,7 @@ import type { TripResource, TripInsurance } from "../ports/TripPort";
  */
 export interface GetTripResourcesInput {
   tripId: TripId;
-  userId: string;
+  userId: UserId;
 }
 
 /**
@@ -31,16 +31,10 @@ export interface TripResourcesDTO {
  * Retrieves resources and insurance for a trip.
  */
 export class GetTripResourcesUseCase {
-  execute(
-    input: GetTripResourcesInput,
-  ): Effect.Effect<
-    TripResourcesDTO,
-    ApplicationError | TripNotFoundError | NotTripParticipantError,
-    TripPortTag | TripParticipantPort
-  > {
+  execute(input: GetTripResourcesInput) {
     return Effect.gen(function* () {
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Check if user is a participant
       const isParticipant = yield* participantPort.isParticipant(
@@ -75,7 +69,7 @@ export class GetTripResourcesUseCase {
       return {
         resources,
         insurance,
-      };
+      } as TripResourcesDTO;
     });
   }
 }

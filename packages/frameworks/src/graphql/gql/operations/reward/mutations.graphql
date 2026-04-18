@@ -1,0 +1,34 @@
+# =============================================================================
+# Reward Mutations
+# =============================================================================
+
+mutation CreateReward($coinCost: Int!, $description: String, $name: String!, $quantity: Int, $tripId: String!) {
+  createReward(coinCost: $coinCost, description: $description, name: $name, quantity: $quantity, tripId: $tripId) {
+    id
+    name
+    description
+    image
+    coinCost
+    availableQuantity
+    tripId
+    createdAt
+  }
+}
+
+mutation RedeemReward($input: RedeemRewardInput!) {
+  redeemReward(input: $input) {
+    id
+    rewardId
+    groupId
+    userId
+    status
+    redeemedAt
+    reward {
+      id
+      name
+      description
+      image
+      coinCost
+    }
+  }
+}

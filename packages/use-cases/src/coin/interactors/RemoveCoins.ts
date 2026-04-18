@@ -1,10 +1,10 @@
 import { Effect } from "effect";
-import { CoinTransactionPort } from "../ports/CoinTransactionPort";
-import { GroupPort } from "../../group/ports/GroupPort";
-import type { CoinTransactionWithDetailsDTO } from "../dto/CoinDTOs";
-import type { ApplicationError } from "@mirai-app/domain";
+import { CoinTransactionPortTag } from "../ports/CoinTransactionPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { UserPortTag } from "../../user/ports/UserPort";
 import { CoinTransactionId, GroupId, UserId } from "@mirai-app/domain";
 import { GroupNotFoundError } from "../../group/errors/GroupErrors";
+import { UserNotFoundError } from "../../user/errors/UserErrors";
 import { InsufficientCoinsError } from "../errors/CoinErrors";
 
 /**
@@ -26,21 +26,27 @@ export interface RemoveCoinsInput {
 export class RemoveCoinsUseCase {
   execute(
     input: RemoveCoinsInput,
-  ): Effect.Effect<
-    CoinTransactionWithDetailsDTO,
-    ApplicationError | GroupNotFoundError | InsufficientCoinsError,
-    CoinTransactionPort | GroupPort
-  > {
+  ) {
     return Effect.gen(function* () {
-      const coinPort = yield* CoinTransactionPort;
-      const groupPort = yield* GroupPort;
+      const coinPort = yield* CoinTransactionPortTag;
+      const groupPort = yield* GroupPortTag;
+      const userPort = yield* UserPortTag;
 
-      // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      // Fetch group and admin in parallel for validation
+      const [group, admin] = yield* Effect.all([
+        groupPort.findById(GroupId.unsafeCreate(input.groupId)),
+        userPort.findById(UserId.unsafeCreate(input.adminId)),
+      ]);
 
       if (!group || group.isDeleted || group.tripId !== input.tripId) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: input.groupId }),
+        );
+      }
+
+      if (!admin) {
+        return yield* Effect.fail(
+          new UserNotFoundError({ userId: input.adminId }),
         );
       }
 
@@ -57,7 +63,7 @@ export class RemoveCoinsUseCase {
 
       // Remove coins from group
       const updatedGroup = yield* groupPort.subtractCoins(
-        input.groupId,
+        GroupId.unsafeCreate(input.groupId),
         input.amount,
       );
 
@@ -65,6 +71,7 @@ export class RemoveCoinsUseCase {
       const transactionId = CoinTransactionId.generate();
       const transaction = yield* coinPort.create({
         id: transactionId,
+        tripId: input.tripId,
         groupId: input.groupId,
         amount: -input.amount,
         reason: input.reason ?? null,
@@ -84,7 +91,11 @@ export class RemoveCoinsUseCase {
           name: updatedGroup.name,
           coins: updatedGroup.coins,
         },
-        admin: null, // Will be hydrated by adapter
+        admin: {
+          id: admin.id,
+          firstName: admin.firstName,
+          lastName: admin.lastName,
+        },
       };
     });
   }

@@ -1,0 +1,49 @@
+# =============================================================================
+# Activity Feed Queries
+# =============================================================================
+
+query ActivityFeed($tripId: String!, $first: Int, $after: String) {
+  activityFeed(tripId: $tripId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        type
+        title
+        description
+        imageUrl
+        isPinned
+        isHidden
+        createdAt
+        updatedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query GroupActivity($groupId: String!, $first: Int, $after: String) {
+  groupActivity(groupId: $groupId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        type
+        title
+        description
+        imageUrl
+        isPinned
+        isHidden
+        createdAt
+        updatedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

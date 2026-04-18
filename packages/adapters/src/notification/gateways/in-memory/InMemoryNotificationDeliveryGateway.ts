@@ -1,19 +1,25 @@
 import { Effect } from "effect";
-import {
-  type NotificationDelivery,
-  type NotificationDeliveryStats,
-} from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import type {
+  INotificationDeliveryPort,
+  NotificationDelivery,
+  NotificationDeliveryStats,
+  NotificationId,
+} from "@mirai-app/domain";
 import { DatabaseError } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 
 /**
  * In-Memory Notification Delivery Gateway
  *
- * Implements NotificationDeliveryPort using in-memory Map storage for testing.
+ * Implements INotificationDeliveryPort using in-memory Map storage for testing.
  *
- * Note: This implements all methods from NotificationDeliveryPort interface
- * but does not formally implement it due to Context.Tag properties.
+ * Auth verification uses AuthContextTag and AuthZPortTag from Effect context.
+ * Notification deliveries are trip-scoped - users need trip-level access for read operations.
  */
-export class InMemoryNotificationDeliveryGateway {
+export class InMemoryNotificationDeliveryGateway
+  implements INotificationDeliveryPort
+{
   private deliveries: Map<string, NotificationDelivery> = new Map();
 
   findAll(params: {
@@ -25,11 +31,29 @@ export class InMemoryNotificationDeliveryGateway {
     limit: number;
     offset: number;
   }) {
-    return Effect.sync(() => {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // If tripId is specified, verify trip read access
+      if (authCtx.isAuthenticated && params.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: params.tripId,
+          requiredPermission: "read",
+        });
+      }
+
       const { tripId, status, scheduleId, startDate, endDate, limit, offset } =
         params;
 
-      let filteredDeliveries = Array.from(this.deliveries.values());
+      let filteredDeliveries = Array.from(self.deliveries.values());
 
       // Apply filters
       if (tripId) {
@@ -64,7 +88,8 @@ export class InMemoryNotificationDeliveryGateway {
 
       // Sort by deliveryStartedAt desc
       const sortedDeliveries = filteredDeliveries.sort(
-        (a, b) => b.deliveryStartedAt.getTime() - a.deliveryStartedAt.getTime(),
+        (a, b) =>
+          b.deliveryStartedAt.getTime() - a.deliveryStartedAt.getTime(),
       );
 
       const total = sortedDeliveries.length;
@@ -80,20 +105,44 @@ export class InMemoryNotificationDeliveryGateway {
     });
   }
 
-  findByNotificationId(notificationId: string) {
-    return Effect.sync(() => {
-      const delivery = Array.from(this.deliveries.values()).find(
-        (d) => d.notificationId === notificationId,
+  findByNotificationId(notificationId: NotificationId) {
+    const self = this;
+    const notificationIdStr = notificationId.toString();
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization (used for logging/auditing)
+      yield* AuthContextTag;
+
+      const delivery = Array.from(self.deliveries.values()).find(
+        (d) => d.notificationId === notificationIdStr,
       );
       return delivery ?? null;
     });
   }
 
   findFailed(params: { tripId?: string; limit: number; offset: number }) {
-    return Effect.sync(() => {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // If tripId is specified, verify trip read access
+      if (authCtx.isAuthenticated && params.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: params.tripId,
+          requiredPermission: "read",
+        });
+      }
+
       const { tripId, limit, offset } = params;
 
-      let filteredDeliveries = Array.from(this.deliveries.values()).filter(
+      let filteredDeliveries = Array.from(self.deliveries.values()).filter(
         (d) => d.status === "failure",
       );
 
@@ -105,7 +154,8 @@ export class InMemoryNotificationDeliveryGateway {
 
       // Sort by deliveryStartedAt desc
       const sortedDeliveries = filteredDeliveries.sort(
-        (a, b) => b.deliveryStartedAt.getTime() - a.deliveryStartedAt.getTime(),
+        (a, b) =>
+          b.deliveryStartedAt.getTime() - a.deliveryStartedAt.getTime(),
       );
 
       const total = sortedDeliveries.length;
@@ -127,10 +177,28 @@ export class InMemoryNotificationDeliveryGateway {
     endDate?: Date;
     scheduleId?: string;
   }) {
-    return Effect.sync(() => {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // If tripId is specified, verify trip read access
+      if (authCtx.isAuthenticated && params.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: params.tripId,
+          requiredPermission: "read",
+        });
+      }
+
       const { tripId, startDate, endDate, scheduleId } = params;
 
-      let filteredDeliveries = Array.from(this.deliveries.values());
+      let filteredDeliveries = Array.from(self.deliveries.values());
 
       // Apply filters
       if (tripId) {
@@ -201,24 +269,40 @@ export class InMemoryNotificationDeliveryGateway {
   }
 
   create(delivery: NotificationDelivery) {
-    return Effect.sync(() => {
-      this.deliveries.set(delivery.id, delivery);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext (used for logging/auditing - system operations)
+      yield* AuthContextTag;
+
+      self.deliveries.set(delivery.id, delivery);
       return delivery;
     });
   }
 
   update(delivery: NotificationDelivery) {
-    return Effect.sync(() => {
-      const existing = this.deliveries.get(delivery.id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext (used for logging/auditing - system operations)
+      yield* AuthContextTag;
+
+      const existing = self.deliveries.get(delivery.id);
       if (!existing) {
-        throw new Error(`Notification delivery not found: ${delivery.id}`);
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "update",
+            id: delivery.id,
+            cause: new Error(`Notification delivery not found: ${delivery.id}`),
+          }),
+        );
       }
 
       const updatedDelivery: NotificationDelivery = {
         ...delivery,
       };
 
-      this.deliveries.set(delivery.id, updatedDelivery);
+      self.deliveries.set(delivery.id, updatedDelivery);
       return updatedDelivery;
     });
   }

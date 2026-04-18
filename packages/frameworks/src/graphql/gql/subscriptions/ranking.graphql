@@ -1,0 +1,14 @@
+# =============================================================================
+# Group Ranking Subscriptions
+# =============================================================================
+
+subscription GroupRankingEvent($filter: GroupSubscriptionFilter!) {
+  groupRankingEvent(filter: $filter) {
+    groupId
+    tripId
+    previousRank
+    newRank
+    coinChange
+    changedAt
+  }
+}

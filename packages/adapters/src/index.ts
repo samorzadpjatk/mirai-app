@@ -1,14 +1,52 @@
 // Main adapters package exports
 
-// Service gateways (Supabase)
-export { SupabaseAuthGateway } from "./auth/gateways/supabase/SupabaseAuthGateway";
-export { SupabaseStorageGateway } from "./storage/gateways/supabase/SupabaseStorageGateway";
-export { SupabaseRealtimeEventBusGateway } from "./shared/gateways/SupabaseRealtimeEventBusGateway";
+// Service gateways (Authentication)
+export { BetterAuthGateway } from "./auth/gateways/better-auth/BetterAuthGateway";
 export { InProcessEventBusGateway } from "./shared/gateways/InProcessEventBusGateway";
+export { RedisEventBusGateway } from "./shared/gateways/RedisEventBusGateway";
+export {
+  type RedisEventBusConfig,
+  defaultRedisEventBusConfig,
+  validateRedisEventBusConfig,
+  loadRedisEventBusConfigFromEnv,
+} from "./shared/gateways/RedisEventBusConfig";
+export {
+  RedisConnectionError,
+  RedisPublishError,
+  RedisSubscribeError,
+  RedisConsumerGroupError,
+  HandlerExecutionError,
+  RedisParseError,
+  // Note: ConfigurationError for EventBus is exported above;
+  // SeaweedFS ConfigurationError is exported separately from storage/gateways/seaweedfs
+} from "./shared/errors/EventBusErrors";
 
 // In-memory storage gateway
 export { InMemoryStorageGateway } from "./storage/gateways/in-memory/InMemoryStorageGateway";
 export { DefaultStoragePathResolver } from "./storage/gateways/default/DefaultStoragePathResolver";
+
+// SeaweedFS Storage Gateway (S3-compatible storage with native TUS)
+export {
+  // Core gateway
+  SeaweedFSStorageGateway,
+
+  // Configuration types
+  type SeaweedFSConfig,
+
+  // Default configuration values
+  defaultSeaweedFSConfig,
+
+  // Validation functions
+  validateSeaweedFSConfig,
+  loadConfigFromEnv,
+
+  // Configuration errors
+  ConfigurationError,
+
+  // Storage error types
+  StorageError,
+  FileNotFoundError,
+} from "./storage/gateways/seaweedfs";
 
 // Storage utilities
 export {
@@ -112,7 +150,10 @@ export {
   ActivityFeedDrizzleGateway,
   ActivityReactionDrizzleGateway,
 } from "./activity-feed/gateways/drizzle";
-export { InMemoryActivityFeedGateway } from "./activity-feed/gateways/in-memory";
+export {
+  InMemoryActivityFeedGateway,
+  InMemoryActivityReactionGateway,
+} from "./activity-feed/gateways/in-memory";
 export { ActivityFeedMapper } from "./activity-feed/mappers";
 
 // Reward domain

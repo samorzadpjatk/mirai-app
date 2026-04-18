@@ -1,0 +1,27 @@
+# =============================================================================
+# Notification Mutations
+# =============================================================================
+
+#import "../../fragments/notification.graphql"
+
+mutation MarkNotificationRead($id: String!) {
+  markNotificationRead(id: $id) {
+    ...NotificationFields
+  }
+}
+
+mutation MarkAllNotificationsRead {
+  markAllNotificationsRead {
+    count
+  }
+}
+
+mutation UpdateNotificationPreferences($input: UpdateNotificationPreferencesInput!) {
+  updateNotificationPreferences(input: $input) {
+    pushEnabled
+    emailEnabled
+    challengeEnabled
+    rankingEnabled
+    systemEnabled
+  }
+}

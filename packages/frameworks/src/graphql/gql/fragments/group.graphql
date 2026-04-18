@@ -1,0 +1,80 @@
+# =============================================================================
+# Group Fragments
+# =============================================================================
+
+fragment GroupFields on Group {
+  id
+  name
+  code
+  image
+  coins
+  description
+  tripId
+  isDeleted
+  createdAt
+  updatedAt
+}
+
+fragment GroupWithDetailsFields on GroupWithDetails {
+  id
+  name
+  code
+  description
+  image
+  coins
+  createdAt
+  updatedAt
+  tripId
+  participantCount
+  organizer {
+    id
+    firstName
+    lastName
+    email
+  }
+  participants {
+    id
+    joinedAt
+    user {
+      id
+      firstName
+      lastName
+      email
+    }
+  }
+}
+
+fragment GroupJoinRequestFields on GroupJoinRequest {
+  id
+  userId
+  groupId
+  tripId
+  status
+  requestedAt
+  user {
+    id
+    firstName
+    lastName
+    email
+  }
+}
+
+fragment GroupGallerySubmissionFields on GroupGallerySubmission {
+  submissionId
+  challengeId
+  challengeTitle
+  imageStoragePath
+  approvedAt
+}
+
+fragment GroupRankingFields on GroupRankingResult {
+  groups {
+    id
+    name
+    image
+    coins
+    participantCount
+    rank
+  }
+  currentDate
+}

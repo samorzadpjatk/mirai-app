@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { createDrizzleClient } from "@mirai-app/frameworks/drizzle";
-import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+import { createBetterAuth, type BetterAuthInstance } from "@mirai-app/frameworks/better-auth";
+import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { ServerStartupError } from "./errors";
 
 /**
@@ -16,12 +16,16 @@ export const createDatabaseClient = (url: string) =>
   );
 
 /**
- * Create Supabase client
+ * Create Better Auth client
  */
-export const createSupabaseServiceClient = (url: string, key: string) =>
+export const createBetterAuthClient = (
+  db: DrizzleDb,
+  secret: string,
+  baseUrl: string,
+) =>
   Effect.try({
-    try: () => createSupabaseClient(url, key) as SupabaseClient,
-    catch: (error) => new ServerStartupError({ cause: error, phase: "supabase" }),
+    try: () => createBetterAuth(db, { secret, baseUrl }),
+    catch: (error) => new ServerStartupError({ cause: error, phase: "better_auth" }),
   }).pipe(
-    Effect.tap(() => Effect.log("Supabase client initialized"))
+    Effect.tap(() => Effect.log("Better Auth client initialized"))
   );

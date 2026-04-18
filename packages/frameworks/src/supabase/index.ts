@@ -19,7 +19,7 @@
  */
 
 import { Context, Layer } from "effect";
-import type { SupabaseClient } from "./types";
+import type { RealSupabaseClient } from "./types";
 
 // =============================================================================
 // Effect Context Tag for DI
@@ -43,7 +43,7 @@ import type { SupabaseClient } from "./types";
  */
 export class SupabaseClientTag extends Context.Tag("SupabaseClient")<
   SupabaseClientTag,
-  SupabaseClient
+  RealSupabaseClient
 >() {}
 
 // =============================================================================
@@ -67,7 +67,7 @@ export class SupabaseClientTag extends Context.Tag("SupabaseClient")<
  * }).pipe(Effect.provide(supabaseLayer));
  * ```
  */
-export const makeSupabaseLayer = (client: SupabaseClient) => {
+export const makeSupabaseLayer = (client: RealSupabaseClient) => {
   return Layer.succeed(SupabaseClientTag, client);
 };
 
@@ -77,6 +77,7 @@ export const makeSupabaseLayer = (client: SupabaseClient) => {
 
 export type {
   SupabaseClient,
+  RealSupabaseClient,
   SupabaseClientOptions,
   SupabaseSession,
   SupabaseUser,
@@ -93,6 +94,11 @@ export type {
   StorageResponse,
   StorageErrorResponse,
   StorageAdapter,
+  AuthStateChangeEvent,
+  PostgrestFilterOperator,
+  PostgrestQueryBuilder,
+  PostgrestFilterBuilder,
+  SupabaseDatabase,
 } from "./types";
 
 export { REALTIME_CHANNEL_STATES } from "./types";

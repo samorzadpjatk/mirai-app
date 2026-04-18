@@ -1,17 +1,10 @@
 import { Effect } from "effect";
-import { CoinTransactionPort } from "../ports/CoinTransactionPort";
-import { GroupPort } from "../../group/ports/GroupPort";
-import type { CoinTransactionWithDetailsDTO } from "../dto/CoinDTOs";
-import type {
-  ApplicationError,
-  CoinTransactionId,
-  GroupId,
-  UserId,
-} from "@mirai-app/domain";
-import { CoinTransactionId as CoinTransactionIdFactory } from "@mirai-app/domain";
-import { GroupId as GroupIdFactory } from "@mirai-app/domain";
-import { UserId as UserIdFactory } from "@mirai-app/domain";
+import { CoinTransactionPortTag } from "../ports/CoinTransactionPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { UserPortTag } from "../../user/ports/UserPort";
+import { CoinTransactionId, GroupId, UserId } from "@mirai-app/domain";
 import { GroupNotFoundError } from "../../group/errors/GroupErrors";
+import { UserNotFoundError } from "../../user/errors/UserErrors";
 
 /**
  * Input for AddCoinsUseCase
@@ -30,56 +23,65 @@ export interface AddCoinsInput {
  * Adds coins to a group and creates a transaction record.
  */
 export class AddCoinsUseCase {
-  execute(
-    input: AddCoinsInput,
-  ): Effect.Effect<
-    CoinTransactionWithDetailsDTO,
-    ApplicationError | GroupNotFoundError,
-    CoinTransactionPort | GroupPort
-  > {
+  execute(input: AddCoinsInput) {
     return Effect.gen(function* () {
-      const coinPort = yield* CoinTransactionPort;
-      const groupPort = yield* GroupPort;
+      const coinPort = yield* CoinTransactionPortTag;
+      const groupPort = yield* GroupPortTag;
+      const userPort = yield* UserPortTag;
 
-      // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const adminId = UserId.unsafeCreate(input.adminId);
 
-      if (!group || group.isDeleted || group.tripId !== input.tripId) {
+      // Find the group and admin in parallel
+      const [group, admin] = yield* Effect.all([
+        groupPort.findById(groupId),
+        userPort.findById(adminId),
+      ]);
+
+      if (!group || group.isDeleted) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: input.groupId }),
         );
       }
 
+      if (!admin) {
+        return yield* Effect.fail(
+          new UserNotFoundError({ userId: input.adminId }),
+        );
+      }
+
       // Add coins to group
-      const updatedGroup = yield* groupPort.addCoins(
-        input.groupId,
-        input.amount,
-      );
+      const updatedGroup = yield* groupPort.addCoins(groupId, input.amount);
 
       // Create transaction record
-      const transactionId = CoinTransactionIdFactory.generate();
+      const transactionId = CoinTransactionId.generate();
       const transaction = yield* coinPort.create({
-        id: transactionId,
-        groupId: input.groupId,
+        id: CoinTransactionId.toString(transactionId),
+        tripId: input.tripId,
+        groupId: GroupId.toString(groupId),
         amount: input.amount,
         reason: input.reason ?? null,
-        adminId: input.adminId,
+        adminId: UserId.toString(adminId),
         createdAt: new Date(),
       });
 
       return {
         id: transactionId,
-        groupId: GroupIdFactory.unsafeCreate(input.groupId),
+        groupId: groupId,
         amount: transaction.amount,
         reason: transaction.reason,
-        adminId: UserIdFactory.unsafeCreate(input.adminId),
+        adminId: adminId,
         createdAt: transaction.createdAt,
         group: {
           id: updatedGroup.id,
           name: updatedGroup.name,
           coins: updatedGroup.coins,
         },
-        admin: null, // Will be hydrated by adapter
+        admin: {
+          id: admin.id,
+          firstName: admin.firstName,
+          lastName: admin.lastName,
+        },
       };
     });
   }

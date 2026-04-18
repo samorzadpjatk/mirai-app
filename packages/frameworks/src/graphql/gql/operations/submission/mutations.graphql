@@ -1,0 +1,17 @@
+# =============================================================================
+# Challenge Submission Mutations
+# =============================================================================
+
+mutation CreateSubmission($input: CreateSubmissionInput!) {
+  createSubmission(input: $input) {
+    id
+    status
+  }
+}
+
+mutation ReviewSubmission($input: ReviewSubmissionInput!) {
+  reviewSubmission(input: $input) {
+    id
+    status
+  }
+}

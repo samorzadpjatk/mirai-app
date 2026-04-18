@@ -1,5 +1,6 @@
 import { Effect, Layer } from "effect";
-import { createYoga } from "graphql-yoga";
+import type * as EffectTypes from "effect/Effect";
+import { createYoga, type YogaServerInstance } from "graphql-yoga";
 import type { Hono } from "hono";
 import { schema } from "@mirai-app/frameworks/graphql";
 import {
@@ -9,33 +10,47 @@ import {
 } from "@mirai-app/frameworks/effect";
 import type { Role } from "@mirai-app/domain";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import { tripParticipants, users } from "@mirai-app/frameworks/drizzle";
 import { eq } from "drizzle-orm";
+import type { BetterAuthInstance } from "@mirai-app/frameworks/better-auth";
+
+/**
+ * GraphQL context for resolvers - contains request-specific context
+ */
+export interface GraphQLContext {
+  /** The original HTTP request */
+  request: Request;
+  /** Function to run Effects with the full application layer including AuthContext */
+  runWithAppLayer: <T, E>(effect: EffectTypes.Effect<T, E, unknown>) => Promise<T>;
+  /** Authentication context for the current user */
+  authContext: AuthContext;
+}
+
+/**
+ * GraphQL server instance type with properly typed context
+ */
+export type TypedYogaServer = YogaServerInstance<{}, GraphQLContext>;
 
 /**
  * GraphQL context configuration
  */
 export interface GraphQLServerConfig {
   /** The application layer for running Effects with dependencies */
-  appLayer: Layer.Layer<unknown, never, never>;
+  appLayer: Layer.Layer<never>;
   /** Database client for auth context queries */
   db: DrizzleDb;
-  /** Supabase client for JWT validation */
-  supabase: SupabaseClient;
+  /** Better Auth instance for session validation */
+  betterAuth: BetterAuthInstance;
 }
 
 /**
- * Extract Bearer token from Authorization header
+ * Extract session cookie from request headers
+ * Better Auth uses cookie-based sessions
  */
-const extractAuthToken = (request: Request): string | null => {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader) return null;
-
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") return null;
-
-  return parts[1] ?? null;
+const extractSessionCookie = (request: Request): string | null => {
+  const cookieHeader = request.headers.get("Cookie");
+  if (!cookieHeader) return null;
+  return cookieHeader;
 };
 
 /**
@@ -62,53 +77,74 @@ const mapTripRole = (role: string): TripRole => {
 };
 
 /**
- * Build AuthContext by validating JWT and fetching user data
+ * Better Auth session response type
+ */
+interface BetterAuthSessionResponse {
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+    image?: string | null;
+  } | null;
+  session: {
+    id: string;
+    expiresAt: string;
+  } | null;
+}
+
+/**
+ * Build AuthContext by validating Better Auth session and fetching user data
+ *
+ * Uses Better Auth's cookie-based session validation. The session cookie
+ * is automatically included in the request and validated by Better Auth.
  */
 const buildAuthContext = async (
-  token: string,
+  cookieHeader: string,
   db: DrizzleDb,
-  supabase: SupabaseClient,
+  betterAuth: BetterAuthInstance,
 ): Promise<AuthContext | null> => {
   try {
-    // Validate JWT with Supabase
-    const { data, error } = await supabase.auth.getUser(token);
-
-    if (error || !data.user) {
-      return null;
-    }
-
-    const authUserId = data.user.id;
-
-    // Fetch user from database to get user ID and role
-    const userResult = await db.query.users.findFirst({
-      where: eq(users.authUserId, authUserId),
+    // Call Better Auth's session endpoint to validate the session
+    // Better Auth validates the session cookie and returns user/session info
+    const response = await betterAuth.api.getSession({
+      headers: new Headers({ Cookie: cookieHeader }),
     });
 
-    if (!userResult) {
+    const result = response as BetterAuthSessionResponse | null;
+
+    if (!result?.user || !result?.session) {
       return null;
     }
 
-    const userId = userResult.id;
-    const role = mapDatabaseRole(userResult.role);
+    // Fetch user role and trip roles from database
+    const userRecord = await db.query.users.findFirst({
+      where: eq(users.id, result.user.id),
+      columns: { role: true },
+    });
 
-    // Fetch trip participants to build tripRoles map
-    const participants = await db.query.tripParticipants.findMany({
-      where: eq(tripParticipants.userId, userId),
+    const role: Role = mapDatabaseRole(userRecord?.role ?? "USER");
+
+    // Fetch trip roles for the user
+    const participantRecords = await db.query.tripParticipants.findMany({
+      where: eq(tripParticipants.userId, result.user.id),
+      columns: { tripId: true, role: true },
     });
 
     const tripRoles: Record<string, TripRole> = {};
-    for (const participant of participants) {
-      tripRoles[participant.tripId] = mapTripRole(participant.role);
+    for (const record of participantRecords) {
+      if (record.tripId) {
+        tripRoles[record.tripId] = mapTripRole(record.role ?? "MEMBER");
+      }
     }
 
     return {
-      userId,
+      userId: result.user.id,
       role,
       tripRoles,
       isAuthenticated: true,
-      accessToken: token,
     };
-  } catch {
+  } catch (error) {
+    console.error("[AuthContext] Session validation failed:", error);
     return null;
   }
 };
@@ -130,22 +166,22 @@ const createGraphQLContext = ({
   request,
   appLayer,
   db,
-  supabase,
+  betterAuth,
 }: {
   request: Request;
-  appLayer: Layer.Layer<unknown, never, never>;
+  appLayer: Layer.Layer<never>;
   db: DrizzleDb;
-  supabase: SupabaseClient;
+  betterAuth: BetterAuthInstance;
 }) =>
   Effect.gen(function* () {
-    // Extract token from Authorization header
-    const token = extractAuthToken(request);
+    // Extract session cookie from request
+    const cookieHeader = extractSessionCookie(request);
 
     // Build AuthContext (authenticated or anonymous)
     let authContext: AuthContext;
-    if (token) {
+    if (cookieHeader) {
       const validatedContext = yield* Effect.tryPromise({
-        try: () => buildAuthContext(token, db, supabase),
+        try: () => buildAuthContext(cookieHeader, db, betterAuth),
         catch: () => null,
       });
       authContext = validatedContext ?? createAnonymousAuthContext();
@@ -160,8 +196,8 @@ const createGraphQLContext = ({
     const fullLayer = Layer.merge(appLayer, authContextLayer);
 
     // Create a function to run Effects with the full layer (including AuthContext)
-    const runWithAppLayer = <T>(effect: Effect.Effect<T, unknown, unknown>) =>
-      Effect.runPromise(effect.pipe(Effect.provide(fullLayer)));
+    const runWithAppLayer = <T, E>(effect: Effect.Effect<T, E, unknown>): Promise<T> =>
+      Effect.runPromise(Effect.provide(effect, fullLayer) as Effect.Effect<T, E, never>);
 
     return {
       request,
@@ -174,8 +210,8 @@ const createGraphQLContext = ({
  * Create GraphQL Yoga server
  */
 export const createYogaServer = (config: GraphQLServerConfig) =>
-  Effect.sync(() =>
-    createYoga({
+  Effect.sync((): TypedYogaServer =>
+    createYoga<{}, GraphQLContext>({
       schema,
       context: async ({ request }) => {
         return await Effect.runPromise(
@@ -183,7 +219,7 @@ export const createYogaServer = (config: GraphQLServerConfig) =>
             request,
             appLayer: config.appLayer,
             db: config.db,
-            supabase: config.supabase,
+            betterAuth: config.betterAuth,
           }),
         );
       },
@@ -195,9 +231,9 @@ export const createYogaServer = (config: GraphQLServerConfig) =>
  */
 export const mountGraphQLEndpoint = (
   app: Hono,
-  yoga: ReturnType<typeof createYoga>,
+  yoga: TypedYogaServer,
 ) =>
   Effect.sync(() => {
-    app.all("/graphql", (c) => yoga.handle(c.req.raw));
+    app.all("/api/graphql", (c) => yoga.handle(c.req.raw));
     return app;
   });

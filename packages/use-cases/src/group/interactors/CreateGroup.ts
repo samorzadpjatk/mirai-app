@@ -1,11 +1,10 @@
 import { Effect, Data } from "effect";
 import { Group, TripParticipant, TripId, UserId } from "@mirai-app/domain";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { GroupJoinRequestPort } from "../ports/GroupJoinRequestPort";
-import type { CreateGroupResultDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
-import { TripNotFoundError, TripHasEndedError } from "../errors/GroupErrors";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupJoinRequestPortTag } from "../ports/GroupJoinRequestPort";
+import { UserPortTag } from "../../user/ports/UserPort";
+import type { CreateGroupResultDTO, GroupMemberDTO } from "../dto/GroupDTOs";
 
 /**
  * Input for CreateGroupUseCase
@@ -23,11 +22,9 @@ export interface CreateGroupInput {
 /**
  * Code generation failed error
  */
-export class CodeGenerationError extends Data.TaggedError(
-  "CodeGenerationError",
-)<{
+export class CodeGenerationError extends Data.TaggedError("CodeGenerationError")<{
   message: string;
-}>() {}
+}> {}
 
 /**
  * Create Group Use Case
@@ -35,17 +32,12 @@ export class CodeGenerationError extends Data.TaggedError(
  * Creates a new group and assigns the creator as a member.
  */
 export class CreateGroupUseCase {
-  execute(
-    input: CreateGroupInput,
-  ): Effect.Effect<
-    CreateGroupResultDTO,
-    DatabaseError | TripNotFoundError | TripHasEndedError | CodeGenerationError,
-    GroupPort | TripParticipantPort | GroupJoinRequestPort
-  > {
+  execute(input: CreateGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
-      const joinRequestPort = yield* GroupJoinRequestPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const joinRequestPort = yield* GroupJoinRequestPortTag;
+      const userPort = yield* UserPortTag;
 
       // Create the group entity - ID will be auto-generated
       const tripId = TripId.unsafeCreate(input.tripId);
@@ -88,13 +80,26 @@ export class CreateGroupUseCase {
       const participant = yield* participantEffect;
 
       // Assign creator as participant and clean up any join requests
+      const userIdForRequest = UserId.unsafeCreate(
+        input.organizerId ?? input.creatorId,
+      );
       yield* Effect.all([
         participantPort.upsert(participant),
-        joinRequestPort.deleteByUserAndTrip(
-          input.organizerId ?? input.creatorId,
-          input.tripId,
-        ),
+        joinRequestPort.deleteByUserAndTrip(userIdForRequest, tripId),
       ]);
+
+      // Fetch organizer data for the response
+      const organizer = yield* userPort.findById(organizerId);
+
+      // Build organizer DTO
+      const organizerDto: GroupMemberDTO | null = organizer
+        ? {
+            id: organizer.id,
+            firstName: organizer.firstName,
+            lastName: organizer.lastName,
+            email: null,
+          }
+        : null;
 
       return {
         id: createdGroup.id,
@@ -104,8 +109,8 @@ export class CreateGroupUseCase {
         image: createdGroup.image,
         code: createdGroup.code,
         coins: createdGroup.coins,
-        organizer: null, // Will be hydrated by adapter
-      };
+        organizer: organizerDto,
+      } as CreateGroupResultDTO;
     });
   }
 }

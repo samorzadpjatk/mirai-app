@@ -85,7 +85,7 @@ export class SupabaseStorageGateway implements IStoragePort {
           .from(bucket)
           .list(path ?? "");
         if (error) throw error;
-        return data.map((item) => item.name);
+        return data.map((item: { name: string }) => item.name);
       },
       catch: (error) =>
         new ApplicationError({

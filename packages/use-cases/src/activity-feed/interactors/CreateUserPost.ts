@@ -1,9 +1,9 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { ActivityFeed } from "@mirai-app/domain";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { ActivityFeed, UserId } from "@mirai-app/domain";
+import type { TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import {
   TripNotFoundError,
@@ -27,17 +27,11 @@ export interface CreateUserPostInput {
  * Creates a user-generated post activity.
  */
 export class CreateUserPostUseCase {
-  execute(
-    input: CreateUserPostInput,
-  ): Effect.Effect<
-    CreateActivityResultDTO,
-    TripNotFoundError | NotTripParticipantError | ApplicationError,
-    ActivityFeedPortTag | TripPortTag | TripParticipantPort
-  > {
+  execute(input: CreateUserPostInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Verify trip exists
       const trip = yield* tripPort.findById(input.tripId);
@@ -49,7 +43,7 @@ export class CreateUserPostUseCase {
 
       // Verify user is a participant
       const isParticipant = yield* participantPort.isParticipant(
-        input.userId,
+        UserId.create(input.userId),
         input.tripId,
       );
       if (!isParticipant) {
@@ -80,7 +74,11 @@ export class CreateUserPostUseCase {
         updatedAt: now,
       });
 
-      const activity = yield* activityEffect;
+      const activity = yield* activityEffect as Effect.Effect<
+        ActivityFeed,
+        never,
+        never
+      >;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

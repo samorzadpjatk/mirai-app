@@ -1,10 +1,9 @@
 import { Effect } from "effect";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import { UserId } from "@mirai-app/domain";
 import type { SharingListUpdateResultDTO } from "../dto/LocationDTOs";
-import type { ApplicationError } from "@mirai-app/domain";
 import {
   NotTripParticipantError,
   TripHasEndedError,
@@ -24,20 +23,16 @@ export interface RemoveUserFromSharingInput {
  * Removes a user from the sharing list.
  */
 export class RemoveUserFromSharingUseCase {
-  execute(
-    input: RemoveUserFromSharingInput,
-  ): Effect.Effect<
-    SharingListUpdateResultDTO,
-    ApplicationError | NotTripParticipantError | TripHasEndedError,
-    LocationPort | TripPortTag | TripParticipantPort
-  > {
+  execute(input: RemoveUserFromSharingInput) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
+
+      const userId = UserId.unsafeCreate(input.userId);
 
       // Check user is in an active trip
-      const participants = yield* participantPort.findByUserId(input.userId);
+      const participants = yield* participantPort.findByUserId(userId);
 
       if (participants.length === 0) {
         return yield* Effect.fail(
@@ -69,7 +64,6 @@ export class RemoveUserFromSharingUseCase {
       }
 
       // Disconnect user from sharing
-      const userId = UserId.unsafeCreate(input.userId);
       const targetUserId = UserId.unsafeCreate(input.targetUserId);
       yield* locationPort.disconnectUserFromSharing(userId, targetUserId);
 

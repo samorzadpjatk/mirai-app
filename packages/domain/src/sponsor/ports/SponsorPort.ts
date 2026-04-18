@@ -26,18 +26,21 @@ export interface ISponsorPort {
 
   /**
    * Create new sponsor
+   * Authorization via AuthContext (admin only)
    */
-  create(sponsor: Sponsor): Effect.Effect<Sponsor, IPortError, never>;
+  create(sponsor: Sponsor): Effect.Effect<Sponsor, IPortError, unknown>;
 
   /**
    * Update existing sponsor
+   * Authorization via AuthContext (admin only)
    */
-  update(sponsor: Sponsor): Effect.Effect<Sponsor, IPortError, never>;
+  update(sponsor: Sponsor): Effect.Effect<Sponsor, IPortError, unknown>;
 
   /**
    * Delete sponsor by ID
+   * Authorization via AuthContext (admin only)
    */
-  delete(id: SponsorId): Effect.Effect<void, IPortError, never>;
+  delete(id: SponsorId): Effect.Effect<void, IPortError, unknown>;
 
   /**
    * Check if sponsor exists

@@ -1,18 +1,45 @@
-// Auth client exports - infrastructure configuration for authentication
+/**
+ * Auth Client Module
+ *
+ * React hooks and provider for authentication in the native app.
+ * Uses Better Auth store for session management.
+ *
+ * @module @mirai-app/frameworks/auth/client
+ */
+
+// =============================================================================
+// Store Re-exports
+// =============================================================================
+
+export { betterAuthStore as authStore } from "../stores";
 export type {
-  DatabaseUser,
-  Role,
-  AuthState,
-  SignInWithOtpOptions,
-  SignInWithPasswordOptions,
-  AuthContextValue,
-} from "./types";
+  BetterAuthStore as AuthStore,
+  BetterAuthState as AuthState,
+  BetterAuthActions as AuthActions,
+  BetterAuthUser,
+  BetterAuthSession,
+  AuthResult,
+  SignInResultData,
+  SignUpResultData,
+  SessionResultData,
+} from "../stores";
 
-// Re-export from stores for convenience
-export type { AuthUser } from "../stores/auth/types";
+// =============================================================================
+// Hooks
+// =============================================================================
 
-// Client-side hooks and store
-export * from "./client";
+export {
+  useAuth,
+  useUser,
+  useSession,
+  useIsAuthenticated,
+  useAuthLoading,
+  useLoginForm,
+} from "./hooks";
 
-// Server-side auth functions (re-exported from adapters)
-export * from "./server";
+// =============================================================================
+// Provider
+// =============================================================================
+
+export { AuthStoreProvider } from "./provider";
+export type { AuthStoreProviderProps } from "./provider";

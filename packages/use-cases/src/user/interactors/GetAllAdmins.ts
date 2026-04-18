@@ -13,10 +13,10 @@ export class GetAllAdminsNamesUseCase {
       const userPort = yield* UserPortTag;
 
       // Get all users with ADMIN or MODERATOR role
-      const allUsers = yield* userPort.findAll({ limit: 1000, offset: 0 });
+      const allUsers = yield* userPort.findAll();
 
       const admins = allUsers.filter(
-        (user) => user.role === "ADMIN" || user.role === "MODERATOR",
+        (user): boolean => user.role === "ADMIN" || user.role === "MODERATOR",
       );
 
       const result: AdminNameDTO[] = admins.map((user) => ({

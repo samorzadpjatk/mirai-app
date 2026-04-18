@@ -1,5 +1,6 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import { ChallengeSubmissionId } from "@mirai-app/domain";
+import { UserId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import {
   ChallengeSubmissionPort,
@@ -33,23 +34,14 @@ export interface ReviewSubmissionInput {
  * Reviews a submission (approve/reject) with points and ranking.
  */
 export class ReviewSubmissionUseCase {
-  execute(
-    input: ReviewSubmissionInput,
-  ): Effect.Effect<
-    ReviewSubmissionResultDTO,
-    | SubmissionNotFoundError
-    | ReviewNotAllowedError
-    | RejectionReasonRequiredError
-    | ApplicationError,
-    ChallengePortTag | ChallengeSubmissionPort | GroupPort | CoinTransactionPort
-  > {
+  execute(input: ReviewSubmissionInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
       const submissionPort = yield* ChallengeSubmissionPort;
       const groupPort = yield* GroupPort;
 
       // Find submission
-      const submission = yield* submissionPort.findById(input.submissionId);
+      const submission = yield* submissionPort.findById(ChallengeSubmissionId.unsafeCreate(input.submissionId));
 
       if (!submission) {
         return yield* Effect.fail(
@@ -69,7 +61,7 @@ export class ReviewSubmissionUseCase {
       if (challenge.scoringCategory === "JUDGED_STAFF") {
         return yield* Effect.fail(
           new ReviewNotAllowedError({
-            challengeId: challenge.id,
+            challengeId: submission.challengeId,
             scoringCategory: challenge.scoringCategory,
             message:
               "For judged staff challenges use staff voting flow instead of manual approve/reject",
@@ -118,7 +110,7 @@ export class ReviewSubmissionUseCase {
         status: input.status,
         rejectionReason:
           input.status === "REJECTED" ? (input.rejectionReason ?? null) : null,
-        reviewedById: input.reviewerId,
+        reviewedById: UserId.unsafeCreate(input.reviewerId),
         reviewedAt: now,
         awardedPoints: input.status === "APPROVED" ? awardedPoints : null,
         bonusPoints:
@@ -142,10 +134,10 @@ export class ReviewSubmissionUseCase {
         status: saved.status,
         awardedPoints: saved.awardedPoints ?? 0,
         bonusPoints: saved.bonusPoints ?? 0,
-        ranking: saved.ranking,
+        ranking: saved.ranking as 1 | 2 | 3 | null,
         reviewedAt: saved.reviewedAt!,
         reviewedById: saved.reviewedById!,
-      };
+      } satisfies ReviewSubmissionResultDTO;
     });
   }
 }

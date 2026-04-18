@@ -6,19 +6,34 @@ import {
 } from "../../shared/value-objects/branded-id";
 
 // ActivityFeed uses UUID
-export const ActivityFeedIdFactory = createBrandedId("ActivityFeedId", {
+export const ActivityFeedId = createBrandedId("ActivityFeedId", {
   validate: isValidUUID,
 });
 export type ActivityFeedId = BrandedId<"ActivityFeedId">;
 
 // ActivityReaction uses UUID
-export const ActivityReactionIdFactory = createBrandedId("ActivityReactionId", {
+export const ActivityReactionId = createBrandedId("ActivityReactionId", {
   validate: isValidUUID,
 });
 export type ActivityReactionId = BrandedId<"ActivityReactionId">;
 
 // UserPost uses CUID (references ActivityFeed as ID)
-export const UserPostIdFactory = createBrandedId("UserPostId", {
+export const UserPostId = createBrandedId("UserPostId", {
   validate: isValidUUID,
 });
 export type UserPostId = BrandedId<"UserPostId">;
+
+/**
+ * @deprecated Use ActivityFeedId instead (const). Kept for backward compatibility.
+ */
+export const ActivityFeedIdFactory = ActivityFeedId;
+
+/**
+ * @deprecated Use ActivityReactionId instead (const). Kept for backward compatibility.
+ */
+export const ActivityReactionIdFactory = ActivityReactionId;
+
+/**
+ * @deprecated Use UserPostId instead (const). Kept for backward compatibility.
+ */
+export const UserPostIdFactory = UserPostId;

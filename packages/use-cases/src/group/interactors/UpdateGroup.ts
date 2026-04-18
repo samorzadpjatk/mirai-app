@@ -1,12 +1,10 @@
 import { Effect } from "effect";
-import { Group } from "@mirai-app/domain";
-import { GroupPort } from "../ports/GroupPort";
+import { Group, GroupId, TripId, UserId } from "@mirai-app/domain";
+import { GroupPortTag } from "../ports/GroupPort";
 import type { UpdateGroupResultDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
 import {
   GroupNotFoundError,
   NotGroupOrganizerError,
-  TripHasEndedError,
 } from "../errors/GroupErrors";
 
 /**
@@ -29,30 +27,24 @@ export interface UpdateGroupInput {
  * Updates group information (only organizer or admin can update).
  */
 export class UpdateGroupUseCase {
-  execute(
-    input: UpdateGroupInput,
-  ): Effect.Effect<
-    UpdateGroupResultDTO,
-    | DatabaseError
-    | GroupNotFoundError
-    | NotGroupOrganizerError
-    | TripHasEndedError,
-    GroupPort
-  > {
+  execute(input: UpdateGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
+      const groupPort = yield* GroupPortTag;
 
       // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const tripId = TripId.unsafeCreate(input.tripId);
+      const group = yield* groupPort.findById(groupId);
 
-      if (!group || group.isDeleted || group.tripId !== input.tripId) {
+      if (!group || group.isDeleted || !TripId.equals(group.tripId, tripId)) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: input.groupId }),
         );
       }
 
       // Check permissions
-      const isOrganizer = group.organizerId === input.userId;
+      const userId = UserId.unsafeCreate(input.userId);
+      const isOrganizer = UserId.equals(group.organizerId, userId);
 
       if (!input.isAdmin && !isOrganizer) {
         return yield* Effect.fail(
@@ -67,7 +59,7 @@ export class UpdateGroupUseCase {
       if (
         !input.isAdmin &&
         input.organizerId &&
-        input.organizerId !== group.organizerId
+        !UserId.equals(UserId.unsafeCreate(input.organizerId), group.organizerId)
       ) {
         return yield* Effect.fail(
           new NotGroupOrganizerError({
@@ -89,14 +81,18 @@ export class UpdateGroupUseCase {
       // Save updated group
       const savedGroup = yield* groupPort.update(updatedGroup);
 
+      const resultOrganizerId =
+        input.isAdmin && input.organizerId
+          ? UserId.unsafeCreate(input.organizerId)
+          : null;
+
       return {
         id: savedGroup.id,
         name: savedGroup.name,
         description: savedGroup.description,
         image: savedGroup.image,
-        organizerId:
-          input.isAdmin && input.organizerId ? input.organizerId : null,
-      };
+        organizerId: resultOrganizerId,
+      } as UpdateGroupResultDTO;
     });
   }
 }

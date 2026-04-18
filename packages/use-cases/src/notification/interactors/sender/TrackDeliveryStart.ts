@@ -1,11 +1,16 @@
 import { Effect } from "effect";
 import {
+  NotificationId,
+  NotificationDeliveryId,
+  type NotificationDelivery,
+} from "@mirai-app/domain";
+import {
   NotificationDeliveryPortTag,
   NotificationScheduleExecutionPortTag,
 } from "../../ports/NotificationPort";
 
 export interface TrackDeliveryStartInput {
-  notificationId: string;
+  notificationId: NotificationId;
 }
 
 export class TrackDeliveryStartUseCase {
@@ -21,7 +26,7 @@ export class TrackDeliveryStartUseCase {
 
       // Create delivery record
       yield* deliveryPort.create({
-        id: crypto.randomUUID(),
+        id: NotificationDeliveryId.create(crypto.randomUUID()),
         notificationId: input.notificationId,
         tripId: execution?.scheduleId ? null : null, // Will be resolved from execution if available
         scheduleId: execution?.scheduleId ?? null,
@@ -32,7 +37,7 @@ export class TrackDeliveryStartUseCase {
         successCount: null,
         failureCount: null,
         errors: null,
-      });
+      } as NotificationDelivery);
     });
   }
 }

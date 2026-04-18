@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { UserId } from "@mirai-app/domain";
+import { UserId, TripId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
 import { TripParticipantPortTag } from "../ports/TripParticipantPort";
 import { GroupPortTag } from "../../group/ports/GroupPort";
@@ -28,19 +28,20 @@ export class GetUserWithGroupUseCase {
       const participantPort = yield* TripParticipantPortTag;
       const groupPort = yield* GroupPortTag;
 
+      // Convert string IDs to branded IDs
+      const userId = UserId.unsafeCreate(input.userId);
+      const tripId = TripId.unsafeCreate(input.tripId);
+
       // Find user by ID
-      const user = yield* userPort.findById(input.userId as UserId);
+      const user = yield* userPort.findById(userId);
 
       if (!user) {
-        return Effect.fail(UserNotFoundError);
+        return yield* Effect.fail(UserNotFoundError);
       }
 
       // Find participant with relations
       const participantWithRelations =
-        yield* participantPort.findByUserAndTripWithRelations(
-          input.userId,
-          input.tripId,
-        );
+        yield* participantPort.findByUserAndTripWithRelations(userId, tripId);
 
       const tripInfo = participantWithRelations
         ? {

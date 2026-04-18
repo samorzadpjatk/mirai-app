@@ -1,9 +1,28 @@
 import { Effect } from "effect";
 import { TripPortTag } from "../ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import type { TripWithParticipantsDTO } from "../dto/TripDTOs";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import type { TripId, UserId, GroupId } from "@mirai-app/domain";
 import { TripNotFoundError } from "../errors/TripErrors";
+
+/**
+ * Participant with relations type from findByTripIdWithRelations
+ */
+interface ParticipantWithRelations {
+  participant: {
+    id: string;
+    wristNumber: string | null;
+    houseNumber: string | null;
+    createdAt: Date;
+  };
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+  group: { id: string; name: string } | null;
+}
 
 /**
  * Input for GetTripByIdAdminUseCase
@@ -18,16 +37,10 @@ export interface GetTripByIdAdminInput {
  * Retrieves a trip by ID with participants (admin view, no access check).
  */
 export class GetTripByIdAdminUseCase {
-  execute(
-    input: GetTripByIdAdminInput,
-  ): Effect.Effect<
-    TripWithParticipantsDTO,
-    ApplicationError | TripNotFoundError,
-    TripPortTag | TripParticipantPort
-  > {
+  execute(input: GetTripByIdAdminInput) {
     return Effect.gen(function* () {
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Get trip
       const trip = yield* tripPort.findById(input.tripId);
@@ -49,40 +62,40 @@ export class GetTripByIdAdminUseCase {
         description: trip.description,
         startDate: trip.startDate,
         endDate: trip.endDate,
-        location: null, // Will be hydrated by adapter
+        location: null,
         image: trip.backgroundImagePath,
         isActive: trip.isActive(new Date()),
-        groups: [], // Will be hydrated by adapter
-        tripSponsors: [], // Will be hydrated by adapter
-        participants: participants.map((p) => ({
+        groups: [],
+        tripSponsors: [],
+        participants: participants.map((p: ParticipantWithRelations) => ({
           id: p.participant.id,
-          userId: p.user.id,
+          userId: p.user.id as UserId,
           tripId: trip.id,
-          groupId: p.group?.id ?? null,
+          groupId: p.group?.id ? (p.group.id as GroupId) : null,
           wristNumber: p.participant.wristNumber,
           houseNumber: p.participant.houseNumber,
-          joinedAt: p.participant.joinedAt,
+          joinedAt: p.participant.createdAt,
           user: {
-            id: p.user.id,
+            id: p.user.id as UserId,
             firstName: p.user.firstName,
             lastName: p.user.lastName,
-            email: null, // Will be hydrated by adapter
+            email: null,
             role: p.user.role,
           },
           group: p.group
             ? {
-                id: p.group.id,
+                id: p.group.id as GroupId,
                 name: p.group.name,
                 image: null,
-                coins: 0, // Will be hydrated by adapter
-                participantCount: 0, // Will be hydrated by adapter
+                coins: 0,
+                participantCount: 0,
                 isDeleted: false,
               }
             : null,
         })),
         createdAt: trip.createdAt,
         updatedAt: trip.updatedAt,
-      };
+      } as TripWithParticipantsDTO;
     });
   }
 }

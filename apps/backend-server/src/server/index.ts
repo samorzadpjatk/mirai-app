@@ -4,16 +4,16 @@ import { createYogaServer, mountGraphQLEndpoint } from "./graphql";
 import { createBunServer } from "./bun-server";
 import { serverState } from "../state";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+import type { BetterAuthInstance } from "@mirai-app/frameworks/better-auth";
 
 /**
  * Server configuration
  */
 export interface ServerConfig {
   port: number;
-  appLayer: Layer.Layer<unknown, never, never>;
+  appLayer: Layer.Layer<never>;
   db: DrizzleDb;
-  supabase: SupabaseClient;
+  betterAuth: BetterAuthInstance;
 }
 
 /**
@@ -21,11 +21,11 @@ export interface ServerConfig {
  */
 export const startServer = (config: ServerConfig) =>
   Effect.gen(function* () {
-    const app = yield* createHonoApp();
+    const app = yield* createHonoApp({ betterAuth: config.betterAuth });
     const yoga = yield* createYogaServer({
       appLayer: config.appLayer,
       db: config.db,
-      supabase: config.supabase,
+      betterAuth: config.betterAuth,
     });
     yield* mountGraphQLEndpoint(app, yoga);
 
@@ -33,9 +33,12 @@ export const startServer = (config: ServerConfig) =>
     serverState.server = server;
 
     yield* Effect.log(`Server listening on port ${config.port}`);
-    yield* Effect.log(`GraphQL endpoint: http://localhost:${config.port}/graphql`);
+    yield* Effect.log(`GraphQL endpoint: http://localhost:${config.port}/api/graphql`);
     yield* Effect.log(`Health check: http://localhost:${config.port}/health`);
-    yield* Effect.log(`GraphQL WebSocket: ws://localhost:${config.port}/graphql`);
+    yield* Effect.log(`GraphQL WebSocket: ws://localhost:${config.port}/api/graphql`);
+    if (config.betterAuth) {
+      yield* Effect.log(`Better Auth endpoints: http://localhost:${config.port}/api/auth/*`);
+    }
 
     return server;
   });

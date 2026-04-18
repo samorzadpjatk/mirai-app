@@ -1,0 +1,175 @@
+# =============================================================================
+# Trip Queries
+# =============================================================================
+
+query MyTrips($first: Int, $after: String) {
+  myTrips(first: $first, after: $after) {
+    edges {
+      node {
+        id
+        name
+        description
+        startDate
+        endDate
+        location
+        image
+        isActive
+        createdAt
+        updatedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query Trip($id: String!) {
+  trip(id: $id) {
+    id
+    name
+    description
+    startDate
+    endDate
+    location
+    image
+    isActive
+    groups {
+      id
+      name
+      code
+      image
+      coins
+      participantCount
+      isDeleted
+    }
+    tripSponsors {
+      id
+      tripId
+      sponsorId
+      sponsor {
+        id
+        name
+        logoPath
+        description
+        isActive
+      }
+    }
+    participants {
+      userId
+      tripId
+      wristNumber
+      houseNumber
+      user {
+        id
+        firstName
+        lastName
+        email
+        role
+      }
+      group {
+        id
+        name
+        code
+        image
+        coins
+        participantCount
+        isDeleted
+      }
+    }
+    createdAt
+    updatedAt
+  }
+}
+
+query TripAdmin($id: String!) {
+  tripAdmin(id: $id) {
+    id
+    name
+    description
+    startDate
+    endDate
+    location
+    image
+    isActive
+    groups {
+      id
+      name
+      code
+      image
+      coins
+      participantCount
+      isDeleted
+    }
+    tripSponsors {
+      id
+      tripId
+      sponsorId
+      sponsor {
+        id
+        name
+        logoPath
+        description
+        isActive
+      }
+    }
+    participants {
+      userId
+      tripId
+      wristNumber
+      houseNumber
+      user {
+        id
+        firstName
+        lastName
+        email
+        role
+      }
+      group {
+        id
+        name
+        code
+        image
+        coins
+        participantCount
+        isDeleted
+      }
+    }
+    createdAt
+    updatedAt
+  }
+}
+
+query TripResources($tripId: String!) {
+  tripResources(tripId: $tripId) {
+    resources {
+      id
+      tripId
+      title
+      description
+      content
+      iconName
+      sortOrder
+      createdAt
+      updatedAt
+    }
+    insurance {
+      id
+      tripId
+      title
+      description
+      provider
+      policyNumber
+      steps {
+        id
+        stepNumber
+        title
+        description
+      }
+      createdAt
+      updatedAt
+    }
+  }
+}

@@ -1,0 +1,14 @@
+# =============================================================================
+# Join Request Subscriptions
+# =============================================================================
+
+subscription JoinRequestEvent($filter: JoinRequestSubscriptionFilter) {
+  joinRequestEvent(filter: $filter) {
+    requestId
+    groupId
+    userId
+    userName
+    eventType
+    createdAt
+  }
+}

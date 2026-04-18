@@ -1,0 +1,23 @@
+# =============================================================================
+# Notification Fragments
+# =============================================================================
+
+fragment NotificationFields on Notification {
+  id
+  body
+  title
+  url
+  tripId
+  createdById
+  createdAt
+  updatedAt
+}
+
+fragment NotificationPreferencesFields on NotificationPreferences {
+  userId
+  pushEnabled
+  emailEnabled
+  challengeEnabled
+  rankingEnabled
+  systemEnabled
+}

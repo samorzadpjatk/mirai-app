@@ -3,11 +3,12 @@ import {
   LocationSharingRequest,
   LocationSharingRequestId,
   ValidationError,
+  UserId,
 } from "@mirai-app/domain";
-import { UserId } from "@mirai-app/domain";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { UserPortTag } from "../../user/ports/UserPort";
 import type { LocationSharingRequestResultDTO } from "../dto/LocationDTOs";
 import type { ApplicationError } from "@mirai-app/domain";
 import {
@@ -35,25 +36,16 @@ export interface RequestLocationSharingInput {
 export class RequestLocationSharingUseCase {
   execute(
     input: RequestLocationSharingInput,
-  ): Effect.Effect<
-    LocationSharingRequestResultDTO,
-    | ApplicationError
-    | NotTripParticipantError
-    | TripHasEndedError
-    | CannotShareWithSelfError
-    | InvalidSharingTargetError
-    | LocationSharingRequestAlreadyExistsError
-    | LocationSharingAlreadyEnabledError
-    | ValidationError,
-    LocationPort | TripPortTag | TripParticipantPort
-  > {
+  ) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
+      const userPort = yield* UserPortTag;
 
       // Check sender is in an active trip
-      const participants = yield* participantPort.findByUserId(input.senderId);
+      const senderId = UserId.unsafeCreate(input.senderId);
+      const participants = yield* participantPort.findByUserId(senderId);
 
       if (participants.length === 0) {
         return yield* Effect.fail(
@@ -90,10 +82,11 @@ export class RequestLocationSharingUseCase {
       }
 
       // Validate receiver is in sharing scope
+      const receiverId = UserId.unsafeCreate(input.receiverId);
       let isShareable = false;
       for (const participant of participants) {
         const isTargetParticipant = yield* participantPort.isParticipant(
-          input.receiverId,
+          receiverId,
           participant.tripId,
         );
         if (isTargetParticipant) {
@@ -112,9 +105,6 @@ export class RequestLocationSharingUseCase {
       }
 
       // Check for existing request
-      const senderId = UserId.unsafeCreate(input.senderId);
-      const receiverId = UserId.unsafeCreate(input.receiverId);
-
       const existingRequest =
         yield* locationPort.findSharingRequestBySenderAndReceiver(
           senderId,
@@ -145,14 +135,38 @@ export class RequestLocationSharingUseCase {
         const updatedRequest = yield* resetEffect;
         yield* locationPort.updateSharingRequest(updatedRequest);
 
+        // Fetch sender and receiver user details in parallel
+        const [sender, receiver] = yield* Effect.all([
+          userPort.findById(updatedRequest.senderId),
+          userPort.findById(updatedRequest.receiverId),
+        ]);
+
         return {
           success: true,
           request: {
             id: updatedRequest.id,
             senderId: updatedRequest.senderId,
             receiverId: updatedRequest.receiverId,
-            sender: null, // Will be hydrated by adapter
-            receiver: null,
+            sender: sender
+              ? {
+                  id: sender.id,
+                  firstName: sender.firstName,
+                  lastName: sender.lastName,
+                  image: sender.hasAvatar
+                    ? `/users/${UserId.toString(sender.id)}/avatar`
+                    : null,
+                }
+              : null,
+            receiver: receiver
+              ? {
+                  id: receiver.id,
+                  firstName: receiver.firstName,
+                  lastName: receiver.lastName,
+                  image: receiver.hasAvatar
+                    ? `/users/${UserId.toString(receiver.id)}/avatar`
+                    : null,
+                }
+              : null,
             status: updatedRequest.status,
             createdAt: updatedRequest.createdAt,
             updatedAt: updatedRequest.updatedAt,
@@ -172,14 +186,38 @@ export class RequestLocationSharingUseCase {
       const request = yield* createEffect;
       yield* locationPort.createSharingRequest(request);
 
+      // Fetch sender and receiver user details in parallel
+      const [sender, receiver] = yield* Effect.all([
+        userPort.findById(request.senderId),
+        userPort.findById(request.receiverId),
+      ]);
+
       return {
         success: true,
         request: {
           id: request.id,
           senderId: request.senderId,
           receiverId: request.receiverId,
-          sender: null, // Will be hydrated by adapter
-          receiver: null,
+          sender: sender
+            ? {
+                id: sender.id,
+                firstName: sender.firstName,
+                lastName: sender.lastName,
+                image: sender.hasAvatar
+                  ? `/users/${UserId.toString(sender.id)}/avatar`
+                  : null,
+              }
+            : null,
+          receiver: receiver
+            ? {
+                id: receiver.id,
+                firstName: receiver.firstName,
+                lastName: receiver.lastName,
+                image: receiver.hasAvatar
+                  ? `/users/${UserId.toString(receiver.id)}/avatar`
+                  : null,
+              }
+            : null,
           status: request.status,
           createdAt: request.createdAt,
           updatedAt: request.updatedAt,

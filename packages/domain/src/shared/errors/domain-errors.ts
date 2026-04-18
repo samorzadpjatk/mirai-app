@@ -93,6 +93,20 @@ export class EntityNotFoundError
 }
 
 /**
+ * Related entity not found error
+ * Used when a required related entity is missing during data aggregation
+ */
+export class RelatedEntityNotFoundError
+  extends Data.TaggedError("RelatedEntityNotFoundError")<{
+    entityType: string;
+    entityId: string;
+  }>
+  implements IPortError
+{
+  override readonly message = "Related entity not found";
+}
+
+/**
  * Entity already exists error
  */
 export class EntityAlreadyExistsError

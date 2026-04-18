@@ -1,0 +1,13 @@
+# =============================================================================
+# Challenge Subscriptions
+# =============================================================================
+
+subscription ChallengeStatusEvent($filter: ChallengeSubscriptionFilter!) {
+  challengeStatusEvent(filter: $filter) {
+    challengeId
+    tripId
+    previousStatus
+    newStatus
+    changedAt
+  }
+}

@@ -10,6 +10,15 @@ export interface LocationUpdate {
   /** The user who updated their location */
   readonly userId: UserId;
 
+  /** User's first name (for display in location sharing) */
+  readonly firstName?: string | null;
+
+  /** User's last name (for display in location sharing) */
+  readonly lastName?: string | null;
+
+  /** User's avatar image URL (for display in location sharing) */
+  readonly image?: string | null;
+
   /** Latitude coordinate in decimal degrees (-90 to 90) */
   readonly latitude: number;
 
@@ -21,6 +30,9 @@ export interface LocationUpdate {
 
   /** When the location update occurred */
   readonly timestamp: Date;
+
+  /** Whether the user is currently online */
+  readonly isOnline?: boolean;
 }
 
 /**

@@ -4,7 +4,6 @@ import {
   varchar,
   text,
   timestamp,
-  boolean,
   integer,
   pgEnum,
   index,

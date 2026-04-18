@@ -7,7 +7,7 @@ import { Context } from "effect";
  * Use this tag to access the EventBus implementation in Effect workflows:
  *   const eventBus = yield* EventBusTag;
  *
- * The tag resolves to an IEventBusPort implementation (SupabaseRealtimeEventBusGateway
+ * The tag resolves to an IEventBusPort implementation (RedisEventBusGateway
  * in production, InProcessEventBusGateway for testing) for publishing and
  * subscribing to domain events.
  *

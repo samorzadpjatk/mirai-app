@@ -3,7 +3,7 @@ import * as tus from "tus-js-client";
 import { File } from "expo-file-system";
 import { getUrqlClient } from "~/lib/urql-client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
-import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
+import { useSession } from "@mirai-app/frameworks/auth/client";
 import {
   CreateUploadUrlDocument,
   type CreateUploadUrlMutation,
@@ -41,7 +41,7 @@ interface UploadTicket {
 }
 
 export const useFileUpload = () => {
-  const supabase = useSupabaseClient();
+  const session = useSession();
 
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [progress, setProgress] = useState<UploadProgress>({
@@ -129,9 +129,6 @@ export const useFileUpload = () => {
         const fileBlob = await fileResponse.blob();
         const bytesTotal = fileInfo.size ?? fileBlob.size ?? null;
 
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
         const accessToken = session?.access_token;
         if (!accessToken) {
           throw new Error("User not authenticated");
@@ -289,7 +286,7 @@ export const useFileUpload = () => {
         uploadRef.current = null;
       }
     },
-    [abort, supabase.auth, createUploadUrl, urlStorage],
+    [abort, session?.access_token, createUploadUrl, urlStorage],
   );
 
   return {

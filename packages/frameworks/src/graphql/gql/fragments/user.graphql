@@ -1,0 +1,83 @@
+# =============================================================================
+# User Fragments
+# =============================================================================
+
+fragment UserFields on User {
+  id
+  firstName
+  lastName
+  email
+  role
+  hasAvatar
+}
+
+fragment UserProfileFields on UserProfile {
+  id
+  firstName
+  lastName
+  email
+  role
+  hasAvatar
+}
+
+fragment UserWithTripInfoFields on UserWithTripInfo {
+  id
+  firstName
+  lastName
+  email
+  role
+  hasAvatar
+  wristNumber
+  houseNumber
+  groupId
+  groupName
+  tripId
+  isBanned
+  bannedUntil
+  banReason
+}
+
+fragment UserWithGroupInfoFields on UserWithGroupInfo {
+  id
+  firstName
+  lastName
+  trips {
+    tripId
+    group {
+      id
+      name
+    }
+    trip {
+      id
+      name
+    }
+  }
+  organizerGroup {
+    id
+    name
+  }
+}
+
+fragment TripParticipantInfoFields on TripParticipantInfo {
+  userId
+  tripId
+  wristNumber
+  houseNumber
+  group {
+    id
+    name
+  }
+}
+
+fragment BanStatusFields on BanStatus {
+  banned
+  bannedUntil
+  reason
+  exists
+}
+
+fragment AdminNameFields on AdminName {
+  id
+  firstName
+  lastName
+}

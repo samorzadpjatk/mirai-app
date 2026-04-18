@@ -2,25 +2,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import { print } from "graphql";
-import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import {
   UpdateLocationDocument,
   type UpdateLocationInput,
 } from "@mirai-app/frameworks";
 import { urqlClient } from "~/lib/urql-client";
-import { authStorage } from "~/services/storage/storage";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
   LOCATION_SHARING_SETTINGS_KEY,
 } from "~/services/location/constants";
-
-const supabaseClient = createSupabaseClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  authStorage,
-);
 
 let isSending = false;
 

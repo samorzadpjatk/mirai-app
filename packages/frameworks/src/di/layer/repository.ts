@@ -5,9 +5,10 @@
  * concrete implementations from the adapters layer.
  */
 
-import { Layer } from "effect";
+import { Layer, Effect } from "effect";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+import type { SeaweedFSConfig } from "@mirai-app/adapters";
 
 import { UserPortTag } from "@mirai-app/use-cases/user/ports/UserPort";
 import { TripParticipantPortTag } from "@mirai-app/use-cases/user/ports/TripParticipantPort";
@@ -70,7 +71,8 @@ import {
   TripSponsorDrizzleGateway,
   SubmissionReportDrizzleGateway,
   LocationSharingRequestDrizzleGateway,
-  SupabaseStorageGateway,
+  SeaweedFSStorageGateway,
+  loadConfigFromEnv,
 } from "@mirai-app/adapters";
 
 // Storage path resolver implementation from adapters
@@ -82,8 +84,10 @@ import { DefaultStoragePathResolver } from "@mirai-app/adapters";
 export interface RepositoryLayerConfig {
   /** Drizzle database client */
   db: DrizzleDb;
-  /** Supabase client - required for storage operations */
+  /** Supabase client - required for realtime services */
   supabase?: SupabaseClient;
+  /** SeaweedFS storage configuration (loads from env if not provided) */
+  seaweedfsConfig?: SeaweedFSConfig;
 }
 
 /**
@@ -301,7 +305,21 @@ export const makeSubmissionReportRepositoryLayer = (
  * Creates the Storage repository Layer.
  *
  * Provides StoragePathResolverPortTag always.
- * Provides StoragePortTag when supabase is provided in config.
+ * Provides StoragePortTag using SeaweedFS storage.
+ *
+ * SeaweedFS storage requires seaweedfsConfig or environment variables.
+ *
+ * @example
+ * ```typescript
+ * // SeaweedFS storage with explicit config
+ * const storageLayer = makeStorageRepositoryLayer({
+ *   db,
+ *   seaweedfsConfig: { ... }
+ * });
+ *
+ * // SeaweedFS storage with env vars
+ * const storageLayer = makeStorageRepositoryLayer({ db });
+ * ```
  */
 export const makeStorageRepositoryLayer = (config: RepositoryLayerConfig) => {
   const pathResolver = new DefaultStoragePathResolver();
@@ -310,14 +328,31 @@ export const makeStorageRepositoryLayer = (config: RepositoryLayerConfig) => {
     pathResolver,
   );
 
-  // Provide full storage gateway when supabase is available
-  if (config.supabase) {
-    const storageGateway = new SupabaseStorageGateway(config.supabase);
-    const storageLayer = Layer.succeed(StoragePortTag, storageGateway);
+  // Create SeaweedFS storage gateway
+  const storageLayer = Effect.gen(function* () {
+    // Use provided config or load from environment
+    const resolvedConfig = config.seaweedfsConfig
+      ? Effect.succeed(config.seaweedfsConfig)
+      : loadConfigFromEnv();
 
-    return Layer.merge(pathResolverLayer, storageLayer);
-  }
+    const cfg = yield* resolvedConfig;
 
-  // Otherwise only provide the path resolver
-  return pathResolverLayer;
+    const gateway = new SeaweedFSStorageGateway(
+      cfg.seaweedfs,
+      cfg.tusd,
+      cfg.redis,
+      cfg.ticket,
+    );
+
+    return Layer.succeed(StoragePortTag, gateway);
+  }).pipe(
+    Effect.catchAll((error) => {
+      throw new Error(
+        `Failed to create SeaweedFS storage layer: ${error.message}`,
+      );
+    }),
+    Effect.runSync,
+  );
+
+  return Layer.merge(pathResolverLayer, storageLayer);
 };

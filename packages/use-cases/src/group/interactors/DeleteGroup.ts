@@ -1,9 +1,10 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { GroupJoinRequestPort } from "../ports/GroupJoinRequestPort";
+import { GroupId } from "@mirai-app/domain";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupJoinRequestPortTag } from "../ports/GroupJoinRequestPort";
 import type { DeleteGroupResultDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
+import type { TripParticipant } from "@mirai-app/domain";
 import { GroupNotFoundError } from "../errors/GroupErrors";
 
 /**
@@ -19,20 +20,15 @@ export interface DeleteGroupInput {
  * Soft deletes a group and removes all members (admin only).
  */
 export class DeleteGroupUseCase {
-  execute(
-    input: DeleteGroupInput,
-  ): Effect.Effect<
-    DeleteGroupResultDTO,
-    DatabaseError | GroupNotFoundError,
-    GroupPort | TripParticipantPort | GroupJoinRequestPort
-  > {
+  execute(input: DeleteGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
-      const joinRequestPort = yield* GroupJoinRequestPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const joinRequestPort = yield* GroupJoinRequestPortTag;
 
       // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const group = yield* groupPort.findById(groupId);
 
       if (!group || group.isDeleted) {
         return yield* Effect.fail(
@@ -43,12 +39,12 @@ export class DeleteGroupUseCase {
       // Remove all participants from the group
       const participants = yield* participantPort.findByTripId(group.tripId);
       const groupParticipants = participants.filter(
-        (p) => p.groupId === group.id,
+        (p: { groupId: typeof groupId | null }) => p.groupId === group.id,
       );
 
       // Update participants to remove group assignment
       yield* Effect.all(
-        groupParticipants.map((p) => {
+        groupParticipants.map((p: { removeFromGroup: () => TripParticipant }) => {
           const updated = p.removeFromGroup();
           return participantPort.update(updated);
         }),
@@ -58,12 +54,12 @@ export class DeleteGroupUseCase {
       yield* joinRequestPort.deleteByGroupId(group.id);
 
       // Soft delete the group
-      yield* groupPort.softDelete(group.id);
+      yield* groupPort.softDelete(groupId);
 
       return {
         success: true,
         groupId: group.id,
-      };
+      } as DeleteGroupResultDTO;
     });
   }
 }

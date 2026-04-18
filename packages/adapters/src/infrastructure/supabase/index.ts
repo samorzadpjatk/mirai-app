@@ -1,8 +1,8 @@
 /**
  * Supabase Infrastructure - Adapters Layer
  *
- * Provides Supabase client type definitions for the adapters layer.
- * Effect Context.Tags moved to use-cases layer for DI.
+ * Re-exports Supabase client type definitions from the frameworks layer
+ * to ensure type compatibility across packages.
  */
 
 export type {
@@ -28,6 +28,6 @@ export type {
   PostgrestQueryBuilder,
   PostgrestFilterBuilder,
   SupabaseDatabase,
-} from "./types";
+} from "@mirai-app/frameworks/supabase";
 
-export { REALTIME_CHANNEL_STATES } from "./types";
+export { REALTIME_CHANNEL_STATES } from "@mirai-app/frameworks/supabase";

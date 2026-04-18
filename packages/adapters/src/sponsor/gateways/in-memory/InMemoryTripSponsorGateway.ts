@@ -1,22 +1,30 @@
-import { Effect } from "effect";
+import { Effect, Context } from "effect";
 import {
   SponsorId,
   TripId,
   TripSponsorId,
   DatabaseError,
+  type IAuthZPort,
 } from "@mirai-app/domain";
 import type {
   ITripSponsorPort,
   TripSponsor,
   TripSponsorWithSponsor,
-  SponsorDTO,
 } from "@mirai-app/use-cases/sponsor";
 import type { Sponsor } from "@mirai-app/domain";
+import { AuthContextTag } from "../../../infrastructure/effect";
+
+// Local AuthZPortTag to avoid circular dependency issues
+class AuthZPortTag extends Context.Tag("AuthZ")<AuthZPortTag, IAuthZPort>() {}
 
 /**
  * In-Memory Trip Sponsor Gateway
  *
  * Implements ITripSponsorPort using in-memory Map storage for testing.
+ *
+ * Authorization Pattern:
+ * - Read operations: Public - no auth required
+ * - Write operations (create, delete, deleteByTripIdAndSponsorId): Admin or trip leader
  */
 export class InMemoryTripSponsorGateway implements ITripSponsorPort {
   private tripSponsors: Map<string, TripSponsor> = new Map();
@@ -83,32 +91,83 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
   }
 
   create(tripSponsor: TripSponsor) {
-    return Effect.sync(() => {
-      this.tripSponsors.set(
-        TripSponsorId.toString(tripSponsor.id),
-        tripSponsor,
-      );
+    const self = this;
+    const idStr = TripSponsorId.toString(tripSponsor.id);
+    const tripIdStr = TripId.toString(tripSponsor.tripId);
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission (admin or trip leader)
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      self.tripSponsors.set(idStr, tripSponsor);
       return tripSponsor;
     });
   }
 
   delete(id: TripSponsorId) {
-    return Effect.sync(() => {
-      this.tripSponsors.delete(TripSponsorId.toString(id));
+    const self = this;
+    const idStr = TripSponsorId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission (admin or trip leader)
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      self.tripSponsors.delete(idStr);
     });
   }
 
   deleteByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
-    return Effect.sync(() => {
-      const tripIdStr = TripId.toString(tripId);
-      const sponsorIdStr = SponsorId.toString(sponsorId);
-      const toDelete = Array.from(this.tripSponsors.entries()).find(
+    const self = this;
+    const tripIdStr = TripId.toString(tripId);
+    const sponsorIdStr = SponsorId.toString(sponsorId);
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission (admin or trip leader)
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      const toDelete = Array.from(self.tripSponsors.entries()).find(
         ([_, ts]) =>
           TripId.toString(ts.tripId) === tripIdStr &&
           SponsorId.toString(ts.sponsorId) === sponsorIdStr,
       );
       if (toDelete) {
-        this.tripSponsors.delete(toDelete[0]);
+        self.tripSponsors.delete(toDelete[0]);
       }
     });
   }
@@ -147,7 +206,7 @@ export class InMemoryTripSponsorGateway implements ITripSponsorPort {
     this.sponsors.clear();
   }
 
-  private toSponsorDTO(sponsor: Sponsor): SponsorDTO {
+  private toSponsorDTO(sponsor: Sponsor): TripSponsorWithSponsor["sponsor"] {
     return {
       id: sponsor.id,
       name: sponsor.name,

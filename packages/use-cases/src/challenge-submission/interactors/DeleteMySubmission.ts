@@ -1,5 +1,5 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import type { ApplicationError, ChallengeSubmissionId, GroupId, UserId, TripId } from "@mirai-app/domain";
 import { ChallengeSubmissionPort } from "../ports/ChallengeSubmissionPort";
 import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
 import {
@@ -7,6 +7,7 @@ import {
   CannotEditApprovedSubmissionError,
   NotGroupMemberError,
 } from "../errors/SubmissionErrors";
+import { ChallengeSubmissionId as ChallengeSubmissionIdFactory, GroupId as GroupIdFactory, UserId as UserIdFactory, TripId as TripIdFactory } from "@mirai-app/domain";
 
 /**
  * Input for DeleteMySubmissionUseCase
@@ -30,24 +31,15 @@ export interface DeleteMySubmissionResult {
  * Deletes the current user's submission if not yet approved.
  */
 export class DeleteMySubmissionUseCase {
-  execute(
-    input: DeleteMySubmissionInput,
-  ): Effect.Effect<
-    DeleteMySubmissionResult,
-    | SubmissionNotFoundError
-    | CannotEditApprovedSubmissionError
-    | NotGroupMemberError
-    | ApplicationError,
-    ChallengeSubmissionPort | TripParticipantPort
-  > {
+  execute(input: DeleteMySubmissionInput) {
     return Effect.gen(function* () {
       const submissionPort = yield* ChallengeSubmissionPort;
       const participantPort = yield* TripParticipantPort;
 
       // Get participant info
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        UserIdFactory.create(input.userId),
+        TripIdFactory.create(input.tripId),
       );
 
       if (!participant?.groupId) {
@@ -59,8 +51,12 @@ export class DeleteMySubmissionUseCase {
         );
       }
 
+      // Convert strings to branded IDs
+      const submissionId = ChallengeSubmissionIdFactory.create(input.submissionId);
+      const participantGroupId = GroupIdFactory.create(participant.groupId);
+
       // Find submission
-      const submission = yield* submissionPort.findById(input.submissionId);
+      const submission = yield* submissionPort.findById(submissionId);
 
       if (!submission) {
         return yield* Effect.fail(
@@ -68,8 +64,8 @@ export class DeleteMySubmissionUseCase {
         );
       }
 
-      // Verify ownership
-      if (submission.groupId !== participant.groupId) {
+      // Verify ownership - convert submission.groupId to string for comparison
+      if (GroupIdFactory.toString(submission.groupId) !== GroupIdFactory.toString(participantGroupId)) {
         return yield* Effect.fail(
           new SubmissionNotFoundError({ submissionId: input.submissionId }),
         );
@@ -85,7 +81,7 @@ export class DeleteMySubmissionUseCase {
       }
 
       // Delete submission
-      yield* submissionPort.delete(input.submissionId);
+      yield* submissionPort.delete(submissionId);
 
       return { success: true };
     });

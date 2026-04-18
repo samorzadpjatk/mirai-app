@@ -3,6 +3,10 @@ import type {
   PushSubscriptionInsert,
 } from "../../infrastructure/drizzle";
 import type { PushSubscription } from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import {
+  PushSubscriptionId,
+  UserId,
+} from "@mirai-app/domain";
 
 /**
  * PushSubscription Mapper
@@ -16,8 +20,8 @@ export class PushSubscriptionMapper {
    */
   toDTO(dbRecord: PushSubscriptionSelect): PushSubscription {
     return {
-      id: dbRecord.id,
-      userId: dbRecord.userId,
+      id: PushSubscriptionId.unsafeCreate(dbRecord.id),
+      userId: UserId.unsafeCreate(dbRecord.userId),
       token: dbRecord.expoPushToken,
       createdAt: dbRecord.createdAt,
       updatedAt: dbRecord.updatedAt,
@@ -29,8 +33,8 @@ export class PushSubscriptionMapper {
    */
   toInsert(subscription: PushSubscription): PushSubscriptionInsert {
     return {
-      id: subscription.id,
-      userId: subscription.userId,
+      id: PushSubscriptionId.toString(subscription.id),
+      userId: UserId.toString(subscription.userId),
       expoPushToken: subscription.token,
       platform: "unknown", // Default value, should be provided elsewhere
       createdAt: subscription.createdAt,

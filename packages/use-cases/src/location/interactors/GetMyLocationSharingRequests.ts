@@ -1,8 +1,16 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { UserId } from "@mirai-app/domain";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
+import { UserPortTag } from "../../user/ports/UserPort";
 import type { MyLocationSharingRequestsDTO } from "../dto/LocationDTOs";
-import type { ApplicationError } from "@mirai-app/domain";
+import type { ApplicationError, User } from "@mirai-app/domain";
+
+/**
+ * Error when a user referenced in a sharing request is not found
+ */
+export class RequestUserNotFoundError extends Data.TaggedError("RequestUserNotFoundError")<{
+  userId: string;
+}> {}
 
 /**
  * Input for GetMyLocationSharingRequestsUseCase
@@ -19,9 +27,10 @@ export interface GetMyLocationSharingRequestsInput {
 export class GetMyLocationSharingRequestsUseCase {
   execute(
     input: GetMyLocationSharingRequestsInput,
-  ): Effect.Effect<MyLocationSharingRequestsDTO, ApplicationError, LocationPort> {
+  ) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
+      const userPort = yield* UserPortTag;
 
       const userId = UserId.unsafeCreate(input.userId);
 
@@ -31,13 +40,50 @@ export class GetMyLocationSharingRequestsUseCase {
         locationPort.findSharingRequestsByReceiver(userId),
       ]);
 
-      // Note: User details will be hydrated by the adapter layer
+      // Collect all unique user IDs (both senders and receivers)
+      const uniqueUserIds = new Set<string>();
+      for (const request of [...sent, ...received]) {
+        uniqueUserIds.add(UserId.toString(request.senderId));
+        uniqueUserIds.add(UserId.toString(request.receiverId));
+      }
+
+      // Fetch all users in parallel
+      const userIds = [...uniqueUserIds].map((id) => UserId.unsafeCreate(id));
+      const users = yield* Effect.all(
+        userIds.map((id) => userPort.findById(id)),
+      );
+
+      // Create lookup map for users
+      const userMap = new Map<string, User>();
+      for (let i = 0; i < userIds.length; i++) {
+        const user = users[i];
+        const userId = userIds[i];
+        if (user && userId) {
+          userMap.set(UserId.toString(userId), user);
+        }
+      }
+
+      // Helper to build user DTO
+      const buildUserDTO = (userId: UserId) => {
+        const user = userMap.get(UserId.toString(userId));
+        if (!user) {
+          return null;
+        }
+        return {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          image: user.hasAvatar ? `/users/${UserId.toString(user.id)}/avatar` : null,
+        };
+      };
+
+      // Build fully-populated DTOs
       const sentDTOs = sent.map((request) => ({
         id: request.id,
         senderId: request.senderId,
         receiverId: request.receiverId,
-        sender: null, // Will be hydrated by adapter
-        receiver: null,
+        sender: buildUserDTO(request.senderId),
+        receiver: buildUserDTO(request.receiverId),
         status: request.status,
         createdAt: request.createdAt,
         updatedAt: request.updatedAt,
@@ -47,8 +93,8 @@ export class GetMyLocationSharingRequestsUseCase {
         id: request.id,
         senderId: request.senderId,
         receiverId: request.receiverId,
-        sender: null, // Will be hydrated by adapter
-        receiver: null,
+        sender: buildUserDTO(request.senderId),
+        receiver: buildUserDTO(request.receiverId),
         status: request.status,
         createdAt: request.createdAt,
         updatedAt: request.updatedAt,

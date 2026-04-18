@@ -1,11 +1,10 @@
 import { Effect } from "effect";
-import { Location, LocationId, ValidationError } from "@mirai-app/domain";
+import { Location, LocationId } from "@mirai-app/domain";
 import { UserId, TripId } from "@mirai-app/domain";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import type { SharingSettingsUpdateResultDTO } from "../dto/LocationDTOs";
-import type { ApplicationError } from "@mirai-app/domain";
 import {
   NotTripParticipantError,
   TripHasEndedError,
@@ -28,27 +27,20 @@ export interface UpdateSharingSettingsInput {
  * Updates the user's location sharing settings.
  */
 export class UpdateSharingSettingsUseCase {
-  execute(
-    input: UpdateSharingSettingsInput,
-  ): Effect.Effect<
-    SharingSettingsUpdateResultDTO,
-    | ApplicationError
-    | NotTripParticipantError
-    | TripHasEndedError
-    | InvalidSharingTargetError
-    | ValidationError,
-    LocationPort | TripPortTag | TripParticipantPort
-  > {
+  execute(input: UpdateSharingSettingsInput) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
+
+      const userId = UserId.unsafeCreate(input.userId);
 
       // Validate trip participation
       if (input.tripId) {
+        const tripId = TripId.unsafeCreate(input.tripId);
         const isParticipant = yield* participantPort.isParticipant(
-          input.userId,
-          input.tripId,
+          userId,
+          tripId,
         );
         if (!isParticipant) {
           return yield* Effect.fail(
@@ -59,7 +51,6 @@ export class UpdateSharingSettingsUseCase {
           );
         }
 
-        const tripId = TripId.unsafeCreate(input.tripId);
         const trip = yield* tripPort.findById(tripId);
         if (trip !== null && trip.hasEnded()) {
           return yield* Effect.fail(
@@ -68,7 +59,7 @@ export class UpdateSharingSettingsUseCase {
         }
       } else {
         // Check user is in any active trip
-        const participants = yield* participantPort.findByUserId(input.userId);
+        const participants = yield* participantPort.findByUserId(userId);
 
         if (participants.length === 0) {
           return yield* Effect.fail(
@@ -116,18 +107,15 @@ export class UpdateSharingSettingsUseCase {
         let shareableUserIds: Set<string>;
 
         if (input.tripId) {
-          const participants = yield* participantPort.findByTripId(
-            input.tripId,
-          );
+          const tripId = TripId.unsafeCreate(input.tripId);
+          const participants = yield* participantPort.findByTripId(tripId);
           shareableUserIds = new Set(
             participants
-              .map((p) => p.userId)
+              .map((p) => UserId.toString(p.userId))
               .filter((id) => id !== input.userId),
           );
         } else {
-          const userParticipants = yield* participantPort.findByUserId(
-            input.userId,
-          );
+          const userParticipants = yield* participantPort.findByUserId(userId);
           shareableUserIds = new Set();
 
           for (const participant of userParticipants) {
@@ -135,8 +123,8 @@ export class UpdateSharingSettingsUseCase {
               participant.tripId,
             );
             for (const tp of tripParticipants) {
-              if (tp.userId !== input.userId) {
-                shareableUserIds.add(tp.userId);
+              if (UserId.toString(tp.userId) !== input.userId) {
+                shareableUserIds.add(UserId.toString(tp.userId));
               }
             }
           }
@@ -156,7 +144,6 @@ export class UpdateSharingSettingsUseCase {
       }
 
       // Find or create location
-      const userId = UserId.unsafeCreate(input.userId);
       const existingLocation = yield* locationPort.findByUserId(userId);
 
       let location: Location;

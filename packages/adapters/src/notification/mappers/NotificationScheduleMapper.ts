@@ -6,6 +6,13 @@ import type {
   NotificationSchedule,
   NotificationScheduleExecution,
 } from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import {
+  NotificationScheduleId,
+  TripId,
+  UserId,
+  NotificationId,
+  NotificationScheduleExecutionId,
+} from "@mirai-app/domain";
 
 /**
  * Notification Schedule Mapper
@@ -18,23 +25,20 @@ export class NotificationScheduleMapper {
    */
   toDTO(record: NotificationScheduleSelect): NotificationSchedule {
     return {
-      id: record.id,
-      tripId: record.tripId,
+      id: NotificationScheduleId.unsafeCreate(record.id),
+      tripId: TripId.unsafeCreate(record.tripId),
       name: record.name,
-      description: record.description ?? undefined,
-      scheduleType: record.scheduleType,
-      scheduledFor: record.scheduledFor,
-      isRecurring: record.isRecurring,
-      recurrencePattern: (record.recurrencePattern as Record<string, unknown>) ?? undefined,
-      isActive: record.isActive,
-      isTemplate: record.isTemplate,
-      lastRunAt: record.lastRunAt ?? undefined,
-      lastRunStatus: record.lastRunStatus ?? undefined,
-      runCount: record.runCount ?? 0,
-      notificationTitle: record.notificationTitle,
-      notificationBody: record.notificationBody,
-      notificationUrl: record.notificationUrl ?? undefined,
-      createdById: record.createdById,
+      notificationType: record.notificationType,
+      notificationTitle: record.name, // Using name as title
+      notificationBody: record.content, // Using content as body
+      notificationUrl: null,
+      startDate: record.scheduledFor,
+      endDate: record.scheduledFor,
+      hour: 0,
+      minute: 0,
+      isActive: !record.isDraft,
+      lastRun: record.isSent ? record.scheduledFor : null,
+      createdById: UserId.unsafeCreate(record.createdBy),
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };
@@ -44,24 +48,22 @@ export class NotificationScheduleMapper {
    * Convert schedule DTO to insert format
    */
   toInsert(dto: NotificationSchedule): NotificationScheduleSelect {
+    // tripId is required in database but nullable in domain - use placeholder if null
+    const tripIdStr = dto.tripId
+      ? TripId.toString(dto.tripId)
+      : "00000000-0000-0000-0000-000000000000";
     return {
-      id: dto.id,
-      tripId: dto.tripId,
+      id: NotificationScheduleId.toString(dto.id),
+      tripId: tripIdStr,
       name: dto.name,
-      description: dto.description ?? null,
-      scheduleType: dto.scheduleType,
-      scheduledFor: dto.scheduledFor,
-      isRecurring: dto.isRecurring,
-      recurrencePattern: dto.recurrencePattern ?? null,
-      isActive: dto.isActive,
-      isTemplate: dto.isTemplate,
-      lastRunAt: dto.lastRunAt ?? null,
-      lastRunStatus: dto.lastRunStatus ?? null,
-      runCount: dto.runCount ?? 0,
-      notificationTitle: dto.notificationTitle,
-      notificationBody: dto.notificationBody,
-      notificationUrl: dto.notificationUrl ?? null,
-      createdById: dto.createdById,
+      notificationType: dto.notificationType,
+      content: dto.notificationBody,
+      scheduledFor: dto.startDate,
+      sendToAll: false,
+      targetGroupIds: null,
+      isSent: dto.lastRun !== null,
+      isDraft: !dto.isActive,
+      createdBy: UserId.toString(dto.createdById),
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
     };
@@ -73,19 +75,11 @@ export class NotificationScheduleMapper {
   toUpdate(dto: NotificationSchedule): Partial<NotificationScheduleSelect> {
     return {
       name: dto.name,
-      description: dto.description ?? null,
-      scheduleType: dto.scheduleType,
-      scheduledFor: dto.scheduledFor,
-      isRecurring: dto.isRecurring,
-      recurrencePattern: dto.recurrencePattern ?? null,
-      isActive: dto.isActive,
-      isTemplate: dto.isTemplate,
-      lastRunAt: dto.lastRunAt ?? null,
-      lastRunStatus: dto.lastRunStatus ?? null,
-      runCount: dto.runCount ?? 0,
-      notificationTitle: dto.notificationTitle,
-      notificationBody: dto.notificationBody,
-      notificationUrl: dto.notificationUrl ?? null,
+      notificationType: dto.notificationType,
+      content: dto.notificationBody,
+      scheduledFor: dto.startDate,
+      isSent: dto.lastRun !== null,
+      isDraft: !dto.isActive,
       updatedAt: new Date(),
     };
   }
@@ -95,13 +89,10 @@ export class NotificationScheduleMapper {
    */
   toExecutionDTO(record: NotificationScheduleExecutionSelect): NotificationScheduleExecution {
     return {
-      id: record.id,
-      scheduleId: record.scheduleId,
+      id: NotificationScheduleExecutionId.unsafeCreate(record.id),
+      scheduleId: NotificationScheduleId.unsafeCreate(record.scheduleId),
+      notificationId: NotificationId.unsafeCreate(record.notificationId),
       executedAt: record.executedAt,
-      status: record.status,
-      notificationId: record.notificationId ?? undefined,
-      errorMessage: record.errorMessage ?? undefined,
-      createdAt: record.createdAt,
     };
   }
 
@@ -110,13 +101,11 @@ export class NotificationScheduleMapper {
    */
   toExecutionInsert(dto: NotificationScheduleExecution): NotificationScheduleExecutionSelect {
     return {
-      id: dto.id,
-      scheduleId: dto.scheduleId,
+      id: NotificationScheduleExecutionId.toString(dto.id),
+      scheduleId: NotificationScheduleId.toString(dto.scheduleId),
+      notificationId: NotificationId.toString(dto.notificationId),
       executedAt: dto.executedAt,
-      status: dto.status,
-      notificationId: dto.notificationId ?? null,
-      errorMessage: dto.errorMessage ?? null,
-      createdAt: dto.createdAt,
+      status: "completed", // Default status
     };
   }
 }

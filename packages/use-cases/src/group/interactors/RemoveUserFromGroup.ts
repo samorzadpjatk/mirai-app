@@ -1,14 +1,14 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { GroupJoinRequestPort } from "../ports/GroupJoinRequestPort";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupJoinRequestPortTag } from "../ports/GroupJoinRequestPort";
 import type { TripParticipant } from "@mirai-app/domain";
-import type { DatabaseError } from "@mirai-app/domain";
+import { TripId, UserId } from "@mirai-app/domain";
+import type { Group } from "@mirai-app/domain";
 import {
   GroupNotFoundError,
   NotGroupOrganizerError,
   CannotRemoveOrganizerError,
-  TripHasEndedError,
 } from "../errors/GroupErrors";
 
 /**
@@ -27,26 +27,20 @@ export interface RemoveUserFromGroupInput {
  * Removes a user from a group (organizer or admin).
  */
 export class RemoveUserFromGroupUseCase {
-  execute(
-    input: RemoveUserFromGroupInput,
-  ): Effect.Effect<
-    TripParticipant,
-    | DatabaseError
-    | GroupNotFoundError
-    | NotGroupOrganizerError
-    | CannotRemoveOrganizerError
-    | TripHasEndedError,
-    GroupPort | TripParticipantPort | GroupJoinRequestPort
-  > {
+  execute(input: RemoveUserFromGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
-      const joinRequestPort = yield* GroupJoinRequestPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const joinRequestPort = yield* GroupJoinRequestPortTag;
+
+      const userId = UserId.unsafeCreate(input.userId);
+      const tripId = TripId.unsafeCreate(input.tripId);
+      const requestingUserId = UserId.unsafeCreate(input.requestingUserId);
 
       // Find the participant
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        userId,
+        tripId,
       );
 
       if (!participant) {
@@ -60,14 +54,14 @@ export class RemoveUserFromGroupUseCase {
       // Find the group
       const group = yield* groupPort.findById(participant.groupId);
 
-      if (!group || group.isDeleted || group.tripId !== input.tripId) {
+      if (!group || group.isDeleted || !TripId.equals(group.tripId, tripId)) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: participant.groupId }),
         );
       }
 
       // Check permissions
-      const isOrganizer = group.organizerId === input.requestingUserId;
+      const isOrganizer = UserId.equals(group.organizerId, requestingUserId);
 
       if (!input.isAdmin && !isOrganizer) {
         return yield* Effect.fail(
@@ -79,7 +73,7 @@ export class RemoveUserFromGroupUseCase {
       }
 
       // Cannot remove organizer unless admin
-      if (!input.isAdmin && input.userId === group.organizerId) {
+      if (!input.isAdmin && UserId.equals(userId, group.organizerId)) {
         return yield* Effect.fail(
           new CannotRemoveOrganizerError({
             groupId: group.id,
@@ -93,9 +87,7 @@ export class RemoveUserFromGroupUseCase {
       const saved = yield* participantPort.update(updated);
 
       // Check if group is now empty
-      const groupParticipants = yield* participantPort.findByTripId(
-        input.tripId,
-      );
+      const groupParticipants = yield* participantPort.findByTripId(tripId);
       const remainingMembers = groupParticipants.filter(
         (p) => p.groupId === group.id,
       );
@@ -104,14 +96,14 @@ export class RemoveUserFromGroupUseCase {
         // Delete group if empty
         yield* joinRequestPort.deleteByGroupId(group.id);
         yield* groupPort.softDelete(group.id);
-      } else if (input.userId === group.organizerId) {
+      } else if (UserId.equals(userId, group.organizerId)) {
         // Reassign organizer to next member
         const nextOrganizer = remainingMembers[0];
         if (nextOrganizer) {
           yield* groupPort.update({
             ...group,
             organizerId: nextOrganizer.userId,
-          });
+          } as Group);
         }
       }
 

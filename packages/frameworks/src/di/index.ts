@@ -104,6 +104,16 @@ export {
 } from "./layer/auth";
 
 // =============================================================================
+// Service Layer - Authentication, Storage (SeaweedFS), and EventBus
+// =============================================================================
+
+export {
+  makeServiceLayer,
+  makeSeaweedFSStorageLayer,
+  type ServiceLayerConfig,
+} from "./layer/service";
+
+// =============================================================================
 // Service Context Tags - For direct service access
 // =============================================================================
 

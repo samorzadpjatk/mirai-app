@@ -1,9 +1,10 @@
 import { Effect } from "effect";
+import { NotificationScheduleId } from "@mirai-app/domain";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
 import type { BulkDeleteSchedulesResultDTO } from "../../dto/NotificationDTOs";
 
 export interface BulkDeleteSchedulesInput {
-  scheduleIds: string[];
+  scheduleIds: NotificationScheduleId[];
 }
 
 export class BulkDeleteSchedulesUseCase {

@@ -1,0 +1,11 @@
+# =============================================================================
+# Storage Queries
+# =============================================================================
+
+#import "../../fragments/storage.graphql"
+
+query UploadUrl($input: GetUploadUrlInput!) {
+  uploadUrl(input: $input) {
+    ...StorageUploadUrlFields
+  }
+}

@@ -21,8 +21,13 @@
     "./supabase": "./src/supabase/index.ts",
     "./di": "./src/di/index.ts",
     "./graphql": "./src/graphql/index.ts",
+    "./graphql/client": "./src/graphql/client/index.ts",
+    "./graphql/client/types": "./src/graphql/client/generated/types.ts",
+    "./graphql/client/operations": "./src/graphql/client/generated/operations.ts",
+    "./graphql/client/urql": "./src/graphql/client/generated/urql.ts",
     "./location": "./src/location/index.ts",
-    "./effect": "./src/effect/index.ts"
+    "./effect": "./src/effect/index.ts",
+    "./better-auth": "./src/better-auth/index.ts"
   },
   "scripts": {
     "test": "bun test",
@@ -52,6 +57,8 @@
     "drizzle-orm": "^0.45.2",
     "effect": "^3.14.0",
     "@supabase/supabase-js": "^2.89.0",
+    "better-auth": "^1.6.5",
+    "@better-auth/drizzle-adapter": "^1.6.5",
     "hono": "^4.12.12",
     "graphql": "^16.13.2",
     "graphql-scalars": "^1.25.0",
@@ -61,6 +68,7 @@
     "@pothos/plugin-relay": "^4.7.0",
     "@pothos/plugin-dataloader": "^4.4.3",
     "@pothos/plugin-scope-auth": "^4.1.6",
+    "@pothos/plugin-validation": "^4.2.0",
     "dataloader": "^2.1.0",
     "zustand": "^5.0.11",
     "urql": "^4.2.2",
@@ -78,6 +86,12 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "react": "^19.1.0"
+    "react": "^19.1.0",
+    "expo-secure-store": "~15.0.8"
+  },
+  "peerDependenciesMeta": {
+    "expo-secure-store": {
+      "optional": true
+    }
   }
 }

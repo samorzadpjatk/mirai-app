@@ -604,6 +604,121 @@ app.post("/auth/mobile/sign-in", async (c) => {
 });
 ```
 
+## GraphQL Cookie-Based Authentication
+
+Better Auth uses cookie-based sessions, which requires special handling in GraphQL servers:
+
+### Server-Side Session Validation
+
+```typescript
+// apps/backend-server/src/server/graphql.ts
+import type { BetterAuthInstance } from "@mirai-app/frameworks/better-auth";
+
+/**
+ * Extract session cookie from request headers
+ */
+const extractSessionCookie = (request: Request): string | null => {
+  return request.headers.get("Cookie");
+};
+
+/**
+ * Build AuthContext by validating Better Auth session
+ */
+const buildAuthContext = async (
+  cookieHeader: string,
+  db: DrizzleDb,
+  betterAuth: BetterAuthInstance,
+): Promise<AuthContext | null> => {
+  // Call Better Auth's session endpoint to validate
+  const response = await betterAuth.api.getSession({
+    headers: new Headers({ Cookie: cookieHeader }),
+  });
+
+  if (!response?.user || !response?.session) {
+    return null; // Anonymous context
+  }
+
+  // Fetch additional user data (role, trip roles) from DB
+  const userRecord = await db.query.users.findFirst({
+    where: eq(users.id, response.user.id),
+  });
+
+  return {
+    userId: response.user.id,
+    role: mapDatabaseRole(userRecord?.role),
+    tripRoles: await fetchTripRoles(db, response.user.id),
+    isAuthenticated: true,
+  };
+};
+```
+
+### GraphQL Context Configuration
+
+```typescript
+// GraphQL server config with Better Auth
+export interface GraphQLServerConfig {
+  appLayer: Layer.Layer<never>;
+  db: DrizzleDb;
+  betterAuth: BetterAuthInstance; // Required for session validation
+}
+
+// Create context with cookie-based auth
+const createGraphQLContext = ({ request, appLayer, db, betterAuth }) =>
+  Effect.gen(function* () {
+    const cookieHeader = extractSessionCookie(request);
+    
+    let authContext: AuthContext;
+    if (cookieHeader) {
+      const validatedContext = yield* Effect.tryPromise({
+        try: () => buildAuthContext(cookieHeader, db, betterAuth),
+        catch: () => null,
+      });
+      authContext = validatedContext ?? createAnonymousAuthContext();
+    } else {
+      authContext = createAnonymousAuthContext();
+    }
+    
+    // ... create context with authContext
+  });
+```
+
+### Client-Side Usage
+
+Web clients don't need to manually set headers - the browser handles cookies automatically:
+
+```typescript
+// React/Next.js with GraphQL
+import { createAuthClient } from "better-auth/react";
+
+const authClient = createAuthClient({
+  baseURL: "http://localhost:3000",
+});
+
+// Sign in (sets session cookie automatically)
+await authClient.signIn.email({
+  email: "user@example.com",
+  password: "password",
+});
+
+// GraphQL requests automatically include the cookie
+const result = await fetch("/api/graphql", {
+  method: "POST",
+  credentials: "include", // Important: include cookies
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ query: "..." }),
+});
+```
+
+### Key Differences from JWT
+
+| Aspect | JWT (Bearer Token) | Better Auth (Cookies) |
+|--------|-------------------|----------------------|
+| Storage | LocalStorage/SecureStore | httpOnly cookies |
+| Header | `Authorization: Bearer <token>` | `Cookie: <session>` |
+| XSS Risk | Vulnerable (JS accessible) | Protected (httpOnly) |
+| CSRF Risk | None | Mitigated by sameSite, CSRF tokens |
+| Mobile | Manual token management | Cookie jar pattern |
+
 ## Clean Architecture Integration
 
 ### Domain Layer (Port Definition)

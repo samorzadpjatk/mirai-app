@@ -1,214 +1,202 @@
+// =============================================================================
+// GraphQL Frameworks Module - Server-Agnostic
+// =============================================================================
+
 /**
- * GraphQL Framework Package
+ * GraphQL Schema and Types for Mirai App
  *
- * Pothos-based GraphQL schema builder with plugins:
- * - @pothos/plugin-relay: Relay-compliant pagination and node interface
- * - @pothos/plugin-dataloader: DataLoader integration for N+1 prevention
- * - @pothos/plugin-scope-auth: Authorization based on scopes
- * - graphql-scalars: Custom scalar types (DateTime, EmailAddress, etc.)
+ * This package provides:
+ * - GraphQL schema built with Pothos
+ * - Types, enums, and inputs
+ * - Minimal context interface (implemented by apps)
+ * - Resolver helpers
  *
- * ## Architecture
+ * ## Server Setup (App Responsibility)
  *
- * ```
- * ┌─────────────────────────────────────────────┐
- * │           Schema Builder (builder.ts)         │
- * │  ┌─────────┐ ┌─────────┐ ┌───────────────┐  │
- * │  │  Relay  │ │Loaders  │ │     Auth      │  │
- * │  │ Plugin  │ │Plugin   │ │    Plugin     │  │
- * │  └─────────┘ └─────────┘ └───────────────┘  │
- * └─────────────────────────────────────────────┘
- *                      │
- *         ┌────────────┼────────────┐
- *         ▼            ▼            ▼
- *    ┌────────┐  ┌────────┐  ┌──────────┐
- *    │Scalars │  │Context │  │  Errors  │
- *    └────────┘  └────────┘  └──────────┘
- * ```
+ * The GraphQL package is SERVER-AGNOSTIC. The app (e.g., backend-server)
+ * must handle server setup, auth, and runtime injection.
  *
- * ## Usage
+ * ### Example: Hono + Yoga
  *
- * ### Building a Schema
  * ```typescript
- * import { builder } from "@mirai-app/frameworks/graphql";
- * import "./types/user"; // Register types
- *
- * export const schema = builder.toSchema();
- * ```
- *
- * ### Creating a Server
- * ```typescript
- * import { createGraphQLServer } from "@mirai-app/frameworks/graphql";
- * import { schema } from "./schema";
- *
- * const yoga = createGraphQLServer({
+ * // apps/backend-server/src/graphql.ts
+ * import { Hono } from "hono";
+ * import { createYoga } from "graphql-yoga";
+ * import { schema } from "@mirai-app/frameworks/graphql";
+ * import { makeAppLayer } from "@mirai-app/frameworks";
+ * import { Effect, Layer } from "effect";
+ * import { user } from "./auth"; // Your auth module
+ * 
+ * const app = new Hono();
+ * 
+ * // Build app layer with dependencies
+ * const appLayer = makeAppLayer({ db, supabase });
+ * const runtime = await Effect.runPromise(Layer.toRuntime(appLayer));
+ * 
+ * // Create Yoga with Effect DI
+ * const yoga = createYoga({
  *   schema,
- *   context: async ({ request }) => ({
- *     user: await authenticate(request),
- *   }),
+ *   context: async ({ request }) => {
+ *     // App handles AuthN
+ *     const token = extractToken(request.headers.get("authorization"));
+ *     const authUser = await user.getUser(token); // Uses AuthNPort
+ *     
+ *     return {
+ *       request,
+ *       authContext: authUser ? {
+ *         userId: authUser.id,
+ *         role: authUser.role,
+ *       } : undefined,
+ *       runtime,  // Pre-built with all deps
+ *     };
+ *   },
  * });
+ * 
+ * app.use("/graphql", yoga);
  * ```
  *
- * ### Defining Types
+ * ## Resolver Pattern
+ *
  * ```typescript
  * import { builder } from "@mirai-app/frameworks/graphql";
- *
- * builder.objectType("User", {
- *   interfaces: [builder.nodeInterface],
- *   isTypeOf: (obj) => obj.__typename === "User",
- *   fields: (t) => ({
- *     id: t.exposeID("id"),
- *     email: t.exposeString("email"),
- *     createdAt: t.field({
- *       type: "DateTime",
- *       resolve: (user) => user.createdAt,
- *     }),
+ * import { GetMyProfileUseCase } from "@mirai-app/use-cases/user";
+ * import { requireAuth, runEffect, mapErrorToGraphQL } from "@mirai-app/frameworks/graphql";
+ * 
+ * builder.queryFields((t) => ({
+ *   me: t.field({
+ *     type: UserProfileType,
+ *     resolve: async (_parent, _args, context) => {
+ *       // Auth check
+ *       const auth = requireAuth(context);
+ *       
+ *       // Use case execution
+ *       const useCase = new GetMyProfileUseCase();
+ *       const effect = useCase.execute({ userId: auth.userId });
+ *       
+ *       // Execute with app's runtime
+ *       return runEffect(context, effect).catch((error) => {
+ *         throw mapErrorToGraphQL(error);
+ *       });
+ *     },
  *   }),
- * });
+ * }));
  * ```
+ *
+ * ## AuthN/AuthZ Flow
+ *
+ * ```
+ * 1. HTTP Request
+ *    │
+ * 2. App extracts token from headers
+ *    │
+ * 3. App calls AuthN use case (validate token, get user)
+ *    ├─ uses AuthNPort → SupabaseAuthGateway
+ *    │
+ * 4. App builds AuthContext { userId, role }
+ *    │
+ * 5. App creates Effect Runtime (Layer.toRuntime)
+ *    │
+ * 6. App provides both to GraphQL context
+ *    │
+ * 7. GraphQL resolver receives context
+ *    ├─ uses requireAuth() for AuthZ (role checks)
+ *    ├─ uses runEffect() with runtime
+ *    │
+ * 8. Use case executes with injected dependencies
+ * ```
+ *
+ * ## Key Principles
+ *
+ * 1. **Server-Agnostic**: No server framework dependencies
+ * 2. **App Manages Auth**: App extracts and validates tokens
+ * 3. **Runtime Injection**: App creates and provides Effect Runtime
+ * 4. **Thin Resolvers**: Only authZ check + use case call
+ * 5. **Effect for Business**: All complexity in use cases
  */
 
 // =============================================================================
-// Core Schema Builder
+// Core
 // =============================================================================
 
-export { builder, type BuilderType, type SchemaBuilderConfig } from "./builder";
+export { builder } from "./builder.js";
+export { schema, default as defaultSchema } from "./schema.js";
 
 // =============================================================================
-// Unified Schema Assembly
-// =============================================================================
-
-export { schema } from "./schema";
-import { schema as _schema } from "./schema";
-export default _schema;
-
-// =============================================================================
-// Custom Scalars
+// Context (Interface Only)
 // =============================================================================
 
 export {
-  scalars,
-  type ScalarName,
-  type ScalarsConfig,
-  registerScalars,
-  parseDateTime,
-  serializeDateTime,
-} from "./scalars";
-
-// =============================================================================
-// Context Types and Utilities
-// =============================================================================
-
-export {
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+  getOptionalAuth,
+  runEffect,
   type GraphQLContext,
   type AuthContext,
-  type GraphQLContextFactory,
-  type GraphQLContextConfig,
-  createGraphQLContext,
-} from "./context";
+} from "./context.js";
 
 // =============================================================================
-// Error Handling
+// Errors
 // =============================================================================
 
 export {
-  type GraphQLErrorCode,
-  GraphQLErrorExtensions,
-  createGraphQLError,
-  formatError,
-  mapDomainErrorToGraphQL,
-} from "./errors";
+  mapErrorToGraphQL,
+  notFoundError,
+  badRequestError,
+  forbiddenError,
+  unauthorizedError,
+  conflictError,
+  type GraphQLError,
+} from "./errors.js";
 
 // =============================================================================
-// Server Setup (Yoga)
+// Pub/Sub for Subscriptions
 // =============================================================================
 
-export {
-  createGraphQLServer,
-  type GraphQLServerConfig,
-  type GraphQLServer,
-  type YogaContext,
-} from "./server";
+export { pubsub } from "./types/subscriptions/index.js";
 
 // =============================================================================
-// Schema Utilities
+// Type Exports
 // =============================================================================
 
-export {
-  type NodeType,
-  type ConnectionType,
-  type EdgeType,
-  type PageInfo,
-  createConnectionType,
-  createEdgeType,
-  toGlobalId,
-  fromGlobalId,
-  isValidGlobalId,
-} from "./relay";
+export * from "./types/index.js";
 
 // =============================================================================
-// Connection Pagination Utilities
-// =============================================================================
-
-export type {
-  CursorDataWithDate,
-  ConnectionItem,
-  GatewayConnectionResult,
-  EncodeCursorFn,
-} from "./utils/connections";
-
-export {
-  decodeCursorWithDate,
-  buildConnectionResponse,
-  buildEdges,
-  buildPageInfo,
-  createEmptyConnection,
-  clampFirst,
-  PAGINATION_LIMITS,
-} from "./utils/connections";
-
-// =============================================================================
-// DataLoader Utilities
+// Enums
 // =============================================================================
 
 export {
-  type LoaderConfig,
-  type LoaderCache,
-  createLoader,
-  createCachedLoader,
-  batchLoadFn,
-} from "./loaders";
+  RoleEnum,
+  SubmissionTypeEnum,
+  ScoringCategoryEnum,
+  ChallengeStatusEnum,
+  SubmissionStatusEnum,
+  VoteTypeEnum,
+  NotificationTypeEnum,
+  NotificationPriorityEnum,
+  CoinTransactionTypeEnum,
+} from "./builder.js";
 
 // =============================================================================
-// Authorization Utilities
+// Codegen Configuration
 // =============================================================================
 
-export {
-  type AuthScope,
-  type AuthScopeMap,
-  type AuthScopesFunction,
-  defineAuthScopes,
-  checkAuthScope,
-  requireAuth,
-  requireAnyAuth,
-  requireAllAuth,
-} from "./auth";
+/**
+ * GraphQL Codegen config for generating client types.
+ * Used by: `bun run --filter=@mirai-app/frameworks sync:schema`
+ */
+export { default as codegenConfig } from "./codegen.js";
 
 // =============================================================================
-// Schema Generation
+// Client Types and Hooks (Generated)
 // =============================================================================
 
-export {
-  printSchemaToSDL,
-  writeSchemaToFile,
-  type SchemaOutputConfig,
-} from "./schema-output";
-
-// =============================================================================
-// Re-exports from Pothos (for convenience)
-// =============================================================================
-
-export {
-  type ObjectTypeOptions,
-  type InterfaceTypeOptions,
-} from "@pothos/core";
-export { type RelayPluginOptions } from "@pothos/plugin-relay";
+/**
+ * Generated client types and hooks are available at:
+ * - @mirai-app/frameworks/graphql/client - Main exports (types, operations, urql hooks)
+ * - @mirai-app/frameworks/graphql/client/types - TypeScript types
+ * - @mirai-app/frameworks/graphql/client/operations - Operation types
+ * - @mirai-app/frameworks/graphql/client/urql - urql hooks
+ *
+ * Regenerate with: `bun run --filter=@mirai-app/frameworks sync:schema`
+ */

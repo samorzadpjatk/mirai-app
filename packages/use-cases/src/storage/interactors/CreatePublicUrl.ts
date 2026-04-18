@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import type { StoragePublicUrlDTO } from "../dto/StorageDTOs";
-import { StoragePathResolverPort } from "../ports/StoragePathResolverPort";
+import { StoragePathResolverPortTag } from "../ports/StoragePathResolverPort";
 import {
   StoragePathResolutionError,
   InvalidStorageBucketError,
@@ -21,17 +21,9 @@ export interface CreatePublicUrlInput {
  * Public URLs are only available for the files-public bucket.
  */
 export class CreatePublicUrlUseCase {
-  execute(
-    input: CreatePublicUrlInput,
-  ): Effect.Effect<
-    StoragePublicUrlDTO,
-    | StoragePathResolutionError
-    | InvalidStorageBucketError
-    | StorageConfigurationError,
-    StoragePathResolverPort
-  > {
+  execute(input: CreatePublicUrlInput) {
     return Effect.gen(function* () {
-      const pathResolver = yield* StoragePathResolverPort;
+      const pathResolver = yield* StoragePathResolverPortTag;
 
       // Resolve the storage path to bucket and object path
       const resolvedPath = yield* Effect.try({

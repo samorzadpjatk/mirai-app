@@ -1,27 +1,20 @@
 import { Effect, Data } from "effect";
+import { NotificationId, TripId } from "@mirai-app/domain";
 import { NotificationDeliveryPortTag } from "../../ports/NotificationPort";
 import type { ApplicationError } from "@mirai-app/domain";
 import type { NotificationDeliveryDTO } from "../../dto/NotificationDTOs";
 
-export class DeliveryNotFoundError extends Data.TaggedError(
-  "DeliveryNotFoundError",
-)<{
-  notificationId: string;
-}>() {}
+export class DeliveryNotFoundError extends Data.TaggedError("DeliveryNotFoundError")<{
+  notificationId: NotificationId;
+}> {}
 
 export interface GetDeliveryByNotificationIdInput {
-  notificationId: string;
-  tripId: string;
+  notificationId: NotificationId;
+  tripId: TripId;
 }
 
 export class GetDeliveryByNotificationIdUseCase {
-  execute(
-    input: GetDeliveryByNotificationIdInput,
-  ): Effect.Effect<
-    NotificationDeliveryDTO,
-    ApplicationError | DeliveryNotFoundError,
-    NotificationDeliveryPortTag
-  > {
+  execute(input: GetDeliveryByNotificationIdInput) {
     return Effect.gen(function* () {
       const deliveryPort = yield* NotificationDeliveryPortTag;
 
@@ -29,13 +22,13 @@ export class GetDeliveryByNotificationIdUseCase {
         input.notificationId,
       );
 
-      if (!delivery || delivery.tripId !== input.tripId) {
+      if (!delivery || !delivery.tripId || !TripId.equals(delivery.tripId, input.tripId)) {
         return yield* Effect.fail(
           new DeliveryNotFoundError({ notificationId: input.notificationId }),
         );
       }
 
-      return { ...delivery, notification: null }; // To be hydrated by adapter
+      return { ...delivery, notification: null } as NotificationDeliveryDTO;
     });
   }
 }

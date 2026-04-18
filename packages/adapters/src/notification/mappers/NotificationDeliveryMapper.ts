@@ -1,5 +1,11 @@
 import type { NotificationDeliverySelect } from "../../infrastructure/drizzle";
 import type { NotificationDelivery } from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import {
+  NotificationDeliveryId,
+  NotificationId,
+  NotificationScheduleId,
+  TripId,
+} from "@mirai-app/domain";
 
 /**
  * Notification Delivery Mapper
@@ -12,19 +18,19 @@ export class NotificationDeliveryMapper {
    */
   toDTO(record: NotificationDeliverySelect): NotificationDelivery {
     return {
-      id: record.id,
-      notificationId: record.notificationId,
-      tripId: record.tripId,
-      scheduleId: record.scheduleId ?? undefined,
+      id: NotificationDeliveryId.unsafeCreate(record.id),
+      notificationId: NotificationId.unsafeCreate(record.notificationId),
+      tripId: record.tripId ? TripId.unsafeCreate(record.tripId) : null,
+      scheduleId: record.scheduleId
+        ? NotificationScheduleId.unsafeCreate(record.scheduleId)
+        : null,
       status: record.status,
       totalRecipients: record.totalRecipients ?? 0,
       successCount: record.successCount ?? 0,
       failureCount: record.failureCount ?? 0,
-      deliveryStartedAt: record.deliveryStartedAt ?? undefined,
-      deliveryCompletedAt: record.deliveryCompletedAt ?? undefined,
-      errorMessage: record.errorMessage ?? undefined,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
+      deliveryStartedAt: record.deliveryStartedAt ?? new Date(),
+      deliveryCompletedAt: record.deliveryCompletedAt ?? null,
+      errors: record.errors,
     };
   }
 
@@ -33,19 +39,21 @@ export class NotificationDeliveryMapper {
    */
   toInsert(dto: NotificationDelivery): NotificationDeliverySelect {
     return {
-      id: dto.id,
-      notificationId: dto.notificationId,
-      tripId: dto.tripId,
-      scheduleId: dto.scheduleId ?? null,
+      id: NotificationDeliveryId.toString(dto.id),
+      notificationId: NotificationId.toString(dto.notificationId),
+      tripId: dto.tripId ? TripId.toString(dto.tripId) : null,
+      scheduleId: dto.scheduleId
+        ? NotificationScheduleId.toString(dto.scheduleId)
+        : null,
       status: dto.status,
       totalRecipients: dto.totalRecipients ?? 0,
       successCount: dto.successCount ?? 0,
       failureCount: dto.failureCount ?? 0,
-      deliveryStartedAt: dto.deliveryStartedAt ?? null,
+      deliveryStartedAt: dto.deliveryStartedAt,
       deliveryCompletedAt: dto.deliveryCompletedAt ?? null,
-      errorMessage: dto.errorMessage ?? null,
-      createdAt: dto.createdAt,
-      updatedAt: dto.updatedAt,
+      errors: dto.errors,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
   }
 
@@ -58,9 +66,9 @@ export class NotificationDeliveryMapper {
       totalRecipients: dto.totalRecipients ?? 0,
       successCount: dto.successCount ?? 0,
       failureCount: dto.failureCount ?? 0,
-      deliveryStartedAt: dto.deliveryStartedAt ?? null,
+      deliveryStartedAt: dto.deliveryStartedAt,
       deliveryCompletedAt: dto.deliveryCompletedAt ?? null,
-      errorMessage: dto.errorMessage ?? null,
+      errors: dto.errors,
       updatedAt: new Date(),
     };
   }

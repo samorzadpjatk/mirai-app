@@ -1,0 +1,14 @@
+# =============================================================================
+# Submission Review Subscriptions
+# =============================================================================
+
+subscription SubmissionReviewed($filter: SubmissionSubscriptionFilter!) {
+  submissionReviewed(filter: $filter) {
+    submissionId
+    challengeId
+    groupId
+    status
+    awardedPoints
+    reviewedAt
+  }
+}

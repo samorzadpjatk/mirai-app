@@ -1,13 +1,11 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { GroupJoinRequestPort } from "../ports/GroupJoinRequestPort";
-import type { TripParticipant } from "@mirai-app/domain";
-import type { DatabaseError } from "@mirai-app/domain";
+import { GroupId, TripId, UserId, TripParticipantId, TripParticipant } from "@mirai-app/domain";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupJoinRequestPortTag } from "../ports/GroupJoinRequestPort";
 import {
   GroupNotFoundError,
   AlreadyInGroupError,
-  TripHasEndedError,
 } from "../errors/GroupErrors";
 
 /**
@@ -25,23 +23,15 @@ export interface JoinGroupInput {
  * Allows admin to directly join/add a user to a group.
  */
 export class JoinGroupUseCase {
-  execute(
-    input: JoinGroupInput,
-  ): Effect.Effect<
-    TripParticipant,
-    | DatabaseError
-    | GroupNotFoundError
-    | AlreadyInGroupError
-    | TripHasEndedError,
-    GroupPort | TripParticipantPort | GroupJoinRequestPort
-  > {
+  execute(input: JoinGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
-      const joinRequestPort = yield* GroupJoinRequestPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const joinRequestPort = yield* GroupJoinRequestPortTag;
 
       // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const group = yield* groupPort.findById(groupId);
 
       if (!group || group.isDeleted) {
         return yield* Effect.fail(
@@ -49,16 +39,20 @@ export class JoinGroupUseCase {
         );
       }
 
-      if (group.tripId !== input.tripId) {
+      const tripId = TripId.unsafeCreate(input.tripId);
+
+      if (!TripId.equals(group.tripId, tripId)) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: input.groupId }),
         );
       }
 
+      const userId = UserId.unsafeCreate(input.userId);
+
       // Check if user is already in the group
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        userId,
+        tripId,
       );
 
       if (participant && participant.groupId === group.id) {
@@ -71,10 +65,10 @@ export class JoinGroupUseCase {
       }
 
       // Assign user to group and clean up join requests
-      const updatedParticipant = yield* participantPort.upsert({
-        id: participant?.id ?? "",
-        userId: input.userId,
-        tripId: input.tripId,
+      const participantToUpsert = yield* TripParticipant.create({
+        id: participant?.id ?? TripParticipantId.generate(),
+        userId: userId,
+        tripId: tripId,
         groupId: group.id,
         wristNumber: participant?.wristNumber ?? null,
         houseNumber: participant?.houseNumber ?? null,
@@ -82,9 +76,10 @@ export class JoinGroupUseCase {
         createdAt: participant?.createdAt ?? new Date(),
         updatedAt: new Date(),
       });
+      const updatedParticipant = yield* participantPort.upsert(participantToUpsert);
 
       // Delete any join requests for this user in this trip
-      yield* joinRequestPort.deleteByUserAndTrip(input.userId, input.tripId);
+      yield* joinRequestPort.deleteByUserAndTrip(userId, tripId);
 
       return updatedParticipant;
     });

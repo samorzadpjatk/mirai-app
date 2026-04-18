@@ -7,7 +7,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import type {
-  SupabaseClient,
+  RealSupabaseClient,
   SupabaseClientOptions,
 } from "./types";
 
@@ -31,7 +31,7 @@ export const createSupabaseClient = (
   url: string,
   anonKey: string,
   options?: SupabaseClientOptions,
-): SupabaseClient => {
+): RealSupabaseClient => {
   return createClient(url, anonKey, {
     auth: {
       persistSession: true,
@@ -42,7 +42,7 @@ export const createSupabaseClient = (
     global: {
       headers: options?.global?.headers,
     },
-  }) as SupabaseClient;
+  });
 };
 
 /**
@@ -65,7 +65,7 @@ export const createServiceClient = (
   url: string,
   serviceRoleKey: string,
   options?: SupabaseClientOptions,
-): SupabaseClient => {
+): RealSupabaseClient => {
   return createClient(url, serviceRoleKey, {
     auth: {
       persistSession: false,
@@ -77,7 +77,7 @@ export const createServiceClient = (
         ...options?.global?.headers,
       },
     },
-  }) as SupabaseClient;
+  });
 };
 
 /**
@@ -104,12 +104,12 @@ export const createClientWithAuth = (
   url: string,
   anonKey: string,
   accessToken: string,
-): SupabaseClient => {
+): RealSupabaseClient => {
   return createClient(url, anonKey, {
     global: {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
     },
-  }) as SupabaseClient;
+  });
 };

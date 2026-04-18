@@ -30,11 +30,19 @@ export interface ITripParticipantPort {
     participant: TripParticipant,
   ): Effect.Effect<TripParticipant, IPortError, never>;
   delete(id: TripParticipantId): Effect.Effect<void, IPortError, never>;
+  deleteByUserAndTrip(
+    userId: UserId,
+    tripId: TripId,
+  ): Effect.Effect<void, IPortError, never>;
   countByTripId(tripId: TripId): Effect.Effect<number, IPortError, never>;
+  countByUserId(userId: UserId): Effect.Effect<number, IPortError, never>;
   isParticipant(
     userId: UserId,
     tripId: TripId,
   ): Effect.Effect<boolean, IPortError, never>;
+  upsert(
+    participant: TripParticipant,
+  ): Effect.Effect<TripParticipant, IPortError, never>;
   findByWristNumber(
     tripId: TripId,
     wristNumber: string,

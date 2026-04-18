@@ -1,12 +1,11 @@
 import { Effect } from "effect";
-import type { ApplicationError, ValidationError } from "@mirai-app/domain";
 import {
   TripParticipant,
   UserId,
   TripId,
   TripParticipantId,
 } from "@mirai-app/domain";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
 import type { ParticipantNumberUpdateDTO } from "../dto/UserDTOs";
 import { UserNotInTripError } from "../errors/UserErrors";
 
@@ -14,8 +13,8 @@ import { UserNotInTripError } from "../errors/UserErrors";
  * Input for UpdateHouseNumberUseCase
  */
 export interface UpdateHouseNumberInput {
-  userId: string;
-  tripId: string;
+  userId: UserId;
+  tripId: TripId;
   houseNumber: string;
 }
 
@@ -25,15 +24,9 @@ export interface UpdateHouseNumberInput {
  * Assigns a house number to a trip participant.
  */
 export class UpdateHouseNumberUseCase {
-  execute(
-    input: UpdateHouseNumberInput,
-  ): Effect.Effect<
-    ParticipantNumberUpdateDTO,
-    ApplicationError | UserNotInTripError | ValidationError,
-    TripParticipantPort
-  > {
+  execute(input: UpdateHouseNumberInput) {
     return Effect.gen(function* () {
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Find existing participant or create new one
       let participant = yield* participantPort.findByUserAndTrip(
@@ -44,8 +37,8 @@ export class UpdateHouseNumberUseCase {
       if (!participant) {
         // Create new participant with house number
         const participantId = TripParticipantId.generate();
-        const tripId = TripId.unsafeCreate(input.tripId);
-        const userId = UserId.unsafeCreate(input.userId);
+        const tripId = input.tripId;
+        const userId = input.userId;
 
         const newParticipantEffect = TripParticipant.create({
           id: participantId,
@@ -60,19 +53,19 @@ export class UpdateHouseNumberUseCase {
         });
 
         const newParticipant = yield* newParticipantEffect;
-        participant = yield* participantPort.upsert(newParticipant);
+        participant = yield* participantPort.create(newParticipant);
       } else {
         // Update existing participant's house number
         const updatedParticipantEffect = participant.withHouseNumber(
           input.houseNumber,
         );
         const updatedParticipant = yield* updatedParticipantEffect;
-        participant = yield* participantPort.upsert(updatedParticipant);
+        participant = yield* participantPort.update(updatedParticipant);
       }
 
       const result: ParticipantNumberUpdateDTO = {
-        userId: input.userId,
-        tripId: input.tripId,
+        userId: UserId.toString(input.userId),
+        tripId: TripId.toString(input.tripId),
         wristNumber: participant.wristNumber,
         houseNumber: participant.houseNumber,
       };

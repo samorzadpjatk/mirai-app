@@ -1,14 +1,13 @@
 // Auth domain barrel exports
 export * from "./errors/AuthErrors";
 export * from "./ports";
-export type {
-  AccessCheckRequest,
-  IAuthPort,
-  PermissionLevel,
-  ResourceType,
-  TripRole,
-} from "./types";
+
+// Re-export auth types from shared/services (single source of truth)
 export {
+  type AccessCheckRequest,
+  type PermissionLevel,
+  type ResourceType,
+  type TripRole,
   sanitizeAccessCheckRequest,
   accessCheckRequestToString,
-} from "./types";
+} from "../shared/services";

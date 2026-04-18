@@ -1,13 +1,12 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { GroupJoinRequestPort } from "../ports/GroupJoinRequestPort";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupJoinRequestPortTag } from "../ports/GroupJoinRequestPort";
 import type { DeleteGroupResultDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
+import { GroupId, UserId } from "@mirai-app/domain";
 import {
   GroupNotFoundError,
   NotGroupOrganizerError,
-  TripHasEndedError,
 } from "../errors/GroupErrors";
 
 /**
@@ -24,23 +23,17 @@ export interface DeleteMyGroupInput {
  * Allows a group organizer to delete their own group.
  */
 export class DeleteMyGroupUseCase {
-  execute(
-    input: DeleteMyGroupInput,
-  ): Effect.Effect<
-    DeleteGroupResultDTO,
-    | DatabaseError
-    | GroupNotFoundError
-    | NotGroupOrganizerError
-    | TripHasEndedError,
-    GroupPort | TripParticipantPort | GroupJoinRequestPort
-  > {
+  execute(input: DeleteMyGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
-      const joinRequestPort = yield* GroupJoinRequestPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const joinRequestPort = yield* GroupJoinRequestPortTag;
+
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const userId = UserId.unsafeCreate(input.userId);
 
       // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      const group = yield* groupPort.findById(groupId);
 
       if (!group || group.isDeleted) {
         return yield* Effect.fail(
@@ -49,7 +42,7 @@ export class DeleteMyGroupUseCase {
       }
 
       // Check if user is the organizer
-      if (group.organizerId !== input.userId) {
+      if (!UserId.equals(group.organizerId, userId)) {
         return yield* Effect.fail(
           new NotGroupOrganizerError({
             userId: input.userId,

@@ -2,7 +2,7 @@ import { Context } from "effect";
 import type {
   ITripParticipantPort,
   TripParticipant,
-} from "@mirai-app/domain/trip";
+} from "@mirai-app/domain";
 
 /**
  * TripParticipant Port - Context.Tag for Effect DI

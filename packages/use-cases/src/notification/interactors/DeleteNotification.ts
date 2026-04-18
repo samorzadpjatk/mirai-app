@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { NotificationId } from "@mirai-app/domain";
 import { NotificationPortTag } from "../ports/NotificationPort";
 import type { DeleteNotificationResultDTO } from "../dto/NotificationDTOs";
 
@@ -6,7 +7,7 @@ import type { DeleteNotificationResultDTO } from "../dto/NotificationDTOs";
  * Input for DeleteNotificationUseCase
  */
 export interface DeleteNotificationInput {
-  notificationId: string;
+  notificationId: NotificationId;
 }
 
 /**

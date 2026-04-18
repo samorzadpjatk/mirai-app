@@ -1,0 +1,33 @@
+# =============================================================================
+# Coin Queries
+# =============================================================================
+
+query MyGroupBalance($tripId: String!) {
+  myGroupBalance(tripId: $tripId) {
+    groupId
+    name
+    coins
+    totalEarned
+    totalSpent
+  }
+}
+
+query GroupTransactions($groupId: String!, $first: Int, $after: String) {
+  groupTransactions(groupId: $groupId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        groupId
+        amount
+        reason
+        adminId
+        createdAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

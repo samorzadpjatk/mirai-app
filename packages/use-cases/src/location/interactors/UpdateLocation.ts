@@ -4,12 +4,13 @@ import {
   LocationId,
   ValidationError,
   LocationUpdated,
+  UserId,
+  TripId,
   type Coordinates,
 } from "@mirai-app/domain";
-import { UserId, TripId } from "@mirai-app/domain";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import { EventBusTag } from "../../shared/ports/EventBusPort";
 import { ThrottleServiceTag } from "../ports/ThrottleServicePort";
 import type { LocationUpdateResultDTO } from "../dto/LocationDTOs";
@@ -43,13 +44,14 @@ export interface UpdateLocationInput {
 export class UpdateLocationUseCase {
   execute(input: UpdateLocationInput) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
       const eventBus = yield* EventBusTag;
 
       // Check if user is in an active trip
-      const participants = yield* participantPort.findByUserId(input.userId);
+      const userId = UserId.unsafeCreate(input.userId);
+      const participants = yield* participantPort.findByUserId(userId);
 
       if (participants.length === 0) {
         return yield* Effect.fail(
@@ -58,7 +60,7 @@ export class UpdateLocationUseCase {
       }
 
       // Find an active trip
-      let activeTripId: string | null = null;
+      let activeTripId: TripId | null = null;
       const now = new Date();
 
       for (const participant of participants) {
@@ -77,15 +79,16 @@ export class UpdateLocationUseCase {
           );
         }
         return yield* Effect.fail(
-          new TripHasEndedError({ tripId: firstParticipant.tripId }),
+          new TripHasEndedError({ tripId: TripId.toString(firstParticipant.tripId) }),
         );
       }
 
       // If tripId specified, verify it matches
-      if (input.tripId && input.tripId !== activeTripId) {
+      if (input.tripId && input.tripId !== TripId.toString(activeTripId)) {
+        const inputTripId = TripId.unsafeCreate(input.tripId);
         const isParticipant = yield* participantPort.isParticipant(
-          input.userId,
-          input.tripId,
+          userId,
+          inputTripId,
         );
         if (!isParticipant) {
           return yield* Effect.fail(
@@ -106,7 +109,6 @@ export class UpdateLocationUseCase {
       }
 
       // Find existing location or create new one
-      const userId = UserId.unsafeCreate(input.userId);
       const existingLocation = yield* locationPort.findByUserId(userId);
 
       let location: Location;
@@ -181,7 +183,7 @@ export class UpdateLocationUseCase {
         }
       }).pipe(
         // Error isolation: publish failures don't block response
-        Effect.catchAll((error) =>
+        Effect.catchAll((error: unknown) =>
           Effect.logError("Failed to publish location update event").pipe(
             Effect.annotateLogs({ error })
           )

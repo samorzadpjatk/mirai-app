@@ -41,7 +41,7 @@ export interface ISubmissionReportPort {
    */
   findById(
     id: SubmissionReportId,
-  ): Effect.Effect<SubmissionReport | null, IPortError, never>;
+  ): Effect.Effect<SubmissionReport | null, IPortError, unknown>;
 
   /**
    * Find all reports for a submission
@@ -55,7 +55,7 @@ export interface ISubmissionReportPort {
    */
   create(
     report: Omit<SubmissionReport, "id" | "createdAt">,
-  ): Effect.Effect<SubmissionReport, IPortError, never>;
+  ): Effect.Effect<SubmissionReport, IPortError, unknown>;
 
   /**
    * Check if user already reported a submission

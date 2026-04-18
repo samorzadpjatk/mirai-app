@@ -67,6 +67,56 @@ export class InMemoryRewardGateway implements IRewardPort {
     });
   }
 
+  findPaginatedByTripId(
+    tripId: TripId,
+    params: { limit: number; offset: number },
+  ) {
+    return Effect.sync(() => {
+      const tripIdStr = TripId.toString(tripId);
+      const allForTrip = Array.from(this.rewards.values())
+        .filter((reward) => TripId.toString(reward.tripId) === tripIdStr)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      const total = allForTrip.length;
+      const paginated = allForTrip.slice(
+        params.offset,
+        params.offset + params.limit,
+      );
+
+      return {
+        rewards: paginated,
+        total,
+        hasMore: params.offset + paginated.length < total,
+      };
+    });
+  }
+
+  findAllPaginated(params: { limit: number; offset: number }) {
+    return Effect.sync(() => {
+      const all = Array.from(this.rewards.values()).sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+
+      const total = all.length;
+      const paginated = all.slice(params.offset, params.offset + params.limit);
+
+      return {
+        rewards: paginated,
+        total,
+        hasMore: params.offset + paginated.length < total,
+      };
+    });
+  }
+
+  countByTripId(tripId: TripId) {
+    return Effect.sync(() => {
+      const tripIdStr = TripId.toString(tripId);
+      return Array.from(this.rewards.values()).filter(
+        (reward) => TripId.toString(reward.tripId) === tripIdStr,
+      ).length;
+    });
+  }
+
   /**
    * Helper method to add a reward (for testing)
    */

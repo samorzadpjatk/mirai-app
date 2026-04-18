@@ -1,13 +1,14 @@
 import { ScrollView, Alert, Dimensions } from "react-native";
-import { useLoginForm } from "@mirai-app/frameworks/auth/client";
+import {
+  useLoginForm,
+  useAuth,
+} from "@mirai-app/frameworks/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { useState } from "react";
-import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
 import { PRIVACY_POLICY_PUBLIC_URL } from "~/config/runtimeEnv";
 import Pdf from "react-native-pdf";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
@@ -71,7 +72,6 @@ export default function LoginScreen() {
   const { formState, setEmail, handleSubmit, clearSent, clearError } =
     useLoginForm();
   const { verifyOtp, signInWithPassword, signOut } = useAuth();
-  const supabase = useSupabaseClient();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 

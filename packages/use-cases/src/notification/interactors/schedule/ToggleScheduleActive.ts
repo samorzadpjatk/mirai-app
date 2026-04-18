@@ -1,21 +1,14 @@
 import { Effect } from "effect";
+import { NotificationScheduleId } from "@mirai-app/domain";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { ToggleScheduleResultDTO } from "../../dto/NotificationDTOs";
-import { ScheduleNotFoundError } from "./GetScheduleById";
+import { ScheduleNotFoundError } from "../../errors/NotificationErrors";
 
 export interface ToggleScheduleActiveInput {
-  scheduleId: string;
+  scheduleId: NotificationScheduleId;
 }
 
 export class ToggleScheduleActiveUseCase {
-  execute(
-    input: ToggleScheduleActiveInput,
-  ): Effect.Effect<
-    ToggleScheduleResultDTO,
-    ApplicationError | ScheduleNotFoundError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: ToggleScheduleActiveInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 

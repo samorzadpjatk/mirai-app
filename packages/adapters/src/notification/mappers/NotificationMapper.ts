@@ -6,6 +6,12 @@ import type {
   Notification,
   NotificationPush,
 } from "@mirai-app/use-cases/notification/ports/NotificationPort";
+import {
+  NotificationId,
+  NotificationPushId,
+  UserId,
+  TripId,
+} from "@mirai-app/domain";
 
 /**
  * Notification Mapper
@@ -19,12 +25,12 @@ export class NotificationMapper {
    */
   toDTO(dbRecord: NotificationSelect): Notification {
     return {
-      id: dbRecord.id,
-      tripId: dbRecord.tripId ?? null,
+      id: NotificationId.unsafeCreate(dbRecord.id),
+      tripId: dbRecord.tripId ? TripId.unsafeCreate(dbRecord.tripId) : null,
       title: dbRecord.title,
       body: dbRecord.body,
-      url: dbRecord.url ?? null,
-      createdById: dbRecord.createdById,
+      url: dbRecord.url ?? "",
+      createdById: UserId.unsafeCreate(dbRecord.createdById),
       createdAt: dbRecord.createdAt,
       updatedAt: dbRecord.updatedAt,
     };
@@ -35,12 +41,12 @@ export class NotificationMapper {
    */
   toInsert(notification: Notification): NotificationInsert {
     return {
-      id: notification.id,
-      tripId: notification.tripId,
+      id: NotificationId.toString(notification.id),
+      tripId: notification.tripId ? TripId.toString(notification.tripId) : null,
       title: notification.title,
       body: notification.body,
       url: notification.url,
-      createdById: notification.createdById,
+      createdById: UserId.toString(notification.createdById),
       createdAt: notification.createdAt,
       updatedAt: notification.updatedAt,
       // Default values for fields not in the port interface
@@ -54,7 +60,7 @@ export class NotificationMapper {
    */
   toUpdate(notification: Notification): Partial<NotificationInsert> {
     return {
-      tripId: notification.tripId,
+      tripId: notification.tripId ? TripId.toString(notification.tripId) : null,
       title: notification.title,
       body: notification.body,
       url: notification.url,
@@ -72,9 +78,9 @@ export class NotificationMapper {
     pushId: string,
   ): NotificationPush {
     return {
-      id: pushId,
-      notificationId: dbRecord.id,
-      targetUserId: targetUserId,
+      id: NotificationPushId.unsafeCreate(pushId),
+      notificationId: NotificationId.unsafeCreate(dbRecord.id),
+      targetUserId: UserId.unsafeCreate(targetUserId),
       status: this.mapStatusToPushStatus(dbRecord.status),
       sentAt: dbRecord.sentAt ?? null,
       failureReason: dbRecord.failureReason ?? null,

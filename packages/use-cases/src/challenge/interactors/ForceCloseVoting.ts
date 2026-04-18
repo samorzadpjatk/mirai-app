@@ -5,7 +5,7 @@ import {
   NotPeerVotingChallengeError,
   ChallengeNotInVotingPhaseError,
 } from "../errors/ChallengeErrors";
-import type { ChallengeDTO } from "../dto/ChallengeDTOs";
+import { ChallengeId } from "@mirai-app/domain";
 
 /**
  * Input for ForceCloseVotingUseCase
@@ -27,8 +27,10 @@ export class ForceCloseVotingUseCase {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
 
+      const challengeId = ChallengeId.unsafeCreate(input.challengeId);
+
       // Find challenge
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challenge = yield* challengePort.findById(challengeId);
       if (!challenge) {
         return yield* Effect.fail(
           new ChallengeNotFoundError({ challengeId: input.challengeId }),

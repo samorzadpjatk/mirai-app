@@ -2,53 +2,113 @@ import { Effect } from "effect";
 import type {
   INotificationSchedulePort,
   NotificationSchedule,
-  NotificationScheduleListResult,
 } from "@mirai-app/domain";
-import { DatabaseError } from "@mirai-app/domain";
+import { DatabaseError, NotificationScheduleId, TripId } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 
 /**
  * In-Memory Notification Schedule Gateway
  *
  * Implements INotificationSchedulePort for testing and development.
  * Stores notification schedules in memory.
+ *
+ * Auth verification uses AuthContextTag and AuthZPortTag from Effect context.
+ * Notification schedules are trip-scoped - users need trip-level access.
  */
 export class InMemoryNotificationScheduleGateway
   implements INotificationSchedulePort
 {
   private schedules: Map<string, NotificationSchedule> = new Map();
 
-  findById(id: string) {
-    return Effect.gen(() => {
-      const schedule = this.schedules.get(id);
+  findById(id: NotificationScheduleId) {
+    const self = this;
+    const idStr = NotificationScheduleId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const schedule = self.schedules.get(idStr);
+
+      // If authenticated and schedule exists, verify trip access
+      if (authCtx.isAuthenticated && schedule && schedule.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(schedule.tripId),
+          requiredPermission: "read",
+        });
+      }
+
       return schedule ?? null;
     });
   }
 
   findAll(params: {
-    tripId?: string;
+    tripId?: string | null;
+    notificationType?: string;
     isActive?: boolean;
-    isTemplate?: boolean;
-    scheduleType?: string;
+    startDateFrom?: Date;
+    startDateTo?: Date;
+    search?: string;
     limit: number;
     offset: number;
   }) {
-    return Effect.gen(() => {
-      let results = Array.from(this.schedules.values());
+    const self = this;
 
-      if (params.tripId) {
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // If tripId is specified, verify access
+      if (authCtx.isAuthenticated && params.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: params.tripId,
+          requiredPermission: "read",
+        });
+      }
+
+      let results = Array.from(self.schedules.values());
+
+      if (params.tripId !== undefined && params.tripId !== null) {
         results = results.filter((s) => s.tripId === params.tripId);
+      }
+
+      if (params.notificationType) {
+        results = results.filter(
+          (s) => s.notificationType === params.notificationType,
+        );
       }
 
       if (params.isActive !== undefined) {
         results = results.filter((s) => s.isActive === params.isActive);
       }
 
-      if (params.isTemplate !== undefined) {
-        results = results.filter((s) => s.isTemplate === params.isTemplate);
+      if (params.startDateFrom) {
+        results = results.filter((s) => s.startDate >= params.startDateFrom!);
       }
 
-      if (params.scheduleType) {
-        results = results.filter((s) => s.scheduleType === params.scheduleType);
+      if (params.startDateTo) {
+        results = results.filter((s) => s.startDate <= params.startDateTo!);
+      }
+
+      if (params.search) {
+        const searchLower = params.search.toLowerCase();
+        results = results.filter(
+          (s) =>
+            s.name.toLowerCase().includes(searchLower) ||
+            s.notificationTitle.toLowerCase().includes(searchLower) ||
+            s.notificationBody.toLowerCase().includes(searchLower),
+        );
       }
 
       const total = results.length;
@@ -56,88 +116,352 @@ export class InMemoryNotificationScheduleGateway
         params.offset,
         params.offset + params.limit,
       );
+      const hasMore = params.offset + paginated.length < total;
 
       return {
         schedules: paginated,
         total,
+        hasMore,
       };
     });
   }
 
-  findActiveSchedules(now: Date) {
-    return Effect.gen(() => {
-      const results = Array.from(this.schedules.values()).filter(
-        (s) => s.isActive && s.scheduledFor <= now,
+  findActive() {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext (used for logging/auditing but not strict auth)
+      yield* AuthContextTag;
+
+      const results = Array.from(self.schedules.values()).filter(
+        (s) => s.isActive,
       );
+
       return results;
     });
   }
 
-  findTemplates() {
-    return Effect.gen(() => {
-      const results = Array.from(this.schedules.values()).filter(
-        (s) => s.isTemplate,
+  findUpcoming(days: number) {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext (used for logging/auditing but not strict auth)
+      yield* AuthContextTag;
+
+      const now = new Date();
+      const futureDate = new Date(now);
+      futureDate.setDate(futureDate.getDate() + days);
+
+      const results = Array.from(self.schedules.values()).filter(
+        (s) => s.startDate >= now && s.startDate <= futureDate && s.isActive,
       );
+
       return results;
+    });
+  }
+
+  findByTripIdAndName(tripId: string, name: string) {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Verify trip read access
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripId,
+          requiredPermission: "read",
+        });
+      }
+
+      const results = Array.from(self.schedules.values()).find(
+        (s) => s.tripId === tripId && s.name === name,
+      );
+
+      return results ?? null;
     });
   }
 
   create(schedule: NotificationSchedule) {
-    return Effect.gen(() => {
-      this.schedules.set(schedule.id, schedule);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Verify trip write access for creating schedules
+      if (authCtx.isAuthenticated && schedule.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(schedule.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      const idStr = NotificationScheduleId.toString(schedule.id);
+      self.schedules.set(idStr, schedule);
       return schedule;
     });
   }
 
   update(schedule: NotificationSchedule) {
-    return Effect.gen(() => {
-      if (!this.schedules.has(schedule.id)) {
-        return null;
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const idStr = NotificationScheduleId.toString(schedule.id);
+      const existing = self.schedules.get(idStr);
+
+      // Verify trip write access
+      if (authCtx.isAuthenticated && existing && existing.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(existing.tripId),
+          requiredPermission: "write",
+        });
       }
-      this.schedules.set(schedule.id, schedule);
+
+      if (!existing) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "update",
+            id: idStr,
+            cause: new Error(`Notification schedule not found: ${idStr}`),
+          }),
+        );
+      }
+
+      self.schedules.set(idStr, schedule);
       return schedule;
     });
   }
 
-  delete(id: string) {
-    return Effect.gen(() => {
-      this.schedules.delete(id);
+  delete(id: NotificationScheduleId) {
+    const self = this;
+    const idStr = NotificationScheduleId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const existing = self.schedules.get(idStr);
+
+      // Verify trip write access
+      if (authCtx.isAuthenticated && existing && existing.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(existing.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      self.schedules.delete(idStr);
     });
   }
 
-  updateLastRun(id: string, lastRunAt: Date, lastRunStatus: string) {
-    return Effect.gen(() => {
-      const schedule = this.schedules.get(id);
-      if (!schedule) {
-        return null;
+  deleteMany(ids: NotificationScheduleId[]) {
+    const self = this;
+
+    if (ids.length === 0) {
+      return Effect.succeed(0);
+    }
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      let count = 0;
+
+      for (const id of ids) {
+        const idStr = NotificationScheduleId.toString(id);
+        const existing = self.schedules.get(idStr);
+
+        // Verify trip write access for each schedule
+        if (authCtx.isAuthenticated && existing && existing.tripId) {
+          const authZPort = yield* AuthZPortTag;
+          yield* authZPort.verifyAccess({
+            userId: authCtx.userId,
+            role: authCtx.role,
+            tripRoles: authCtx.tripRoles,
+            resourceType: "trip",
+            resourceId: TripId.toString(existing.tripId),
+            requiredPermission: "write",
+          });
+        }
+
+        if (self.schedules.delete(idStr)) {
+          count++;
+        }
       }
-      const updated = {
-        ...schedule,
-        lastRunAt,
-        lastRunStatus,
-        runCount: (schedule.runCount ?? 0) + 1,
-      };
-      this.schedules.set(id, updated);
+
+      return count;
+    });
+  }
+
+  toggleActive(id: NotificationScheduleId, isActive: boolean) {
+    const self = this;
+    const idStr = NotificationScheduleId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const existing = self.schedules.get(idStr);
+
+      // Verify trip write access
+      if (authCtx.isAuthenticated && existing && existing.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(existing.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      if (!existing) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "toggleActive",
+            id: idStr,
+            cause: new Error(`Notification schedule not found: ${idStr}`),
+          }),
+        );
+      }
+
+      const updated = { ...existing, isActive };
+      self.schedules.set(idStr, updated);
       return updated;
     });
   }
 
-  duplicate(id: string, newId: string) {
-    return Effect.gen(() => {
-      const schedule = this.schedules.get(id);
-      if (!schedule) {
-        return null;
+  toggleMany(ids: NotificationScheduleId[], isActive: boolean) {
+    const self = this;
+
+    if (ids.length === 0) {
+      return Effect.succeed(0);
+    }
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      let count = 0;
+
+      for (const id of ids) {
+        const idStr = NotificationScheduleId.toString(id);
+        const existing = self.schedules.get(idStr);
+
+        // Verify trip write access for each schedule
+        if (authCtx.isAuthenticated && existing && existing.tripId) {
+          const authZPort = yield* AuthZPortTag;
+          yield* authZPort.verifyAccess({
+            userId: authCtx.userId,
+            role: authCtx.role,
+            tripRoles: authCtx.tripRoles,
+            resourceType: "trip",
+            resourceId: TripId.toString(existing.tripId),
+            requiredPermission: "write",
+          });
+        }
+
+        if (existing) {
+          const updated = { ...existing, isActive };
+          self.schedules.set(idStr, updated);
+          count++;
+        }
       }
-      const duplicated = {
-        ...schedule,
-        id: newId,
-        name: `${schedule.name} (Copy)`,
-        isTemplate: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      this.schedules.set(newId, duplicated);
-      return duplicated;
+
+      return count;
+    });
+  }
+
+  updateLastRun(id: NotificationScheduleId, lastRun: Date) {
+    const self = this;
+    const idStr = NotificationScheduleId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const existing = self.schedules.get(idStr);
+
+      // Verify trip write access
+      if (authCtx.isAuthenticated && existing && existing.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(existing.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      if (!existing) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "updateLastRun",
+            id: idStr,
+            cause: new Error(`Notification schedule not found: ${idStr}`),
+          }),
+        );
+      }
+
+      const updated = { ...existing, lastRun };
+      self.schedules.set(idStr, updated);
+      return updated;
+    });
+  }
+
+  countExecutions(id: NotificationScheduleId) {
+    const self = this;
+    const idStr = NotificationScheduleId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const existing = self.schedules.get(idStr);
+
+      // Verify trip read access
+      if (authCtx.isAuthenticated && existing && existing.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(existing.tripId),
+          requiredPermission: "read",
+        });
+      }
+
+      // Mock execution count - in a real implementation this would query a separate table
+      return 0;
     });
   }
 }

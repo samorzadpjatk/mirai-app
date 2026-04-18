@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
+import { ActivityFeed } from "@mirai-app/domain";
 import type { ActivityFeedId } from "@mirai-app/domain";
 import type { UpdateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import { ActivityNotFoundError } from "../errors/ActivityFeedErrors";
@@ -33,10 +34,12 @@ export class UpdateActivityUseCase {
         );
       }
 
-      // Update fields
+      // Update fields by creating a new ActivityFeed entity
       const now = new Date();
-      const updated = {
-        ...activity,
+      const updatedEffect = ActivityFeed.create({
+        id: activity.id,
+        tripId: activity.tripId,
+        activityType: activity.activityType,
         title: input.title ?? activity.title,
         description:
           input.description !== undefined
@@ -44,8 +47,17 @@ export class UpdateActivityUseCase {
             : activity.description,
         imageUrl:
           input.imageUrl !== undefined ? input.imageUrl : activity.imageUrl,
+        isPinned: activity.isPinned,
+        isHidden: activity.isHidden,
+        hiddenByAdmin: activity.hiddenByAdmin,
+        hiddenAt: activity.hiddenAt,
+        hiddenReason: activity.hiddenReason,
+        createdByAdmin: activity.createdByAdmin,
+        createdAt: activity.createdAt,
         updatedAt: now,
-      };
+      });
+
+      const updated = yield* updatedEffect;
 
       // Save updated activity
       const saved = yield* activityPort.update(updated);

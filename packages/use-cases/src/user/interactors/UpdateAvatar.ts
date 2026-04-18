@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { UserId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
 import type { AvatarUpdateDTO } from "../dto/UserDTOs";
 import { UserNotFoundError } from "../errors/UserErrors";
@@ -7,7 +8,7 @@ import { UserNotFoundError } from "../errors/UserErrors";
  * Input for UpdateAvatarUseCase
  */
 export interface UpdateAvatarInput {
-  userId: string;
+  userId: UserId;
   hasAvatar: boolean;
 }
 
@@ -26,7 +27,7 @@ export class UpdateAvatarUseCase {
 
       if (!user) {
         return yield* Effect.fail(
-          new UserNotFoundError({ userId: input.userId }),
+          new UserNotFoundError({ userId: UserId.toString(input.userId) }),
         );
       }
 

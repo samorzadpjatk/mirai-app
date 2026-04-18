@@ -1,8 +1,9 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import type { IPortError } from "@mirai-app/domain";
+import { UserId, TripId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { DeleteUserResultDTO } from "../dto/UserDTOs";
 import { UserNotFoundError, UserNotInTripError } from "../errors/UserErrors";
 
@@ -20,20 +21,18 @@ export interface DeleteUserInput {
  * Deletes a user from a trip and from the system if they have no remaining trips.
  */
 export class DeleteUserUseCase {
-  execute(
-    input: DeleteUserInput,
-  ): Effect.Effect<
-    DeleteUserResultDTO,
-    ApplicationError | UserNotFoundError | UserNotInTripError,
-    UserPortTag | TripParticipantPort | AuthServicePort
-  > {
+  execute(input: DeleteUserInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const participantPort = yield* TripParticipantPort;
-      const authService = yield* AuthServicePort;
+      const participantPort = yield* TripParticipantPortTag;
+      const authService = yield* AuthServicePortTag;
+
+      // Convert strings to branded IDs
+      const userId = UserId.unsafeCreate(input.userId);
+      const tripId = TripId.unsafeCreate(input.tripId);
 
       // Find user by ID
-      const user = yield* userPort.findById(input.userId);
+      const user = yield* userPort.findById(userId);
 
       if (!user) {
         return yield* Effect.fail(
@@ -43,8 +42,8 @@ export class DeleteUserUseCase {
 
       // Check if user is participant of the trip
       const isParticipant = yield* participantPort.isParticipant(
-        input.userId,
-        input.tripId,
+        userId,
+        tripId,
       );
 
       if (!isParticipant) {
@@ -56,17 +55,17 @@ export class DeleteUserUseCase {
         );
       }
 
-      // Delete participant from trip
-      yield* participantPort.delete(input.userId);
+      // Delete participant from trip (use userId as that's the lookup key)
+      yield* participantPort.deleteByUserAndTrip(userId, tripId);
 
       // Check remaining trips
-      const remainingTrips = yield* participantPort.countByTripId(input.userId);
+      const remainingTrips = yield* participantPort.countByUserId(userId);
 
       let deletedFromSystem = false;
 
       if (remainingTrips === 0) {
         // Delete user from database
-        yield* userPort.delete(input.userId);
+        yield* userPort.delete(userId);
 
         // Delete auth user
         yield* authService.deleteAuthUser(user.authUserId);

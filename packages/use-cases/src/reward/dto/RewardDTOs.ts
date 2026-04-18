@@ -50,19 +50,6 @@ export interface RewardWithCreatorDTO extends RewardDTO {
 }
 
 /**
- * DTO for paginated rewards
- */
-export interface PaginatedRewardsDTO {
-  rewards: RewardDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
-}
-
-/**
  * DTO for reward purchase
  */
 export interface RewardPurchaseDTO {
@@ -92,19 +79,6 @@ export interface RewardPurchaseWithDetailsDTO extends RewardPurchaseDTO {
     firstName: string;
     lastName: string;
   } | null;
-}
-
-/**
- * DTO for paginated purchases
- */
-export interface PaginatedPurchasesDTO {
-  purchases: RewardPurchaseDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
 }
 
 /**

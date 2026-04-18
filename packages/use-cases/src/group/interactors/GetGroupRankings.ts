@@ -1,8 +1,8 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import type { GroupRankingsDTO, GroupRankingDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
+import { TripId } from "@mirai-app/domain";
 
 /**
  * Input for GetGroupRankingsUseCase
@@ -17,22 +17,18 @@ export interface GetGroupRankingsInput {
  * Retrieves group rankings by coins for a trip.
  */
 export class GetGroupRankingsUseCase {
-  execute(
-    input: GetGroupRankingsInput,
-  ): Effect.Effect<
-    GroupRankingsDTO,
-    DatabaseError,
-    GroupPort | TripParticipantPort
-  > {
+  execute(input: GetGroupRankingsInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+
+      const tripId = TripId.unsafeCreate(input.tripId);
 
       // Get ranked groups
-      const groups = yield* groupPort.getRanking(input.tripId);
+      const groups = yield* groupPort.getRanking(tripId);
 
       // Get all participants for this trip
-      const allParticipants = yield* participantPort.findByTripId(input.tripId);
+      const allParticipants = yield* participantPort.findByTripId(tripId);
 
       const rankings: GroupRankingDTO[] = groups.map((group, index) => {
         const groupParticipants = allParticipants.filter(

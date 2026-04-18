@@ -8,10 +8,41 @@
 
 This skill provides patterns for implementing cursor-based pagination across all layers of a Clean Architecture codebase:
 
-- **Domain Layer**: Pure interfaces defining pagination contracts
-- **Use Cases Layer**: Effect-based orchestration with Context.Tag DI
-- **Adapter Layer**: Drizzle ORM implementations with cursor queries
-- **GraphQL Layer**: Pothos Relay plugin for connection types
+- **GraphQL Layer**: Pothos Relay plugin for connection types (primary focus)
+- **Framework Layer**: Connection utilities in `packages/frameworks/src/graphql/utils/connections.ts`
+- **Use Cases Layer**: DTOs return items directly; GraphQL layer builds connections
+
+## Quick Reference
+
+```typescript
+// 1. Create Connection Type (in types.ts)
+export const TripConnectionType = builder.connectionObject(
+  { name: "TripConnection", type: TripType },
+  { name: "TripEdge" }
+);
+
+// 2. Use in Query (in queries.ts)
+import { normalizePaginationArgs, buildConnection, encodeCursor } from "../../utils/connections";
+
+myTrips: t.field({
+  type: TripConnectionType,
+  args: {
+    first: t.arg.int(),
+    after: t.arg.string(),
+  },
+  resolve: async (_parent, args, context) => {
+    const { limit, after } = normalizePaginationArgs(args);
+    const result = await fetchData({ limit, cursor: after });
+    
+    return buildConnection({
+      items: result.items,
+      hasMore: result.hasMore,
+      getCursor: (item) => encodeCursor(item.id),
+      totalCount: result.total,
+    });
+  },
+}),
+```
 
 ---
 
@@ -220,6 +251,93 @@ builder.queryField("entities", (t) =>
       ),
   }),
 );
+```
+
+---
+
+## Connection Utilities (Project Standard)
+
+Use the utilities from `packages/frameworks/src/graphql/utils/connections.ts`:
+
+### Available Functions
+
+```typescript
+import {
+  // Cursor encoding/decoding
+  encodeCursor,
+  decodeCursor,
+  encodeCursorWithTimestamp,
+  decodeCursorWithTimestamp,
+  
+  // Connection building
+  buildConnection,
+  buildConnectionFromPaginated,
+  
+  // Pagination arguments
+  clampFirst,
+  normalizePaginationArgs,
+} from "../../utils/connections";
+```
+
+### Building a Connection
+
+```typescript
+import { buildConnection, encodeCursor } from "../../utils/connections";
+
+const connection = buildConnection({
+  items: trips,
+  hasMore: true,
+  getCursor: (trip) => encodeCursor(trip.id),
+  totalCount: 100,
+});
+
+// Returns:
+// {
+//   edges: [{ node: Trip, cursor: "base64id:trip-123" }, ...],
+//   pageInfo: {
+//     hasNextPage: true,
+//     hasPreviousPage: false,
+//     startCursor: "base64id:trip-123",
+//     endCursor: "base64id:trip-132",
+//   },
+//   totalCount: 100
+// }
+```
+
+### Using in Resolver
+
+```typescript
+import { 
+  normalizePaginationArgs, 
+  buildConnection, 
+  encodeCursor 
+} from "../../utils/connections";
+
+builder.queryFields((t) => ({
+  trips: t.field({
+    type: TripConnectionType,
+    args: {
+      first: t.arg.int(),
+      after: t.arg.string(),
+    },
+    resolve: async (_parent, args, ctx) => {
+      const { limit, after } = normalizePaginationArgs(args);
+      
+      const useCase = new GetTripsUseCase();
+      const result = await useCase.execute({ 
+        first: limit, 
+        after: after ? decodeCursor(after) : null 
+      });
+      
+      return buildConnection({
+        items: result.items,
+        hasMore: result.hasMore,
+        getCursor: (trip) => encodeCursor(trip.id),
+        totalCount: result.total,
+      });
+    },
+  }),
+}));
 ```
 
 ---
@@ -1065,19 +1183,32 @@ describe("[UNIT] InMemoryEntityGateway Pagination", () => {
 
 ## Migration Checklist
 
-When adding cursor pagination to an existing gateway:
+When adding cursor pagination to a new domain:
 
-- [ ] Define `CursorPaginationOptions` interface in use-cases layer
-- [ ] Define `CursorPaginatedResult<T>` interface in use-cases layer
-- [ ] Add cursor method to gateway interface (keep offset method for compatibility)
-- [ ] Implement in Drizzle gateway with composite (createdAt, id) sort
-- [ ] Implement in In-Memory gateway for testing
-- [ ] Add cursor encode/decode utilities
-- [ ] Update GraphQL resolver to use `t.connection`
-- [ ] Write unit tests for cursor encoding
-- [ ] Write unit tests for gateway pagination
-- [ ] Write integration tests for full flow
-- [ ] Deprecate offset pagination (optional, post-migration)
+- [ ] Create `EntityConnectionType` using `builder.connectionObject()` in types.ts
+- [ ] Update query resolver to use `normalizePaginationArgs()` and `buildConnection()`
+- [ ] Import utilities from `../../utils/connections`
+- [ ] Test the GraphQL query with `first` and `after` arguments
+
+## Project Status
+
+**Completed Big Bang Migration (April 2025):**
+All domains now use Relay cursor-based pagination exclusively:
+
+- TripConnection/TripEdge
+- UserConnection/UserEdge
+- GroupConnection/GroupEdge
+- ChallengeConnection/ChallengeEdge
+- SubmissionConnection/SubmissionEdge
+- RewardConnection/RewardEdge
+- NotificationConnection/NotificationEdge
+- CoinTransactionConnection/CoinTransactionEdge
+- ActivityFeedConnection/ActivityFeedEdge
+
+**Legacy types removed:**
+- `PaginatedTrips`, `PaginatedUsers`, `PaginatedGroups`, etc.
+- `PaginationInput` and `PaginationInfo` input/object types
+- All `Paginated*DTO` interfaces from use-cases layer
 
 ---
 

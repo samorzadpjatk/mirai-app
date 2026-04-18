@@ -1,12 +1,11 @@
 import { Effect } from "effect";
-import type { ApplicationError, ValidationError } from "@mirai-app/domain";
 import {
   TripParticipant,
   UserId,
   TripId,
   TripParticipantId,
 } from "@mirai-app/domain";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
 import type { ParticipantNumberUpdateDTO } from "../dto/UserDTOs";
 import {
   UserNotInTripError,
@@ -17,8 +16,8 @@ import {
  * Input for UpdateWristNumberUseCase
  */
 export interface UpdateWristNumberInput {
-  userId: string;
-  tripId: string;
+  userId: UserId;
+  tripId: TripId;
   wristNumber: string;
 }
 
@@ -28,18 +27,9 @@ export interface UpdateWristNumberInput {
  * Assigns a wrist number to a trip participant.
  */
 export class UpdateWristNumberUseCase {
-  execute(
-    input: UpdateWristNumberInput,
-  ): Effect.Effect<
-    ParticipantNumberUpdateDTO,
-    | ApplicationError
-    | UserNotInTripError
-    | WristNumberAlreadyTakenError
-    | ValidationError,
-    TripParticipantPort
-  > {
+  execute(input: UpdateWristNumberInput) {
     return Effect.gen(function* () {
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Check if wrist number is already taken by another user
       const existingParticipant = yield* participantPort.findByWristNumber(
@@ -52,8 +42,8 @@ export class UpdateWristNumberUseCase {
         return yield* Effect.fail(
           new WristNumberAlreadyTakenError({
             wristNumber: input.wristNumber,
-            tripId: input.tripId,
-            takenByUserId: existingParticipant.userId,
+            tripId: TripId.toString(input.tripId),
+            takenByUserId: UserId.toString(existingParticipant.userId),
           }),
         );
       }
@@ -67,8 +57,8 @@ export class UpdateWristNumberUseCase {
       if (!participant) {
         return yield* Effect.fail(
           new UserNotInTripError({
-            userId: input.userId,
-            tripId: input.tripId,
+            userId: UserId.toString(input.userId),
+            tripId: TripId.toString(input.tripId),
           }),
         );
       }
@@ -81,11 +71,11 @@ export class UpdateWristNumberUseCase {
 
       // Save updated participant
       const savedParticipant =
-        yield* participantPort.upsert(updatedParticipant);
+        yield* participantPort.update(updatedParticipant);
 
       const result: ParticipantNumberUpdateDTO = {
-        userId: input.userId,
-        tripId: input.tripId,
+        userId: UserId.toString(input.userId),
+        tripId: TripId.toString(input.tripId),
         wristNumber: savedParticipant.wristNumber,
         houseNumber: savedParticipant.houseNumber,
       };

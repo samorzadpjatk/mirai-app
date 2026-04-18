@@ -1,11 +1,12 @@
 import { Effect } from "effect";
 import { LocationSharingRequestId, ValidationError } from "@mirai-app/domain";
 import { UserId } from "@mirai-app/domain";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { UserPortTag } from "../../user/ports/UserPort";
+import { StoragePortTag } from "../../storage/ports/StoragePort";
 import type { RequestResponseResultDTO } from "../dto/LocationDTOs";
-import type { ApplicationError } from "@mirai-app/domain";
 import {
   NotTripParticipantError,
   TripHasEndedError,
@@ -13,6 +14,7 @@ import {
   NotRequestRecipientError,
   RequestNotPendingError,
 } from "../errors/LocationErrors";
+import { UserNotFoundError } from "../../user/errors/UserErrors";
 
 /**
  * Input for AcceptLocationSharingRequestUseCase
@@ -28,26 +30,17 @@ export interface AcceptLocationSharingRequestInput {
  * Accepts a pending location sharing request.
  */
 export class AcceptLocationSharingRequestUseCase {
-  execute(
-    input: AcceptLocationSharingRequestInput,
-  ): Effect.Effect<
-    RequestResponseResultDTO,
-    | ApplicationError
-    | NotTripParticipantError
-    | TripHasEndedError
-    | LocationSharingRequestNotFoundError
-    | NotRequestRecipientError
-    | RequestNotPendingError
-    | ValidationError,
-    LocationPort | TripPortTag | TripParticipantPort
-  > {
+  execute(input: AcceptLocationSharingRequestInput) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
+      const storagePort = yield* StoragePortTag;
+
+      const userId = UserId.unsafeCreate(input.userId);
 
       // Check user is in an active trip
-      const participants = yield* participantPort.findByUserId(input.userId);
+      const participants = yield* participantPort.findByUserId(userId);
 
       if (participants.length === 0) {
         return yield* Effect.fail(
@@ -91,8 +84,7 @@ export class AcceptLocationSharingRequestUseCase {
       }
 
       // Verify user is the receiver
-      const userId = UserId.unsafeCreate(input.userId);
-      if (request.receiverId !== userId) {
+      if (!UserId.equals(request.receiverId, userId)) {
         return yield* Effect.fail(
           new NotRequestRecipientError({
             requestId: input.requestId,
@@ -126,14 +118,54 @@ export class AcceptLocationSharingRequestUseCase {
         request.senderId,
       );
 
+      // Fetch sender and receiver user data in parallel
+      const userPort = yield* UserPortTag;
+      const [sender, receiver] = yield* Effect.all([
+        userPort.findById(request.senderId),
+        userPort.findById(request.receiverId),
+      ]);
+
+      // Handle missing users gracefully
+      if (!sender) {
+        return yield* Effect.fail(
+          new UserNotFoundError({ userId: UserId.toString(request.senderId) }),
+        );
+      }
+
+      if (!receiver) {
+        return yield* Effect.fail(
+          new UserNotFoundError({ userId: UserId.toString(request.receiverId) }),
+        );
+      }
+
       return {
         success: true,
         request: {
           id: updatedRequest.id,
           senderId: updatedRequest.senderId,
           receiverId: updatedRequest.receiverId,
-          sender: null, // Will be hydrated by adapter
-          receiver: null,
+          sender: {
+            id: sender.id,
+            firstName: sender.firstName,
+            lastName: sender.lastName,
+            image: sender.hasAvatar
+              ? storagePort.getPublicUrl(
+                  "images",
+                  `avatars/${UserId.toString(sender.id)}.jpg`,
+                )
+              : null,
+          },
+          receiver: {
+            id: receiver.id,
+            firstName: receiver.firstName,
+            lastName: receiver.lastName,
+            image: receiver.hasAvatar
+              ? storagePort.getPublicUrl(
+                  "images",
+                  `avatars/${UserId.toString(receiver.id)}.jpg`,
+                )
+              : null,
+          },
           status: updatedRequest.status,
           createdAt: updatedRequest.createdAt,
           updatedAt: updatedRequest.updatedAt,

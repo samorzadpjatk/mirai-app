@@ -30,17 +30,8 @@ export class UnhideActivityUseCase {
         );
       }
 
-      const now = new Date();
-
-      // Update activity to unhide
-      const updated = {
-        ...activity,
-        isHidden: false,
-        hiddenByAdmin: null,
-        hiddenAt: null,
-        hiddenReason: null,
-        updatedAt: now,
-      };
+      // Use entity method to unhide activity
+      const updated = activity.unhide();
 
       // Save updated activity
       const saved = yield* activityPort.update(updated);
@@ -48,7 +39,7 @@ export class UnhideActivityUseCase {
       return {
         id: saved.id,
         isHidden: saved.isHidden,
-        unhiddenAt: now,
+        unhiddenAt: new Date(),
       };
     });
   }

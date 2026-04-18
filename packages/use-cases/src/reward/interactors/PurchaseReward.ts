@@ -4,11 +4,13 @@ import type {
   UserId,
   GroupId,
   ValidationError,
-  InsufficientResourcesError} from "@mirai-app/domain";
+  InsufficientResourcesError,
+  CoinTransactionDTO} from "@mirai-app/domain";
 import {
   RewardId as RewardIdFactory,
   UserId as UserIdFactory,
   GroupId as GroupIdFactory,
+  TripId,
   RewardPurchaseId,
   CoinTransactionId,
   CoinTransaction,
@@ -105,8 +107,9 @@ export class PurchaseRewardUseCase {
       }
 
       // Get user's participant record for this trip
+      const userId = UserIdFactory.unsafeCreate(input.userId);
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
+        userId,
         reward.tripId,
       );
 
@@ -188,7 +191,6 @@ export class PurchaseRewardUseCase {
       // Create purchase record
       const now = new Date();
       const purchaseId = RewardPurchaseId.generate();
-      const userId = UserIdFactory.unsafeCreate(input.userId);
 
       const purchaseEffect = RewardPurchaseEntity.create({
         id: purchaseId,
@@ -222,7 +224,17 @@ export class PurchaseRewardUseCase {
       });
 
       const transaction = yield* transactionEffect;
-      yield* coinTransactionPort.create(transaction);
+      // Convert to DTO with tripId for persistence
+      const transactionDTO: import("@mirai-app/domain").CoinTransactionDTO = {
+        id: transaction.id,
+        tripId: TripId.toString(reward.tripId),
+        groupId: transaction.groupId,
+        amount: transaction.amount,
+        reason: transaction.reason,
+        adminId: transaction.adminId,
+        createdAt: transaction.createdAt,
+      };
+      yield* coinTransactionPort.create(transactionDTO);
 
       return {
         id: purchase.id,

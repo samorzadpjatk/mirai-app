@@ -51,10 +51,11 @@ export interface TripInsurance {
 export interface ITripPort {
   /**
    * Find trip by ID
+   * Authorization via AuthContext (participants can view)
    */
   findById(
     id: TripId,
-  ): Effect.Effect<Trip | null, IPortError, never>;
+  ): Effect.Effect<Trip | null, IPortError, unknown>;
 
   /**
    * Find trips by user ID
@@ -86,18 +87,21 @@ export interface ITripPort {
 
   /**
    * Create new trip
+   * Authorization via AuthContext (admin only)
    */
-  create(trip: Trip): Effect.Effect<Trip, IPortError, never>;
+  create(trip: Trip): Effect.Effect<Trip, IPortError, unknown>;
 
   /**
    * Update existing trip
+   * Authorization via AuthContext (organizers only)
    */
-  update(trip: Trip): Effect.Effect<Trip, IPortError, never>;
+  update(trip: Trip): Effect.Effect<Trip, IPortError, unknown>;
 
   /**
    * Delete trip by ID
+   * Authorization via AuthContext (admin only)
    */
-  delete(id: TripId): Effect.Effect<void, IPortError, never>;
+  delete(id: TripId): Effect.Effect<void, IPortError, unknown>;
 
   /**
    * Check if trip exists

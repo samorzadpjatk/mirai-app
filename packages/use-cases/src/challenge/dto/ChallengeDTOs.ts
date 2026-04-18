@@ -60,19 +60,6 @@ export interface ChallengeWithClientFieldsDTO extends ChallengeDTO {
 }
 
 /**
- * DTO for paginated challenges
- */
-export interface PaginatedChallengesDTO {
-  challenges: ChallengeDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
-}
-
-/**
  * DTO for challenge with stats
  */
 export interface ChallengeWithStatsDTO extends ChallengeDTO {

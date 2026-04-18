@@ -1,6 +1,11 @@
 import type { Effect } from "effect";
 import type { IPortError } from "../../shared/errors/ports";
-import type { AccessCheckRequest, PermissionLevel, ResourceType, TripRole } from "../types";
+import type {
+  AccessCheckRequest,
+  PermissionLevel,
+  ResourceType,
+  TripRole,
+} from "../../shared/services";
 import type { Role } from "../../user/entities/User";
 
 /**
@@ -75,5 +80,10 @@ export interface IAuthZPort {
 /**
  * Re-export supporting types for convenience
  */
-export type { AccessCheckRequest, PermissionLevel, ResourceType, TripRole } from "../types";
+export type {
+  AccessCheckRequest,
+  PermissionLevel,
+  ResourceType,
+  TripRole,
+} from "../../shared/services";
 export type { Role } from "../../user/entities/User";

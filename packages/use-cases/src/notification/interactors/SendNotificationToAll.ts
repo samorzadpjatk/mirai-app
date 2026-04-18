@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import { NotificationServicePortTag } from "../ports/NotificationPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import { EventBusTag } from "../../shared/ports/EventBusPort";
-import { NotificationCreated } from "@mirai-app/domain";
+import { NotificationCreated, NotificationId, TripId } from "@mirai-app/domain";
 import type {
   CreateNotificationResultDTO,
   SendToAllInputDTO,
@@ -21,7 +21,7 @@ export interface SendNotificationToAllInput extends SendToAllInputDTO {}
 export class SendNotificationToAllUseCase {
   execute(input: SendNotificationToAllInput) {
     return Effect.gen(function* () {
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
       const notificationService = yield* NotificationServicePortTag;
       const eventBus = yield* EventBusTag;
 
@@ -41,12 +41,12 @@ export class SendNotificationToAllUseCase {
 
       // Publish NotificationCreated event after DB write
       const event = new NotificationCreated(
-        result.notificationId,
-        input.tripId,
+        result.notificationId as NotificationId,
+        input.tripId as TripId,
         input.title,
         input.body,
         input.url,
-        userIds,
+        userIds.map((id) => id as string),
         new Date(),
       );
 

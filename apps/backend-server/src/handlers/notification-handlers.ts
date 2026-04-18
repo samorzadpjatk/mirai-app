@@ -78,7 +78,8 @@ export function initializeNotificationHandlers() {
         const handler = new NotificationSendHandler();
         // Provide the captured services to the handler's Effect
         // This satisfies the IEventBusPort requirement of Effect<void, never, never>
-        return handler.handle(event).pipe(Effect.provide(handlerLayer));
+        const handled = handler.handle(event);
+        return Effect.provide(handled, handlerLayer) as Effect.Effect<void, never, never>;
       }
     );
 

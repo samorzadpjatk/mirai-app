@@ -1,8 +1,9 @@
 import { Effect } from "effect";
-import type { TripId, GroupId } from "@mirai-app/domain";
+import type { TripId, GroupId, UserId } from "@mirai-app/domain";
 import {
   TripId as TripIdFactory,
   GroupId as GroupIdFactory,
+  UserId as UserIdFactory,
 } from "@mirai-app/domain";
 import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
 import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
@@ -43,9 +44,10 @@ export class GetPurchaseHistoryUseCase {
 
       // If not staff, restrict to user's group
       if (!input.isStaff) {
+        const userId = UserIdFactory.unsafeCreate(input.userId);
         const participant = yield* participantPort.findByUserAndTrip(
-          input.userId,
-          input.tripId,
+          userId,
+          tripId,
         );
 
         if (!participant?.groupId) {

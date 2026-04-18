@@ -1,9 +1,10 @@
 import { Effect } from "effect";
+import { NotificationId } from "@mirai-app/domain";
 import { NotificationServicePortTag } from "../../ports/NotificationPort";
 import type { MobileNotificationResultDTO } from "../../dto/NotificationDTOs";
 
 export interface SendMobileNotificationsInput {
-  notificationId: string;
+  notificationId: NotificationId;
 }
 
 export class SendMobileNotificationsUseCase {

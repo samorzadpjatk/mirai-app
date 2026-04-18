@@ -221,6 +221,51 @@ export class TripParticipantDrizzleGateway
     );
   }
 
+  countByUserId(userId: string) {
+    return this.tryPromise(
+      "TripParticipantDrizzleGateway.countByUserId",
+      async () => {
+        const result = await this.db
+          .select({ count: count() })
+          .from(tripParticipants)
+          .where(eq(tripParticipants.userId, userId));
+        return result[0]?.count ?? 0;
+      },
+      userId,
+    );
+  }
+
+  create(participant: TripParticipant) {
+    return this.tryPromise(
+      "TripParticipantDrizzleGateway.create",
+      async () => {
+        const insertData = tripParticipantMapper.toInsert(participant);
+
+        await this.db.insert(tripParticipants).values(insertData);
+
+        return participant;
+      },
+      TripParticipantId.toString(participant.id),
+    );
+  }
+
+  deleteByUserAndTrip(userId: string, tripId: string) {
+    return this.tryPromise(
+      "TripParticipantDrizzleGateway.deleteByUserAndTrip",
+      async () => {
+        await this.db
+          .delete(tripParticipants)
+          .where(
+            and(
+              eq(tripParticipants.userId, userId),
+              eq(tripParticipants.tripId, tripId),
+            ),
+          );
+      },
+      `${userId}-${tripId}`,
+    );
+  }
+
   findByUserAndTripWithRelations(userId: string, tripId: string) {
     return this.tryPromise(
       "TripParticipantDrizzleGateway.findByUserAndTripWithRelations",

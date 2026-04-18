@@ -1,7 +1,8 @@
 import { Effect } from "effect";
-import type { ApplicationError, Role } from "@mirai-app/domain";
+import type { Role } from "@mirai-app/domain";
+import { UserId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { UpdateUserResultDTO } from "../dto/UserDTOs";
 import {
   UserNotFoundError,
@@ -12,9 +13,9 @@ import {
  * Input for UpdateUserRoleUseCase
  */
 export interface UpdateUserRoleInput {
-  userId: string;
+  userId: UserId;
   role: Role;
-  currentUserId: string;
+  currentUserId: UserId;
 }
 
 /**
@@ -23,25 +24,19 @@ export interface UpdateUserRoleInput {
  * Updates a user's role (admin only operation).
  */
 export class UpdateUserRoleUseCase {
-  execute(
-    input: UpdateUserRoleInput,
-  ): Effect.Effect<
-    UpdateUserResultDTO,
-    ApplicationError | UserNotFoundError | CannotRemoveOwnAdminError,
-    UserPortTag | AuthServicePort
-  > {
+  execute(input: UpdateUserRoleInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const authService = yield* AuthServicePort;
+      const authService = yield* AuthServicePortTag;
 
       // Prevent admin from removing their own admin status
       if (
-        input.userId === input.currentUserId &&
+        UserId.equals(input.userId, input.currentUserId) &&
         input.role !== "ADMIN" &&
         input.role !== "MODERATOR"
       ) {
         return yield* Effect.fail(
-          new CannotRemoveOwnAdminError({ userId: input.userId }),
+          new CannotRemoveOwnAdminError({ userId: UserId.toString(input.userId) }),
         );
       }
 
@@ -50,7 +45,7 @@ export class UpdateUserRoleUseCase {
 
       if (!user) {
         return yield* Effect.fail(
-          new UserNotFoundError({ userId: input.userId }),
+          new UserNotFoundError({ userId: UserId.toString(input.userId) }),
         );
       }
 

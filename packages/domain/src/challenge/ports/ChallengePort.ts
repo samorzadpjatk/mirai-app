@@ -81,4 +81,10 @@ export interface IChallengePort {
   activateVisibleChallenges(
     tripId?: TripId,
   ): Effect.Effect<void, IPortError, unknown>;
+
+  /**
+   * Find all challenges across all trips (admin only)
+   * Authorization via AuthContext (admin only)
+   */
+  findAll(): Effect.Effect<Challenge[], IPortError, unknown>;
 }

@@ -1,0 +1,15 @@
+# =============================================================================
+# Activity Feed Fragments
+# =============================================================================
+
+fragment ActivityFeedItemFields on ActivityFeedItem {
+  id
+  type
+  title
+  description
+  imageUrl
+  isPinned
+  isHidden
+  createdAt
+  updatedAt
+}

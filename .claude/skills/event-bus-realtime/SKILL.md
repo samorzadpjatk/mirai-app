@@ -1,6 +1,6 @@
-# Skill: Event Bus with Supabase Realtime
+# Skill: Event Bus with Redis Streams
 
-Build event-driven architectures using Supabase Realtime as the transport layer with Clean Architecture and Effect-TS patterns.
+Build event-driven architectures using Redis Streams as the transport layer with Clean Architecture and Effect-TS patterns.
 
 ## Overview
 
@@ -8,7 +8,7 @@ This skill provides patterns for implementing a pluggable event bus in Clean Arc
 
 - **Domain Layer**: `IDomainEvent`, `IEventBusPort`, `IEventHandler` interfaces
 - **Use Cases Layer**: Event publishing in workflows, async handler registration
-- **Adapters Layer**: Supabase Realtime gateway implementation
+- **Adapters Layer**: Redis Streams gateway implementation
 - **Frameworks Layer**: DI wiring with Effect Layers
 
 The event bus enables async notification delivery (50-100ms API responses) while background handlers process push notifications (1-5 seconds).
@@ -97,55 +97,155 @@ export class EventBusPortTag extends Context.Tag("EventBus")<
 ### 6. Adapters: Implement Gateway
 
 ```typescript
-// packages/adapters/src/shared/gateways/SupabaseRealtimeEventBusGateway.ts
-import { Effect } from "effect";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+// packages/adapters/src/shared/gateways/RedisEventBusGateway.ts
+import { Effect, Runtime, Layer } from "effect";
+import Redis from "ioredis";
 import type { IEventBusPort, IDomainEvent } from "@mirai-app/domain";
-import { ApplicationError } from "@mirai-app/domain";
+import {
+  RedisConnectionError,
+  RedisPublishError,
+  RedisSubscribeError,
+  HandlerExecutionError,
+} from "../errors/EventBusErrors";
 
-export class SupabaseRealtimeEventBusGateway implements IEventBusPort {
-  constructor(private readonly supabase: SupabaseClient) {}
+export interface RedisEventBusConfig {
+  host: string;
+  port: number;
+  password?: string;
+  db: number;
+  maxRetries: number;
+  maxStreamLength?: number;
+  blockTimeout?: number;
+  consumerGroup?: string;
+  consumerName?: string;
+}
+
+export class RedisEventBusGateway implements IEventBusPort {
+  private handlerRuntime: Runtime.Runtime<never> | null = null;
+  private redis: Redis;
+
+  constructor(private readonly config: RedisEventBusConfig) {
+    this.redis = new Redis({
+      host: config.host,
+      port: config.port,
+      password: config.password,
+      db: config.db,
+      maxRetriesPerRequest: config.maxRetries,
+    });
+  }
+
+  setRuntime(runtime: Runtime.Runtime<never>): void {
+    this.handlerRuntime = runtime;
+  }
 
   publish<T extends IDomainEvent>(event: T) {
-    return Effect.tryPromise({
-      try: async () => {
-        const channel = `domain-events-${event._tag.toLowerCase()}`;
-        const response = await this.supabase.channel(channel).send({
-          type: "broadcast",
-          event: event._tag,
-          payload: event,
-        });
-        if (response === "error" || response === "timed out") {
-          throw new Error(`Broadcast failed: ${response}`);
-        }
-      },
-      catch: (error) => new ApplicationError({ operation: "EventBus.publish", cause: error }),
-    });
+    return Effect.gen(this, function* () {
+      const streamKey = `domain-events-${event._tag.toLowerCase()}`;
+      const maxlen = this.config.maxStreamLength ?? 10000;
+
+      yield* Effect.tryPromise({
+        try: () =>
+          this.redis.xadd(streamKey, "*", "payload", JSON.stringify(event), "MAXLEN", "~", maxlen.toString()),
+        catch: (error) => new RedisPublishError({ eventTag: event._tag, cause: error }),
+      });
+    }).pipe(
+      Effect.retry({
+        schedule: Schedule.exponential("100 millis").pipe(Schedule.intersect(Schedule.recurs(3))),
+        while: (error) => error._tag === "RedisConnectionError",
+      })
+    );
   }
 
   subscribe<T extends IDomainEvent>(
     eventTag: string,
-    handler: (event: T) => Effect.Effect<void, never, never>
+    handler: (event: T) => Effect.Effect<void, never, never>,
+    options?: { consumerGroup?: string; consumerName?: string }
   ) {
-    return Effect.try({
-      try: () => {
-        const channel = `domain-events-${eventTag.toLowerCase()}`;
-        const subscription = this.supabase
-          .channel(channel)
-          .on("broadcast", { event: eventTag }, (payload) => {
-            // Run handler asynchronously without blocking
-            Effect.runFork(handler(payload.payload as T));
-          })
-          .subscribe();
+    return Effect.gen(this, function* () {
+      const streamKey = `domain-events-${eventTag.toLowerCase()}`;
+      const groupName = options?.consumerGroup ?? this.config.consumerGroup ?? `${eventTag.toLowerCase()}-consumers`;
+      const consumerName = options?.consumerName ?? this.config.consumerName ?? `consumer-${Date.now()}`;
 
-        return {
-          unsubscribe: () => {
-            subscription.unsubscribe();
-          },
-        };
-      },
-      catch: (error) => new ApplicationError({ operation: "EventBus.subscribe", cause: error }),
+      const consumerRedis = new Redis({
+        host: this.config.host,
+        port: this.config.port,
+        password: this.config.password,
+        db: this.config.db,
+      });
+
+      // Create consumer group if not exists
+      yield* Effect.tryPromise({
+        try: () =>
+          consumerRedis.xgroup("CREATE", streamKey, groupName, "$", "MKSTREAM").catch((err) => {
+            if (!err.message.includes("BUSYGROUP")) throw err;
+          }),
+        catch: (error) => new RedisSubscribeError({ eventTag, cause: error }),
+      });
+
+      const blockTimeout = this.config.blockTimeout ?? 5000;
+      let running = true;
+
+      const processLoop = Effect.gen(this, function* () {
+        while (running) {
+          const streams = yield* Effect.tryPromise({
+            try: () =>
+              consumerRedis.xreadgroup("GROUP", groupName, consumerName, "BLOCK", blockTimeout, "STREAMS", streamKey, ">"),
+            catch: (error) => new RedisSubscribeError({ eventTag, cause: error }),
+          });
+
+          if (!streams || streams.length === 0) continue;
+
+          for (const [, messages] of streams) {
+            for (const [id, fields] of messages) {
+              const payloadField = fields.find((f: string, i: number) => i % 2 === 0 && f === "payload");
+              const payloadIndex = fields.indexOf(payloadField as string);
+              const payload = payloadIndex >= 0 ? fields[payloadIndex + 1] : null;
+
+              if (!payload) continue;
+
+              yield* Effect.try({
+                try: () => JSON.parse(payload) as T,
+                catch: (error) =>
+                  Effect.logError(`Failed to parse event ${id}`, error).pipe(Effect.asVoid),
+              }).pipe(
+                Effect.flatMap((event) =>
+                  Effect.tryPromise({
+                    try: async () => {
+                      if (this.handlerRuntime) {
+                        await Runtime.runPromise(this.handlerRuntime, handler(event));
+                      } else {
+                        await Effect.runPromise(handler(event));
+                      }
+                    },
+                    catch: (error) =>
+                      Effect.logError(`Handler failed for ${eventTag}`, { error, eventId: id }),
+                  })
+                ),
+                Effect.tap(() =>
+                  Effect.tryPromise({
+                    try: () => consumerRedis.xack(streamKey, groupName, id),
+                    catch: () => Effect.void,
+                  })
+                )
+              );
+            }
+          }
+        }
+      }).pipe(Effect.catchAll((error) => Effect.logError(`Subscribe loop failed for ${eventTag}`, error)));
+
+      Effect.runFork(processLoop);
+
+      return {
+        unsubscribe: () => {
+          running = false;
+          consumerRedis.disconnect();
+        },
+      };
     });
+  }
+
+  disconnect() {
+    this.redis.disconnect();
   }
 }
 ```
@@ -226,15 +326,37 @@ export class NotificationSendHandler
 
 ```typescript
 // packages/frameworks/src/di/layer/service.ts
-import { Layer } from "effect";
+import { Layer, Effect, Runtime } from "effect";
 import { EventBusPortTag } from "@mirai-app/use-cases/shared/ports/EventBusPort";
-import { SupabaseRealtimeEventBusGateway } from "@mirai-app/adapters/shared/gateways/SupabaseRealtimeEventBusGateway";
+import { RedisEventBusGateway, loadRedisEventBusConfigFromEnv } from "@mirai-app/adapters";
+import { PushSubscriptionPortTag, NotificationDeliveryPortTag, NotificationServicePortTag } from "@mirai-app/use-cases";
 
-export const makeEventBusLayer = (supabase: SupabaseClient) =>
-  Layer.succeed(
-    EventBusPortTag,
-    new SupabaseRealtimeEventBusGateway(supabase)
-  );
+export const makeEventBusLayer = (config?: RedisEventBusConfig) =>
+  Effect.gen(function* () {
+    const resolvedConfig = config
+      ? Effect.succeed(config)
+      : loadRedisEventBusConfigFromEnv();
+
+    const cfg = yield* resolvedConfig;
+    const gateway = new RedisEventBusGateway(cfg);
+
+    // Capture notification ports for handler injection
+    const pushSubscriptionPort = yield* PushSubscriptionPortTag;
+    const deliveryPort = yield* NotificationDeliveryPortTag;
+    const servicePort = yield* NotificationServicePortTag;
+
+    // Build handler runtime with these ports
+    const handlerLayer = Layer.mergeAll(
+      Layer.succeed(PushSubscriptionPortTag, pushSubscriptionPort),
+      Layer.succeed(NotificationDeliveryPortTag, deliveryPort),
+      Layer.succeed(NotificationServicePortTag, servicePort),
+    );
+
+    const handlerRuntime = yield* Layer.toRuntime(handlerLayer);
+    gateway.setRuntime(handlerRuntime);
+
+    return Layer.succeed(EventBusPortTag, gateway);
+  }).pipe(Effect.runSync);
 ```
 
 ### 10. Server: Initialize Handlers
@@ -346,34 +468,33 @@ const handlePushError = (error: PushNotificationError) => {
 
 ## Transport Swapping
 
-### To Replace Supabase Realtime with Redis:
+### To Replace Redis with an Alternative (e.g., PostgreSQL NOTIFY):
 
-1. Create new gateway:
+1. Create new gateway implementing IEventBusPort:
 
 ```typescript
-// packages/adapters/src/shared/gateways/RedisEventBusGateway.ts
-export class RedisEventBusGateway implements IEventBusPort {
-  constructor(private readonly redis: RedisClient) {}
+// packages/adapters/src/shared/gateways/PostgresNotifyEventBusGateway.ts
+export class PostgresNotifyEventBusGateway implements IEventBusPort {
+  constructor(private readonly db: DrizzleDb) {}
   
   publish<T extends IDomainEvent>(event: T) {
     return Effect.tryPromise({
-      try: () => this.redis.publish(`events:${event._tag}`, JSON.stringify(event)),
-      catch: (error) => new ApplicationError({ operation: "Redis.publish", cause: error }),
+      try: () => this.db.execute(`SELECT pg_notify('events:${event._tag}', '${JSON.stringify(event)}')`),
+      catch: (error) => new EventBusError({ operation: "PostgresNotify.publish", cause: error }),
     });
   }
   
   subscribe<T extends IDomainEvent>(eventTag: string, handler: (event: T) => Effect.Effect<void, never, never>) {
-    return Effect.try({
-      try: () => {
-        const subscriber = this.redis.duplicate();
-        subscriber.subscribe(`events:${eventTag}`);
-        subscriber.on("message", (_, message) => {
-          const event = JSON.parse(message) as T;
+    return Effect.tryPromise({
+      try: async () => {
+        const listener = (payload: string) => {
+          const event = JSON.parse(payload) as T;
           Effect.runFork(handler(event));
-        });
-        return { unsubscribe: () => subscriber.unsubscribe() };
+        };
+        await this.db.listen(`events:${eventTag}`, listener);
+        return { unsubscribe: () => this.db.unlisten(`events:${eventTag}`, listener) };
       },
-      catch: (error) => new ApplicationError({ operation: "Redis.subscribe", cause: error }),
+      catch: (error) => new EventBusError({ operation: "PostgresNotify.subscribe", cause: error }),
     });
   }
 }
@@ -383,11 +504,11 @@ export class RedisEventBusGateway implements IEventBusPort {
 
 ```typescript
 // packages/frameworks/src/di/layer/service.ts
-export const makeEventBusLayer = (redis: RedisClient) =>
-  Layer.succeed(EventBusPortTag, new RedisEventBusGateway(redis));
+export const makeEventBusLayer = (db: DrizzleDb) =>
+  Layer.succeed(EventBusPortTag, new PostgresNotifyEventBusGateway(db));
 ```
 
-No changes needed in use cases or handlers.
+No changes needed in use cases or handlers - the IEventBusPort abstraction enables seamless transport swapping.
 
 ## Testing
 
@@ -417,10 +538,16 @@ describe("[UNIT] NotificationSendHandler", () => {
 ### Integration Test Event Bus
 
 ```typescript
-describe("[INTEGRATION] SupabaseRealtimeEventBus", () => {
+describe("[INTEGRATION] RedisEventBus", () => {
   it("publishes and receives events", async () => {
     const events: IDomainEvent[] = [];
-    const eventBus = new SupabaseRealtimeEventBusGateway(supabase);
+    const config: RedisEventBusConfig = {
+      host: "localhost",
+      port: 6380,
+      db: 15, // Use separate test DB
+      maxRetries: 3,
+    };
+    const eventBus = new RedisEventBusGateway(config);
     
     const sub = await Effect.runPromise(
       eventBus.subscribe("TestEvent", (e) => Effect.sync(() => events.push(e)))
@@ -433,6 +560,7 @@ describe("[INTEGRATION] SupabaseRealtimeEventBus", () => {
     expect(events).toHaveLength(1);
     
     sub.unsubscribe();
+    eventBus.disconnect();
   });
 });
 ```
@@ -447,7 +575,12 @@ describe("[INTEGRATION] SupabaseRealtimeEventBus", () => {
 
 ## References
 
-- Supabase Realtime: https://supabase.com/docs/guides/realtime
+- Redis Streams Documentation: https://redis.io/docs/data-types/streams/
 - Effect Documentation: https://effect.website/docs
-- Expo Push Notifications: https://docs.expo.dev/push-notifications/sending-notifications/
+- ioredis Client: https://github.com/redis/ioredis
 - Clean Architecture: Robert C. Martin, Chapter 21 (Event Sourcing)
+
+---
+
+**Last Updated:** 2026-04-20
+**Version:** 2.0.0 (Migrated from Supabase Realtime to Redis Streams)

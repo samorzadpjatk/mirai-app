@@ -1,7 +1,8 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { ActivityReactionPortTag } from "../ports/ActivityReactionPort";
-import type { ActivityFeedId, UserId } from "@mirai-app/domain";
+import { ActivityReactionIdFactory } from "@mirai-app/domain";
+import type { ActivityFeedId, UserId, ActivityReaction } from "@mirai-app/domain";
 import type { ToggleReactionResultDTO } from "../dto/ActivityFeedDTOs";
 import type { ActivityReactionType } from "../ports/ActivityReactionPort";
 import {
@@ -84,12 +85,15 @@ export class ToggleActivityReactionUseCase {
 
       // Add new reaction
       const now = new Date();
-      yield* reactionPort.create({
-        id: "", // Will be assigned by repository
+      const newReaction: Omit<ActivityReaction, "id"> = {
         activityId: input.activityId,
         userId: input.userId,
         reactionType: input.reactionType,
         createdAt: now,
+      };
+      yield* reactionPort.create({
+        id: ActivityReactionIdFactory.generate(),
+        ...newReaction,
       });
 
       // Get updated count

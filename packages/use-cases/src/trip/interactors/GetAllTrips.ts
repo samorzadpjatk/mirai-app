@@ -26,6 +26,7 @@ export class GetAllTripsUseCase {
 
       const limit = input.pagination?.limit ?? 30;
       const offset = input.pagination?.offset ?? 0;
+      const now = new Date();
 
       const result = yield* tripPort.findPaginated({
         userId: input.userId,
@@ -39,9 +40,9 @@ export class GetAllTripsUseCase {
         description: trip.description,
         startDate: trip.startDate,
         endDate: trip.endDate,
-        location: null, // Will be hydrated by adapter
+        location: null,
         image: trip.backgroundImagePath,
-        isActive: trip.isActive(new Date()),
+        isActive: trip.isActive(now),
         createdAt: trip.createdAt,
         updatedAt: trip.updatedAt,
       }));

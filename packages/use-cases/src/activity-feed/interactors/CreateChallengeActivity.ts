@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
-import { ActivityFeed } from "@mirai-app/domain";
+import { ActivityFeed, ChallengeId } from "@mirai-app/domain";
 import type { TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import {
@@ -40,7 +40,9 @@ export class CreateChallengeActivityUseCase {
       }
 
       // Verify challenge exists
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challenge = yield* challengePort.findById(
+        ChallengeId.create(input.challengeId),
+      );
       if (!challenge) {
         return yield* Effect.fail(
           new ChallengeNotFoundError({ challengeId: input.challengeId }),
@@ -82,7 +84,11 @@ export class CreateChallengeActivityUseCase {
         updatedAt: now,
       });
 
-      const activity = yield* activityEffect;
+      const activity = yield* activityEffect as Effect.Effect<
+        ActivityFeed,
+        never,
+        never
+      >;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

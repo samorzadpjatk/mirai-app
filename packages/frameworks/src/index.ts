@@ -115,24 +115,24 @@ export {
   makeChallengeSubmissionRepositoryLayer,
   makeChallengeVoteRepositoryLayer,
   makeNotificationRepositoryLayer,
-  makeNotificationDeliveryRepositoryLayer,
-  makeNotificationScheduleRepositoryLayer,
   makeLocationRepositoryLayer,
   makeActivityFeedRepositoryLayer,
   makeRewardRepositoryLayer,
   makeCoinTransactionRepositoryLayer,
   makeSponsorRepositoryLayer,
+  makeTripSponsorRepositoryLayer,
   makeSubmissionReportRepositoryLayer,
   type RepositoryLayerConfig,
   // Service Layer
   makeServiceLayer,
-  makeAuthLayer,
   makeStorageLayer,
-  makePubSubLayer,
-  AuthPortTag,
-  StoragePortTag,
-  PubSubServiceTag,
   type ServiceLayerConfig,
+  // Service Context Tags
+  AuthPortTag,
+  AuthNPortTag,
+  AuthZPortTag,
+  StoragePortTag,
+  EventBusTag,
 } from "./di";
 
 // =============================================================================

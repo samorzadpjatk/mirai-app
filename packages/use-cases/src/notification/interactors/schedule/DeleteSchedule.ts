@@ -1,21 +1,14 @@
 import { Effect } from "effect";
+import { NotificationScheduleId } from "@mirai-app/domain";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { DeleteScheduleResultDTO } from "../../dto/NotificationDTOs";
-import { ScheduleNotFoundError } from "./GetScheduleById";
+import { ScheduleNotFoundError } from "../../errors/NotificationErrors";
 
 export interface DeleteScheduleInput {
-  scheduleId: string;
+  scheduleId: NotificationScheduleId;
 }
 
 export class DeleteScheduleUseCase {
-  execute(
-    input: DeleteScheduleInput,
-  ): Effect.Effect<
-    DeleteScheduleResultDTO,
-    ApplicationError | ScheduleNotFoundError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: DeleteScheduleInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 

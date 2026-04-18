@@ -1,9 +1,9 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { GroupPort } from "../../group/ports/GroupPort";
-import { ActivityFeed } from "@mirai-app/domain";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { ActivityFeed, GroupId } from "@mirai-app/domain";
+import type { TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import {
   TripNotFoundError,
@@ -27,17 +27,11 @@ export interface CreateRankChangeActivityInput {
  * Creates an activity when a group's rank changes.
  */
 export class CreateRankChangeActivityUseCase {
-  execute(
-    input: CreateRankChangeActivityInput,
-  ): Effect.Effect<
-    CreateActivityResultDTO,
-    TripNotFoundError | GroupNotFoundError | ApplicationError,
-    ActivityFeedPortTag | TripPortTag | GroupPort
-  > {
+  execute(input: CreateRankChangeActivityInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const tripPort = yield* TripPortTag;
-      const groupPort = yield* GroupPort;
+      const groupPort = yield* GroupPortTag;
 
       // Verify trip exists
       const trip = yield* tripPort.findById(input.tripId);
@@ -48,7 +42,9 @@ export class CreateRankChangeActivityUseCase {
       }
 
       // Verify group exists
-      const group = yield* groupPort.findById(input.groupId);
+      const group = yield* groupPort.findById(
+        GroupId.create(input.groupId),
+      );
       if (!group) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: input.groupId }),
@@ -85,7 +81,11 @@ export class CreateRankChangeActivityUseCase {
         updatedAt: now,
       });
 
-      const activity = yield* activityEffect;
+      const activity = yield* activityEffect as Effect.Effect<
+        ActivityFeed,
+        never,
+        never
+      >;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

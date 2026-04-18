@@ -35,6 +35,8 @@ export interface NotificationContent {
 /**
  * NotificationService Port
  * Defines service operations for sending notifications
+ *
+ * Methods requiring authorization use AuthContext pattern via Effect context.
  */
 export interface INotificationServicePort {
   sendNotification(params: {
@@ -44,14 +46,14 @@ export interface INotificationServicePort {
     url: string;
     tripId: string;
     createdById: string;
-  }): Effect.Effect<SendNotificationResult, IPortError, never>;
+  }): Effect.Effect<SendNotificationResult, IPortError, unknown>;
   sendMobileNotifications(
     notificationId: NotificationId,
-  ): Effect.Effect<MobileNotificationResult, IPortError, never>;
+  ): Effect.Effect<MobileNotificationResult, IPortError, unknown>;
   sendRankingUpdate(params: {
     tripId: string;
     createdById: string;
-  }): Effect.Effect<SendNotificationResult, IPortError, never>;
+  }): Effect.Effect<SendNotificationResult, IPortError, unknown>;
   createCoinsAddedNotification(
     groupName: string,
     amount: number,

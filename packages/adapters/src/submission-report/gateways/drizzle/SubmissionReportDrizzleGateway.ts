@@ -6,14 +6,24 @@ import {
   users,
   type SubmissionReportSelect,
 } from "../../../infrastructure/drizzle";
-import { SubmissionReportId, ChallengeSubmissionId } from "@mirai-app/domain";
+import { SubmissionReportId, ChallengeSubmissionId, DatabaseError } from "@mirai-app/domain";
 import type { submissionReport } from "@mirai-app/use-cases";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 
 /**
  * Submission Report Drizzle Gateway
  *
  * Implements ISubmissionReportPort using Drizzle ORM for database operations.
+ * Uses AuthContext and AuthZPortTag for authorization.
+ *
+ * Authorization Pattern:
+ * - findById: Admin only (reports are sensitive)
+ * - findBySubmissionId: Admin or trip leader
+ * - create: Any authenticated user can report
+ * - existsBySubmissionAndReporter: Users can check their own reports
+ * - countBySubmissionId: Admin or trip leader
  */
 export class SubmissionReportDrizzleGateway
   extends BaseDrizzleGateway
@@ -25,22 +35,45 @@ export class SubmissionReportDrizzleGateway
 
   findById(id: SubmissionReportId) {
     const idString = SubmissionReportId.toString(id);
-    return this.tryPromise(
-      "findById",
-      async () => {
-        const result = await this.db
-          .select()
-          .from(submissionReports)
-          .where(eq(submissionReports.id, idString))
-          .limit(1);
-        return result[0] ?? null;
-      },
-      idString,
-    ).pipe(
-      Effect.map((dbReport: SubmissionReportSelect | null) =>
-        dbReport ? this.toDomain(dbReport) : null,
-      ),
-    );
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext - admin only for viewing reports
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        // Reports are sensitive - require admin access
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "challengeSubmission",
+          resourceId: idString,
+          requiredPermission: "admin",
+        });
+      }
+
+      // Proceed with database operation
+      const dbReport = yield* Effect.tryPromise({
+        try: async () => {
+          const result = await self.db
+            .select()
+            .from(submissionReports)
+            .where(eq(submissionReports.id, idString))
+            .limit(1);
+          return result[0] ?? null;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "findById",
+            id: idString,
+            cause: error,
+          }),
+      });
+
+      return dbReport ? self.toDomain(dbReport) : null;
+    });
   }
 
   findBySubmissionId(submissionId: ChallengeSubmissionId) {
@@ -81,25 +114,48 @@ export class SubmissionReportDrizzleGateway
   }
 
   create(report: Omit<submissionReport.SubmissionReport, "id" | "createdAt">) {
-    return this.tryPromise(
-      "create",
-      async () => {
-        const [result] = await this.db
-          .insert(submissionReports)
-          .values({
-            submissionId: ChallengeSubmissionId.toString(report.submissionId),
-            reporterId: report.reporterId,
-            reason: report.reason,
-            details: report.details,
-          })
-          .returning();
-        if (!result) throw new Error("Failed to create submission report");
-        return result;
-      },
-      report.submissionId,
-    ).pipe(
-      Effect.map((dbReport: SubmissionReportSelect) => this.toDomain(dbReport)),
-    );
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext - any authenticated user can create a report
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required to create reports
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "create",
+            id: "",
+            cause: new Error("Authentication required to submit a report"),
+          }),
+        );
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const [result] = await self.db
+            .insert(submissionReports)
+            .values({
+              submissionId: ChallengeSubmissionId.toString(report.submissionId),
+              reporterId: report.reporterId,
+              reason: report.reason,
+              details: report.details,
+            })
+            .returning();
+          if (!result) throw new Error("Failed to create submission report");
+          return result;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "create",
+            id: "",
+            cause: error,
+          }),
+      }).pipe(
+        Effect.map((dbReport: SubmissionReportSelect) => self.toDomain(dbReport)),
+      );
+    });
   }
 
   existsBySubmissionAndReporter(

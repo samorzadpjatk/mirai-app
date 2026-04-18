@@ -1,7 +1,8 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import type { IPortError } from "@mirai-app/domain";
+import { UserId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { BanUserResultDTO } from "../dto/UserDTOs";
 import {
   UserNotFoundError,
@@ -24,22 +25,16 @@ export interface BanUserInput {
  * Bans a user until a specific date.
  */
 export class BanUserUseCase {
-  execute(
-    input: BanUserInput,
-  ): Effect.Effect<
-    BanUserResultDTO,
-    | ApplicationError
-    | UserNotFoundError
-    | InvalidBanDateError
-    | AuthUserNotFoundError,
-    UserPortTag | AuthServicePort
-  > {
+  execute(input: BanUserInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const authService = yield* AuthServicePort;
+      const authService = yield* AuthServicePortTag;
+
+      // Convert string to branded UserId
+      const userId = UserId.unsafeCreate(input.userId);
 
       // Find user by ID
-      const user = yield* userPort.findById(input.userId);
+      const user = yield* userPort.findById(userId);
 
       if (!user) {
         return yield* Effect.fail(

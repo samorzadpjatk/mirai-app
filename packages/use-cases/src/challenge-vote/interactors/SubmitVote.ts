@@ -1,12 +1,10 @@
 import { Effect, Data } from "effect";
 import type { ApplicationError } from "@mirai-app/domain";
+import { ChallengeId, ChallengeSubmissionId, ChallengeVoteId, TripId, UserId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
-import { ChallengeSubmissionPort } from "../../challenge-submission/ports/ChallengeSubmissionPort";
-import {
-  ChallengeVotePort,
-  type ChallengeVote,
-} from "../ports/ChallengeVotePort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { ChallengeSubmissionPortTag } from "../../challenge-submission/ports/ChallengeSubmissionPort";
+import { ChallengeVotePortTag } from "../ports/ChallengeVotePort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import {
   VotingNotActiveError,
   AlreadyVotedError,
@@ -15,6 +13,7 @@ import {
   VotePositionTakenError,
 } from "../errors/VoteErrors";
 import type { ChallengeVoteDTO } from "../dto/ChallengeVoteDTOs";
+import type { ChallengeVote } from "@mirai-app/domain";
 
 /**
  * Input for SubmitVoteUseCase
@@ -36,31 +35,22 @@ export interface SubmitVoteInput {
  * Submits a single vote for a challenge.
  */
 export class SubmitVoteUseCase {
-  execute(
-    input: SubmitVoteInput,
-  ): Effect.Effect<
-    ChallengeVoteDTO,
-    | VotingNotActiveError
-    | AlreadyVotedError
-    | CannotVoteForOwnGroupError
-    | InvalidSubmissionError
-    | VotePositionTakenError
-    | ApplicationError,
-    | ChallengePortTag
-    | ChallengeSubmissionPort
-    | ChallengeVotePort
-    | TripParticipantPort
-  > {
+  execute(input: SubmitVoteInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
-      const submissionPort = yield* ChallengeSubmissionPort;
-      const votePort = yield* ChallengeVotePort;
-      const participantPort = yield* TripParticipantPort;
+      const submissionPort = yield* ChallengeSubmissionPortTag;
+      const votePort = yield* ChallengeVotePortTag;
+      const participantPort = yield* TripParticipantPortTag;
+
+      // Convert string IDs to branded IDs
+      const challengeId = ChallengeId.create(input.challengeId);
+      const tripId = TripId.create(input.tripId);
+      const userId = UserId.create(input.userId);
 
       // Get participant info
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        userId,
+        tripId,
       );
 
       if (!participant) {
@@ -73,7 +63,7 @@ export class SubmitVoteUseCase {
       }
 
       // Get challenge
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challenge = yield* challengePort.findById(challengeId);
 
       if (!challenge) {
         return yield* Effect.fail(
@@ -109,9 +99,10 @@ export class SubmitVoteUseCase {
       }
 
       // Get submission
-      const submission = yield* submissionPort.findById(input.submissionId);
+      const submissionId = ChallengeSubmissionId.create(input.submissionId);
+      const submission = yield* submissionPort.findById(submissionId);
 
-      if (!submission || submission.challengeId !== input.challengeId) {
+      if (!submission || !ChallengeId.equals(submission.challengeId, challengeId)) {
         return yield* Effect.fail(
           new InvalidSubmissionError({
             submissionId: input.submissionId,
@@ -132,8 +123,8 @@ export class SubmitVoteUseCase {
 
       // Check for existing votes
       const existingVotes = yield* votePort.findByChallengeAndVoter(
-        input.challengeId,
-        participant.id,
+        challengeId,
+        participant.userId,
       );
 
       // For peer voting, any existing vote blocks new votes
@@ -144,14 +135,14 @@ export class SubmitVoteUseCase {
         return yield* Effect.fail(
           new AlreadyVotedError({
             challengeId: input.challengeId,
-            voterId: participant.id,
+            voterId: participant.userId,
           }),
         );
       }
 
       // For judged staff, check if position is already taken
       const existingByPosition = existingVotes.find(
-        (v) => v.votePosition === input.votePosition,
+        (v: ChallengeVote) => v.votePosition === input.votePosition,
       );
 
       if (existingByPosition) {
@@ -166,10 +157,10 @@ export class SubmitVoteUseCase {
       // Create vote
       const now = new Date();
       const vote: ChallengeVote = {
-        id: "", // Will be assigned by repository
-        challengeId: input.challengeId,
-        submissionId: input.submissionId,
-        voterId: participant.id,
+        id: ChallengeVoteId.generate(),
+        challengeId: challengeId,
+        submissionId: submissionId,
+        voterId: participant.userId,
         votePosition: input.votePosition,
         votePoints: input.votePoints,
         normalizedWeight: input.normalizedWeight ?? 1.0,

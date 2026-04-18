@@ -1,0 +1,139 @@
+# =============================================================================
+# Trip Fragments
+# =============================================================================
+
+fragment TripFields on Trip {
+  id
+  name
+  description
+  startDate
+  endDate
+  location
+  image
+  isActive
+  createdAt
+  updatedAt
+}
+
+fragment TripGroupFields on TripGroup {
+  id
+  name
+  code
+  image
+  coins
+  participantCount
+  isDeleted
+}
+
+fragment TripSponsorFields on TripSponsor {
+  id
+  tripId
+  sponsorId
+  sponsor {
+    id
+    name
+    logoPath
+    description
+    isActive
+  }
+}
+
+fragment TripParticipantDetailFields on TripParticipantDetail {
+  userId
+  tripId
+  wristNumber
+  houseNumber
+  user {
+    id
+    firstName
+    lastName
+    email
+    role
+  }
+  group {
+    ...TripGroupFields
+  }
+}
+
+fragment TripWithDetailsFields on TripWithDetails {
+  id
+  name
+  description
+  startDate
+  endDate
+  location
+  image
+  isActive
+  groups {
+    ...TripGroupFields
+  }
+  tripSponsors {
+    ...TripSponsorFields
+  }
+  createdAt
+  updatedAt
+}
+
+fragment TripWithParticipantsFields on TripWithParticipants {
+  id
+  name
+  description
+  startDate
+  endDate
+  location
+  image
+  isActive
+  groups {
+    ...TripGroupFields
+  }
+  tripSponsors {
+    ...TripSponsorFields
+  }
+  participants {
+    ...TripParticipantDetailFields
+  }
+  createdAt
+  updatedAt
+}
+
+fragment TripResourceFields on TripResource {
+  id
+  tripId
+  title
+  description
+  content
+  iconName
+  sortOrder
+  createdAt
+  updatedAt
+}
+
+fragment InsuranceStepFields on InsuranceStep {
+  id
+  stepNumber
+  title
+  description
+}
+
+fragment TripInsuranceFields on TripInsurance {
+  id
+  tripId
+  title
+  description
+  provider
+  policyNumber
+  steps {
+    ...InsuranceStepFields
+  }
+  createdAt
+  updatedAt
+}
+
+fragment TripResourcesResultFields on TripResourcesResult {
+  resources {
+    ...TripResourceFields
+  }
+  insurance {
+    ...TripInsuranceFields
+  }
+}

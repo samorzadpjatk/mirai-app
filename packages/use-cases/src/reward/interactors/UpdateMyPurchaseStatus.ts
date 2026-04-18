@@ -2,10 +2,12 @@ import { Effect } from "effect";
 import type {
   RewardPurchaseId,
   UserId,
-  ValidationError} from "@mirai-app/domain";
+  ValidationError,
+  CoinTransactionDTO} from "@mirai-app/domain";
 import {
   RewardPurchaseId as RewardPurchaseIdFactory,
   UserId as UserIdFactory,
+  TripId,
 } from "@mirai-app/domain";
 import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
 import { GroupPortTag } from "../../group/ports/GroupPort";
@@ -112,13 +114,15 @@ export class UpdateMyPurchaseStatusUseCase {
         const refundedGroup = yield* group.addCoins(purchase.totalCost);
         yield* groupPort.update(refundedGroup);
 
-        // Restore reward quantity
+        // Restore reward quantity and get tripId for transaction
+        let tripId: import("@mirai-app/domain").TripId | null = null;
         const reward = yield* rewardPort.findById(purchase.rewardId);
         if (reward) {
           // Note: We need to add back the quantity, but the domain entity
           // doesn't have an addQuantity method. This would need to be handled
           // by the repository/adapter layer or the entity needs to be extended.
           // For now, we'll update through the repository directly.
+          tripId = reward.tripId;
         }
 
         // Create coin transaction for refund
@@ -133,7 +137,17 @@ export class UpdateMyPurchaseStatusUseCase {
           createdAt: now,
         });
         const transaction = yield* transactionEffect;
-        yield* coinTransactionPort.create(transaction);
+        // Convert to DTO with tripId for persistence
+        const transactionDTO: CoinTransactionDTO = {
+          id: transaction.id,
+          tripId: tripId ? TripId.toString(tripId) : "",
+          groupId: transaction.groupId,
+          amount: transaction.amount,
+          reason: transaction.reason,
+          adminId: transaction.adminId,
+          createdAt: transaction.createdAt,
+        };
+        yield* coinTransactionPort.create(transactionDTO);
 
         const cancelResult = yield* purchase.cancel(userId);
         updatedPurchase = cancelResult;

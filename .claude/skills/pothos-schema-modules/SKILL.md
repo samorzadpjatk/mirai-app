@@ -128,7 +128,7 @@ export const UserConnectionType = builder.connection(
 
 ```typescript
 import { builder } from "../../builder";
-import { decodeCursorWithDate, clampFirst } from "../../utils/connections";
+import { normalizePaginationArgs, buildConnection, encodeCursor } from "../../utils/connections";
 import { UserConnectionType } from "./types";
 
 export const userQueries = builder.queryFields((t) => ({
@@ -140,7 +140,19 @@ export const userQueries = builder.queryFields((t) => ({
     },
     resolve: async (_parent, args, ctx) => {
       const controller = ctx.controllers.userController;
-      // ... resolver logic
+      const { limit, after } = normalizePaginationArgs(args);
+      
+      const result = await controller.findMany({ 
+        first: limit, 
+        after: after ? decodeCursor(after) : null 
+      });
+      
+      return buildConnection({
+        items: result.items,
+        hasMore: result.hasMore,
+        getCursor: (user) => encodeCursor(user.id),
+        totalCount: result.total,
+      });
     },
   }),
 }));

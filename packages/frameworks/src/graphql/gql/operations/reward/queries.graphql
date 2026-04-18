@@ -1,0 +1,61 @@
+# =============================================================================
+# Reward Queries
+# =============================================================================
+
+query AllRewards {
+  allRewards {
+    id
+    name
+    description
+    image
+    coinCost
+    availableQuantity
+    isHidden
+    tripId
+    createdAt
+    updatedAt
+  }
+}
+
+query Rewards($tripId: String!, $first: Int, $after: String) {
+  rewards(tripId: $tripId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        name
+        description
+        image
+        coinCost
+        availableQuantity
+        isHidden
+        tripId
+        createdAt
+        updatedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query MyRedeemedRewards($tripId: String!) {
+  myRedeemedRewards(tripId: $tripId) {
+    id
+    rewardId
+    groupId
+    userId
+    status
+    redeemedAt
+    reward {
+      id
+      name
+      description
+      image
+      coinCost
+      availableQuantity
+    }
+  }
+}

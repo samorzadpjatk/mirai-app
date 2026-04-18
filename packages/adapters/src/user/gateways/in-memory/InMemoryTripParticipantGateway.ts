@@ -144,6 +144,48 @@ export class InMemoryTripParticipantGateway implements ITripParticipantPort {
     });
   }
 
+  countByUserId(userId: string) {
+    return Effect.sync(() => {
+      const participantIds = this.participantsByUserId.get(userId);
+      return participantIds?.size ?? 0;
+    });
+  }
+
+  create(participant: TripParticipant) {
+    return Effect.sync(() => {
+      const id = TripParticipantId.toString(participant.id);
+      const userIdStr = UserId.toString(participant.userId);
+      const tripIdStr = TripId.toString(participant.tripId);
+      const key = this.createKey(userIdStr, tripIdStr);
+
+      this.participants.set(id, participant);
+      this.participantsByUserAndTrip.set(key, id);
+
+      const userParticipants =
+        this.participantsByUserId.get(userIdStr) ?? new Set<string>();
+      userParticipants.add(id);
+      this.participantsByUserId.set(userIdStr, userParticipants);
+
+      const tripParticipants =
+        this.participantsByTripId.get(tripIdStr) ?? new Set<string>();
+      tripParticipants.add(id);
+      this.participantsByTripId.set(tripIdStr, tripParticipants);
+
+      return participant;
+    });
+  }
+
+  deleteByUserAndTrip(userId: string, tripId: string) {
+    return Effect.sync(() => {
+      const key = this.createKey(userId, tripId);
+      const participantId = this.participantsByUserAndTrip.get(key);
+
+      if (participantId) {
+        this.delete(participantId);
+      }
+    });
+  }
+
   findByWristNumber(
     tripId: string,
     wristNumber: string,

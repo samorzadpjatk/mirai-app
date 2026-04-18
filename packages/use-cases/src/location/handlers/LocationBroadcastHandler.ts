@@ -92,7 +92,7 @@ export class LocationBroadcastHandler implements IEventHandler<LocationUpdated, 
               })
             )
           ),
-          Effect.catchAll((error) =>
+          Effect.catchAll((error: unknown) =>
             Effect.gen(function* () {
               yield* Effect.logWarning("Location broadcast delivery failed").pipe(
                 Effect.annotateLogs({

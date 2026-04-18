@@ -22,6 +22,9 @@ export const GRAPHQL_HTTP_URL = getEnvString(
 
 export const GRAPHQL_WS_URL = GRAPHQL_HTTP_URL.replace(/^http/, "ws");
 
+// Better Auth API base URL (same as GraphQL endpoint base)
+export const BETTER_AUTH_URL = GRAPHQL_HTTP_URL.replace(/\/graphql$/, "");
+
 export const PRIVACY_POLICY_PUBLIC_URL = getEnvString(
   process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL,
   "PRIVACY_POLICY_PUBLIC_URL",

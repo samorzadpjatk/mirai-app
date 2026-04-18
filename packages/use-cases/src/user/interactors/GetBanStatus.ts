@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import type { IPortError } from "@mirai-app/domain";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { BanStatusDTO } from "../dto/UserDTOs";
 
 /**
@@ -16,18 +16,17 @@ export interface GetBanStatusInput {
  * Checks if the current user is banned based on their access token.
  */
 export class GetBanStatusUseCase {
-  execute(
-    input: GetBanStatusInput,
-  ): Effect.Effect<BanStatusDTO, ApplicationError, AuthServicePort> {
+  execute(input: GetBanStatusInput) {
     return Effect.gen(function* () {
-      const authService = yield* AuthServicePort;
+      const authService = yield* AuthServicePortTag;
 
-      // If no access token, user is not banned
+      // If no access token, user is not banned and doesn't exist in auth system
       if (!input.accessToken) {
         return {
           banned: false,
           bannedUntil: null,
           reason: null,
+          exists: false,
         };
       }
 
@@ -40,6 +39,7 @@ export class GetBanStatusUseCase {
         banned: banStatus.banned,
         bannedUntil: banStatus.bannedUntil,
         reason: banStatus.reason,
+        exists: true,
       };
     });
   }

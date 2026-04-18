@@ -1,32 +1,72 @@
 import { Effect } from "effect";
 import {
-  ActivityFeed,
-  type ActivityFeedId,
-  ActivityFeedIdFactory,
+  type ActivityFeed,
+  ActivityFeedId,
   TripId,
   DatabaseError,
 } from "@mirai-app/domain";
 import type { IActivityFeedPort } from "@mirai-app/use-cases/activity-feed/ports";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 
 /**
  * In-Memory ActivityFeed Gateway
  *
  * Implements IActivityFeedPort using in-memory Map storage for testing.
+ * Supports the AuthContext pattern for authorization testing.
  */
 export class InMemoryActivityFeedGateway implements IActivityFeedPort {
-  private activities: Map<string, ActivityFeed> = new Map();
+  private activities = new Map<string, ActivityFeed>();
 
   findById(id: ActivityFeedId) {
-    return Effect.sync(() => {
-      const activity = this.activities.get(ActivityFeedIdFactory.toString(id));
-      return activity ?? null;
+    const self = this;
+    const idStr = ActivityFeedId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const activity = self.activities.get(idStr) ?? null;
+
+      // Verify access if authenticated and activity exists
+      if (authCtx.isAuthenticated && activity) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(activity.tripId),
+          requiredPermission: "read",
+        });
+      }
+
+      return activity;
     });
   }
 
   findByTripId(tripId: TripId) {
-    return Effect.sync(() => {
-      const tripIdStr = TripId.toString(tripId);
-      return Array.from(this.activities.values())
+    const self = this;
+    const tripIdStr = TripId.toString(tripId);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Verify user is member of the trip
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "read",
+        });
+      }
+
+      return Array.from(self.activities.values())
         .filter((activity) => TripId.toString(activity.tripId) === tripIdStr)
         .sort((a, b) => {
           // Sort by isPinned first (pinned items first), then by createdAt desc
@@ -46,12 +86,30 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
       includeHidden?: boolean;
     },
   ) {
-    return Effect.sync(() => {
-      const tripIdStr = TripId.toString(tripId);
+    const self = this;
+    const tripIdStr = TripId.toString(tripId);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Verify user is member of the trip
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "read",
+        });
+      }
+
       const limit = params.limit;
       const includeHidden = params.includeHidden ?? false;
 
-      let filtered = Array.from(this.activities.values()).filter(
+      let filtered = Array.from(self.activities.values()).filter(
         (activity) => TripId.toString(activity.tripId) === tripIdStr,
       );
 
@@ -96,11 +154,29 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
       cursor?: string | null;
     },
   ) {
-    return Effect.sync(() => {
-      const tripIdStr = TripId.toString(tripId);
+    const self = this;
+    const tripIdStr = TripId.toString(tripId);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Moderation requires admin permission
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "admin",
+        });
+      }
+
       const limit = params.limit;
 
-      let filtered = Array.from(this.activities.values()).filter(
+      let filtered = Array.from(self.activities.values()).filter(
         (activity) => TripId.toString(activity.tripId) === tripIdStr,
       );
 
@@ -129,10 +205,90 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
     });
   }
 
+  findVisibleByTripId(tripId: TripId) {
+    const self = this;
+    const tripIdStr = TripId.toString(tripId);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Verify user is member of the trip
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "read",
+        });
+      }
+
+      return Array.from(self.activities.values())
+        .filter((activity) => TripId.toString(activity.tripId) === tripIdStr)
+        .filter((activity) => !activity.isHidden)
+        .sort((a, b) => {
+          // Sort by isPinned first (pinned items first), then by createdAt desc
+          if (a.isPinned !== b.isPinned) {
+            return a.isPinned ? -1 : 1;
+          }
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+    });
+  }
+
+  findPinnedByTripId(tripId: TripId) {
+    const self = this;
+    const tripIdStr = TripId.toString(tripId);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Verify user is member of the trip
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "read",
+        });
+      }
+
+      return Array.from(self.activities.values())
+        .filter((activity) => TripId.toString(activity.tripId) === tripIdStr)
+        .filter((activity) => activity.isPinned && !activity.isHidden)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    });
+  }
+
   create(activity: ActivityFeed) {
-    return Effect.sync(() => {
-      this.activities.set(
-        ActivityFeedIdFactory.toString(activity.id),
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Verify write permission for the trip
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(activity.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      self.activities.set(
+        ActivityFeedId.toString(activity.id),
         activity,
       );
       return activity;
@@ -140,9 +296,27 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
   }
 
   update(activity: ActivityFeed) {
-    return Effect.sync(() => {
-      this.activities.set(
-        ActivityFeedIdFactory.toString(activity.id),
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Verify write permission for the trip
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(activity.tripId),
+          requiredPermission: "write",
+        });
+      }
+
+      self.activities.set(
+        ActivityFeedId.toString(activity.id),
         activity,
       );
       return activity;
@@ -150,28 +324,95 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
   }
 
   delete(id: ActivityFeedId) {
-    return Effect.sync(() => {
-      this.activities.delete(ActivityFeedIdFactory.toString(id));
+    const self = this;
+    const idStr = ActivityFeedId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Fetch activity first to get tripId for auth check
+      const activity = self.activities.get(idStr);
+
+      // Verify admin permission for delete
+      if (authCtx.isAuthenticated && activity) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(activity.tripId),
+          requiredPermission: "admin",
+        });
+      }
+
+      self.activities.delete(idStr);
     });
   }
 
   setPinned(id: ActivityFeedId, isPinned: boolean) {
-    return Effect.sync(() => {
-      const idStr = ActivityFeedIdFactory.toString(id);
-      const activity = this.activities.get(idStr);
+    const self = this;
+    const idStr = ActivityFeedId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const activity = self.activities.get(idStr);
       if (!activity) {
-        throw new Error(`Activity not found: ${idStr}`);
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "setPinned",
+            id: idStr,
+            cause: new Error(`Activity not found: ${idStr}`),
+          }),
+        );
+      }
+
+      // Verify admin permission for pinning
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(activity.tripId),
+          requiredPermission: "admin",
+        });
       }
 
       const updated = isPinned ? activity.pin() : activity.unpin();
-      this.activities.set(idStr, updated);
+      self.activities.set(idStr, updated);
       return updated;
     });
   }
 
   exists(id: ActivityFeedId) {
-    return Effect.sync(() => {
-      return this.activities.has(ActivityFeedIdFactory.toString(id));
+    const self = this;
+    const idStr = ActivityFeedId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      const activity = self.activities.get(idStr);
+
+      // Verify access if authenticated and activity exists
+      if (authCtx.isAuthenticated && activity) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: TripId.toString(activity.tripId),
+          requiredPermission: "read",
+        });
+      }
+
+      return activity !== undefined;
     });
   }
 
@@ -179,7 +420,7 @@ export class InMemoryActivityFeedGateway implements IActivityFeedPort {
    * Helper method to add an activity (for testing)
    */
   addActivity(activity: ActivityFeed): void {
-    this.activities.set(ActivityFeedIdFactory.toString(activity.id), activity);
+    this.activities.set(ActivityFeedId.toString(activity.id), activity);
   }
 
   /**

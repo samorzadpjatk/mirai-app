@@ -1,25 +1,21 @@
 import { Effect } from "effect";
+import {
+  NotificationScheduleId,
+  UserId,
+} from "@mirai-app/domain";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { DuplicateScheduleResultDTO } from "../../dto/NotificationDTOs";
-import { ScheduleNotFoundError } from "./GetScheduleById";
+import { ScheduleNotFoundError } from "../../errors/NotificationErrors";
 
 export interface DuplicateScheduleInput {
-  scheduleId: string;
+  scheduleId: NotificationScheduleId;
   name?: string;
   startDate?: Date;
   endDate?: Date;
-  createdById: string;
+  createdById: UserId;
 }
 
 export class DuplicateScheduleUseCase {
-  execute(
-    input: DuplicateScheduleInput,
-  ): Effect.Effect<
-    DuplicateScheduleResultDTO,
-    ApplicationError | ScheduleNotFoundError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: DuplicateScheduleInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 
@@ -38,7 +34,7 @@ export class DuplicateScheduleUseCase {
         input.endDate ?? new Date(newStartDate.getTime() + durationMs);
 
       const created = yield* schedulePort.create({
-        id: crypto.randomUUID(),
+        id: NotificationScheduleId.create(crypto.randomUUID()),
         name: input.name ?? `${original.name} (Copy)`,
         tripId: original.tripId,
         notificationType: original.notificationType,

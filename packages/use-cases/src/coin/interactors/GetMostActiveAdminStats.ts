@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { CoinTransactionPort } from "../ports/CoinTransactionPort";
+import { CoinTransactionPortTag } from "../ports/CoinTransactionPort";
 import type { ApplicationError, UserId } from "@mirai-app/domain";
 
 /**
@@ -24,15 +24,9 @@ export interface MostActiveAdminStatsDTO {
  * Retrieves statistics about the most active admin for coin transactions.
  */
 export class GetMostActiveAdminStatsUseCase {
-  execute(
-    input: GetMostActiveAdminStatsInput,
-  ): Effect.Effect<
-    MostActiveAdminStatsDTO | null,
-    ApplicationError,
-    CoinTransactionPort
-  > {
+  execute(input: GetMostActiveAdminStatsInput) {
     return Effect.gen(function* () {
-      const coinPort = yield* CoinTransactionPort;
+      const coinPort = yield* CoinTransactionPortTag;
 
       const stats = yield* coinPort.getMostActiveAdminStats(input.tripId);
 

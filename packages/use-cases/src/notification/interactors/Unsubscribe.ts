@@ -1,22 +1,20 @@
 import { Effect, Data } from "effect";
+import { UserId } from "@mirai-app/domain";
 import { PushSubscriptionPortTag } from "../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
 import type { UnsubscribeResultDTO } from "../dto/NotificationDTOs";
 
 /**
  * Subscription not found error
  */
-export class SubscriptionNotFoundError extends Data.TaggedError(
-  "SubscriptionNotFoundError",
-)<{
+export class SubscriptionNotFoundError extends Data.TaggedError("SubscriptionNotFoundError")<{
   token: string;
-}>() {}
+}> {}
 
 /**
  * Input for UnsubscribeUseCase
  */
 export interface UnsubscribeInput {
-  userId: string;
+  userId: UserId;
   token: string;
 }
 
@@ -26,19 +24,13 @@ export interface UnsubscribeInput {
  * Unsubscribe from push notifications by token.
  */
 export class UnsubscribeUseCase {
-  execute(
-    input: UnsubscribeInput,
-  ): Effect.Effect<
-    UnsubscribeResultDTO,
-    ApplicationError | SubscriptionNotFoundError,
-    PushSubscriptionPortTag
-  > {
+  execute(input: UnsubscribeInput) {
     return Effect.gen(function* () {
       const subscriptionPort = yield* PushSubscriptionPortTag;
 
       const deletedCount = yield* subscriptionPort.deleteByTokenAndUserId(
         input.token,
-        input.userId,
+        UserId.toString(input.userId),
       );
 
       if (deletedCount === 0) {
@@ -50,7 +42,7 @@ export class UnsubscribeUseCase {
       return {
         success: true,
         deletedCount,
-      };
+      } as UnsubscribeResultDTO;
     });
   }
 }

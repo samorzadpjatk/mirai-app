@@ -1,8 +1,8 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import { TripId, UserId, ChallengeId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
-import { ChallengeSubmissionPort } from "../../challenge-submission/ports/ChallengeSubmissionPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { ChallengeSubmissionPortTag } from "../../challenge-submission/ports/ChallengeSubmissionPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import type {
   ChallengeWithStatsDTO,
   PaginatedChallengesDTO,
@@ -25,46 +25,45 @@ export interface GetChallengesByTripInput {
  * Retrieves challenges for a specific trip with pagination and user stats.
  */
 export class GetChallengesByTripUseCase {
-  execute(
-    input: GetChallengesByTripInput,
-  ): Effect.Effect<
-    PaginatedChallengesDTO,
-    ApplicationError,
-    ChallengePortTag | ChallengeSubmissionPort | TripParticipantPort
-  > {
+  execute(input: GetChallengesByTripInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
-      const submissionPort = yield* ChallengeSubmissionPort;
-      const participantPort = yield* TripParticipantPort;
+      const submissionPort = yield* ChallengeSubmissionPortTag;
+      const participantPort = yield* TripParticipantPortTag;
 
+      const tripId = TripId.unsafeCreate(input.tripId);
+      const userId = UserId.unsafeCreate(input.userId);
       const limit = input.limit ?? 30;
       const offset = input.offset ?? 0;
 
       // Activate visible challenges for this trip
-      yield* challengePort.activateVisibleChallenges(input.tripId);
+      yield* challengePort.activateVisibleChallenges(tripId);
 
       // Get paginated challenges
-      const result = yield* challengePort.findPaginatedByTripId(input.tripId, {
+      const result = yield* challengePort.findPaginatedByTripId(tripId, {
         limit,
         offset,
       });
 
       // Get participant info for this user
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        userId,
+        tripId,
       );
 
       // Gather stats for each challenge
       const challengesWithStats: ChallengeWithStatsDTO[] = [];
       for (const challenge of result.challenges) {
+        const challengeId = ChallengeId.unsafeCreate(
+          typeof challenge.id === "string" ? challenge.id : ChallengeId.toString(challenge.id)
+        );
         const [submissionCount, pendingCount, mySubmission] = yield* Effect.all(
           [
-            submissionPort.countByChallengeId(challenge.id),
-            submissionPort.countPendingByChallengeId(challenge.id),
+            submissionPort.countByChallengeId(challengeId),
+            submissionPort.countPendingByChallengeId(challengeId),
             participant && participant.groupId
               ? submissionPort.findByChallengeAndGroup(
-                  challenge.id,
+                  challengeId,
                   participant.groupId,
                 )
               : Effect.succeed(null),
@@ -100,7 +99,6 @@ export class GetChallengesByTripUseCase {
           submissionCount,
           approvedSubmissionCount: submissionCount - pendingCount,
           pendingSubmissionCount: pendingCount,
-          myGroupSubmissionStatus: mySubmission?.status ?? null,
         });
       }
 

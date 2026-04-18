@@ -403,4 +403,44 @@ export class ChallengeDrizzleGateway
       }
     });
   }
+
+  findAll() {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext to check if authenticated (admin only)
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "challenge",
+          resourceId: "*",
+          requiredPermission: "admin",
+        });
+      }
+
+      return yield* Effect.tryPromise({
+        try: () =>
+          self.db
+            .select()
+            .from(challenges)
+            .orderBy(sql`${challenges.createdAt} DESC`),
+        catch: (error) =>
+          new DatabaseError({
+            operation: "ChallengeDrizzleGateway.findAll",
+            cause: error,
+          }),
+      });
+    }).pipe(
+      Effect.flatMap((dbChallenges: ChallengeSelect[]) =>
+        Effect.forEach(dbChallenges, (dbChallenge) =>
+          challengeMapper.toDomain(dbChallenge),
+        ),
+      ),
+    );
+  }
 }

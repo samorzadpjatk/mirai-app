@@ -30,6 +30,10 @@ The frameworks layer contains:
 ```
 src/
 ├── index.ts              # Public exports
+├── better-auth/          # Better Auth configuration
+│   ├── index.ts          # Better Auth factory
+│   ├── schema.ts         # Drizzle schema for auth tables
+│   └── client.ts         # Client-side auth utilities
 ├── graphql/              # GraphQL configuration
 │   ├── client.tsx        # GraphQL client (urql)
 │   ├── server.ts         # GraphQL Yoga server setup
@@ -51,7 +55,7 @@ src/
 │       ├── repository.ts # Repository layer
 │       ├── service.ts    # Service layer
 │       └── test.ts       # Test layer
-├── auth/                 # Auth configuration
+├── auth/                 # Auth configuration (legacy, being migrated)
 │   ├── client.ts         # Client auth setup
 │   ├── server.ts         # Server auth setup
 │   └── hooks/            # React auth hooks
@@ -74,11 +78,79 @@ AppLayer (mergeAll)
 │   ├── ContentDomainLayer (ActivityFeed, Event, Sponsor)
 │   └── ReportingDomainLayer (SubmissionReport, CoinTransaction)
 │
-└── ServiceLayer (5 services)
-    ├── SupabaseServicesLayer (Auth, Realtime, Storage)
-    ├── TelemetryServiceLayer (Telemetry)
+└── ServiceLayer (3 services)
+    ├── AuthServiceLayer (Auth)
+    ├── StorageServiceLayer (SeaweedFS with native TUS)
     └── PubSubServiceLayer (PubSub)
 ```
+
+### Better Auth Configuration
+
+The frameworks layer provides Better Auth configuration using the Drizzle adapter:
+
+```typescript
+// packages/frameworks/src/better-auth/index.ts
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { emailOTP } from "better-auth/plugins";
+
+export const createBetterAuth = (db: Database) => betterAuth({
+  database: drizzleAdapter(db, { provider: "pg" }),
+  basePath: "/api/auth",
+  emailAndPassword: { enabled: true },
+  plugins: [
+    emailOTP({
+      async sendVerificationOTP({ email, otp, type }) {
+        // Integrate with notification service
+      },
+      expiresIn: 300, // 5 minutes
+    }),
+  ],
+  session: {
+    expiresIn: 604800,  // 7 days
+    updateAge: 86400,   // 1 day
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "strict",
+    },
+  },
+});
+
+export type BetterAuthInstance = ReturnType<typeof createBetterAuth>;
+```
+
+**Key Features:**
+- **Drizzle Adapter**: Uses existing database connection pool
+- **Email/Password**: Traditional authentication
+- **Email OTP**: Passwordless authentication with 5-minute expiration
+- **Session Management**: 7-day expiry with automatic refresh
+- **Security**: httpOnly, secure, sameSite=strict cookies
+
+**Migration Support:**
+The service layer uses Better Auth for authentication and SeaweedFS with native TUS for storage:
+
+```typescript
+// Service layer configuration
+export const makeServiceLayer = (config: ServiceLayerConfig) => {
+  // Better Auth for authentication
+  const betterAuth = createBetterAuth(config.db);
+  const authLayer = Layer.succeed(
+    AuthPortTag, 
+    new BetterAuthGateway(betterAuth)
+  );
+
+  // SeaweedFS with native TUS for storage
+  const storageLayer = Layer.succeed(
+    StoragePortTag,
+    new SeaweedFSStorageGateway(config.storageConfig)
+  );
+
+  return Layer.mergeAll(authLayer, storageLayer);
+};
+```
+
+See [`.specs/docs/auth.md`](../../.specs/docs/auth.md) for complete authentication documentation.
 
 ### Complete App Layer
 
@@ -159,25 +231,24 @@ const program = Effect.gen(function* () {
 
 ### Service Layer
 
-The `ServiceLayer` binds 5 service Context.Tags to their adapter implementations:
+The `ServiceLayer` binds service Context.Tags to their adapter implementations:
 
 ```typescript
 import {
   makeServiceLayer,
-  makeSupabaseServicesLayer,
+  makeAuthLayer,
+  makeStorageLayer,
 } from "@mirai-app/frameworks/di";
-import { createSupabaseClient } from "@mirai-app/frameworks/supabase/client";
 import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
 
-const supabase = createSupabaseClient(url, key);
 const db = createDrizzleClient(databaseUrl);
 
-// All 5 services
-const serviceLayer = makeServiceLayer({ supabase, db });
+// All services
+const serviceLayer = makeServiceLayer({ db });
 
 // Individual service groups
-const supabaseLayer = makeSupabaseServicesLayer(supabase); // Auth, Realtime, Storage
-const telemetryLayer = makeTelemetryServiceLayer(db); // Telemetry
+const authLayer = makeAuthLayer(db); // Better Auth
+const storageLayer = makeStorageLayer(storageConfig); // SeaweedFS with native TUS
 const pubSubLayer = makePubSubServiceLayer(); // PubSub (no deps)
 
 // Use in Effect
@@ -185,19 +256,17 @@ const program = Effect.gen(function* () {
   const auth = yield* AuthPortTag;
   const user = yield* auth.getCurrentUser();
   return user;
-}).pipe(Effect.provide(supabaseLayer));
+}).pipe(Effect.provide(authLayer));
 ```
 
 **Service Groups:**
 
-| Factory                     | Services                | Dependencies   |
-| --------------------------- | ----------------------- | -------------- |
-| `makeSupabaseServicesLayer` | Auth, Realtime, Storage | SupabaseClient |
-| `makeTelemetryServiceLayer` | Telemetry               | DrizzleDb      |
-| `makePubSubServiceLayer`    | PubSub                  | None           |
-| `makeAuthLayer`             | Auth only               | SupabaseClient |
-| `makeRealtimeLayer`         | Realtime only           | SupabaseClient |
-| `makeStorageLayer`          | Storage only            | SupabaseClient |
+| Factory                     | Services                     | Dependencies        |
+| --------------------------- | ---------------------------- | ------------------- |
+| `makeAuthLayer`             | Authentication (Better Auth) | DrizzleDb           |
+| `makeStorageLayer`          | Storage (SeaweedFS native TUS) | StorageConfig     |
+| `makePubSubServiceLayer`    | PubSub                       | None                |
+| `makeTelemetryServiceLayer` | Telemetry                    | DrizzleDb           |
 
 ### Factory Functions Reference
 
@@ -218,12 +287,10 @@ makeContentDomainLayer(db: DrizzleDb): Layer<...>
 makeReportingDomainLayer(db: DrizzleDb): Layer<...>
 
 // Service layers
-makeSupabaseServicesLayer(supabase: SupabaseClient): Layer<...>
+makeAuthLayer(db: DrizzleDb): Layer<...>
+makeStorageLayer(config: StorageConfig): Layer<...>
 makeTelemetryServiceLayer(db: DrizzleDb): Layer<...>
 makePubSubServiceLayer(): Layer<...>
-makeAuthLayer(supabase: SupabaseClient): Layer<...>
-makeRealtimeLayer(supabase: SupabaseClient): Layer<...>
-makeStorageLayer(supabase: SupabaseClient): Layer<...>
 ```
 
 ## Testing with Effect
@@ -498,10 +565,13 @@ const testLayer = baseLayer.pipe(
 
 - [CLAUDE.md](../../CLAUDE.md) - CEK Five Pillars (Effect Framework Patterns)
 - [AGENTS.md](../../AGENTS.md) - Quick reference for Effect patterns
+- [`.specs/docs/auth.md`](../../.specs/docs/auth.md) - Authentication system documentation
+- [`.specs/docs/adr/001-better-auth-migration.md`](../../.specs/docs/adr/001-better-auth-migration.md) - Better Auth migration ADR
 - [docs/effect-decision-tree.md](../../docs/effect-decision-tree.md) - When to use Effect vs async/await
 - [packages/frameworks/AGENTS.md](./AGENTS.md) - Framework layer quick reference
 - [packages/use-cases/AGENTS.md](../use-cases/AGENTS.md) - Use case Effect patterns
 - [packages/adapters/AGENTS.md](../adapters/AGENTS.md) - Adapter DI patterns
+- [Better Auth Documentation](https://www.better-auth.com/) - Official Better Auth docs
 
 ### Effect Framework Resources
 

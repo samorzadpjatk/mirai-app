@@ -1,22 +1,15 @@
 import { Effect } from "effect";
+import { NotificationScheduleId } from "@mirai-app/domain";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { NotificationScheduleDTO } from "../../dto/NotificationDTOs";
-import { ScheduleNotFoundError } from "./GetScheduleById";
+import { ScheduleNotFoundError } from "../../errors/NotificationErrors";
 
 export interface UpdateScheduleLastRunInput {
-  scheduleId: string;
+  scheduleId: NotificationScheduleId;
   lastRun: Date;
 }
 
 export class UpdateScheduleLastRunUseCase {
-  execute(
-    input: UpdateScheduleLastRunInput,
-  ): Effect.Effect<
-    NotificationScheduleDTO,
-    ApplicationError | ScheduleNotFoundError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: UpdateScheduleLastRunInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 

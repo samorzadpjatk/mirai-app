@@ -7,7 +7,6 @@
 
 import { Layer, Effect } from "effect";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import { NotificationServicePortTag } from "@mirai-app/use-cases/notification/ports/NotificationPort";
 import {
   NotificationPortTag,
@@ -15,8 +14,10 @@ import {
 } from "@mirai-app/use-cases/notification/ports/NotificationPort";
 import { NotificationServiceGateway } from "@mirai-app/adapters";
 import { makeRepositoryLayer } from "./repository";
-import { makeServiceLayer } from "./service";
+import { makeServiceLayer, setupEventBusHandlerRuntime } from "./service";
 import { makeAuthLayer } from "./auth";
+import { EventBusTag } from "@mirai-app/use-cases";
+import { RedisEventBusGateway } from "@mirai-app/adapters";
 
 /**
  * Configuration for creating the complete App Layer
@@ -24,8 +25,6 @@ import { makeAuthLayer } from "./auth";
 export interface AppLayerConfig {
   /** Drizzle database client */
   db: DrizzleDb;
-  /** Supabase client for auth, storage, and realtime */
-  supabase: SupabaseClient;
 }
 
 /**
@@ -42,7 +41,7 @@ export interface AppLayerConfig {
  *
  * @example
  * ```typescript
- * const appLayer = makeAppLayer({ db, supabase });
+ * const appLayer = makeAppLayer({ db });
  *
  * const program = Effect.gen(function* () {
  *   const userRepo = yield* UserPortTag;
@@ -50,12 +49,13 @@ export interface AppLayerConfig {
  * }).pipe(Effect.provide(appLayer));
  * ```
  */
-export const makeAppLayer = (config: AppLayerConfig) => {
-  const authLayer = makeAuthLayer({ supabase: config.supabase });
+export const makeAppLayer = (config: AppLayerConfig): Layer.Layer<never> => {
+  const authLayer = makeAuthLayer({ db: config.db });
   const repoLayer = makeRepositoryLayer({ db: config.db });
-  const serviceLayer = makeServiceLayer({ supabase: config.supabase });
+  const serviceLayer = makeServiceLayer({ db: config.db });
 
-  // NotificationServiceGateway requires repository ports from repoLayer context
+  // NotificationServiceGateway requires repository ports from repoLayer.
+  // Use Layer.effect + Layer.provide to properly compose dependencies.
   const notificationServiceLayer = Layer.effect(
     NotificationServicePortTag,
     Effect.gen(function* () {
@@ -63,9 +63,30 @@ export const makeAppLayer = (config: AppLayerConfig) => {
       const pushSubscriptionPort = yield* PushSubscriptionPortTag;
       return new NotificationServiceGateway(notificationPort, pushSubscriptionPort);
     }),
-  );
+  ).pipe(Layer.provide(repoLayer));  // Satisfies NotificationPortTag and PushSubscriptionPortTag requirements
 
-  return Layer.mergeAll(authLayer, repoLayer, serviceLayer, notificationServiceLayer);
+  // EventBus handler runtime setup - requires notification ports from repoLayer
+  const eventBusSetupLayer = Layer.effect(
+    EventBusTag,
+    Effect.gen(function* () {
+      // Get the existing event bus gateway from service layer
+      const eventBus = yield* EventBusTag;
+      
+      // Set up handler runtime with notification ports
+      yield* setupEventBusHandlerRuntime(eventBus as RedisEventBusGateway);
+      
+      return eventBus;
+    }),
+  ).pipe(Layer.provide(Layer.mergeAll(serviceLayer, repoLayer)));
+
+  // Now all layers have no unsatisfied requirements
+  return Layer.mergeAll(
+    authLayer, 
+    repoLayer, 
+    serviceLayer, 
+    notificationServiceLayer,
+    eventBusSetupLayer
+  ) as Layer.Layer<never>;
 };
 
 /**
@@ -80,6 +101,6 @@ export const makeRepositoriesOnlyLayer = (config: { db: DrizzleDb }) => {
  * Creates a Layer with only services (no repositories).
  * Useful when repositories are provided separately.
  */
-export const makeServicesOnlyLayer = (config: { supabase: SupabaseClient }) => {
+export const makeServicesOnlyLayer = (config: { db: DrizzleDb }) => {
   return makeServiceLayer(config);
 };

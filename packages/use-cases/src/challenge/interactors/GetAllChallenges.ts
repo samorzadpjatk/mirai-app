@@ -1,6 +1,6 @@
 import { Effect, Data } from "effect";
 import { ChallengePortTag } from "../ports/ChallengePort";
-import type { ChallengeDTO } from "../dto/ChallengeDTOs";
+import { TripId } from "@mirai-app/domain";
 
 /**
  * Input for GetAllChallengesUseCase
@@ -23,8 +23,8 @@ export class GetAllChallengesUseCase {
       // Activate visible challenges first
       yield* challengePort.activateVisibleChallenges();
 
-      // Get all challenges
-      const allChallenges = yield* challengePort.findByTripId("");
+      // Get all challenges - use a dummy TripId for findByTripId with empty string
+      const allChallenges = yield* challengePort.findAll();
 
       // Filter out recurring if not requested
       const challenges = input.includeRecurring
@@ -33,7 +33,7 @@ export class GetAllChallengesUseCase {
 
       // Map to DTOs
       return challenges.map(
-        (challenge): ChallengeDTO => ({
+        (challenge) => ({
           id: challenge.id,
           tripId: challenge.tripId,
           name: challenge.name,

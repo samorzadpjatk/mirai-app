@@ -1,11 +1,19 @@
-import { Effect } from "effect";
+import { Effect, Context } from "effect";
 import { Sponsor, SponsorId, DatabaseError } from "@mirai-app/domain";
-import type { ISponsorPort } from "@mirai-app/domain";
+import type { ISponsorPort, IAuthZPort } from "@mirai-app/domain";
+import { AuthContextTag } from "../../../infrastructure/effect";
+
+// Local AuthZPortTag to avoid circular dependency issues
+class AuthZPortTag extends Context.Tag("AuthZ")<AuthZPortTag, IAuthZPort>() {}
 
 /**
  * In-Memory Sponsor Gateway
  *
  * Implements ISponsorPort using in-memory Map storage for testing.
+ *
+ * Authorization Pattern:
+ * - Read operations: Public - no auth required
+ * - Write operations (create, update, delete): Admin only
  */
 export class InMemorySponsorGateway implements ISponsorPort {
   private sponsors: Map<string, Sponsor> = new Map();
@@ -34,22 +42,74 @@ export class InMemorySponsorGateway implements ISponsorPort {
   }
 
   create(sponsor: Sponsor) {
-    return Effect.sync(() => {
-      this.sponsors.set(SponsorId.toString(sponsor.id), sponsor);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify admin permission for create
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "sponsor",
+          resourceId: SponsorId.toString(sponsor.id),
+          requiredPermission: "write",
+        });
+      }
+
+      self.sponsors.set(SponsorId.toString(sponsor.id), sponsor);
       return sponsor;
     });
   }
 
   update(sponsor: Sponsor) {
-    return Effect.sync(() => {
-      this.sponsors.set(SponsorId.toString(sponsor.id), sponsor);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify admin permission for update
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "sponsor",
+          resourceId: SponsorId.toString(sponsor.id),
+          requiredPermission: "write",
+        });
+      }
+
+      self.sponsors.set(SponsorId.toString(sponsor.id), sponsor);
       return sponsor;
     });
   }
 
   delete(id: SponsorId) {
-    return Effect.sync(() => {
-      this.sponsors.delete(SponsorId.toString(id));
+    const self = this;
+    const idStr = SponsorId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify admin permission for delete
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "sponsor",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      self.sponsors.delete(idStr);
     });
   }
 

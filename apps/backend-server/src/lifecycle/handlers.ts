@@ -9,7 +9,7 @@ import { serverState } from "../state";
  * This function initializes both notification and location event handlers,
  * wiring them to the EventBus for real-time event processing.
  */
-export const initializeHandlers = <T>(appLayer: Layer.Layer<T, never, never>) =>
+export const initializeHandlers = (appLayer: Layer.Layer<never>) =>
   Effect.gen(function* () {
     yield* Effect.log("Initializing all event handlers...");
 

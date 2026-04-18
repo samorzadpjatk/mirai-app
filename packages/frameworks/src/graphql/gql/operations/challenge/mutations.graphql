@@ -1,0 +1,35 @@
+# =============================================================================
+# Challenge Mutations
+# =============================================================================
+
+mutation CreateChallenge($input: CreateChallengeInput!) {
+  createChallenge(input: $input) {
+    id
+    name
+    status
+  }
+}
+
+mutation UpdateChallenge($input: UpdateChallengeInput!) {
+  updateChallenge(input: $input) {
+    id
+    name
+    status
+  }
+}
+
+mutation DeleteChallenge($input: DeleteChallengeInput!) {
+  deleteChallenge(input: $input) {
+    id
+    name
+    status
+  }
+}
+
+mutation ForceCloseVoting($id: String!, $tripId: String!) {
+  forceCloseVoting(id: $id, tripId: $tripId) {
+    id
+    name
+    status
+  }
+}

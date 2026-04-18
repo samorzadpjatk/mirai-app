@@ -1,6 +1,6 @@
 import { Effect, Data } from "effect";
 import type { Challenge } from "@mirai-app/domain";
-import { Challenge as ChallengeEntity, TripId } from "@mirai-app/domain";
+import { Challenge as ChallengeEntity, TripId, ChallengeId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
 import {
   ChallengeValidationError,

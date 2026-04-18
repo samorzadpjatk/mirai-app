@@ -1,6 +1,7 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import { GroupJoinRequestPort } from "../ports/GroupJoinRequestPort";
+import { GroupId, UserId } from "@mirai-app/domain";
+import { GroupPortTag } from "../ports/GroupPort";
+import { GroupJoinRequestPortTag } from "../ports/GroupJoinRequestPort";
 import type { DatabaseError } from "@mirai-app/domain";
 import {
   GroupNotFoundError,
@@ -24,20 +25,14 @@ export interface CancelMyJoinRequestInput {
 export class CancelMyJoinRequestUseCase {
   execute(
     input: CancelMyJoinRequestInput,
-  ): Effect.Effect<
-    { success: boolean },
-    | DatabaseError
-    | GroupNotFoundError
-    | JoinRequestNotFoundError
-    | TripHasEndedError,
-    GroupPort | GroupJoinRequestPort
-  > {
+  ) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const joinRequestPort = yield* GroupJoinRequestPort;
+      const groupPort = yield* GroupPortTag;
+      const joinRequestPort = yield* GroupJoinRequestPortTag;
 
       // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const group = yield* groupPort.findById(groupId);
 
       if (!group || group.isDeleted) {
         return yield* Effect.fail(
@@ -46,8 +41,9 @@ export class CancelMyJoinRequestUseCase {
       }
 
       // Find join request
+      const userId = UserId.unsafeCreate(input.userId);
       const request = yield* joinRequestPort.findByUserTripAndGroup(
-        input.userId,
+        userId,
         group.tripId,
         group.id,
       );

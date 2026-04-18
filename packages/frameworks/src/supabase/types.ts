@@ -6,7 +6,14 @@
  * storage and realtime capabilities.
  */
 
-import type { AuthSession } from "../stores/auth/types";
+import type { createClient } from "@supabase/supabase-js";
+import type { AuthSession } from "@mirai-app/domain";
+
+/**
+ * Helper type to get the real Supabase client type.
+ * Used for casting when needed.
+ */
+export type RealSupabaseClient = ReturnType<typeof createClient>;
 
 /**
  * Supabase session type - extends AuthSession
@@ -379,14 +386,14 @@ export interface SupabaseDatabase {
 /**
  * Supabase client interface
  *
- * This is the main interface used throughout the application for
- * Supabase operations including auth, storage, realtime, and database queries.
+ * This is the minimal interface needed by the adapters package.
+ * The actual Supabase client from @supabase/supabase-js has more properties
+ * but satisfies this interface.
  */
 export interface SupabaseClient {
   auth: SupabaseAuth;
   storage: SupabaseStorage;
   realtime: SupabaseRealtime;
-  db: SupabaseDatabase;
   channel(name: string): RealtimeChannel;
   from<T = unknown>(table: string): PostgrestQueryBuilder<T>;
   rpc<T = unknown>(fn: string, params?: Record<string, unknown>): Promise<{

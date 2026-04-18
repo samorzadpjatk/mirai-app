@@ -1,138 +1,157 @@
-import { GraphQLError } from "graphql";
-import type { GraphQLContext } from "./context";
+import { builder } from "./builder.js";
+import type { GraphQLContext } from "./context.js";
 
 /**
- * Standard GraphQL error codes
- * Following the GraphQL spec and common conventions
+ * Base error interface
  */
-export type GraphQLErrorCode =
-  | "INTERNAL_SERVER_ERROR"
-  | "BAD_REQUEST"
-  | "UNAUTHENTICATED"
-  | "FORBIDDEN"
-  | "NOT_FOUND"
-  | "CONFLICT"
-  | "VALIDATION_ERROR"
-  | "RATE_LIMITED"
-  | "TIMEOUT"
-  | "SERVICE_UNAVAILABLE"
-  | "BAD_USER_INPUT";
+export interface GraphQLError {
+  message: string;
+  code: string;
+  extensions?: Record<string, unknown>;
+}
 
 /**
- * GraphQL error extensions
- * Additional metadata attached to errors
+ * Map domain/use-case errors to GraphQL errors
  */
-export interface GraphQLErrorExtensions {
-  code: GraphQLErrorCode;
-  requestId?: string;
-  path?: string[];
-  timestamp?: string;
-  details?: Record<string, unknown>;
+export function mapErrorToGraphQL(error: unknown): GraphQLError {
+  if (error instanceof Error) {
+    // Handle specific error types
+    if (error.message.includes("UNAUTHENTICATED")) {
+      return {
+        message: error.message.replace("UNAUTHENTICATED: ", ""),
+        code: "UNAUTHENTICATED",
+      };
+    }
+    if (error.message.includes("FORBIDDEN")) {
+      return {
+        message: error.message.replace("FORBIDDEN: ", ""),
+        code: "FORBIDDEN",
+      };
+    }
+    if (error.message.includes("NOT_FOUND")) {
+      return {
+        message: error.message.replace("NOT_FOUND: ", ""),
+        code: "NOT_FOUND",
+      };
+    }
+    if (error.message.includes("BAD_REQUEST")) {
+      return {
+        message: error.message.replace("BAD_REQUEST: ", ""),
+        code: "BAD_USER_INPUT",
+      };
+    }
+    if (error.message.includes("CONFLICT")) {
+      return {
+        message: error.message.replace("CONFLICT: ", ""),
+        code: "CONFLICT",
+      };
+    }
+  }
+
+  // Default internal error
+  return {
+    message: error instanceof Error ? error.message : "Internal server error",
+    code: "INTERNAL_SERVER_ERROR",
+  };
+}
+
+/**
+ * Error extensions type
+ */
+export interface ErrorExtensions {
+  code: string;
   [key: string]: unknown;
 }
 
 /**
- * Create a GraphQL error with standard extensions
- *
- * @param message - Error message
- * @param code - Error code
- * @param context - GraphQL context for request ID
- * @param details - Additional error details
- * @returns GraphQLError
+ * Create GraphQL error with extensions
  */
 export function createGraphQLError(
   message: string,
-  code: GraphQLErrorCode,
-  context?: GraphQLContext,
-  details?: Record<string, unknown>,
-): GraphQLError {
-  const extensions: Record<string, unknown> = {
+  code: string,
+  extensions?: Record<string, unknown>,
+): Error {
+  const error = new Error(message);
+  (error as Error & { extensions: ErrorExtensions }).extensions = {
     code,
-    ...(context && {
-      requestId: context.requestId,
-      timestamp: context.requestTime.toISOString(),
-    }),
-    ...(details && { details }),
+    ...extensions,
   };
-
-  return new GraphQLError(message, { extensions });
-}
-
-/**
- * Format an error for the response
- * Removes sensitive information in production
- *
- * @param error - The original error
- * @param isDevelopment - Whether in development mode
- * @returns Formatted error
- */
-export function formatError(
-  error: Error & { extensions?: Record<string, unknown> },
-  isDevelopment: boolean,
-): Error & { extensions?: Record<string, unknown> } {
-  // In production, hide internal details for server errors
-  if (!isDevelopment) {
-    const code = error.extensions?.code as GraphQLErrorCode | undefined;
-    if (code === "INTERNAL_SERVER_ERROR") {
-      const formatted = new Error("Internal server error");
-      (
-        formatted as Error & { extensions?: Record<string, unknown> }
-      ).extensions = {
-        code: "INTERNAL_SERVER_ERROR",
-        requestId: error.extensions?.requestId,
-      };
-      return formatted as Error & { extensions?: Record<string, unknown> };
-    }
-  }
-
   return error;
 }
 
 /**
- * Map domain errors to GraphQL errors
- * Converts domain-specific errors to standard GraphQL error format
- *
- * @param error - Domain error
- * @param context - GraphQL context
- * @returns GraphQLError
+ * Not found error helper
  */
-export function mapDomainErrorToGraphQL(
-  error: { _tag: string; message?: string },
-  context: GraphQLContext,
-): GraphQLError {
-  const codeMap: Record<string, GraphQLErrorCode> = {
-    NotFoundError: "NOT_FOUND",
-    ValidationError: "VALIDATION_ERROR",
-    UnauthorizedError: "UNAUTHENTICATED",
-    ForbiddenError: "FORBIDDEN",
-    ConflictError: "CONFLICT",
-    RateLimitError: "RATE_LIMITED",
-    TimeoutError: "TIMEOUT",
-  };
-
-  const code = codeMap[error._tag] ?? "INTERNAL_SERVER_ERROR";
-
+export function notFoundError(resource: string, id?: string): Error {
   return createGraphQLError(
-    error.message ?? `Error: ${error._tag}`,
-    code,
-    context,
-    { originalTag: error._tag },
+    `${resource} not found${id ? `: ${id}` : ""}`,
+    "NOT_FOUND",
+    { resource, id },
   );
 }
 
 /**
- * Error codes for common scenarios
+ * Bad request error helper
  */
-export const ErrorCodes = {
-  INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR" as const,
-  BAD_REQUEST: "BAD_REQUEST" as const,
-  UNAUTHENTICATED: "UNAUTHENTICATED" as const,
-  FORBIDDEN: "FORBIDDEN" as const,
-  NOT_FOUND: "NOT_FOUND" as const,
-  CONFLICT: "CONFLICT" as const,
-  VALIDATION_ERROR: "VALIDATION_ERROR" as const,
-  RATE_LIMITED: "RATE_LIMITED" as const,
-  TIMEOUT: "TIMEOUT" as const,
-  SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE" as const,
-  BAD_USER_INPUT: "BAD_USER_INPUT" as const,
-};
+export function badRequestError(message: string): Error {
+  return createGraphQLError(message, "BAD_USER_INPUT");
+}
+
+/**
+ * Forbidden error helper
+ */
+export function forbiddenError(message = "Access denied"): Error {
+  return createGraphQLError(message, "FORBIDDEN");
+}
+
+/**
+ * Unauthorized error helper
+ */
+export function unauthorizedError(message = "Authentication required"): Error {
+  return createGraphQLError(message, "UNAUTHENTICATED");
+}
+
+/**
+ * Conflict error helper
+ */
+export function conflictError(message: string): Error {
+  return createGraphQLError(message, "CONFLICT");
+}
+
+// =============================================================================
+// Error Result Types
+// =============================================================================
+
+/**
+ * Error result type for mutations that can fail
+ */
+export const ErrorResult = builder.objectType("ErrorResult", {
+  description: "Error result from a mutation",
+  fields: (t) => ({
+    message: t.exposeString("message"),
+    code: t.exposeString("code"),
+  }),
+});
+
+
+
+/**
+ * Mutation result union helper
+ */
+export interface MutationResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+/**
+ * Standard mutation response type
+ */
+export interface MutationResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    message: string;
+    code: string;
+  };
+}

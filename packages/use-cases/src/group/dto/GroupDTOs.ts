@@ -20,6 +20,7 @@ export interface GroupDTO {
   image: string | null;
   code: string;
   coins: number;
+  participantCount: number;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -109,19 +110,6 @@ export interface GroupRankingDTO {
   organizer: GroupMemberDTO | null;
   participants: GroupParticipantDTO[];
   coinTransactions: CoinTransactionDTO[];
-}
-
-/**
- * DTO for paginated groups
- */
-export interface PaginatedGroupsDTO {
-  groups: GroupWithParticipantsDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
 }
 
 /**

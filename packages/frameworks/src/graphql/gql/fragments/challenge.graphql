@@ -1,0 +1,47 @@
+# =============================================================================
+# Challenge Fragments
+# =============================================================================
+
+fragment ChallengeFields on Challenge {
+  id
+  tripId
+  name
+  description
+  submissionType
+  scoringCategory
+  status
+  startTime
+  endTime
+  targetLatitude
+  targetLongitude
+  qrCodeValue
+  basePoints
+  firstPlacePoints
+  secondPlacePoints
+  thirdPlacePoints
+  autoApprove
+  isRecurring
+  dailyStartTime
+  dailyEndTime
+  expectedValue
+  image
+  votingStartTime
+  votingEndTime
+  createdAt
+  updatedAt
+}
+
+fragment ChallengeWithSubmissionsFields on Challenge {
+  id
+  tripId
+  name
+  description
+  submissionType
+  scoringCategory
+  status
+  startTime
+  endTime
+  basePoints
+  createdAt
+  updatedAt
+}

@@ -2,7 +2,7 @@
 export { SubscribeUseCase } from "./Subscribe";
 export type { SubscribeInput } from "./Subscribe";
 
-export { UnsubscribeUseCase, SubscriptionNotFoundError } from "./Unsubscribe";
+export { UnsubscribeUseCase } from "./Unsubscribe";
 export type { UnsubscribeInput } from "./Unsubscribe";
 
 export { UnsubscribeAllUseCase } from "./UnsubscribeAll";
@@ -65,7 +65,6 @@ export type { GetUpcomingSchedulesInput } from "./schedule/GetUpcomingSchedules"
 
 export {
   GetScheduleByIdUseCase,
-  ScheduleNotFoundError,
 } from "./schedule/GetScheduleById";
 export type { GetScheduleByIdInput } from "./schedule/GetScheduleById";
 
@@ -133,3 +132,9 @@ export type { TrackDeliveryFailureInput } from "./sender/TrackDeliveryFailure";
 
 // Event handlers
 export { NotificationSendHandler } from "../handlers/NotificationSendHandler";
+
+// Re-export errors from central location
+export {
+  SubscriptionNotFoundError,
+  ScheduleNotFoundError,
+} from "../errors/NotificationErrors";

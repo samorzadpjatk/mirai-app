@@ -1,9 +1,10 @@
 import { Effect, Data } from "effect";
 import type { ApplicationError } from "@mirai-app/domain";
+import { ChallengeId, TripId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
-import { ChallengeVotePort } from "../ports/ChallengeVotePort";
-import { ChallengeSubmissionPort } from "../../challenge-submission/ports/ChallengeSubmissionPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { ChallengeVotePortTag } from "../ports/ChallengeVotePort";
+import { ChallengeSubmissionPortTag } from "../../challenge-submission/ports/ChallengeSubmissionPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import { NotJudgedStaffChallengeError } from "../errors/VoteErrors";
 
 /**
@@ -33,24 +34,17 @@ export interface JudgedStaffProgressResult {
  * Gets the voting progress for judged staff challenges.
  */
 export class GetJudgedStaffProgressUseCase {
-  execute(
-    input: GetJudgedStaffProgressInput,
-  ): Effect.Effect<
-    JudgedStaffProgressResult,
-    NotJudgedStaffChallengeError | ApplicationError,
-    | ChallengePortTag
-    | ChallengeVotePort
-    | ChallengeSubmissionPort
-    | TripParticipantPort
-  > {
+  execute(input: GetJudgedStaffProgressInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
-      const votePort = yield* ChallengeVotePort;
-      const submissionPort = yield* ChallengeSubmissionPort;
-      const participantPort = yield* TripParticipantPort;
+      const votePort = yield* ChallengeVotePortTag;
+      const submissionPort = yield* ChallengeSubmissionPortTag;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Get challenge
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challengeId = ChallengeId.create(input.challengeId);
+      const tripId = TripId.create(input.tripId);
+      const challenge = yield* challengePort.findById(challengeId);
 
       if (!challenge || challenge.scoringCategory !== "JUDGED_STAFF") {
         return yield* Effect.fail(
@@ -63,7 +57,7 @@ export class GetJudgedStaffProgressUseCase {
 
       // Get eligible submissions count (not rejected)
       const allSubmissions = yield* submissionPort.findByChallengeId(
-        input.challengeId,
+        challengeId,
       );
       const eligibleSubmissions = allSubmissions.filter(
         (s) => s.status !== "REJECTED",
@@ -77,15 +71,15 @@ export class GetJudgedStaffProgressUseCase {
           : 0;
 
       // Get admin participants
-      const participants = yield* participantPort.findByTripId(input.tripId);
+      const participants = yield* participantPort.findByTripId(tripId);
       // Filter for admin role would be done at adapter layer with user info
       const adminParticipants = participants; // Simplified - actual filter needs user role info
 
       // Get votes by admin participants
-      const adminParticipantIds = adminParticipants.map((p) => p.id);
-      const allVotes = yield* votePort.findByChallengeId(input.challengeId);
+      const adminParticipantIds = adminParticipants.map((p) => p.userId);
+      const allVotes = yield* votePort.findByChallengeId(challengeId);
       const adminVotes = allVotes.filter((v) =>
-        adminParticipantIds.includes(v.voterId),
+        adminParticipantIds.some((id) => id === v.voterId),
       );
 
       // Count voted admins (those who have voted for all required positions)

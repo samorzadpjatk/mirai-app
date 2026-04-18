@@ -1,4 +1,5 @@
 import { Effect, Data } from "effect";
+import { NotificationId } from "@mirai-app/domain";
 import {
   NotificationPortTag,
   NotificationServicePortTag,
@@ -9,26 +10,22 @@ import type { RetryNotificationResultDTO } from "../dto/NotificationDTOs";
 /**
  * Notification not found error
  */
-export class NotificationNotFoundError extends Data.TaggedError(
-  "NotificationNotFoundError",
-)<{
-  notificationId: string;
-}>() {}
+export class NotificationNotFoundError extends Data.TaggedError("NotificationNotFoundError")<{
+  notificationId: NotificationId;
+}> {}
 
 /**
  * No failed pushes error
  */
-export class NoFailedPushesError extends Data.TaggedError(
-  "NoFailedPushesError",
-)<{
-  notificationId: string;
-}>() {}
+export class NoFailedPushesError extends Data.TaggedError("NoFailedPushesError")<{
+  notificationId: NotificationId;
+}> {}
 
 /**
  * Input for RetryNotificationUseCase
  */
 export interface RetryNotificationInput {
-  notificationId: string;
+  notificationId: NotificationId;
 }
 
 /**
@@ -37,13 +34,7 @@ export interface RetryNotificationInput {
  * Retries failed notification pushes for a notification.
  */
 export class RetryNotificationUseCase {
-  execute(
-    input: RetryNotificationInput,
-  ): Effect.Effect<
-    RetryNotificationResultDTO,
-    ApplicationError | NotificationNotFoundError | NoFailedPushesError,
-    NotificationPortTag | NotificationServicePortTag
-  > {
+  execute(input: RetryNotificationInput) {
     return Effect.gen(function* () {
       const notificationPort = yield* NotificationPortTag;
       const notificationService = yield* NotificationServicePortTag;

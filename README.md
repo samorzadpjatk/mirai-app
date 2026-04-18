@@ -269,6 +269,87 @@ See [TESTING.md](./TESTING.md) for detailed testing documentation.
 
 ---
 
+## Storage Configuration
+
+The application uses **SeaweedFS with native TUS support** for file storage with resumable uploads.
+
+### Features
+
+| Feature | SeaweedFS Native TUS |
+|---------|---------------------|
+| Resumable uploads | Yes (tus protocol) |
+| Self-hosted | Yes |
+| Mobile network resilience | Excellent |
+| Max file size | 100 MB (configurable) |
+| Setup complexity | Low |
+| Cost | Infrastructure only |
+
+SeaweedFS with native TUS provides:
+- Resumable uploads for unreliable mobile networks
+- Full data sovereignty (self-hosted)
+- Reduced cloud storage costs
+- Simplified architecture (no separate tusd server needed)
+
+### Quick Start with Docker Compose
+
+Start the storage stack:
+
+```bash
+# Start SeaweedFS
+docker compose -f docker-compose.storage.yml up -d
+
+# Verify services are running
+curl http://localhost:8333  # SeaweedFS S3 API
+curl http://localhost:7333  # SeaweedFS Filer (TUS endpoint)
+```
+
+### Environment Variables
+
+#### SeaweedFS Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `SEAWEEDFS_ENDPOINT` | SeaweedFS S3 endpoint | `http://localhost:8333` | Yes |
+| `SEAWEEDFS_ACCESS_KEY` | S3 access key | `minioadmin` | Yes |
+| `SEAWEEDFS_SECRET_KEY` | S3 secret key | `minioadmin` | Yes |
+| `SEAWEEDFS_REGION` | S3 region | `us-east-1` | No |
+| `SEAWEEDFS_TUS_ENDPOINT` | SeaweedFS Filer TUS endpoint | `http://localhost:7333/tus` | Yes |
+
+### Backend Configuration
+
+In `packages/frameworks/src/di/layer/service.ts`, the storage layer is configured for SeaweedFS:
+
+```typescript
+// makeServiceLayer creates the SeaweedFS storage layer
+const serviceLayer = makeServiceLayer({
+  db: drizzleDb,
+  storageConfig: {  // Optional - loads from env if not provided
+    endpoint: process.env.SEAWEEDFS_ENDPOINT,
+    accessKeyId: process.env.SEAWEEDFS_ACCESS_KEY,
+    secretAccessKey: process.env.SEAWEEDFS_SECRET_KEY,
+    tusEndpoint: process.env.SEAWEEDFS_TUS_ENDPOINT,
+  },
+});
+```
+
+### Storage Capabilities
+
+| Aspect | SeaweedFS Native TUS |
+|--------|---------------------|
+| Upload protocol | tus (resumable) |
+| Upload URL creation | Direct pre-signed URL |
+| Large file support | Native resumable |
+| Mobile experience | Automatically resumes |
+| API compatibility | tus-js-client |
+| Architecture | Simplified (single service) |
+
+### Documentation
+
+- [SeaweedFS TUS Documentation](https://github.com/seaweedfs/seaweedfs/wiki/TUS-Resumable-Uploads) - SeaweedFS native TUS support
+- [Deployment Guide](docs/storage/deployment.md) - Production deployment with Docker Swarm
+
+---
+
 ## Component Development
 
 ### Adding New Components

@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # SeaweedFS - S3-compatible object storage
+  # Replaces MinIO (archived Feb 2026) with actively maintained Apache 2.0 licensed alternative
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: mirai-seaweedfs
+    ports:
+      - "8333:8333"  # S3 API endpoint (non-standard to avoid Supabase MinIO conflict)
+    command: >
+      server -s3
+      -s3.port=8333
+      -volume.max=30
+      -master.volumeSizeLimitMB=1024
+      -filer
+      -filer.port=8888
+      -filer.maxMB=4
+      -ip=seaweedfs
+      -ip.bind=0.0.0.0
+    volumes:
+      - seaweedfs-data:/data
+      - seaweedfs-volumes:/weed/volumes
+    environment:
+      - WEED_MASTER_VOLUME_GROWTH_COPY_COUNT=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9333/cluster/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - storage-network
+    restart: unless-stopped
+
+  # tusd - Resumable upload server implementing tus protocol
+  # Handles large file uploads with automatic resume capability for mobile users
+  tusd:
+    image: tusproject/tusd:latest
+    container_name: mirai-tusd
+    ports:
+      - "1080:1080"  # tus protocol endpoint (non-standard to avoid conflicts)
+    environment:
+      - TUSD_S3_ENDPOINT=http://seaweedfs:8333
+      - TUSD_S3_BUCKET=uploads
+      - TUSD_S3_PREFIX=tus/
+      - TUSD_BEHIND_PROXY=false
+      - TUSD_MAX_SIZE=104857600  # 100MB max upload size
+      - TUSD_TIMEOUT_READ=30000
+      - TUSD_TIMEOUT_WRITE=30000
+      - TUSD_TIMEOUT_IDLE=30000
+      # Hook configuration - calls backend to validate upload tickets
+      - TUSD_HOOKS_ENABLED=pre-create,post-finish,post-terminate
+      - TUSD_HOOKS_URL=http://backend:3000/tus-hooks
+      - TUSD_HOOKS_RETRY=3
+      - TUSD_HOOKS_TIMEOUT=10000
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    command: >
+      -s3-endpoint http://seaweedfs:8333
+      -s3-bucket uploads
+      -s3-prefix tus/
+      -max-size 104857600
+      -hooks-http http://backend:3000/tus-hooks
+      -hooks-enabled pre-create,post-finish,post-terminate
+      -hooks-retry 3
+      -hooks-timeout 10000
+      -port 1080
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:1080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - storage-network
+    restart: unless-stopped
+
+  # Redis - Ticket state management for upload authentication
+  # Stores single-use upload tickets with TTL expiration
+  redis:
+    image: redis:7-alpine
+    container_name: mirai-storage-redis
+    ports:
+      - "6380:6379"  # Redis port mapped to 6380 to avoid Supabase Redis conflict
+    volumes:
+      - redis-data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --timeout 300
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - storage-network
+    restart: unless-stopped
+
+volumes:
+  seaweedfs-data:
+    driver: local
+  seaweedfs-volumes:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  storage-network:
+    driver: bridge
+    name: mirai-storage-network

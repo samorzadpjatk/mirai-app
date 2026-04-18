@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { TripId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
 import { TripParticipantPortTag } from "../ports/TripParticipantPort";
 import { AuthServicePortTag } from "../ports/AuthServicePort";
@@ -8,7 +9,7 @@ import type { PaginatedUsersDTO, UserWithTripInfoDTO } from "../dto/UserDTOs";
  * Input for SearchUsersUseCase
  */
 export interface SearchUsersInput {
-  tripId: string;
+  tripId: TripId;
   field:
     | "firstName"
     | "lastName"
@@ -38,7 +39,7 @@ export class SearchUsersUseCase {
 
       // Search users via port
       const searchResult = yield* userPort.search({
-        tripId: input.tripId,
+        tripId: TripId.toString(input.tripId),
         field: input.field,
         searchTerm: input.searchTerm,
         limit: input.limit,
@@ -54,6 +55,8 @@ export class SearchUsersUseCase {
         const participantsWithInfo =
           yield* participantPort.findByTripIdWithRelations(input.tripId);
 
+        type ParticipantWithInfo = (typeof participantsWithInfo)[number];
+
         // Get auth info for email filtering
         const authUserIds = participantsWithInfo
           .map((p) => p.user.authUserId)
@@ -62,9 +65,10 @@ export class SearchUsersUseCase {
         const authInfos = yield* authService.getUserInfosByAuthIds(authUserIds);
 
         // Filter by email if search term provided
+        let filteredParticipants = participantsWithInfo;
         if (input.searchTerm) {
           const normalizedSearch = input.searchTerm.toLowerCase();
-          participantsWithInfo.filter((info) => {
+          filteredParticipants = participantsWithInfo.filter((info: ParticipantWithInfo) => {
             const email = info.user.authUserId
               ? authInfos.get(info.user.authUserId)?.email
               : null;
@@ -73,8 +77,8 @@ export class SearchUsersUseCase {
         }
 
         // Apply pagination
-        total = participantsWithInfo.length;
-        const paginated = participantsWithInfo.slice(
+        total = filteredParticipants.length;
+        const paginated = filteredParticipants.slice(
           input.offset,
           input.offset + input.limit,
         );
@@ -96,7 +100,7 @@ export class SearchUsersUseCase {
             houseNumber: info.participant.houseNumber,
             groupId: info.group?.id ?? null,
             groupName: info.group?.name ?? null,
-            tripId: input.tripId,
+            tripId: TripId.toString(input.tripId),
             isBanned: authInfo?.isBanned ?? false,
             bannedUntil: authInfo?.bannedUntil ?? null,
             banReason: authInfo?.banReason ?? null,
@@ -144,7 +148,7 @@ export class SearchUsersUseCase {
           houseNumber: null,
           groupId: null,
           groupName: null,
-          tripId: input.tripId,
+          tripId: TripId.toString(input.tripId),
           isBanned: authInfo?.isBanned ?? false,
           bannedUntil: authInfo?.bannedUntil ?? null,
           banReason: authInfo?.banReason ?? null,

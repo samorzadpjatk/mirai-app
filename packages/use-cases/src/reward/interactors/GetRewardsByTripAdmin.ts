@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { ApplicationError, TripId, UserId } from "@mirai-app/domain";
+import type { TripId, UserId, Reward } from "@mirai-app/domain";
 import { TripId as TripIdFactory } from "@mirai-app/domain";
 import { RewardPortTag } from "../ports/RewardPort";
 import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
@@ -49,14 +49,7 @@ interface AdminRewardResult extends RewardWithAvailabilityDTO {
  * For admin/moderator use.
  */
 export class GetRewardsByTripAdminUseCase {
-  execute(input: GetRewardsByTripAdminInput): Effect.Effect<
-    {
-      rewards: AdminRewardResult[];
-      pagination: PaginatedRewardsDTO["pagination"];
-    },
-    ApplicationError | TripNotFoundError,
-    RewardPortTag | RewardPurchasePortTag | ChallengePortTag
-  > {
+  execute(input: GetRewardsByTripAdminInput) {
     return Effect.gen(function* () {
       const rewardPort = yield* RewardPortTag;
       const challengePort = yield* ChallengePortTag;
@@ -70,16 +63,18 @@ export class GetRewardsByTripAdminUseCase {
         : TripIdFactory.unsafeCreate(input.tripId);
 
       // Get paginated rewards (all, including hidden)
-      const { rewards, total, hasMore } = isAllTrips
+      const paginatedResult = isAllTrips
         ? yield* rewardPort.findAllPaginated({ limit, offset })
         : tripId
           ? yield* rewardPort.findPaginatedByTripId(tripId, { limit, offset })
-          : { rewards: [] as typeof rewards, total: 0, hasMore: false };
+          : { rewards: [] as Reward[], total: 0, hasMore: false };
+
+      const { rewards, total, hasMore } = paginatedResult;
 
       // Calculate total available points for dynamic pricing
       let totalAvailablePoints = 0;
       if (!isAllTrips && tripId) {
-        const challenges = yield* challengePort.findByTripId(input.tripId);
+        const challenges = yield* challengePort.findByTripId(tripId);
         for (const challenge of challenges) {
           totalAvailablePoints += challenge.basePoints;
           if (challenge.scoringCategory !== "UNLIMITED") {
@@ -92,7 +87,7 @@ export class GetRewardsByTripAdminUseCase {
 
       // Build result with dynamic pricing
       const rewardsWithDetails: AdminRewardResult[] = yield* Effect.all(
-        rewards.map((reward) =>
+        rewards.map((reward: Reward) =>
           Effect.gen(function* () {
             // Calculate dynamic coin cost
             let dynamicCoinCost = reward.coinCost;

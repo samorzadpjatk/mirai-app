@@ -6,7 +6,7 @@ import { Data } from "effect";
  */
 export class ServerStartupError extends Data.TaggedError("ServerStartupError")<{
   readonly cause: unknown;
-  readonly phase: "database" | "supabase" | "app_layer" | "handlers" | "server";
+  readonly phase: "database" | "supabase" | "better_auth" | "app_layer" | "handlers" | "server";
 }> {}
 
 /**

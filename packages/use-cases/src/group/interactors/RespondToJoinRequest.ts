@@ -1,8 +1,8 @@
 import { Effect } from "effect";
-import { GroupJoinRequest } from "@mirai-app/domain";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { GroupJoinRequestPort } from "../ports/GroupJoinRequestPort";
+import { GroupJoinRequest, GroupJoinRequestId, UserId, GroupId, TripParticipant } from "@mirai-app/domain";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupJoinRequestPortTag } from "../ports/GroupJoinRequestPort";
 import type { JoinRequestResponseDTO } from "../dto/GroupDTOs";
 import type { DatabaseError } from "@mirai-app/domain";
 import {
@@ -28,25 +28,17 @@ export interface RespondToJoinRequestInput {
  * Accepts or rejects a join request (organizer only).
  */
 export class RespondToJoinRequestUseCase {
-  execute(
-    input: RespondToJoinRequestInput,
-  ): Effect.Effect<
-    JoinRequestResponseDTO,
-    | DatabaseError
-    | GroupNotFoundError
-    | JoinRequestNotFoundError
-    | NotGroupOrganizerError
-    | AlreadyInGroupError
-    | TripHasEndedError,
-    GroupPort | TripParticipantPort | GroupJoinRequestPort
-  > {
+  execute(input: RespondToJoinRequestInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
-      const joinRequestPort = yield* GroupJoinRequestPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const joinRequestPort = yield* GroupJoinRequestPortTag;
+
+      const requesterUserId = UserId.unsafeCreate(input.userId);
 
       // Find the request
-      const request = yield* joinRequestPort.findById(input.requestId);
+      const requestId = GroupJoinRequestId.unsafeCreate(input.requestId);
+      const request = yield* joinRequestPort.findById(requestId);
 
       if (!request) {
         return yield* Effect.fail(
@@ -59,16 +51,16 @@ export class RespondToJoinRequestUseCase {
 
       if (!group || group.isDeleted) {
         return yield* Effect.fail(
-          new GroupNotFoundError({ groupId: request.groupId }),
+          new GroupNotFoundError({ groupId: GroupId.toString(request.groupId) }),
         );
       }
 
       // Check if user is the organizer
-      if (group.organizerId !== input.userId) {
+      if (!UserId.equals(group.organizerId, requesterUserId)) {
         return yield* Effect.fail(
           new NotGroupOrganizerError({
             userId: input.userId,
-            groupId: group.id,
+            groupId: GroupId.toString(group.id),
           }),
         );
       }
@@ -88,28 +80,34 @@ export class RespondToJoinRequestUseCase {
       if (
         participant &&
         participant.groupId &&
-        participant.groupId !== request.groupId
+        !GroupId.equals(participant.groupId, request.groupId)
       ) {
         return yield* Effect.fail(
           new AlreadyInGroupError({
-            userId: request.userId,
-            groupId: participant.groupId,
+            userId: UserId.toString(request.userId),
+            groupId: GroupId.toString(participant.groupId),
           }),
         );
       }
 
       // Assign user to group
-      yield* participantPort.upsert({
-        id: participant?.id ?? "",
-        userId: request.userId,
-        tripId: request.tripId,
-        groupId: request.groupId,
-        wristNumber: participant?.wristNumber ?? null,
-        houseNumber: participant?.houseNumber ?? null,
-        role: participant?.role ?? "MEMBER",
-        createdAt: participant?.createdAt ?? new Date(),
-        updatedAt: new Date(),
-      });
+      if (participant) {
+        // Update existing participant with new group assignment
+        const updatedParticipant = participant.assignToGroup(request.groupId);
+        yield* participantPort.update(updatedParticipant);
+      } else {
+        // Create new participant
+        const createEffect = TripParticipant.create({
+          userId: request.userId,
+          tripId: request.tripId,
+          groupId: request.groupId,
+          role: "MEMBER",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        const newParticipant = yield* createEffect;
+        yield* participantPort.create(newParticipant);
+      }
 
       // Delete all join requests for this user in this trip
       yield* joinRequestPort.deleteByUserAndTrip(

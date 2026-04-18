@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import type { IPortError } from "@mirai-app/domain";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { BanStatusDTO } from "../dto/UserDTOs";
 
 /**
@@ -16,11 +16,9 @@ export interface GetBanStatusByEmailInput {
  * Checks ban status by email address.
  */
 export class GetBanStatusByEmailUseCase {
-  execute(
-    input: GetBanStatusByEmailInput,
-  ): Effect.Effect<BanStatusDTO, ApplicationError, AuthServicePort> {
+  execute(input: GetBanStatusByEmailInput) {
     return Effect.gen(function* () {
-      const authService = yield* AuthServicePort;
+      const authService = yield* AuthServicePortTag;
 
       // Get ban status from auth service
       const result = yield* authService.getBanStatusByEmail(input.email);

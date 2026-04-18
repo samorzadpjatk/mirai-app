@@ -1,7 +1,7 @@
 import type { Trip, TripId } from "@mirai-app/domain";
 import type { GroupDTO, GroupWithStatsDTO } from "../../group/dto/GroupDTOs";
 import type { TripParticipantDTO } from "./TripParticipantDTOs";
-import type { SponsorDTO } from "../../sponsor/dto/SponsorDTOs";
+import type { SponsorDTO, TripSponsorDTO } from "../../sponsor/dto/SponsorDTOs";
 
 /**
  * DTO for basic trip info
@@ -32,7 +32,7 @@ export interface TripWithDetailsDTO {
   image: string | null;
   isActive: boolean;
   groups: GroupDTO[];
-  tripSponsors: SponsorDTO[];
+  tripSponsors: TripSponsorDTO[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,7 +50,7 @@ export interface TripWithParticipantsDTO {
   image: string | null;
   isActive: boolean;
   groups: GroupWithStatsDTO[];
-  tripSponsors: SponsorDTO[];
+  tripSponsors: TripSponsorDTO[];
   participants: TripParticipantDTO[];
   createdAt: Date;
   updatedAt: Date;
@@ -68,6 +68,8 @@ export interface CreateTripResultDTO {
   location: string | null;
   image: string | null;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -82,23 +84,8 @@ export interface UpdateTripResultDTO {
   location: string | null;
   image: string | null;
   isActive: boolean;
-}
-
-/**
- * DTO for paginated trips
- */
-export interface PaginatedTripsDTO {
-  trips: TripDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-    currentPage: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**

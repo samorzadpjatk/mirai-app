@@ -233,6 +233,31 @@ export class InMemoryChallengeGateway implements IChallengePort {
     });
   }
 
+  findAll() {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext to check if authenticated (admin only)
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "challenge",
+          resourceId: "*",
+          requiredPermission: "admin",
+        });
+      }
+
+      return Array.from(self.challenges.values()).sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+    });
+  }
+
   /**
    * Helper method to add a challenge (for testing)
    */

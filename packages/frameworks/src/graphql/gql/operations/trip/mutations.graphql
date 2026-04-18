@@ -1,0 +1,35 @@
+# =============================================================================
+# Trip Mutations
+# =============================================================================
+
+mutation CreateTrip($input: CreateTripInput!) {
+  createTrip(input: $input) {
+    id
+    name
+    description
+    startDate
+    endDate
+    location
+    image
+    isActive
+  }
+}
+
+mutation UpdateTrip($input: UpdateTripInput!) {
+  updateTrip(input: $input) {
+    id
+    name
+    description
+    startDate
+    endDate
+    location
+    image
+    isActive
+  }
+}
+
+mutation DeleteTrip($input: DeleteTripInput!) {
+  deleteTrip(input: $input) {
+    success
+  }
+}

@@ -1,45 +1,91 @@
 import { Effect, Data } from "effect";
-import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type { NotificationScheduleWithRelationsDTO } from "../../dto/NotificationDTOs";
-
-/**
- * Schedule not found error
- */
-export class ScheduleNotFoundError extends Data.TaggedError(
-  "ScheduleNotFoundError",
-)<{
-  scheduleId: string;
-}>() {}
+import {
+  NotificationScheduleId,
+  UserId,
+  TripId,
+} from "@mirai-app/domain";
+import {
+  NotificationSchedulePortTag,
+  NotificationScheduleExecutionPortTag,
+} from "../../ports/NotificationPort";
+import { UserPortTag } from "../../../user/ports/UserPort";
+import { TripPortTag } from "../../../trip/ports/TripPort";
+import { ScheduleNotFoundError } from "../../errors/NotificationErrors";
 
 /**
  * Input for GetScheduleByIdUseCase
  */
 export interface GetScheduleByIdInput {
-  scheduleId: string;
+  scheduleId: NotificationScheduleId;
 }
+
+/**
+ * Error when user referenced by schedule is not found
+ */
+export class ScheduleUserNotFoundError extends Data.TaggedError(
+  "ScheduleUserNotFoundError",
+)<{
+  userId: string;
+}> {}
+
+/**
+ * Error when trip referenced by schedule is not found
+ */
+export class ScheduleTripNotFoundError extends Data.TaggedError(
+  "ScheduleTripNotFoundError",
+)<{
+  tripId: string;
+}> {}
 
 /**
  * Get Schedule By ID Use Case
  *
- * Retrieves a notification schedule by ID with relations.
+ * Retrieves a notification schedule by ID with fully-populated relations.
  */
 export class GetScheduleByIdUseCase {
-  execute(
-    input: GetScheduleByIdInput,
-  ): Effect.Effect<
-    NotificationScheduleWithRelationsDTO,
-    ApplicationError | ScheduleNotFoundError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: GetScheduleByIdInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
+      const userPort = yield* UserPortTag;
+      const tripPort = yield* TripPortTag;
+      const executionPort = yield* NotificationScheduleExecutionPortTag;
 
       const schedule = yield* schedulePort.findById(input.scheduleId);
 
       if (!schedule) {
         return yield* Effect.fail(
           new ScheduleNotFoundError({ scheduleId: input.scheduleId }),
+        );
+      }
+
+      // Parallel fetch of all related data
+      const createdByTask = userPort.findById(
+        UserId.unsafeCreate(schedule.createdById),
+      );
+      const tripTask = schedule.tripId
+        ? tripPort.findById(schedule.tripId)
+        : Effect.succeed(null);
+      const executionsTask = executionPort.findByScheduleId(schedule.id, 10000);
+
+      const [createdBy, trip, executions] = yield* Effect.all([
+        createdByTask,
+        tripTask,
+        executionsTask,
+      ]);
+
+      // Handle missing entities
+      if (!createdBy) {
+        return yield* Effect.fail(
+          new ScheduleUserNotFoundError({ userId: schedule.createdById }),
+        );
+      }
+
+      // Only fail if trip was expected but not found
+      if (schedule.tripId && !trip) {
+        return yield* Effect.fail(
+          new ScheduleTripNotFoundError({
+            tripId: TripId.toString(schedule.tripId),
+          }),
         );
       }
 
@@ -60,9 +106,19 @@ export class GetScheduleByIdUseCase {
         createdById: schedule.createdById,
         createdAt: schedule.createdAt,
         updatedAt: schedule.updatedAt,
-        createdBy: null, // To be hydrated by adapter
-        trip: null, // To be hydrated by adapter
-        executionCount: 0, // To be hydrated by adapter
+        createdBy: {
+          id: createdBy.id,
+          firstName: createdBy.firstName,
+          lastName: createdBy.lastName,
+          fullName: createdBy.getFullName(),
+        },
+        trip: trip
+          ? {
+              id: trip.id,
+              name: trip.name,
+            }
+          : null,
+        executionCount: executions.length,
       };
     });
   }

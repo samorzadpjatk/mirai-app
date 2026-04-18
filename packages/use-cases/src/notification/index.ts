@@ -11,15 +11,17 @@ export {
   NotificationServicePortTag,
   type INotificationPort,
   type IPushSubscriptionPort,
-  type INotificationSchedulePort,
-  type INotificationScheduleExecutionPort,
-  type INotificationDeliveryPort,
-  type INotificationServicePort,
 } from "./ports/NotificationPort";
 
 // Export DTOs
 export * from "./dto";
 
 // Export additional errors not covered by interactors
-export * from "./errors/NotificationScheduleErrors";
+// Note: InvalidScheduleDatesError is already exported via interactors/index.ts from CreateSchedule
+export {
+  NotificationScheduleNotFoundError,
+  InvalidScheduleTimeError,
+  InvalidNotificationContentError,
+  ScheduleAlreadyExistsError,
+} from "./errors/NotificationScheduleErrors";
 export * from "./errors/NotificationDeliveryErrors";

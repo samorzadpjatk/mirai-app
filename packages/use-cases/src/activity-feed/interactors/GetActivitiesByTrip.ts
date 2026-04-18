@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { ActivityReactionPortTag } from "../ports/ActivityReactionPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { UserPortTag } from "../../user/ports/UserPort";
 import { TripId } from "@mirai-app/domain";
 import type {
   PaginatedActivitiesDTO,
@@ -35,6 +35,7 @@ export class GetActivitiesByTripUseCase {
       const activityPort = yield* ActivityFeedPortTag;
       const tripPort = yield* TripPortTag;
       const reactionPort = yield* ActivityReactionPortTag;
+      const userPort = yield* UserPortTag;
 
       // Verify trip exists
       const trip = yield* tripPort.findById(TripId.unsafeCreate(input.tripId));
@@ -67,7 +68,7 @@ export class GetActivitiesByTripUseCase {
         },
       );
 
-      // Get reactions for each activity
+      // Get reactions for each activity and fetch related user data
       const activitiesWithReactions = yield* Effect.all(
         result.activities.map((activity) =>
           Effect.gen(function* () {
@@ -84,6 +85,35 @@ export class GetActivitiesByTripUseCase {
               star: reactions.filter((r) => r.reactionType === "star").length,
             };
 
+            // Fetch admin user data if createdByAdmin exists
+            let admin: { id: string; firstName: string; lastName: string } | null = null;
+            if (activity.createdByAdmin) {
+              const adminUser = yield* userPort.findById(activity.createdByAdmin);
+              if (adminUser) {
+                admin = {
+                  id: adminUser.id,
+                  firstName: adminUser.firstName,
+                  lastName: adminUser.lastName,
+                };
+              }
+            }
+
+            // Fetch hiddenBy user data if hiddenByAdmin exists
+            let hiddenBy: { id: string; firstName: string; lastName: string } | null = null;
+            if (activity.hiddenByAdmin) {
+              const hiddenByUser = yield* userPort.findById(activity.hiddenByAdmin);
+              if (hiddenByUser) {
+                hiddenBy = {
+                  id: hiddenByUser.id,
+                  firstName: hiddenByUser.firstName,
+                  lastName: hiddenByUser.lastName,
+                };
+              }
+            }
+
+            // TODO: submissionDetails, challengeDetails, and rankChangeDetails
+            // require activity entity to expose submissionId, challengeId, and groupId
+            // Currently ActivityFeed entity doesn't store these foreign keys
             return {
               id: activity.id,
               tripId: activity.tripId,
@@ -98,11 +128,11 @@ export class GetActivitiesByTripUseCase {
               createdByAdmin: activity.createdByAdmin,
               createdAt: activity.createdAt,
               updatedAt: activity.updatedAt,
-              admin: null, // Will be hydrated by adapter
-              hiddenBy: null, // Will be hydrated by adapter
-              submissionDetails: null, // Will be hydrated by adapter
-              challengeDetails: null, // Will be hydrated by adapter
-              rankChangeDetails: null, // Will be hydrated by adapter
+              admin,
+              hiddenBy,
+              submissionDetails: null,
+              challengeDetails: null,
+              rankChangeDetails: null,
               reactions: reactionCounts,
               userReactions: userReactions.map((r) => r.reactionType),
             };

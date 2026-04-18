@@ -72,6 +72,8 @@ export class UpdateTripUseCase {
         location: null,
         image: savedTrip.backgroundImagePath,
         isActive: savedTrip.isActive(new Date()),
+        createdAt: savedTrip.createdAt,
+        updatedAt: savedTrip.updatedAt,
       };
     });
   }

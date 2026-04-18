@@ -6,23 +6,27 @@
  * the adapter implementations to the use-cases layer Context.Tags.
  *
  * This module provides:
- * - makeAuthNLayer: Authentication (JWT validation, sign in/out)
+ * - makeAuthNLayer: Authentication using Better Auth (JWT validation, sign in/out)
  * - makeAuthZLayer: Authorization (Role-based permissions)
- * - makeAuthLayer: Convenience function merging both (backward compatibility)
+ * - makeAuthLayer: Convenience function merging both
  */
 
 import { Layer } from "effect";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
+import { createBetterAuth } from "@mirai-app/frameworks/better-auth";
 import { AuthNPortTag, AuthZPortTag } from "@mirai-app/use-cases";
-import { SupabaseAuthGateway, UserDrizzleGateway } from "@mirai-app/adapters";
+import { BetterAuthGateway, UserDrizzleGateway } from "@mirai-app/adapters";
 
 /**
- * Configuration for creating the AuthN Layer
+ * Configuration for creating the AuthN Layer with Better Auth
  */
 export interface AuthNLayerConfig {
-  /** Supabase client for authentication operations */
-  supabase: SupabaseClient;
+  /** Drizzle database client for Better Auth */
+  db: DrizzleDb;
+  /** Better Auth secret key (falls back to BETTER_AUTH_SECRET env var) */
+  betterAuthSecret?: string;
+  /** Better Auth base URL (falls back to BETTER_AUTH_URL env var) */
+  betterAuthUrl?: string;
 }
 
 /**
@@ -35,17 +39,18 @@ export interface AuthZLayerConfig {
 
 /**
  * Configuration for creating the combined auth Layer
- * @deprecated Use separate AuthNLayerConfig and AuthZLayerConfig for better separation
  */
 export interface AuthLayerConfig {
-  /** Supabase client for authentication operations */
-  supabase: SupabaseClient;
-  /** Drizzle database client for authorization operations */
+  /** Drizzle database client for Better Auth and authorization */
   db: DrizzleDb;
+  /** Better Auth secret key (falls back to BETTER_AUTH_SECRET env var) */
+  betterAuthSecret?: string;
+  /** Better Auth base URL (falls back to BETTER_AUTH_URL env var) */
+  betterAuthUrl?: string;
 }
 
 /**
- * Creates the AuthN (Authentication) Layer.
+ * Creates the AuthN (Authentication) Layer using Better Auth.
  *
  * Provides AuthNPortTag for authentication operations:
  * - Session management (getSession, signIn, signOut)
@@ -53,7 +58,7 @@ export interface AuthLayerConfig {
  *
  * @example
  * ```typescript
- * const authNLayer = makeAuthNLayer({ supabase });
+ * const authNLayer = makeAuthNLayer({ db });
  *
  * const program = Effect.gen(function* () {
  *   const authN = yield* AuthNPortTag;
@@ -62,7 +67,11 @@ export interface AuthLayerConfig {
  * ```
  */
 export const makeAuthNLayer = (config: AuthNLayerConfig) => {
-  const gateway = new SupabaseAuthGateway(config.supabase);
+  const betterAuth = createBetterAuth(config.db, {
+    secret: config.betterAuthSecret,
+    baseUrl: config.betterAuthUrl,
+  });
+  const gateway = new BetterAuthGateway(betterAuth);
   return Layer.succeed(AuthNPortTag, gateway);
 };
 
@@ -94,11 +103,9 @@ export const makeAuthZLayer = (config: AuthZLayerConfig) => {
 };
 
 /**
- * Creates the combined Auth service Layer (backward compatibility).
+ * Creates the combined Auth service Layer.
  *
  * Merges both AuthN and AuthZ layers into a single layer.
- * For new code, prefer using makeAuthNLayer and makeAuthZLayer separately
- * for better separation of concerns.
  *
  * @example
  * ```typescript
@@ -112,7 +119,11 @@ export const makeAuthZLayer = (config: AuthZLayerConfig) => {
  * ```
  */
 export const makeAuthLayer = (config: AuthLayerConfig) => {
-  const authNLayer = makeAuthNLayer({ supabase: config.supabase });
+  const authNLayer = makeAuthNLayer({
+    db: config.db,
+    betterAuthSecret: config.betterAuthSecret,
+    betterAuthUrl: config.betterAuthUrl,
+  });
   const authZLayer = makeAuthZLayer({ db: config.db });
   return Layer.mergeAll(authNLayer, authZLayer);
 };

@@ -1,11 +1,10 @@
 import { Effect } from "effect";
 import { LocationSharingRequestId, ValidationError } from "@mirai-app/domain";
 import { UserId } from "@mirai-app/domain";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import type { RequestResponseResultDTO } from "../dto/LocationDTOs";
-import type { ApplicationError } from "@mirai-app/domain";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { UserPortTag } from "../../user/ports/UserPort";
 import {
   NotTripParticipantError,
   TripHasEndedError,
@@ -28,26 +27,16 @@ export interface RejectLocationSharingRequestInput {
  * Rejects a pending location sharing request.
  */
 export class RejectLocationSharingRequestUseCase {
-  execute(
-    input: RejectLocationSharingRequestInput,
-  ): Effect.Effect<
-    RequestResponseResultDTO,
-    | ApplicationError
-    | NotTripParticipantError
-    | TripHasEndedError
-    | LocationSharingRequestNotFoundError
-    | NotRequestRecipientError
-    | RequestNotPendingError
-    | ValidationError,
-    LocationPort | TripPortTag | TripParticipantPort
-  > {
+  execute(input: RejectLocationSharingRequestInput) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
       const tripPort = yield* TripPortTag;
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
+
+      const userId = UserId.unsafeCreate(input.userId);
 
       // Check user is in an active trip
-      const participants = yield* participantPort.findByUserId(input.userId);
+      const participants = yield* participantPort.findByUserId(userId);
 
       if (participants.length === 0) {
         return yield* Effect.fail(
@@ -91,8 +80,7 @@ export class RejectLocationSharingRequestUseCase {
       }
 
       // Verify user is the receiver
-      const userId = UserId.unsafeCreate(input.userId);
-      if (request.receiverId !== userId) {
+      if (!UserId.equals(request.receiverId, userId)) {
         return yield* Effect.fail(
           new NotRequestRecipientError({
             requestId: input.requestId,
@@ -116,14 +104,35 @@ export class RejectLocationSharingRequestUseCase {
       const updatedRequest = yield* rejectEffect;
       yield* locationPort.updateSharingRequest(updatedRequest);
 
+      // Fetch sender and receiver user data in parallel
+      const userPort = yield* UserPortTag;
+      const [sender, receiver] = yield* Effect.all([
+        userPort.findById(updatedRequest.senderId),
+        userPort.findById(updatedRequest.receiverId),
+      ]);
+
       return {
         success: true,
         request: {
           id: updatedRequest.id,
           senderId: updatedRequest.senderId,
           receiverId: updatedRequest.receiverId,
-          sender: null, // Will be hydrated by adapter
-          receiver: null,
+          sender: sender
+            ? {
+                id: sender.id,
+                firstName: sender.firstName,
+                lastName: sender.lastName,
+                hasAvatar: sender.hasAvatar,
+              }
+            : null,
+          receiver: receiver
+            ? {
+                id: receiver.id,
+                firstName: receiver.firstName,
+                lastName: receiver.lastName,
+                hasAvatar: receiver.hasAvatar,
+              }
+            : null,
           status: updatedRequest.status,
           createdAt: updatedRequest.createdAt,
           updatedAt: updatedRequest.updatedAt,

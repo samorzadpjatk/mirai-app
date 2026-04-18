@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { LocationPort } from "../ports/LocationPort";
+import { LocationPortTag } from "../ports/LocationPort";
 import { UserId } from "@mirai-app/domain";
 import type { MyLocationDTO } from "../dto/LocationDTOs";
 import type { ApplicationError } from "@mirai-app/domain";
@@ -19,9 +19,9 @@ export interface GetMyLocationInput {
 export class GetMyLocationUseCase {
   execute(
     input: GetMyLocationInput,
-  ): Effect.Effect<MyLocationDTO, ApplicationError, LocationPort> {
+  ) {
     return Effect.gen(function* () {
-      const locationPort = yield* LocationPort;
+      const locationPort = yield* LocationPortTag;
 
       const userId = UserId.unsafeCreate(input.userId);
       const location = yield* locationPort.findByUserId(userId);

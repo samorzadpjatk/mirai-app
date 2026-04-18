@@ -1,11 +1,22 @@
-import { Effect } from "effect";
-import { SubmissionReportId, ChallengeSubmissionId } from "@mirai-app/domain";
+import { Effect, Context } from "effect";
+import { SubmissionReportId, ChallengeSubmissionId, DatabaseError, type IAuthZPort } from "@mirai-app/domain";
 import type { submissionReport } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
+
+// Local AuthZPortTag to avoid circular dependency issues
+class AuthZPortTag extends Context.Tag("AuthZ")<AuthZPortTag, IAuthZPort>() {}
 
 /**
  * In-Memory Submission Report Gateway
  *
  * Implements ISubmissionReportPort using in-memory Map storage for testing.
+ *
+ * Authorization Pattern:
+ * - findById: Admin only (reports are sensitive)
+ * - findBySubmissionId: Admin or trip leader
+ * - create: Any authenticated user can report
+ * - existsBySubmissionAndReporter: Users can check their own reports
+ * - countBySubmissionId: Admin or trip leader
  */
 export class InMemorySubmissionReportGateway
   implements submissionReport.ISubmissionReportPort
@@ -13,9 +24,27 @@ export class InMemorySubmissionReportGateway
   private reports: Map<string, submissionReport.SubmissionReport> = new Map();
 
   findById(id: SubmissionReportId) {
-    return Effect.sync(() => {
-      const idString = SubmissionReportId.toString(id);
-      const report = this.reports.get(idString);
+    const self = this;
+    const idString = SubmissionReportId.toString(id);
+
+    return Effect.gen(function* () {
+      // Get AuthContext - admin only for viewing reports
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        // Reports are sensitive - require admin access
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "challengeSubmission",
+          resourceId: idString,
+          requiredPermission: "admin",
+        });
+      }
+
+      const report = self.reports.get(idString);
       return report ?? null;
     });
   }
@@ -37,7 +66,23 @@ export class InMemorySubmissionReportGateway
   }
 
   create(report: Omit<submissionReport.SubmissionReport, "id" | "createdAt">) {
-    return Effect.sync(() => {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext - any authenticated user can create a report
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required to create reports
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new DatabaseError({
+            operation: "create",
+            id: "",
+            cause: new Error("Authentication required to submit a report"),
+          }),
+        );
+      }
+
       const id = SubmissionReportId.generate();
       const createdAt = new Date();
       const newReport: submissionReport.SubmissionReport = {
@@ -48,7 +93,7 @@ export class InMemorySubmissionReportGateway
         details: report.details,
         createdAt,
       };
-      this.reports.set(SubmissionReportId.toString(id), newReport);
+      self.reports.set(SubmissionReportId.toString(id), newReport);
       return newReport;
     });
   }

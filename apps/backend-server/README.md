@@ -29,12 +29,19 @@ The server requires the following environment variables:
 # Server port (default: 4000)
 PORT=4000
 
-# Supabase
+# Better Auth (primary authentication)
+BETTER_AUTH_SECRET="your-32-character-secret-minimum-required"
+BETTER_AUTH_URL="http://localhost:3000"
+
+# Supabase (for database only - auth, storage, realtime features deprecated)
 SUPABASE_URL="http://localhost:8000"
 SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 
 # Database
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"
+
+# Feature flag for dual-run migration period
+USE_BETTER_AUTH=true
 
 # GraphQL (optional)
 GRAPHQL_PLAYGROUND=true  # Enable GraphiQL in development
@@ -117,11 +124,24 @@ The server uses a modern GraphQL architecture with code-first schema building:
 
 ## Authentication
 
-The backend server supports authorization via JWT tokens from Supabase Auth.
+The backend server uses **Better Auth** for authentication with cookie-based sessions.
+
+### Better Auth Endpoints
+
+Better Auth endpoints are mounted at `/api/auth/*`:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/sign-up/email` | POST | Create new account |
+| `/api/auth/sign-in/email` | POST | Sign in with email/password |
+| `/api/auth/sign-in/email-otp` | POST | Sign in with OTP |
+| `/api/auth/email-otp/send-verification-otp` | POST | Send OTP to email |
+| `/api/auth/sign-out` | POST | Sign out |
+| `/api/auth/get-session` | GET | Get current session |
 
 ### HTTP Requests (Queries & Mutations)
 
-For HTTP requests, the token is passed in the `Authorization` header:
+For HTTP requests, the session is passed via httpOnly cookies (handled automatically by Better Auth). For API compatibility, Bearer tokens can also be used:
 
 ```typescript
 const client = new GraphQLClient("http://localhost:4000/graphql", {
@@ -136,9 +156,9 @@ const client = new GraphQLClient("http://localhost:4000/graphql", {
 
 For WebSocket connections (subscriptions), authentication uses http-only cookies:
 
-1. **Login Flow**: Client authenticates via HTTP, server sets `auth-token` httpOnly cookie
+1. **Login Flow**: Client authenticates via Better Auth at `/api/auth/sign-in/email`
 2. **WebSocket Connect**: Browser automatically sends cookies with upgrade request
-3. **Server Validation**: Server extracts and validates token from cookie header
+3. **Server Validation**: Server validates session using Better Auth session API
 
 ```typescript
 // Client-side (urql with graphql-ws)
@@ -168,54 +188,37 @@ const client = createClient({
 ### Authorization Flow
 
 1. **Client** (native/web application):
-   - Gets `access_token` from Supabase session
-   - Passes token in `Authorization: Bearer <token>` header (HTTP)
-   - Cookies sent automatically (WebSocket)
+    - Authenticates via Better Auth endpoints at `/api/auth/*`
+    - Receives session cookie (httpOnly, secure, sameSite=strict)
+    - Passes token in `Authorization: Bearer <token>` header for API requests (optional, cookies preferred)
+    - Cookies sent automatically (WebSocket)
 
-2. **GraphQL Context** (`src/graphql/context.ts`):
-   - Extracts token from `Authorization` header or cookies
-   - Resolves auth context using Effect-based `authenticateUserUseCase`
-   - Provides controllers via `context.controllers`
+2. **Better Auth Session** (`/api/auth/get-session`):
+    - Validates session cookie or Bearer token
+    - Returns user info and session data
+    - Handles automatic session refresh
 
-3. **Auth Helpers** (`src/graphql/utils/auth-helpers.ts`):
-   - `requireAuth(context)` - Throws if not authenticated
-   - `requireAdmin(context)` - Throws if not admin
-   - `requireModerator(context)` - Throws if not moderator/admin
-   - `getOptionalAuth(context)` - Returns null if not authenticated
+3. **GraphQL Context** (`src/graphql/context.ts`):
+    - Extracts token from `Authorization` header or validates session cookie
+    - Resolves auth context using Better Auth session API
+    - Provides controllers via `context.controllers`
 
-### Auth Scopes (Pothos Plugin)
+4. **Auth Helpers** (`src/graphql/utils/auth-helpers.ts`):
+    - `requireAuth(context)` - Throws if not authenticated
+    - `requireAdmin(context)` - Throws if not admin
+    - `requireModerator(context)` - Throws if not moderator/admin
+    - `getOptionalAuth(context)` - Returns null if not authenticated
 
-Pothos scope-auth plugin provides declarative authorization:
+### Migration from Supabase Auth
 
-```typescript
-builder.queryField("adminOnlyField", (t) =>
-  t.field({
-    type: "SomeType",
-    authScopes: {
-      admin: true, // Requires admin role
-    },
-    resolve: async (_root, _args, context) => {
-      // Only executes if auth passes
-      return await context.controllers.someController.getData();
-    },
-  }),
-);
-```
+During the dual-run period, both authentication systems are supported:
 
-Available scopes:
+- **Better Auth**: Primary for new users and migrated users
+- **Supabase Auth**: Legacy support for unmigrated users
 
-- `public: true` - No authentication required
-- `authenticated: true` - User must be logged in
-- `admin: true` - User must have ADMIN or SERVICE role
-- `moderator: true` - User must have MODERATOR, ADMIN, or SERVICE role
+The `USE_BETTER_AUTH` feature flag controls which system handles new authentications. Users are automatically migrated via OTP flow when they log in.
 
-### Missing Token
-
-When client connects **without** a token:
-
-- Public queries/mutations work normally
-- Authenticated fields throw `GraphQLError` with code `UNAUTHENTICATED`
-- Admin fields throw `GraphQLError` with code `FORBIDDEN`
+See [`.specs/docs/migration-runbook.md`](../../.specs/docs/migration-runbook.md) for detailed migration procedures.
 
 ## Resolver Patterns
 
@@ -325,6 +328,7 @@ const userController = ControllersFrom.user(context);
 ## GraphQL Endpoints
 
 - `/health` - Health check endpoint (HTTP GET)
+- `/api/auth/*` - Better Auth endpoints (sign-in, sign-up, session management)
 - `/graphql` - GraphQL endpoint (HTTP POST/GET)
 - `/graphql` - GraphiQL playground (HTTP GET, development only)
 - `/graphql/ws` - WebSocket endpoint for subscriptions
@@ -501,4 +505,6 @@ For comprehensive architecture details, see:
 - `CLAUDE.md` Core Architecture section: Clean Architecture with Effect
 - `CLAUDE.md` Effect Framework section: Patterns and best practices
 - `AGENTS.md` (root): Universal conventions
+- `.specs/docs/auth.md`: Authentication system documentation
+- `.specs/docs/adr/001-better-auth-migration.md`: Better Auth migration ADR
 - **Note**: Backend `AGENTS.md` shows legacy tRPC patterns, use this README for current GraphQL patterns

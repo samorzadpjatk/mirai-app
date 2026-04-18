@@ -1,8 +1,9 @@
 import { Effect } from "effect";
+import { NotificationId } from "@mirai-app/domain";
 import { NotificationDeliveryPortTag } from "../../ports/NotificationPort";
 
 export interface TrackDeliveryCompleteInput {
-  notificationId: string;
+  notificationId: NotificationId;
   totalRecipients: number;
   successCount: number;
   failureCount: number;

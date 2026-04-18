@@ -1,5 +1,6 @@
 import { Effect, Queue } from "effect";
 import { UserId } from "@mirai-app/domain";
+import type { IPortError } from "@mirai-app/domain";
 import { LocationPortTag } from "@mirai-app/use-cases/location/ports";
 import { builder } from "../../builder.js";
 import type { FriendLocationEvent } from "./types.js";
@@ -8,7 +9,7 @@ import {
   type LocationSubscriber,
 } from "../../../location/LocationBroadcastService.js";
 import type { LocationUpdate } from "@mirai-app/use-cases/location/handlers";
-import { isAuthenticated } from "../../context.js";
+import { requireAuth, runEffect } from "../../context.js";
 
 /**
  * Global broadcast service instance
@@ -44,7 +45,7 @@ interface LocationSubscriptionArgs {
 function checkLocationSharingAuthorization(
   friendId: UserId,
   viewerUserId: string,
-): Effect.Effect<boolean, unknown, LocationPortTag> {
+) {
   return Effect.gen(function* () {
     const locationPort = yield* LocationPortTag;
     const sharingList = yield* locationPort.getSharingListForUser(friendId);
@@ -93,36 +94,22 @@ builder.subscriptionField("friendLocationEvent", (t) =>
         description: "The friend ID to subscribe to location updates for",
       }),
     },
-    authScopes: {
-      authenticated: true,
-    },
     subscribe: async function* (
       _parent: unknown,
       args: LocationSubscriptionArgs,
       ctx,
     ): AsyncGenerator<FriendLocationEvent, void, unknown> {
       // Validate authentication
-      if (!isAuthenticated(ctx)) {
-        throw new Error("Authentication required for location subscriptions");
-      }
-
-      const viewerUserId = ctx.authContext.userId;
+      const auth = requireAuth(ctx);
+      const viewerUserId = auth.userId;
 
       // Convert string friendId to UserId using unsafeCreate
       // The validation should have already occurred at the API boundary
       const friendId = UserId.unsafeCreate(args.friendId);
 
       // Check authorization: viewer must be in friend's sharing list
-      if (!ctx.runWithAppLayer) {
-        throw new Error(
-          "Server error: Application layer not initialized. " +
-            "Unable to perform authorization check.",
-        );
-      }
-
-      const isAuthorized = await ctx.runWithAppLayer(
-        checkLocationSharingAuthorization(friendId, viewerUserId),
-      );
+      const authEffect = checkLocationSharingAuthorization(friendId, viewerUserId);
+      const isAuthorized = await runEffect(ctx, authEffect);
 
       if (!isAuthorized) {
         throw new Error(
@@ -139,10 +126,14 @@ builder.subscriptionField("friendLocationEvent", (t) =>
           void Effect.runPromise(
             queue.offer({
               userId: update.userId,
+              firstName: update.firstName ?? null,
+              lastName: update.lastName ?? null,
+              image: update.image ?? null,
               latitude: update.latitude,
               longitude: update.longitude,
               accuracy: update.accuracy,
               timestamp: update.timestamp,
+              isOnline: update.isOnline ?? true,
             }),
           );
         });

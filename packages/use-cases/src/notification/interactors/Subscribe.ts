@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { UserId, PushSubscriptionId, type PushSubscription } from "@mirai-app/domain";
 import { PushSubscriptionPortTag } from "../ports/NotificationPort";
 import type { SubscribeResultDTO } from "../dto/NotificationDTOs";
 
@@ -6,7 +7,7 @@ import type { SubscribeResultDTO } from "../dto/NotificationDTOs";
  * Input for SubscribeUseCase
  */
 export interface SubscribeInput {
-  userId: string;
+  userId: UserId;
   token: string;
 }
 
@@ -40,12 +41,12 @@ export class SubscribeUseCase {
 
       // Create new subscription
       const newSubscription = yield* subscriptionPort.create({
-        id: crypto.randomUUID(),
+        id: PushSubscriptionId.create(crypto.randomUUID()),
         userId: input.userId,
         token: input.token,
         createdAt: now,
         updatedAt: now,
-      });
+      } as PushSubscription);
 
       return {
         success: true,

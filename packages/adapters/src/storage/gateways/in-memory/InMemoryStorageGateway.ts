@@ -63,7 +63,15 @@ export class InMemoryStorageGateway implements IStoragePort {
       this.tokenCounter++;
       const token = `mock-upload-token-${this.tokenCounter}`;
 
-      return { token };
+      // Return mock upload URL in SeaweedFS native TUS format
+      // Format: {endpoint}/tus/{bucket}/{path}?auth={token}
+      const uploadUrl = `https://mock-storage.example.com/tus/${input.bucket}/${input.path}?auth=${token}`;
+
+      return {
+        token,
+        uploadUrl,
+        expiresIn: input.expiresInSeconds ?? 3600,
+      };
     });
   }
 

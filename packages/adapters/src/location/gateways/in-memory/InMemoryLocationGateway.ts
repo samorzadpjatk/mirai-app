@@ -1,23 +1,37 @@
-import { Effect } from "effect";
+import { Effect, Context } from "effect";
 import {
   type Location,
   type LocationSharingRequest,
   type ILocationPort,
+  type IAuthZPort,
   type UserId,
   type LocationId,
   type LocationSharingRequestId,
   LocationId as LocationIdFactory,
   UserId as UserIdFactory,
   LocationSharingRequestId as LocationSharingRequestIdFactory,
+  PermissionDeniedError,
 } from "@mirai-app/domain";
-import { locationMapper } from "../../mappers/LocationMapper";
-import { locationSharingRequestMapper } from "../../mappers/LocationSharingRequestMapper";
+import { AuthContextTag } from "../../../infrastructure/effect";
+
+// Local AuthZPortTag to avoid circular dependency issues
+class AuthZPortTag extends Context.Tag("AuthZ")<AuthZPortTag, IAuthZPort>() {}
 
 /**
  * In-Memory Location Gateway
  *
  * Implements ILocationPort using in-memory Map storage.
  * Used for testing and development.
+ *
+ * Authorization Pattern:
+ * This gateway uses the AuthContext pattern for authorization, matching
+ * the Drizzle gateway implementation. All privacy-sensitive operations
+ * require authentication and ownership verification.
+ *
+ * Privacy Protection:
+ * - findByUserId: Users can only access their own location
+ * - update/upsert: Users can only update their own location
+ * - Sharing operations: Users can only modify their own sharing settings
  */
 export class InMemoryLocationGateway implements ILocationPort {
   private locations: Map<string, Location> = new Map();
@@ -36,9 +50,39 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
+  /**
+   * Find location by user ID
+   * PRIVACY-CRITICAL: Users can only access their own location
+   */
   findByUserId(userId: UserId) {
-    return Effect.sync(() => {
-      for (const location of this.locations.values()) {
+    const self = this;
+    const userIdStr = UserIdFactory.toString(userId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: "location",
+          }),
+        );
+      }
+
+      // Users can only access their own location
+      if (authCtx.userId !== userIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: `location:user:${userIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      for (const location of self.locations.values()) {
         if (UserIdFactory.equals(location.userId, userId)) {
           return location;
         }
@@ -47,22 +91,69 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
+  /**
+   * Find locations with sharing enabled
+   * Protected: Requires authentication
+   */
   findSharing() {
-    return Effect.sync(() => {
-      return Array.from(this.locations.values()).filter(
+    const self = this;
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: "locations:sharing",
+          }),
+        );
+      }
+
+      return Array.from(self.locations.values()).filter(
         (location) => location.isSharingLocation,
       );
     });
   }
 
+  /**
+   * Find locations where user is in sharing list
+   * Privacy-safe: Returns only locations explicitly shared with the requesting user
+   */
   findByUserInSharingList(userId: UserId) {
-    return Effect.sync(() => {
-      const userIdStr = UserIdFactory.toString(userId);
+    const self = this;
+    const userIdStr = UserIdFactory.toString(userId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: "locations:shared",
+          }),
+        );
+      }
+
+      // Users can only view locations shared with them
+      if (authCtx.userId !== userIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: `locations:shared:${userIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
       const result: Location[] = [];
 
-      for (const location of this.locations.values()) {
+      for (const location of self.locations.values()) {
         const ownerIdStr = UserIdFactory.toString(location.userId);
-        const sharingList = this.sharingLists.get(ownerIdStr);
+        const sharingList = self.sharingLists.get(ownerIdStr);
         if (sharingList?.has(userIdStr)) {
           result.push(location);
         }
@@ -72,37 +163,160 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
+  /**
+   * Create new location
+   * Protected: Requires authentication and ownership
+   */
   create(location: Location) {
-    return Effect.sync(() => {
-      this.locations.set(LocationIdFactory.toString(location.id), location);
-      return location;
-    });
-  }
+    const self = this;
+    const userIdStr = UserIdFactory.toString(location.userId);
 
-  update(location: Location) {
-    return Effect.sync(() => {
-      this.locations.set(LocationIdFactory.toString(location.id), location);
-      return location;
-    });
-  }
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
 
-  upsert(location: Location) {
-    return Effect.sync(() => {
-      this.locations.set(LocationIdFactory.toString(location.id), location);
-      return location;
-    });
-  }
-
-  delete(id: LocationId) {
-    return Effect.sync(() => {
-      this.locations.delete(LocationIdFactory.toString(id));
-      // Clean up sharing list for this location owner
-      const location = Array.from(this.locations.values()).find((loc) =>
-        LocationIdFactory.equals(loc.id, id),
-      );
-      if (location) {
-        this.sharingLists.delete(UserIdFactory.toString(location.userId));
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "create",
+            resource: "location",
+          }),
+        );
       }
+
+      // Users can only create locations for themselves
+      if (authCtx.userId !== userIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "create",
+            resource: `location:user:${userIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      self.locations.set(LocationIdFactory.toString(location.id), location);
+      return location;
+    });
+  }
+
+  /**
+   * Update existing location
+   * PRIVACY-CRITICAL: Users can only update their own location
+   */
+  update(location: Location) {
+    const self = this;
+    const userIdStr = UserIdFactory.toString(location.userId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "update",
+            resource: `location:${LocationIdFactory.toString(location.id)}`,
+          }),
+        );
+      }
+
+      // Users can only update their own location
+      if (authCtx.userId !== userIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "update",
+            resource: `location:${LocationIdFactory.toString(location.id)}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      self.locations.set(LocationIdFactory.toString(location.id), location);
+      return location;
+    });
+  }
+
+  /**
+   * Upsert location for user
+   * PRIVACY-CRITICAL: Users can only upsert their own location
+   */
+  upsert(location: Location) {
+    const self = this;
+    const userIdStr = UserIdFactory.toString(location.userId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "upsert",
+            resource: `location:${LocationIdFactory.toString(location.id)}`,
+          }),
+        );
+      }
+
+      // Users can only upsert their own location
+      if (authCtx.userId !== userIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "upsert",
+            resource: `location:${LocationIdFactory.toString(location.id)}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      self.locations.set(LocationIdFactory.toString(location.id), location);
+      return location;
+    });
+  }
+
+  /**
+   * Delete location by ID
+   * Protected: Requires authentication and ownership
+   */
+  delete(id: LocationId) {
+    const self = this;
+    const idStr = LocationIdFactory.toString(id);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "delete",
+            resource: `location:${idStr}`,
+          }),
+        );
+      }
+
+      const location = self.locations.get(idStr);
+      if (!location) {
+        return yield* Effect.succeed(void 0);
+      }
+
+      // Users can only delete their own location
+      const userIdStr = UserIdFactory.toString(location.userId);
+      if (authCtx.userId !== userIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "delete",
+            resource: `location:${idStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      self.locations.delete(idStr);
+      // Clean up sharing list for this location owner
+      self.sharingLists.delete(userIdStr);
+
+      return yield* Effect.succeed(void 0);
     });
   }
 
@@ -133,9 +347,39 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
+  /**
+   * Find pending sharing requests for receiver
+   * Protected: Users can only view their own pending requests
+   */
   findPendingSharingRequestsByReceiver(receiverId: UserId) {
-    return Effect.sync(() => {
-      return Array.from(this.sharingRequests.values()).filter(
+    const self = this;
+    const receiverIdStr = UserIdFactory.toString(receiverId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: "locationSharingRequests:pending",
+          }),
+        );
+      }
+
+      // Users can only view their own pending requests
+      if (authCtx.userId !== receiverIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: `locationSharingRequests:pending:${receiverIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      return Array.from(self.sharingRequests.values()).filter(
         (request) =>
           UserIdFactory.equals(request.receiverId, receiverId) &&
           request.status === "PENDING",
@@ -143,25 +387,115 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
+  /**
+   * Find sharing requests by sender
+   * Protected: Users can only view their own sent requests
+   */
   findSharingRequestsBySender(senderId: UserId) {
-    return Effect.sync(() => {
-      return Array.from(this.sharingRequests.values()).filter((request) =>
+    const self = this;
+    const senderIdStr = UserIdFactory.toString(senderId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: "locationSharingRequests:sent",
+          }),
+        );
+      }
+
+      // Users can only view their own sent requests
+      if (authCtx.userId !== senderIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: `locationSharingRequests:sent:${senderIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      return Array.from(self.sharingRequests.values()).filter((request) =>
         UserIdFactory.equals(request.senderId, senderId),
       );
     });
   }
 
+  /**
+   * Find sharing requests by receiver
+   * Protected: Users can only view their own received requests
+   */
   findSharingRequestsByReceiver(receiverId: UserId) {
-    return Effect.sync(() => {
-      return Array.from(this.sharingRequests.values()).filter((request) =>
+    const self = this;
+    const receiverIdStr = UserIdFactory.toString(receiverId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: "locationSharingRequests:received",
+          }),
+        );
+      }
+
+      // Users can only view their own received requests
+      if (authCtx.userId !== receiverIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: `locationSharingRequests:received:${receiverIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      return Array.from(self.sharingRequests.values()).filter((request) =>
         UserIdFactory.equals(request.receiverId, receiverId),
       );
     });
   }
 
+  /**
+   * Create sharing request
+   * Protected: Users can only create requests as themselves
+   */
   createSharingRequest(request: LocationSharingRequest) {
-    return Effect.sync(() => {
-      this.sharingRequests.set(
+    const self = this;
+    const senderIdStr = UserIdFactory.toString(request.senderId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "create",
+            resource: "locationSharingRequest",
+          }),
+        );
+      }
+
+      // Users can only create requests as themselves (sender)
+      if (authCtx.userId !== senderIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "create",
+            resource: `locationSharingRequest:sender:${senderIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      self.sharingRequests.set(
         LocationSharingRequestIdFactory.toString(request.id),
         request,
       );
@@ -169,9 +503,40 @@ export class InMemoryLocationGateway implements ILocationPort {
     });
   }
 
+  /**
+   * Update sharing request
+   * Protected: Users can only update requests they are involved in
+   */
   updateSharingRequest(request: LocationSharingRequest) {
-    return Effect.sync(() => {
-      this.sharingRequests.set(
+    const self = this;
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "update",
+            resource: `locationSharingRequest:${LocationSharingRequestIdFactory.toString(request.id)}`,
+          }),
+        );
+      }
+
+      // Users can only update requests they are involved in
+      const senderIdStr = UserIdFactory.toString(request.senderId);
+      const receiverIdStr = UserIdFactory.toString(request.receiverId);
+      if (authCtx.userId !== senderIdStr && authCtx.userId !== receiverIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "update",
+            resource: `locationSharingRequest:${LocationSharingRequestIdFactory.toString(request.id)}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      self.sharingRequests.set(
         LocationSharingRequestIdFactory.toString(request.id),
         request,
       );
@@ -183,41 +548,155 @@ export class InMemoryLocationGateway implements ILocationPort {
   // Sharing List Operations
   // ============================================================================
 
+  /**
+   * Connect user to sharing list
+   * Protected: Users can only modify their own sharing list
+   */
   connectUserToSharing(locationOwnerId: UserId, userIdToShareWith: UserId) {
-    return Effect.sync(() => {
-      const ownerIdStr = UserIdFactory.toString(locationOwnerId);
-      const userIdStr = UserIdFactory.toString(userIdToShareWith);
+    const self = this;
+    const ownerIdStr = UserIdFactory.toString(locationOwnerId);
 
-      if (!this.sharingLists.has(ownerIdStr)) {
-        this.sharingLists.set(ownerIdStr, new Set());
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "connect",
+            resource: `locationSharing:owner:${ownerIdStr}`,
+          }),
+        );
       }
 
-      this.sharingLists.get(ownerIdStr)!.add(userIdStr);
+      // Users can only modify their own sharing list
+      if (authCtx.userId !== ownerIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "connect",
+            resource: `locationSharing:owner:${ownerIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      const userIdStr = UserIdFactory.toString(userIdToShareWith);
+
+      if (!self.sharingLists.has(ownerIdStr)) {
+        self.sharingLists.set(ownerIdStr, new Set());
+      }
+
+      self.sharingLists.get(ownerIdStr)!.add(userIdStr);
     });
   }
 
+  /**
+   * Disconnect user from sharing list
+   * Protected: Users can only modify their own sharing list
+   */
   disconnectUserFromSharing(locationOwnerId: UserId, userIdToRemove: UserId) {
-    return Effect.sync(() => {
-      const ownerIdStr = UserIdFactory.toString(locationOwnerId);
+    const self = this;
+    const ownerIdStr = UserIdFactory.toString(locationOwnerId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "disconnect",
+            resource: `locationSharing:owner:${ownerIdStr}`,
+          }),
+        );
+      }
+
+      // Users can only modify their own sharing list
+      if (authCtx.userId !== ownerIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "disconnect",
+            resource: `locationSharing:owner:${ownerIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
       const userIdStr = UserIdFactory.toString(userIdToRemove);
-
-      this.sharingLists.get(ownerIdStr)?.delete(userIdStr);
+      self.sharingLists.get(ownerIdStr)?.delete(userIdStr);
     });
   }
 
+  /**
+   * Set users to share with
+   * Protected: Users can only modify their own sharing list
+   */
   setUsersToShareWith(locationOwnerId: UserId, userIds: UserId[]) {
-    return Effect.sync(() => {
-      const ownerIdStr = UserIdFactory.toString(locationOwnerId);
-      const userIdStrs = userIds.map((id) => UserIdFactory.toString(id));
+    const self = this;
+    const ownerIdStr = UserIdFactory.toString(locationOwnerId);
 
-      this.sharingLists.set(ownerIdStr, new Set(userIdStrs));
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "setSharingList",
+            resource: `locationSharing:owner:${ownerIdStr}`,
+          }),
+        );
+      }
+
+      // Users can only modify their own sharing list
+      if (authCtx.userId !== ownerIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "setSharingList",
+            resource: `locationSharing:owner:${ownerIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      const userIdStrs = userIds.map((id) => UserIdFactory.toString(id));
+      self.sharingLists.set(ownerIdStr, new Set(userIdStrs));
     });
   }
 
+  /**
+   * Get sharing list for user
+   * Protected: Users can only view their own sharing list
+   */
   getSharingListForUser(locationOwnerId: UserId) {
-    return Effect.sync(() => {
-      const ownerIdStr = UserIdFactory.toString(locationOwnerId);
-      const sharingSet = this.sharingLists.get(ownerIdStr);
+    const self = this;
+    const ownerIdStr = UserIdFactory.toString(locationOwnerId);
+
+    return Effect.gen(function* () {
+      const authCtx = yield* AuthContextTag;
+
+      // Authentication required
+      if (!authCtx.isAuthenticated) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: `locationSharing:list:${ownerIdStr}`,
+          }),
+        );
+      }
+
+      // Users can only view their own sharing list
+      if (authCtx.userId !== ownerIdStr) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "read",
+            resource: `locationSharing:list:${ownerIdStr}`,
+            userId: authCtx.userId,
+          }),
+        );
+      }
+
+      const sharingSet = self.sharingLists.get(ownerIdStr);
 
       if (!sharingSet) {
         return [];

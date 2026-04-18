@@ -1,6 +1,7 @@
 import { Effect } from "effect";
-import type { ValidationError } from "@mirai-app/domain";
+import { UserId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { UserProfileDTO } from "../dto/UserDTOs";
 import { UserNotFoundError } from "../errors/UserErrors";
 
@@ -8,7 +9,7 @@ import { UserNotFoundError } from "../errors/UserErrors";
  * Input for UpdateMyProfileUseCase
  */
 export interface UpdateMyProfileInput {
-  userId: string;
+  userId: UserId;
   firstName: string;
   lastName: string;
 }
@@ -22,13 +23,14 @@ export class UpdateMyProfileUseCase {
   execute(input: UpdateMyProfileInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
+      const authService = yield* AuthServicePortTag;
 
       // Find user by ID
       const user = yield* userPort.findById(input.userId);
 
       if (!user) {
         return yield* Effect.fail(
-          new UserNotFoundError({ userId: input.userId }),
+          new UserNotFoundError({ userId: UserId.toString(input.userId) }),
         );
       }
 
@@ -43,11 +45,14 @@ export class UpdateMyProfileUseCase {
       // Save updated user
       const savedUser = yield* userPort.update(updatedUser);
 
+      // Get auth user info for email
+      const authInfo = yield* authService.getUserInfoByAuthId(user.authUserId);
+
       const result: UserProfileDTO = {
         id: savedUser.id,
         firstName: savedUser.firstName,
         lastName: savedUser.lastName,
-        email: null, // Will be hydrated by adapter layer
+        email: authInfo?.email ?? null,
         role: savedUser.role,
         hasAvatar: savedUser.hasAvatar,
       };

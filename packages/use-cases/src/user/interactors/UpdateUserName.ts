@@ -1,7 +1,7 @@
 import { Effect } from "effect";
-import type { ApplicationError, ValidationError } from "@mirai-app/domain";
+import { UserId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { UpdateUserResultDTO } from "../dto/UserDTOs";
 import { UserNotFoundError } from "../errors/UserErrors";
 
@@ -9,7 +9,7 @@ import { UserNotFoundError } from "../errors/UserErrors";
  * Input for UpdateUserNameUseCase
  */
 export interface UpdateUserNameInput {
-  userId: string;
+  userId: UserId;
   firstName: string;
   lastName: string;
 }
@@ -20,23 +20,17 @@ export interface UpdateUserNameInput {
  * Updates a user's name (admin only operation).
  */
 export class UpdateUserNameUseCase {
-  execute(
-    input: UpdateUserNameInput,
-  ): Effect.Effect<
-    UpdateUserResultDTO,
-    ApplicationError | UserNotFoundError | ValidationError,
-    UserPortTag | AuthServicePort
-  > {
+  execute(input: UpdateUserNameInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const authService = yield* AuthServicePort;
+      const authService = yield* AuthServicePortTag;
 
       // Find user by ID
       const user = yield* userPort.findById(input.userId);
 
       if (!user) {
         return yield* Effect.fail(
-          new UserNotFoundError({ userId: input.userId }),
+          new UserNotFoundError({ userId: UserId.toString(input.userId) }),
         );
       }
 

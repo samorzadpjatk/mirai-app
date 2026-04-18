@@ -1,0 +1,15 @@
+# =============================================================================
+# Notification Subscriptions
+# =============================================================================
+
+subscription NotificationReceived {
+  notificationReceived {
+    id
+    type
+    priority
+    title
+    body
+    data
+    receivedAt
+  }
+}

@@ -1,7 +1,7 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
+import { GroupPortTag } from "../ports/GroupPort";
 import type { GroupNameDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
+import { TripId } from "@mirai-app/domain";
 
 /**
  * Input for GetAllGroupNamesUseCase
@@ -16,13 +16,12 @@ export interface GetAllGroupNamesInput {
  * Retrieves all group names for a trip (for moderators).
  */
 export class GetAllGroupNamesUseCase {
-  execute(
-    input: GetAllGroupNamesInput,
-  ): Effect.Effect<GroupNameDTO[], DatabaseError, GroupPort> {
+  execute(input: GetAllGroupNamesInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
+      const groupPort = yield* GroupPortTag;
 
-      const groups = yield* groupPort.findByTripId(input.tripId);
+      const tripId = TripId.unsafeCreate(input.tripId);
+      const groups = yield* groupPort.findByTripId(tripId);
 
       return groups.map((group) => ({
         id: group.id,

@@ -1,6 +1,6 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError, ChallengeSubmissionId } from "@mirai-app/domain";
-import { ChallengeId, GroupId } from "@mirai-app/domain";
+import type { ApplicationError, ChallengeSubmissionId, UserId, TripId } from "@mirai-app/domain";
+import { ChallengeId, GroupId, ChallengeSubmissionId as ChallengeSubmissionIdFactory, UserId as UserIdFactory, TripId as TripIdFactory } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import {
   ChallengeSubmissionPort,
@@ -45,26 +45,7 @@ const LOCATION_SUBMISSION_RADIUS_METERS = 200;
  * Creates a new submission for a challenge with validation.
  */
 export class CreateSubmissionUseCase {
-  execute(
-    input: CreateSubmissionInput,
-  ): Effect.Effect<
-    CreateSubmissionResultDTO,
-    | ChallengeNotFoundError
-    | ChallengeNotActiveError
-    | SubmissionWindowClosedError
-    | SubmissionAlreadyExistsError
-    | NotGroupMemberError
-    | MissingRequiredMediaError
-    | InvalidLocationError
-    | InvalidQrCodeError
-    | InvalidTextPhraseError
-    | ApplicationError,
-    | ChallengePortTag
-    | ChallengeSubmissionPort
-    | TripParticipantPort
-    | GroupPort
-    | CoinTransactionPort
-  > {
+  execute(input: CreateSubmissionInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
       const submissionPort = yield* ChallengeSubmissionPort;
@@ -73,8 +54,8 @@ export class CreateSubmissionUseCase {
 
       // Get participant info
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        UserIdFactory.create(input.userId),
+        TripIdFactory.create(input.tripId),
       );
 
       if (!participant) {
@@ -96,7 +77,7 @@ export class CreateSubmissionUseCase {
       }
 
       // Verify challenge exists and is active
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challenge = yield* challengePort.findById(ChallengeId.create(input.challengeId));
       if (!challenge) {
         return yield* Effect.fail(
           new ChallengeNotFoundError({ challengeId: input.challengeId }),
@@ -123,8 +104,8 @@ export class CreateSubmissionUseCase {
 
       // Check for existing submission
       const existingSubmission = yield* submissionPort.findByChallengeAndGroup(
-        input.challengeId,
-        participant.groupId,
+        ChallengeId.create(input.challengeId),
+        GroupId.create(participant.groupId),
       );
 
       if (existingSubmission) {
@@ -145,16 +126,16 @@ export class CreateSubmissionUseCase {
       // Create submission
       const now = new Date();
       const submission: ChallengeSubmission = {
-        id: "", // Will be assigned by repository
-        challengeId: input.challengeId,
-        groupId: participant.groupId,
+        id: ChallengeSubmissionIdFactory.create(ChallengeSubmissionIdFactory.generate()),
+        challengeId: ChallengeId.create(input.challengeId),
+        groupId: GroupId.create(participant.groupId),
         imageIds: input.imageIds ?? [],
         videoId: input.videoId ?? null,
         textContent: input.textContent ?? null,
         latitude: input.latitude ?? null,
         longitude: input.longitude ?? null,
         status: autoApproved ? "APPROVED" : "PENDING",
-        reviewedById: autoApproved ? "system" : null,
+        reviewedById: autoApproved ? UserIdFactory.create(UserIdFactory.generate()) : null,
         reviewedAt: autoApproved ? now : null,
         rejectionReason: null,
         awardedPoints: autoApproved ? challenge.basePoints : null,

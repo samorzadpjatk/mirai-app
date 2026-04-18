@@ -1,0 +1,166 @@
+# =============================================================================
+# User Queries
+# =============================================================================
+
+query Me {
+  me {
+    id
+    firstName
+    lastName
+    email
+    role
+    hasAvatar
+  }
+}
+
+query MyBanStatus {
+  myBanStatus {
+    banned
+    bannedUntil
+    reason
+    exists
+  }
+}
+
+query MyGroupInfo($tripId: String!) {
+  myGroupInfo(tripId: $tripId) {
+    id
+    firstName
+    lastName
+    trips {
+      tripId
+      group {
+        id
+        name
+      }
+      trip {
+        id
+        name
+      }
+    }
+    organizerGroup {
+      id
+      name
+    }
+  }
+}
+
+query User($id: String!) {
+  user(id: $id) {
+    id
+    firstName
+    lastName
+    email
+    role
+    hasAvatar
+  }
+}
+
+query UserWithGroup($id: String!, $tripId: String!) {
+  userWithGroup(id: $id, tripId: $tripId) {
+    id
+    firstName
+    lastName
+    trips {
+      tripId
+      group {
+        id
+        name
+      }
+      trip {
+        id
+        name
+      }
+    }
+    organizerGroup {
+      id
+      name
+    }
+  }
+}
+
+query TripParticipant($userId: String!, $tripId: String!) {
+  tripParticipant(userId: $userId, tripId: $tripId) {
+    userId
+    tripId
+    wristNumber
+    houseNumber
+    group {
+      id
+      name
+    }
+  }
+}
+
+query BanStatusByEmail($input: GetUserByEmailInput!) {
+  banStatusByEmail(input: $input) {
+    banned
+    bannedUntil
+    reason
+    exists
+  }
+}
+
+query Users($tripId: String!, $first: Int, $after: String) {
+  users(tripId: $tripId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        firstName
+        lastName
+        email
+        role
+        hasAvatar
+        wristNumber
+        houseNumber
+        groupId
+        groupName
+        tripId
+        isBanned
+        bannedUntil
+        banReason
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query SearchUsers($tripId: String!, $field: String!, $searchTerm: String, $first: Int, $after: String) {
+  searchUsers(tripId: $tripId, field: $field, searchTerm: $searchTerm, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        firstName
+        lastName
+        email
+        role
+        hasAvatar
+        wristNumber
+        houseNumber
+        groupId
+        groupName
+        tripId
+        isBanned
+        bannedUntil
+        banReason
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query AdminNames {
+  adminNames {
+    id
+    firstName
+    lastName
+  }
+}

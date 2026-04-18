@@ -2,8 +2,8 @@ import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { ActivityReactionPortTag } from "../ports/ActivityReactionPort";
-import { TripId } from "@mirai-app/domain";
-import type { PaginatedActivitiesForModerationDTO } from "../dto/ActivityFeedDTOs";
+import { UserPortTag } from "../../user/ports/UserPort";
+import { TripId, UserId } from "@mirai-app/domain";
 import {
   TripNotFoundError,
   InvalidCursorError,
@@ -62,6 +62,8 @@ export class GetActivitiesByTripModerationUseCase {
       );
 
       // Get reactions for each activity
+      const userPort = yield* UserPortTag;
+
       const activitiesWithReactions = yield* Effect.all(
         result.activities.map((activity) =>
           Effect.gen(function* () {
@@ -74,6 +76,36 @@ export class GetActivitiesByTripModerationUseCase {
               clap: reactions.filter((r) => r.reactionType === "clap").length,
               star: reactions.filter((r) => r.reactionType === "star").length,
             };
+
+            // Fetch admin details if activity was created by admin
+            let admin = null;
+            if (activity.createdByAdmin) {
+              const adminUser = yield* userPort.findById(
+                UserId.unsafeCreate(activity.createdByAdmin),
+              );
+              if (adminUser) {
+                admin = {
+                  id: adminUser.id,
+                  firstName: adminUser.firstName,
+                  lastName: adminUser.lastName,
+                };
+              }
+            }
+
+            // Fetch hiddenBy details if activity was hidden
+            let hiddenBy = null;
+            if (activity.hiddenByAdmin) {
+              const hiddenByUser = yield* userPort.findById(
+                UserId.unsafeCreate(activity.hiddenByAdmin),
+              );
+              if (hiddenByUser) {
+                hiddenBy = {
+                  id: hiddenByUser.id,
+                  firstName: hiddenByUser.firstName,
+                  lastName: hiddenByUser.lastName,
+                };
+              }
+            }
 
             return {
               id: activity.id,
@@ -89,11 +121,11 @@ export class GetActivitiesByTripModerationUseCase {
               createdByAdmin: activity.createdByAdmin,
               createdAt: activity.createdAt,
               updatedAt: activity.updatedAt,
-              admin: null, // Will be hydrated by adapter
-              hiddenBy: null, // Will be hydrated by adapter
-              submissionDetails: null, // Will be hydrated by adapter
-              challengeDetails: null, // Will be hydrated by adapter
-              rankChangeDetails: null, // Will be hydrated by adapter
+              admin,
+              hiddenBy,
+              submissionDetails: null,
+              challengeDetails: null,
+              rankChangeDetails: null,
               reactions: reactionCounts,
               userReactions: [],
             };

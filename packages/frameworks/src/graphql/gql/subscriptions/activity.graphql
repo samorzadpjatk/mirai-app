@@ -1,0 +1,16 @@
+# =============================================================================
+# Activity Feed Subscriptions
+# =============================================================================
+
+subscription ActivityFeedEvent($filter: ActivityFeedSubscriptionFilter!) {
+  activityFeedEvent(filter: $filter) {
+    id
+    type
+    title
+    description
+    groupId
+    userId
+    metadata
+    createdAt
+  }
+}

@@ -1,0 +1,28 @@
+# =============================================================================
+# Challenge Submission Fragments
+# =============================================================================
+
+fragment ChallengeSubmissionFields on ChallengeSubmission {
+  id
+  challengeId
+  groupId
+  status
+  textContent
+  imageIds
+  videoId
+  latitude
+  longitude
+  awardedPoints
+  bonusPoints
+  ranking
+  rejectionReason
+  voteCount
+  voteScore
+  createdAt
+  reviewedAt
+}
+
+fragment SubmissionResultFields on SubmissionResult {
+  id
+  status
+}

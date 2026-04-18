@@ -1,5 +1,11 @@
 import type { ChallengeSubmissionSelect } from "../../infrastructure/drizzle";
-import type { ChallengeSubmission } from "@mirai-app/use-cases";
+import type { ChallengeSubmission } from "@mirai-app/use-cases/challenge-submission";
+import {
+  ChallengeSubmissionId,
+  ChallengeId,
+  GroupId,
+} from "@mirai-app/domain";
+import type { UserId } from "@mirai-app/domain";
 
 /**
  * ChallengeSubmission Mapper
@@ -14,16 +20,16 @@ export class ChallengeSubmissionMapper {
     dbSubmission: ChallengeSubmissionSelect,
   ): ChallengeSubmission {
     return {
-      id: dbSubmission.id,
-      challengeId: dbSubmission.challengeId,
-      groupId: dbSubmission.groupId,
+      id: ChallengeSubmissionId.create(dbSubmission.id),
+      challengeId: ChallengeId.create(dbSubmission.challengeId),
+      groupId: GroupId.create(dbSubmission.groupId),
       imageIds: dbSubmission.imageIds ?? [],
       videoId: dbSubmission.videoId ?? null,
       textContent: dbSubmission.textContent ?? null,
       latitude: dbSubmission.latitude ?? null,
       longitude: dbSubmission.longitude ?? null,
       status: dbSubmission.status as "PENDING" | "APPROVED" | "REJECTED",
-      reviewedById: dbSubmission.reviewedById ?? null,
+      reviewedById: (dbSubmission.reviewedById as UserId | null) ?? null,
       reviewedAt: dbSubmission.reviewedAt ?? null,
       rejectionReason: dbSubmission.rejectionReason ?? null,
       awardedPoints: dbSubmission.awardedPoints ?? null,

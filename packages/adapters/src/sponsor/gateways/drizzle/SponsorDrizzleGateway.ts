@@ -8,6 +8,8 @@ import {
   DatabaseError,
   type ISponsorPort,
 } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { sponsorMapper } from "../../mappers/SponsorMapper";
 
@@ -15,6 +17,11 @@ import { sponsorMapper } from "../../mappers/SponsorMapper";
  * Sponsor Drizzle Gateway
  *
  * Implements ISponsorPort using Drizzle ORM for database operations.
+ * Uses AuthContext and AuthZPortTag for authorization.
+ *
+ * Authorization Pattern:
+ * - Read operations (findById, findAll, findActive, exists): Public - no auth required
+ * - Write operations (create, update, delete): Admin only
  */
 export class SponsorDrizzleGateway
   extends BaseDrizzleGateway
@@ -79,18 +86,43 @@ export class SponsorDrizzleGateway
 
   create(sponsor: Sponsor) {
     const insertData = sponsorMapper.toInsert(sponsor);
-    return this.tryPromise(
-      "create",
-      async () => {
-        const [result] = await this.db
-          .insert(sponsors)
-          .values(insertData)
-          .returning();
-        if (!result) throw new Error("Failed to create sponsor");
-        return result;
-      },
-      SponsorId.toString(sponsor.id),
-    ).pipe(
+    const idStr = SponsorId.toString(sponsor.id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify admin permission for create
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "sponsor",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const [result] = await self.db
+            .insert(sponsors)
+            .values(insertData)
+            .returning();
+          if (!result) throw new Error("Failed to create sponsor");
+          return result;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "create",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    }).pipe(
       Effect.flatMap((dbSponsor: SponsorSelect) =>
         sponsorMapper.toDomain(dbSponsor),
       ),
@@ -99,19 +131,44 @@ export class SponsorDrizzleGateway
 
   update(sponsor: Sponsor) {
     const updateData = sponsorMapper.toUpdate(sponsor);
-    return this.tryPromise(
-      "update",
-      async () => {
-        const [result] = await this.db
-          .update(sponsors)
-          .set(updateData)
-          .where(eq(sponsors.id, SponsorId.toString(sponsor.id)))
-          .returning();
-        if (!result) throw new Error("Failed to update sponsor");
-        return result;
-      },
-      SponsorId.toString(sponsor.id),
-    ).pipe(
+    const idStr = SponsorId.toString(sponsor.id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify admin permission for update
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "sponsor",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const [result] = await self.db
+            .update(sponsors)
+            .set(updateData)
+            .where(eq(sponsors.id, idStr))
+            .returning();
+          if (!result) throw new Error("Failed to update sponsor");
+          return result;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "update",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    }).pipe(
       Effect.flatMap((dbSponsor: SponsorSelect) =>
         sponsorMapper.toDomain(dbSponsor),
       ),
@@ -120,13 +177,37 @@ export class SponsorDrizzleGateway
 
   delete(id: SponsorId) {
     const idStr = SponsorId.toString(id);
-    return this.tryPromise(
-      "delete",
-      async () => {
-        await this.db.delete(sponsors).where(eq(sponsors.id, idStr));
-      },
-      idStr,
-    );
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify admin permission for delete
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "sponsor",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await self.db.delete(sponsors).where(eq(sponsors.id, idStr));
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "delete",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    });
   }
 
   exists(id: SponsorId) {

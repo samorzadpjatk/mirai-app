@@ -1,4 +1,5 @@
 import { Effect, Data } from "effect";
+import { ChallengeId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
 import { ChallengeNotFoundError } from "../errors/ChallengeErrors";
 
@@ -26,9 +27,10 @@ export class DeleteChallengeUseCase {
   execute(input: DeleteChallengeInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
+      const challengeId = ChallengeId.unsafeCreate(input.challengeId);
 
       // Check if challenge exists
-      const existing = yield* challengePort.findById(input.challengeId);
+      const existing = yield* challengePort.findById(challengeId);
       if (!existing) {
         return yield* Effect.fail(
           new ChallengeNotFoundError({ challengeId: input.challengeId }),
@@ -36,7 +38,7 @@ export class DeleteChallengeUseCase {
       }
 
       // Delete challenge
-      yield* challengePort.delete(input.challengeId);
+      yield* challengePort.delete(challengeId);
 
       return { success: true };
     });

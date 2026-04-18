@@ -1,16 +1,15 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import { GroupJoinRequestPort } from "../ports/GroupJoinRequestPort";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupJoinRequestPortTag } from "../ports/GroupJoinRequestPort";
 import type {
   BulkAssignResultDTO,
   GroupParticipantDTO,
 } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
+import { GroupId, TripId, UserId, TripParticipantId, TripParticipant } from "@mirai-app/domain";
 import {
   GroupNotFoundError,
   NotGroupOrganizerError,
-  TripHasEndedError,
 } from "../errors/GroupErrors";
 
 /**
@@ -29,32 +28,27 @@ export interface BulkAssignUsersToGroupInput {
  * Bulk assigns multiple users to a group (organizer only).
  */
 export class BulkAssignUsersToGroupUseCase {
-  execute(
-    input: BulkAssignUsersToGroupInput,
-  ): Effect.Effect<
-    BulkAssignResultDTO,
-    | DatabaseError
-    | GroupNotFoundError
-    | NotGroupOrganizerError
-    | TripHasEndedError,
-    GroupPort | TripParticipantPort | GroupJoinRequestPort
-  > {
+  execute(input: BulkAssignUsersToGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
-      const joinRequestPort = yield* GroupJoinRequestPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const joinRequestPort = yield* GroupJoinRequestPortTag;
+
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const tripId = TripId.unsafeCreate(input.tripId);
+      const requestingUserId = UserId.unsafeCreate(input.requestingUserId);
 
       // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      const group = yield* groupPort.findById(groupId);
 
-      if (!group || group.isDeleted || group.tripId !== input.tripId) {
+      if (!group || group.isDeleted || !TripId.equals(group.tripId, tripId)) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: input.groupId }),
         );
       }
 
       // Check if user is the organizer
-      if (group.organizerId !== input.requestingUserId) {
+      if (!UserId.equals(group.organizerId, requestingUserId)) {
         return yield* Effect.fail(
           new NotGroupOrganizerError({
             userId: input.requestingUserId,
@@ -63,7 +57,7 @@ export class BulkAssignUsersToGroupUseCase {
         );
       }
 
-      const uniqueUserIds = Array.from(new Set(input.userIds));
+      const uniqueUserIds = Array.from(new Set(input.userIds)).map((id) => UserId.unsafeCreate(id));
 
       // Assign all users to group
       const assignedParticipants = yield* Effect.all(
@@ -71,12 +65,12 @@ export class BulkAssignUsersToGroupUseCase {
           Effect.gen(function* () {
             const existing = yield* participantPort.findByUserAndTrip(
               userId,
-              input.tripId,
+              tripId,
             );
-            return yield* participantPort.upsert({
-              id: existing?.id ?? "",
-              userId,
-              tripId: input.tripId,
+            const participant = yield* TripParticipant.create({
+              id: existing?.id ?? TripParticipantId.generate(),
+              userId: userId,
+              tripId: tripId,
               groupId: group.id,
               wristNumber: existing?.wristNumber ?? null,
               houseNumber: existing?.houseNumber ?? null,
@@ -84,12 +78,13 @@ export class BulkAssignUsersToGroupUseCase {
               createdAt: existing?.createdAt ?? new Date(),
               updatedAt: new Date(),
             });
+            return yield* participantPort.upsert(participant);
           }),
         ),
       );
 
       // Delete join requests for all assigned users
-      yield* joinRequestPort.deleteByUsersAndTrip(uniqueUserIds, input.tripId);
+      yield* joinRequestPort.deleteByUsersAndTrip(uniqueUserIds, tripId);
 
       const participants: GroupParticipantDTO[] = assignedParticipants.map(
         (p) => ({

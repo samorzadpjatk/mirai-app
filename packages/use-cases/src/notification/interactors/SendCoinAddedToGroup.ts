@@ -1,7 +1,7 @@
-import { Effect, Data } from "effect";
+import { Effect } from "effect";
 import { NotificationServicePortTag } from "../ports/NotificationPort";
-import { GroupPort } from "../../group/ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import type { ApplicationError } from "@mirai-app/domain";
 import type {
   CreateNotificationResultDTO,
@@ -22,14 +22,10 @@ export interface SendCoinAddedToGroupInput extends SendCoinsNotificationInputDTO
 export class SendCoinAddedToGroupUseCase {
   execute(
     input: SendCoinAddedToGroupInput,
-  ): Effect.Effect<
-    CreateNotificationResultDTO,
-    ApplicationError | GroupNotFoundError,
-    NotificationServicePortTag | GroupPort | TripParticipantPort
-  > {
+  ) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
       const notificationService = yield* NotificationServicePortTag;
 
       // Verify group exists and belongs to trip

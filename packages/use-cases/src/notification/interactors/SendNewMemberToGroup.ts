@@ -1,7 +1,7 @@
 import { Effect, Data } from "effect";
 import { NotificationServicePortTag } from "../ports/NotificationPort";
-import { GroupPort } from "../../group/ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import { UserPortTag } from "../../user/ports/UserPort";
 import type { ApplicationError } from "@mirai-app/domain";
 import type {
@@ -15,7 +15,7 @@ import { GroupNotFoundError } from "../../group/errors/GroupErrors";
  */
 export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   userId: string;
-}>() {}
+}> {}
 
 /**
  * Input for SendNewMemberToGroupUseCase
@@ -30,14 +30,10 @@ export interface SendNewMemberToGroupInput extends SendNewMemberNotificationInpu
 export class SendNewMemberToGroupUseCase {
   execute(
     input: SendNewMemberToGroupInput,
-  ): Effect.Effect<
-    CreateNotificationResultDTO,
-    ApplicationError | GroupNotFoundError | UserNotFoundError,
-    GroupPort | TripParticipantPort | UserPortTag | NotificationServicePortTag
-  > {
+  ) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
       const userPort = yield* UserPortTag;
       const notificationService = yield* NotificationServicePortTag;
 

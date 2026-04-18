@@ -1,12 +1,12 @@
 ---
 name: event-driven-location-sharing
-description: Event-driven location sharing patterns using EventBus, Effect, and Supabase Realtime. Reusable for real-time streaming features.
-tags: [event-driven, location, realtime, effect, supabase, streaming]
+description: Event-driven location sharing patterns using EventBus, Effect, and Redis Streams. Reusable for real-time streaming features.
+tags: [event-driven, location, realtime, effect, redis, streaming]
 ---
 
 # Event-Driven Location Sharing
 
-> **Reusable patterns for real-time event streaming using Effect and Supabase Realtime**
+> **Reusable patterns for real-time event streaming using Effect and Redis Streams**
 
 This skill provides patterns for implementing event-driven location sharing and other real-time streaming features. It leverages the existing EventBus architecture (used by notifications) to enable unified, scalable event streaming.
 
@@ -22,8 +22,8 @@ This skill provides patterns for implementing event-driven location sharing and 
 
 **Prerequisites:**
 - Understanding of Effect framework (`Effect.gen`, `Context.Tag`, `Layer`)
-- Supabase Realtime configured in project
-- Existing EventBus infrastructure (see `SupabaseRealtimeEventBusGateway`)
+- Redis Streams configured in project
+- Existing EventBus infrastructure (see `RedisEventBusGateway`)
 
 ---
 
@@ -39,14 +39,14 @@ This skill provides patterns for implementing event-driven location sharing and 
 └───────────────────────────────────────────────┼───────────────────┘
                                                 │
 ┌───────────────────────────────────────────────▼───────────────────┐
-│ SupabaseRealtimeEventBusGateway                                   │
-│   Channel: domain-events-locationupdated                          │
-│   Broadcast: { userId, lat, lng, sharingWithUserIds }            │
+│ RedisEventBusGateway                                              │
+│   Stream: domain-events-locationupdated                           │
+│   XADD: { userId, lat, lng, sharingWithUserIds }                 │
 └───────────────────────────────────────────────┬─────────────────────┘
                                                 │
 ┌───────────────────────────────────────────────▼───────────────────┐
 │ LocationEventHandler                                              │
-│   Subscribes to LocationUpdated                                   │
+│   Subscribes to LocationUpdated (XREADGROUP)                        │
 │   For each user in sharingWithUserIds:                           │
 │     → Push to GraphQL subscription stream                         │
 └───────────────────────────────────────────────────────────────────┘
@@ -649,11 +649,11 @@ subscribe: async function* () {
 ## References
 
 - Effect Scheduling: https://effect.website/docs/scheduling/introduction
-- Supabase Realtime Broadcast: https://supabase.com/docs/guides/realtime/broadcast
+- Redis Streams: https://redis.io/docs/data-types/streams/
 - Pothos Subscriptions: https://pothos-graphql.dev/docs/guide/subscriptions
 - graphql-ws Protocol: https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md
 
 ---
 
-**Last Updated:** 2026-04-18  
-**Version:** 1.0.0
+**Last Updated:** 2026-04-20
+**Version:** 1.1.0 (Updated for Redis Streams)

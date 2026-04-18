@@ -19,13 +19,14 @@ import {
  * Error types for non-retryable push notification failures
  * These error types implement the Data.TaggedError pattern from Effect
  */
-export class DeviceNotRegisteredError extends Data.TaggedError(
-  "DeviceNotRegisteredError",
-)<{ token: string; userId: string }> {}
+export class DeviceNotRegisteredError extends Data.TaggedError("DeviceNotRegisteredError")<{
+  token: string;
+  userId: string;
+}> {}
 
-export class InvalidCredentialsError extends Data.TaggedError(
-  "InvalidCredentialsError",
-)<{ message: string }> {}
+export class InvalidCredentialsError extends Data.TaggedError("InvalidCredentialsError")<{
+  message: string;
+}> {}
 
 /**
  * Result type for notification send operation
@@ -75,8 +76,15 @@ export class NotificationSendHandler
       );
   }
 
-  handle(event: NotificationCreated) {
-    return Effect.gen(this, function* () {
+  handle(
+    event: NotificationCreated
+  ): Effect.Effect<
+    void,
+    never,
+    PushSubscriptionPortTag | NotificationDeliveryPortTag | NotificationServicePortTag
+  > {
+    const self = this;
+    return Effect.gen(function* () {
       yield* Effect.log("Processing NotificationCreated event").pipe(
         Effect.annotateLogs({
           notificationId: event.aggregateId,
@@ -157,7 +165,7 @@ export class NotificationSendHandler
       }
 
       // Send notifications with retry logic
-      const sendResult = yield* this.sendWithRetry(
+      const sendResult = yield* self.sendWithRetry(
         notificationService,
         event.aggregateId
       );
@@ -214,14 +222,19 @@ export class NotificationSendHandler
           );
         });
       })
-    );
+    ) as Effect.Effect<
+      void,
+      never,
+      PushSubscriptionPortTag | NotificationDeliveryPortTag | NotificationServicePortTag
+    >;
   }
 
   private sendWithRetry(
     notificationService: INotificationServicePort,
     notificationId: NotificationId
-  ): Effect.Effect<SendResult, never, never> {
-    return Effect.gen(this, function* () {
+  ) {
+    const self = this;
+    return Effect.gen(function* () {
       // Apply retry policy - the send effect must be created INSIDE the retry
       // so it gets re-executed on each retry attempt
       const result = yield* Effect.retry(
@@ -229,7 +242,7 @@ export class NotificationSendHandler
           notificationService.sendMobileNotifications(notificationId)
         ).pipe(Effect.flatten),
         {
-          schedule: this.retrySchedule,
+          schedule: self.retrySchedule,
           while: (error) => {
             const errorWithTag = error as { _tag?: string };
             const isNonRetryable =

@@ -1,0 +1,1518 @@
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+type ActivityFeedConnection {
+  edges: [ActivityFeedEdge]
+  pageInfo: PageInfo!
+}
+
+type ActivityFeedEdge {
+  cursor: String!
+  node: ActivityFeedItem
+}
+
+"""
+New activity feed item event
+"""
+type ActivityFeedEvent {
+  createdAt: DateTime
+  description: String
+  groupId: ID
+  id: ID
+  metadata: JSON
+  title: String
+  type: String
+  userId: ID
+}
+
+"""
+Activity feed item
+"""
+type ActivityFeedItem {
+  createdAt: DateTime
+  description: String
+  id: ID
+  imageUrl: String
+  isHidden: Boolean
+  isPinned: Boolean
+  title: String
+  type: String
+  updatedAt: DateTime
+}
+
+input ActivityFeedSubscriptionFilter {
+  groupId: String
+  tripId: String!
+}
+
+"""
+Add coins to group result
+"""
+type AddCoinsResult {
+  amount: Int
+  groupId: ID
+  newCoins: Int
+  previousCoins: Int
+}
+
+input AddGroupCoinsInput {
+  amount: Int!
+  groupId: String!
+  tripId: String!
+}
+
+"""
+Admin user name information
+"""
+type AdminName {
+  firstName: String
+  id: ID
+  lastName: String
+}
+
+"""
+Avatar update result
+"""
+type AvatarUpdateResult {
+  hasAvatar: Boolean
+}
+
+"""
+User ban status information
+"""
+type BanStatus {
+  banned: Boolean
+  bannedUntil: String
+  exists: Boolean
+  reason: String
+}
+
+input BanUserInput {
+  bannedUntilMs: Int!
+  reason: String
+  userId: String!
+}
+
+"""
+Ban user result
+"""
+type BanUserResult {
+  bannedUntil: String
+}
+
+"""
+Bulk assign users result
+"""
+type BulkAssignResult {
+  count: Int
+  participants: [GroupParticipant!]
+}
+
+input BulkAssignUsersInput {
+  groupId: String!
+  tripId: String!
+  userIds: [String!]!
+}
+
+input CastVoteInput {
+  submissionId: String!
+  voteType: VoteType!
+}
+
+"""
+Challenge entity
+"""
+type Challenge {
+  autoApprove: Boolean
+  basePoints: Int
+  createdAt: DateTime
+  dailyEndTime: String
+  dailyStartTime: String
+  description: String
+  endTime: DateTime
+  expectedValue: String
+  firstPlacePoints: Int
+  id: ID
+  image: String
+  isRecurring: Boolean
+  myGroupSubmissionStatus: String
+  name: String
+  participantGroupsCount: Int
+  pendingSubmissionsCount: Int
+  qrCodeValue: String
+  scoringCategory: ScoringCategory
+  secondPlacePoints: Int
+  startTime: DateTime
+  status: ChallengeStatus
+  submissionType: SubmissionType
+  targetLatitude: Float
+  targetLongitude: Float
+  thirdPlacePoints: Int
+  tripId: ID
+  updatedAt: DateTime
+  votingEndTime: DateTime
+  votingStartTime: DateTime
+}
+
+type ChallengeConnection {
+  edges: [ChallengeEdge]
+  pageInfo: PageInfo!
+}
+
+type ChallengeEdge {
+  cursor: String!
+  node: Challenge
+}
+
+"""
+Challenge operation result
+"""
+type ChallengeResult {
+  id: ID
+  name: String
+  status: ChallengeStatus
+}
+
+"""
+Current status of a challenge
+"""
+enum ChallengeStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  HIDDEN
+  VISIBLE
+  VOTING_PHASE
+}
+
+"""
+Challenge status change notification
+"""
+type ChallengeStatusEvent {
+  challengeId: ID
+  changedAt: DateTime
+  newStatus: String
+  previousStatus: String
+  tripId: ID
+}
+
+"""
+Challenge submission
+"""
+type ChallengeSubmission {
+  awardedPoints: Int
+  bonusPoints: Int
+  challengeId: ID
+  createdAt: DateTime
+  groupId: ID
+  id: ID
+  imageIds: [String!]
+  latitude: Float
+  longitude: Float
+  ranking: Int
+  rejectionReason: String
+  reviewedAt: DateTime
+  status: SubmissionStatus
+  textContent: String
+  videoId: String
+  voteCount: Int
+  voteScore: Int
+}
+
+input ChallengeSubscriptionFilter {
+  challengeIds: [String!]
+  tripId: String!
+}
+
+"""
+Vote on a challenge submission
+"""
+type ChallengeVote {
+  createdAt: DateTime
+  id: ID
+  score: Int
+  submissionId: ID
+  userId: ID
+}
+
+"""
+Coin balance for a group
+"""
+type CoinBalance {
+  coins: Int
+  groupId: ID
+  name: String
+  totalEarned: Int
+  totalSpent: Int
+}
+
+"""
+Coin transaction record
+"""
+type CoinTransaction {
+  adminId: ID
+  amount: Int
+  createdAt: DateTime
+  groupId: ID
+  id: ID
+  reason: String
+}
+
+type CoinTransactionConnection {
+  edges: [CoinTransactionEdge]
+  pageInfo: PageInfo!
+}
+
+type CoinTransactionEdge {
+  cursor: String!
+  node: CoinTransaction
+}
+
+"""
+Type of coin transaction
+"""
+enum CoinTransactionType {
+  ADJUSTMENT
+  BONUS
+  EARNED
+  REWARD
+  SPENT
+}
+
+input CreateChallengeInput {
+  autoApprove: Boolean
+  basePoints: Int
+  dailyEndTime: String
+  dailyStartTime: String
+  description: String
+  endTime: DateTime
+  firstPlacePoints: Int
+  image: String
+  isRecurring: Boolean
+  name: String!
+  qrCodeValue: String
+  recurringDays: Int
+  scoringCategory: ScoringCategory!
+  secondPlacePoints: Int
+  startTime: DateTime
+  status: ChallengeStatus
+  submissionType: SubmissionType!
+  targetLatitude: Float
+  targetLongitude: Float
+  textExpectedPhrase: String
+  thirdPlacePoints: Int
+  tripId: String!
+  votingDurationHours: Int
+  votingEndTime: DateTime
+  votingStartTime: DateTime
+}
+
+input CreateGroupInput {
+  description: String
+  image: String
+  name: String!
+  organizerId: String
+  tripId: String!
+}
+
+"""
+Group creation result
+"""
+type CreateGroupResult {
+  code: String
+  coins: Int
+  description: String
+  id: ID
+  image: String
+  name: String
+  organizer: GroupMember
+}
+
+input CreateSubmissionInput {
+  challengeId: String!
+  imageIds: [String!]
+  latitude: Float
+  longitude: Float
+  textContent: String
+  tripId: String!
+  videoId: String
+}
+
+input CreateTripInput {
+  backgroundImagePath: String
+  description: String
+  endDate: DateTime!
+  name: String!
+  startDate: DateTime!
+}
+
+"""
+Trip creation result
+"""
+type CreateTripResult {
+  description: String
+  endDate: DateTime
+  id: ID
+  image: String
+  isActive: Boolean
+  location: String
+  name: String
+  startDate: DateTime
+}
+
+input CreateUserInput {
+  email: String!
+  firstName: String!
+  lastName: String!
+  tripId: String!
+}
+
+"""
+User creation result
+"""
+type CreateUserResult {
+  email: String
+  firstName: String
+  groupId: ID
+  groupName: String
+  houseNumber: String
+  id: ID
+  lastName: String
+  role: Role
+  tripId: ID
+  wristNumber: String
+}
+
+scalar DateTime
+
+input DeleteChallengeInput {
+  id: String!
+  tripId: String!
+}
+
+input DeleteGroupInput {
+  id: String!
+}
+
+input DeleteTripInput {
+  id: String!
+}
+
+"""
+Trip deletion result
+"""
+type DeleteTripResult {
+  success: Boolean
+}
+
+input DeleteUserInput {
+  tripId: String!
+  userId: String!
+}
+
+"""
+User deletion result
+"""
+type DeleteUserResult {
+  deletedFromSystem: Boolean
+}
+
+"""
+Error result from a mutation
+"""
+type ErrorResult {
+  code: String
+  message: String
+}
+
+"""
+Force close voting result
+"""
+type ForceCloseVotingResult {
+  id: ID
+  name: String
+  status: String
+}
+
+"""
+Real-time location update event for friends
+"""
+type FriendLocationEvent {
+  """
+  GPS accuracy in meters (null if unavailable)
+  """
+  accuracy: Float
+  """
+  User's first name
+  """
+  firstName: String
+  """
+  User's avatar image URL
+  """
+  image: String
+  """
+  Whether the user is currently online
+  """
+  isOnline: Boolean
+  """
+  User's last name
+  """
+  lastName: String
+  """
+  Latitude coordinate in decimal degrees (-90 to 90)
+  """
+  latitude: Float
+  """
+  Longitude coordinate in decimal degrees (-180 to 180)
+  """
+  longitude: Float
+  """
+  When the location update occurred
+  """
+  timestamp: DateTime
+  """
+  The user who updated their location
+  """
+  userId: ID
+}
+
+input GetTripInput {
+  id: String!
+}
+
+input GetUploadUrlInput {
+  bucket: String
+  contentType: String!
+  filename: String!
+}
+
+input GetUserByEmailInput {
+  email: String!
+}
+
+"""
+Group entity
+"""
+type Group {
+  code: String
+  coins: Int
+  createdAt: DateTime
+  description: String
+  id: ID
+  image: String
+  isDeleted: Boolean
+  name: String
+  tripId: ID
+  updatedAt: DateTime
+}
+
+"""
+Coin transaction in group context
+"""
+type GroupCoinTransaction {
+  adminId: ID
+  amount: Int
+  createdAt: DateTime
+  groupId: ID
+  id: ID
+  reason: String
+}
+
+type GroupConnection {
+  edges: [GroupEdge]
+  pageInfo: PageInfo!
+}
+
+type GroupEdge {
+  cursor: String!
+  node: GroupWithDetails
+}
+
+"""
+Approved challenge submission for group gallery
+"""
+type GroupGallerySubmission {
+  approvedAt: DateTime
+  challengeId: ID
+  challengeTitle: String
+  imageStoragePath: String
+  submissionId: ID
+}
+
+"""
+Basic group information
+"""
+type GroupInfo {
+  id: ID
+  name: String
+}
+
+"""
+Group join request
+"""
+type GroupJoinRequest {
+  groupId: ID
+  id: ID
+  requestedAt: DateTime
+  status: String
+  tripId: ID
+  user: GroupMember
+  userId: ID
+}
+
+"""
+Group member user details
+"""
+type GroupMember {
+  email: String
+  firstName: String
+  id: ID
+  lastName: String
+}
+
+"""
+Group participant
+"""
+type GroupParticipant {
+  id: ID
+  joinedAt: DateTime
+  user: GroupMember
+}
+
+"""
+Group ranking entry
+"""
+type GroupRankingEntry {
+  coins: Int
+  id: ID
+  image: String
+  name: String
+  participantCount: Int
+  rank: Int
+}
+
+"""
+Group ranking position change
+"""
+type GroupRankingEvent {
+  changedAt: DateTime
+  coinChange: Int
+  groupId: ID
+  newRank: Int
+  previousRank: Int
+  tripId: ID
+}
+
+"""
+Group ranking for a trip
+"""
+type GroupRankingResult {
+  currentDate: DateTime
+  groups: [GroupRankingEntry!]
+}
+
+input GroupSubscriptionFilter {
+  groupId: String
+  tripId: String!
+}
+
+"""
+Group with participants and transactions
+"""
+type GroupWithDetails {
+  code: String
+  coinTransactions: [GroupCoinTransaction!]
+  coins: Int
+  createdAt: DateTime
+  description: String
+  id: ID
+  image: String
+  isDeleted: Boolean
+  name: String
+  organizer: GroupMember
+  participantCount: Int
+  participants: [GroupParticipant!]
+  tripId: ID
+  updatedAt: DateTime
+}
+
+"""
+Group with participant statistics
+"""
+type GroupWithStats {
+  code: String
+  coins: Int
+  description: String
+  id: ID
+  image: String
+  name: String
+  participantCount: Int
+}
+
+"""
+Insurance claim step
+"""
+type InsuranceStep {
+  description: String
+  id: ID
+  stepNumber: Int
+  title: String
+}
+
+scalar JSON
+
+input JoinGroupInput {
+  groupId: String!
+  tripId: String!
+}
+
+"""
+Join group result
+"""
+type JoinGroupResult {
+  groupId: ID
+  success: Boolean
+}
+
+"""
+Group join request notification
+"""
+type JoinRequestEvent {
+  createdAt: DateTime
+  eventType: String
+  groupId: ID
+  requestId: ID
+  userId: ID
+  userName: String
+}
+
+"""
+Join request response result
+"""
+type JoinRequestResponse {
+  status: String
+}
+
+input JoinRequestSubscriptionFilter {
+  groupId: String
+  tripId: String
+}
+
+"""
+Leave group result
+"""
+type LeaveGroupResult {
+  groupDeleted: Boolean
+  left: Boolean
+  reassignedOrganizerId: ID
+}
+
+input LocationSubscriptionFilter {
+  friendIds: [String!]
+  tripId: String!
+}
+
+type MarkAllReadResult {
+  count: Int
+}
+
+type Mutation {
+  addGroupCoins(input: AddGroupCoinsInput!): AddCoinsResult
+  banUser(input: BanUserInput!): BanUserResult
+  bulkAssignUsers(input: BulkAssignUsersInput!): BulkAssignResult
+  cancelJoinRequest(groupId: String!): LeaveGroupResult
+  castVote(input: CastVoteInput!): VoteResult
+  createChallenge(input: CreateChallengeInput!): ChallengeResult
+  createGroup(input: CreateGroupInput!): CreateGroupResult
+  createReward(
+    coinCost: Int!
+    description: String
+    name: String!
+    quantity: Int
+    tripId: String!
+  ): Reward
+  createSubmission(input: CreateSubmissionInput!): SubmissionResult
+  createTrip(input: CreateTripInput!): CreateTripResult
+  createUser(input: CreateUserInput!): CreateUserResult
+  deleteChallenge(input: DeleteChallengeInput!): ChallengeResult
+  deleteFile(path: String!): StorageDeleteResult
+  deleteGroup(input: DeleteGroupInput!): LeaveGroupResult
+  deleteMyGroup(groupId: String!): LeaveGroupResult
+  deleteTrip(input: DeleteTripInput!): DeleteTripResult
+  deleteUser(input: DeleteUserInput!): DeleteUserResult
+  forceCloseVoting(id: String!, tripId: String!): ForceCloseVotingResult
+  joinGroup(input: JoinGroupInput!): JoinGroupResult
+  leaveGroup(groupId: String!): LeaveGroupResult
+  markAllNotificationsRead: MarkAllReadResult
+  markNotificationRead(id: String!): Notification
+  redeemReward(input: RedeemRewardInput!): RedeemedReward
+  removeHouseNumber(tripId: String!, userId: String!): ParticipantNumberResult
+  removeUserFromGroup(tripId: String!, userId: String!): JoinGroupResult
+  removeVote(submissionId: String!): VoteResult
+  removeWristNumber(tripId: String!, userId: String!): ParticipantNumberResult
+  requestJoinGroup(input: RequestJoinGroupInput!): JoinGroupResult
+  respondToJoinRequest(input: RespondJoinRequestInput!): JoinRequestResponse
+  reviewSubmission(input: ReviewSubmissionInput!): SubmissionResult
+  updateAvatar(input: UpdateAvatarInput!): AvatarUpdateResult
+  updateChallenge(input: UpdateChallengeInput!): ChallengeResult
+  updateGroup(input: UpdateGroupInput!): UpdateGroupResult
+  updateHouseNumber(input: UpdateHouseNumberInput!): ParticipantNumberResult
+  updateMyProfile(input: UpdateUserProfileInput!): UpdateProfileResult
+  updateNotificationPreferences(
+    input: UpdateNotificationPreferencesInput!
+  ): UpdatePreferencesResult
+  updateTrip(input: UpdateTripInput!): UpdateTripResult
+  updateUserName(input: UpdateUserNameInput!): UpdateUserResult
+  updateUserRole(input: UpdateUserRoleInput!): UpdateUserResult
+  updateWristNumber(input: UpdateWristNumberInput!): ParticipantNumberResult
+}
+
+"""
+Notification entity
+"""
+type Notification {
+  body: String
+  createdAt: DateTime
+  createdById: ID
+  id: ID
+  title: String
+  tripId: ID
+  updatedAt: DateTime
+  url: String
+}
+
+type NotificationConnection {
+  edges: [NotificationEdge]
+  pageInfo: PageInfo!
+}
+
+type NotificationEdge {
+  cursor: String!
+  node: Notification
+}
+
+type NotificationPreferences {
+  challengeEnabled: Boolean
+  emailEnabled: Boolean
+  pushEnabled: Boolean
+  rankingEnabled: Boolean
+  systemEnabled: Boolean
+  userId: ID
+}
+
+"""
+Priority level for notifications
+"""
+enum NotificationPriority {
+  CRITICAL
+  HIGH
+  LOW
+  NORMAL
+}
+
+"""
+Real-time notification delivery
+"""
+type NotificationReceivedEvent {
+  body: String
+  data: JSON
+  id: ID
+  priority: String
+  receivedAt: DateTime
+  title: String
+  type: String
+}
+
+"""
+Type of notification
+"""
+enum NotificationType {
+  ACTIVITY
+  APPROVAL
+  CHALLENGE
+  RANKING
+  REMINDER
+  SYSTEM
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+"""
+Participant number update result
+"""
+type ParticipantNumberResult {
+  houseNumber: String
+  tripId: ID
+  userId: ID
+  wristNumber: String
+}
+
+type Query {
+  activityFeed(
+    after: String
+    first: Int
+    tripId: String!
+  ): ActivityFeedConnection
+  adminNames: [AdminName!]
+  allChallenges: [Challenge!]
+  allRewards: [Reward!]
+  banStatusByEmail(input: GetUserByEmailInput!): BanStatus
+  challenge(id: String!, tripId: String!): Challenge
+  challenges(after: String, first: Int, tripId: String!): ChallengeConnection
+  group(id: String!): GroupWithDetails
+  groupActivity(
+    after: String
+    first: Int
+    groupId: String!
+  ): ActivityFeedConnection
+  groupGallery(groupId: String!): [GroupGallerySubmission!]
+  groupList(tripId: String!): [Group!]
+  groupRanking(tripId: String!): GroupRankingResult
+  groupSubmissions(
+    after: String
+    challengeId: String!
+    first: Int
+    tripId: String!
+  ): SubmissionConnection
+  groupTransactions(
+    after: String
+    first: Int
+    groupId: String!
+  ): CoinTransactionConnection
+  groups(after: String, first: Int, tripId: String!): GroupConnection
+  me: UserProfile
+  myBanStatus: BanStatus
+  myGroup(tripId: String!): GroupWithDetails
+  myGroupBalance(tripId: String!): CoinBalance
+  myGroupInfo(tripId: String!): UserWithGroupInfo
+  myJoinRequest(groupId: String!): GroupJoinRequest
+  myNotifications(after: String, first: Int): NotificationConnection
+  myRedeemedRewards(tripId: String!): [RedeemedReward!]
+  mySubmissions(
+    after: String
+    first: Int
+    tripId: String!
+  ): SubmissionConnection
+  myTrips(after: String, first: Int): TripConnection
+  myVotes(challengeId: String!): [ChallengeVote!]
+  notificationPreferences: NotificationPreferences
+  pendingJoinRequests(groupId: String!): [GroupJoinRequest!]
+  pendingSubmissions(
+    after: String
+    first: Int
+    tripId: String!
+  ): SubmissionConnection
+  rewards(after: String, first: Int, tripId: String!): RewardConnection
+  searchUsers(
+    after: String
+    field: String!
+    first: Int
+    searchTerm: String
+    tripId: String!
+  ): UserConnection
+  sponsors: [Sponsor!]
+  submissionVotes(submissionId: String!): [ChallengeVote!]
+  trip(id: String!): TripWithParticipants
+  tripAdmin(id: String!): TripWithParticipants
+  tripParticipant(tripId: String!, userId: String!): TripParticipantInfo
+  tripResources(tripId: String!): TripResourcesResult
+  uploadUrl(input: GetUploadUrlInput!): StorageUploadUrl
+  user(id: String!): User
+  userWithGroup(id: String!, tripId: String!): UserWithGroupInfo
+  users(after: String, first: Int, tripId: String!): UserConnection
+}
+
+input RedeemRewardInput {
+  rewardId: String!
+  tripId: String!
+}
+
+type RedeemedReward {
+  groupId: ID
+  id: ID
+  redeemedAt: DateTime
+  reward: Reward
+  rewardId: ID
+  status: String
+  userId: ID
+}
+
+input RequestJoinGroupInput {
+  groupId: String!
+}
+
+input RespondJoinRequestInput {
+  accept: Boolean!
+  requestId: String!
+}
+
+input ReviewSubmissionInput {
+  awardedPoints: Int
+  bonusPoints: Int
+  rejectionReason: String
+  status: SubmissionStatus!
+  submissionId: String!
+}
+
+"""
+Reward entity
+"""
+type Reward {
+  availableQuantity: Int
+  coinCost: Int
+  createdAt: DateTime
+  createdById: ID
+  description: String
+  id: ID
+  image: String
+  isHidden: Boolean
+  name: String
+  tripId: ID
+  updatedAt: DateTime
+}
+
+type RewardConnection {
+  edges: [RewardEdge]
+  pageInfo: PageInfo!
+}
+
+type RewardEdge {
+  cursor: String!
+  node: Reward
+}
+
+"""
+User role in the system
+"""
+enum Role {
+  ADMIN
+  MODERATOR
+  SERVICE
+  USER
+}
+
+"""
+How challenge submissions are scored
+"""
+enum ScoringCategory {
+  JUDGED_STAFF
+  PEER_VOTING
+  SPEED
+  UNLIMITED
+}
+
+input SearchUsersInput {
+  field: String!
+  searchTerm: String
+  tripId: String!
+}
+
+"""
+Sponsor entity
+"""
+type Sponsor {
+  createdAt: DateTime
+  description: String
+  height: Float
+  id: ID
+  isActive: Boolean
+  logoPath: String
+  name: String
+  offsetX: Float
+  offsetY: Float
+  updatedAt: DateTime
+}
+
+type StorageDeleteResult {
+  path: String
+  success: Boolean
+}
+
+"""
+Pre-signed upload URL for storage
+"""
+type StorageUploadUrl {
+  expiresAt: DateTime
+  path: String
+  url: String
+}
+
+type SubmissionConnection {
+  edges: [SubmissionEdge]
+  pageInfo: PageInfo!
+}
+
+type SubmissionEdge {
+  cursor: String!
+  node: ChallengeSubmission
+}
+
+type SubmissionResult {
+  id: ID
+  status: String
+}
+
+"""
+Challenge submission review notification
+"""
+type SubmissionReviewedEvent {
+  awardedPoints: Int
+  challengeId: ID
+  groupId: ID
+  reviewedAt: DateTime
+  status: String
+  submissionId: ID
+}
+
+"""
+Status of a challenge submission
+"""
+enum SubmissionStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+input SubmissionSubscriptionFilter {
+  challengeId: String
+  groupId: String!
+}
+
+"""
+Type of challenge submission required
+"""
+enum SubmissionType {
+  IMAGE
+  IMAGE_LOCATION
+  LOCATION
+  MULTI_IMAGE
+  QR_CODE
+  TEXT
+  VIDEO
+}
+
+type Subscription {
+  activityFeedEvent(filter: ActivityFeedSubscriptionFilter!): ActivityFeedEvent
+  challengeStatusEvent(
+    filter: ChallengeSubscriptionFilter!
+  ): ChallengeStatusEvent
+  """
+  Subscribe to real-time location updates from a friend
+  """
+  friendLocationEvent(
+    """
+    The friend ID to subscribe to location updates for
+    """
+    friendId: ID!
+  ): FriendLocationEvent
+  groupRankingEvent(filter: GroupSubscriptionFilter!): GroupRankingEvent
+  joinRequestEvent(filter: JoinRequestSubscriptionFilter): JoinRequestEvent
+  notificationReceived: NotificationReceivedEvent
+  submissionReviewed(
+    filter: SubmissionSubscriptionFilter!
+  ): SubmissionReviewedEvent
+}
+
+"""
+Trip entity representing a travel event
+"""
+type Trip {
+  createdAt: DateTime
+  description: String
+  endDate: DateTime
+  id: ID
+  image: String
+  isActive: Boolean
+  location: String
+  name: String
+  startDate: DateTime
+  updatedAt: DateTime
+}
+
+type TripConnection {
+  edges: [TripEdge]
+  pageInfo: PageInfo!
+}
+
+type TripEdge {
+  cursor: String!
+  node: Trip
+}
+
+"""
+Group information within trip context
+"""
+type TripGroup {
+  code: String
+  coins: Int
+  id: ID
+  image: String
+  isDeleted: Boolean
+  name: String
+  participantCount: Int
+}
+
+"""
+Basic trip information
+"""
+type TripInfo {
+  id: ID
+  name: String
+}
+
+"""
+Trip insurance information
+"""
+type TripInsurance {
+  createdAt: DateTime
+  description: String
+  id: ID
+  policyNumber: String
+  provider: String
+  steps: [InsuranceStep!]
+  title: String
+  tripId: ID
+  updatedAt: DateTime
+}
+
+"""
+Detailed trip participant information
+"""
+type TripParticipantDetail {
+  group: TripGroup
+  houseNumber: String
+  tripId: ID
+  user: TripParticipantUser
+  userId: ID
+  wristNumber: String
+}
+
+"""
+Trip participant information
+"""
+type TripParticipantInfo {
+  group: GroupInfo
+  houseNumber: String
+  tripId: ID
+  userId: ID
+  wristNumber: String
+}
+
+"""
+User information for trip participant
+"""
+type TripParticipantUser {
+  email: String
+  firstName: String
+  id: ID
+  lastName: String
+  role: String
+}
+
+"""
+Trip resource or document
+"""
+type TripResource {
+  content: String
+  createdAt: DateTime
+  description: String
+  iconName: String
+  id: ID
+  sortOrder: Int
+  title: String
+  tripId: ID
+  updatedAt: DateTime
+}
+
+"""
+Trip resources query result
+"""
+type TripResourcesResult {
+  insurance: TripInsurance
+  resources: [TripResource!]
+}
+
+"""
+Sponsor association with trip
+"""
+type TripSponsor {
+  id: ID
+  sponsor: Sponsor
+  sponsorId: ID
+  tripId: ID
+}
+
+"""
+Trip with groups and sponsors
+"""
+type TripWithDetails {
+  createdAt: DateTime
+  description: String
+  endDate: DateTime
+  groups: [TripGroup!]
+  id: ID
+  image: String
+  isActive: Boolean
+  location: String
+  name: String
+  startDate: DateTime
+  tripSponsors: [TripSponsor!]
+  updatedAt: DateTime
+}
+
+"""
+Trip with full details including participants
+"""
+type TripWithParticipants {
+  createdAt: DateTime
+  description: String
+  endDate: DateTime
+  groups: [TripGroup!]
+  id: ID
+  image: String
+  isActive: Boolean
+  location: String
+  name: String
+  participants: [TripParticipantDetail!]
+  startDate: DateTime
+  tripSponsors: [TripSponsor!]
+  updatedAt: DateTime
+}
+
+input UpdateAvatarInput {
+  hasAvatar: Boolean!
+}
+
+input UpdateChallengeInput {
+  autoApprove: Boolean
+  basePoints: Int
+  dailyEndTime: String
+  dailyStartTime: String
+  description: String
+  endTime: DateTime
+  firstPlacePoints: Int
+  id: String!
+  image: String
+  isRecurring: Boolean
+  name: String
+  qrCodeValue: String
+  recurringDays: Int
+  scoringCategory: ScoringCategory
+  secondPlacePoints: Int
+  startTime: DateTime
+  status: ChallengeStatus
+  submissionType: SubmissionType
+  targetLatitude: Float
+  targetLongitude: Float
+  textExpectedPhrase: String
+  thirdPlacePoints: Int
+  tripId: String!
+  votingDurationHours: Int
+  votingEndTime: DateTime
+  votingStartTime: DateTime
+}
+
+input UpdateGroupInput {
+  description: String
+  id: String!
+  image: String
+  name: String
+  organizerId: String
+  tripId: String!
+}
+
+"""
+Group update result
+"""
+type UpdateGroupResult {
+  description: String
+  id: ID
+  image: String
+  name: String
+  organizerId: ID
+}
+
+input UpdateHouseNumberInput {
+  houseNumber: String!
+  tripId: String!
+  userId: String!
+}
+
+input UpdateNotificationPreferencesInput {
+  challengeEnabled: Boolean
+  emailEnabled: Boolean
+  pushEnabled: Boolean
+  rankingEnabled: Boolean
+  systemEnabled: Boolean
+}
+
+type UpdatePreferencesResult {
+  challengeEnabled: Boolean
+  emailEnabled: Boolean
+  pushEnabled: Boolean
+  rankingEnabled: Boolean
+  systemEnabled: Boolean
+}
+
+"""
+User profile update result
+"""
+type UpdateProfileResult {
+  firstName: String
+  id: ID
+  lastName: String
+}
+
+input UpdateTripInput {
+  backgroundImagePath: String
+  description: String
+  endDate: DateTime
+  id: String!
+  isActive: Boolean
+  name: String
+  startDate: DateTime
+}
+
+"""
+Trip update result
+"""
+type UpdateTripResult {
+  description: String
+  endDate: DateTime
+  id: ID
+  image: String
+  isActive: Boolean
+  location: String
+  name: String
+  startDate: DateTime
+}
+
+input UpdateUserNameInput {
+  firstName: String!
+  lastName: String!
+  userId: String!
+}
+
+input UpdateUserProfileInput {
+  firstName: String!
+  lastName: String!
+}
+
+"""
+User update result
+"""
+type UpdateUserResult {
+  email: String
+  firstName: String
+  id: ID
+  lastName: String
+  role: Role
+}
+
+input UpdateUserRoleInput {
+  role: Role!
+  userId: String!
+}
+
+input UpdateWristNumberInput {
+  tripId: String!
+  userId: String!
+  wristNumber: String!
+}
+
+"""
+User entity
+"""
+type User {
+  email: String
+  firstName: String
+  fullName: String
+  hasAvatar: Boolean
+  id: ID
+  lastName: String
+  role: Role
+}
+
+type UserConnection {
+  edges: [UserEdge]
+  pageInfo: PageInfo!
+}
+
+type UserEdge {
+  cursor: String!
+  node: UserWithTripInfo
+}
+
+"""
+User profile information
+"""
+type UserProfile {
+  email: String
+  firstName: String
+  hasAvatar: Boolean
+  id: ID
+  lastName: String
+  role: Role
+}
+
+"""
+User's trip membership with group info
+"""
+type UserTripInfo {
+  group: GroupInfo
+  trip: TripInfo
+  tripId: ID
+}
+
+"""
+User with group information for a trip
+"""
+type UserWithGroupInfo {
+  firstName: String
+  id: ID
+  lastName: String
+  organizerGroup: GroupInfo
+  trips: [UserTripInfo!]
+}
+
+"""
+User with trip participant information
+"""
+type UserWithTripInfo {
+  banReason: String
+  bannedUntil: String
+  email: String
+  firstName: String
+  groupId: ID
+  groupName: String
+  hasAvatar: Boolean
+  houseNumber: String
+  id: ID
+  isBanned: Boolean
+  lastName: String
+  role: Role
+  tripId: ID
+  wristNumber: String
+}
+
+type VoteResult {
+  id: ID
+  score: Int
+  submissionId: ID
+}
+
+"""
+Type of vote on a submission
+"""
+enum VoteType {
+  DOWNVOTE
+  UPVOTE
+}

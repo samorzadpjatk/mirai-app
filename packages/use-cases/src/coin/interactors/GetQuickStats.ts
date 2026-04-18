@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import { CoinTransactionPort } from "../ports/CoinTransactionPort";
-import { GroupPort } from "../../group/ports/GroupPort";
+import { CoinTransactionPortTag } from "../ports/CoinTransactionPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
 import type { ApplicationError, GroupId } from "@mirai-app/domain";
 import { GroupId as GroupIdFactory } from "@mirai-app/domain";
 
@@ -28,16 +28,10 @@ export interface QuickStatsDTO {
  * Retrieves quick statistics about coin distribution in a trip.
  */
 export class GetQuickStatsUseCase {
-  execute(
-    input: GetQuickStatsInput,
-  ): Effect.Effect<
-    QuickStatsDTO | null,
-    ApplicationError,
-    CoinTransactionPort | GroupPort
-  > {
+  execute(input: GetQuickStatsInput) {
     return Effect.gen(function* () {
-      const coinPort = yield* CoinTransactionPort;
-      const groupPort = yield* GroupPort;
+      const coinPort = yield* CoinTransactionPortTag;
+      const groupPort = yield* GroupPortTag;
 
       const [totalStats, richestGroup] = yield* Effect.all([
         Effect.gen(function* () {
@@ -57,9 +51,7 @@ export class GetQuickStatsUseCase {
       }
 
       // Get the group name
-      const group = yield* groupPort.findById(
-        GroupIdFactory.toString(richestGroup.groupId),
-      );
+      const group = yield* groupPort.findById(richestGroup.groupId);
 
       if (!group) {
         return null;

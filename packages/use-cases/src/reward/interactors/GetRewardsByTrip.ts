@@ -2,8 +2,9 @@ import { Effect, Data } from "effect";
 import type {
   TripId,
   UserId,
-  GroupId} from "@mirai-app/domain";
-import { TripId as TripIdFactory } from "@mirai-app/domain";
+  GroupId,
+  Reward} from "@mirai-app/domain";
+import { TripId as TripIdFactory, UserId as UserIdFactory } from "@mirai-app/domain";
 import { RewardPortTag } from "../ports/RewardPort";
 import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
 import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
@@ -79,7 +80,7 @@ export class GetRewardsByTripUseCase {
       // Calculate total available points for dynamic pricing
       let totalAvailablePoints = 0;
       if (!isAllTrips && tripId) {
-        const challenges = yield* challengePort.findByTripId(input.tripId);
+        const challenges = yield* challengePort.findByTripId(tripId);
         for (const challenge of challenges) {
           totalAvailablePoints += challenge.basePoints;
           if (challenge.scoringCategory !== "UNLIMITED") {
@@ -96,9 +97,10 @@ export class GetRewardsByTripUseCase {
       let groupId: GroupId | null = null;
 
       if (!isAllTrips && tripId) {
+        const userId = UserIdFactory.unsafeCreate(input.userId);
         const participant = yield* participantPort.findByUserAndTrip(
-          input.userId,
-          input.tripId,
+          userId,
+          tripId,
         );
 
         if (participant?.groupId) {
@@ -107,14 +109,14 @@ export class GetRewardsByTripUseCase {
             groupId = group.id;
             groupCoins = group.coins;
             // Check if user is group leader (organizer)
-            isGroupLeader = group.organizerId === input.userId;
+            isGroupLeader = group.organizerId === userId;
           }
         }
       }
 
       // Build result with dynamic pricing
       const rewardsWithDetails = yield* Effect.all(
-        rewards.map((reward) =>
+        rewards.map((reward: Reward) =>
           Effect.gen(function* () {
             // Calculate dynamic coin cost
             let dynamicCoinCost = reward.coinCost;

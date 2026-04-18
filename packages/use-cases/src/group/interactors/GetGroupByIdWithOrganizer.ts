@@ -1,8 +1,9 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import type { GroupWithStatsDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
-import { GroupNotFoundError } from "../errors/GroupErrors";
+import { GroupPortTag } from "../ports/GroupPort";
+import { UserPortTag } from "../../user/ports/UserPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import type { GroupMemberDTO } from "../dto/GroupDTOs";
+import { GroupId } from "@mirai-app/domain";
 
 /**
  * Input for GetGroupByIdWithOrganizerUseCase
@@ -17,21 +18,32 @@ export interface GetGroupByIdWithOrganizerInput {
  * Retrieves a group with organizer info and stats (for moderators).
  */
 export class GetGroupByIdWithOrganizerUseCase {
-  execute(
-    input: GetGroupByIdWithOrganizerInput,
-  ): Effect.Effect<
-    GroupWithStatsDTO | null,
-    DatabaseError | GroupNotFoundError,
-    GroupPort
-  > {
+  execute(input: GetGroupByIdWithOrganizerInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
+      const groupPort = yield* GroupPortTag;
+      const userPort = yield* UserPortTag;
+      const participantPort = yield* TripParticipantPortTag;
 
-      const group = yield* groupPort.findById(input.groupId);
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const group = yield* groupPort.findById(groupId);
 
       if (!group || group.isDeleted) {
         return null;
       }
+
+      const [participantCount, organizer] = yield* Effect.all([
+        participantPort.countByTripId(group.tripId),
+        userPort.findById(group.organizerId),
+      ]);
+
+      const organizerDto: GroupMemberDTO | null = organizer
+        ? {
+            id: organizer.id,
+            firstName: organizer.firstName,
+            lastName: organizer.lastName,
+            email: null,
+          }
+        : null;
 
       return {
         id: group.id,
@@ -40,8 +52,8 @@ export class GetGroupByIdWithOrganizerUseCase {
         image: group.image,
         code: group.code,
         coins: group.coins,
-        participantCount: 0, // Will be hydrated by adapter
-        organizer: null, // Will be hydrated by adapter
+        participantCount,
+        organizer: organizerDto,
         isDeleted: group.isDeleted,
       };
     });

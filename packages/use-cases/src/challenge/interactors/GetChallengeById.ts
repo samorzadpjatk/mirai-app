@@ -1,4 +1,5 @@
 import { Effect, Data } from "effect";
+import { ChallengeId, TripId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
 import { ChallengeNotFoundError } from "../errors/ChallengeErrors";
 import type { ChallengeDTO } from "../dto/ChallengeDTOs";
@@ -22,12 +23,14 @@ export class GetChallengeByIdUseCase {
   execute(input: GetChallengeByIdInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
+      const tripId = TripId.unsafeCreate(input.tripId);
+      const challengeId = ChallengeId.unsafeCreate(input.challengeId);
 
       // Activate visible challenges for this trip
-      yield* challengePort.activateVisibleChallenges(input.tripId);
+      yield* challengePort.activateVisibleChallenges(tripId);
 
       // Find challenge
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challenge = yield* challengePort.findById(challengeId);
 
       if (!challenge) {
         return yield* Effect.fail(

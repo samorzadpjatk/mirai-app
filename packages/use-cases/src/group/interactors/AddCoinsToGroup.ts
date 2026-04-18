@@ -1,8 +1,7 @@
 import { Effect } from "effect";
-import { Group } from "@mirai-app/domain";
-import { GroupPort } from "../ports/GroupPort";
+import { Group, GroupId, TripId, UserId } from "@mirai-app/domain";
+import { GroupPortTag } from "../ports/GroupPort";
 import type { AddCoinsResultDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
 import { GroupNotFoundError } from "../errors/GroupErrors";
 
 /**
@@ -21,20 +20,17 @@ export interface AddCoinsToGroupInput {
  * Adds coins to a group (moderator only).
  */
 export class AddCoinsToGroupUseCase {
-  execute(
-    input: AddCoinsToGroupInput,
-  ): Effect.Effect<
-    AddCoinsResultDTO,
-    DatabaseError | GroupNotFoundError,
-    GroupPort
-  > {
+  execute(input: AddCoinsToGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
+      const groupPort = yield* GroupPortTag;
+
+      const groupId = GroupId.unsafeCreate(input.groupId);
+      const tripId = TripId.unsafeCreate(input.tripId);
 
       // Find the group
-      const group = yield* groupPort.findById(input.groupId);
+      const group = yield* groupPort.findById(groupId);
 
-      if (!group || group.isDeleted || group.tripId !== input.tripId) {
+      if (!group || group.isDeleted || !TripId.equals(group.tripId, tripId)) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: input.groupId }),
         );

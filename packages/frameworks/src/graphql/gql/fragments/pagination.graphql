@@ -1,0 +1,10 @@
+# =============================================================================
+# Pagination Fragments
+# =============================================================================
+
+fragment PageInfoFields on PageInfo {
+  hasNextPage
+  hasPreviousPage
+  startCursor
+  endCursor
+}

@@ -56,19 +56,6 @@ export interface CoinTransactionWithDetailsDTO extends CoinTransactionDTO {
 }
 
 /**
- * DTO for paginated coin transactions
- */
-export interface PaginatedCoinTransactionsDTO {
-  transactions: CoinTransactionDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
-}
-
-/**
  * DTO for coin operation result
  */
 export interface CoinOperationResultDTO {

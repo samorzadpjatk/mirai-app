@@ -1,6 +1,11 @@
-import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
-import { ChallengeSubmissionPort } from "../ports/ChallengeSubmissionPort";
+import { Effect } from "effect";
+import {
+  ChallengeSubmissionId,
+} from "@mirai-app/domain";
+import { ChallengeSubmissionPortTag } from "../ports/ChallengeSubmissionPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { UserPortTag } from "../../user/ports/UserPort";
+import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import { SubmissionNotFoundError } from "../errors/SubmissionErrors";
 import type { SubmissionWithDetailsDTO } from "../dto/ChallengeSubmissionDTOs";
 
@@ -15,21 +20,20 @@ export interface GetSubmissionByIdInput {
 /**
  * Get Submission By ID Use Case
  *
- * Retrieves a submission by its ID.
+ * Retrieves a submission by its ID with all related details populated.
  */
 export class GetSubmissionByIdUseCase {
-  execute(
-    input: GetSubmissionByIdInput,
-  ): Effect.Effect<
-    SubmissionWithDetailsDTO,
-    SubmissionNotFoundError | ApplicationError,
-    ChallengeSubmissionPort
-  > {
+  execute(input: GetSubmissionByIdInput) {
     return Effect.gen(function* () {
-      const submissionPort = yield* ChallengeSubmissionPort;
+      const submissionPort = yield* ChallengeSubmissionPortTag;
+      const groupPort = yield* GroupPortTag;
+      const userPort = yield* UserPortTag;
+      const challengePort = yield* ChallengePortTag;
 
       // Find submission
-      const submission = yield* submissionPort.findById(input.submissionId);
+      const submission = yield* submissionPort.findById(
+        ChallengeSubmissionId.unsafeCreate(input.submissionId),
+      );
 
       if (!submission) {
         return yield* Effect.fail(
@@ -37,7 +41,19 @@ export class GetSubmissionByIdUseCase {
         );
       }
 
-      // Map to DTO
+      // Fetch all related entities in parallel
+      const [groupResult, reviewedByResult, challengeResult] = yield* Effect.all(
+        [
+          groupPort.findById(submission.groupId),
+          submission.reviewedById
+            ? userPort.findById(submission.reviewedById)
+            : Effect.succeed(null),
+          challengePort.findById(submission.challengeId),
+        ],
+        { concurrency: "unbounded" },
+      );
+
+      // Build populated DTO
       return {
         id: submission.id,
         challengeId: submission.challengeId,
@@ -53,15 +69,35 @@ export class GetSubmissionByIdUseCase {
         rejectionReason: submission.rejectionReason,
         awardedPoints: submission.awardedPoints ?? 0,
         bonusPoints: submission.bonusPoints ?? 0,
-        ranking: submission.ranking,
+        ranking: submission.ranking as 1 | 2 | 3 | null,
         voteCount: submission.voteCount,
         voteScore: submission.voteScore,
         createdAt: submission.createdAt,
         updatedAt: submission.updatedAt,
-        group: null, // Will be hydrated by adapter
-        reviewedBy: null, // Will be hydrated by adapter
-        challenge: null, // Will be hydrated by adapter
-      };
+        group: groupResult
+          ? {
+              id: groupResult.id,
+              name: groupResult.name,
+              description: groupResult.description,
+              image: groupResult.image,
+            }
+          : null,
+        reviewedBy: reviewedByResult
+          ? {
+              id: reviewedByResult.id,
+              firstName: reviewedByResult.firstName,
+              lastName: reviewedByResult.lastName,
+              email: null,
+            }
+          : null,
+        challenge: challengeResult
+          ? {
+              id: challengeResult.id,
+              tripId: challengeResult.tripId,
+              name: challengeResult.name,
+            }
+          : null,
+      } satisfies SubmissionWithDetailsDTO;
     });
   }
 }

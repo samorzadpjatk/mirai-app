@@ -1,208 +1,719 @@
+// =============================================================================
+// GraphQL Builder Configuration
+// =============================================================================
+
 import SchemaBuilder from "@pothos/core";
 import RelayPlugin from "@pothos/plugin-relay";
 import DataloaderPlugin from "@pothos/plugin-dataloader";
-import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
-import type { DateTimeResolver, EmailAddressResolver } from "graphql-scalars";
-import type { GraphQLContext } from "./context";
-import type { AuthScopeMap } from "./auth";
-import type { FriendLocationEvent } from "./types/location/types.js";
+import type { GraphQLContext } from "./context.js";
+
+// =============================================================================
+// Import DTOs for PothosTypes Objects Mapping
+// =============================================================================
+
+// Connection types
+import type { Connection, Edge } from "./utils/connections.js";
+
+// User DTOs
+import type {
+  UserProfileDTO,
+  UserWithTripInfoDTO,
+  UserWithGroupInfoDTO,
+} from "@mirai-app/use-cases/user/dto";
+
+// Trip DTOs
+import type {
+  TripDTO,
+  TripWithDetailsDTO,
+  TripWithParticipantsDTO,
+} from "@mirai-app/use-cases/trip/dto";
+
+// Group DTOs
+import type {
+  GroupDTO,
+  GroupWithOrganizerDTO,
+  GroupWithParticipantsDTO,
+  GroupWithStatsDTO,
+  GroupMemberDTO,
+  GroupParticipantDTO,
+  GroupRankingDTO,
+  GroupJoinRequestDTO,
+  CreateGroupResultDTO,
+  UpdateGroupResultDTO,
+  GroupJoinResultDTO,
+  LeaveGroupResultDTO,
+  JoinRequestResponseDTO,
+  AddCoinsResultDTO,
+  BulkAssignResultDTO,
+  GroupRankingsDTO,
+} from "@mirai-app/use-cases/group/dto";
+
+// Challenge DTOs
+import type {
+  ChallengeDTO,
+  ChallengeWithClientFieldsDTO,
+  CreateChallengeResultDTO,
+  UpdateChallengeResultDTO,
+} from "@mirai-app/use-cases/challenge/dto";
+
+// Challenge Submission DTOs
+import type {
+  ChallengeSubmissionDTO,
+  SubmissionWithDetailsDTO,
+  CreateSubmissionResultDTO,
+  ReviewSubmissionResultDTO,
+} from "@mirai-app/use-cases/challenge-submission/dto";
+
+// Challenge Vote DTOs
+import type {
+  ChallengeVoteDTO,
+  CreateVoteResultDTO,
+  UpdateVoteResultDTO,
+} from "@mirai-app/use-cases/challenge-vote/dto";
+
+// Notification DTOs
+import type {
+  NotificationDTO,
+  NotificationWithCreatorDTO,
+  NotificationScheduleDTO,
+  NotificationScheduleWithRelationsDTO,
+} from "@mirai-app/use-cases/notification/dto";
+
+// Coin DTOs
+import type {
+  CoinTransactionDTO,
+  CoinTransactionWithAdminDTO,
+  GroupCoinBalanceDTO,
+} from "@mirai-app/use-cases/coin/dto";
+
+// Reward DTOs
+import type {
+  RewardDTO,
+  RewardWithAvailabilityDTO,
+  RewardPurchaseDTO,
+} from "@mirai-app/use-cases/reward/dto";
+
+// Sponsor DTOs
+import type { SponsorDTO, TripSponsorDTO } from "@mirai-app/use-cases/sponsor/dto";
+
+// Activity Feed DTOs
+import type {
+  ActivityFeedItemDTO,
+} from "@mirai-app/use-cases/activity-feed/dto";
+
+// Location DTOs
+import type {
+  LocationDTO,
+  LocationWithUserDTO,
+  SharingUserDTO,
+} from "@mirai-app/use-cases/location/dto";
+
+// Storage DTOs
+import type { StorageUploadUrlDTO } from "@mirai-app/use-cases/storage/dto";
+
+// =============================================================================
+// Pothos Schema Builder with Objects Mapping
+// =============================================================================
 
 /**
- * Schema builder configuration type
- */
-export interface SchemaBuilderConfig {
-  relay?: {
-    clientMutationId?: "omit" | "include" | "exclude";
-    cursorType?: "String" | "ID";
-  };
-  auth?: {
-    authorizeOnSubscribe?: boolean;
-  };
-  scalars?: {
-    DateTime: typeof DateTimeResolver;
-    EmailAddress: typeof EmailAddressResolver;
-  };
-}
-
-/**
- * Default scalars configuration
- * These are registered automatically via graphql-scalars
- */
-const defaultScalars = {
-  DateTime: "DateTime",
-  EmailAddress: "EmailAddress",
-  UUID: "UUID",
-  JSONObject: "JSONObject",
-  URL: "URL",
-  BigInt: "BigInt",
-} as const;
-
-/**
- * Extended builder type with plugins
+ * Pothos Schema Builder
  *
- * This type represents the fully configured Pothos builder with:
- * - Relay plugin for pagination
- * - DataLoader plugin for N+1 prevention
- * - Scope Auth plugin for authorization
- */
-export type BuilderType = ReturnType<typeof createBuilder>;
-
-/**
- * Create the Pothos schema builder with all plugins
+ * Central builder instance for the GraphQL schema using Pothos.
  *
- * This factory function creates a configured SchemaBuilder instance
- * with all required plugins for the Mirai App GraphQL API.
- *
- * ## Plugins
+ * ## Plugins Used
  *
  * ### @pothos/plugin-relay
- * Provides Relay-compliant pagination and the Node interface.
- * All types that implement `nodeInterface` get automatic global ID support.
+ * Provides Relay Node interface and connections for pagination.
+ * - `builder.node()` - Object types with global IDs
+ * - `builder.connection()` - Relay-style pagination
  *
  * ### @pothos/plugin-dataloader
- * Provides DataLoader integration for solving N+1 query problems.
- * Use `t.loadable()` for fields that need batch loading.
+ * Provides N+1 query prevention via DataLoader pattern.
+ * - `t.loadable()` - Fields with automatic batching
  *
- * ### @pothos/plugin-scope-auth
- * Provides authorization based on auth scopes.
- * Use `authScopes` option to define required permissions.
+ * ## PothosTypes Objects Mapping
  *
- * ## Usage
- *
- * ```typescript
- * import { builder } from "@mirai-app/frameworks/graphql";
- *
- * // The builder is pre-configured with all plugins
- * builder.objectType("User", {
- *   interfaces: [builder.nodeInterface],
- *   fields: (t) => ({
- *     id: t.exposeID("id"),
- *     email: t.exposeString("email"),
- *   }),
- * });
- * ```
+ * The Objects generic maps GraphQL type names to their backing DTO types.
+ * This provides type safety throughout the schema definition.
  */
-export function createBuilder() {
-  return new SchemaBuilder<{
-    // Context type for all resolvers
-    Context: GraphQLContext;
+export const builder = new SchemaBuilder<{
+  Context: GraphQLContext;
+  Scalars: {
+    DateTime: {
+      Input: Date;
+      Output: Date;
+    };
+    JSON: {
+      Input: unknown;
+      Output: unknown;
+    };
+  };
+  Objects: {
+    // ==========================================================================
+    // User Types
+    // ==========================================================================
+    User: UserProfileDTO;
+    UserProfile: UserProfileDTO;
+    UserWithTripInfo: UserWithTripInfoDTO;
+    UserConnection: Connection<UserWithTripInfoDTO>;
+    UserEdge: Edge<UserWithTripInfoDTO>;
 
-    // Scalars from graphql-scalars
-    Scalars: {
-      DateTime: {
-        Input: Date;
-        Output: Date;
+    // ==========================================================================
+    // Trip Types
+    // ==========================================================================
+    Trip: TripDTO;
+    TripWithDetails: TripWithDetailsDTO;
+    TripWithParticipants: TripWithParticipantsDTO;
+    TripGroup: {
+      id: string;
+      name: string;
+      code: string | null;
+      image: string | null;
+      coins: number;
+      participantCount: number;
+      isDeleted: boolean;
+    };
+    TripParticipantUser: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      role: string;
+    };
+    TripParticipantDetail: {
+      userId: string;
+      tripId: string;
+      wristNumber: string | null;
+      houseNumber: string | null;
+      user: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string | null;
+        role: string;
       };
-      EmailAddress: {
-        Input: string;
-        Output: string;
-      };
-      UUID: {
-        Input: string;
-        Output: string;
-      };
-      JSONObject: {
-        Input: Record<string, unknown>;
-        Output: Record<string, unknown>;
-      };
-      URL: {
-        Input: string;
-        Output: string;
-      };
-      BigInt: {
-        Input: bigint;
-        Output: bigint;
-      };
+      group: {
+        id: string;
+        name: string;
+        code: string | null;
+        image: string | null;
+        coins: number;
+        participantCount: number;
+        isDeleted: boolean;
+      } | null;
+    };
+    TripResource: {
+      id: string;
+      tripId: string;
+      title: string;
+      description: string | null;
+      iconName: string | null;
+      content: string;
+      sortOrder: number;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    InsuranceStep: {
+      id: string;
+      stepNumber: number;
+      title: string;
+      description: string | null;
+    };
+    TripInsurance: {
+      id: string;
+      tripId: string;
+      title: string;
+      description: string | null;
+      provider: string | null;
+      policyNumber: string | null;
+      steps: {
+        id: string;
+        stepNumber: number;
+        title: string;
+        description: string | null;
+      }[];
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    TripResourcesResult: {
+      resources: {
+        id: string;
+        tripId: string;
+        title: string;
+        description: string | null;
+        iconName: string | null;
+        content: string;
+        sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
+      }[];
+      insurance: {
+        id: string;
+        tripId: string;
+        title: string;
+        description: string | null;
+        provider: string | null;
+        policyNumber: string | null;
+        steps: {
+          id: string;
+          stepNumber: number;
+          title: string;
+          description: string | null;
+        }[];
+        createdAt: Date;
+        updatedAt: Date;
+      } | null;
+    };
+    CreateTripResult: TripDTO;
+    UpdateTripResult: TripDTO;
+    DeleteTripResult: { success: boolean; id: string };
+
+    // ==========================================================================
+    // Subscription Event Types
+    // ==========================================================================
+    NotificationReceivedEvent: {
+      id: string;
+      type: string;
+      priority: string;
+      title: string;
+      body: string;
+      data: unknown;
+      receivedAt: Date;
+    };
+    ActivityFeedEvent: {
+      id: string;
+      type: string;
+      title: string;
+      description: string | null;
+      groupId: string | null;
+      userId: string | null;
+      metadata: unknown;
+      createdAt: Date;
+    };
+    ChallengeStatusEvent: {
+      challengeId: string;
+      tripId: string;
+      previousStatus: string;
+      newStatus: string;
+      changedAt: Date;
+    };
+    GroupRankingEvent: {
+      groupId: string;
+      tripId: string;
+      previousRank: number;
+      newRank: number;
+      coinChange: number;
+      changedAt: Date;
+    };
+    SubmissionReviewedEvent: {
+      submissionId: string;
+      challengeId: string;
+      groupId: string;
+      status: string;
+      awardedPoints: number | null;
+      reviewedAt: Date;
+    };
+    JoinRequestEvent: {
+      requestId: string;
+      groupId: string;
+      userId: string;
+      userName: string;
+      eventType: string;
+      createdAt: Date;
     };
 
-    // Auth scopes configuration
-    AuthScopes: AuthScopeMap;
-
-    // Auth contexts for field-level auth
-    AuthContexts: {
-      AuthContext: GraphQLContext & {
-        authContext: NonNullable<GraphQLContext["authContext"]>;
-      };
+    // ==========================================================================
+    // User Types (continued)
+    // ==========================================================================
+    UserWithGroupInfo: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      trips: {
+        tripId: string;
+        group: { id: string; name: string } | null;
+        trip: { id: string; name: string } | null;
+      }[];
+      organizerGroup: { id: string; name: string } | null;
+    };
+    GroupInfo: {
+      id: string;
+      name: string;
+    };
+    TripInfo: {
+      id: string;
+      name: string;
+    };
+    UserTripInfo: {
+      tripId: string;
+      group: { id: string; name: string } | null;
+      trip: { id: string; name: string } | null;
+    };
+    BanStatus: {
+      banned: boolean;
+      bannedUntil: string | null;
+      reason: string | null;
+      exists: boolean | null;
+    };
+    TripParticipantInfo: {
+      userId: string;
+      tripId: string;
+      wristNumber: string | null;
+      houseNumber: string | null;
+      group: { id: string; name: string } | null;
+    };
+    AdminName: {
+      id: string;
+      firstName: string | null;
+      lastName: string | null;
+    };
+    UpdateProfileResult: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+    AvatarUpdateResult: {
+      hasAvatar: boolean;
+    };
+    CreateUserResult: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: string;
+      wristNumber: string | null;
+      houseNumber: string | null;
+      groupId: string | null;
+      groupName: string | null;
+      tripId: string;
+    };
+    UpdateUserResult: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      role: string;
+    };
+    DeleteUserResult: {
+      deletedFromSystem: boolean;
+    };
+    BanUserResult: {
+      bannedUntil: string;
+    };
+    ParticipantNumberResult: {
+      userId: string;
+      tripId: string;
+      wristNumber: string | null;
+      houseNumber: string | null;
     };
 
-    // Relay plugin options
-    Objects: {
-      Node: {};
-      PageInfo: {
-        hasNextPage: boolean;
-        hasPreviousPage: boolean;
-        startCursor: string | null;
-        endCursor: string | null;
-      };
-      FriendLocationEvent: FriendLocationEvent;
+    // ==========================================================================
+    // Group Types
+    // ==========================================================================
+    Group: GroupDTO;
+    GroupWithStats: GroupWithStatsDTO;
+    GroupWithOrganizer: GroupWithOrganizerDTO;
+    GroupWithParticipants: GroupWithParticipantsDTO;
+    GroupWithDetails: GroupWithParticipantsDTO;
+    GroupMember: GroupMemberDTO;
+    GroupParticipant: GroupParticipantDTO;
+    GroupRankingEntry: GroupRankingDTO;
+    GroupJoinRequest: GroupJoinRequestDTO;
+    GroupGallerySubmission: {
+      submissionId: string;
+      challengeId: string;
+      challengeTitle: string;
+      imageStoragePath: string;
+      approvedAt: Date;
     };
-    Interfaces: {
-      Node: {};
+    GroupCoinTransaction: {
+      id: string;
+      groupId: string;
+      amount: number;
+      reason: string | null;
+      adminId: string;
+      createdAt: Date;
     };
-  }>({
-    plugins: [RelayPlugin, DataloaderPlugin, ScopeAuthPlugin],
 
-    relay: {
-      // Use "omit" to exclude clientMutationId from mutation inputs
-      clientMutationId: "omit",
-      // Use String for cursor type
-      cursorType: "String",
-    },
+    // Group Connection Types (Relay Pagination)
+    GroupConnection: Connection<GroupWithParticipantsDTO>;
+    GroupEdge: Edge<GroupWithParticipantsDTO>;
 
-    scopeAuth: {
-      // Default auth scopes - can be overridden per-type
-      authScopes: () => ({
-        public: true,
-        authenticated: false,
-        admin: false,
-        moderator: false,
-        owner: false,
-        member: false,
-      }),
-    },
-  });
-}
+    // Group Result Types
+    CreateGroupResult: CreateGroupResultDTO;
+    UpdateGroupResult: UpdateGroupResultDTO;
+    JoinGroupResult: GroupJoinResultDTO;
+    LeaveGroupResult: LeaveGroupResultDTO;
+    JoinRequestResponse: JoinRequestResponseDTO;
+    AddCoinsResult: AddCoinsResultDTO;
+    BulkAssignResult: BulkAssignResultDTO;
+    GroupRankingResult: GroupRankingsDTO;
+
+    // ==========================================================================
+    // Challenge Types
+    // ==========================================================================
+    Challenge: ChallengeDTO;
+    ChallengeWithClientFields: ChallengeWithClientFieldsDTO;
+    ChallengeResult: CreateChallengeResultDTO;
+    ChallengeConnection: Connection<ChallengeDTO>;
+    ChallengeEdge: Edge<ChallengeDTO>;
+    ForceCloseVotingResult: {
+      id: string;
+      name: string;
+      status: string;
+    };
+
+    // ==========================================================================
+    // Challenge Submission Types
+    // ==========================================================================
+    ChallengeSubmission: ChallengeSubmissionDTO;
+    SubmissionWithDetails: SubmissionWithDetailsDTO;
+    SubmissionConnection: Connection<ChallengeSubmissionDTO>;
+    SubmissionEdge: Edge<ChallengeSubmissionDTO>;
+    SubmissionResult: CreateSubmissionResultDTO;
+    ReviewSubmissionResult: ReviewSubmissionResultDTO;
+
+    // ==========================================================================
+    // Challenge Vote Types
+    // ==========================================================================
+    ChallengeVote: ChallengeVoteDTO;
+    VoteResult: CreateVoteResultDTO | UpdateVoteResultDTO;
+
+    // ==========================================================================
+    // Notification Types
+    // ==========================================================================
+    Notification: NotificationDTO;
+    NotificationWithCreator: NotificationWithCreatorDTO;
+    NotificationConnection: Connection<NotificationDTO>;
+    NotificationEdge: Edge<NotificationDTO>;
+    NotificationSchedule: NotificationScheduleDTO;
+    NotificationScheduleWithRelations: NotificationScheduleWithRelationsDTO;
+    NotificationPreferences: {
+      userId: string;
+      pushEnabled: boolean;
+      emailEnabled: boolean;
+      challengeEnabled: boolean;
+      rankingEnabled: boolean;
+      systemEnabled: boolean;
+    };
+    MarkAllReadResult: { count: number };
+    UpdatePreferencesResult: {
+      pushEnabled: boolean;
+      emailEnabled: boolean;
+      challengeEnabled: boolean;
+      rankingEnabled: boolean;
+      systemEnabled: boolean;
+    };
+
+    // ==========================================================================
+    // Coin Types
+    // ==========================================================================
+    CoinTransaction: CoinTransactionDTO;
+    CoinTransactionWithAdmin: CoinTransactionWithAdminDTO;
+    CoinBalance: GroupCoinBalanceDTO;
+    CoinTransactionConnection: {
+      edges: Array<{ node: CoinTransactionDTO; cursor: string }>;
+      pageInfo: { hasNextPage: boolean; hasPreviousPage: boolean; startCursor: string | null; endCursor: string | null };
+    };
+    CoinTransactionEdge: { node: CoinTransactionDTO; cursor: string };
+
+    // ==========================================================================
+    // Reward Types
+    // ==========================================================================
+    Reward: RewardDTO;
+    RewardWithAvailability: RewardWithAvailabilityDTO;
+    RewardPurchase: RewardPurchaseDTO;
+    RewardConnection: Connection<RewardDTO>;
+    RewardEdge: Edge<RewardDTO>;
+    RedeemedReward: {
+      id: string;
+      rewardId: string;
+      groupId: string;
+      userId: string;
+      redeemedAt: Date;
+      status: string;
+      reward: RewardDTO;
+    };
+
+    // ==========================================================================
+    // Sponsor Types
+    // ==========================================================================
+    Sponsor: SponsorDTO;
+    TripSponsor: TripSponsorDTO;
+
+    // ==========================================================================
+    // Activity Feed Types
+    // ==========================================================================
+    ActivityFeedItem: ActivityFeedItemDTO;
+    ActivityFeedConnection: Connection<ActivityFeedItemDTO>;
+    ActivityFeedEdge: Edge<ActivityFeedItemDTO>;
+
+    // ==========================================================================
+    // Location Types
+    // ==========================================================================
+    FriendLocationEvent: {
+      userId: string;
+      firstName: string | null;
+      lastName: string | null;
+      image: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      accuracy: number | null;
+      timestamp: Date;
+      isOnline: boolean;
+    };
+    Location: LocationDTO;
+    LocationWithUser: LocationWithUserDTO;
+    SharingUser: SharingUserDTO;
+
+    // ==========================================================================
+    // Storage Types
+    // ==========================================================================
+    StorageUploadUrl: {
+      url: string;
+      path: string;
+      expiresAt: Date;
+    };
+    StorageDeleteResult: {
+      success: boolean;
+      path: string;
+    };
+
+    // ==========================================================================
+    // Trip Connection Types (Relay Pattern)
+    // ==========================================================================
+    TripConnection: Connection<TripDTO>;
+    TripEdge: Edge<TripDTO>;
+
+    // ==========================================================================
+    // Error and Result Types
+    // ==========================================================================
+    ErrorResult: {
+      message: string;
+      code: string;
+    };
+  };
+}>({
+  plugins: [RelayPlugin, DataloaderPlugin],
+  relay: {
+    clientMutationId: "omit",
+    cursorType: "String",
+  },
+});
+
+// =============================================================================
+// Scalar Types
+// =============================================================================
 
 /**
- * Global schema builder instance
- *
- * This is the primary builder instance used throughout the application.
- * Import this to define types, queries, mutations, and subscriptions.
- *
- * ## Example
- *
- * ```typescript
- * import { builder } from "@mirai-app/frameworks/graphql";
- *
- * // Define a type
- * builder.objectType("User", {
- *   interfaces: [builder.nodeInterface],
- *   fields: (t) => ({
- *     id: t.exposeID("id"),
- *     email: t.exposeString("email"),
- *   }),
- * });
- *
- * // Define a query
- * builder.queryType({
- *   fields: (t) => ({
- *     user: t.field({
- *       type: "User",
- *       args: {
- *         id: t.arg.id({ required: true }),
- *       },
- *       resolve: async (_parent, args, ctx) => {
- *         return await ctx.controllers.userController.getById({ id: args.id });
- *       },
- *     }),
- *   }),
- * });
- * ```
+ * DateTime scalar
  */
-export const builder = createBuilder();
+builder.scalarType("DateTime", {
+  serialize: (value) => value.toISOString(),
+  parseValue: (value) => {
+    if (typeof value !== "string") {
+      throw new Error("DateTime must be a string");
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error("Invalid DateTime");
+    }
+    return date;
+  },
+});
 
 /**
- * Type export for the builder
- * Use this when you need to reference the builder type explicitly.
+ * JSON scalar
  */
-export type Builder = typeof builder;
+builder.scalarType("JSON", {
+  serialize: (value) => value,
+  parseValue: (value) => value,
+});
+
+// =============================================================================
+// Enum Types - Role
+// =============================================================================
+
+export const RoleEnum = builder.enumType("Role", {
+  values: ["USER", "ADMIN", "MODERATOR", "SERVICE"] as const,
+  description: "User role in the system",
+});
+
+// =============================================================================
+// Enum Types - Challenge
+// =============================================================================
+
+export const SubmissionTypeEnum = builder.enumType("SubmissionType", {
+  values: ["IMAGE", "MULTI_IMAGE", "VIDEO", "TEXT", "IMAGE_LOCATION", "LOCATION", "QR_CODE"] as const,
+  description: "Type of challenge submission required",
+});
+
+export const ScoringCategoryEnum = builder.enumType("ScoringCategory", {
+  values: ["SPEED", "UNLIMITED", "JUDGED_STAFF", "PEER_VOTING"] as const,
+  description: "How challenge submissions are scored",
+});
+
+export const ChallengeStatusEnum = builder.enumType("ChallengeStatus", {
+  values: ["HIDDEN", "VISIBLE", "ACTIVE", "VOTING_PHASE", "COMPLETED", "CANCELLED"] as const,
+  description: "Current status of a challenge",
+});
+
+// =============================================================================
+// Enum Types - Submission
+// =============================================================================
+
+export const SubmissionStatusEnum = builder.enumType("SubmissionStatus", {
+  values: ["PENDING", "APPROVED", "REJECTED"] as const,
+  description: "Status of a challenge submission",
+});
+
+// =============================================================================
+// Enum Types - Vote
+// =============================================================================
+
+export const VoteTypeEnum = builder.enumType("VoteType", {
+  values: ["UPVOTE", "DOWNVOTE"] as const,
+  description: "Type of vote on a submission",
+});
+
+// =============================================================================
+// Enum Types - Notification
+// =============================================================================
+
+export const NotificationTypeEnum = builder.enumType("NotificationType", {
+  values: ["CHALLENGE", "RANKING", "APPROVAL", "SYSTEM", "REMINDER", "ACTIVITY"] as const,
+  description: "Type of notification",
+});
+
+export const NotificationPriorityEnum = builder.enumType("NotificationPriority", {
+  values: ["LOW", "NORMAL", "HIGH", "CRITICAL"] as const,
+  description: "Priority level for notifications",
+});
+
+// =============================================================================
+// Enum Types - Coin
+// =============================================================================
+
+export const CoinTransactionTypeEnum = builder.enumType("CoinTransactionType", {
+    values: ["EARNED", "SPENT", "ADJUSTMENT", "REWARD", "BONUS"] as const,
+  description: "Type of coin transaction",
+});
+
+// =============================================================================
+// Root Types - Required for builder.queryFields/mutationFields to work
+// =============================================================================
+
+/**
+ * Query type - Fields added via builder.queryFields() in domain modules
+ */
+builder.queryType({});
+
+/**
+ * Mutation type - Fields added via builder.mutationFields() in domain modules
+ */
+builder.mutationType({});
+
+/**
+ * Subscription type - Fields added via builder.subscriptionFields() in domain modules
+ */
+builder.subscriptionType({});

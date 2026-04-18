@@ -8,6 +8,8 @@ import type {
 } from "@mirai-app/domain";
 import type { IPortError } from "@mirai-app/domain";
 import type { INotificationPort, IPushSubscriptionPort } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 
 /**
  * Error for notification service failures
@@ -26,6 +28,9 @@ export class NotificationServiceError
  *
  * Implements INotificationServicePort using in-memory storage for testing.
  * Simulates push notification delivery without external API calls.
+ *
+ * This gateway uses the AuthContext pattern for authorization matching the
+ * ExpoNotificationServiceGateway implementation.
  */
 export class InMemoryNotificationServiceGateway implements INotificationServicePort {
   private sentNotifications: Array<{
@@ -53,6 +58,8 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
 
   /**
    * Send notification to multiple users
+   *
+   * Requires trip write access for the specified tripId.
    */
   sendNotification(params: {
     userIds: string[];
@@ -64,8 +71,24 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
   }) {
     const { userIds, title, body, url, tripId, createdById } = params;
     const pushSubscriptionPort = this.pushSubscriptionPort;
+    const self = this;
 
     return Effect.gen(function* () {
+      // Get AuthContext and verify trip write access
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripId,
+          requiredPermission: "write",
+        });
+      }
+
       // Fetch push subscriptions for target users
       const tokens: string[] = [];
 
@@ -87,6 +110,8 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
         timestamp: new Date(),
       };
 
+      self.sentNotifications.push(notificationRecord);
+
       // In test mode, we simulate success for all tokens
       const recipientCount = tokens.length;
 
@@ -100,13 +125,19 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
 
   /**
    * Send mobile push notifications for a notification
+   *
+   * Requires admin or trip write access for the notification's trip.
    */
   sendMobileNotifications(notificationId: NotificationId) {
     const notificationPort = this.notificationPort;
     const pushSubscriptionPort = this.pushSubscriptionPort;
+    const self = this;
 
     return Effect.gen(function* () {
-      // Fetch the notification with pushes
+      // Get AuthContext for authorization
+      const authCtx = yield* AuthContextTag;
+
+      // Fetch the notification with pushes first to get tripId
       const notificationResult = yield* notificationPort.findWithPushes(
         notificationId,
       );
@@ -121,6 +152,19 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
       }
 
       const { notification, pushes } = notificationResult;
+
+      // Verify trip write access if authenticated and trip context exists
+      if (authCtx.isAuthenticated && notification.tripId) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: notification.tripId,
+          requiredPermission: "write",
+        });
+      }
 
       // Filter pending pushes
       const pendingPushes = pushes.filter((p) => p.status === "pending");
@@ -170,6 +214,15 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
       // In test mode, simulate successful delivery to all subscriptions
       const sentCount = scopedSubs.length;
 
+      // Record the mobile notification
+      self.mobileNotifications.push({
+        notificationId,
+        sent: sentCount,
+        failed: 0,
+        total: hasExplicitAudience ? pushes.length : sentCount,
+        timestamp: new Date(),
+      });
+
       return {
         success: true,
         sent: sentCount,
@@ -181,16 +234,47 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
 
   /**
    * Send ranking update notification
+   *
+   * Requires trip write access for the specified tripId.
    */
   sendRankingUpdate(params: { tripId: string; createdById: string }) {
+    const { tripId } = params;
+    const self = this;
+
     return Effect.gen(function* () {
+      // Get AuthContext and verify trip write access
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripId,
+          requiredPermission: "write",
+        });
+      }
+
       // Ranking update notifications are sent via the same mechanism
       // as regular notifications. This is a placeholder for future
       // ranking-specific notification logic.
 
+      // Record the ranking update
+      self.sentNotifications.push({
+        userIds: [],
+        title: "Ranking Update",
+        body: "Your ranking has been updated",
+        url: "/rankings",
+        tripId,
+        createdById: params.createdById,
+        timestamp: new Date(),
+      });
+
       return {
         success: true,
-        notificationId: params.tripId as NotificationId,
+        notificationId: tripId as NotificationId,
         recipientCount: 0,
       };
     });

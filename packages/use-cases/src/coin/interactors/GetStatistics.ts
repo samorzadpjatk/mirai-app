@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { CoinTransactionPort } from "../ports/CoinTransactionPort";
+import { CoinTransactionPortTag } from "../ports/CoinTransactionPort";
 import type { ApplicationError } from "@mirai-app/domain";
 
 /**
@@ -26,15 +26,9 @@ export interface TransactionStatisticsDTO {
  * Retrieves statistics about coin transactions for a trip.
  */
 export class GetStatisticsUseCase {
-  execute(
-    input: GetStatisticsInput,
-  ): Effect.Effect<
-    TransactionStatisticsDTO,
-    ApplicationError,
-    CoinTransactionPort
-  > {
+  execute(input: GetStatisticsInput) {
     return Effect.gen(function* () {
-      const coinPort = yield* CoinTransactionPort;
+      const coinPort = yield* CoinTransactionPortTag;
 
       const [transactionCount, addedCoins, removedCoins] = yield* Effect.all([
         coinPort.countByTripId(input.tripId),

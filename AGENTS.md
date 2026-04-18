@@ -148,7 +148,7 @@ export * as user from "./user";
 export * as trip from "./trip";
 
 // Shared service ports
-export { AuthPortTag, StoragePortTag, RealtimePortTag } from "./shared/ports";
+export { AuthPortTag, StoragePortTag, EventBusPortTag } from "./shared/ports";
 ```
 
 **Usage:**
@@ -247,6 +247,7 @@ export { GroupPortTag } from "./group/ports/GroupPort"; // Already exported via 
 10. **No inline type imports:** Use standard ES module imports at the top of the file. Never use inline type imports like `import("@mirai-app/domain").ActivityId`. If a type is needed, import it properly: `import type { ActivityId } from "@mirai-app/domain"`
 11. **No `as unknown as` casts:** Never use `as unknown as Type` type assertions. Fix the underlying type mismatch through proper type guards, type narrowing, or by correcting the type definitions. If external types are incorrect, use proper type declarations or wrapper functions instead of unsafe casting.
 12. **Port naming convention:** Domain interfaces use I-prefix (`IUserPort`), Context.Tag classes use Tag suffix (`UserPortTag`). Never use declaration merging between interfaces and classes.
+13. **Unit tests only use In-Memory or In-Process gateways:** Never use Drizzle Gateways (or any real database implementations) in unit tests. Unit tests must use In-Memory or In-Process mock gateways with `createTestLayer()` from `@mirai-app/frameworks/di`. Drizzle Gateways are for integration tests only.
 
 ---
 
@@ -477,7 +478,7 @@ import { makeAppLayer } from "@mirai-app/frameworks/di";
 import { UserPortTag } from "@mirai-app/use-cases/user/ports/UserPort";
 import { Effect } from "effect";
 
-const appLayer = makeAppLayer({ db, supabase });
+const appLayer = makeAppLayer({ db });
 
 const program = Effect.gen(function* () {
   const userRepo = yield* UserPortTag;
@@ -515,7 +516,7 @@ const result = await runWithTestLayer(
 2. **No `as unknown as` casts** - Use proper gateway implementations; avoid unsafe type assertions
 3. **Check existing implementations** - Before creating placeholders, verify if gateways already exist in adapters
 4. **Layer composition** - Use `Layer.mergeAll()` for combining multiple repository layers
-5. **Service separation** - Repository layers (db) and service layers (supabase) can be created independently
+5. **Service separation** - Repository layers (db) and service layers (Better Auth, SeaweedFS Storage, Redis EventBus) can be created independently
 
 ---
 
@@ -752,5 +753,83 @@ For comprehensive conventions, see **AGENTS.md** (this file) and per-package AGE
 
 ---
 
+## Rule 14: Use-Cases Must Return Fully-Populated DTOs
+
+Use-cases orchestrate data fetching - they must fetch ALL required data before returning DTOs. Never return incomplete DTOs expecting the adapter to "hydrate" them later.
+
+### Violation Pattern (Anti-Pattern)
+
+```typescript
+// WRONG: Incomplete DTO with placeholders
+return {
+  id: group.id,
+  name: group.name,
+  organizer: null, // Will be hydrated by adapter - WRONG!
+  participants: participants.map(p => ({
+    id: p.id,
+    user: {
+      id: p.userId,
+      firstName: "", // Will be hydrated by adapter - WRONG!
+    },
+  })),
+};
+```
+
+### Correct Pattern
+
+```typescript
+// CORRECT: Fetch all data within use-case
+const [organizer, trip, participants] = yield* Effect.all([
+  userPort.findById(group.organizerId),
+  tripPort.findById(group.tripId),
+  participantPort.findByGroupId(groupId),
+]);
+
+// Fetch user details for all participants
+const participantUsers = yield* Effect.all(
+  participants.map(p => userPort.findById(p.userId))
+);
+
+// Return fully-populated DTO
+return {
+  id: group.id,
+  name: group.name,
+  organizer: {
+    id: organizer.id,
+    firstName: organizer.firstName,
+    lastName: organizer.lastName,
+    email: organizer.email,
+  },
+  participants: participants.map((p, index) => {
+    const user = participantUsers[index];
+    return {
+      id: p.id,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
+      joinedAt: p.createdAt,
+    };
+  }),
+  trip: {
+    id: trip.id,
+    name: trip.name,
+  },
+};
+```
+
+### Why This Matters
+
+| Aspect | Problem with Hydration | Solution with Full DTOs |
+|--------|------------------------|-------------------------|
+| **Layer Responsibility** | Adapter layer does business orchestration | Use-cases orchestrate, adapters pass through |
+| **Testability** | Can't test use-case output without adapter mocks | DTOs are complete and testable in isolation |
+| **Hidden Dependencies** | Invisible coupling between use-case and adapter | Explicit data fetching visible in use-case |
+| **Clean Architecture** | Violates dependency rule (adapter depends on use-case, not reverse) | Proper dependency direction |
+
+---
+
 **Last Updated:** 2026-04-18
-**Version:** 2.10.0 (Added gateway-level auth protection documentation with Effect DI patterns and migration guide)
+**Version:** 2.12.0 (Added Rule 14: Use-cases must return fully-populated DTOs - no adapter hydration)

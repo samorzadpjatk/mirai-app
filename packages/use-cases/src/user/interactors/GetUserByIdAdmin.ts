@@ -1,15 +1,14 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import { UserId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { UpdateUserResultDTO } from "../dto/UserDTOs";
-import { UserNotFoundError } from "../errors/UserErrors";
 
 /**
  * Input for GetUserByIdUseCase
  */
 export interface GetUserByIdInput {
-  userId: string;
+  userId: UserId;
 }
 
 /**
@@ -18,16 +17,10 @@ export interface GetUserByIdInput {
  * Retrieves a user by their ID with email from auth service (for moderators/admins).
  */
 export class GetUserByIdAdminUseCase {
-  execute(
-    input: GetUserByIdInput,
-  ): Effect.Effect<
-    UpdateUserResultDTO | null,
-    ApplicationError,
-    UserPortTag | AuthServicePort
-  > {
+  execute(input: GetUserByIdInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const authService = yield* AuthServicePort;
+      const authService = yield* AuthServicePortTag;
 
       // Find user by ID
       const user = yield* userPort.findById(input.userId);

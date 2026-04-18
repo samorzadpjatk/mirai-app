@@ -1,8 +1,10 @@
-import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import { Effect } from "effect";
+import { ChallengeId, TripId, GroupId, UserId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
-import { ChallengeSubmissionPort } from "../ports/ChallengeSubmissionPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { ChallengeSubmissionPortTag } from "../ports/ChallengeSubmissionPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { UserPortTag } from "../../user/ports/UserPort";
 import { ChallengeNotFoundError } from "../../challenge/errors/ChallengeErrors";
 import { NotGroupMemberError } from "../errors/SubmissionErrors";
 import type { SubmissionWithDetailsDTO } from "../dto/ChallengeSubmissionDTOs";
@@ -22,22 +24,18 @@ export interface GetMySubmissionForChallengeInput {
  * Retrieves the current user's group's submission for a specific challenge.
  */
 export class GetMySubmissionForChallengeUseCase {
-  execute(
-    input: GetMySubmissionForChallengeInput,
-  ): Effect.Effect<
-    SubmissionWithDetailsDTO | null,
-    ChallengeNotFoundError | NotGroupMemberError | ApplicationError,
-    ChallengePortTag | ChallengeSubmissionPort | TripParticipantPort
-  > {
+  execute(input: GetMySubmissionForChallengeInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
-      const submissionPort = yield* ChallengeSubmissionPort;
-      const participantPort = yield* TripParticipantPort;
+      const submissionPort = yield* ChallengeSubmissionPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const groupPort = yield* GroupPortTag;
+      const userPort = yield* UserPortTag;
 
       // Get participant info
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        UserId.unsafeCreate(input.userId),
+        TripId.unsafeCreate(input.tripId),
       );
 
       if (!participant) {
@@ -55,7 +53,7 @@ export class GetMySubmissionForChallengeUseCase {
       }
 
       // Verify challenge exists
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challenge = yield* challengePort.findById(ChallengeId.unsafeCreate(input.challengeId));
       if (!challenge) {
         return yield* Effect.fail(
           new ChallengeNotFoundError({ challengeId: input.challengeId }),
@@ -64,7 +62,7 @@ export class GetMySubmissionForChallengeUseCase {
 
       // Get submission for this group
       const submission = yield* submissionPort.findByChallengeAndGroup(
-        input.challengeId,
+        ChallengeId.unsafeCreate(input.challengeId),
         participant.groupId,
       );
 
@@ -72,7 +70,15 @@ export class GetMySubmissionForChallengeUseCase {
         return null;
       }
 
-      // Map to DTO
+      // Fetch related data in parallel
+      const [group, reviewer] = yield* Effect.all([
+        groupPort.findById(GroupId.unsafeCreate(submission.groupId)),
+        submission.reviewedById
+          ? userPort.findById(submission.reviewedById)
+          : Effect.succeed(null),
+      ]);
+
+      // Map to fully-populated DTO
       return {
         id: submission.id,
         challengeId: submission.challengeId,
@@ -88,15 +94,33 @@ export class GetMySubmissionForChallengeUseCase {
         rejectionReason: submission.rejectionReason,
         awardedPoints: submission.awardedPoints ?? 0,
         bonusPoints: submission.bonusPoints ?? 0,
-        ranking: submission.ranking,
+        ranking: submission.ranking as 1 | 2 | 3 | null,
         voteCount: submission.voteCount,
         voteScore: submission.voteScore,
         createdAt: submission.createdAt,
         updatedAt: submission.updatedAt,
-        group: null, // Will be hydrated by adapter
-        reviewedBy: null, // Will be hydrated by adapter
-        challenge: null, // Will be hydrated by adapter
-      };
+        group: group
+          ? {
+              id: group.id,
+              name: group.name,
+              description: group.description,
+              image: group.image,
+            }
+          : null,
+        reviewedBy: reviewer
+          ? {
+              id: reviewer.id,
+              firstName: reviewer.firstName,
+              lastName: reviewer.lastName,
+              email: null,
+            }
+          : null,
+        challenge: {
+          id: challenge.id,
+          tripId: challenge.tripId,
+          name: challenge.name,
+        },
+      } satisfies SubmissionWithDetailsDTO;
     });
   }
 }

@@ -1,12 +1,10 @@
 import { Effect, Data } from "effect";
 import type { ApplicationError } from "@mirai-app/domain";
+import { ChallengeId, ChallengeSubmissionId, ChallengeVoteId, TripId, UserId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
-import { ChallengeSubmissionPort } from "../../challenge-submission/ports/ChallengeSubmissionPort";
-import {
-  ChallengeVotePort,
-  type ChallengeVote,
-} from "../ports/ChallengeVotePort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { ChallengeSubmissionPortTag } from "../../challenge-submission/ports/ChallengeSubmissionPort";
+import { ChallengeVotePortTag } from "../ports/ChallengeVotePort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import {
   VotingNotActiveError,
   AlreadyVotedError,
@@ -17,6 +15,7 @@ import {
   AdminOnlyVotingError,
 } from "../errors/VoteErrors";
 import type { ChallengeVoteDTO } from "../dto/ChallengeVoteDTOs";
+import type { ChallengeVote } from "@mirai-app/domain";
 
 /**
  * Vote Input
@@ -45,33 +44,22 @@ export interface SubmitVotesInput {
  * Submits multiple votes for a challenge.
  */
 export class SubmitVotesUseCase {
-  execute(
-    input: SubmitVotesInput,
-  ): Effect.Effect<
-    ChallengeVoteDTO[],
-    | VotingNotActiveError
-    | AlreadyVotedError
-    | CannotVoteForOwnGroupError
-    | InvalidSubmissionError
-    | DuplicateVotePositionError
-    | DuplicateSubmissionVoteError
-    | AdminOnlyVotingError
-    | ApplicationError,
-    | ChallengePortTag
-    | ChallengeSubmissionPort
-    | ChallengeVotePort
-    | TripParticipantPort
-  > {
+  execute(input: SubmitVotesInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
-      const submissionPort = yield* ChallengeSubmissionPort;
-      const votePort = yield* ChallengeVotePort;
-      const participantPort = yield* TripParticipantPort;
+      const submissionPort = yield* ChallengeSubmissionPortTag;
+      const votePort = yield* ChallengeVotePortTag;
+      const participantPort = yield* TripParticipantPortTag;
+
+      // Convert string IDs to branded IDs
+      const challengeId = ChallengeId.create(input.challengeId);
+      const tripId = TripId.create(input.tripId);
+      const userId = UserId.create(input.userId);
 
       // Get participant info
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        userId,
+        tripId,
       );
 
       if (!participant) {
@@ -84,7 +72,7 @@ export class SubmitVotesUseCase {
       }
 
       // Get challenge
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challenge = yield* challengePort.findById(challengeId);
 
       if (!challenge) {
         return yield* Effect.fail(
@@ -129,15 +117,15 @@ export class SubmitVotesUseCase {
 
       // Check for existing votes
       const existingVotes = yield* votePort.findByChallengeAndVoter(
-        input.challengeId,
-        participant.id,
+        challengeId,
+        participant.userId,
       );
 
       if (existingVotes.length > 0) {
         return yield* Effect.fail(
           new AlreadyVotedError({
             challengeId: input.challengeId,
-            voterId: participant.id,
+            voterId: participant.userId,
           }),
         );
       }
@@ -156,19 +144,15 @@ export class SubmitVotesUseCase {
 
         if (submissionIds.has(vote.submissionId)) {
           return yield* Effect.fail(
-            new DuplicateSubmissionVoteError({
-              submissionId: vote.submissionId,
-            }),
+            new DuplicateSubmissionVoteError({ submissionId: vote.submissionId }),
           );
         }
         submissionIds.add(vote.submissionId);
       }
 
       // Validate submissions
-      const submissions = yield* submissionPort.findByChallengeId(
-        input.challengeId,
-      );
-      const submissionMap = new Map(submissions.map((s) => [s.id, s]));
+      const submissions = yield* submissionPort.findByChallengeId(challengeId);
+      const submissionMap = new Map(submissions.map((s) => [ChallengeSubmissionId.toString(s.id), s]));
 
       for (const vote of input.votes) {
         const submission = submissionMap.get(vote.submissionId);
@@ -195,10 +179,10 @@ export class SubmitVotesUseCase {
       // Create votes
       const now = new Date();
       const votesToCreate: ChallengeVote[] = input.votes.map((vote) => ({
-        id: "", // Will be assigned by repository
-        challengeId: input.challengeId,
-        submissionId: vote.submissionId,
-        voterId: participant.id,
+        id: ChallengeVoteId.generate(),
+        challengeId: challengeId,
+        submissionId: ChallengeSubmissionId.create(vote.submissionId),
+        voterId: participant.userId,
         votePosition: vote.votePosition,
         votePoints: vote.votePoints,
         normalizedWeight: vote.normalizedWeight ?? 1.0,

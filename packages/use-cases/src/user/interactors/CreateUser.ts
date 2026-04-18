@@ -1,9 +1,9 @@
 import { Effect } from "effect";
-import type { ApplicationError, ValidationError } from "@mirai-app/domain";
+import type { IPortError } from "@mirai-app/domain";
 import { User, TripParticipant, AuthUserId, TripId } from "@mirai-app/domain";
 import { UserPortTag } from "../ports/UserPort";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
-import { AuthServicePort } from "../ports/AuthServicePort";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
+import { AuthServicePortTag } from "../ports/AuthServicePort";
 import type { CreateUserResultDTO } from "../dto/UserDTOs";
 
 /**
@@ -22,17 +22,11 @@ export interface CreateUserInput {
  * Creates a new user with auth and adds them to a trip.
  */
 export class CreateUserUseCase {
-  execute(
-    input: CreateUserInput,
-  ): Effect.Effect<
-    CreateUserResultDTO,
-    ApplicationError | ValidationError,
-    UserPortTag | TripParticipantPort | AuthServicePort
-  > {
+  execute(input: CreateUserInput) {
     return Effect.gen(function* () {
       const userPort = yield* UserPortTag;
-      const participantPort = yield* TripParticipantPort;
-      const authService = yield* AuthServicePort;
+      const participantPort = yield* TripParticipantPortTag;
+      const authService = yield* AuthServicePortTag;
 
       // Create auth user
       const authUser = yield* authService.createAuthUser({

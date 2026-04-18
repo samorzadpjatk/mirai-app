@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { RewardId } from "@mirai-app/domain";
+import type { RewardId, TripId } from "@mirai-app/domain";
 import { RewardId as RewardIdFactory } from "@mirai-app/domain";
 import { RewardPortTag } from "../ports/RewardPort";
 import { RewardPurchasePortTag } from "../ports/RewardPurchasePort";
@@ -49,8 +49,8 @@ export class DeleteRewardUseCase {
         );
       }
 
-      // Delete the reward
-      yield* rewardPort.delete(rewardId);
+      // Delete the reward (requires tripId for auth verification)
+      yield* rewardPort.delete(rewardId, existingReward.tripId);
 
       return { success: true };
     });

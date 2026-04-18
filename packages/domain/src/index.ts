@@ -31,3 +31,5 @@ export * from "./location";
 export * from "./sponsor";
 export * from "./coin";
 export * from "./auth";
+export * from "./submission-report";
+export * from "./migration";

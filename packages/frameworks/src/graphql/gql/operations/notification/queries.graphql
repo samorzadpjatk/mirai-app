@@ -1,0 +1,38 @@
+# =============================================================================
+# Notification Queries
+# =============================================================================
+
+#import "../../fragments/notification.graphql"
+
+query MyNotifications($first: Int, $after: String) {
+  myNotifications(first: $first, after: $after) {
+    edges {
+      node {
+        id
+        body
+        title
+        url
+        tripId
+        createdById
+        createdAt
+        updatedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query NotificationPreferences {
+  notificationPreferences {
+    userId
+    pushEnabled
+    emailEnabled
+    challengeEnabled
+    rankingEnabled
+    systemEnabled
+  }
+}

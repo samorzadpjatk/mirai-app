@@ -26,7 +26,7 @@ export const createBunServer = (config: BunServerConfig) =>
           const upgradeHeader = req.headers.get("upgrade");
           if (upgradeHeader === "websocket") {
             const url = new URL(req.url);
-            if (url.pathname === "/graphql") {
+            if (url.pathname === "/api/graphql") {
               const protocols = req.headers.get("sec-websocket-protocol") || "";
               if (!handleProtocols(protocols)) {
                 return new Response("Bad Request: unsupported WebSocket protocol", { status: 400 });

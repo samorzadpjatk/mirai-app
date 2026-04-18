@@ -31,6 +31,10 @@ src/
 │   ├── controllers/      # Activity controllers
 │   ├── gateways/         # Activity gateways (Drizzle, in-memory)
 │   └── mappers/          # Activity mappers
+├── auth/                 # Authentication adapters
+│   └── gateways/
+│       ├── better-auth/  # Better Auth gateway (IAuthPort implementation)
+│       └── supabase/     # Supabase Auth gateway (legacy, retained for dual-run)
 ├── challenge/            # Challenge domain
 ├── coin/                 # Coin domain
 ├── event/                # Event domain
@@ -247,6 +251,56 @@ export class CustomDrizzleGateway implements CustomGateway {
   }
 }
 ```
+
+### BetterAuthGateway (Authentication)
+
+The `BetterAuthGateway` implements the `IAuthPort` interface from the domain layer, wrapping Better Auth SDK calls in Effect:
+
+```typescript
+// packages/adapters/src/auth/gateways/better-auth/BetterAuthGateway.ts
+import { Effect } from "effect";
+import type { IAuthPort } from "@mirai-app/domain";
+import type { BetterAuthInstance } from "@mirai-app/frameworks/better-auth";
+
+export class BetterAuthGateway implements IAuthPort {
+  constructor(private auth: BetterAuthInstance) {}
+
+  signInWithPassword(email: string, password: string) {
+    return Effect.tryPromise({
+      try: async () => {
+        const result = await this.auth.api.signInEmail({
+          body: { email, password },
+        });
+        return {
+          user: { id: result.user.id, email: result.user.email ?? "" },
+          session: { accessToken: result.token ?? "" },
+        };
+      },
+      catch: (error) => new ApplicationError({
+        operation: "BetterAuthGateway.signInWithPassword",
+        cause: error,
+      }),
+    });
+  }
+
+  // ... other IAuthPort methods
+}
+```
+
+**Key Points:**
+- Implements domain `IAuthPort` interface (Clean Architecture boundary)
+- Wraps all Better Auth API calls in `Effect.tryPromise`
+- Maps Better Auth errors to domain error types
+- Used via `AuthPortTag` in use cases and controllers
+- SupabaseAuthGateway retained during dual-run period for rollback capability
+
+**Migration Context:**
+During the migration from Supabase Auth, both gateways coexist:
+- `BetterAuthGateway`: Handles new users and migrated users
+- `SupabaseAuthGateway`: Handles legacy users during transition
+- Feature flag `USE_BETTER_AUTH` controls routing
+
+See [`.specs/docs/auth.md`](../../.specs/docs/auth.md) for complete authentication documentation.
 
 ## Mapper
 
@@ -605,3 +659,5 @@ export class GoodController {
 - [Effect Documentation](https://effect.website/) - Effect framework patterns
 - [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
 - [Data Mapper Pattern](https://martinfowler.com/eaaCatalog/dataMapper.html)
+- [Better Auth Documentation](https://www.better-auth.com/) - Authentication framework used
+- [`.specs/docs/auth.md`](../../.specs/docs/auth.md) - Mirai authentication system documentation

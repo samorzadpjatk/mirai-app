@@ -1,11 +1,10 @@
 import { Effect, Data } from "effect";
 import type { ApplicationError } from "@mirai-app/domain";
-import {
-  ChallengeVotePort,
-  type ChallengeVote,
-} from "../ports/ChallengeVotePort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
+import { ChallengeId, TripId, UserId } from "@mirai-app/domain";
+import { ChallengeVotePortTag } from "../ports/ChallengeVotePort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
 import type { ChallengeVoteDTO } from "../dto/ChallengeVoteDTOs";
+import type { UserId as UserIdType } from "@mirai-app/domain";
 
 /**
  * Input for GetMyVotesByChallengeUseCase
@@ -22,21 +21,20 @@ export interface GetMyVotesByChallengeInput {
  * Retrieves the current user's votes for a challenge.
  */
 export class GetMyVotesByChallengeUseCase {
-  execute(
-    input: GetMyVotesByChallengeInput,
-  ): Effect.Effect<
-    ChallengeVoteDTO[],
-    ApplicationError,
-    ChallengeVotePort | TripParticipantPort
-  > {
+  execute(input: GetMyVotesByChallengeInput) {
     return Effect.gen(function* () {
-      const votePort = yield* ChallengeVotePort;
-      const participantPort = yield* TripParticipantPort;
+      const votePort = yield* ChallengeVotePortTag;
+      const participantPort = yield* TripParticipantPortTag;
+
+      // Convert string IDs to branded IDs
+      const challengeId = ChallengeId.create(input.challengeId);
+      const tripId = TripId.create(input.tripId);
+      const userId = UserId.create(input.userId);
 
       // Get participant info
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        userId,
+        tripId,
       );
 
       if (!participant) {
@@ -45,8 +43,8 @@ export class GetMyVotesByChallengeUseCase {
 
       // Get votes
       const votes = yield* votePort.findByChallengeAndVoter(
-        input.challengeId,
-        participant.id,
+        challengeId,
+        participant.userId,
       );
 
       // Map to DTOs
@@ -54,7 +52,7 @@ export class GetMyVotesByChallengeUseCase {
         (vote): ChallengeVoteDTO => ({
           id: vote.id,
           submissionId: vote.submissionId,
-          userId: participant.id,
+          userId: participant.userId as UserIdType,
           score: vote.votePoints * vote.normalizedWeight,
           createdAt: vote.votedAt,
           updatedAt: vote.votedAt,

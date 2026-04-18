@@ -9,6 +9,8 @@ import type { NotificationId } from "../value-objects/NotificationId";
 /**
  * NotificationDelivery Port
  * Defines repository operations for notification deliveries
+ *
+ * Methods requiring authorization use AuthContext pattern via Effect context.
  */
 export interface INotificationDeliveryPort {
   findAll(params: {
@@ -25,11 +27,11 @@ export interface INotificationDeliveryPort {
       total: number;
     },
     IPortError,
-    never
+    unknown
   >;
   findByNotificationId(
     notificationId: NotificationId,
-  ): Effect.Effect<NotificationDelivery | null, IPortError, never>;
+  ): Effect.Effect<NotificationDelivery | null, IPortError, unknown>;
   findFailed(params: {
     tripId?: string;
     limit: number;
@@ -40,18 +42,18 @@ export interface INotificationDeliveryPort {
       total: number;
     },
     IPortError,
-    never
+    unknown
   >;
   getStats(params: {
     tripId?: string;
     startDate?: Date;
     endDate?: Date;
     scheduleId?: string;
-  }): Effect.Effect<NotificationDeliveryStats, IPortError, never>;
+  }): Effect.Effect<NotificationDeliveryStats, IPortError, unknown>;
   create(
     delivery: NotificationDelivery,
-  ): Effect.Effect<NotificationDelivery, IPortError, never>;
+  ): Effect.Effect<NotificationDelivery, IPortError, unknown>;
   update(
     delivery: NotificationDelivery,
-  ): Effect.Effect<NotificationDelivery, IPortError, never>;
+  ): Effect.Effect<NotificationDelivery, IPortError, unknown>;
 }

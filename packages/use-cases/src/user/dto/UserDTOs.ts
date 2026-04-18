@@ -75,23 +75,6 @@ export interface TripParticipantDTO {
 }
 
 /**
- * DTO for paginated users
- */
-export interface PaginatedUsersDTO {
-  users: UserWithTripInfoDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-    currentPage: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
-}
-
-/**
  * DTO for ban status
  */
 export interface BanStatusDTO {

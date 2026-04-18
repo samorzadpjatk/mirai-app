@@ -1,22 +1,27 @@
 import { Effect } from "effect";
+import { NotificationScheduleId, TripId, type NotificationSchedule } from "@mirai-app/domain";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
-import type { ApplicationError } from "@mirai-app/domain";
-import type {
-  NotificationScheduleWithRelationsDTO,
-  UpdateScheduleInputDTO,
-} from "../../dto/NotificationDTOs";
-import { ScheduleNotFoundError } from "./GetScheduleById";
+import {
+  ScheduleNotFoundError,
+} from "../../errors/NotificationErrors";
 
-export interface UpdateScheduleInput extends UpdateScheduleInputDTO {}
+export interface UpdateScheduleInput {
+  id: NotificationScheduleId;
+  name?: string;
+  tripId?: string | null;
+  notificationType?: string;
+  notificationTitle?: string | null;
+  notificationBody?: string | null;
+  notificationUrl?: string | null;
+  startDate?: Date;
+  endDate?: Date;
+  hour?: number;
+  minute?: number;
+  isActive?: boolean;
+}
 
 export class UpdateScheduleUseCase {
-  execute(
-    input: UpdateScheduleInput,
-  ): Effect.Effect<
-    NotificationScheduleWithRelationsDTO,
-    ApplicationError | ScheduleNotFoundError,
-    NotificationSchedulePortTag
-  > {
+  execute(input: UpdateScheduleInput) {
     return Effect.gen(function* () {
       const schedulePort = yield* NotificationSchedulePortTag;
 
@@ -31,7 +36,9 @@ export class UpdateScheduleUseCase {
       const updated = yield* schedulePort.update({
         ...existing,
         name: input.name ?? existing.name,
-        tripId: input.tripId !== undefined ? input.tripId : existing.tripId,
+        tripId: input.tripId !== undefined 
+          ? (input.tripId ? TripId.create(input.tripId) : null) 
+          : existing.tripId,
         notificationType: input.notificationType ?? existing.notificationType,
         notificationTitle:
           input.notificationTitle !== undefined
@@ -51,7 +58,7 @@ export class UpdateScheduleUseCase {
         minute: input.minute ?? existing.minute,
         isActive: input.isActive ?? existing.isActive,
         updatedAt: now,
-      });
+      } as NotificationSchedule);
 
       return { ...updated, createdBy: null, trip: null, executionCount: 0 };
     });

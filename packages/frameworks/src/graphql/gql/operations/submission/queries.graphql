@@ -1,0 +1,92 @@
+# =============================================================================
+# Challenge Submission Queries
+# =============================================================================
+
+query MySubmissions($tripId: String!, $first: Int, $after: String) {
+  mySubmissions(tripId: $tripId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        challengeId
+        groupId
+        status
+        textContent
+        imageIds
+        videoId
+        latitude
+        longitude
+        awardedPoints
+        bonusPoints
+        ranking
+        voteCount
+        voteScore
+        createdAt
+        reviewedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query GroupSubmissions($tripId: String!, $challengeId: String!, $first: Int, $after: String) {
+  groupSubmissions(tripId: $tripId, challengeId: $challengeId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        challengeId
+        groupId
+        status
+        textContent
+        imageIds
+        videoId
+        latitude
+        longitude
+        awardedPoints
+        bonusPoints
+        ranking
+        voteCount
+        voteScore
+        createdAt
+        reviewedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query PendingSubmissions($tripId: String!, $first: Int, $after: String) {
+  pendingSubmissions(tripId: $tripId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        challengeId
+        groupId
+        status
+        textContent
+        imageIds
+        videoId
+        latitude
+        longitude
+        awardedPoints
+        bonusPoints
+        ranking
+        rejectionReason
+        createdAt
+        reviewedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

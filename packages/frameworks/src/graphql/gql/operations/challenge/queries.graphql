@@ -1,0 +1,105 @@
+# =============================================================================
+# Challenge Queries
+# =============================================================================
+
+query Challenges($tripId: String!, $first: Int, $after: String) {
+  challenges(tripId: $tripId, first: $first, after: $after) {
+    edges {
+      node {
+        id
+        tripId
+        name
+        description
+        submissionType
+        scoringCategory
+        status
+        startTime
+        endTime
+        targetLatitude
+        targetLongitude
+        qrCodeValue
+        basePoints
+        firstPlacePoints
+        secondPlacePoints
+        thirdPlacePoints
+        autoApprove
+        isRecurring
+        dailyStartTime
+        dailyEndTime
+        expectedValue
+        image
+        votingStartTime
+        votingEndTime
+        createdAt
+        updatedAt
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+query Challenge($id: String!, $tripId: String!) {
+  challenge(id: $id, tripId: $tripId) {
+    id
+    tripId
+    name
+    description
+    submissionType
+    scoringCategory
+    status
+    startTime
+    endTime
+    targetLatitude
+    targetLongitude
+    qrCodeValue
+    basePoints
+    firstPlacePoints
+    secondPlacePoints
+    thirdPlacePoints
+    autoApprove
+    isRecurring
+    dailyStartTime
+    dailyEndTime
+    expectedValue
+    image
+    votingStartTime
+    votingEndTime
+    createdAt
+    updatedAt
+  }
+}
+
+query AllChallenges {
+  allChallenges {
+    id
+    tripId
+    name
+    description
+    submissionType
+    scoringCategory
+    status
+    startTime
+    endTime
+    targetLatitude
+    targetLongitude
+    qrCodeValue
+    basePoints
+    firstPlacePoints
+    secondPlacePoints
+    thirdPlacePoints
+    autoApprove
+    isRecurring
+    dailyStartTime
+    dailyEndTime
+    expectedValue
+    image
+    votingStartTime
+    votingEndTime
+    createdAt
+    updatedAt
+  }
+}

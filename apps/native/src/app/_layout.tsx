@@ -33,12 +33,10 @@ import {
   useFonts,
 } from "@expo-google-fonts/ibm-plex-sans";
 import { useAuth, useAuthLoading } from "@mirai-app/frameworks/auth/client";
-import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
-import { SupabaseProvider } from "@mirai-app/frameworks/supabase/react";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";
+import { createBetterAuthClient } from "@mirai-app/frameworks/better-auth";
+import { BETTER_AUTH_URL } from "~/config/runtimeEnv";
 import { urqlClient } from "~/lib/urql-client";
 import "~/services/background/backgroundLocationTask";
-import { authStorage } from "~/services/storage/storage";
 import "../../global.css";
 import "../global.css";
 
@@ -50,11 +48,11 @@ const colors = {
   textLight: "#000000",
 };
 
-const supabaseClient = createSupabaseClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  authStorage,
-);
+// Create Better Auth client
+const betterAuthClient = createBetterAuthClient({
+  baseURL: BETTER_AUTH_URL,
+  basePath: "/api/auth",
+});
 
 function AutoPushSubscription() {
   useAutoPushSubscription();
@@ -76,6 +74,7 @@ function App() {
   const headerBackgroundColor = colors.backgroundDark;
   const headerTintColor = colors.textDark;
 
+  // Check for valid session using access_token (from extended session format)
   const hasSession = !!session?.access_token;
 
   return (
@@ -213,9 +212,7 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthStoreProvider
-      supabaseUrl={SUPABASE_URL}
-      supabaseKey={SUPABASE_ANON_KEY}
-      supabaseClient={supabaseClient}
+      client={betterAuthClient}
       onUserFetch={onUserFetch}
     >
       {children}
@@ -242,13 +239,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <TamaguiProvider config={config} defaultTheme="dark">
-          <SupabaseProvider client={supabaseClient}>
-            <AuthStoreProviderWrapper>
-              <LocationStoreProvider>
-                <App />
-              </LocationStoreProvider>
-            </AuthStoreProviderWrapper>
-          </SupabaseProvider>
+          <AuthStoreProviderWrapper>
+            <LocationStoreProvider>
+              <App />
+            </LocationStoreProvider>
+          </AuthStoreProviderWrapper>
         </TamaguiProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

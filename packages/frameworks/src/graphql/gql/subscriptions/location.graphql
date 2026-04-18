@@ -1,0 +1,17 @@
+# =============================================================================
+# Location Sharing Subscriptions
+# =============================================================================
+
+subscription FriendLocationEvent($friendId: ID!) {
+  friendLocationEvent(friendId: $friendId) {
+    userId
+    firstName
+    lastName
+    image
+    latitude
+    longitude
+    accuracy
+    isOnline
+    timestamp
+  }
+}

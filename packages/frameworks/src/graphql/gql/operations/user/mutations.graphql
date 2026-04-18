@@ -1,0 +1,100 @@
+# =============================================================================
+# User Mutations
+# =============================================================================
+
+mutation UpdateMyProfile($input: UpdateUserProfileInput!) {
+  updateMyProfile(input: $input) {
+    id
+    firstName
+    lastName
+  }
+}
+
+mutation UpdateAvatar($input: UpdateAvatarInput!) {
+  updateAvatar(input: $input) {
+    hasAvatar
+  }
+}
+
+mutation CreateUser($input: CreateUserInput!) {
+  createUser(input: $input) {
+    id
+    firstName
+    lastName
+    email
+    role
+    wristNumber
+    houseNumber
+    groupId
+    groupName
+    tripId
+  }
+}
+
+mutation UpdateUserRole($input: UpdateUserRoleInput!) {
+  updateUserRole(input: $input) {
+    id
+    firstName
+    lastName
+    email
+    role
+  }
+}
+
+mutation UpdateUserName($input: UpdateUserNameInput!) {
+  updateUserName(input: $input) {
+    id
+    firstName
+    lastName
+    email
+    role
+  }
+}
+
+mutation BanUser($input: BanUserInput!) {
+  banUser(input: $input) {
+    bannedUntil
+  }
+}
+
+mutation DeleteUser($input: DeleteUserInput!) {
+  deleteUser(input: $input) {
+    deletedFromSystem
+  }
+}
+
+mutation UpdateWristNumber($input: UpdateWristNumberInput!) {
+  updateWristNumber(input: $input) {
+    userId
+    tripId
+    wristNumber
+    houseNumber
+  }
+}
+
+mutation RemoveWristNumber($userId: String!, $tripId: String!) {
+  removeWristNumber(userId: $userId, tripId: $tripId) {
+    userId
+    tripId
+    wristNumber
+    houseNumber
+  }
+}
+
+mutation UpdateHouseNumber($input: UpdateHouseNumberInput!) {
+  updateHouseNumber(input: $input) {
+    userId
+    tripId
+    wristNumber
+    houseNumber
+  }
+}
+
+mutation RemoveHouseNumber($userId: String!, $tripId: String!) {
+  removeHouseNumber(userId: $userId, tripId: $tripId) {
+    userId
+    tripId
+    wristNumber
+    houseNumber
+  }
+}

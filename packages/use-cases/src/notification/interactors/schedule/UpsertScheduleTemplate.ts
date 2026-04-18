@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { TripId, NotificationScheduleId, UserId } from "@mirai-app/domain";
 import { NotificationSchedulePortTag } from "../../ports/NotificationPort";
 import { TripPortTag } from "../../../trip/ports/TripPort";
 import { TripNotFoundError } from "../../../trip/errors/TripErrors";
@@ -7,9 +8,9 @@ import { TripNotFoundError } from "../../../trip/errors/TripErrors";
  * Input for UpsertScheduleTemplateUseCase
  */
 export interface UpsertScheduleTemplateInput {
-  tripId: string;
+  tripId: TripId;
   templateKey: "daily_morning" | "daily_evening";
-  createdById: string;
+  createdById: UserId;
 }
 
 const TEMPLATES: Record<
@@ -42,11 +43,19 @@ export class UpsertScheduleTemplateUseCase {
       const trip = yield* tripPort.findById(input.tripId);
       if (!trip) {
         return yield* Effect.fail(
-          new TripNotFoundError({ tripId: input.tripId }),
+          new TripNotFoundError({
+            tripId: TripId.toString(input.tripId),
+          }),
         );
       }
 
       const template = TEMPLATES[input.templateKey];
+      if (!template) {
+        return yield* Effect.fail(
+          new Error(`Unknown template key: ${input.templateKey}`),
+        );
+      }
+
       const now = new Date();
       const existingSchedule = yield* schedulePort.findByTripIdAndName(
         input.tripId,
@@ -80,7 +89,7 @@ export class UpsertScheduleTemplateUseCase {
       }
 
       const created = yield* schedulePort.create({
-        id: crypto.randomUUID(),
+        id: NotificationScheduleId.create(crypto.randomUUID()),
         tripId: input.tripId,
         name: template.name,
         notificationType: template.notificationType,

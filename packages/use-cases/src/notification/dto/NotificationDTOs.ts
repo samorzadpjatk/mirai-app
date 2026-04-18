@@ -57,32 +57,6 @@ export interface NotificationWithCreatorDTO extends NotificationDTO {
 }
 
 /**
- * DTO for paginated notifications (admin view)
- */
-export interface PaginatedAdminNotificationsDTO {
-  notifications: NotificationWithCreatorDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
-}
-
-/**
- * DTO for paginated notifications (user view)
- */
-export interface PaginatedNotificationsDTO {
-  notifications: NotificationDTO[];
-  pagination: {
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-  };
-}
-
-/**
  * DTO for notification creation result
  */
 export interface CreateNotificationResultDTO {
@@ -174,19 +148,6 @@ export interface NotificationScheduleWithRelationsDTO extends NotificationSchedu
     name: string;
   } | null;
   executionCount: number;
-}
-
-/**
- * DTO for paginated notification schedules
- */
-export interface PaginatedNotificationSchedulesDTO {
-  schedules: NotificationScheduleWithRelationsDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
 }
 
 /**
@@ -322,16 +283,6 @@ export interface NotificationDeliveryDTO {
       email: string | null;
     } | null;
   } | null;
-}
-
-/**
- * DTO for paginated deliveries
- */
-export interface PaginatedDeliveriesDTO {
-  deliveries: NotificationDeliveryDTO[];
-  total: number;
-  limit: number;
-  offset: number;
 }
 
 /**

@@ -21,8 +21,14 @@ export interface TripSponsorWithSponsor extends TripSponsor {
   sponsor: {
     id: SponsorId;
     name: string;
-    logoUrl: string | null;
-    website: string | null;
+    description: string;
+    logoPath: string;
+    height: number | null;
+    offsetX: number | null;
+    offsetY: number | null;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
   };
 }
 
@@ -46,12 +52,12 @@ export interface ITripSponsorPort {
   ): Effect.Effect<TripSponsor | null, IPortError, never>;
   create(
     tripSponsor: TripSponsor,
-  ): Effect.Effect<TripSponsor, IPortError, never>;
-  delete(id: TripSponsorId): Effect.Effect<void, IPortError, never>;
+  ): Effect.Effect<TripSponsor, IPortError, unknown>;
+  delete(id: TripSponsorId): Effect.Effect<void, IPortError, unknown>;
   deleteByTripIdAndSponsorId(
     tripId: TripId,
     sponsorId: SponsorId,
-  ): Effect.Effect<void, IPortError, never>;
+  ): Effect.Effect<void, IPortError, unknown>;
   existsByTripIdAndSponsorId(
     tripId: TripId,
     sponsorId: SponsorId,

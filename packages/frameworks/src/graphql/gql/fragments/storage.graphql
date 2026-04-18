@@ -1,0 +1,14 @@
+# =============================================================================
+# Storage Fragments
+# =============================================================================
+
+fragment StorageUploadUrlFields on StorageUploadUrl {
+  url
+  path
+  expiresAt
+}
+
+fragment StorageDeleteResultFields on StorageDeleteResult {
+  success
+  path
+}

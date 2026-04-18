@@ -7,30 +7,33 @@ import type { ChallengeVote } from "../entities/ChallengeVote";
 /**
  * ChallengeVote Port
  * Defines repository operations for challenge votes
+ *
+ * Note: Methods may require AuthContextTag and AuthZPortTag in the Effect context
+ * for authorization checks. Use Effect.provide() to supply these dependencies.
  */
 export interface IChallengeVotePort {
   findById(
     id: ChallengeVoteId,
-  ): Effect.Effect<ChallengeVote | null, IPortError, never>;
+  ): Effect.Effect<ChallengeVote | null, IPortError, unknown>;
   findByChallengeId(
     challengeId: ChallengeId,
-  ): Effect.Effect<ChallengeVote[], IPortError, never>;
+  ): Effect.Effect<ChallengeVote[], IPortError, unknown>;
   findByChallengeAndVoter(
     challengeId: ChallengeId,
     voterId: UserId,
-  ): Effect.Effect<ChallengeVote[], IPortError, never>;
+  ): Effect.Effect<ChallengeVote[], IPortError, unknown>;
   create(
     vote: ChallengeVote,
-  ): Effect.Effect<ChallengeVote, IPortError, never>;
+  ): Effect.Effect<ChallengeVote, IPortError, unknown>;
   createMany(
     votes: ChallengeVote[],
-  ): Effect.Effect<ChallengeVote[], IPortError, never>;
-  delete(id: ChallengeVoteId): Effect.Effect<void, IPortError, never>;
+  ): Effect.Effect<ChallengeVote[], IPortError, unknown>;
+  delete(id: ChallengeVoteId): Effect.Effect<void, IPortError, unknown>;
   deleteByChallengeAndVoter(
     challengeId: ChallengeId,
     voterId: UserId,
-  ): Effect.Effect<void, IPortError, never>;
+  ): Effect.Effect<void, IPortError, unknown>;
   countByChallengeId(
     challengeId: ChallengeId,
-  ): Effect.Effect<number, IPortError, never>;
+  ): Effect.Effect<number, IPortError, unknown>;
 }

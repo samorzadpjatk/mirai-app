@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
+import { ActivityFeed } from "@mirai-app/domain";
 import type { ActivityFeedId, UserId } from "@mirai-app/domain";
 import type { HideActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import { ActivityNotFoundError } from "../errors/ActivityFeedErrors";
@@ -32,25 +33,18 @@ export class HideActivityUseCase {
         );
       }
 
-      const now = new Date();
-
-      // Update activity with hidden status
-      const updated = {
-        ...activity,
-        isHidden: true,
-        hiddenByAdmin: input.adminId,
-        hiddenAt: now,
-        hiddenReason: input.reason ?? null,
-        updatedAt: now,
-      };
+      // Use entity method to hide activity
+      const updated = activity.hide(input.adminId, input.reason ?? null);
 
       // Save updated activity
       const saved = yield* activityPort.update(updated);
 
+      const hiddenAt = saved.hiddenAt ?? new Date();
+
       return {
         id: saved.id,
         isHidden: saved.isHidden,
-        hiddenAt: saved.hiddenAt ?? now,
+        hiddenAt,
         hiddenReason: saved.hiddenReason,
       };
     });

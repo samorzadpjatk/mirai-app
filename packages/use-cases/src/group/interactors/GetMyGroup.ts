@@ -1,9 +1,11 @@
 import { Effect } from "effect";
-import { GroupPort } from "../ports/GroupPort";
-import { TripParticipantPort } from "../../user/ports/TripParticipantPort";
-import type { GroupWithParticipantsDTO } from "../dto/GroupDTOs";
-import type { DatabaseError } from "@mirai-app/domain";
-import { GroupNotFoundError } from "../errors/GroupErrors";
+import { GroupPortTag } from "../ports/GroupPort";
+import { TripParticipantPortTag } from "../../user/ports/TripParticipantPort";
+import { UserPortTag } from "../../user/ports/UserPort";
+import { CoinTransactionPortTag } from "../../coin/ports/CoinTransactionPort";
+import type { GroupWithParticipantsDTO, GroupMemberDTO } from "../dto/GroupDTOs";
+import type { CoinTransactionDTO } from "../../coin/dto/CoinDTOs";
+import { TripId, UserId, GroupId, CoinTransactionId } from "@mirai-app/domain";
 
 /**
  * Input for GetMyGroupUseCase
@@ -19,21 +21,20 @@ export interface GetMyGroupInput {
  * Retrieves the current user's group with participants.
  */
 export class GetMyGroupUseCase {
-  execute(
-    input: GetMyGroupInput,
-  ): Effect.Effect<
-    GroupWithParticipantsDTO | null,
-    DatabaseError | GroupNotFoundError,
-    GroupPort | TripParticipantPort
-  > {
+  execute(input: GetMyGroupInput) {
     return Effect.gen(function* () {
-      const groupPort = yield* GroupPort;
-      const participantPort = yield* TripParticipantPort;
+      const groupPort = yield* GroupPortTag;
+      const participantPort = yield* TripParticipantPortTag;
+      const userPort = yield* UserPortTag;
+      const coinPort = yield* CoinTransactionPortTag;
+
+      const userId = UserId.unsafeCreate(input.userId);
+      const tripId = TripId.unsafeCreate(input.tripId);
 
       // Find user's participant record for this trip
       const participant = yield* participantPort.findByUserAndTrip(
-        input.userId,
-        input.tripId,
+        userId,
+        tripId,
       );
 
       if (!participant || !participant.groupId) {
@@ -48,10 +49,72 @@ export class GetMyGroupUseCase {
       }
 
       // Get all participants for this group
-      const participants = yield* participantPort.findByTripId(input.tripId);
+      const participants = yield* participantPort.findByTripId(tripId);
       const groupParticipants = participants.filter(
         (p) => p.groupId === group.id,
       );
+
+      // Fetch organizer and coin transactions in parallel
+      const [organizer, coinTransactionsRaw] = yield* Effect.all([
+        userPort.findById(group.organizerId).pipe(
+          Effect.map((user): GroupMemberDTO | null =>
+            user
+              ? {
+                  id: user.id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  email: null,
+                }
+              : null,
+          ),
+        ),
+        coinPort.findByGroupId(group.id),
+      ]);
+
+      // Fetch user details for all participants in parallel
+      const participantUsers = yield* Effect.all(
+        groupParticipants.map((p) =>
+          userPort.findById(p.userId).pipe(
+            Effect.map((user): GroupMemberDTO | null =>
+              user
+                ? {
+                    id: user.id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: null,
+                  }
+                : null,
+            ),
+          ),
+        ),
+      );
+
+      // Transform coin transactions to use-cases DTO format with branded IDs
+      const coinTransactions: CoinTransactionDTO[] = coinTransactionsRaw.map(
+        (tx) => ({
+          id: CoinTransactionId.unsafeCreate(tx.id),
+          groupId: GroupId.unsafeCreate(tx.groupId),
+          amount: tx.amount,
+          reason: tx.reason,
+          adminId: tx.adminId
+            ? UserId.unsafeCreate(tx.adminId)
+            : UserId.generate(),
+          createdAt: tx.createdAt,
+        }),
+      );
+
+      // Build participant DTOs, filtering out any where user lookup failed
+      const participantDTOs = groupParticipants
+        .map((p, index) => {
+          const user = participantUsers[index];
+          if (!user) return null;
+          return {
+            id: p.id,
+            user,
+            joinedAt: p.createdAt,
+          };
+        })
+        .filter((dto): dto is NonNullable<typeof dto> => dto !== null);
 
       return {
         id: group.id,
@@ -62,21 +125,12 @@ export class GetMyGroupUseCase {
         code: group.code,
         coins: group.coins,
         isDeleted: group.isDeleted,
-        organizer: null, // Will be hydrated by adapter
-        participants: groupParticipants.map((p) => ({
-          id: p.id,
-          user: {
-            id: p.userId,
-            firstName: "", // Will be hydrated
-            lastName: "",
-            email: null,
-          },
-          joinedAt: p.createdAt,
-        })),
-        coinTransactions: [], // Will be hydrated by adapter
+        organizer,
+        participants: participantDTOs,
+        coinTransactions,
         createdAt: group.createdAt,
         updatedAt: group.updatedAt,
-      };
+      } satisfies GroupWithParticipantsDTO;
     });
   }
 }

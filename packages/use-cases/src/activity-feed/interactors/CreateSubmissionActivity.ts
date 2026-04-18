@@ -1,11 +1,17 @@
 import { Effect } from "effect";
 import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
-import { ChallengeSubmissionPort } from "../../challenge-submission/ports/ChallengeSubmissionPort";
+import { ChallengeSubmissionPortTag } from "../../challenge-submission/ports/ChallengeSubmissionPort";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
-import { GroupPort } from "../../group/ports/GroupPort";
-import { ActivityFeed } from "@mirai-app/domain";
-import type { ApplicationError, TripId } from "@mirai-app/domain";
+import { GroupPortTag } from "../../group/ports/GroupPort";
+import { StoragePortTag } from "../../storage/ports/StoragePort";
+import {
+  ActivityFeed,
+  ChallengeId,
+  ChallengeSubmissionId,
+  GroupId,
+} from "@mirai-app/domain";
+import type { TripId } from "@mirai-app/domain";
 import type { CreateActivityResultDTO } from "../dto/ActivityFeedDTOs";
 import {
   TripNotFoundError,
@@ -31,27 +37,14 @@ export interface CreateSubmissionActivityInput {
  * Creates an activity when a submission is approved.
  */
 export class CreateSubmissionActivityUseCase {
-  execute(
-    input: CreateSubmissionActivityInput,
-  ): Effect.Effect<
-    CreateActivityResultDTO,
-    | TripNotFoundError
-    | ChallengeNotFoundError
-    | SubmissionNotFoundError
-    | GroupNotFoundError
-    | ApplicationError,
-    | ActivityFeedPortTag
-    | TripPortTag
-    | ChallengeSubmissionPort
-    | ChallengePortTag
-    | GroupPort
-  > {
+  execute(input: CreateSubmissionActivityInput) {
     return Effect.gen(function* () {
       const activityPort = yield* ActivityFeedPortTag;
       const tripPort = yield* TripPortTag;
-      const submissionPort = yield* ChallengeSubmissionPort;
+      const submissionPort = yield* ChallengeSubmissionPortTag;
       const challengePort = yield* ChallengePortTag;
-      const groupPort = yield* GroupPort;
+      const groupPort = yield* GroupPortTag;
+      const storagePort = yield* StoragePortTag;
 
       // Verify trip exists
       const trip = yield* tripPort.findById(input.tripId);
@@ -62,7 +55,9 @@ export class CreateSubmissionActivityUseCase {
       }
 
       // Verify challenge exists
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challenge = yield* challengePort.findById(
+        ChallengeId.create(input.challengeId),
+      );
       if (!challenge) {
         return yield* Effect.fail(
           new ChallengeNotFoundError({ challengeId: input.challengeId }),
@@ -70,7 +65,9 @@ export class CreateSubmissionActivityUseCase {
       }
 
       // Verify submission exists
-      const submission = yield* submissionPort.findById(input.submissionId);
+      const submission = yield* submissionPort.findById(
+        ChallengeSubmissionId.create(input.submissionId),
+      );
       if (!submission) {
         return yield* Effect.fail(
           new SubmissionNotFoundError({ submissionId: input.submissionId }),
@@ -78,7 +75,7 @@ export class CreateSubmissionActivityUseCase {
       }
 
       // Verify group exists
-      const group = yield* groupPort.findById(input.groupId);
+      const group = yield* groupPort.findById(GroupId.create(input.groupId));
       if (!group) {
         return yield* Effect.fail(
           new GroupNotFoundError({ groupId: input.groupId }),
@@ -89,13 +86,20 @@ export class CreateSubmissionActivityUseCase {
       const title =
         input.title ?? `Submission approved for challenge: ${challenge.name}`;
 
+      // Resolve image URL from submission if images exist
+      const firstImageId = submission.imageIds[0];
+      const imageUrl =
+        firstImageId !== undefined
+          ? storagePort.getPublicUrl("images", firstImageId)
+          : null;
+
       // Create activity entity - ID will be auto-generated
       const activityEffect = ActivityFeed.create({
         tripId: input.tripId,
         activityType: "SUBMISSION",
         title: title,
         description: null,
-        imageUrl: null, // Will be hydrated by adapter from submission
+        imageUrl,
         isPinned: false,
         isHidden: false,
         hiddenByAdmin: null,
@@ -106,7 +110,11 @@ export class CreateSubmissionActivityUseCase {
         updatedAt: now,
       });
 
-      const activity = yield* activityEffect;
+      const activity = yield* activityEffect as Effect.Effect<
+        ActivityFeed,
+        never,
+        never
+      >;
 
       // Save activity
       const saved = yield* activityPort.create(activity);

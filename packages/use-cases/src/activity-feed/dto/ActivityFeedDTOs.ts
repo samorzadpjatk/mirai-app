@@ -94,24 +94,6 @@ export interface ActivityCursor {
 }
 
 /**
- * DTO for paginated activities with cursor
- */
-export interface PaginatedActivitiesDTO {
-  activities: ActivityWithReactionsDTO[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
-
-/**
- * DTO for paginated activities for moderation
- */
-export interface PaginatedActivitiesForModerationDTO {
-  activities: ActivityWithReactionsDTO[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
-
-/**
  * DTO for activity reaction
  */
 export interface ActivityReactionDTO {

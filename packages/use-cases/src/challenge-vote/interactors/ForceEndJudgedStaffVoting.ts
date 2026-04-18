@@ -1,6 +1,7 @@
 import { Effect, Data } from "effect";
+import { ChallengeId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
-import { ChallengeVotePort } from "../ports/ChallengeVotePort";
+import { ChallengeVotePortTag } from "../ports/ChallengeVotePort";
 import {
   NotJudgedStaffChallengeError,
   StaffVotingNotStartedError,
@@ -35,12 +36,13 @@ export class ForceEndJudgedStaffVotingUseCase {
       const challengePort = yield* ChallengePortTag;
 
       // Get challenge
-      const challenge = yield* challengePort.findById(input.challengeId);
+      const challengeId = ChallengeId.create(input.challengeId);
+      const challenge = yield* challengePort.findById(challengeId);
 
       if (!challenge || challenge.scoringCategory !== "JUDGED_STAFF") {
         return yield* Effect.fail(
           new NotJudgedStaffChallengeError({
-            challengeId: input.challengeId,
+            challengeId: ChallengeId.toString(challengeId),
             scoringCategory: challenge?.scoringCategory ?? "UNKNOWN",
           }),
         );
@@ -49,7 +51,7 @@ export class ForceEndJudgedStaffVotingUseCase {
       if (challenge.status === "CANCELLED") {
         return yield* Effect.fail(
           new StaffVotingNotStartedError({
-            challengeId: input.challengeId,
+            challengeId: ChallengeId.toString(challengeId),
             endTime: new Date(),
           }),
         );
@@ -58,7 +60,7 @@ export class ForceEndJudgedStaffVotingUseCase {
       if (!challenge.endTime || challenge.endTime.getTime() > Date.now()) {
         return yield* Effect.fail(
           new StaffVotingNotStartedError({
-            challengeId: input.challengeId,
+            challengeId: ChallengeId.toString(challengeId),
             endTime: challenge.endTime ?? new Date(),
           }),
         );

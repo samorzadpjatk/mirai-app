@@ -1,7 +1,7 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import { ChallengeId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../ports/ChallengePort";
-import { ChallengeSubmissionPort } from "../../challenge-submission/ports/ChallengeSubmissionPort";
+import { ChallengeSubmissionPortTag } from "../../challenge-submission/ports/ChallengeSubmissionPort";
 import {
   ChallengeNotFoundError,
   InvalidPeerVotingConfigError,
@@ -63,23 +63,14 @@ const HOUR_MS = 60 * 60 * 1000;
  * Updates an existing challenge with validation.
  */
 export class UpdateChallengeUseCase {
-  execute(
-    input: UpdateChallengeInput,
-  ): Effect.Effect<
-    ChallengeDTO,
-    | ChallengeNotFoundError
-    | InvalidPeerVotingConfigError
-    | PeerVotingNotReadyError
-    | NotPeerVotingChallengeError
-    | ApplicationError,
-    ChallengePortTag | ChallengeSubmissionPort
-  > {
+  execute(input: UpdateChallengeInput) {
     return Effect.gen(function* () {
       const challengePort = yield* ChallengePortTag;
-      const submissionPort = yield* ChallengeSubmissionPort;
+      const submissionPort = yield* ChallengeSubmissionPortTag;
+      const challengeId = ChallengeId.unsafeCreate(input.challengeId);
 
       // Find existing challenge
-      const existing = yield* challengePort.findById(input.challengeId);
+      const existing = yield* challengePort.findById(challengeId);
       if (!existing) {
         return yield* Effect.fail(
           new ChallengeNotFoundError({ challengeId: input.challengeId }),
@@ -97,8 +88,8 @@ export class UpdateChallengeUseCase {
         nextStatus === "VOTING_PHASE"
       ) {
         const [totalSubmissions, pendingSubmissions] = yield* Effect.all([
-          submissionPort.countByChallengeId(input.challengeId),
-          submissionPort.countPendingByChallengeId(input.challengeId),
+          submissionPort.countByChallengeId(challengeId),
+          submissionPort.countPendingByChallengeId(challengeId),
         ]);
 
         if (totalSubmissions === 0 || pendingSubmissions > 0) {

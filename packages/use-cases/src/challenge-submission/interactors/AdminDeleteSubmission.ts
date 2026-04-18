@@ -1,7 +1,8 @@
 import { Effect, Data } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
+import type { ApplicationError, ChallengeSubmissionId } from "@mirai-app/domain";
 import { ChallengeSubmissionPort } from "../ports/ChallengeSubmissionPort";
 import { SubmissionNotFoundError } from "../errors/SubmissionErrors";
+import { ChallengeSubmissionId as ChallengeSubmissionIdFactory } from "@mirai-app/domain";
 
 /**
  * Input for AdminDeleteSubmissionUseCase
@@ -23,18 +24,15 @@ export interface AdminDeleteSubmissionResult {
  * Admin can delete any submission regardless of status.
  */
 export class AdminDeleteSubmissionUseCase {
-  execute(
-    input: AdminDeleteSubmissionInput,
-  ): Effect.Effect<
-    AdminDeleteSubmissionResult,
-    SubmissionNotFoundError | ApplicationError,
-    ChallengeSubmissionPort
-  > {
+  execute(input: AdminDeleteSubmissionInput) {
     return Effect.gen(function* () {
       const submissionPort = yield* ChallengeSubmissionPort;
 
+      // Convert string to branded ID
+      const submissionId = ChallengeSubmissionIdFactory.create(input.submissionId);
+
       // Check if submission exists
-      const submission = yield* submissionPort.findById(input.submissionId);
+      const submission = yield* submissionPort.findById(submissionId);
 
       if (!submission) {
         return yield* Effect.fail(
@@ -43,7 +41,7 @@ export class AdminDeleteSubmissionUseCase {
       }
 
       // Delete submission
-      yield* submissionPort.delete(input.submissionId);
+      yield* submissionPort.delete(submissionId);
 
       return { success: true };
     });

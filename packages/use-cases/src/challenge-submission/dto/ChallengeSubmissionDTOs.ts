@@ -81,19 +81,6 @@ export interface SubmissionWithDetailsDTO extends ChallengeSubmissionDTO {
 }
 
 /**
- * DTO for paginated submissions
- */
-export interface PaginatedSubmissionsDTO {
-  submissions: ChallengeSubmissionDTO[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
-}
-
-/**
  * DTO for submission creation result
  */
 export interface CreateSubmissionResultDTO {

@@ -18,8 +18,9 @@ import type {
   ITripSponsorPort,
   TripSponsor,
   TripSponsorWithSponsor,
-  SponsorDTO,
 } from "@mirai-app/use-cases/sponsor";
+import { AuthZPortTag } from "@mirai-app/use-cases";
+import { AuthContextTag } from "../../../infrastructure/effect";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { sponsorMapper } from "../../mappers/SponsorMapper";
 
@@ -27,6 +28,11 @@ import { sponsorMapper } from "../../mappers/SponsorMapper";
  * Trip Sponsor Drizzle Gateway
  *
  * Implements ITripSponsorPort using Drizzle ORM for database operations.
+ * Uses AuthContext and AuthZPortTag for authorization.
+ *
+ * Authorization Pattern:
+ * - Read operations: Public (viewing trip sponsors)
+ * - Write operations (create, delete, deleteByTripIdAndSponsorId): Admin or trip leader
  */
 export class TripSponsorDrizzleGateway
   extends BaseDrizzleGateway
@@ -155,18 +161,44 @@ export class TripSponsorDrizzleGateway
       sponsorId: SponsorId.toString(tripSponsor.sponsorId),
       createdAt: tripSponsor.createdAt,
     };
-    return this.tryPromise(
-      "create",
-      async () => {
-        const [result] = await this.db
-          .insert(tripSponsors)
-          .values(insertData)
-          .returning();
-        if (!result) throw new Error("Failed to create trip sponsor");
-        return result;
-      },
-      TripSponsorId.toString(tripSponsor.id),
-    ).pipe(
+    const idStr = TripSponsorId.toString(tripSponsor.id);
+    const tripIdStr = TripId.toString(tripSponsor.tripId);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission (admin or trip leader)
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const [result] = await self.db
+            .insert(tripSponsors)
+            .values(insertData)
+            .returning();
+          if (!result) throw new Error("Failed to create trip sponsor");
+          return result;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "create",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    }).pipe(
       Effect.map((dbTripSponsor: TripSponsorSelect) =>
         this.mapTripSponsor(dbTripSponsor),
       ),
@@ -175,32 +207,80 @@ export class TripSponsorDrizzleGateway
 
   delete(id: TripSponsorId) {
     const idStr = TripSponsorId.toString(id);
-    return this.tryPromise(
-      "delete",
-      async () => {
-        await this.db.delete(tripSponsors).where(eq(tripSponsors.id, idStr));
-      },
-      idStr,
-    );
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission (admin or trip leader)
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: idStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await self.db.delete(tripSponsors).where(eq(tripSponsors.id, idStr));
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "delete",
+            id: idStr,
+            cause: error,
+          }),
+      });
+    });
   }
 
   deleteByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
     const tripIdStr = TripId.toString(tripId);
     const sponsorIdStr = SponsorId.toString(sponsorId);
-    return this.tryPromise(
-      "deleteByTripIdAndSponsorId",
-      async () => {
-        await this.db
-          .delete(tripSponsors)
-          .where(
-            and(
-              eq(tripSponsors.tripId, tripIdStr),
-              eq(tripSponsors.sponsorId, sponsorIdStr),
-            ),
-          );
-      },
-      `${tripIdStr}:${sponsorIdStr}`,
-    );
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Get AuthContext and verify write permission (admin or trip leader)
+      const authCtx = yield* AuthContextTag;
+
+      if (authCtx.isAuthenticated) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          userId: authCtx.userId,
+          role: authCtx.role,
+          tripRoles: authCtx.tripRoles,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await self.db
+            .delete(tripSponsors)
+            .where(
+              and(
+                eq(tripSponsors.tripId, tripIdStr),
+                eq(tripSponsors.sponsorId, sponsorIdStr),
+              ),
+            );
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "deleteByTripIdAndSponsorId",
+            id: `${tripIdStr}:${sponsorIdStr}`,
+            cause: error,
+          }),
+      });
+    });
   }
 
   existsByTripIdAndSponsorId(tripId: TripId, sponsorId: SponsorId) {
@@ -248,7 +328,7 @@ export class TripSponsorDrizzleGateway
     );
   }
 
-  private toSponsorDTO(sponsor: Sponsor): SponsorDTO {
+  private toSponsorDTO(sponsor: Sponsor): TripSponsorWithSponsor["sponsor"] {
     return {
       id: sponsor.id,
       name: sponsor.name,

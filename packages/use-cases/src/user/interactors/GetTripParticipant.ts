@@ -1,14 +1,14 @@
 import { Effect } from "effect";
-import type { ApplicationError } from "@mirai-app/domain";
-import { TripParticipantPort } from "../ports/TripParticipantPort";
+import { UserId, TripId } from "@mirai-app/domain";
+import { TripParticipantPortTag } from "../ports/TripParticipantPort";
 import type { TripParticipantDTO } from "../dto/UserDTOs";
 
 /**
  * Input for GetTripParticipantUseCase
  */
 export interface GetTripParticipantInput {
-  userId: string;
-  tripId: string;
+  userId: UserId;
+  tripId: TripId;
 }
 
 /**
@@ -17,15 +17,9 @@ export interface GetTripParticipantInput {
  * Retrieves trip participant information for a user.
  */
 export class GetTripParticipantUseCase {
-  execute(
-    input: GetTripParticipantInput,
-  ): Effect.Effect<
-    TripParticipantDTO | null,
-    ApplicationError,
-    TripParticipantPort
-  > {
+  execute(input: GetTripParticipantInput) {
     return Effect.gen(function* () {
-      const participantPort = yield* TripParticipantPort;
+      const participantPort = yield* TripParticipantPortTag;
 
       // Find participant with relations
       const result = yield* participantPort.findByUserAndTripWithRelations(
@@ -38,8 +32,8 @@ export class GetTripParticipantUseCase {
       }
 
       const dto: TripParticipantDTO = {
-        userId: input.userId,
-        tripId: input.tripId,
+        userId: UserId.toString(input.userId),
+        tripId: TripId.toString(input.tripId),
         wristNumber: result.participant.wristNumber,
         houseNumber: result.participant.houseNumber,
         group: result.group,
