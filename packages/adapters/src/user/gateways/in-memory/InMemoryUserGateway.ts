@@ -6,21 +6,23 @@ import { type User, UserId, AuthUserId } from "@mirai-app/domain";
  * In-Memory User Gateway
  *
  * Implements UserPort using in-memory Map storage for testing.
+ * Auth token parameter is accepted but ignored (auth verification happens
+ * in real gateways; in-memory gateway is for testing business logic only).
  */
 export class InMemoryUserGateway implements IUserPort {
   private users = new Map<string, User>();
   private usersByAuthId = new Map<string, User>();
   private usersByTripId = new Map<string, Set<string>>();
 
-  findById(id: UserId) {
+  findById(id: UserId, _authToken?: string) {
     return Effect.sync(() => this.users.get(UserId.toString(id)) ?? null);
   }
 
-  findByAuthUserId(authUserId: string) {
+  findByAuthUserId(authUserId: string, _authToken?: string) {
     return Effect.sync(() => this.usersByAuthId.get(authUserId) ?? null);
   }
 
-  findByTripId(tripId: string) {
+  findByTripId(tripId: string, _authToken?: string) {
     return Effect.sync(() => {
       const userIds = this.usersByTripId.get(tripId);
       if (!userIds) return [];
@@ -36,26 +38,32 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  findAllPaginated(params: { limit: number; offset: number }) {
+  findAllPaginated(
+    params: { limit: number; offset: number },
+    _authToken?: string,
+  ) {
     return Effect.sync(() => {
       const allUsers = Array.from(this.users.values());
       return allUsers.slice(params.offset, params.offset + params.limit);
     });
   }
 
-  findAll() {
+  findAll(_authToken?: string) {
     return Effect.sync(() => {
       return Array.from(this.users.values());
     });
   }
 
-  search(params: {
-    tripId: string;
-    field: string;
-    searchTerm?: string;
-    limit: number;
-    offset: number;
-  }) {
+  search(
+    params: {
+      tripId: string;
+      field: string;
+      searchTerm?: string;
+      limit: number;
+      offset: number;
+    },
+    _authToken?: string,
+  ) {
     return Effect.sync(() => {
       const userIds = this.usersByTripId.get(params.tripId);
       if (!userIds) {
@@ -93,7 +101,7 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  create(user: User) {
+  create(user: User, _authToken?: string) {
     return Effect.sync(() => {
       this.users.set(UserId.toString(user.id), user);
       this.usersByAuthId.set(AuthUserId.toString(user.authUserId), user);
@@ -101,7 +109,7 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  update(user: User) {
+  update(user: User, _authToken?: string) {
     return Effect.sync(() => {
       const existing = this.users.get(UserId.toString(user.id));
       if (existing) {
@@ -113,7 +121,7 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  delete(id: UserId) {
+  delete(id: UserId, _authToken?: string) {
     return Effect.sync(() => {
       const user = this.users.get(UserId.toString(id));
       if (user) {
@@ -123,11 +131,11 @@ export class InMemoryUserGateway implements IUserPort {
     });
   }
 
-  exists(id: UserId) {
+  exists(id: UserId, _authToken?: string) {
     return Effect.sync(() => this.users.has(UserId.toString(id)));
   }
 
-  count() {
+  count(_authToken?: string) {
     return Effect.sync(() => this.users.size);
   }
 

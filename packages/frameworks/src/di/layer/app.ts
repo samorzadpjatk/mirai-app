@@ -16,6 +16,7 @@ import {
 import { NotificationServiceGateway } from "@mirai-app/adapters";
 import { makeRepositoryLayer } from "./repository";
 import { makeServiceLayer } from "./service";
+import { makeAuthLayer } from "./auth";
 
 /**
  * Configuration for creating the complete App Layer
@@ -50,6 +51,7 @@ export interface AppLayerConfig {
  * ```
  */
 export const makeAppLayer = (config: AppLayerConfig) => {
+  const authLayer = makeAuthLayer({ supabase: config.supabase });
   const repoLayer = makeRepositoryLayer({ db: config.db });
   const serviceLayer = makeServiceLayer({ supabase: config.supabase });
 
@@ -63,7 +65,7 @@ export const makeAppLayer = (config: AppLayerConfig) => {
     }),
   );
 
-  return Layer.mergeAll(repoLayer, serviceLayer, notificationServiceLayer);
+  return Layer.mergeAll(authLayer, repoLayer, serviceLayer, notificationServiceLayer);
 };
 
 /**

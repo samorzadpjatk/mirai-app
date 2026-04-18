@@ -1,5 +1,6 @@
 import type { Effect } from "effect";
 import type { IPortError } from "../errors/ports";
+import type { AccessCheckRequest } from "../../auth/types";
 
 /**
  * Interface for authentication operations via Supabase
@@ -51,6 +52,19 @@ export interface IAuthPort {
     IPortError,
     never
   >;
+
+  /**
+   * Verify access to a resource
+   *
+   * Validates the authentication token and checks if the user has the
+   * required permissions for the specified resource.
+   *
+   * @param request - Access check request containing token, resource info, and required permissions
+   * @returns Effect that succeeds if access is granted, fails with IPortError otherwise
+   */
+  verifyAccess(
+    request: AccessCheckRequest,
+  ): Effect.Effect<void, IPortError, never>;
 }
 
 /**

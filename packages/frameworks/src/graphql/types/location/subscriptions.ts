@@ -1,5 +1,6 @@
 import { Effect, Queue } from "effect";
 import { UserId } from "@mirai-app/domain";
+import { LocationPortTag } from "@mirai-app/use-cases/location/ports";
 import { builder } from "../../builder.js";
 import type { FriendLocationEvent } from "./types.js";
 import {
@@ -34,16 +35,33 @@ interface LocationSubscriptionArgs {
 }
 
 /**
+ * Check if viewer is authorized to subscribe to friend's location
+ *
+ * Authorization rule: The viewer must be in the friend's sharing list.
+ * This ensures users can only receive location updates from friends
+ * who have explicitly shared their location with them.
+ */
+function checkLocationSharingAuthorization(
+  friendId: UserId,
+  viewerUserId: string,
+): Effect.Effect<boolean, unknown, LocationPortTag> {
+  return Effect.gen(function* () {
+    const locationPort = yield* LocationPortTag;
+    const sharingList = yield* locationPort.getSharingListForUser(friendId);
+    return sharingList.some((userId) => UserId.toString(userId) === viewerUserId);
+  });
+}
+
+/**
  * friendLocationEvent subscription
  *
  * Allows a user to subscribe to real-time location updates from a friend.
- * Note: Authorization (checking if viewer is in friend's sharing list)
- * should be performed before establishing the subscription.
+ * Only friends who are in the sharing list receive updates.
  *
  * ## Authorization
  *
  * - User must be authenticated
- * - User should be in the friend's location sharing list (enforced at API gateway or prior validation)
+ * - User must be in the friend's location sharing list (enforced via LocationPort)
  *
  * ## Error Handling
  *
@@ -88,23 +106,45 @@ builder.subscriptionField("friendLocationEvent", (t) =>
         throw new Error("Authentication required for location subscriptions");
       }
 
+      const viewerUserId = ctx.authContext.userId;
+
       // Convert string friendId to UserId using unsafeCreate
       // The validation should have already occurred at the API boundary
       const friendId = UserId.unsafeCreate(args.friendId);
+
+      // Check authorization: viewer must be in friend's sharing list
+      if (!ctx.runWithAppLayer) {
+        throw new Error(
+          "Server error: Application layer not initialized. " +
+            "Unable to perform authorization check.",
+        );
+      }
+
+      const isAuthorized = await ctx.runWithAppLayer(
+        checkLocationSharingAuthorization(friendId, viewerUserId),
+      );
+
+      if (!isAuthorized) {
+        throw new Error(
+          "Unauthorized: You are not in this friend's location sharing list",
+        );
+      }
 
       // Create an unbounded queue for location events
       const queue = await Effect.runPromise(Queue.unbounded<FriendLocationEvent>());
 
       // Define subscriber callback that pushes to queue
       const subscriber: LocationSubscriber = (update: LocationUpdate) => {
-        return Effect.gen(function* () {
-          yield* queue.offer({
-            userId: update.userId,
-            latitude: update.latitude,
-            longitude: update.longitude,
-            accuracy: update.accuracy,
-            timestamp: update.timestamp,
-          });
+        return Effect.sync(() => {
+          void Effect.runPromise(
+            queue.offer({
+              userId: update.userId,
+              latitude: update.latitude,
+              longitude: update.longitude,
+              accuracy: update.accuracy,
+              timestamp: update.timestamp,
+            }),
+          );
         });
       };
 
@@ -123,6 +163,6 @@ builder.subscriptionField("friendLocationEvent", (t) =>
         await Effect.runPromise(queue.shutdown);
       }
     },
-    resolve: (event) => event,
+    resolve: (event: FriendLocationEvent): FriendLocationEvent => event,
   }),
 );

@@ -1,14 +1,24 @@
 import { Effect } from "effect";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
-import type { IAuthPort } from "@mirai-app/domain";
+import type { IAuthNPort } from "@mirai-app/domain";
 import { ApplicationError } from "@mirai-app/domain";
 
 /**
  * Supabase Auth Gateway
  *
- * Implements IAuthPort using Supabase Auth client for authentication operations.
+ * Implements IAuthNPort using Supabase Auth client for authentication operations.
+ *
+ * Note: Authorization (verifyAccess) has been moved to UserDrizzleGateway which
+ * implements IAuthZPort. This gateway focuses solely on authentication (AuthN):
+ * - signInWithPassword, signInWithOtp, signUp
+ * - signOut
+ * - getSession, refreshSession
+ *
+ * Backward Compatibility: This class also satisfies IAuthPort structure for
+ * transition period (has all 6 AuthN methods). To use as IAuthPort, combine
+ * with an IAuthZPort implementation at the application layer.
  */
-export class SupabaseAuthGateway implements IAuthPort {
+export class SupabaseAuthGateway implements IAuthNPort {
   constructor(private readonly supabase: SupabaseClient) {}
 
   signInWithPassword(email: string, password: string) {
@@ -19,7 +29,7 @@ export class SupabaseAuthGateway implements IAuthPort {
           password,
         });
         if (error) throw error;
-        if (!data.user || !data.session) {
+        if (!data || !data.user || !data.session) {
           throw new Error("Sign in failed: no user or session returned");
         }
         return {
@@ -44,7 +54,7 @@ export class SupabaseAuthGateway implements IAuthPort {
           type: "email",
         });
         if (error) throw error;
-        if (!data.user || !data.session) {
+        if (!data || !data.user || !data.session) {
           throw new Error(
             "OTP verification failed: no user or session returned",
           );
@@ -71,7 +81,7 @@ export class SupabaseAuthGateway implements IAuthPort {
         });
         if (error) throw error;
         return {
-          user: data.user
+          user: data && data.user
             ? { id: data.user.id, email: data.user.email ?? "" }
             : null,
         };
@@ -104,10 +114,10 @@ export class SupabaseAuthGateway implements IAuthPort {
         const { data, error } = await this.supabase.auth.getSession();
         if (error) throw error;
         return {
-          user: data.session?.user
+          user: data && data.session && data.session.user
             ? { id: data.session.user.id, email: data.session.user.email ?? "" }
             : null,
-          accessToken: data.session?.access_token ?? null,
+          accessToken: data && data.session ? data.session.access_token : null,
         };
       },
       catch: (error) =>
@@ -124,7 +134,7 @@ export class SupabaseAuthGateway implements IAuthPort {
         const { data, error } = await this.supabase.auth.refreshSession();
         if (error) throw error;
         return {
-          session: data.session
+          session: data && data.session
             ? { accessToken: data.session.access_token }
             : null,
         };

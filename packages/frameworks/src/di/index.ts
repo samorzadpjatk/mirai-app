@@ -91,15 +91,17 @@ export {
 } from "./layer/repository";
 
 // =============================================================================
-// Service Layers - External Services (Supabase, etc.)
+// Auth Layer - Authentication (AuthN) and Authorization (AuthZ) Layers
 // =============================================================================
 
 export {
-  makeServiceLayer,
   makeAuthLayer,
-  makeStorageLayer,
-  type ServiceLayerConfig,
-} from "./layer/service";
+  makeAuthNLayer,
+  makeAuthZLayer,
+  type AuthLayerConfig,
+  type AuthNLayerConfig,
+  type AuthZLayerConfig,
+} from "./layer/auth";
 
 // =============================================================================
 // Service Context Tags - For direct service access
@@ -107,11 +109,13 @@ export {
 
 export {
   AuthPortTag,
+  AuthNPortTag,
+  AuthZPortTag,
   StoragePortTag,
   EventBusTag,
 } from "@mirai-app/use-cases";
 
-export type { IAuthPort, IStoragePort } from "@mirai-app/domain";
+export type { IAuthPort, IAuthNPort, IAuthZPort, IStoragePort } from "@mirai-app/domain";
 
 // =============================================================================
 // Test Utilities - Mock layers and test helpers
@@ -122,6 +126,26 @@ export {
   runWithTestLayer,
   mockLayerOf,
   createMockRepositoryLayer,
+  // Legacy auth mock helpers (backward compatibility)
+  createAlwaysAllowMockAuth,
+  createAlwaysDenyMockAuth,
+  createConditionalMockAuth,
+  createMockAuthLayer,
+  createMockAuthPort,
+  MockUnauthorizedError,
+  MockPermissionDeniedError,
+  MockSessionExpiredError,
+  // AuthN mock helpers
+  createAlwaysAllowMockAuthN,
+  createAlwaysDenyMockAuthN,
+  createMockAuthNLayer,
+  // AuthZ mock helpers
+  createAlwaysAllowMockAuthZ,
+  createAlwaysDenyMockAuthZ,
+  createConditionalMockAuthZ,
+  createMockAuthZLayer,
+  type ConditionalMockAuthConfig,
+  type ConditionalMockAuthZConfig,
   type TestLayer,
   type TestLayerConfig,
 } from "./layer/test";

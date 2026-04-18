@@ -5,6 +5,7 @@ import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
 import type { DateTimeResolver, EmailAddressResolver } from "graphql-scalars";
 import type { GraphQLContext } from "./context";
 import type { AuthScopeMap } from "./auth";
+import type { FriendLocationEvent } from "./types/location/types.js";
 
 /**
  * Schema builder configuration type
@@ -133,6 +134,7 @@ export function createBuilder() {
         startCursor: string | null;
         endCursor: string | null;
       };
+      FriendLocationEvent: FriendLocationEvent;
     };
     Interfaces: {
       Node: {};

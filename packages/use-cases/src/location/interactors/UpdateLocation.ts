@@ -165,15 +165,17 @@ export class UpdateLocationUseCase {
 
         if (shouldPublish) {
           const eventId = crypto.randomUUID();
-          const event = new LocationUpdated(
+          const event = new LocationUpdated({
             eventId,
             userId,
-            input.latitude,
-            input.longitude,
-            input.accuracy ?? null,
-            location.timestamp,
+            coordinates: {
+              latitude: input.latitude,
+              longitude: input.longitude,
+            },
+            accuracy: input.accuracy ?? undefined,
+            timestamp: location.timestamp,
             sharingList,
-          );
+          });
 
           yield* eventBus.publish(event);
         }

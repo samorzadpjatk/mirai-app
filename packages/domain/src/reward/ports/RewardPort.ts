@@ -12,8 +12,12 @@ import type { TripId } from "../../trip/value-objects/TripId";
 export interface IRewardPort {
   /**
    * Find reward by ID
+   * @param authToken - Optional auth token for access verification (participants can view)
    */
-  findById(id: RewardId): Effect.Effect<Reward | null, IPortError, never>;
+  findById(
+    id: RewardId,
+    authToken?: string,
+  ): Effect.Effect<Reward | null, IPortError, never>;
 
   /**
    * Find rewards by trip
@@ -53,18 +57,32 @@ export interface IRewardPort {
 
   /**
    * Create new reward
+   * @param authToken - Optional auth token for access verification (organizers only)
    */
-  create(reward: Reward): Effect.Effect<Reward, IPortError, never>;
+  create(
+    reward: Reward,
+    authToken?: string,
+  ): Effect.Effect<Reward, IPortError, never>;
 
   /**
    * Update existing reward
+   * @param authToken - Optional auth token for access verification (organizers only)
    */
-  update(reward: Reward): Effect.Effect<Reward, IPortError, never>;
+  update(
+    reward: Reward,
+    authToken?: string,
+  ): Effect.Effect<Reward, IPortError, never>;
 
   /**
    * Delete reward by ID
+   * @param tripId - Trip ID for auth verification
+   * @param authToken - Optional auth token for access verification (organizers only)
    */
-  delete(id: RewardId): Effect.Effect<void, IPortError, never>;
+  delete(
+    id: RewardId,
+    tripId: TripId,
+    authToken?: string,
+  ): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if reward exists

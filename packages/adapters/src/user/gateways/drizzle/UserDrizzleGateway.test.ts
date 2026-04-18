@@ -149,7 +149,7 @@ describe("[UNIT] InMemoryUserGateway", () => {
     });
   });
 
-  describe("findAll", () => {
+  describe("findAllPaginated", () => {
     it("should return paginated users", async () => {
       const user1 = createTestUser("user-1");
       const user2 = createTestUser("user-2");
@@ -159,7 +159,7 @@ describe("[UNIT] InMemoryUserGateway", () => {
       await Effect.runPromise(gateway.create(user2));
       await Effect.runPromise(gateway.create(user3));
 
-      const effect = gateway.findAll({ limit: 2, offset: 0 });
+      const effect = gateway.findAllPaginated({ limit: 2, offset: 0 });
       const either = await Effect.runPromise(Effect.either(effect));
 
       expect(Either.isRight(either)).toBe(true);
@@ -175,7 +175,7 @@ describe("[UNIT] InMemoryUserGateway", () => {
       await Effect.runPromise(gateway.create(user1));
       await Effect.runPromise(gateway.create(user2));
 
-      const effect = gateway.findAll({ limit: 10, offset: 1 });
+      const effect = gateway.findAllPaginated({ limit: 10, offset: 1 });
       const either = await Effect.runPromise(Effect.either(effect));
 
       expect(Either.isRight(either)).toBe(true);

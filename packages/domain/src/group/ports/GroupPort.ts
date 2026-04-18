@@ -8,12 +8,17 @@ import type { TripId } from "../../trip/value-objects/TripId";
  * Group Repository Port
  *
  * Defines the interface for group persistence operations.
+ * All protected methods support optional authToken for authorization.
  */
 export interface IGroupPort {
   /**
    * Find group by ID
+   * @param authToken - Optional auth token for authorization (read permission)
    */
-  findById(id: GroupId): Effect.Effect<Group | null, IPortError, never>;
+  findById(
+    id: GroupId,
+    authToken?: string,
+  ): Effect.Effect<Group | null, IPortError, never>;
 
   /**
    * Find groups by trip
@@ -46,23 +51,36 @@ export interface IGroupPort {
 
   /**
    * Create new group
+   * @param authToken - Optional auth token for authorization (write permission)
    */
-  create(group: Group): Effect.Effect<Group, IPortError, never>;
+  create(
+    group: Group,
+    authToken?: string,
+  ): Effect.Effect<Group, IPortError, never>;
 
   /**
    * Update existing group
+   * @param authToken - Optional auth token for authorization (write permission)
    */
-  update(group: Group): Effect.Effect<Group, IPortError, never>;
+  update(
+    group: Group,
+    authToken?: string,
+  ): Effect.Effect<Group, IPortError, never>;
 
   /**
    * Delete group by ID
+   * @param authToken - Optional auth token for authorization (admin permission)
    */
-  delete(id: GroupId): Effect.Effect<void, IPortError, never>;
+  delete(id: GroupId, authToken?: string): Effect.Effect<void, IPortError, never>;
 
   /**
    * Soft delete group by ID
+   * @param authToken - Optional auth token for authorization (admin permission)
    */
-  softDelete(id: GroupId): Effect.Effect<void, IPortError, never>;
+  softDelete(
+    id: GroupId,
+    authToken?: string,
+  ): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if group exists
@@ -76,18 +94,22 @@ export interface IGroupPort {
 
   /**
    * Add coins to group
+   * @param authToken - Optional auth token for authorization (write permission)
    */
   addCoins(
     groupId: GroupId,
     amount: number,
+    authToken?: string,
   ): Effect.Effect<Group, IPortError, never>;
 
   /**
    * Subtract coins from group
+   * @param authToken - Optional auth token for authorization (write permission)
    */
   subtractCoins(
     groupId: GroupId,
     amount: number,
+    authToken?: string,
   ): Effect.Effect<Group, IPortError, never>;
 
   /**

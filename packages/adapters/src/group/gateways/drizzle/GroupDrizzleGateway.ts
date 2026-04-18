@@ -11,22 +11,26 @@ import { groupMapper } from "../../mappers/GroupMapper";
  * Group Drizzle Gateway
  *
  * Implements GroupPort using Drizzle ORM for PostgreSQL.
+ *
+ * Note: Auth verification is handled at the use case layer, not in the gateway.
+ * The authToken parameter is passed through for compatibility with the interface
+ * and for future use cases that may need to pass auth context to the database layer.
  */
 export class GroupDrizzleGateway
   extends BaseDrizzleGateway
   implements IGroupPort
 {
-  findById(id: string) {
+  findById(id: GroupId, _authToken?: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.findById",
       async () => {
         const result = await this.db.query.groups.findFirst({
-          where: eq(groups.id, id),
+          where: eq(groups.id, GroupId.toString(id)),
         });
         if (!result) return null;
         return await Effect.runPromise(groupMapper.toDomain(result));
       },
-      id,
+      GroupId.toString(id),
     );
   }
 
@@ -123,7 +127,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  create(group: Group) {
+  create(group: Group, _authToken?: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.create",
       async () => {
@@ -135,7 +139,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  update(group: Group) {
+  update(group: Group, _authToken?: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.update",
       async () => {
@@ -150,40 +154,45 @@ export class GroupDrizzleGateway
     );
   }
 
-  delete(id: string) {
+  delete(id: GroupId, _authToken?: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.delete",
       async () => {
-        await this.db.delete(groups).where(eq(groups.id, id));
+        await this.db.delete(groups).where(eq(groups.id, GroupId.toString(id)));
       },
-      id,
+      GroupId.toString(id),
     );
   }
 
-  softDelete(id: string) {
+  softDelete(id: GroupId, _authToken?: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.softDelete",
       async () => {
         await this.db
           .update(groups)
           .set({ isDeleted: true, updatedAt: new Date() })
-          .where(eq(groups.id, id));
+          .where(eq(groups.id, GroupId.toString(id)));
       },
-      id,
+      GroupId.toString(id),
     );
   }
 
-  exists(id: string) {
+  exists(id: GroupId) {
     return this.tryPromise(
       "GroupDrizzleGateway.exists",
       async () => {
         const result = await this.db
           .select({ count: count() })
           .from(groups)
-          .where(and(eq(groups.id, id), eq(groups.isDeleted, false)));
+          .where(
+            and(
+              eq(groups.id, GroupId.toString(id)),
+              eq(groups.isDeleted, false),
+            ),
+          );
         return (result[0]?.count ?? 0) > 0;
       },
-      id,
+      GroupId.toString(id),
     );
   }
 
@@ -201,7 +210,7 @@ export class GroupDrizzleGateway
     );
   }
 
-  addCoins(groupId: string, amount: number) {
+  addCoins(groupId: GroupId, amount: number, _authToken?: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.addCoins",
       async () => {
@@ -211,7 +220,7 @@ export class GroupDrizzleGateway
             coins: sql`${groups.coins} + ${amount}`,
             updatedAt: new Date(),
           })
-          .where(eq(groups.id, groupId))
+          .where(eq(groups.id, GroupId.toString(groupId)))
           .returning();
 
         if (!result[0]) {
@@ -220,11 +229,11 @@ export class GroupDrizzleGateway
 
         return await Effect.runPromise(groupMapper.toDomain(result[0]));
       },
-      groupId,
+      GroupId.toString(groupId),
     );
   }
 
-  subtractCoins(groupId: string, amount: number) {
+  subtractCoins(groupId: GroupId, amount: number, _authToken?: string) {
     return this.tryPromise(
       "GroupDrizzleGateway.subtractCoins",
       async () => {
@@ -234,7 +243,7 @@ export class GroupDrizzleGateway
             coins: sql`${groups.coins} - ${amount}`,
             updatedAt: new Date(),
           })
-          .where(eq(groups.id, groupId))
+          .where(eq(groups.id, GroupId.toString(groupId)))
           .returning();
 
         if (!result[0]) {
@@ -243,7 +252,7 @@ export class GroupDrizzleGateway
 
         return await Effect.runPromise(groupMapper.toDomain(result[0]));
       },
-      groupId,
+      GroupId.toString(groupId),
     );
   }
 

@@ -1,1 +1,6 @@
-export { LocationUpdated, InvalidCoordinatesError } from "./LocationUpdated";
+export {
+  LocationUpdated,
+  InvalidCoordinatesError,
+  type LocationUpdatedEventPayload,
+  type Coordinates,
+} from "./LocationUpdated";

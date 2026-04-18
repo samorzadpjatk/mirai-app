@@ -70,13 +70,6 @@ export const makeServiceLayer = (config: ServiceLayerConfig) => {
 };
 
 /**
- * Creates only the Auth service Layer.
- */
-export const makeAuthLayer = (supabase: SupabaseClient) => {
-  return Layer.succeed(AuthPortTag, new SupabaseAuthGateway(supabase));
-};
-
-/**
  * Creates only the Storage service Layer.
  */
 export const makeStorageLayer = (supabase: SupabaseClient) => {

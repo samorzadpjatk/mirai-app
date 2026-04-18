@@ -4,6 +4,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { rewards, type RewardSelect } from "@mirai-app/frameworks/drizzle";
 import { Reward, RewardId, TripId, DatabaseError } from "@mirai-app/domain";
 import type { IRewardPort } from "@mirai-app/domain";
+import { AuthZPortTag } from "@mirai-app/use-cases/auth/ports/AuthZPort";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { rewardMapper } from "../../mappers/RewardMapper";
 
@@ -20,24 +21,61 @@ export class RewardDrizzleGateway
     super(db);
   }
 
-  findById(id: RewardId) {
+  findById(id: RewardId, authToken?: string) {
     const idStr = RewardId.toString(id);
 
-    return Effect.tryPromise({
-      try: async () => {
-        const result = await this.db
-          .select()
-          .from(rewards)
-          .where(eq(rewards.id, idStr))
-          .limit(1);
-        return result[0] ?? null;
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "findById",
-          id: idStr,
-          cause: error,
-        }),
+    return Effect.gen(function* () {
+      // Verify auth if token provided (read permission for participants)
+      if (authToken) {
+        const authZPort = yield* AuthZPortTag;
+
+        // First get the reward to check tripId
+        const rewardResult = yield* Effect.tryPromise({
+          try: async () => {
+            const result = await this.db
+              .select()
+              .from(rewards)
+              .where(eq(rewards.id, idStr))
+              .limit(1);
+            return result[0] ?? null;
+          },
+          catch: (error) =>
+            new DatabaseError({
+              operation: "findById",
+              id: idStr,
+              cause: error,
+            }),
+        });
+
+        if (rewardResult) {
+          yield* authZPort.verifyAccess({
+            token: authToken,
+            resourceType: "trip",
+            resourceId: rewardResult.tripId,
+            requiredPermission: "read",
+          });
+        }
+
+        return rewardResult;
+      }
+
+      // No auth token - proceed without verification (backward compatibility)
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const result = await this.db
+            .select()
+            .from(rewards)
+            .where(eq(rewards.id, idStr))
+            .limit(1);
+          return result[0] ?? null;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "findById",
+            id: idStr,
+            cause: error,
+          }),
+      });
     }).pipe(
       Effect.flatMap((dbReward: RewardSelect | null) => {
         if (!dbReward) {
@@ -108,25 +146,40 @@ export class RewardDrizzleGateway
     );
   }
 
-  create(reward: Reward) {
+  create(reward: Reward, authToken?: string) {
     const insertData = rewardMapper.toInsert(reward);
     const idStr = RewardId.toString(reward.id);
+    const tripIdStr = TripId.toString(reward.tripId);
 
-    return Effect.tryPromise({
-      try: async () => {
-        const [result] = await this.db
-          .insert(rewards)
-          .values(insertData)
-          .returning();
-        if (!result) throw new Error("Failed to create reward");
-        return result;
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "create",
-          id: idStr,
-          cause: error,
-        }),
+    return Effect.gen(function* () {
+      // Verify auth if token provided (write permission for organizers)
+      if (authToken) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          token: authToken,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const [result] = await this.db
+            .insert(rewards)
+            .values(insertData)
+            .returning();
+          if (!result) throw new Error("Failed to create reward");
+          return result;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "create",
+            id: idStr,
+            cause: error,
+          }),
+      });
     }).pipe(
       Effect.flatMap((dbReward: RewardSelect) =>
         rewardMapper.toDomain(dbReward),
@@ -134,26 +187,41 @@ export class RewardDrizzleGateway
     );
   }
 
-  update(reward: Reward) {
+  update(reward: Reward, authToken?: string) {
     const updateData = rewardMapper.toUpdate(reward);
     const idStr = RewardId.toString(reward.id);
+    const tripIdStr = TripId.toString(reward.tripId);
 
-    return Effect.tryPromise({
-      try: async () => {
-        const [result] = await this.db
-          .update(rewards)
-          .set(updateData)
-          .where(eq(rewards.id, idStr))
-          .returning();
-        if (!result) throw new Error("Failed to update reward");
-        return result;
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "update",
-          id: idStr,
-          cause: error,
-        }),
+    return Effect.gen(function* () {
+      // Verify auth if token provided (write permission for organizers)
+      if (authToken) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          token: authToken,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          const [result] = await this.db
+            .update(rewards)
+            .set(updateData)
+            .where(eq(rewards.id, idStr))
+            .returning();
+          if (!result) throw new Error("Failed to update reward");
+          return result;
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "update",
+            id: idStr,
+            cause: error,
+          }),
+      });
     }).pipe(
       Effect.flatMap((dbReward: RewardSelect) =>
         rewardMapper.toDomain(dbReward),
@@ -161,19 +229,34 @@ export class RewardDrizzleGateway
     );
   }
 
-  delete(id: RewardId) {
+  delete(id: RewardId, tripId: TripId, authToken?: string) {
     const idStr = RewardId.toString(id);
+    const tripIdStr = TripId.toString(tripId);
 
-    return Effect.tryPromise({
-      try: async () => {
-        await this.db.delete(rewards).where(eq(rewards.id, idStr));
-      },
-      catch: (error) =>
-        new DatabaseError({
-          operation: "delete",
-          id: idStr,
-          cause: error,
-        }),
+    return Effect.gen(function* () {
+      // Verify auth if token provided (write permission for organizers)
+      if (authToken) {
+        const authZPort = yield* AuthZPortTag;
+        yield* authZPort.verifyAccess({
+          token: authToken,
+          resourceType: "trip",
+          resourceId: tripIdStr,
+          requiredPermission: "write",
+        });
+      }
+
+      // Proceed with database operation
+      return yield* Effect.tryPromise({
+        try: async () => {
+          await this.db.delete(rewards).where(eq(rewards.id, idStr));
+        },
+        catch: (error) =>
+          new DatabaseError({
+            operation: "delete",
+            id: idStr,
+            cause: error,
+          }),
+      });
     });
   }
 

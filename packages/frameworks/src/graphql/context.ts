@@ -1,3 +1,5 @@
+import type { Effect, Layer } from "effect";
+
 /**
  * GraphQL Context Types
  *
@@ -33,6 +35,13 @@ export interface GraphQLContext {
   authContext?: AuthContext;
   /** Request object */
   request: Request;
+  /**
+   * Run an Effect with the application layer
+   *
+   * This allows resolvers and subscriptions to execute Effects
+   * that require application dependencies (ports, services).
+   */
+  runWithAppLayer?: <T>(effect: Effect.Effect<T, unknown, unknown>) => Promise<T>;
 }
 
 /**

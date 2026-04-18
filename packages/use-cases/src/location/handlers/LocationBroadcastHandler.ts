@@ -73,9 +73,9 @@ export class LocationBroadcastHandler implements IEventHandler<LocationUpdated, 
       // Create the location update payload once
       const locationUpdate: LocationUpdate = {
         userId: event.userId,
-        latitude: event.latitude,
-        longitude: event.longitude,
-        accuracy: event.accuracy,
+        latitude: event.coordinates.latitude,
+        longitude: event.coordinates.longitude,
+        accuracy: event.accuracy ?? null,
         timestamp: event.occurredAt,
       };
 

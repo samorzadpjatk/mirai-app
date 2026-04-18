@@ -577,7 +577,171 @@ See TESTING.md for comprehensive Effect testing patterns including:
 
 ---
 
-## Deep reference
+## Gateway-Level Auth Protection
+
+Gateway-level auth protection ensures users can only access resources they own. This section documents the implementation patterns for auth-protected gateways.
+
+### Architecture Overview
+
+```
+Domain Layer          Use-Cases Layer        Adapters Layer        Frameworks Layer
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│ IAuthPort       │   │ AuthPortTag     │   │ SupabaseAuth    │   │ makeAuthLayer() │
+│ interface       │→  │ Context.Tag     │←  │ Gateway         │←  │ Layer.compose   │
+│ verifyAccess()  │   │ yield* AuthPort │   │ implements      │   │ merge with      │
+└─────────────────┘   └─────────────────┘   │ IAuthPort       │   │ repoLayer       │
+│ AccessCheckRequest│                     └─────────────────┘   └─────────────────┘
+└─────────────────┘
+```
+
+### Key Components
+
+**Domain Layer (`@mirai-app/domain`)**: Defines auth contracts and error types
+- `IAuthPort` interface with `verifyAccess()` method
+- `AccessCheckRequest` type for resource verification
+- Auth error classes: `AuthSessionExpiredError`, `PermissionDeniedError`, `TokenMissingError`, `AuthServiceError`
+
+**Use-Cases Layer (`@mirai-app/use-cases`)**: Provides Effect DI tag
+- `AuthPortTag` Context.Tag for accessing auth port
+- Re-export of `IAuthPort` type
+
+**Adapters Layer (`@mirai-app/adapters`)**: Implements auth verification
+- `SupabaseAuthGateway` implements `IAuthPort`
+- `verifyAccess()` validates JWT via Supabase and checks resource permissions
+- Supports resource types: trip, group, challenge, user, activity, notification, reward, sponsor, coin, challengeSubmission
+
+**Frameworks Layer (`@mirai-app/frameworks/di`)**: Wires auth into DI system
+- `makeAuthLayer({ supabase })` creates auth Layer
+- Merged into `makeAppLayer()` via `Layer.mergeAll(authLayer, repoLayer, serviceLayer)`
+- Test utilities in `createTestLayer()` with mock auth support
+
+### Effect.gen Pattern with AuthPortTag
+
+**Basic Pattern:**
+
+```typescript
+import { Effect } from "effect";
+import { AuthPortTag } from "@mirai-app/use-cases";
+
+const protectedOperation = Effect.gen(function* () {
+  const authPort = yield* AuthPortTag;
+  
+  // Verify access before operation
+  yield* authPort.verifyAccess({
+    token: authToken,
+    resourceType: "trip",
+    resourceId: tripId,
+    requiredPermission: "write",
+  });
+  
+  // Proceed with protected operation
+  const result = yield* performOperation();
+  return result;
+});
+```
+
+**Gateway Implementation Pattern:**
+
+```typescript
+import { Effect } from "effect";
+import { AuthPortTag } from "@mirai-app/use-cases";
+import type { ITripPort } from "@mirai-app/domain";
+
+export class TripDrizzleGateway implements ITripPort {
+  findById(id: TripId, authToken?: string) {
+    return Effect.gen(function* () {
+      // Skip auth for public operations (token optional)
+      if (authToken) {
+        const authPort = yield* AuthPortTag;
+        yield* authPort.verifyAccess({
+          token: authToken,
+          resourceType: "trip",
+          resourceId: TripId.toString(id),
+          requiredPermission: "read",
+        });
+      }
+      
+      // Proceed with database query
+      const result = yield* databaseQuery();
+      return result;
+    });
+  }
+}
+```
+
+### Permission Levels
+
+| Level  | Access | Typical Use Case |
+|--------|--------|------------------|
+| `read`  | View resource | Get operations, list queries |
+| `write` | Modify resource | Create, update operations |
+| `admin` | Full control | Delete operations, admin operations |
+
+### Error Handling
+
+Auth errors implement `IPortError` and can be matched with `Effect.catchTag`:
+
+```typescript
+import { AuthSessionExpiredError, PermissionDeniedError } from "@mirai-app/domain";
+
+const program = Effect.gen(function* () {
+  // ... auth verification
+}).pipe(
+  Effect.catchTag("AuthSessionExpiredError", (error) => {
+    // Handle expired token - redirect to login
+    return Effect.fail(new UnauthorizedError({}));
+  }),
+  Effect.catchTag("PermissionDeniedError", (error) => {
+    // Handle permission denied - return 403
+    return Effect.fail(new ForbiddenError({}));
+  })
+);
+```
+
+### Testing Auth-Protected Operations
+
+**Mock Auth Helpers (from `@mirai-app/frameworks/di`):**
+
+```typescript
+import { 
+  createTestLayer, 
+  createAlwaysAllowMockAuth, 
+  createAlwaysDenyMockAuth,
+  createConditionalMockAuth,
+  MockUnauthorizedError,
+  MockPermissionDeniedError 
+} from "@mirai-app/frameworks/di";
+import { Effect, Either } from "effect";
+
+// Test with auth bypassed (always succeeds)
+const testLayer = createTestLayer(); // includes mock auth
+
+// Test with auth failure
+const denyLayer = createTestLayer({
+  authPort: createAlwaysDenyMockAuth(new MockUnauthorizedError({}))
+});
+
+// Test conditional auth
+const conditionalLayer = createTestLayer({
+  authPort: createConditionalMockAuth({
+    isAllowed: (token) => token === "valid-token",
+    error: new MockPermissionDeniedError({}),
+  })
+});
+
+// Type-safe error testing with Effect.either
+const either = await Effect.runPromise(
+  Effect.either(program.pipe(Effect.provide(denyLayer)))
+);
+expect(Either.isLeft(either)).toBe(true);
+if (Either.isLeft(either)) {
+  expect(either.left).toBeInstanceOf(MockUnauthorizedError);
+}
+```
+
+---
+
+## Migration Pattern for Existing Gateways
 
 For comprehensive conventions, see **AGENTS.md** (this file) and per-package AGENTS.md files:
 
@@ -589,4 +753,4 @@ For comprehensive conventions, see **AGENTS.md** (this file) and per-package AGE
 ---
 
 **Last Updated:** 2026-04-18
-**Version:** 2.9.0 (Added inference-first convention documentation with IPortError, updated per-package AGENTS.md files)
+**Version:** 2.10.0 (Added gateway-level auth protection documentation with Effect DI patterns and migration guide)

@@ -11,44 +11,63 @@ import type { UserId } from "../value-objects/UserId";
 export interface IUserPort {
   /**
    * Find user by ID
+   * @param authToken - Optional auth token for access verification
    */
-  findById(id: UserId): Effect.Effect<User | null, IPortError, never>;
+  findById(
+    id: UserId,
+    authToken?: string,
+  ): Effect.Effect<User | null, IPortError, never>;
 
   /**
    * Find user by auth user ID
+   * @param authToken - Optional auth token for access verification
    */
   findByAuthUserId(
     authUserId: string,
+    authToken?: string,
   ): Effect.Effect<User | null, IPortError, never>;
 
   /**
    * Find users by trip participant
+   * @param authToken - Optional auth token for access verification
    */
-  findByTripId(tripId: string): Effect.Effect<User[], IPortError, never>;
+  findByTripId(
+    tripId: string,
+    authToken?: string,
+  ): Effect.Effect<User[], IPortError, never>;
 
   /**
    * Find all users
+   * @param authToken - Optional auth token for access verification
    */
-  findAll(): Effect.Effect<User[], IPortError, never>;
+  findAll(authToken?: string): Effect.Effect<User[], IPortError, never>;
 
   /**
    * Find all users with pagination
+   * @param authToken - Optional auth token for access verification
    */
-  findAllPaginated(params: {
-    limit: number;
-    offset: number;
-  }): Effect.Effect<User[], IPortError, never>;
+  findAllPaginated(
+    params: {
+      limit: number;
+      offset: number;
+    },
+    authToken?: string,
+  ): Effect.Effect<User[], IPortError, never>;
 
   /**
    * Search users
+   * @param authToken - Optional auth token for access verification
    */
-  search(params: {
-    tripId: string;
-    field: string;
-    searchTerm?: string;
-    limit: number;
-    offset: number;
-  }): Effect.Effect<
+  search(
+    params: {
+      tripId: string;
+      field: string;
+      searchTerm?: string;
+      limit: number;
+      offset: number;
+    },
+    authToken?: string,
+  ): Effect.Effect<
     {
       users: User[];
       total: number;
@@ -60,26 +79,43 @@ export interface IUserPort {
 
   /**
    * Create new user
+   * @param authToken - Optional auth token for access verification
    */
-  create(user: User): Effect.Effect<User, IPortError, never>;
+  create(
+    user: User,
+    authToken?: string,
+  ): Effect.Effect<User, IPortError, never>;
 
   /**
    * Update existing user
+   * @param authToken - Optional auth token for access verification
    */
-  update(user: User): Effect.Effect<User, IPortError, never>;
+  update(
+    user: User,
+    authToken?: string,
+  ): Effect.Effect<User, IPortError, never>;
 
   /**
    * Delete user by ID
+   * @param authToken - Optional auth token for access verification
    */
-  delete(id: UserId): Effect.Effect<void, IPortError, never>;
+  delete(
+    id: UserId,
+    authToken?: string,
+  ): Effect.Effect<void, IPortError, never>;
 
   /**
    * Check if user exists
+   * @param authToken - Optional auth token for access verification
    */
-  exists(id: UserId): Effect.Effect<boolean, IPortError, never>;
+  exists(
+    id: UserId,
+    authToken?: string,
+  ): Effect.Effect<boolean, IPortError, never>;
 
   /**
    * Count users
+   * @param authToken - Optional auth token for access verification
    */
-  count(): Effect.Effect<number, IPortError, never>;
+  count(authToken?: string): Effect.Effect<number, IPortError, never>;
 }

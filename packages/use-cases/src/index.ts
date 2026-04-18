@@ -1,5 +1,6 @@
 // Export all use-cases modules as namespaces
 export * as activityFeed from "./activity-feed";
+export * as auth from "./auth";
 export * as challenge from "./challenge";
 export * as challengeSubmission from "./challenge-submission";
 export * as challengeVote from "./challenge-vote";
@@ -16,3 +17,6 @@ export * as user from "./user";
 
 // Export shared service ports
 export { AuthPortTag, StoragePortTag, EventBusTag } from "./shared/ports";
+
+// Export new AuthN and AuthZ port tags
+export { AuthNPortTag, AuthZPortTag } from "./auth/ports";

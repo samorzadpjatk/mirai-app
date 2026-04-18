@@ -3,10 +3,17 @@ import { eq, count, and, sql } from "drizzle-orm";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import {
   challenges,
+  tripParticipants,
   type ChallengeSelect,
 } from "@mirai-app/frameworks/drizzle";
-import { Challenge, ChallengeId, DatabaseError } from "@mirai-app/domain";
-import type { IChallengePort } from "@mirai-app/domain";
+import {
+  Challenge,
+  ChallengeId,
+  TripId,
+  DatabaseError,
+  PermissionDeniedError,
+  type IChallengePort,
+} from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { challengeMapper } from "../../mappers/ChallengeMapper";
 
@@ -14,6 +21,8 @@ import { challengeMapper } from "../../mappers/ChallengeMapper";
  * Challenge Drizzle Gateway
  *
  * Implements IChallengePort using Drizzle ORM for database operations.
+ * Supports optional auth token for protected operations.
+ * Auth verification uses direct database queries to check trip membership.
  */
 export class ChallengeDrizzleGateway
   extends BaseDrizzleGateway
@@ -23,39 +32,97 @@ export class ChallengeDrizzleGateway
     super(db);
   }
 
-  findById(id: string) {
-    return this.tryPromise(
-      "findById",
-      async () => {
-        const result = await this.db
-          .select()
-          .from(challenges)
-          .where(eq(challenges.id, id))
-          .limit(1);
-        return result[0] ?? null;
-      },
-      id,
-    ).pipe(
-      Effect.flatMap((dbChallenge: ChallengeSelect | null) =>
-        dbChallenge
-          ? challengeMapper.toDomain(dbChallenge)
-          : Effect.succeed(null),
-      ),
-    );
+  /**
+   * Verify trip membership from auth token
+   * Extracts user ID from token and checks if they're a trip participant
+   */
+  private verifyTripMembership(
+    authToken: string,
+    tripId: string,
+  ): Effect.Effect<void, PermissionDeniedError | DatabaseError, never> {
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Extract user ID from token (last 36 chars for UUID)
+      const userId = authToken.length > 36 ? authToken.slice(-36) : authToken;
+
+      // Check if user is a trip participant
+      const participant = yield* Effect.tryPromise({
+        try: () =>
+          self.db.query.tripParticipants.findFirst({
+            where: and(
+              eq(tripParticipants.tripId, tripId),
+              eq(tripParticipants.userId, userId),
+            ),
+          }),
+        catch: (error) =>
+          new DatabaseError({
+            operation: "ChallengeDrizzleGateway.verifyTripMembership",
+            cause: error,
+          }),
+      });
+
+      if (!participant) {
+        return yield* Effect.fail(
+          new PermissionDeniedError({
+            action: "access:challenge",
+            resource: `trip:${tripId}`,
+            userId,
+          }),
+        );
+      }
+    });
   }
 
-  findByTripId(tripId: string) {
+  findById(id: ChallengeId, authToken?: string) {
+    const challengeIdStr = ChallengeId.toString(id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // First, fetch the challenge to get tripId for auth check
+      const dbChallenge = yield* Effect.tryPromise({
+        try: () =>
+          self.db
+            .select()
+            .from(challenges)
+            .where(eq(challenges.id, challengeIdStr))
+            .limit(1)
+            .then((r: ChallengeSelect[]) => r[0] ?? null),
+        catch: (error) =>
+          new DatabaseError({
+            operation: "ChallengeDrizzleGateway.findById",
+            id: challengeIdStr,
+            cause: error,
+          }),
+      });
+
+      if (!dbChallenge) {
+        return null;
+      }
+
+      // Verify auth if token provided - check trip membership
+      if (authToken) {
+        yield* self.verifyTripMembership(authToken, dbChallenge.tripId);
+      }
+
+      return yield* challengeMapper.toDomain(dbChallenge);
+    });
+  }
+
+  findByTripId(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
+
     return this.tryPromise(
       "findByTripId",
       async () => {
         const results = await this.db
           .select()
           .from(challenges)
-          .where(eq(challenges.tripId, tripId))
+          .where(eq(challenges.tripId, tripIdStr))
           .orderBy(sql`${challenges.createdAt} DESC`);
         return results;
       },
-      tripId,
+      tripIdStr,
     ).pipe(
       Effect.flatMap((dbChallenges: ChallengeSelect[]) =>
         Effect.forEach(dbChallenges, (dbChallenge) =>
@@ -65,7 +132,8 @@ export class ChallengeDrizzleGateway
     );
   }
 
-  findActiveByTripId(tripId: string, atDate?: Date) {
+  findActiveByTripId(tripId: TripId, atDate?: Date) {
+    const tripIdStr = TripId.toString(tripId);
     const checkDate = atDate ?? new Date();
 
     return this.tryPromise(
@@ -76,7 +144,7 @@ export class ChallengeDrizzleGateway
           .from(challenges)
           .where(
             and(
-              eq(challenges.tripId, tripId),
+              eq(challenges.tripId, tripIdStr),
               eq(challenges.status, "ACTIVE"),
               sql`${challenges.startTime} IS NULL OR ${challenges.startTime} <= ${checkDate}`,
               sql`${challenges.endTime} IS NULL OR ${challenges.endTime} >= ${checkDate}`,
@@ -85,7 +153,7 @@ export class ChallengeDrizzleGateway
           .orderBy(sql`${challenges.createdAt} DESC`);
         return results;
       },
-      tripId,
+      tripIdStr,
     ).pipe(
       Effect.flatMap((dbChallenges: ChallengeSelect[]) =>
         Effect.forEach(dbChallenges, (dbChallenge) =>
@@ -96,9 +164,11 @@ export class ChallengeDrizzleGateway
   }
 
   findPaginatedByTripId(
-    tripId: string,
+    tripId: TripId,
     params: { limit: number; offset: number },
   ) {
+    const tripIdStr = TripId.toString(tripId);
+
     return this.tryPromise(
       "findPaginatedByTripId",
       async () => {
@@ -106,19 +176,19 @@ export class ChallengeDrizzleGateway
           this.db
             .select()
             .from(challenges)
-            .where(eq(challenges.tripId, tripId))
+            .where(eq(challenges.tripId, tripIdStr))
             .orderBy(sql`${challenges.createdAt} DESC`)
             .limit(params.limit)
             .offset(params.offset),
           this.db
             .select({ count: count() })
             .from(challenges)
-            .where(eq(challenges.tripId, tripId)),
+            .where(eq(challenges.tripId, tripIdStr)),
         ]);
 
         return { items, total: totalResult[0]?.count ?? 0 };
       },
-      tripId,
+      tripIdStr,
     ).pipe(
       Effect.flatMap(
         ({ items, total }: { items: ChallengeSelect[]; total: number }) =>
@@ -133,107 +203,200 @@ export class ChallengeDrizzleGateway
     );
   }
 
-  create(challenge: Challenge) {
+  create(challenge: Challenge, authToken?: string) {
     const insertData = challengeMapper.toInsert(challenge);
-    return this.tryPromise(
-      "create",
-      async () => {
-        const [result] = await this.db
-          .insert(challenges)
-          .values(insertData)
-          .returning();
-        if (!result) throw new Error("Failed to create challenge");
-        return result;
-      },
-      ChallengeId.toString(challenge.id),
-    ).pipe(
-      Effect.flatMap((dbChallenge: ChallengeSelect) =>
-        challengeMapper.toDomain(dbChallenge),
-      ),
-    );
+    const tripIdStr = TripId.toString(challenge.tripId);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Verify auth if token provided - check trip membership (organizer+ required)
+      if (authToken) {
+        yield* self.verifyTripMembership(authToken, tripIdStr);
+        // Note: Additional role check (organizer+) would be done at use case layer
+        // The gateway only verifies trip membership
+      }
+
+      const dbChallenge = yield* Effect.tryPromise({
+        try: () =>
+          self.db
+            .insert(challenges)
+            .values(insertData)
+            .returning()
+            .then((r: ChallengeSelect[]) => {
+              if (!r[0]) throw new Error("Failed to create challenge");
+              return r[0];
+            }),
+        catch: (error) =>
+          new DatabaseError({
+            operation: "ChallengeDrizzleGateway.create",
+            id: ChallengeId.toString(challenge.id),
+            cause: error,
+          }),
+      });
+
+      return yield* challengeMapper.toDomain(dbChallenge);
+    });
   }
 
-  update(challenge: Challenge) {
+  update(challenge: Challenge, authToken?: string) {
     const updateData = challengeMapper.toUpdate(challenge);
-    return this.tryPromise(
-      "update",
-      async () => {
-        const [result] = await this.db
-          .update(challenges)
-          .set(updateData)
-          .where(eq(challenges.id, ChallengeId.toString(challenge.id)))
-          .returning();
-        if (!result) throw new Error("Failed to update challenge");
-        return result;
-      },
-      ChallengeId.toString(challenge.id),
-    ).pipe(
-      Effect.flatMap((dbChallenge: ChallengeSelect) =>
-        challengeMapper.toDomain(dbChallenge),
-      ),
-    );
+    const challengeIdStr = ChallengeId.toString(challenge.id);
+    const tripIdStr = TripId.toString(challenge.tripId);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Verify auth if token provided - check trip membership (organizer+ required)
+      if (authToken) {
+        yield* self.verifyTripMembership(authToken, tripIdStr);
+        // Note: Additional role check (organizer+) would be done at use case layer
+      }
+
+      const dbChallenge = yield* Effect.tryPromise({
+        try: () =>
+          self.db
+            .update(challenges)
+            .set(updateData)
+            .where(eq(challenges.id, challengeIdStr))
+            .returning()
+            .then((r: ChallengeSelect[]) => {
+              if (!r[0]) throw new Error("Failed to update challenge");
+              return r[0];
+            }),
+        catch: (error) =>
+          new DatabaseError({
+            operation: "ChallengeDrizzleGateway.update",
+            id: challengeIdStr,
+            cause: error,
+          }),
+      });
+
+      return yield* challengeMapper.toDomain(dbChallenge);
+    });
   }
 
-  delete(id: string) {
-    return this.tryPromise(
-      "delete",
-      async () => {
-        await this.db.delete(challenges).where(eq(challenges.id, id));
-      },
-      id,
-    );
+  delete(id: ChallengeId, authToken?: string) {
+    const challengeIdStr = ChallengeId.toString(id);
+    const self = this;
+
+    return Effect.gen(function* () {
+      // First fetch the challenge to get tripId for auth check
+      const dbChallenge = yield* Effect.tryPromise({
+        try: () =>
+          self.db
+            .select()
+            .from(challenges)
+            .where(eq(challenges.id, challengeIdStr))
+            .limit(1)
+            .then((r: ChallengeSelect[]) => r[0] ?? null),
+        catch: (error) =>
+          new DatabaseError({
+            operation: "ChallengeDrizzleGateway.delete",
+            id: challengeIdStr,
+            cause: error,
+          }),
+      });
+
+      if (!dbChallenge) {
+        return;
+      }
+
+      // Verify auth if token provided - check trip membership (organizer+ required)
+      if (authToken) {
+        yield* self.verifyTripMembership(authToken, dbChallenge.tripId);
+        // Note: Additional role check (organizer+) would be done at use case layer
+      }
+
+      yield* Effect.tryPromise({
+        try: () =>
+          self.db
+            .delete(challenges)
+            .where(eq(challenges.id, challengeIdStr)),
+        catch: (error) =>
+          new DatabaseError({
+            operation: "ChallengeDrizzleGateway.delete",
+            id: challengeIdStr,
+            cause: error,
+          }),
+      });
+    });
   }
 
-  exists(id: string) {
+  exists(id: ChallengeId) {
+    const challengeIdStr = ChallengeId.toString(id);
+
     return this.tryPromise(
       "exists",
       async () => {
         const result = await this.db
           .select({ count: count() })
           .from(challenges)
-          .where(eq(challenges.id, id));
+          .where(eq(challenges.id, challengeIdStr));
         return (result[0]?.count ?? 0) > 0;
       },
-      id,
+      challengeIdStr,
     );
   }
 
-  countByTripId(tripId: string) {
+  countByTripId(tripId: TripId) {
+    const tripIdStr = TripId.toString(tripId);
+
     return this.tryPromise(
       "countByTripId",
       async () => {
         const result = await this.db
           .select({ count: count() })
           .from(challenges)
-          .where(eq(challenges.tripId, tripId));
+          .where(eq(challenges.tripId, tripIdStr));
         return result[0]?.count ?? 0;
       },
-      tripId,
+      tripIdStr,
     );
   }
 
-  activateVisibleChallenges(tripId?: string) {
-    return this.tryPromise(
-      "activateVisibleChallenges",
-      async () => {
-        if (tripId) {
-          await this.db
-            .update(challenges)
-            .set({ status: "ACTIVE", updatedAt: new Date() })
-            .where(
-              and(
-                eq(challenges.tripId, tripId),
-                eq(challenges.status, "VISIBLE"),
+  activateVisibleChallenges(tripId?: TripId, authToken?: string) {
+    const tripIdStr = tripId ? TripId.toString(tripId) : undefined;
+    const self = this;
+
+    return Effect.gen(function* () {
+      // Verify auth if token provided - check trip membership (admin required for this operation)
+      if (authToken && tripIdStr) {
+        yield* self.verifyTripMembership(authToken, tripIdStr);
+        // Note: Additional admin role check would be done at use case layer
+      }
+
+      if (tripIdStr) {
+        yield* Effect.tryPromise({
+          try: () =>
+            self.db
+              .update(challenges)
+              .set({ status: "ACTIVE", updatedAt: new Date() })
+              .where(
+                and(
+                  eq(challenges.tripId, tripIdStr),
+                  eq(challenges.status, "VISIBLE"),
+                ),
               ),
-            );
-        } else {
-          await this.db
-            .update(challenges)
-            .set({ status: "ACTIVE", updatedAt: new Date() })
-            .where(eq(challenges.status, "VISIBLE"));
-        }
-      },
-      tripId,
-    );
+          catch: (error) =>
+            new DatabaseError({
+              operation: "ChallengeDrizzleGateway.activateVisibleChallenges",
+              id: tripIdStr,
+              cause: error,
+            }),
+        });
+      } else {
+        yield* Effect.tryPromise({
+          try: () =>
+            self.db
+              .update(challenges)
+              .set({ status: "ACTIVE", updatedAt: new Date() })
+              .where(eq(challenges.status, "VISIBLE")),
+          catch: (error) =>
+            new DatabaseError({
+              operation: "ChallengeDrizzleGateway.activateVisibleChallenges",
+              cause: error,
+            }),
+        });
+      }
+    });
   }
 }

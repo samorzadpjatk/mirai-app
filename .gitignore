@@ -96,3 +96,8 @@ Thumbs.db
 .specs/scratchpad/
 .specs/scratchpad/
 .specs/scratchpad/
+.specs/scratchpad/
+*.original.md
+.specs/scratchpad/
+*.original.md
+.specs/analysis/

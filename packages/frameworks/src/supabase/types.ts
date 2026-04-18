@@ -203,7 +203,15 @@ export type AuthStateChangeEvent =
  */
 export interface SupabaseAuth {
   /** Get the current session */
-  getSession(): Promise<{ data: { session: SupabaseSession | null } }>;
+  getSession(): Promise<{
+    data: { session: SupabaseSession | null };
+    error: Error | null;
+  }>;
+
+  /** Get user information from a JWT token */
+  getUser(
+    jwt?: string,
+  ): Promise<{ data: { user: SupabaseUser | null }; error: Error | null }>;
 
   /** Subscribe to auth state changes */
   onAuthStateChange(
@@ -284,16 +292,107 @@ export interface SupabaseClientOptions {
 }
 
 /**
+ * PostgREST filter operators
+ */
+export type PostgrestFilterOperator =
+  | "eq"
+  | "neq"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "like"
+  | "ilike"
+  | "is"
+  | "in"
+  | "contains"
+  | "containedBy"
+  | "rangeGt"
+  | "rangeGte"
+  | "rangeLt"
+  | "rangeLte"
+  | "rangeAdjacent"
+  | "overlaps"
+  | "textSearch"
+  | "match"
+  | "not"
+  | "or"
+  | "and";
+
+/**
+ * PostgREST query builder interface for database operations
+ */
+export interface PostgrestQueryBuilder<T = unknown> {
+  select(
+    columns?: string,
+    options?: { count?: "exact" | "planned" | "estimated" },
+  ): PostgrestFilterBuilder<T>;
+  insert(values: Partial<T> | Partial<T>[]): PostgrestFilterBuilder<T>;
+  update(values: Partial<T>): PostgrestFilterBuilder<T>;
+  delete(): PostgrestFilterBuilder<T>;
+  upsert(
+    values: Partial<T> | Partial<T>[],
+    options?: { onConflict?: string; ignoreDuplicates?: boolean },
+  ): PostgrestFilterBuilder<T>;
+}
+
+/**
+ * PostgREST filter builder for chaining query conditions
+ */
+export interface PostgrestFilterBuilder<T> {
+  eq<K extends keyof T>(column: K, value: T[K]): PostgrestFilterBuilder<T>;
+  neq<K extends keyof T>(column: K, value: T[K]): PostgrestFilterBuilder<T>;
+  gt<K extends keyof T>(column: K, value: T[K]): PostgrestFilterBuilder<T>;
+  gte<K extends keyof T>(column: K, value: T[K]): PostgrestFilterBuilder<T>;
+  lt<K extends keyof T>(column: K, value: T[K]): PostgrestFilterBuilder<T>;
+  lte<K extends keyof T>(column: K, value: T[K]): PostgrestFilterBuilder<T>;
+  like<K extends keyof T>(column: K, pattern: string): PostgrestFilterBuilder<T>;
+  ilike<K extends keyof T>(column: K, pattern: string): PostgrestFilterBuilder<T>;
+  is<K extends keyof T>(column: K, value: boolean | null): PostgrestFilterBuilder<T>;
+  in<K extends keyof T>(column: K, values: T[K][]): PostgrestFilterBuilder<T>;
+  contains<K extends keyof T>(column: K, value: unknown): PostgrestFilterBuilder<T>;
+  containedBy<K extends keyof T>(column: K, value: unknown): PostgrestFilterBuilder<T>;
+  order<K extends keyof T>(
+    column: K,
+    options?: { ascending?: boolean; nullsFirst?: boolean },
+  ): PostgrestFilterBuilder<T>;
+  limit(count: number): PostgrestFilterBuilder<T>;
+  range(from: number, to: number): PostgrestFilterBuilder<T>;
+  single(): PostgrestFilterBuilder<T>;
+  maybeSingle(): Promise<{ data: T | null; error: Error | null }>;
+  then<R>(
+    onfulfilled: (value: { data: T[] | null; error: Error | null }) => R,
+  ): Promise<R>;
+}
+
+/**
+ * Supabase database interface for PostgREST queries
+ */
+export interface SupabaseDatabase {
+  from<T = unknown>(table: string): PostgrestQueryBuilder<T>;
+  rpc<T = unknown>(fn: string, params?: Record<string, unknown>): Promise<{
+    data: T | null;
+    error: Error | null;
+  }>;
+}
+
+/**
  * Supabase client interface
  *
  * This is the main interface used throughout the application for
- * Supabase operations including auth, storage, and realtime.
+ * Supabase operations including auth, storage, realtime, and database queries.
  */
 export interface SupabaseClient {
   auth: SupabaseAuth;
   storage: SupabaseStorage;
   realtime: SupabaseRealtime;
+  db: SupabaseDatabase;
   channel(name: string): RealtimeChannel;
+  from<T = unknown>(table: string): PostgrestQueryBuilder<T>;
+  rpc<T = unknown>(fn: string, params?: Record<string, unknown>): Promise<{
+    data: T | null;
+    error: Error | null;
+  }>;
 }
 
 /**

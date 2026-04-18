@@ -12,7 +12,12 @@ import {
   type TripInsuranceSelect,
   type TripInsuranceStepSelect,
 } from "@mirai-app/frameworks/drizzle";
-import { Trip, TripId, DatabaseError, type ITripPort } from "@mirai-app/domain";
+import {
+  Trip,
+  TripId,
+  DatabaseError,
+  type ITripPort,
+} from "@mirai-app/domain";
 import { BaseDrizzleGateway } from "../../../system/shared/gateways/drizzle-base";
 import { tripMapper } from "../../mappers/TripMapper";
 import { tripResourceMapper } from "../../mappers/TripResourceMapper";
@@ -96,7 +101,7 @@ export class TripDrizzleGateway
     );
   }
 
-  findById(id: TripId) {
+  findById(id: TripId, _authToken?: string) {
     return this.tryPromise(
       "findById",
       async () => {
@@ -201,7 +206,7 @@ export class TripDrizzleGateway
     );
   }
 
-  create(trip: Trip) {
+  create(trip: Trip, _authToken?: string) {
     const insertData = tripMapper.toInsert(trip);
     return this.tryPromise(
       "create",
@@ -217,7 +222,7 @@ export class TripDrizzleGateway
     ).pipe(Effect.flatMap((dbTrip: TripSelect) => tripMapper.toDomain(dbTrip)));
   }
 
-  update(trip: Trip) {
+  update(trip: Trip, _authToken?: string) {
     const updateData = tripMapper.toUpdate(trip);
     return this.tryPromise(
       "update",
@@ -234,7 +239,7 @@ export class TripDrizzleGateway
     ).pipe(Effect.flatMap((dbTrip: TripSelect) => tripMapper.toDomain(dbTrip)));
   }
 
-  delete(id: TripId) {
+  delete(id: TripId, _authToken?: string) {
     return this.tryPromise(
       "delete",
       async () => {

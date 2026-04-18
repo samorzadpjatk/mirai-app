@@ -10,7 +10,7 @@ import type { IRewardPort } from "@mirai-app/domain";
 export class InMemoryRewardGateway implements IRewardPort {
   private rewards: Map<string, Reward> = new Map();
 
-  findById(id: RewardId) {
+  findById(id: RewardId, _authToken?: string) {
     return Effect.sync(() => {
       const reward = this.rewards.get(RewardId.toString(id));
       return reward ?? null;
@@ -41,21 +41,21 @@ export class InMemoryRewardGateway implements IRewardPort {
     });
   }
 
-  create(reward: Reward) {
+  create(reward: Reward, _authToken?: string) {
     return Effect.sync(() => {
       this.rewards.set(RewardId.toString(reward.id), reward);
       return reward;
     });
   }
 
-  update(reward: Reward) {
+  update(reward: Reward, _authToken?: string) {
     return Effect.sync(() => {
       this.rewards.set(RewardId.toString(reward.id), reward);
       return reward;
     });
   }
 
-  delete(id: RewardId) {
+  delete(id: RewardId, _tripId: TripId, _authToken?: string) {
     return Effect.sync(() => {
       this.rewards.delete(RewardId.toString(id));
     });
