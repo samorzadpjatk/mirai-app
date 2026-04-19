@@ -39,8 +39,8 @@ const createMockAuthZPort = (): IAuthZPort => ({
  */
 const createDenyAllAuthZPort = (): IAuthZPort => ({
   verifyAccess: () => Effect.fail(new PermissionDeniedError({
-    action: "read",
-    resource: "trip",
+    requiredPermission: "read",
+    resourceType: "trip",
     userId: "test-user-123",
   })),
   checkRolePermission: () => Effect.succeed(false),
@@ -56,11 +56,11 @@ const getTestLayer = (authContext?: AuthContext, authZPort?: IAuthZPort) => {
   );
 };
 
-const createTestNotificationSchedule = (id: string, tripId?: string): NotificationSchedule => {
+const createTestNotificationSchedule = (id: string, tripId: string): NotificationSchedule => {
   return {
     id: NotificationScheduleId.unsafeCreate(id),
     name: "Test Schedule",
-    tripId: tripId ? TripId.unsafeCreate(tripId) : null,
+    tripId: TripId.unsafeCreate(tripId),
     notificationType: "reminder",
     notificationTitle: "Test Notification",
     notificationBody: "This is a test notification",
@@ -95,7 +95,7 @@ describe("[UNIT] InMemoryNotificationScheduleGateway", () => {
     });
 
     it("should return NotificationSchedule when found", async () => {
-      const item = createTestNotificationSchedule("item-123");
+      const item = createTestNotificationSchedule("item-123", "trip-123");
       await Effect.runPromise(gateway.create(item).pipe(Effect.provide(getTestLayer())));
 
       const effect = gateway.findById(item.id).pipe(Effect.provide(getTestLayer()));
@@ -110,8 +110,8 @@ describe("[UNIT] InMemoryNotificationScheduleGateway", () => {
 
   describe("findAll", () => {
     it("should return paginated schedules", async () => {
-      const item1 = createTestNotificationSchedule("item-1");
-      const item2 = createTestNotificationSchedule("item-2");
+      const item1 = createTestNotificationSchedule("item-1", "trip-123");
+      const item2 = createTestNotificationSchedule("item-2", "trip-456");
       await Effect.runPromise(gateway.create(item1).pipe(Effect.provide(getTestLayer())));
       await Effect.runPromise(gateway.create(item2).pipe(Effect.provide(getTestLayer())));
 
@@ -142,7 +142,7 @@ describe("[UNIT] InMemoryNotificationScheduleGateway", () => {
 
   describe("create", () => {
     it("should create with Either pattern", async () => {
-      const item = createTestNotificationSchedule("new-item");
+      const item = createTestNotificationSchedule("new-item", "trip-123");
       const effect = gateway.create(item).pipe(Effect.provide(getTestLayer()));
 
       const either = await Effect.runPromise(Effect.either(effect));
@@ -167,7 +167,7 @@ describe("[UNIT] InMemoryNotificationScheduleGateway", () => {
 
   describe("Either pattern", () => {
     it("should use Effect.either with Either.isLeft/isRight and instanceof", async () => {
-      const item = createTestNotificationSchedule("pattern-item");
+      const item = createTestNotificationSchedule("pattern-item", "trip-123");
       const effect = gateway.create(item).pipe(Effect.provide(getTestLayer()));
 
       const either = await Effect.runPromise(Effect.either(effect));

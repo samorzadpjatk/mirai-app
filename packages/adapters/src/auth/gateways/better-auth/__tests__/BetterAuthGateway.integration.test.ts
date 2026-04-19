@@ -2344,7 +2344,8 @@ describe("[UNIT] BetterAuthGateway - IAuthPort Compliance", () => {
 
     // All should succeed with the mock
     for (const result of results) {
-      expect(Either.isRight(result)).toBe(true);
+      // Use type assertion since results array contains different Either types
+      expect(Either.isRight(result as Either.Either<unknown, unknown>)).toBe(true);
     }
   });
 });

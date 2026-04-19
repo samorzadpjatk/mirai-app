@@ -2,18 +2,17 @@
  * Storage adapters module
  *
  * This module provides storage-related adapters including:
- * - Storage gateways for different providers (Supabase, In-Memory, SeaweedFS)
+ * - Storage gateways for different providers (In-Memory, SeaweedFS)
  * - Storage path utilities for normalization and parsing
  */
 
 // Gateway exports
 export {
-  SupabaseStorageGateway,
   InMemoryStorageGateway,
   DefaultStoragePathResolver,
 } from "./gateways";
 
-// SeaweedFS Storage Gateway exports (simplified - no tusd/ticket dependencies)
+// SeaweedFS Storage Gateway exports
 export {
   // Core gateway
   SeaweedFSStorageGateway,

@@ -39,7 +39,7 @@ const createTestCoinTransactionDTO = (
   groupId: string = "group-123",
   amount: number = 100,
 ): CoinTransactionDTO => ({
-  id,
+  id: CoinTransactionId.create(id),
   tripId,
   groupId,
   amount,
@@ -67,7 +67,7 @@ describe("[UNIT] InMemoryCoinTransactionGateway with AuthContext", () => {
   describe("findById", () => {
     it("should return null when transaction not found", async () => {
       const effect = gateway
-        .findById("nonexistent")
+        .findById(CoinTransactionId.create("nonexistent"))
         .pipe(Effect.provide(getTestLayer()));
 
       const either = await Effect.runPromise(Effect.either(effect));
@@ -86,7 +86,7 @@ describe("[UNIT] InMemoryCoinTransactionGateway with AuthContext", () => {
 
       expect(Either.isRight(either)).toBe(true);
       if (Either.isRight(either) && either.right) {
-        expect(either.right.id).toEqual(item.id);
+        expect(CoinTransactionId.equals(either.right.id, item.id)).toBe(true);
       }
     });
   });
@@ -128,8 +128,9 @@ describe("[UNIT] InMemoryCoinTransactionGateway with AuthContext", () => {
       expect(Either.isRight(either)).toBe(true);
       if (Either.isRight(either)) {
         expect(either.right).toHaveLength(2);
-        expect(either.right.map((t) => t.id)).toContain("item-1");
-        expect(either.right.map((t) => t.id)).toContain("item-2");
+        const ids = either.right.map((t) => CoinTransactionId.toString(t.id));
+        expect(ids).toContain("item-1");
+        expect(ids).toContain("item-2");
       }
     });
   });

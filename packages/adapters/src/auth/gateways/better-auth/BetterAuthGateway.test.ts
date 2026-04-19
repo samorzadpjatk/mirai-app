@@ -36,7 +36,7 @@ function createMockBetterAuth(config: {
   getSessionResult?: {
     user: { id: string; email: string } | null;
     session: { id: string; expiresAt: Date } | null;
-    token?: string;
+    token?: string | null;
     error?: Error;
   };
 } = {}) {

@@ -1,4 +1,4 @@
-// SeaweedFS Storage Gateway exports (simplified - no tusd/ticket dependencies)
+// SeaweedFS Storage Gateway exports
 
 // Storage errors
 export {

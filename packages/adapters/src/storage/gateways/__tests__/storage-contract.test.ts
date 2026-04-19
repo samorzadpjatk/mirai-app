@@ -754,10 +754,10 @@ describe("[FR-9] Contract Test Compliance", () => {
     ];
 
     for (const method of requiredMethods) {
-      expect(typeof (inMemory as Record<string, unknown>)[method]).toBe(
+      expect(typeof (inMemory as unknown as Record<string, unknown>)[method]).toBe(
         "function",
       );
-      expect(typeof (seaweedFS as Record<string, unknown>)[method]).toBe(
+      expect(typeof (seaweedFS as unknown as Record<string, unknown>)[method]).toBe(
         "function",
       );
     }
@@ -796,6 +796,7 @@ describe("[FR-9] Contract Test Compliance", () => {
       bucket: "bucket",
       path: "path",
       upsert: false,
+      expiresInSeconds: 3600,
     });
     expect(typeof uploadUrlEffect).toBe("object");
     expect(uploadUrlEffect).toBeDefined();
@@ -833,6 +834,7 @@ describe("[FR-9] Contract Test Compliance", () => {
         bucket: "test-bucket",
         path: "test.txt",
         upsert: false,
+        expiresInSeconds: 3600,
       });
       const signedUploadResult = await Effect.runPromise(
         Effect.either(signedUploadEffect),

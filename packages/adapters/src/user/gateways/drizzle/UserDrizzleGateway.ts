@@ -303,8 +303,9 @@ export class UserDrizzleGateway
             if (!hasPermission) {
               return Effect.fail(
                 new PermissionDeniedError({
-                  action: request.requiredPermission,
-                  resource: `${request.resourceType}:${request.resourceId}`,
+                  requiredPermission: request.requiredPermission,
+                  resourceType: request.resourceType,
+                  resourceId: request.resourceId,
                   userId,
                 }),
               );
@@ -333,8 +334,9 @@ export class UserDrizzleGateway
           if (!participant) {
             return Effect.fail(
               new PermissionDeniedError({
-                action: request.requiredPermission,
-                resource: `${request.resourceType}:${request.resourceId}`,
+                requiredPermission: request.requiredPermission,
+                resourceType: request.resourceType,
+                  resourceId: request.resourceId,
                 userId,
               }),
             );
@@ -356,8 +358,9 @@ export class UserDrizzleGateway
               if (!hasPermission) {
                 return Effect.fail(
                   new PermissionDeniedError({
-                    action: request.requiredPermission,
-                    resource: `${request.resourceType}:${request.resourceId}`,
+                    requiredPermission: request.requiredPermission,
+                    resourceType: request.resourceType,
+                  resourceId: request.resourceId,
                     userId,
                   }),
                 );
@@ -382,8 +385,9 @@ export class UserDrizzleGateway
         if (!hasPermission) {
           return Effect.fail(
             new PermissionDeniedError({
-              action: request.requiredPermission,
-              resource: `${request.resourceType}:${request.resourceId}`,
+              requiredPermission: request.requiredPermission,
+              resourceType: request.resourceType,
+                  resourceId: request.resourceId,
               userId,
             }),
           );

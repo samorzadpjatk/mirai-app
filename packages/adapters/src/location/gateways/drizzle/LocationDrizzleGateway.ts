@@ -76,8 +76,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `location:${idStr}`,
+            requiredPermission: "read",
+            resourceType: "location",
+            resourceId: idStr,
           }),
         );
       }
@@ -113,8 +114,9 @@ export class LocationDrizzleGateway
         if (!isShared) {
           return yield* Effect.fail(
             new PermissionDeniedError({
-              action: "read",
-              resource: `location:${idStr}`,
+              requiredPermission: "read",
+              resourceType: "location",
+            resourceId: idStr,
               userId: authCtx.userId,
             }),
           );
@@ -142,8 +144,8 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "location",
+            requiredPermission: "read",
+            resourceType: "location",
           }),
         );
       }
@@ -153,8 +155,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `location:user:${userIdStr}`,
+            requiredPermission: "read",
+            resourceType: "location",
+            resourceId: userIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -199,8 +202,8 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locations:sharing",
+            requiredPermission: "read",
+            resourceType: "locations:sharing",
           }),
         );
       }
@@ -261,8 +264,8 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locations:shared",
+            requiredPermission: "read",
+            resourceType: "locations:shared",
           }),
         );
       }
@@ -272,8 +275,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locations:shared:${userIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locations:shared",
+            resourceId: userIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -334,8 +338,8 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "create",
-            resource: "location",
+            requiredPermission: "create",
+            resourceType: "location",
           }),
         );
       }
@@ -344,8 +348,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "create",
-            resource: `location:user:${userIdStr}`,
+            requiredPermission: "create",
+            resourceType: "location",
+            resourceId: userIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -394,8 +399,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "update",
-            resource: `location:${idStr}`,
+            requiredPermission: "update",
+            resourceType: "location",
+            resourceId: idStr,
           }),
         );
       }
@@ -405,8 +411,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "update",
-            resource: `location:${idStr}`,
+            requiredPermission: "update",
+            resourceType: "location",
+            resourceId: idStr,
             userId: authCtx.userId,
           }),
         );
@@ -455,8 +462,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "upsert",
-            resource: `location:${idStr}`,
+            requiredPermission: "write",
+            resourceType: "location",
+            resourceId: idStr,
           }),
         );
       }
@@ -466,8 +474,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "upsert",
-            resource: `location:${idStr}`,
+            requiredPermission: "write",
+            resourceType: "location",
+            resourceId: idStr,
             userId: authCtx.userId,
           }),
         );
@@ -566,8 +575,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "delete",
-            resource: `location:${idStr}`,
+            requiredPermission: "delete",
+            resourceType: "location",
+            resourceId: idStr,
           }),
         );
       }
@@ -576,8 +586,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== dbLocation.userId) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "delete",
-            resource: `location:${idStr}`,
+            requiredPermission: "delete",
+            resourceType: "location",
+            resourceId: idStr,
             userId: authCtx.userId,
           }),
         );
@@ -674,8 +685,8 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locationSharingRequests:pending",
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:pending",
           }),
         );
       }
@@ -684,8 +695,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== receiverIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharingRequests:pending:${receiverIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:pending",
+            resourceId: receiverIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -726,8 +738,8 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locationSharingRequests:sent",
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:sent",
           }),
         );
       }
@@ -736,8 +748,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== senderIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharingRequests:sent:${senderIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:sent",
+            resourceId: senderIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -775,8 +788,8 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locationSharingRequests:received",
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:received",
           }),
         );
       }
@@ -785,8 +798,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== receiverIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharingRequests:received:${receiverIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:received",
+            resourceId: receiverIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -826,8 +840,8 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "create",
-            resource: "locationSharingRequest",
+            requiredPermission: "create",
+            resourceType: "locationSharingRequest",
           }),
         );
       }
@@ -836,8 +850,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== senderIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "create",
-            resource: `locationSharingRequest:sender:${senderIdStr}`,
+            requiredPermission: "create",
+            resourceType: "locationSharingRequest",
+            resourceId: senderIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -881,8 +896,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "update",
-            resource: `locationSharingRequest:${idStr}`,
+            requiredPermission: "update",
+            resourceType: "locationSharingRequest",
+            resourceId: idStr,
           }),
         );
       }
@@ -894,8 +910,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== senderIdStr && authCtx.userId !== receiverIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "update",
-            resource: `locationSharingRequest:${idStr}`,
+            requiredPermission: "update",
+            resourceType: "locationSharingRequest",
+            resourceId: idStr,
             userId: authCtx.userId,
           }),
         );
@@ -944,8 +961,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "connect",
-            resource: `locationSharing:owner:${ownerId}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerId,
           }),
         );
       }
@@ -954,8 +972,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== ownerId) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "connect",
-            resource: `locationSharing:owner:${ownerId}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerId,
             userId: authCtx.userId,
           }),
         );
@@ -996,8 +1015,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "disconnect",
-            resource: `locationSharing:owner:${ownerId}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerId,
           }),
         );
       }
@@ -1006,8 +1026,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== ownerId) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "disconnect",
-            resource: `locationSharing:owner:${ownerId}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerId,
             userId: authCtx.userId,
           }),
         );
@@ -1049,8 +1070,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "setSharingList",
-            resource: `locationSharing:owner:${ownerId}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerId,
           }),
         );
       }
@@ -1059,8 +1081,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== ownerId) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "setSharingList",
-            resource: `locationSharing:owner:${ownerId}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerId,
             userId: authCtx.userId,
           }),
         );
@@ -1112,8 +1135,9 @@ export class LocationDrizzleGateway
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharing:list:${ownerId}`,
+            requiredPermission: "read",
+            resourceType: "locationSharing:list",
+            resourceId: ownerId,
           }),
         );
       }
@@ -1122,8 +1146,9 @@ export class LocationDrizzleGateway
       if (authCtx.userId !== ownerId) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharing:list:${ownerId}`,
+            requiredPermission: "read",
+            resourceType: "locationSharing:list",
+            resourceId: ownerId,
             userId: authCtx.userId,
           }),
         );

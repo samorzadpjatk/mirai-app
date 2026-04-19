@@ -362,9 +362,22 @@ export class ExpoNotificationServiceGateway implements INotificationServicePort 
    * Send ranking update notification
    *
    * Requires trip write access for the specified tripId.
+   * Sends notification to all trip participants with the current group rankings.
    */
-  sendRankingUpdate(params: { tripId: string; createdById: string }) {
-    const { tripId } = params;
+  sendRankingUpdate(params: {
+    tripId: string;
+    createdById: string;
+    groups: {
+      id: string;
+      name: string;
+      coins: number;
+      rank: number;
+    }[];
+    userIds: string[];
+  }) {
+    const { tripId, createdById, groups, userIds } = params;
+    const pushSubscriptionPort = this.pushSubscriptionPort;
+    const expo = this.expo;
 
     return Effect.gen(function* () {
       // Get AuthContext and verify trip write access
@@ -382,14 +395,93 @@ export class ExpoNotificationServiceGateway implements INotificationServicePort 
         });
       }
 
-      // Ranking update notifications are sent via the same mechanism
-      // as regular notifications. This is a placeholder for future
-      // ranking-specific notification logic.
+      // Build ranking message
+      const topGroups = groups.slice(0, 3);
+      const rankingText = topGroups
+        .map((g, index) => `${index + 1}. ${g.name} (${g.coins} coins)`)
+        .join("\n");
+
+      const title = "Group Rankings Updated";
+      const body =
+        groups.length > 0
+          ? `Current top groups:\n${rankingText}`
+          : "Group rankings have been updated";
+      const url = `/trips/${tripId}/rankings`;
+
+      // Fetch push subscriptions for target users
+      const tokens: string[] = [];
+      const userByToken = new Map<string, string>();
+
+      for (const userId of userIds) {
+        const subs = yield* pushSubscriptionPort.findByUserId(userId);
+        for (const sub of subs) {
+          if (Expo.isExpoPushToken(sub.token)) {
+            tokens.push(sub.token);
+            userByToken.set(sub.token, userId);
+          }
+        }
+      }
+
+      if (tokens.length === 0) {
+        return {
+          success: true,
+          notificationId: tripId as NotificationId,
+          recipientCount: 0,
+        };
+      }
+
+      // Create Expo push messages
+      const messages: ExpoPushMessage[] = tokens.map((token) => ({
+        to: token,
+        title,
+        body,
+        data: { url },
+        sound: "default",
+        priority: "default",
+      }));
+
+      // Chunk and send notifications
+      const chunks = expo.chunkPushNotifications(messages);
+      const tickets: ExpoPushTicket[] = [];
+
+      for (const chunk of chunks) {
+        const ticketChunk = yield* Effect.tryPromise({
+          try: () => expo.sendPushNotificationsAsync(chunk),
+          catch: (error) => new NotificationServiceError({ cause: error }),
+        }).pipe(
+          Effect.catchAll((error) =>
+            Effect.logError("Failed to send ranking update chunk").pipe(
+              Effect.annotateLogs({ error }),
+              Effect.map(() =>
+                chunk.map(
+                  (): ExpoPushTicket => ({
+                    status: "error",
+                    message: "network error",
+                  }),
+                ),
+              ),
+            ),
+          ),
+        );
+        tickets.push(...ticketChunk);
+      }
+
+      // Count successes and failures
+      let successCount = 0;
+      let failureCount = 0;
+
+      for (const ticket of tickets) {
+        if (ticket.status === "ok") {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+      }
 
       return {
-        success: true,
+        success: failureCount === 0,
         notificationId: tripId as NotificationId,
-        recipientCount: 0,
+        recipientCount: successCount,
       };
     });
   }

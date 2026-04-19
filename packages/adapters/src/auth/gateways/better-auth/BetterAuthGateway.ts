@@ -138,7 +138,7 @@ export class BetterAuthGateway implements IAuthPort {
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData = await response.json().catch(() => ({})) as { message?: string };
           throw new Error(errorData.message || `HTTP ${response.status}`);
         }
       },
@@ -171,7 +171,7 @@ export class BetterAuthGateway implements IAuthPort {
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData = await response.json().catch(() => ({})) as { message?: string };
           throw new Error(errorData.message || `HTTP ${response.status}`);
         }
 
@@ -252,7 +252,7 @@ export class BetterAuthGateway implements IAuthPort {
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData = await response.json().catch(() => ({})) as { message?: string };
           throw new Error(errorData.message || `HTTP ${response.status}`);
         }
       },
@@ -286,7 +286,7 @@ export class BetterAuthGateway implements IAuthPort {
               accessToken: null,
             };
           }
-          const errorData = await response.json().catch(() => ({}));
+          const errorData = await response.json().catch(() => ({})) as { message?: string };
           throw new Error(errorData.message || `HTTP ${response.status}`);
         }
 
@@ -339,7 +339,7 @@ export class BetterAuthGateway implements IAuthPort {
             // Session expired
             return { session: null };
           }
-          const errorData = await response.json().catch(() => ({}));
+          const errorData = await response.json().catch(() => ({})) as { message?: string };
           throw new Error(errorData.message || `HTTP ${response.status}`);
         }
 

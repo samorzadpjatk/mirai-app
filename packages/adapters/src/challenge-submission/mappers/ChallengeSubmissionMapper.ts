@@ -4,6 +4,8 @@ import {
   ChallengeSubmissionId,
   ChallengeId,
   GroupId,
+  ImageId,
+  VideoId,
 } from "@mirai-app/domain";
 import type { UserId } from "@mirai-app/domain";
 
@@ -23,8 +25,8 @@ export class ChallengeSubmissionMapper {
       id: ChallengeSubmissionId.create(dbSubmission.id),
       challengeId: ChallengeId.create(dbSubmission.challengeId),
       groupId: GroupId.create(dbSubmission.groupId),
-      imageIds: dbSubmission.imageIds ?? [],
-      videoId: dbSubmission.videoId ?? null,
+      imageIds: (dbSubmission.imageIds ?? []).map((id) => ImageId.unsafeCreate(id)),
+      videoId: dbSubmission.videoId ? VideoId.unsafeCreate(dbSubmission.videoId) : null,
       textContent: dbSubmission.textContent ?? null,
       latitude: dbSubmission.latitude ?? null,
       longitude: dbSubmission.longitude ?? null,

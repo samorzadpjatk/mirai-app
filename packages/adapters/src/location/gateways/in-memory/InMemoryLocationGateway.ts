@@ -65,8 +65,8 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "location",
+            requiredPermission: "read",
+            resourceType: "location",
           }),
         );
       }
@@ -75,8 +75,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `location:user:${userIdStr}`,
+            requiredPermission: "read",
+            resourceType: "location",
+            resourceId: userIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -105,8 +106,8 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locations:sharing",
+            requiredPermission: "read",
+            resourceType: "locations:sharing",
           }),
         );
       }
@@ -132,8 +133,8 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locations:shared",
+            requiredPermission: "read",
+            resourceType: "locations:shared",
           }),
         );
       }
@@ -142,8 +143,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locations:shared:${userIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locations:shared",
+            resourceId: userIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -178,8 +180,8 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "create",
-            resource: "location",
+            requiredPermission: "create",
+            resourceType: "location",
           }),
         );
       }
@@ -188,8 +190,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "create",
-            resource: `location:user:${userIdStr}`,
+            requiredPermission: "create",
+            resourceType: "location",
+            resourceId: userIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -215,8 +218,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "update",
-            resource: `location:${LocationIdFactory.toString(location.id)}`,
+            requiredPermission: "update",
+            resourceType: "location",
+            resourceId: LocationIdFactory.toString(location.id),
           }),
         );
       }
@@ -225,8 +229,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "update",
-            resource: `location:${LocationIdFactory.toString(location.id)}`,
+            requiredPermission: "update",
+            resourceType: "location",
+            resourceId: LocationIdFactory.toString(location.id),
             userId: authCtx.userId,
           }),
         );
@@ -252,8 +257,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "upsert",
-            resource: `location:${LocationIdFactory.toString(location.id)}`,
+            requiredPermission: "write",
+            resourceType: "location",
+            resourceId: LocationIdFactory.toString(location.id),
           }),
         );
       }
@@ -262,8 +268,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "upsert",
-            resource: `location:${LocationIdFactory.toString(location.id)}`,
+            requiredPermission: "write",
+            resourceType: "location",
+            resourceId: LocationIdFactory.toString(location.id),
             userId: authCtx.userId,
           }),
         );
@@ -289,8 +296,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "delete",
-            resource: `location:${idStr}`,
+            requiredPermission: "delete",
+            resourceType: "location",
+            resourceId: idStr,
           }),
         );
       }
@@ -305,8 +313,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== userIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "delete",
-            resource: `location:${idStr}`,
+            requiredPermission: "delete",
+            resourceType: "location",
+            resourceId: idStr,
             userId: authCtx.userId,
           }),
         );
@@ -362,8 +371,8 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locationSharingRequests:pending",
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:pending",
           }),
         );
       }
@@ -372,8 +381,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== receiverIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharingRequests:pending:${receiverIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:pending",
+            resourceId: receiverIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -402,8 +412,8 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locationSharingRequests:sent",
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:sent",
           }),
         );
       }
@@ -412,8 +422,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== senderIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharingRequests:sent:${senderIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:sent",
+            resourceId: senderIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -440,8 +451,8 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: "locationSharingRequests:received",
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:received",
           }),
         );
       }
@@ -450,8 +461,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== receiverIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharingRequests:received:${receiverIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locationSharingRequests:received",
+            resourceId: receiverIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -478,8 +490,8 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "create",
-            resource: "locationSharingRequest",
+            requiredPermission: "create",
+            resourceType: "locationSharingRequest",
           }),
         );
       }
@@ -488,8 +500,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== senderIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "create",
-            resource: `locationSharingRequest:sender:${senderIdStr}`,
+            requiredPermission: "create",
+            resourceType: "locationSharingRequest",
+            resourceId: senderIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -517,8 +530,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "update",
-            resource: `locationSharingRequest:${LocationSharingRequestIdFactory.toString(request.id)}`,
+            requiredPermission: "update",
+            resourceType: "locationSharingRequest",
+            resourceId: LocationSharingRequestIdFactory.toString(request.id),
           }),
         );
       }
@@ -529,8 +543,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== senderIdStr && authCtx.userId !== receiverIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "update",
-            resource: `locationSharingRequest:${LocationSharingRequestIdFactory.toString(request.id)}`,
+            requiredPermission: "update",
+            resourceType: "locationSharingRequest",
+            resourceId: LocationSharingRequestIdFactory.toString(request.id),
             userId: authCtx.userId,
           }),
         );
@@ -563,8 +578,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "connect",
-            resource: `locationSharing:owner:${ownerIdStr}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerIdStr,
           }),
         );
       }
@@ -573,8 +589,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== ownerIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "connect",
-            resource: `locationSharing:owner:${ownerIdStr}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -605,8 +622,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "disconnect",
-            resource: `locationSharing:owner:${ownerIdStr}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerIdStr,
           }),
         );
       }
@@ -615,8 +633,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== ownerIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "disconnect",
-            resource: `locationSharing:owner:${ownerIdStr}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -642,8 +661,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "setSharingList",
-            resource: `locationSharing:owner:${ownerIdStr}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerIdStr,
           }),
         );
       }
@@ -652,8 +672,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== ownerIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "setSharingList",
-            resource: `locationSharing:owner:${ownerIdStr}`,
+            requiredPermission: "write",
+            resourceType: "locationSharing",
+            resourceId: ownerIdStr,
             userId: authCtx.userId,
           }),
         );
@@ -679,8 +700,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (!authCtx.isAuthenticated) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharing:list:${ownerIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locationSharing:list",
+            resourceId: ownerIdStr,
           }),
         );
       }
@@ -689,8 +711,9 @@ export class InMemoryLocationGateway implements ILocationPort {
       if (authCtx.userId !== ownerIdStr) {
         return yield* Effect.fail(
           new PermissionDeniedError({
-            action: "read",
-            resource: `locationSharing:list:${ownerIdStr}`,
+            requiredPermission: "read",
+            resourceType: "locationSharing:list",
+            resourceId: ownerIdStr,
             userId: authCtx.userId,
           }),
         );

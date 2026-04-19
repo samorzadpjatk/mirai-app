@@ -48,13 +48,9 @@ export class NotificationScheduleMapper {
    * Convert schedule DTO to insert format
    */
   toInsert(dto: NotificationSchedule): NotificationScheduleSelect {
-    // tripId is required in database but nullable in domain - use placeholder if null
-    const tripIdStr = dto.tripId
-      ? TripId.toString(dto.tripId)
-      : "00000000-0000-0000-0000-000000000000";
     return {
       id: NotificationScheduleId.toString(dto.id),
-      tripId: tripIdStr,
+      tripId: TripId.toString(dto.tripId),
       name: dto.name,
       notificationType: dto.notificationType,
       content: dto.notificationBody,

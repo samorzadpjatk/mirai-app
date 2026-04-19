@@ -45,7 +45,7 @@ export class FileNotFoundError
 
 /**
  * Error thrown when an upload ticket has expired (TTL passed).
- * Used during tusd pre-create hook validation when a ticket's expiration
+ * Used during upload URL validation when a token's expiration
  * time has been exceeded.
  */
 export class UploadTicketExpiredError

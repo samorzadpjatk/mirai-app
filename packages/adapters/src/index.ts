@@ -1,5 +1,16 @@
 // Main adapters package exports
 
+// Email service
+export {
+  SmtpEmailGateway,
+  type SmtpEmailConfig,
+  defaultSmtpEmailConfig,
+  validateSmtpEmailConfig,
+  loadSmtpConfigFromEnv,
+  EmailConfigurationError,
+  EmailSendError,
+} from "./email";
+
 // Service gateways (Authentication)
 export { BetterAuthGateway } from "./auth/gateways/better-auth/BetterAuthGateway";
 export { InProcessEventBusGateway } from "./shared/gateways/InProcessEventBusGateway";

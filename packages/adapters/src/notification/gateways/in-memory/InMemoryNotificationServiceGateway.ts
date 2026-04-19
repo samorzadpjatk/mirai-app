@@ -236,9 +236,21 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
    * Send ranking update notification
    *
    * Requires trip write access for the specified tripId.
+   * Sends notification to all trip participants with the current group rankings.
    */
-  sendRankingUpdate(params: { tripId: string; createdById: string }) {
-    const { tripId } = params;
+  sendRankingUpdate(params: {
+    tripId: string;
+    createdById: string;
+    groups: Array<{
+      id: string;
+      name: string;
+      coins: number;
+      rank: number;
+    }>;
+    userIds: string[];
+  }) {
+    const { tripId, createdById, groups, userIds } = params;
+    const pushSubscriptionPort = this.pushSubscriptionPort;
     const self = this;
 
     return Effect.gen(function* () {
@@ -257,25 +269,49 @@ export class InMemoryNotificationServiceGateway implements INotificationServiceP
         });
       }
 
-      // Ranking update notifications are sent via the same mechanism
-      // as regular notifications. This is a placeholder for future
-      // ranking-specific notification logic.
+      // Build ranking message
+      const topGroups = groups.slice(0, 3);
+      const rankingText = topGroups
+        .map((g, index) => `${index + 1}. ${g.name} (${g.coins} coins)`)
+        .join("\n");
 
-      // Record the ranking update
-      self.sentNotifications.push({
-        userIds: [],
-        title: "Ranking Update",
-        body: "Your ranking has been updated",
-        url: "/rankings",
+      const title = "Group Rankings Updated";
+      const body =
+        groups.length > 0
+          ? `Current top groups:\n${rankingText}`
+          : "Group rankings have been updated";
+      const url = `/trips/${tripId}/rankings`;
+
+      // Fetch push subscriptions for target users
+      const tokens: string[] = [];
+
+      for (const userId of userIds) {
+        const subs = yield* pushSubscriptionPort.findByUserId(userId);
+        for (const sub of subs) {
+          tokens.push(sub.token);
+        }
+      }
+
+      // Record the notification attempt
+      const notificationRecord = {
+        userIds,
+        title,
+        body,
+        url,
         tripId,
-        createdById: params.createdById,
+        createdById,
         timestamp: new Date(),
-      });
+      };
+
+      self.sentNotifications.push(notificationRecord);
+
+      // In test mode, we simulate success for all tokens
+      const recipientCount = tokens.length;
 
       return {
         success: true,
         notificationId: tripId as NotificationId,
-        recipientCount: 0,
+        recipientCount,
       };
     });
   }

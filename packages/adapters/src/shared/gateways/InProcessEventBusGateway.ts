@@ -7,7 +7,7 @@ import { ApplicationError } from "@mirai-app/domain";
  *
  * Purpose:
  * - Provides a fast, deterministic, in-memory event bus for unit and integration tests
- * - No external dependencies (no Supabase, no network calls)
+ * - No external dependencies (no network calls)
  * - Fresh instance per test for complete isolation
  *
  * Implementation:

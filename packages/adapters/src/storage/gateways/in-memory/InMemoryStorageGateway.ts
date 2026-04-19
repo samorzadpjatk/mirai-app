@@ -12,7 +12,7 @@ import { ApplicationError } from "@mirai-app/domain";
  * In-Memory Storage Gateway
  *
  * Implements IStoragePort using in-memory storage for testing.
- * Simulates file operations and signed URL generation without actual Supabase Storage.
+ * Simulates file operations and signed URL generation without actual storage service.
  */
 export class InMemoryStorageGateway implements IStoragePort {
   private storage = new Map<string, Blob>();

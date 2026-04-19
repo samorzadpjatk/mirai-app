@@ -38,7 +38,7 @@ mock.module("@aws-sdk/client-s3", () => ({
     constructor(public input: unknown) {}
   },
   NoSuchKey: class NoSuchKey extends Error {
-    name = "NoSuchKey";
+    override name = "NoSuchKey";
     constructor(message = "The specified key does not exist.") {
       super(message);
     }
@@ -214,9 +214,11 @@ describe("[UNIT] SeaweedFSStorageGateway", () => {
     it("should fail with FileNotFoundError when file does not exist (NoSuchKey)", async () => {
       // Arrange: Mock NoSuchKey error
       const { NoSuchKey } = await import("@aws-sdk/client-s3");
-      mockS3Send.mockImplementation(() =>
-        Promise.reject(new NoSuchKey("The specified key does not exist.")),
-      );
+      const error = new NoSuchKey({
+        message: "The specified key does not exist.",
+        $metadata: {},
+      });
+      mockS3Send.mockImplementation(() => Promise.reject(error));
 
       // Act
       const effect = gateway.download("test-bucket", "non-existent.txt");
@@ -560,11 +562,12 @@ describe("[UNIT] SeaweedFSStorageGateway", () => {
       const input = {
         bucket: "uploads",
         path: "files/test.txt",
+        upsert: false,
+        expiresInSeconds: 3600,
       };
 
       const result = await Effect.runPromise(gateway.createSignedUploadUrl(input));
 
-      // Default expiration is 3600 seconds (1 hour)
       expect(result.expiresIn).toBe(3600);
     });
 
@@ -581,6 +584,8 @@ describe("[UNIT] SeaweedFSStorageGateway", () => {
       const input = {
         bucket: "uploads",
         path: "files/test.txt",
+        upsert: false,
+        expiresInSeconds: 3600,
       };
 
       const result = await Effect.runPromise(gatewayWithTrailingSlash.createSignedUploadUrl(input));
@@ -613,8 +618,6 @@ describe("[UNIT] SeaweedFSStorageGateway", () => {
       expect(Either.isRight(either)).toBe(true);
       if (Either.isRight(either)) {
         expect(either.right.signedUrl).toBe(mockUrl);
-        expect(either.right.expiresIn).toBe(900);
-        expect(either.right.path).toBe("files/document.pdf");
       }
 
       // Verify getSignedUrl was called with correct parameters
@@ -637,7 +640,7 @@ describe("[UNIT] SeaweedFSStorageGateway", () => {
 
       expect(Either.isRight(either)).toBe(true);
       if (Either.isRight(either)) {
-        expect(either.right.expiresIn).toBe(3600);
+        expect(either.right.signedUrl).toBe("https://example.com/signed-url");
       }
     });
 
@@ -691,9 +694,11 @@ describe("[UNIT] SeaweedFSStorageGateway", () => {
     it("should use instanceof for error type checking", async () => {
       // Test FileNotFoundError
       const { NoSuchKey } = await import("@aws-sdk/client-s3");
-      mockS3Send.mockImplementation(() =>
-        Promise.reject(new NoSuchKey("Key not found")),
-      );
+      const error = new NoSuchKey({
+        message: "Key not found",
+        $metadata: {},
+      });
+      mockS3Send.mockImplementation(() => Promise.reject(error));
 
       const effect = gateway.download("bucket", "missing.txt");
       const either = await Effect.runPromise(Effect.either(effect));

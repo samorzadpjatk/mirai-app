@@ -1,5 +1,6 @@
 import type { CoinTransactionSelect } from "../../infrastructure/drizzle";
 import type { CoinTransaction } from "@mirai-app/use-cases/coin/ports/CoinTransactionPort";
+import { CoinTransactionId } from "@mirai-app/domain";
 
 /**
  * CoinTransaction Mapper
@@ -13,7 +14,7 @@ export class CoinTransactionMapper {
    */
   toDTO(dbTransaction: CoinTransactionSelect): CoinTransaction {
     return {
-      id: dbTransaction.id,
+      id: CoinTransactionId.unsafeCreate(dbTransaction.id),
       tripId: dbTransaction.tripId,
       groupId: dbTransaction.groupId,
       amount: dbTransaction.amount,
