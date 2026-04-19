@@ -9,7 +9,9 @@ import { serverState } from "../state";
  * This function initializes both notification and location event handlers,
  * wiring them to the EventBus for real-time event processing.
  */
-export const initializeHandlers = (appLayer: Layer.Layer<never>) =>
+export const initializeHandlers = (
+  appLayer: Layer.Layer<never>
+): Effect.Effect<{ cleanup: () => void }, never, never> =>
   Effect.gen(function* () {
     yield* Effect.log("Initializing all event handlers...");
 
@@ -17,7 +19,14 @@ export const initializeHandlers = (appLayer: Layer.Layer<never>) =>
     const notificationEither = yield* initializeNotificationHandlers().pipe(
       Effect.provide(appLayer),
       Effect.either
-    );
+    ) as Effect.Effect<
+      Either.Either<
+        { cleanup: () => void },
+        unknown
+      >,
+      never,
+      never
+    >;
 
     const notificationResult = yield* Either.match(notificationEither, {
       onLeft: (error) =>
@@ -44,7 +53,14 @@ export const initializeHandlers = (appLayer: Layer.Layer<never>) =>
     const locationEither = yield* initializeLocationHandlers().pipe(
       Effect.provide(appLayer),
       Effect.either
-    );
+    ) as Effect.Effect<
+      Either.Either<
+        { cleanup: () => void },
+        unknown
+      >,
+      never,
+      never
+    >;
 
     const locationResult = yield* Either.match(locationEither, {
       onLeft: (error) =>

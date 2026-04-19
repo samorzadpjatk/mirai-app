@@ -1,6 +1,6 @@
 # Storage Deployment Guide
 
-This guide covers deploying the SeaweedFS + tusd + Redis storage stack in production environments.
+This guide covers deploying the SeaweedFS storage stack with native TUS support in production environments.
 
 ## Table of Contents
 
@@ -8,11 +8,9 @@ This guide covers deploying the SeaweedFS + tusd + Redis storage stack in produc
 2. [Prerequisites](#prerequisites)
 3. [Production Architecture](#production-architecture)
 4. [SeaweedFS Configuration](#seaweedfs-configuration)
-5. [tusd Configuration](#tusd-configuration)
-6. [Redis Configuration](#redis-configuration)
-7. [Security Considerations](#security-considerations)
-8. [Monitoring and Observability](#monitoring-and-observability)
-9. [Troubleshooting](#troubleshooting)
+5. [Security Considerations](#security-considerations)
+6. [Monitoring and Observability](#monitoring-and-observability)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -34,7 +32,7 @@ This guide covers deploying the SeaweedFS + tusd + Redis storage stack in produc
 │  ┌────────────────────────────────────────────────────────────────────────────┐ │
 │  │  - SSL termination                                                          │ │
 │  │  - Rate limiting                                                            │ │
-│  │  - Path routing: /files/* → tusd, /graphql → backend, /storage/* → SeaweedFS │ │
+│  │  - Path routing: /graphql → backend, /storage/* → SeaweedFS               │ │
 │  └────────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────────┘
                 │                               │
@@ -42,38 +40,32 @@ This guide covers deploying the SeaweedFS + tusd + Redis storage stack in produc
 ┌──────────────────────────────┐    ┌─────────────────────────────────────────────┐
 │      UPLOAD ENDPOINT         │    │              BACKEND LAYER                   │
 │  ┌────────────────────────┐ │    │  ┌───────────────────────────────────────┐ │
-│  │        tusd            │ │    │  │    Backend Server (Hono/GraphQL)      │ │
-│  │  - Port: 1080          │ │    │  │                                       │ │
-│  │  - tus protocol        │ │    │  │  ┌─────────────┐  ┌──────────────┐  │ │
-│  │  - Webhook auth        │ │    │  │  │   GraphQL   │  │ TusHookCtrl  │  │ │
-│  │  - Streams to SeaweedFS│ │◄───┼──┼──┤   Resolvers │  │   (hooks)    │  │ │
+│  │   SeaweedFS Filer      │ │    │  │    Backend Server (Hono/GraphQL)      │ │
+│  │  - Port: 8888          │ │    │  │                                       │ │
+│  │  - Native TUS protocol │ │    │  │  ┌─────────────┐  ┌──────────────┐  │ │
+│  │  - S3-compatible API   │ │◄───┼──┼──┤   GraphQL   │  │   Storage    │  │ │
+│  │  - Direct auth tokens  │ │    │  │  │   Resolvers │  │   Mutations  │  │ │
 │  └──────────┬─────────────┘ │    │  │  └─────────────┘  └──────────────┘  │ │
 └─────────────┼────────────────┘    │  └───────────────────────────────────────┘ │
-              │                     └─────────────────────────────────────────────┘
-              │ S3 API
-              ▼
+               │                     └─────────────────────────────────────────────┘
+               │ S3 API
+               ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                           STORAGE LAYER (SeaweedFS)                              │
 │  ┌────────────────────────┐  ┌────────────────────────┐  ┌───────────────────┐ │
 │  │    Master Server       │  │    Volume Servers      │  │    Filer Server   │ │
 │  │  - Metadata management │  │  - Data storage        │  │  - S3 API gateway │ │
-│  │  - Port: 9333          │  │  - Port: 8080, 18080   │  │  - Port: 8333     │ │
+│  │  - Port: 9333          │  │  - Port: 8080, 18080   │  │  - TUS endpoint   │ │
 │  └────────────────────────┘  └────────────────────────┘  └───────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────────┘
-              │
-              │ Redis Protocol
-              ▼
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              CACHE LAYER (Redis)                                   │
-│  ┌────────────────────────────────────────────────────────────────────────────┐  │
-│  │    Redis Cluster                                                           │  │
-│  │  - Upload ticket storage                                                   │  │
-│  │  - TTL expiration (1 hour default)                                         │  │
-│  │  - Port: 6379                                                              │  │
-│  │  - Persistent: AOF + RDB                                                   │  │
-│  └────────────────────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Key Changes from Previous Architecture
+
+- **No separate tusd server**: SeaweedFS Filer provides native TUS support
+- **Simplified auth**: Direct auth tokens in URL query parameters
+- **Reduced complexity**: No webhook handling, no Redis ticket storage
+- **Better performance**: Direct upload to storage layer
 
 ---
 
@@ -150,7 +142,7 @@ services:
           cpus: '1'
           memory: 1G
 
-  # SeaweedFS Filer (S3 API)
+  # SeaweedFS Filer (S3 API + TUS)
   seaweedfs-filer:
     image: chrislusf/seaweedfs:3.60
     command: "filer -master=seaweedfs-master:9333 -port=8888 -s3"
@@ -162,6 +154,7 @@ services:
       - seaweedfs-filer-data:/data
     ports:
       - "8333:8333"  # S3 API
+      - "8888:8888"  # Filer UI / TUS
     networks:
       - storage-network
       - app-network
@@ -181,79 +174,12 @@ services:
       retries: 3
       start_period: 10s
 
-  # tusd Upload Server
-  tusd:
-    image: tusproject/tusd:v2.4
-    command: >
-      -hooks-http=http://backend:2022/tus-hooks
-      -hooks-http-forward-headers=X-Request-ID,X-User-ID
-      -s3-endpoint=http://seaweedfs-filer:8333
-      -s3-bucket=uploads
-      -s3-key-id=minioadmin
-      -s3-secret-key=${SEAWEEDFS_SECRET_KEY:-changeme}
-      -s3-region=us-east-1
-      -port=1080
-      -max-size=104857600
-      -timeout=30s
-      -hooks-retry=3
-      -hooks-backoff=1s
-    environment:
-      - AWS_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=minioadmin
-      - AWS_SECRET_ACCESS_KEY=${SEAWEEDFS_SECRET_KEY:-changeme}
-    ports:
-      - "1080:1080"
-    networks:
-      - storage-network
-      - app-network
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:1080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  # Redis
-  redis:
-    image: redis:7-alpine
-    command: >
-      redis-server
-      --appendonly yes
-      --maxmemory 2gb
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
-    volumes:
-      - redis-data:/data
-    networks:
-      - storage-network
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          cpus: '1'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
-
 volumes:
   seaweedfs-master-data:
     driver: local
   seaweedfs-volume-data:
     driver: local
   seaweedfs-filer-data:
-    driver: local
-  redis-data:
     driver: local
 
 networks:
@@ -319,9 +245,9 @@ weed volume \
 | `-dataCenter` | Data center identifier |
 | `-index` | Index level (memory, leveldb, boltdb) |
 
-### Filer Server (S3 API)
+### Filer Server (S3 API + Native TUS)
 
-The filer provides S3-compatible API:
+The filer provides S3-compatible API and native TUS resumable upload support:
 
 ```bash
 weed filer \
@@ -339,90 +265,12 @@ weed filer \
 | `WEED_S3_SECRET_KEY` | S3 secret key | minioadmin |
 | `WEED_S3_BUCKET` | Default bucket | s3bucket |
 
----
+**TUS Configuration**:
 
-## tusd Configuration
-
-### Command Line Options
-
-```bash
-tusd \
-  -hooks-http=http://backend:2022/tus-hooks \
-  -hooks-http-forward-headers=X-Request-ID,X-User-ID \
-  -s3-endpoint=http://seaweedfs-filer:8333 \
-  -s3-bucket=uploads \
-  -s3-key-id=minioadmin \
-  -s3-secret-key=secret \
-  -s3-region=us-east-1 \
-  -port=1080 \
-  -max-size=104857600 \
-  -timeout=30s \
-  -hooks-retry=3 \
-  -hooks-backoff=1s
-```
-
-**Configuration Reference**:
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-hooks-http` | Webhook endpoint URL | Required |
-| `-hooks-retry` | Number of webhook retries | 3 |
-| `-hooks-backoff` | Backoff between retries | 1s |
-| `-s3-endpoint` | S3/SeaweedFS endpoint | Required |
-| `-s3-bucket` | Default S3 bucket | uploads |
-| `-max-size` | Maximum upload size (bytes) | 0 (unlimited) |
-| `-timeout` | Request timeout | 30s |
-| `-behind-proxy` | Trust X-Forwarded-* headers | false |
-
-### Environment Variables
-
-```bash
-# AWS SDK configuration for S3 backend
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=minioadmin
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_S3_ENDPOINT=http://seaweedfs-filer:8333
-```
-
----
-
-## Redis Configuration
-
-### Production Configuration
-
-```conf
-# redis.conf for production
-bind 0.0.0.0
-port 6379
-
-# Persistence
-appendonly yes
-appendfsync everysec
-save 900 1
-save 300 10
-save 60 10000
-
-# Memory
-maxmemory 2gb
-maxmemory-policy allkeys-lru
-
-# Security
-requirepass your-redis-password
-
-# Performance
-tcp-keepalive 60
-timeout 0
-```
-
-### Memory Management
-
-Upload tickets have 1-hour TTL by default. With typical usage:
-
-- Average ticket size: ~200 bytes
-- Peak concurrent uploads: 1000
-- Memory required: ~200 KB for active tickets
-
-The `allkeys-lru` policy automatically evicts least recently used keys if memory is full (though tickets should expire naturally).
+SeaweedFS Filer provides native TUS support at the `/tus/` endpoint:
+- Upload endpoint: `http://filer:8888/tus/{bucket}/{path}`
+- Supports resumable uploads with automatic chunk handling
+- Compatible with `tus-js-client` and other TUS protocol clients
 
 ---
 
@@ -433,18 +281,19 @@ The `allkeys-lru` policy automatically evicts least recently used keys if memory
 ```
 ┌────────────────────────────────────────────────────────────┐
 │                     PUBLIC NETWORK                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │    Nginx     │  │     tusd     │  │  SeaweedFS   │    │
-│  │   (443)      │  │   (1080)     │  │   S3 (8333)  │    │
-│  └──────────────┘  └──────────────┘  └──────────────┘    │
+│  ┌──────────────┐  ┌──────────────────┐                      │
+│  │    Nginx     │  │  SeaweedFS Filer │                      │
+│  │   (443)      │  │   S3 (8333)      │                      │
+│  │              │  │   TUS (8888)     │                      │
+│  └──────────────┘  └──────────────────┘                      │
 └────────────────────────────────────────────────────────────┘
                           │
 ┌────────────────────────────────────────────────────────────┐
 │                   INTERNAL NETWORK                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │   Backend    │  │     tusd     │  │    Redis     │    │
-│  │   (2022)     │  │  (webhooks)  │  │   (6379)     │    │
-│  └──────────────┘  └──────────────┘  └──────────────┘    │
+│  ┌──────────────┐  ┌──────────────────┐                    │
+│  │   Backend    │  │  SeaweedFS       │                    │
+│  │   (2022)     │  │  Internal ports  │                    │
+│  └──────────────┘  └──────────────────┘                    │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -455,14 +304,10 @@ The `allkeys-lru` policy automatically evicts least recently used keys if memory
 - Rotate credentials every 90 days
 - Store in Docker secrets or external vault
 
-**Redis Password**:
-- Enable `requirepass` in production
-- Use Redis 6+ ACL for fine-grained access
-
-**tusd Webhook Security**:
-- Endpoint only accessible on internal network
-- Use shared secret verification (optional)
-- Log all webhook calls for audit
+**Upload Token Security**:
+- Tokens are single-use with 1-hour TTL
+- Signed URLs include auth tokens in query parameters
+- Backend validates user permissions before generating upload URLs
 
 ### 3. SSL/TLS
 
@@ -477,9 +322,9 @@ server {
     ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
 
-    # tusd upload endpoint
-    location /files/ {
-        proxy_pass http://tusd:1080/;
+    # SeaweedFS Filer TUS endpoint
+    location /tus/ {
+        proxy_pass http://seaweedfs-filer:8888/tus/;
         proxy_request_buffering off;
         proxy_buffering off;
         client_max_body_size 0;
@@ -499,7 +344,7 @@ limit_req_zone $binary_remote_addr zone=uploads:10m rate=10r/s;
 limit_req_zone $binary_remote_addr zone=downloads:10m rate=100r/s;
 
 server {
-    location /files/ {
+    location /tus/ {
         limit_req zone=uploads burst=20 nodelay;
     }
 }
@@ -514,16 +359,12 @@ server {
 **SeaweedFS Filer**:
 ```bash
 curl -f http://seaweedfs-filer:8888/
+curl -f http://seaweedfs-filer:8888/tus/  # TUS endpoint
 ```
 
-**tusd**:
+**SeaweedFS Master**:
 ```bash
-curl -f http://tusd:1080/health
-```
-
-**Redis**:
-```bash
-redis-cli ping
+curl -f http://seaweedfs-master:9333/cluster/status
 ```
 
 ### Prometheus Metrics
@@ -571,14 +412,14 @@ Create Grafana dashboards for:
    - Number of active uploads
 
 2. **Performance Metrics**
-   - tusd webhook latency
-   - Redis operation duration
+   - TUS upload latency
    - SeaweedFS response times
+   - Network throughput
 
 3. **Error Rates**
    - Failed uploads
    - Authentication rejections
-   - Redis errors
+   - Storage errors
 
 ---
 
@@ -588,31 +429,29 @@ Create Grafana dashboards for:
 
 #### 1. Uploads Fail with 401 Unauthorized
 
-**Symptoms**: tusd returns 401, upload rejected
+**Symptoms**: TUS endpoint returns 401, upload rejected
 
 **Checklist**:
-- [ ] Verify token exists in Redis: `GET ticket:{token}`
-- [ ] Check token expiration: `TTL ticket:{token}`
-- [ ] Verify userId matches between ticket and metadata
-- [ ] Check tusd webhook logs for detailed error
+- [ ] Verify token is valid and not expired
+- [ ] Check user has permission for the bucket
+- [ ] Verify token format is correct (query parameter)
+- [ ] Check SeaweedFS filer logs
 
 **Debug Commands**:
 ```bash
-# Check Redis for ticket
-docker exec redis redis-cli GET "ticket:your-token"
+# Test TUS endpoint
+curl -X POST http://seaweedfs-filer:8888/tus/mybucket/test.txt \
+  -H "Tus-Resumable: 1.0.0" \
+  -H "Upload-Length: 1024" \
+  -H "Content-Type: application/offset+octet-stream"
 
-# View tusd logs
-docker logs tusd
-
-# Test webhook manually
-curl -X POST http://backend:2022/tus-hooks \
-  -H "Content-Type: application/json" \
-  -d '{"Type":"pre-create","Event":{"Upload":{"ID":"test","Size":1024,"MetaData":{"token":"your-token","userId":"user-id","filename":"test.txt"}},"HTTPRequest":{"Header":{}}}}'
+# View filer logs
+docker logs seaweedfs-filer
 ```
 
 #### 2. SeaweedFS Connection Errors
 
-**Symptoms**: tusd cannot connect to S3 endpoint
+**Symptoms**: Backend cannot connect to S3 endpoint
 
 **Checklist**:
 - [ ] Verify SeaweedFS filer is running: `curl http://seaweedfs-filer:8333/`
@@ -620,29 +459,19 @@ curl -X POST http://backend:2022/tus-hooks \
 - [ ] Verify network connectivity between containers
 - [ ] Check SeaweedFS filer logs
 
-#### 3. Redis Connection Timeout
-
-**Symptoms**: Backend cannot connect to Redis
-
-**Checklist**:
-- [ ] Verify Redis is running: `docker exec redis redis-cli ping`
-- [ ] Check network connectivity
-- [ ] Review Redis maxmemory settings
-- [ ] Check for firewall rules blocking port 6379
-
-#### 4. Slow Upload Performance
+#### 3. Slow Upload Performance
 
 **Symptoms**: Uploads are slower than expected
 
 **Solutions**:
 - Increase `client_max_body_size` in nginx
-- Disable proxy buffering for tusd
+- Disable proxy buffering for TUS uploads
 - Use SSD for SeaweedFS volume storage
 - Enable SeaweedFS volume preallocation
 
 ```nginx
-location /files/ {
-    proxy_pass http://tusd:1080/;
+location /tus/ {
+    proxy_pass http://seaweedfs-filer:8888/tus/;
     proxy_request_buffering off;
     proxy_buffering off;
     client_max_body_size 0;
@@ -660,14 +489,10 @@ docker exec seaweedfs-master weed shell <<< "cluster.check"
 # List all volumes
 docker exec seaweedfs-master weed shell <<< "volume.list"
 
-# Redis info
-docker exec redis redis-cli info
-
-# Clear expired tickets manually
-docker exec redis redis-cli --eval clear-expired.lua
+# Check filer status
+docker exec seaweedfs-filer curl -f http://localhost:8888/
 
 # Restart services
-docker service update --force pjapp_tusd
 docker service update --force pjapp_seaweedfs-filer
 ```
 
@@ -676,6 +501,5 @@ docker service update --force pjapp_seaweedfs-filer
 ## References
 
 - [SeaweedFS Documentation](https://github.com/seaweedfs/seaweedfs/wiki)
-- [tusd Documentation](https://github.com/tus/tusd/blob/main/docs/usage-package.md)
+- [SeaweedFS TUS Resumable Uploads](https://github.com/seaweedfs/seaweedfs/wiki/TUS-Resumable-Uploads)
 - [tus Protocol Specification](https://tus.io/protocols/resumable-upload.html)
-- [Redis Persistence Documentation](https://redis.io/docs/management/persistence/)

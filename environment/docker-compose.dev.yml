@@ -1,79 +1,171 @@
 # =============================================================================
-# PJApp Environment - Supabase
+# PJApp Environment - Development
 # =============================================================================
 #
 # This Docker Compose configuration provides a complete local development
 # environment with:
-#   - Supabase: Backend-as-a-Service (Database, Auth, Storage, Realtime, etc.)
+#   - PostgreSQL: Main database (Drizzle ORM)
+#   - Redis: Session storage for Better-Auth
+#   - SeaweedFS: S3-compatible object storage
+#   - Backend Server: Hono + Pothos GraphQL + Better-Auth
+#   - Notification Sender: Background job processor
+#   - Web: Astro SSR frontend
+#   - Mailpit: Email testing
+#
+# Tech Stack:
+#   - Database: PostgreSQL 15 with Drizzle ORM
+#   - Auth: Better-Auth (built into backend-server)
+#   - Storage: SeaweedFS
+#   - Cache/Sessions: Redis
+#   - API: GraphQL (Pothos + Yoga) on Hono
 #
 # Usage:
 #   Start:           docker compose up -d
 #   Stop:            docker compose down
-#   Reset:           ./reset.sh
 #   View logs:       docker compose logs -f
 #   Check status:    docker compose ps
 #
 # Prerequisites:
-#   - Set AUTHENTIK_SECRET_KEY and PG_PASS in .env
-#
+#   - Copy .env.dev to .env and configure values
 # =============================================================================
 
 name: pjapp
 
 services:
   # ===========================================================================
-  # E-MAIL SERVICES
+  # DATABASE
+  # ===========================================================================
+
+  db:
+    container_name: pjapp-db
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./volumes/db/init:/docker-entrypoint-initdb.d:Z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-pjapp}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+  # ===========================================================================
+  # CACHE & SESSION STORE
+  # ===========================================================================
+
+  redis:
+    container_name: pjapp-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ===========================================================================
+  # OBJECT STORAGE (SeaweedFS - replaces MinIO)
+  # ===========================================================================
+
+  seaweedfs:
+    container_name: pjapp-seaweedfs
+    image: chrislusf/seaweedfs:latest
+    restart: unless-stopped
+    ports:
+      - "${SEAWEEDFS_S3_PORT:-8333}:8333"  # S3 API
+      - "${SEAWEEDFS_WEB_PORT:-8888}:8888"  # Filer UI
+    volumes:
+      - seaweedfs-data:/data
+      - seaweedfs-volumes:/weed/volumes
+    command: >
+      server -s3
+      -s3.port=8333
+      -volume.max=30
+      -master.volumeSizeLimitMB=1024
+      -filer
+      -filer.port=8888
+      -filer.maxMB=4
+      -ip=seaweedfs
+      -ip.bind=0.0.0.0
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9333/cluster/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  seaweedfs-init:
+    container_name: pjapp-seaweedfs-init
+    image: chrislusf/seaweedfs:latest
+    restart: "no"
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      SEAWEEDFS_BUCKET: ${SEAWEEDFS_BUCKET:-pjapp-uploads}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "Initializing SeaweedFS bucket..."
+        # Create bucket using S3 API
+        curl -X PUT http://seaweedfs:8333/${SEAWEEDFS_BUCKET:-pjapp-uploads} || true
+        echo "Bucket initialization complete"
+
+  # ===========================================================================
+  # EMAIL TESTING
   # ===========================================================================
 
   mailpit:
-    container_name: mailpit
+    container_name: pjapp-mailpit
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - "8025:8025" # Web UI
-      - "1025:1025" # SMTP
-
-
-  # ===========================================================================
-  # ADMIN PANEL
-  # ===========================================================================
-
-  web:
-    container_name: web
-    build:
-      context: ../
-      dockerfile: apps/web/Dockerfile
-      args:
-        PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:-http://localhost:8000}
-        PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
-        PUBLIC_TRPC_API_URL: ${PUBLIC_TRPC_API_URL:-http://localhost:2022/api/trpc}
-        PUBLIC_TRPC_WS_URL: ${PUBLIC_TRPC_WS_URL:-ws://localhost:2022/api/trpc}
-    restart: unless-stopped
-    ports:
-      - "${ADMIN_WEB_PORT:-4321}:4321"
+      - "${MAILPIT_WEB_PORT:-8025}:8025"  # Web UI
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"  # SMTP
     environment:
-      HOST: "0.0.0.0"
-      PORT: "4321"
-
-  email-templates:
-    container_name: supabase-email-templates
-    image: nginx:alpine
-    restart: unless-stopped
-    volumes:
-      - ./volumes/email-templates:/usr/share/nginx/html:ro
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost/otp.html"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
 
   # ===========================================================================
   # BACKEND SERVICES
   # ===========================================================================
 
+  db-migrations:
+    container_name: pjapp-db-migrations
+    build:
+      context: ../
+      dockerfile: Dockerfile
+      args:
+        PACKAGE: db-migrations
+        PORT: "3000"
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-pjapp}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["./app", "migrate"]
+
   backend-server:
-    container_name: backend-server
+    container_name: pjapp-backend-server
     build:
       context: ../
       dockerfile: Dockerfile
@@ -82,21 +174,37 @@ services:
         PORT: "2022"
     restart: unless-stopped
     ports:
-      - "2022:2022"
+      - "${BACKEND_PORT:-2022}:2022"
     environment:
-      TRPC_SERVER_PORT: "2022"
-      TRPC_SERVER_HOST: "0.0.0.0"
-      SUPABASE_URL: "http://kong:8000"
-      SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
-      DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@supabase-pooler:${POOLER_PROXY_PORT_TRANSACTION}/${POSTGRES_DB}"
+      PORT: "2022"
+      HOST: "0.0.0.0"
+      NODE_ENV: "development"
+      # Database
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-pjapp}
+      # Redis (for Better-Auth sessions)
+      REDIS_URL: redis://redis:6379
+      # Storage
+      SEAWEEDFS_ENDPOINT: http://seaweedfs:8333
+      SEAWEEDFS_BUCKET: ${SEAWEEDFS_BUCKET:-pjapp-uploads}
+      # Auth (Better-Auth)
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-your-secret-key-min-32-chars}
+      BETTER_AUTH_URL: http://localhost:${BACKEND_PORT:-2022}
+      # Email
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_USER: ""
+      SMTP_PASS: ""
+      SMTP_FROM: ${SMTP_FROM:-dev@pjapp.local}
     depends_on:
       db:
         condition: service_healthy
-      supavisor:
+      redis:
+        condition: service_healthy
+      seaweedfs:
         condition: service_healthy
 
   notification-sender:
-    container_name: notification-sender
+    container_name: pjapp-notification-sender
     build:
       context: ../
       dockerfile: Dockerfile
@@ -105,461 +213,52 @@ services:
         PORT: "3011"
     restart: unless-stopped
     ports:
-      - "3011:3011"
+      - "${NOTIFICATION_PORT:-3011}:3011"
     environment:
       PORT: "3011"
       HOST: "0.0.0.0"
-      TRPC_HOST: "backend-server:2022"
-      SUPABASE_URL: "http://kong:8000"
-      SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
+      NODE_ENV: "development"
+      # Database
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-pjapp}
+      # Redis
+      REDIS_URL: redis://redis:6379
+      # Backend connection
+      BACKEND_URL: http://backend-server:2022
+      # Auth
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-your-secret-key-min-32-chars}
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       backend-server:
         condition: service_started
 
-
   # ===========================================================================
-  # SUPABASE SERVICES
+  # FRONTEND
   # ===========================================================================
 
-  # Supabase Studio - Web-based database management interface
-  studio:
-    container_name: supabase-studio
-    image: supabase/studio:2025.10.27-sha-85b84e0
-    restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://studio:3000/api/platform/profile').then((r) => {if (r.status !== 200) throw new Error(r.status)})",
-        ]
-      timeout: 10s
-      interval: 5s
-      retries: 3
-    environment:
-      # Binds nestjs listener to both IPv4 and IPv6 network interfaces
-      HOSTNAME: "::"
-
-      STUDIO_PG_META_URL: http://meta:8080
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PG_META_CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
-
-      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION}
-      DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-
-      SUPABASE_URL: http://kong:8000
-      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
-      SUPABASE_ANON_KEY: ${ANON_KEY}
-      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
-      AUTH_JWT_SECRET: ${JWT_SECRET}
-
-      # LOGFLARE_API_KEY is deprecated
-      LOGFLARE_API_KEY: ${LOGFLARE_PUBLIC_ACCESS_TOKEN}
-      LOGFLARE_PUBLIC_ACCESS_TOKEN: ${LOGFLARE_PUBLIC_ACCESS_TOKEN}
-      LOGFLARE_PRIVATE_ACCESS_TOKEN: ${LOGFLARE_PRIVATE_ACCESS_TOKEN}
-
-      LOGFLARE_URL: http://analytics:4000
-      # Toggle analytics UI in Studio (set to true to show logs)
-      NEXT_PUBLIC_ENABLE_LOGS: ${NEXT_PUBLIC_ENABLE_LOGS:-false}
-      # Comma-separated list of modules to hide in Studio (engineering note: Studio reads this env in our self-hosted setup if supported)
-      STUDIO_DISABLED_MODULES: ${STUDIO_DISABLED_MODULES:-functions,analytics}
-      # Comment to use Big Query backend for analytics
-      NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
-      # Uncomment to use Big Query backend for analytics
-      # NEXT_ANALYTICS_BACKEND_PROVIDER: bigquery
-
-  # Kong API Gateway - Routes requests to appropriate Supabase services
-  kong:
-    container_name: supabase-kong
-    image: kong:2.8.1
+  web:
+    container_name: pjapp-web
+    build:
+      context: ../
+      dockerfile: apps/web/Dockerfile
+      args:
+        PUBLIC_BACKEND_URL: http://localhost:${BACKEND_PORT:-2022}
+        PUBLIC_GRAPHQL_URL: http://localhost:${BACKEND_PORT:-2022}/graphql
     restart: unless-stopped
     ports:
-      - ${KONG_HTTP_PORT}:8000/tcp
-      - ${KONG_HTTPS_PORT}:8443/tcp
-    volumes:
-      # https://github.com/supabase/supabase/issues/12661
-      - ./volumes/api/kong.yml:/home/kong/temp.yml:ro,z
-
+      - "${WEB_PORT:-4321}:4321"
     environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
-      # https://github.com/supabase/cli/issues/14
-      KONG_DNS_ORDER: LAST,A,CNAME
-      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth,request-termination,ip-restriction
-      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
-      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
-      SUPABASE_ANON_KEY: ${ANON_KEY}
-      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
-      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME}
-      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
-    # https://unix.stackexchange.com/a/294837
-    entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml && /docker-entrypoint.sh kong docker-start'
-
-  # GoTrue - Supabase authentication service
-  auth:
-    container_name: supabase-auth
-    image: supabase/gotrue:v2.182.0
-    restart: unless-stopped
-    extra_hosts:
-      - "localhost:host-gateway"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-fsS",
-          "http://localhost:9999/health",
-        ]
-      timeout: 5s
-      interval: 5s
-      retries: 3
+      HOST: "0.0.0.0"
+      PORT: "4321"
+      NODE_ENV: "development"
     depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
-      mailpit:
+      backend-server:
         condition: service_started
-    environment:
-      GOTRUE_API_HOST: 0.0.0.0
-      GOTRUE_API_PORT: 9999
-      API_EXTERNAL_URL: ${API_EXTERNAL_URL}
-
-      GOTRUE_DB_DRIVER: postgres
-      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-
-      GOTRUE_SITE_URL: ${SITE_URL}
-      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
-      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
-
-      GOTRUE_JWT_ADMIN_ROLES: service_role
-      GOTRUE_JWT_AUD: authenticated
-      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
-      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
-      GOTRUE_JWT_SECRET: ${JWT_SECRET}
-
-      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP}
-      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: ${ENABLE_ANONYMOUS_USERS}
-      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM}
-
-      # Uncomment to bypass nonce check in ID Token flow. Commonly set to true when using Google Sign In on mobile.
-      # GOTRUE_EXTERNAL_SKIP_NONCE_CHECK: true
-
-      # GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: true
-      # GOTRUE_SMTP_MAX_FREQUENCY: 1s
-      # Use Mailpit for local development/testing (no auth required)
-      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL:-admin@example.com}
-      GOTRUE_SMTP_HOST: mailpit
-      GOTRUE_SMTP_PORT: "1025"
-      GOTRUE_SMTP_USER: ""
-      GOTRUE_SMTP_PASS: ""
-      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME:-fake_sender}
-      GOTRUE_MAILER_URLPATHS_INVITE: ${MAILER_URLPATHS_INVITE}
-      GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${MAILER_URLPATHS_CONFIRMATION}
-      GOTRUE_MAILER_URLPATHS_RECOVERY: ${MAILER_URLPATHS_RECOVERY}
-      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${MAILER_URLPATHS_EMAIL_CHANGE}
-      # Use the internal static email templates service (OTP-only magic link)
-      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: http://email-templates/otp.html
-      MAILER_TEMPLATES_MAGIC_LINK: http://email-templates/otp.html
-      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Twój kod logowania — MIRAI"
-      MAILER_SUBJECTS_MAGIC_LINK: "Twój kod logowania — MIRAI"
-
-      GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
-      GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
-
-  # PostgREST - RESTful API for PostgreSQL
-  rest:
-    container_name: supabase-rest
-    image: postgrest/postgrest:v13.0.7
-    restart: unless-stopped
-    depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
-    environment:
-      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
-      PGRST_DB_ANON_ROLE: anon
-      PGRST_JWT_SECRET: ${JWT_SECRET}
-      PGRST_DB_USE_LEGACY_GUCS: "false"
-      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
-      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
-    command: ["postgrest"]
-
-  # Supabase Realtime - WebSocket server for real-time subscriptions
-  realtime:
-    # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
-    container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.57.2
-    restart: unless-stopped
-    depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-sSfL",
-          "--head",
-          "-o",
-          "/dev/null",
-          "-H",
-          "Authorization: Bearer ${ANON_KEY}",
-          "http://localhost:4000/api/tenants/realtime-dev/health",
-        ]
-      timeout: 5s
-      interval: 5s
-      retries: 3
-    environment:
-      PORT: 4000
-      DB_HOST: ${POSTGRES_HOST}
-      DB_PORT: ${POSTGRES_PORT}
-      DB_USER: supabase_admin
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: ${POSTGRES_DB}
-      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
-      DB_ENC_KEY: supabaserealtime
-      API_JWT_SECRET: ${JWT_SECRET}
-      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
-      ERL_AFLAGS: -proto_dist inet_tcp
-      DNS_NODES: "''"
-      RLIMIT_NOFILE: "10000"
-      APP_NAME: realtime
-      SEED_SELF_HOST: true
-      RUN_JANITOR: true
-
-  # Supabase Storage - Object storage with image transformations
-  # To use S3 backed storage: docker compose -f docker-compose.yml -f docker-compose.s3.yml up
-  storage:
-    container_name: supabase-storage
-    image: supabase/storage-api:v1.28.2
-    restart: unless-stopped
-    volumes:
-      - ./volumes/storage:/var/lib/storage:z
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-fsS",
-          "http://storage:5000/status",
-        ]
-      timeout: 5s
-      interval: 5s
-      retries: 3
-    depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
-      rest:
-        condition: service_started
-      imgproxy:
-        condition: service_started
-      minio:
-        condition: service_healthy
-    environment:
-      ANON_KEY: ${ANON_KEY}
-      SERVICE_KEY: ${SERVICE_ROLE_KEY}
-      POSTGREST_URL: http://rest:3000
-      PGRST_JWT_SECRET: ${JWT_SECRET}
-      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-      FILE_SIZE_LIMIT: 52428800
-      STORAGE_BACKEND: s3
-      GLOBAL_S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
-      STORAGE_S3_FORCE_PATH_STYLE: "true"
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      TENANT_ID: stub
-      REGION: ${MINIO_REGION:-pl-waw-1}
-      GLOBAL_S3_BUCKET: ${MINIO_BUCKET:-pjapp}
-      ENABLE_IMAGE_TRANSFORMATION: "true"
-      IMGPROXY_URL: http://imgproxy:5001
-
-  # ImgProxy - Fast image processing service
-  imgproxy:
-    container_name: supabase-imgproxy
-    image: darthsim/imgproxy:v3.8.0
-    restart: unless-stopped
-    volumes:
-      - ./volumes/storage:/var/lib/storage:z
-    healthcheck:
-      test: ["CMD", "imgproxy", "health"]
-      timeout: 5s
-      interval: 5s
-      retries: 3
-    environment:
-      IMGPROXY_BIND: ":5001"
-      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
-      IMGPROXY_USE_ETAG: "true"
-      IMGPROXY_ENABLE_WEBP_DETECTION: "true"
-
-  minio:
-    container_name: minio
-    image: minio/minio:latest
-    restart: unless-stopped
-    # Host port mapping configurable via MINIO_HTTP_PORT and MINIO_CONSOLE_PORT
-    # This avoids collisions with other local services (e.g., Authentik or local Minio)
-    ports:
-      - "${MINIO_HTTP_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    volumes:
-      - ./volumes/minio:/data:z
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/ready"]
-      timeout: 5s
-      interval: 5s
-      retries: 3
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-    command: server /data --console-address ":9001"
-
-  minio-init:
-    container_name: minio-init
-    image: minio/mc:latest
-    restart: "no"
-    depends_on:
-      minio:
-        condition: service_healthy
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_BUCKET: ${MINIO_BUCKET:-pjapp}
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD";
-        mc mb --ignore-existing "local/$MINIO_BUCKET";
-
-  # Supabase Postgres Meta - PostgreSQL metadata API
-  meta:
-    container_name: supabase-meta
-    image: supabase/postgres-meta:v0.93.1
-    restart: unless-stopped
-    depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
-    environment:
-      PG_META_PORT: 8080
-      PG_META_DB_HOST: ${POSTGRES_HOST}
-      PG_META_DB_PORT: ${POSTGRES_PORT}
-      PG_META_DB_NAME: ${POSTGRES_DB}
-      PG_META_DB_USER: supabase_admin
-      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
-
-  # Supavisor - PostgreSQL connection pooler
-  # Update the DATABASE_URL if you are using an external Postgres database
-  supavisor:
-    container_name: supabase-pooler
-    image: supabase/supavisor:2.7.3
-    restart: unless-stopped
-    # Host Postgres port mapping configurable via SUPAVISOR_HOST_POSTGRES_PORT
-    # Default set to 5433 to avoid colliding with local Postgres on :5432
-    ports:
-      - "${SUPAVISOR_HOST_POSTGRES_PORT:-5433}:5432"
-      - ${POOLER_PROXY_PORT_TRANSACTION}:6543
-    volumes:
-      - ./volumes/pooler/pooler.exs:/etc/pooler/pooler.exs:ro,z
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-sSfL",
-          "--head",
-          "-o",
-          "/dev/null",
-          "http://127.0.0.1:4000/api/health",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      PORT: 4000
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_URL: ecto://supabase_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/_supabase
-      CLUSTER_POSTGRES: true
-      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
-      VAULT_ENC_KEY: ${VAULT_ENC_KEY}
-      API_JWT_SECRET: ${JWT_SECRET}
-      METRICS_JWT_SECRET: ${JWT_SECRET}
-      REGION: local
-      ERL_AFLAGS: -proto_dist inet_tcp
-      POOLER_TENANT_ID: ${POOLER_TENANT_ID}
-      POOLER_DEFAULT_POOL_SIZE: ${POOLER_DEFAULT_POOL_SIZE}
-      POOLER_MAX_CLIENT_CONN: ${POOLER_MAX_CLIENT_CONN}
-      POOLER_POOL_MODE: transaction
-      DB_POOL_SIZE: ${POOLER_DB_POOL_SIZE}
-    command:
-      [
-        "/bin/sh",
-        "-c",
-        '/app/bin/migrate && /app/bin/supavisor eval "$$(cat /etc/pooler/pooler.exs)" && /app/bin/server',
-      ]
-
-    # Supabase PostgreSQL Database - Main database for Supabase
-  # Comment out everything below this point if you are using an external Postgres database
-  db:
-    container_name: supabase-db
-    image: supabase/postgres:15.8.1.085
-    restart: unless-stopped
-    volumes:
-      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
-      - ./volumes/db/init/data.sql:/docker-entrypoint-initdb.d/init-scripts/97-data.sql:Z
-      # Must be superuser to create event trigger
-      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
-      # Must be superuser to alter reserved role
-      - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
-      # Initialize the database settings with JWT_SECRET and JWT_EXP
-      - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
-      # PGDATA directory is persisted between restarts
-      - ./volumes/db/data:/var/lib/postgresql/data:Z
-      # Changes required for internal supabase data such as _analytics
-      - ./volumes/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
-      # Changes required for Analytics support
-      # - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
-      # Changes required for Pooler support
-      - ./volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
-      # Use named volume to persist pgsodium decryption key between restarts
-      - db-config:/etc/postgresql-custom
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    environment:
-      POSTGRES_HOST: /var/run/postgresql
-      PGPORT: ${POSTGRES_PORT}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: ${POSTGRES_DB}
-      POSTGRES_DB: ${POSTGRES_DB}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXP: ${JWT_EXPIRY}
-    command: [
-        "postgres",
-        "-c",
-        "config_file=/etc/postgresql/postgresql.conf",
-        "-c",
-        "log_min_messages=fatal", # prevents Realtime polling queries from appearing in logs
-      ]
 
 volumes:
-  db-config:
+  postgres-data:
+  redis-data:
+  seaweedfs-data:
+  seaweedfs-volumes:
