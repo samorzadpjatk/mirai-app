@@ -14,6 +14,8 @@ export const ChallengeVoteType = builder.objectType("ChallengeVote", {
 export const CastVoteInput = builder.inputType("CastVoteInput", {
   fields: (t) => ({
     submissionId: t.string({ required: true }),
+    tripId: t.string({ required: true }),
+    challengeId: t.string({ required: true }),
     voteType: t.field({ type: VoteTypeEnum, required: true }),
   }),
 });

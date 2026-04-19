@@ -109,7 +109,7 @@ export const makeAuthZLayer = (config: AuthZLayerConfig) => {
  *
  * @example
  * ```typescript
- * const authLayer = makeAuthLayer({ supabase, db });
+ * const authLayer = makeAuthLayer({ db });
  *
  * const program = Effect.gen(function* () {
  *   const authN = yield* AuthNPortTag;

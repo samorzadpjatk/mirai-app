@@ -57,7 +57,10 @@ export const ReviewSubmissionInput = builder.inputType("ReviewSubmissionInput", 
 export const SubmissionResultType = builder.objectType("SubmissionResult", {
   fields: (t) => ({
     id: t.exposeID("id"),
+    challengeId: t.exposeID("challengeId"),
+    groupId: t.exposeID("groupId"),
     status: t.exposeString("status"),
+    createdAt: t.field({ type: "DateTime", resolve: (s) => s.createdAt }),
   }),
 });
 

@@ -2,7 +2,7 @@ import { builder } from "../../builder.js";
 import type { GraphQLContext } from "../../context.js";
 import { requireAuth, requireModerator } from "../../context.js";
 import { ChallengeSubmissionType, SubmissionConnectionType } from "./index.js";
-import { buildConnection, clampFirst, decodeCursorWithDate } from "../../utils/connections.js";
+import { buildConnection, clampFirst, decodeCursorWithTimestamp } from "../../utils/connections.js";
 
 builder.queryFields((t) => ({
   mySubmissions: t.field({

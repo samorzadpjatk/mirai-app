@@ -9,10 +9,10 @@
  * ```
  * ┌─────────────────────────────────────────┐
  * │          Frameworks Layer               │
- * │  ┌─────────┐ ┌─────────┐ ┌─────────┐  │
- * │  │Drizzle  │ │ Effect │ │ Supabase│  │
- * │  │ Client  │ │ Layers  │ │ Client  │  │
- * │  └─────────┘ └─────────┘ └─────────┘  │
+ * │  ┌─────────┐ ┌─────────┐              │
+ * │  │Drizzle  │ │ Effect │              │
+ * │  │ Client  │ │ Layers  │              │
+ * │  └─────────┘ └─────────┘              │
  * └─────────────────────────────────────────┘
  *              │
  *              ▼
@@ -30,16 +30,6 @@
  *
  * const db = createDrizzleClient(process.env.DATABASE_URL);
  * ```
- *
- * ### Supabase Client
- * ```typescript
- * import { createSupabaseClient } from "@mirai-app/frameworks/supabase/client";
- *
- * const supabase = createSupabaseClient(
- *   process.env.SUPABASE_URL,
- *   process.env.SUPABASE_ANON_KEY
- * );
- * ```
  */
 
 // =============================================================================
@@ -49,24 +39,6 @@
 export { createDrizzleClient, type DrizzleDb } from "./drizzle/client";
 
 export * from "./drizzle/schema";
-
-// =============================================================================
-// Supabase Configuration
-// =============================================================================
-
-export { createSupabaseClient } from "./supabase/client";
-export { SupabaseClientTag } from "./supabase/index";
-export type {
-  SupabaseClientOptions,
-  SupabaseClient,
-  SupabaseSession,
-  SupabaseUser,
-  RealtimePostgresChangesPayload,
-  RealtimeChannel,
-  RealtimePostgresInsertPayload,
-  StorageAdapter,
-} from "./supabase/types";
-export { REALTIME_CHANNEL_STATES } from "./supabase/types";
 
 // =============================================================================
 // Effect Layer Compositions (DI Factories)
@@ -82,7 +54,7 @@ export { REALTIME_CHANNEL_STATES } from "./supabase/types";
  * import { makeAppLayer, type AppLayerConfig } from "@mirai-app/frameworks";
  * import { UserGatewayTag } from "@mirai-app/use-cases/ports/user/gateway";
  *
- * const appLayer = makeAppLayer({ supabase, db });
+ * const appLayer = makeAppLayer({ db });
  *
  * const program = Effect.gen(function* () {
  *   const userRepo = yield* UserGatewayTag;
@@ -96,7 +68,7 @@ export { REALTIME_CHANNEL_STATES } from "./supabase/types";
  * import { Layer } from "effect";
  *
  * const repoLayer = makeRepositoryLayer({ db });
- * const serviceLayer = makeServiceLayer({ supabase });
+ * const serviceLayer = makeServiceLayer();
  * const combined = repoLayer.pipe(Layer.merge(serviceLayer));
  * ```
  */
@@ -125,7 +97,7 @@ export {
   type RepositoryLayerConfig,
   // Service Layer
   makeServiceLayer,
-  makeStorageLayer,
+  makeSeaweedFSStorageLayer,
   type ServiceLayerConfig,
   // Service Context Tags
   AuthPortTag,

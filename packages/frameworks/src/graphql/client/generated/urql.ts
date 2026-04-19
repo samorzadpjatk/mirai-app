@@ -1170,11 +1170,8 @@ export function useGroupGalleryQuery(
 }
 export const MarkNotificationReadDocument = gql`
   mutation MarkNotificationRead($id: String!) {
-    markNotificationRead(id: $id) {
-      ...NotificationFields
-    }
+    markNotificationRead(id: $id)
   }
-  ${NotificationFieldsFragmentDoc}
 `;
 
 export function useMarkNotificationReadMutation() {

@@ -86,7 +86,7 @@ export const makeAppLayer = (config: AppLayerConfig): Layer.Layer<never> => {
     serviceLayer, 
     notificationServiceLayer,
     eventBusSetupLayer
-  ) as Layer.Layer<never>;
+  ) as unknown as Layer.Layer<never>;
 };
 
 /**

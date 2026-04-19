@@ -5,9 +5,7 @@
 #import "../../fragments/notification.graphql"
 
 mutation MarkNotificationRead($id: String!) {
-  markNotificationRead(id: $id) {
-    ...NotificationFields
-  }
+  markNotificationRead(id: $id)
 }
 
 mutation MarkAllNotificationsRead {

@@ -30,7 +30,7 @@
  * import { makeAppLayer } from "@mirai-app/frameworks/di";
  * import { Effect } from "effect";
  *
- * const appLayer = makeAppLayer({ db, supabase });
+ * const appLayer = makeAppLayer({ db });
  *
  * const program = Effect.gen(function* () {
  *   const userRepo = yield* UserPortTag;
@@ -104,12 +104,13 @@ export {
 } from "./layer/auth";
 
 // =============================================================================
-// Service Layer - Authentication, Storage (SeaweedFS), and EventBus
+// Service Layer - Authentication, Storage (SeaweedFS), EventBus, and Email
 // =============================================================================
 
 export {
   makeServiceLayer,
   makeSeaweedFSStorageLayer,
+  makeSmtpEmailLayer,
   type ServiceLayerConfig,
 } from "./layer/service";
 
@@ -123,9 +124,16 @@ export {
   AuthZPortTag,
   StoragePortTag,
   EventBusTag,
+  EmailPortTag,
 } from "@mirai-app/use-cases";
 
-export type { IAuthPort, IAuthNPort, IAuthZPort, IStoragePort } from "@mirai-app/domain";
+export type {
+  IAuthPort,
+  IAuthNPort,
+  IAuthZPort,
+  IStoragePort,
+  IEmailPort,
+} from "@mirai-app/domain";
 
 // =============================================================================
 // Test Utilities - Mock layers and test helpers

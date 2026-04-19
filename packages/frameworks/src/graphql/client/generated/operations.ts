@@ -1280,18 +1280,7 @@ export type MarkNotificationReadMutationVariables = Types.Exact<{
 }>;
 
 export type MarkNotificationReadMutation = {
-  markNotificationRead:
-    | ({
-        id: string | null;
-        body: string | null;
-        title: string | null;
-        url: string | null;
-        tripId: string | null;
-        createdById: string | null;
-        createdAt: Date | null;
-        updatedAt: Date | null;
-      } & { __typename?: "Notification" })
-    | null;
+  markNotificationRead: boolean | null;
 } & { __typename?: "Mutation" };
 
 export type MarkAllNotificationsReadMutationVariables = Types.Exact<{

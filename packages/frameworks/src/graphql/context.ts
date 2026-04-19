@@ -31,7 +31,7 @@ export type { AuthContext };
  * import { Layer, Effect } from "effect";
  * 
  * // Build the app layer with all dependencies
- * const appLayer = makeAppLayer({ db, supabase });
+ * const appLayer = makeAppLayer({ db });
  * 
  * // Create runtime once at server startup
  * const runtime = await Effect.runPromise(Layer.toRuntime(appLayer));

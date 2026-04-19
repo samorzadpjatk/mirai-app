@@ -137,7 +137,9 @@ export interface BulkAssignUsersInput {
 }
 
 export interface CastVoteInput {
+  challengeId: Scalars["String"]["input"];
   submissionId: Scalars["String"]["input"];
+  tripId: Scalars["String"]["input"];
   voteType: VoteType;
 }
 
@@ -708,7 +710,7 @@ export interface Mutation {
   joinGroup: Maybe<JoinGroupResult>;
   leaveGroup: Maybe<LeaveGroupResult>;
   markAllNotificationsRead: Maybe<MarkAllReadResult>;
-  markNotificationRead: Maybe<Notification>;
+  markNotificationRead: Maybe<Scalars["Boolean"]["output"]>;
   redeemReward: Maybe<RedeemedReward>;
   removeHouseNumber: Maybe<ParticipantNumberResult>;
   removeUserFromGroup: Maybe<JoinGroupResult>;
@@ -723,6 +725,7 @@ export interface Mutation {
   updateHouseNumber: Maybe<ParticipantNumberResult>;
   updateMyProfile: Maybe<UpdateProfileResult>;
   updateNotificationPreferences: Maybe<UpdatePreferencesResult>;
+  updateReward: Maybe<Reward>;
   updateTrip: Maybe<UpdateTripResult>;
   updateUserName: Maybe<UpdateUserResult>;
   updateUserRole: Maybe<UpdateUserResult>;
@@ -833,7 +836,7 @@ export interface MutationRemoveUserFromGroupArgs {
 }
 
 export interface MutationRemoveVoteArgs {
-  submissionId: Scalars["String"]["input"];
+  input: RemoveVoteInput;
 }
 
 export interface MutationRemoveWristNumberArgs {
@@ -875,6 +878,10 @@ export interface MutationUpdateMyProfileArgs {
 
 export interface MutationUpdateNotificationPreferencesArgs {
   input: UpdateNotificationPreferencesInput;
+}
+
+export interface MutationUpdateRewardArgs {
+  input: UpdateRewardInput;
 }
 
 export interface MutationUpdateTripArgs {
@@ -1196,6 +1203,12 @@ export interface RedeemedReward {
   userId: Maybe<Scalars["ID"]["output"]>;
 }
 
+export interface RemoveVoteInput {
+  challengeId: Scalars["String"]["input"];
+  submissionId: Scalars["String"]["input"];
+  tripId: Scalars["String"]["input"];
+}
+
 export interface RequestJoinGroupInput {
   groupId: Scalars["String"]["input"];
 }
@@ -1300,6 +1313,9 @@ export interface SubmissionEdge {
 
 export interface SubmissionResult {
   __typename?: "SubmissionResult";
+  challengeId: Maybe<Scalars["ID"]["output"]>;
+  createdAt: Maybe<Scalars["DateTime"]["output"]>;
+  groupId: Maybe<Scalars["ID"]["output"]>;
   id: Maybe<Scalars["ID"]["output"]>;
   status: Maybe<Scalars["String"]["output"]>;
 }
@@ -1606,6 +1622,15 @@ export interface UpdateProfileResult {
   firstName: Maybe<Scalars["String"]["output"]>;
   id: Maybe<Scalars["ID"]["output"]>;
   lastName: Maybe<Scalars["String"]["output"]>;
+}
+
+export interface UpdateRewardInput {
+  coinCost?: InputMaybe<Scalars["Int"]["input"]>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  isHidden?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+  quantity?: InputMaybe<Scalars["Int"]["input"]>;
+  rewardId: Scalars["String"]["input"];
 }
 
 export interface UpdateTripInput {

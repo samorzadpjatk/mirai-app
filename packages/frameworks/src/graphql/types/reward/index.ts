@@ -41,5 +41,16 @@ export const RedeemRewardInput = builder.inputType("RedeemRewardInput", {
   }),
 });
 
+export const UpdateRewardInput = builder.inputType("UpdateRewardInput", {
+  fields: (t) => ({
+    rewardId: t.string({ required: true }),
+    name: t.string({ required: false }),
+    description: t.string({ required: false }),
+    coinCost: t.int({ required: false }),
+    quantity: t.int({ required: false }),
+    isHidden: t.boolean({ required: false }),
+  }),
+});
+
 import "./queries.js";
 import "./mutations.js";

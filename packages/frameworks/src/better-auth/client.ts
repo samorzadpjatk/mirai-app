@@ -67,7 +67,7 @@ export function createBetterAuthClient(config: BetterAuthClientConfig): BetterAu
       if (!response.ok) {
         // Try to parse error response
         try {
-          const errorData = await response.json();
+          const errorData = await response.json() as { message?: string; error?: string };
           return {
             data: null,
             error: {
@@ -86,7 +86,7 @@ export function createBetterAuthClient(config: BetterAuthClientConfig): BetterAu
 
       // Parse successful response
       try {
-        const data = await response.json();
+        const data = await response.json() as T;
         return { data, error: null };
       } catch {
         // Some endpoints might return empty body

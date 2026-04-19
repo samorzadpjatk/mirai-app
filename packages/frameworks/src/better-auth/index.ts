@@ -19,6 +19,7 @@ import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { emailOTP } from "better-auth/plugins";
 import type { DrizzleDb } from "../drizzle/client";
+import type { IEmailPort } from "@mirai-app/domain";
 import {
   betterAuthUser,
   betterAuthSession,
@@ -34,12 +35,8 @@ export interface BetterAuthFactoryConfig {
   secret?: string;
   /** Base URL for the application (falls back to BETTER_AUTH_URL env var, required) */
   baseUrl?: string;
-  /** Custom callback for sending verification OTP emails */
-  sendVerificationOTP?: (data: {
-    email: string;
-    otp: string;
-    type: "email-verification" | "sign-in" | "forget-password" | "change-email";
-  }) => Promise<void>;
+  /** Email port for sending verification emails (if not provided, uses console fallback) */
+  emailPort?: IEmailPort;
   /** Disable secure cookies (only for development) */
   disableSecureCookies?: boolean;
 }
@@ -50,20 +47,21 @@ export interface BetterAuthFactoryConfig {
 export type BetterAuthInstance = ReturnType<typeof betterAuth>;
 
 /**
- * Default sendVerificationOTP callback (stub)
+ * Creates a sendVerificationOTP callback using the email port
  *
- * This is a placeholder implementation that logs the OTP for development.
- * In production, this should be replaced with an actual email service.
+ * Wraps the Effect-based email port into a Promise-based callback
+ * for Better Auth integration.
  */
-const defaultSendVerificationOTP = async (data: {
-  email: string;
-  otp: string;
-  type: "email-verification" | "sign-in" | "forget-password" | "change-email";
-}): Promise<void> => {
-  console.warn(
-    "[BetterAuth] OTP not sent - no email service configured. " +
-      `Email: ${data.email}, OTP: ${data.otp}, Type: ${data.type}`,
-  );
+const createSendVerificationOTP = (emailPort: IEmailPort) => {
+  return async (data: {
+    email: string;
+    otp: string;
+    type: "email-verification" | "sign-in" | "forget-password" | "change-email";
+  }): Promise<void> => {
+    const { Effect } = await import("effect");
+    const program = emailPort.sendOtp(data);
+    await Effect.runPromise(program);
+  };
 };
 
 /**
@@ -100,8 +98,6 @@ export function createBetterAuth(
 ): BetterAuthInstance {
   const secret = config.secret ?? process.env.BETTER_AUTH_SECRET;
   const baseUrl = config.baseUrl ?? process.env.BETTER_AUTH_URL;
-  const sendVerificationOTP =
-    config.sendVerificationOTP ?? defaultSendVerificationOTP;
 
   if (!secret) {
     throw new Error(
@@ -168,9 +164,18 @@ export function createBetterAuth(
       emailOTP({
         // 5 minute OTP expiry
         expiresIn: 300,
-        // Send OTP callback
+        // Send OTP callback - uses email port if configured, otherwise logs to console
         async sendVerificationOTP({ email, otp, type }) {
-          await sendVerificationOTP({ email, otp, type });
+          if (config.emailPort) {
+            const sendVerificationOTP = createSendVerificationOTP(config.emailPort);
+            await sendVerificationOTP({ email, otp, type });
+          } else {
+            // Fallback: log to console for development
+            console.warn(
+              "[BetterAuth] OTP not sent - no email service configured. " +
+                `Email: ${email}, OTP: ${otp}, Type: ${type}`,
+            );
+          }
         },
       }),
     ],

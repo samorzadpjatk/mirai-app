@@ -7,7 +7,6 @@
 
 import { Layer, Effect } from "effect";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import type { SeaweedFSConfig } from "@mirai-app/adapters";
 
 import { UserPortTag } from "@mirai-app/use-cases/user/ports/UserPort";
@@ -84,8 +83,6 @@ import { DefaultStoragePathResolver } from "@mirai-app/adapters";
 export interface RepositoryLayerConfig {
   /** Drizzle database client */
   db: DrizzleDb;
-  /** Supabase client - required for realtime services */
-  supabase?: SupabaseClient;
   /** SeaweedFS storage configuration (loads from env if not provided) */
   seaweedfsConfig?: SeaweedFSConfig;
 }
@@ -329,7 +326,7 @@ export const makeStorageRepositoryLayer = (config: RepositoryLayerConfig) => {
   );
 
   // Create SeaweedFS storage gateway
-  const storageLayer = Effect.gen(function* () {
+  const storageEffect = Effect.gen(function* () {
     // Use provided config or load from environment
     const resolvedConfig = config.seaweedfsConfig
       ? Effect.succeed(config.seaweedfsConfig)
@@ -337,22 +334,16 @@ export const makeStorageRepositoryLayer = (config: RepositoryLayerConfig) => {
 
     const cfg = yield* resolvedConfig;
 
-    const gateway = new SeaweedFSStorageGateway(
-      cfg.seaweedfs,
-      cfg.tusd,
-      cfg.redis,
-      cfg.ticket,
-    );
+    const gateway = new SeaweedFSStorageGateway(cfg);
 
     return Layer.succeed(StoragePortTag, gateway);
-  }).pipe(
-    Effect.catchAll((error) => {
-      throw new Error(
-        `Failed to create SeaweedFS storage layer: ${error.message}`,
-      );
-    }),
-    Effect.runSync,
-  );
+  }).pipe(Effect.catchAll((error): Effect.Effect<never, never, never> => {
+    throw new Error(
+      `Failed to create SeaweedFS storage layer: ${error.message}`,
+    );
+  }));
+
+  const storageLayer = Effect.runSync(storageEffect) as Layer.Layer<unknown>;
 
   return Layer.merge(pathResolverLayer, storageLayer);
 };

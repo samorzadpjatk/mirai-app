@@ -58,7 +58,7 @@ export interface AuthContext {
 
   /**
    * Access token for operations that need it (optional)
-   * e.g., for Supabase operations requiring JWT
+   * e.g., for external API calls requiring JWT
    */
   readonly accessToken?: string;
 }

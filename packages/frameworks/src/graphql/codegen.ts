@@ -45,6 +45,7 @@ const config: CodegenConfig = {
         enumsAsTypes: true,
         skipTypename: false,
         declarationKind: "interface",
+        banner: "// @ts-nocheck\n// This file is auto-generated. Do not edit manually.\n",
       },
     },
 
@@ -67,6 +68,7 @@ const config: CodegenConfig = {
         skipTypename: false,
         preResolveTypes: true,
         mergeFragmentTypes: true,
+        banner: "// @ts-nocheck\n// This file is auto-generated. Do not edit manually.\n",
       },
     },
 
@@ -90,6 +92,7 @@ const config: CodegenConfig = {
         withComponent: false,
         withHooks: true,
         urqlImportFrom: "@urql/core",
+        banner: "// @ts-nocheck\n// This file is auto-generated. Do not edit manually.\n",
       },
     },
 

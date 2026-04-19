@@ -50,7 +50,7 @@ export function encodeCursor(id: string): string {
 export function decodeCursor(cursor: string): string {
   const decoded = base64Decode(cursor);
   const match = decoded.match(/^id:(.+)$/);
-  if (!match) {
+  if (!match || !match[1]) {
     throw new Error(`Invalid cursor format: ${cursor}`);
   }
   return match[1];
@@ -69,7 +69,7 @@ export function encodeCursorWithTimestamp(id: string, timestamp: Date): string {
 export function decodeCursorWithTimestamp(cursor: string): { id: string; timestamp: Date } {
   const decoded = base64Decode(cursor);
   const match = decoded.match(/^(.+):(.+)$/);
-  if (!match) {
+  if (!match || !match[1] || !match[2]) {
     throw new Error(`Invalid cursor format: ${cursor}`);
   }
   return {
@@ -130,16 +130,18 @@ export interface Connection<T> {
 }
 
 /**
- * Build a Relay connection from items
+ * Build a Relay connection from items with full pagination support
  */
 export function buildConnection<T>({
   items,
   hasMore,
+  hasPrevious,
   getCursor,
   totalCount = null,
 }: {
   items: T[];
   hasMore: boolean;
+  hasPrevious?: boolean;
   getCursor: (item: T) => string;
   totalCount?: number | null;
 }): Connection<T> {
@@ -152,9 +154,9 @@ export function buildConnection<T>({
     edges,
     pageInfo: {
       hasNextPage: hasMore,
-      hasPreviousPage: false, // Forward pagination only for now
-      startCursor: edges.length > 0 ? edges[0].cursor : null,
-      endCursor: edges.length > 0 ? edges[edges.length - 1].cursor : null,
+      hasPreviousPage: hasPrevious ?? false,
+      startCursor: edges.length > 0 ? edges[0]!.cursor : null,
+      endCursor: edges.length > 0 ? edges[edges.length - 1]!.cursor : null,
     },
     totalCount,
   };
@@ -175,6 +177,16 @@ export function clampFirst(first: number | null | undefined, max = 100, defaultV
 }
 
 /**
+ * Clamp last argument for backward pagination
+ */
+export function clampLast(last: number | null | undefined, max = 100, defaultValue = 20): number {
+  if (last === null || last === undefined) {
+    return defaultValue;
+  }
+  return Math.min(Math.max(1, last), max);
+}
+
+/**
  * Pagination arguments for Relay queries
  */
 export interface PaginationArgs {
@@ -185,18 +197,41 @@ export interface PaginationArgs {
 }
 
 /**
- * Validate and normalize pagination arguments
+ * Normalized pagination arguments with direction
  */
-export function normalizePaginationArgs(args: PaginationArgs): {
+export interface NormalizedPaginationArgs {
   limit: number;
   after: string | null;
-} {
-  if (args.last !== null && args.last !== undefined) {
-    throw new Error("Backward pagination (last/before) not yet supported");
+  before: string | null;
+  direction: "forward" | "backward";
+}
+
+/**
+ * Validate and normalize pagination arguments
+ * Supports both forward (first/after) and backward (last/before) pagination
+ */
+export function normalizePaginationArgs(args: PaginationArgs): NormalizedPaginationArgs {
+  const hasForward = args.first !== null && args.first !== undefined;
+  const hasBackward = args.last !== null && args.last !== undefined;
+
+  // Cannot use both forward and backward pagination at the same time
+  if (hasForward && hasBackward) {
+    throw new Error("Cannot use both forward (first/after) and backward (last/before) pagination simultaneously");
+  }
+
+  if (hasBackward) {
+    return {
+      limit: clampLast(args.last),
+      after: null,
+      before: args.before ?? null,
+      direction: "backward",
+    };
   }
 
   return {
     limit: clampFirst(args.first),
     after: args.after ?? null,
+    before: null,
+    direction: "forward",
   };
 }

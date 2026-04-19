@@ -9,8 +9,10 @@
  */
 
 import { describe, it, expect, beforeEach } from "bun:test";
+import { Effect } from "effect";
 import { createBetterAuth, type BetterAuthFactoryConfig } from "./index";
 import type { DrizzleDb } from "../drizzle/client";
+import type { IEmailPort } from "@mirai-app/domain";
 
 // ============================================================================
 // Mock Drizzle Database Factory
@@ -439,10 +441,10 @@ describe("[UNIT] createBetterAuth - Return Type", () => {
 });
 
 // ============================================================================
-// Test Suite: Custom sendVerificationOTP Callback
+// Test Suite: Custom Email Port Configuration
 // ============================================================================
 
-describe("[UNIT] createBetterAuth - Custom sendVerificationOTP", () => {
+describe("[UNIT] createBetterAuth - Custom Email Port", () => {
   let mockDb: DrizzleDb;
   const TEST_BASE_URL = "http://localhost:3000";
 
@@ -450,36 +452,32 @@ describe("[UNIT] createBetterAuth - Custom sendVerificationOTP", () => {
     mockDb = createMockDrizzleDb();
   });
 
-  it("should accept custom sendVerificationOTP callback", () => {
+  it("should accept custom email port for sending OTP", () => {
     // Arrange
-    let capturedData: {
-      email: string;
-      otp: string;
-      type: string;
-    } | null = null;
+    let capturedData: { email: string; otp: string; type: string } | null = null;
 
-    const customCallback = async (data: {
-      email: string;
-      otp: string;
-      type: "email-verification" | "sign-in" | "forget-password" | "change-email";
-    }) => {
-      capturedData = data;
+    const mockEmailPort: IEmailPort = {
+      sendOtp: (data) => {
+        capturedData = data;
+        return Effect.succeed(void 0);
+      },
+      sendEmail: () => Effect.succeed(void 0),
     };
 
     const config: BetterAuthFactoryConfig = {
       secret: "test-secret",
       baseUrl: TEST_BASE_URL,
-      sendVerificationOTP: customCallback,
+      emailPort: mockEmailPort,
     };
 
     // Act
     const auth = createBetterAuth(mockDb, config);
 
-    // Assert - Factory should accept the custom callback
+    // Assert - Factory should accept the email port
     expect(auth).toBeDefined();
   });
 
-  it("should use default callback when custom not provided", () => {
+  it("should use console fallback when email port not provided", () => {
     // Arrange
     const config: BetterAuthFactoryConfig = {
       secret: "test-secret",
@@ -489,7 +487,7 @@ describe("[UNIT] createBetterAuth - Custom sendVerificationOTP", () => {
     // Act
     const auth = createBetterAuth(mockDb, config);
 
-    // Assert - Should create instance with default callback
+    // Assert - Should create instance with console fallback
     expect(auth).toBeDefined();
     expect(auth.options.plugins).toBeDefined();
   });

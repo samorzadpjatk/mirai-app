@@ -18,6 +18,7 @@ import {
   normalizePaginationArgs,
   buildConnection,
   encodeCursor,
+  decodeCursor,
 } from "../../utils/connections.js";
 
 // Import use cases
@@ -27,6 +28,8 @@ import {
   GetTripByIdAdminUseCase,
   GetTripResourcesUseCase,
 } from "@mirai-app/use-cases/trip";
+
+import type { TripDTO } from "@mirai-app/use-cases/trip";
 
 import { TripId, UserId } from "@mirai-app/domain";
 
@@ -44,13 +47,14 @@ builder.queryFields((t) => ({
     resolve: async (_parent, args, context: GraphQLContext) => {
       const auth = requireAuth(context);
       const { limit, after } = normalizePaginationArgs(args);
+      const offset = after ? decodeCursor(after).length : 0;
 
       const useCase = new GetAllTripsUseCase();
       const effect = useCase.execute({
         userId: auth.userId,
         pagination: {
-          first: limit,
-          after: after ?? undefined,
+          limit,
+          offset,
         },
       });
 
@@ -59,10 +63,10 @@ builder.queryFields((t) => ({
       });
 
       return buildConnection({
-        items: result.items,
-        hasMore: result.hasMore,
-        getCursor: (trip) => encodeCursor(trip.id),
-        totalCount: result.totalCount,
+        items: result.trips,
+        hasMore: result.pagination.hasMore,
+        getCursor: (trip: TripDTO) => encodeCursor(trip.id),
+        totalCount: result.pagination.total,
       });
     },
   }),

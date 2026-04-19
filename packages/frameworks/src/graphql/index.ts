@@ -30,7 +30,7 @@
  * const app = new Hono();
  * 
  * // Build app layer with dependencies
- * const appLayer = makeAppLayer({ db, supabase });
+ * const appLayer = makeAppLayer({ db });
  * const runtime = await Effect.runPromise(Layer.toRuntime(appLayer));
  * 
  * // Create Yoga with Effect DI
@@ -90,7 +90,7 @@
  * 2. App extracts token from headers
  *    │
  * 3. App calls AuthN use case (validate token, get user)
- *    ├─ uses AuthNPort → SupabaseAuthGateway
+ *    ├─ uses AuthNPort → BetterAuthGateway
  *    │
  * 4. App builds AuthContext { userId, role }
  *    │

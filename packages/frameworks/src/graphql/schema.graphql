@@ -118,7 +118,9 @@ input BulkAssignUsersInput {
 }
 
 input CastVoteInput {
+  challengeId: String!
   submissionId: String!
+  tripId: String!
   voteType: VoteType!
 }
 
@@ -747,11 +749,11 @@ type Mutation {
   joinGroup(input: JoinGroupInput!): JoinGroupResult
   leaveGroup(groupId: String!): LeaveGroupResult
   markAllNotificationsRead: MarkAllReadResult
-  markNotificationRead(id: String!): Notification
+  markNotificationRead(id: String!): Boolean
   redeemReward(input: RedeemRewardInput!): RedeemedReward
   removeHouseNumber(tripId: String!, userId: String!): ParticipantNumberResult
   removeUserFromGroup(tripId: String!, userId: String!): JoinGroupResult
-  removeVote(submissionId: String!): VoteResult
+  removeVote(input: RemoveVoteInput!): VoteResult
   removeWristNumber(tripId: String!, userId: String!): ParticipantNumberResult
   requestJoinGroup(input: RequestJoinGroupInput!): JoinGroupResult
   respondToJoinRequest(input: RespondJoinRequestInput!): JoinRequestResponse
@@ -764,6 +766,7 @@ type Mutation {
   updateNotificationPreferences(
     input: UpdateNotificationPreferencesInput!
   ): UpdatePreferencesResult
+  updateReward(input: UpdateRewardInput!): Reward
   updateTrip(input: UpdateTripInput!): UpdateTripResult
   updateUserName(input: UpdateUserNameInput!): UpdateUserResult
   updateUserRole(input: UpdateUserRoleInput!): UpdateUserResult
@@ -945,6 +948,12 @@ type RedeemedReward {
   userId: ID
 }
 
+input RemoveVoteInput {
+  challengeId: String!
+  submissionId: String!
+  tripId: String!
+}
+
 input RequestJoinGroupInput {
   groupId: String!
 }
@@ -1056,6 +1065,9 @@ type SubmissionEdge {
 }
 
 type SubmissionResult {
+  challengeId: ID
+  createdAt: DateTime
+  groupId: ID
   id: ID
   status: String
 }
@@ -1369,6 +1381,15 @@ type UpdateProfileResult {
   firstName: String
   id: ID
   lastName: String
+}
+
+input UpdateRewardInput {
+  coinCost: Int
+  description: String
+  isHidden: Boolean
+  name: String
+  quantity: Int
+  rewardId: String!
 }
 
 input UpdateTripInput {

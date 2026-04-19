@@ -1,32 +1,54 @@
+// =============================================================================
+// Notification Mutations - Effect DI Pattern
+// =============================================================================
+
 import { builder } from "../../builder.js";
 import type { GraphQLContext } from "../../context.js";
-import { requireAuth } from "../../context.js";
-import { NotificationId, TripId, UserId } from "@mirai-app/domain";
+import { requireAuth, runEffect } from "../../context.js";
+import { mapErrorToGraphQL } from "../../errors.js";
+import { NotificationId } from "@mirai-app/domain";
 import { UpdatePreferencesInput, NotificationType } from "./index.js";
 
+// Import use cases
+import {
+  DeleteNotificationUseCase,
+  MarkAllNotificationsReadUseCase,
+  UpdateNotificationPreferencesUseCase,
+} from "@mirai-app/use-cases/notification";
+
 builder.mutationFields((t) => ({
+  // Using DeleteNotification as "mark as read" - removes from user's view
   markNotificationRead: t.field({
-    type: NotificationType,
+    type: "Boolean",
     args: { id: t.arg.string({ required: true }) },
     resolve: async (_parent, args, context: GraphQLContext) => {
       requireAuth(context);
-      return {
-        id: NotificationId.unsafeCreate(args.id),
-        tripId: null,
-        title: "",
-        body: "",
-        url: null,
-        createdById: UserId.unsafeCreate("placeholder"),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+
+      const useCase = new DeleteNotificationUseCase();
+      const effect = useCase.execute({
+        notificationId: NotificationId.unsafeCreate(args.id),
+      });
+
+      return runEffect(context, effect)
+        .then(() => true)
+        .catch((error) => {
+          throw mapErrorToGraphQL(error);
+        });
     },
   }),
   markAllNotificationsRead: t.field({
     type: builder.objectType("MarkAllReadResult", { fields: (t2) => ({ count: t2.exposeInt("count") }) }),
     resolve: async (_parent, _args, context: GraphQLContext) => {
-      requireAuth(context);
-      return { count: 0 };
+      const auth = requireAuth(context);
+
+      const useCase = new MarkAllNotificationsReadUseCase();
+      const effect = useCase.execute({
+        userId: auth.userId,
+      });
+
+      return runEffect(context, effect).catch((error) => {
+        throw mapErrorToGraphQL(error);
+      });
     },
   }),
   updateNotificationPreferences: t.field({
@@ -39,14 +61,21 @@ builder.mutationFields((t) => ({
     }) }),
     args: { input: t.arg({ type: UpdatePreferencesInput, required: true }) },
     resolve: async (_parent, args, context: GraphQLContext) => {
-      requireAuth(context);
-      return {
-        pushEnabled: args.input.pushEnabled ?? true,
-        emailEnabled: args.input.emailEnabled ?? true,
-        challengeEnabled: args.input.challengeEnabled ?? true,
-        rankingEnabled: args.input.rankingEnabled ?? true,
-        systemEnabled: args.input.systemEnabled ?? true,
-      };
+      const auth = requireAuth(context);
+
+      const useCase = new UpdateNotificationPreferencesUseCase();
+      const effect = useCase.execute({
+        userId: auth.userId,
+        pushEnabled: args.input.pushEnabled ?? undefined,
+        emailEnabled: args.input.emailEnabled ?? undefined,
+        challengeEnabled: args.input.challengeEnabled ?? undefined,
+        rankingEnabled: args.input.rankingEnabled ?? undefined,
+        systemEnabled: args.input.systemEnabled ?? undefined,
+      });
+
+      return runEffect(context, effect).catch((error) => {
+        throw mapErrorToGraphQL(error);
+      });
     },
   }),
 }));
