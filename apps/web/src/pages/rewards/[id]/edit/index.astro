@@ -1,0 +1,13 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+
+interface Params {
+  id: string
+}
+
+export const prerender = false
+
+const { id } = Astro.params as Params
+---
+
+<AdminLayout title="Edit Reward" page="rewards-edit" pageProps={{ rewardId: id }} />

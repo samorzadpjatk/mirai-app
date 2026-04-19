@@ -1,0 +1,63 @@
+---
+import { ClientRouter } from 'astro:transitions'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = 'Admin Panel',
+  description = 'MIRAI Admin Dashboard',
+} = Astro.props
+
+// Get initial theme from cookie or default to light
+const themeCookie = Astro.cookies.get('theme')
+const initialTheme = themeCookie?.value ?? 'light'
+---
+
+<!doctype html>
+<html lang="en" data-theme={initialTheme}>
+  <head>
+    <ClientRouter />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} | MIRAI Admin</title>
+
+    {/* Critical CSS for theme to prevent flash */}
+    <style is:inline>
+      /* Prevent FOUC by setting background immediately */
+      html[data-theme='light'] {
+        background-color: #ffffff;
+        color: #1b2828;
+      }
+      html[data-theme='dark'] {
+        background-color: #0f1a1a;
+        color: #ffffff;
+      }
+      /* Ensure body fills viewport */
+      html,
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+
+    {/* Theme initialization script - runs before hydration */}
+    <script is:inline define:vars={{ initialTheme }}>
+      // Apply theme immediately to prevent flash
+      ;(function () {
+        const theme =
+          document.documentElement.getAttribute('data-theme') || 'light'
+        document.documentElement.classList.add(`t_${theme}`)
+      })()
+    </script>
+  </head>
+  <body class="antialiased">
+    <slot />
+  </body>
+</html>

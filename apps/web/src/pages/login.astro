@@ -1,0 +1,14 @@
+---
+import Layout from '../layouts/Layout.astro'
+import { LoginApp } from '../components/LoginApp'
+
+export const prerender = false
+---
+
+<Layout title="Admin Login" description="Sign in to MIRAI Admin Panel">
+  <main class="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
+    <div class="w-full max-w-md">
+      <LoginApp client:only="react" />
+    </div>
+  </main>
+</Layout>

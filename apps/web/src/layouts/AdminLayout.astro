@@ -1,0 +1,33 @@
+---
+import Layout from './Layout.astro'
+import GlobalProviders from '../components/providers/GlobalProviders'
+
+interface Props {
+  title?: string
+  description?: string
+  page: string
+  pageProps?: Record<string, string>
+}
+
+const {
+  title = 'Dashboard',
+  description = 'Mirai Admin Dashboard',
+  page,
+  pageProps = {},
+} = Astro.props
+const currentPath = Astro.url.pathname
+---
+
+<Layout title={title} description={description}>
+  <!--
+    Single React island: providers, shell chrome, AND page content live in
+    the same React tree so every component can access TripProvider context.
+  -->
+  <GlobalProviders
+    client:load
+    transition:persist
+    currentPath={currentPath}
+    page={page}
+    pageProps={pageProps}
+  />
+</Layout>

@@ -40,12 +40,36 @@ export default defineConfig({
         "@tamagui/core",
         "@tamagui/config",
         "react-native-web",
+        // React integration - optimized for hydration
+        "react",
+        "react-dom",
+        "react-dom/client",
+        // GraphQL client dependencies
+        "urql",
+        "@urql/core",
+        "graphql",
+        "graphql-ws",
+        "wonka",
+        // Validation
+        "zod",
+        // UI utilities
+        "react-hot-toast",
+        "react-icons",
+        // Effect for complex operations
+        "effect",
       ],
       exclude: ["react-native"],
+      esbuildOptions: {
+        target: "es2022",
+      },
     },
     ssr: {
       // Ensure Tamagui packages are properly handled for SSR
       noExternal: ["tamagui", "@tamagui/core", "@tamagui/web"],
+    },
+    build: {
+      target: "es2022",
+      sourcemap: true,
     },
   },
 });

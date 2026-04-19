@@ -4,12 +4,14 @@
     "baseUrl": ".",
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM"],
-    "types": ["astro/client", "bun"],
+    "types": ["astro/client", "bun", "@testing-library/jest-dom"],
     "paths": {
       "@/*": ["./src/*"],
       "@mirai-app/ui": ["../../packages/ui/src/index.ts"],
-      "@mirai-app/ui/*": ["../../packages/ui/src/*"]
+      "@mirai-app/ui/*": ["../../packages/ui/src/*"],
+      "@mirai-app/graphql-client": ["../../packages/frameworks/src/graphql/client/index.ts"],
+      "@mirai-app/domain": ["../../packages/domain/src/index.ts"]
     }
   },
-  "include": ["src/**/*", ".astro/types.d.ts", "test-setup.ts", "*.ts"]
+  "include": ["env.d.ts", "src/**/*", ".astro/types.d.ts", "test-setup.ts", "*.ts"]
 }
