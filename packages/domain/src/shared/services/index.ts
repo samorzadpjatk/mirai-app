@@ -90,8 +90,7 @@ export interface AccessCheckRequest {
  * Interface for authentication operations
  *
  * This interface defines the contract for authentication and authorization
- * operations. It can be implemented by Supabase Auth, Better Auth, or other
- * authentication providers.
+ * operations. It is implemented by Better Auth in the adapters layer.
  *
  * PERFORMANCE TARGET: < 50ms for local operations (excluding external auth service calls)
  */
@@ -209,7 +208,7 @@ export interface CreateSignedDownloadUrlResult {
 }
 
 /**
- * Interface for storage operations via Supabase Storage
+ * Interface for storage operations
  */
 export interface IStoragePort {
   /** Upload a file to storage */
@@ -275,7 +274,7 @@ export interface BanStatus {
 
 /**
  * Auth Service Port
- * Interface for interacting with the external authentication service (Supabase Auth)
+ * Interface for interacting with the external authentication service (Better Auth)
  */
 export interface IAuthServicePort {
   getCurrentUserBanStatus(
@@ -336,3 +335,6 @@ export {
   makeThrottleService,
   type Coordinates,
 } from "./ThrottleService";
+
+// Email service exports
+export type { IEmailPort, SendEmailOtpInput, EmailOtpType } from "./email";

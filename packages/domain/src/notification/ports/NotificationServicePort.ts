@@ -53,6 +53,13 @@ export interface INotificationServicePort {
   sendRankingUpdate(params: {
     tripId: string;
     createdById: string;
+    groups: Array<{
+      id: string;
+      name: string;
+      coins: number;
+      rank: number;
+    }>;
+    userIds: string[];
   }): Effect.Effect<SendNotificationResult, IPortError, unknown>;
   createCoinsAddedNotification(
     groupName: string,

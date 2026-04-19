@@ -4,7 +4,7 @@ import type { IPortError } from "../../shared/errors/ports";
 /**
  * Migration Domain Errors
  *
- * Errors specific to the user migration process from Supabase to Better Auth.
+ * Errors specific to the user migration process from legacy auth to Better Auth.
  * These errors handle edge cases in the migration flow including:
  * - Invalid or expired OTP codes
  * - Users not found in source system
@@ -28,7 +28,7 @@ export class InvalidOtpError
 }
 
 /**
- * Error thrown when a user cannot be found in the source auth system (Supabase).
+ * Error thrown when a user cannot be found in the source auth system.
  */
 export class UserNotFoundInSourceError
   extends Data.TaggedError("UserNotFoundInSourceError")<{

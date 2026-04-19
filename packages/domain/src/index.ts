@@ -16,6 +16,9 @@ export type {
   IStoragePathResolverPort,
   ResolvedStoragePath,
   StorageBucket,
+  IEmailPort,
+  SendEmailOtpInput,
+  EmailOtpType,
 } from "./shared/services";
 export { makeThrottleService, type Coordinates } from "./shared/services";
 

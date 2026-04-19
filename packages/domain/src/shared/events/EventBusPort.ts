@@ -6,9 +6,8 @@ import type { IDomainEvent } from "./DomainEvent";
  * IEventBusPort - Transport-agnostic event bus contract
  *
  * Defines the interface for publishing and subscribing to domain events.
- * Implementations can use Supabase Realtime, Redis, PostgreSQL NOTIFY, or
- * in-memory mechanisms. The abstraction ensures business logic remains
- * independent of transport details.
+ * Implementations can use Redis, PostgreSQL NOTIFY, or in-memory mechanisms.
+ * The abstraction ensures business logic remains independent of transport details.
  *
  * Design decisions:
  * - Generic publish/subscribe with type-safe event handling

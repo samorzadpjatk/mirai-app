@@ -9,7 +9,7 @@ import type { NotificationScheduleId } from "../value-objects/NotificationId";
 export interface NotificationSchedule {
   id: NotificationScheduleId;
   name: string;
-  tripId: TripId | null;
+  tripId: TripId;
   notificationType: string;
   notificationTitle: string;
   notificationBody: string;

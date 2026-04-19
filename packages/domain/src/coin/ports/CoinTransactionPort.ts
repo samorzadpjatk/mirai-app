@@ -1,13 +1,14 @@
 import type { Effect } from "effect";
 import type { IPortError } from "../../shared/errors/ports";
 import type { GroupId } from "../../group/value-objects/GroupId";
+import type { CoinTransactionId } from "../../group/value-objects/CoinTransactionId";
 
 /**
  * CoinTransaction DTO (defined in use-cases, referenced here)
  * This is the persistence DTO used by adapters
  */
 export interface CoinTransactionDTO {
-  id: string;
+  id: CoinTransactionId;
   tripId: string;
   groupId: string;
   amount: number;
@@ -37,7 +38,7 @@ export interface ICoinTransactionPort {
    * in the Effect context. Financial data requires strict auth verification.
    */
   findById(
-    id: string,
+    id: CoinTransactionId,
   ): Effect.Effect<CoinTransactionDTO | null, IPortError, unknown>;
 
   /**
@@ -102,7 +103,7 @@ export interface ICoinTransactionPort {
    * Note: Authorization is handled via AuthContextTag and AuthZPortTag
    * in the Effect context. Financial data requires strict auth verification.
    */
-  delete(id: string): Effect.Effect<void, IPortError, unknown>;
+  delete(id: CoinTransactionId): Effect.Effect<void, IPortError, unknown>;
 
   /**
    * Sum transactions by group ID

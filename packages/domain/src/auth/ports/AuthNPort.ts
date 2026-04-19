@@ -6,7 +6,7 @@ import type { IPortError } from "../../shared/errors/ports";
  *
  * Defines the contract for authentication operations (identity verification).
  * This includes sign-in, sign-up, sign-out, and session management.
- * Implemented by SupabaseAuthGateway in the adapters layer.
+ * Implemented by BetterAuthGateway in the adapters layer.
  *
  * Note: Authorization (permission checking) is handled by IAuthZPort.
  *

@@ -4,13 +4,13 @@ import type { IPortError } from "../../shared/errors/ports";
 /**
  * Auth provider values for tracking migration status
  */
-export type AuthProvider = "supabase" | "better-auth" | "migrating";
+export type AuthProvider = "better-auth";
 
 /**
  * Migration status for a user
  */
 export interface MigrationStatus {
-  /** Current auth provider for the user */
+  /** Current auth provider for the user - all users are now on Better Auth */
   authProvider: AuthProvider;
 
   /** When the migration started (if in progress) */
@@ -22,7 +22,7 @@ export interface MigrationStatus {
   /** Better Auth user ID (if migrated) */
   betterAuthUserId?: string;
 
-  /** Whether the user can rollback to Supabase */
+  /** Whether the user can rollback - always false as migration is complete */
   canRollback: boolean;
 }
 
@@ -68,12 +68,8 @@ export interface VerifyMigrationOtpInput {
 /**
  * Port for user migration operations
  *
- * Defines the contract for migrating users from Supabase Auth to Better Auth.
- * Implementations handle:
- * - OTP generation and sending
- * - OTP verification
- * - Better Auth account creation
- * - Migration status tracking
+ * Legacy port for migration operations. Migration from legacy auth to Better Auth
+ * is now complete. This port is retained for reference and status tracking.
  */
 export interface IUserMigrationPort {
   /**
@@ -109,7 +105,7 @@ export interface IUserMigrationPort {
   ): Effect.Effect<MigrationStatus | null, IPortError, never>;
 
   /**
-   * Check if a user exists in the source (Supabase) auth system
+   * Check if a user exists in the source auth system
    *
    * @param email - User email to check
    * @returns Effect with boolean indicating existence
@@ -119,12 +115,13 @@ export interface IUserMigrationPort {
   ): Effect.Effect<boolean, IPortError, never>;
 
   /**
-   * Rollback a migration (re-enable Supabase access)
+   * Rollback a migration (no longer supported)
    *
-   * This allows users to continue using Supabase Auth if Better Auth migration fails.
+   * Migration rollback is no longer supported as all users have been
+   * permanently migrated to Better Auth.
    *
    * @param userId - User ID to rollback
-   * @returns Effect that succeeds when rollback is complete
+   * @returns Effect that fails with not supported error
    */
   rollbackMigration(userId: string): Effect.Effect<void, IPortError, never>;
 }
@@ -136,7 +133,7 @@ export interface IBatchMigrationPort {
   /**
    * Get list of users eligible for migration
    *
-   * @returns Effect with list of user emails
+   * @returns Effect with list of user emails (always empty as migration is complete)
    */
   getEligibleUsers(): Effect.Effect<string[], IPortError, never>;
 

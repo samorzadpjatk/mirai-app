@@ -4,6 +4,9 @@ import {
 } from "../value-objects/ActivityId";
 import type { TripId } from "../../trip/value-objects/TripId";
 import type { UserId } from "../../user/value-objects/UserId";
+import type { ChallengeId } from "../../challenge/value-objects/ChallengeId";
+import type { GroupId } from "../../group/value-objects/GroupId";
+import type { ChallengeSubmissionId } from "../../challenge/value-objects/ChallengeId";
 import { ValidationError } from "../../shared/errors/domain-errors";
 import { Effect } from "effect";
 
@@ -37,6 +40,10 @@ export class ActivityFeed {
     readonly createdByAdmin: UserId | null,
     readonly createdAt: Date,
     readonly updatedAt: Date,
+    // Foreign keys for activity enrichment
+    readonly submissionId: ChallengeSubmissionId | null,
+    readonly challengeId: ChallengeId | null,
+    readonly groupId: GroupId | null,
   ) {}
 
   /**
@@ -58,6 +65,10 @@ export class ActivityFeed {
     createdByAdmin?: UserId | null;
     createdAt: Date;
     updatedAt: Date;
+    // Foreign keys for activity enrichment (optional)
+    submissionId?: ChallengeSubmissionId | null;
+    challengeId?: ChallengeId | null;
+    groupId?: GroupId | null;
   }): Effect.Effect<ActivityFeed, ValidationError, never> {
     const trimmedTitle = props.title.trim();
 
@@ -100,6 +111,9 @@ export class ActivityFeed {
         props.createdByAdmin ?? null,
         props.createdAt,
         props.updatedAt,
+        props.submissionId ?? null,
+        props.challengeId ?? null,
+        props.groupId ?? null,
       ),
     );
   }
@@ -123,6 +137,9 @@ export class ActivityFeed {
       this.createdByAdmin,
       this.createdAt,
       new Date(),
+      this.submissionId,
+      this.challengeId,
+      this.groupId,
     );
   }
 
@@ -145,6 +162,9 @@ export class ActivityFeed {
       this.createdByAdmin,
       this.createdAt,
       new Date(),
+      this.submissionId,
+      this.challengeId,
+      this.groupId,
     );
   }
 
@@ -167,6 +187,9 @@ export class ActivityFeed {
       this.createdByAdmin,
       this.createdAt,
       new Date(),
+      this.submissionId,
+      this.challengeId,
+      this.groupId,
     );
   }
 
@@ -189,6 +212,9 @@ export class ActivityFeed {
       this.createdByAdmin,
       this.createdAt,
       new Date(),
+      this.submissionId,
+      this.challengeId,
+      this.groupId,
     );
   }
 

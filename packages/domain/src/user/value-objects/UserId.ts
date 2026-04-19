@@ -9,7 +9,7 @@ import {
 export const UserId = createBrandedId("UserId", { validate: isValidUUID });
 export type UserId = BrandedId<"UserId">;
 
-// AuthUserId is from Supabase (UUID)
+// AuthUserId from auth provider (UUID)
 export const AuthUserId = createBrandedId("AuthUserId", {
   validate: isValidUUID,
 });
