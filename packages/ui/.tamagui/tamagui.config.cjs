@@ -6997,8 +6997,10 @@ var animationConfigs = {
   },
   // Quick fade for overlays and backdrops
   fade: {
-    type: "timing",
-    duration: 200
+    type: "spring",
+    damping: 30,
+    mass: 1,
+    stiffness: 400
   },
   // Scale animation for pop-in effects
   scale: {

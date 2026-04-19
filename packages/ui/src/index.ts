@@ -1,21 +1,19 @@
 // Main barrel export for @mirai-app/ui
 // Re-exports all Tamagui components and custom UI components
 
-// Re-export Tamagui core primitives
+// Re-export Tamagui core primitives (excluding those we override)
 export {
-  // Base components (Text is exported from ./components with variants)
+  // Base components
   View,
   Stack,
   XStack,
   YStack,
   ZStack,
-  Button,
-  Input,
+  // Note: Button, Input, Card are exported from ./components below
   TextArea,
   Select,
   Sheet,
   Spinner,
-  Card,
   // Theming
   TamaguiProvider,
   Theme,
@@ -35,6 +33,7 @@ export {
 export { config } from "../tamagui.config";
 
 // Export custom components (Phase 2: Tier 1 primitives)
+// These override Tamagui's default components with our custom implementations
 export * from "./components";
 
 // Export theme tokens (colorTokens for native app compatibility)

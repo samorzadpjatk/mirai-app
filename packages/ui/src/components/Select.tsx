@@ -428,7 +428,7 @@ SelectTrigger.displayName = "Select.Trigger";
  * </Select>
  * ```
  */
-const Select: React.FC<SelectProps> = ({
+function Select({
   value,
   defaultValue,
   onValueChange,
@@ -446,7 +446,7 @@ const Select: React.FC<SelectProps> = ({
   children,
   id,
   nativeID,
-}) => {
+}: SelectProps) {
   const sizeStyles = SIZE_STYLES[size];
   const hasError = Boolean(error);
 

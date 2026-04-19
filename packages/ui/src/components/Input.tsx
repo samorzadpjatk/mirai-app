@@ -51,7 +51,7 @@ export type InputVariant = "outline" | "filled" | "underlined";
 /**
  * Props for the Input component
  */
-export interface InputProps extends Omit<TamaguiInputProps, "size"> {
+export interface InputProps extends Omit<TamaguiInputProps, "size" | "onChange" | "onBlur"> {
   /** Input size variant */
   size?: InputSize;
   /** Visual style variant */
@@ -68,6 +68,22 @@ export interface InputProps extends Omit<TamaguiInputProps, "size"> {
   disabled?: boolean;
   /** Custom ID for label association */
   id?: string;
+  /** Name attribute for form integration */
+  name?: string;
+  /** HTML input type */
+  type?: string;
+  /** Minimum value (for number inputs) */
+  min?: number | string;
+  /** Maximum value (for number inputs) */
+  max?: number | string;
+  /** Step value (for number inputs) */
+  step?: string | number;
+  /** Callback when input value changes (string-based for direct usage) */
+  onChangeText?: (value: string) => void;
+  /** Callback when input changes (event-based for react-hook-form compatibility) */
+  onChange?: (e: { target: { value: string; name?: string }; type?: string }) => void;
+  /** Callback when input loses focus (for react-hook-form compatibility) */
+  onBlur?: (event: { target: { value: string; name?: string }; type?: string }) => void;
 }
 
 /**
@@ -273,6 +289,10 @@ export const Input = forwardRef<
       id,
       size = "md",
       variant = "outline",
+      onChange,
+      onChangeText,
+      onBlur,
+      name,
       ...inputProps
     },
     ref,
@@ -284,6 +304,18 @@ export const Input = forwardRef<
 
     // Determine which descriptive text to announce (error takes precedence)
     const describedBy = error ? errorId : helperText ? helperId : undefined;
+
+    // Handle both react-hook-form's onChange (event-based) and direct onChangeText (string-based)
+    const handleChangeText = (value: string) => {
+      // Call onChangeText if provided (direct string handler)
+      if (onChangeText) {
+        onChangeText(value);
+      }
+      // Call onChange if provided (react-hook-form event handler)
+      if (onChange) {
+        onChange({ target: { value, name } });
+      }
+    };
 
     return (
       <InputContainer disabled={disabled}>
@@ -314,6 +346,8 @@ export const Input = forwardRef<
           aria-describedby={describedBy}
           aria-required={required}
           editable={!disabled}
+          onChangeText={handleChangeText}
+          onBlur={onBlur as (e: unknown) => void}
           {...inputProps}
         />
 
