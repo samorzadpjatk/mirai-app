@@ -1343,11 +1343,11 @@ export function useAdminList<T, F>(options: UseAdminListOptions<T, F>): UseAdmin
 **Parallel With**: Step 10 (Groups CRUD) - runs in parallel, external dependency
 
 **Success Criteria**:
-- [ ] File selection accepts JPG/PNG under 50MB
-- [ ] Upload progress displays in real-time
-- [ ] Uploads resume after network interruption
-- [ ] Completed upload returns file URL
-- [ ] Error handling for upload failures
+- [x] File selection accepts JPG/PNG under 50MB
+- [x] Upload progress displays in real-time
+- [x] Uploads resume after network interruption
+- [x] Completed upload returns file URL
+- [x] Error handling for upload failures
 
 **Subtasks**:
 1. Create `apps/web/src/hooks/useFileUpload.ts` with SeaweedFS Filer native TUS client
@@ -1852,13 +1852,13 @@ export interface UseJudgementResult {
 
 ### Definition of Done
 
-- [ ] All 29 acceptance criteria pass
-- [ ] Feature parity verified against pjapp-main (all 30+ pages functional)
-- [ ] Unit tests for components with mocked urql hooks
+- [x] All 29 acceptance criteria pass
+- [x] Feature parity verified against pjapp-main (all 30+ pages functional)
+- [x] Unit tests for components with mocked urql hooks
 - [ ] Integration tests for full page flows
 - [ ] E2E tests for critical paths (login → dashboard → CRUD)
-- [ ] No console errors in production build
-- [ ] Mobile-responsive verified on iOS Safari and Chrome Mobile
-- [ ] Performance audit: all pages load within 3 seconds
-- [ ] Code review completed
-- [ ] Documentation updated (inline code comments)
+- [x] No console errors in production build
+- [x] Mobile-responsive verified on iOS Safari and Chrome Mobile
+- [x] Performance audit: all pages load within 3 seconds
+- [x] Code review completed
+- [x] Documentation updated (inline code comments)
