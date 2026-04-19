@@ -1,8 +1,5 @@
 import { Effect } from "effect";
-import type {
-  RewardId,
-  ValidationError} from "@mirai-app/domain";
-import { Reward, RewardId as RewardIdFactory } from "@mirai-app/domain";
+import { Reward, RewardId } from "@mirai-app/domain";
 import { RewardPortTag } from "../ports/RewardPort";
 import type { UpdateRewardResultDTO } from "../dto/RewardDTOs";
 import {
@@ -19,8 +16,8 @@ export interface UpdateRewardInput {
   description?: string;
   availableQuantity?: number;
   images?: string[];
-  image?: string | null;
   coinCost?: number;
+  isHidden?: boolean;
 }
 
 /**
@@ -33,9 +30,8 @@ export class UpdateRewardUseCase {
     return Effect.gen(function* () {
       const rewardPort = yield* RewardPortTag;
 
-      const rewardId = RewardIdFactory.unsafeCreate(input.rewardId);
-
-      // Find existing reward
+      // Find the reward
+      const rewardId = RewardId.create(input.rewardId);
       const existingReward = yield* rewardPort.findById(rewardId);
 
       if (!existingReward) {
@@ -45,19 +41,39 @@ export class UpdateRewardUseCase {
       }
 
       // Validate inputs if provided
-      if (input.name !== undefined && input.name.trim().length === 0) {
-        return yield* Effect.fail(
-          new RewardValidationError({
-            field: "name",
-            message: "Reward name cannot be empty",
-          }),
-        );
+      if (input.name !== undefined) {
+        const trimmedName = input.name.trim();
+        if (trimmedName.length === 0) {
+          return yield* Effect.fail(
+            new RewardValidationError({
+              field: "name",
+              message: "Reward name is required",
+            }),
+          );
+        }
+        if (trimmedName.length > 100) {
+          return yield* Effect.fail(
+            new RewardValidationError({
+              field: "name",
+              message: "Reward name must be at most 100 characters",
+            }),
+          );
+        }
       }
 
-      if (
-        input.availableQuantity !== undefined &&
-        input.availableQuantity < 0
-      ) {
+      if (input.description !== undefined) {
+        const trimmedDescription = input.description.trim();
+        if (trimmedDescription.length === 0) {
+          return yield* Effect.fail(
+            new RewardValidationError({
+              field: "description",
+              message: "Reward description is required",
+            }),
+          );
+        }
+      }
+
+      if (input.availableQuantity !== undefined && input.availableQuantity < 0) {
         return yield* Effect.fail(
           new RewardValidationError({
             field: "availableQuantity",
@@ -75,55 +91,47 @@ export class UpdateRewardUseCase {
         );
       }
 
-      // Determine image value
+      // Serialize images if provided
       let image: string | null = existingReward.image;
-      if (input.images !== undefined) {
-        // Images array takes precedence
-        if (input.images.length > 0) {
-          image =
-            input.images.length === 1
-              ? input.images[0]!
-              : JSON.stringify(input.images);
-        } else {
-          image = null;
-        }
-      } else if (input.image !== undefined) {
-        // Single image fallback
-        image = input.image ?? null;
+      if (input.images !== undefined && input.images !== null) {
+        image =
+          input.images.length > 0
+            ? input.images.length === 1
+              ? (input.images[0] ?? null)
+              : JSON.stringify(input.images)
+            : null;
       }
 
-      // Create updated reward
-      const updatedEffect = Reward.create({
+      // Create updated reward entity using factory
+      const updatedRewardEffect = Reward.create({
         id: existingReward.id,
+        tripId: existingReward.tripId,
         name: input.name?.trim() ?? existingReward.name,
-        description:
-          input.description !== undefined
-            ? input.description.trim()
-            : existingReward.description,
-        availableQuantity:
-          input.availableQuantity ?? existingReward.availableQuantity,
-        isHidden: existingReward.isHidden,
+        description: input.description?.trim() ?? existingReward.description,
+        availableQuantity: input.availableQuantity ?? existingReward.availableQuantity,
+        isHidden: input.isHidden ?? existingReward.isHidden,
         image,
         coinCost: input.coinCost ?? existingReward.coinCost,
-        tripId: existingReward.tripId,
         createdById: existingReward.createdById,
         createdAt: existingReward.createdAt,
         updatedAt: new Date(),
       });
 
-      const updatedReward = yield* updatedEffect;
+      const updatedReward = yield* updatedRewardEffect;
 
       // Save to repository
       const savedReward = yield* rewardPort.update(updatedReward);
 
       return {
         id: savedReward.id,
+        tripId: savedReward.tripId,
         name: savedReward.name,
         description: savedReward.description,
         availableQuantity: savedReward.availableQuantity,
+        isHidden: savedReward.isHidden,
         coinCost: savedReward.coinCost,
         updatedAt: savedReward.updatedAt,
-      };
+      } satisfies UpdateRewardResultDTO;
     });
   }
 }

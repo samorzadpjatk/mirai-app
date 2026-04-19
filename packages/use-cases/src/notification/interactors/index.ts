@@ -54,6 +54,16 @@ export type { RetryNotificationInput } from "./RetryNotification";
 export { DeleteNotificationUseCase } from "./DeleteNotification";
 export type { DeleteNotificationInput } from "./DeleteNotification";
 
+// Notification preferences interactors
+export { MarkAllNotificationsReadUseCase } from "./MarkAllNotificationsRead";
+export type { MarkAllNotificationsReadInput } from "./MarkAllNotificationsRead";
+
+export { GetNotificationPreferencesUseCase } from "./GetNotificationPreferences";
+export type { GetNotificationPreferencesInput } from "./GetNotificationPreferences";
+
+export { UpdateNotificationPreferencesUseCase } from "./UpdateNotificationPreferences";
+export type { UpdateNotificationPreferencesInput } from "./UpdateNotificationPreferences";
+
 // Schedule interactors
 export { GetAllSchedulesUseCase } from "./schedule/GetAllSchedules";
 export type { GetAllSchedulesInput } from "./schedule/GetAllSchedules";

@@ -47,9 +47,7 @@ export class GetAllSchedulesUseCase {
         if (schedule.createdById) {
           userIds.add(UserId.toString(schedule.createdById));
         }
-        if (schedule.tripId) {
-          tripIds.add(TripId.toString(schedule.tripId));
-        }
+        tripIds.add(TripId.toString(schedule.tripId));
       }
 
       // Fetch all related users and trips in parallel
@@ -96,9 +94,9 @@ export class GetAllSchedulesUseCase {
       // Map schedules to fully populated DTOs
       const schedules = result.schedules.map((schedule, index) => {
         const createdById = UserId.toString(schedule.createdById);
-        const tripId = schedule.tripId ? TripId.toString(schedule.tripId) : null;
+        const tripId = TripId.toString(schedule.tripId);
         const user = userMap.get(createdById);
-        const trip = tripId ? tripMap.get(tripId) : null;
+        const trip = tripMap.get(tripId);
         const executionCountResult = executionCountResults[index];
         const executionCount =
           executionCountResult && Either.isRight(executionCountResult)

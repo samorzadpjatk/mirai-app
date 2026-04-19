@@ -131,6 +131,8 @@ export class ReviewSubmissionUseCase {
 
       return {
         id: saved.id,
+        challengeId: submission.challengeId,
+        groupId: submission.groupId,
         status: saved.status,
         awardedPoints: saved.awardedPoints ?? 0,
         bonusPoints: saved.bonusPoints ?? 0,

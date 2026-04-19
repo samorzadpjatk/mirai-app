@@ -97,9 +97,11 @@ export interface CreateRewardResultDTO {
  */
 export interface UpdateRewardResultDTO {
   id: RewardId;
+  tripId: TripId;
   name: string;
   description: string;
   availableQuantity: number;
+  isHidden: boolean;
   coinCost: number;
   updatedAt: Date;
 }
@@ -126,4 +128,38 @@ export interface PurchaseStatusChangeDTO {
   previousStatus: RewardPurchaseStatus;
   newStatus: RewardPurchaseStatus;
   changedAt: Date;
+}
+
+/**
+ * DTO for paginated rewards with availability
+ */
+export interface PaginatedRewardsDTO {
+  rewards: RewardWithAvailabilityDTO[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    hasNextPage: boolean;
+    currentPage: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+  };
+}
+
+/**
+ * DTO for paginated reward purchases
+ */
+export interface PaginatedPurchasesDTO {
+  purchases: RewardPurchaseDTO[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    hasNextPage: boolean;
+    currentPage: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+  };
 }

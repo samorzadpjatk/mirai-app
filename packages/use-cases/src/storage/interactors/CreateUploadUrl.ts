@@ -22,7 +22,7 @@ export interface CreateUploadUrlInput {
 /**
  * Create Upload URL Use Case
  *
- * Creates a signed upload URL for resumable file uploads.
+ * Creates a signed upload URL for resumable file uploads using SeaweedFS.
  */
 export class CreateUploadUrlUseCase {
   execute(input: CreateUploadUrlInput) {
@@ -48,6 +48,7 @@ export class CreateUploadUrlUseCase {
         bucket: resolvedPath.bucket,
         path: resolvedPath.path,
         upsert: input.upsert ?? false,
+        expiresInSeconds: 3600, // 1 hour default expiration
       });
 
       return {
@@ -62,7 +63,7 @@ export class CreateUploadUrlUseCase {
 }
 
 /**
- * Get resumable upload endpoint URL
+ * Get resumable upload endpoint URL for SeaweedFS
  */
 function getResumableEndpoint(): Effect.Effect<
   string,
@@ -70,26 +71,23 @@ function getResumableEndpoint(): Effect.Effect<
   never
 > {
   return Effect.gen(function* () {
-    const baseUrl = process.env.SUPABASE_URL;
+    const baseUrl = process.env.SEAWEEDFS_ENDPOINT;
 
     if (!baseUrl) {
       return yield* Effect.fail(
-        new StorageConfigurationError({ configKey: "SUPABASE_URL" }),
+        new StorageConfigurationError({ configKey: "SEAWEEDFS_ENDPOINT" }),
       );
     }
 
+    // SeaweedFS Filer TUS endpoint
     try {
       const url = new URL(baseUrl);
-      const host = url.host;
-      if (host.endsWith(".supabase.co") && !host.includes(".storage.")) {
-        url.host = host.replace(".supabase.co", ".storage.supabase.co");
-      }
-      url.pathname = "/storage/v1/upload/resumable/sign";
+      url.pathname = "/tus";
       url.search = "";
       url.hash = "";
       return url.toString();
     } catch {
-      return `${baseUrl.replace(/\/$/, "")}/storage/v1/upload/resumable/sign`;
+      return `${baseUrl.replace(/\/$/, "")}/tus`;
     }
   });
 }

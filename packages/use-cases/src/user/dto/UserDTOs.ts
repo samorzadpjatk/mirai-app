@@ -150,3 +150,21 @@ export interface DeleteUserResultDTO {
 export interface BanUserResultDTO {
   bannedUntil: string;
 }
+
+/**
+ * DTO for paginated users with trip info
+ */
+export interface PaginatedUsersDTO {
+  users: UserWithTripInfoDTO[];
+  pagination: {
+    total: number;
+    totalCount: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    hasNextPage: boolean;
+    currentPage: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+  };
+}

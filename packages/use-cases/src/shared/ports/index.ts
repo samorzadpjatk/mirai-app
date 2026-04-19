@@ -1,5 +1,10 @@
 import { Context } from "effect";
-import type { IAuthPort, IEventBusPort, IStoragePort } from "@mirai-app/domain";
+import type {
+  IAuthPort,
+  IEventBusPort,
+  IStoragePort,
+  IEmailPort,
+} from "@mirai-app/domain";
 
 /**
  * Auth Port Tag - Context Tag for Effect DI
@@ -44,4 +49,30 @@ export class StoragePortTag extends Context.Tag("StoragePort")<
 export class EventBusTag extends Context.Tag("EventBus")<
   EventBusTag,
   IEventBusPort
+>() {}
+
+/**
+ * Email Port Tag - Context Tag for Effect DI
+ *
+ * Use this tag to access the EmailPort implementation in Effect workflows:
+ *   const emailPort = yield* EmailPortTag;
+ *
+ * The tag resolves to an IEmailPort implementation (SmtpEmailGateway
+ * in production, mock implementations for testing) for sending emails.
+ *
+ * @example
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const emailPort = yield* EmailPortTag;
+ *   yield* emailPort.sendOtp({
+ *     email: "user@example.com",
+ *     otp: "123456",
+ *     type: "email-verification"
+ *   });
+ * });
+ * ```
+ */
+export class EmailPortTag extends Context.Tag("EmailPort")<
+  EmailPortTag,
+  IEmailPort
 >() {}

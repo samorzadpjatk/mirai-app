@@ -62,9 +62,7 @@ export class GetScheduleByIdUseCase {
       const createdByTask = userPort.findById(
         UserId.unsafeCreate(schedule.createdById),
       );
-      const tripTask = schedule.tripId
-        ? tripPort.findById(schedule.tripId)
-        : Effect.succeed(null);
+      const tripTask = tripPort.findById(schedule.tripId);
       const executionsTask = executionPort.findByScheduleId(schedule.id, 10000);
 
       const [createdBy, trip, executions] = yield* Effect.all([
@@ -80,8 +78,8 @@ export class GetScheduleByIdUseCase {
         );
       }
 
-      // Only fail if trip was expected but not found
-      if (schedule.tripId && !trip) {
+      // Fail if trip not found
+      if (!trip) {
         return yield* Effect.fail(
           new ScheduleTripNotFoundError({
             tripId: TripId.toString(schedule.tripId),
@@ -112,12 +110,10 @@ export class GetScheduleByIdUseCase {
           lastName: createdBy.lastName,
           fullName: createdBy.getFullName(),
         },
-        trip: trip
-          ? {
-              id: trip.id,
-              name: trip.name,
-            }
-          : null,
+        trip: {
+          id: trip.id,
+          name: trip.name,
+        },
         executionCount: executions.length,
       };
     });

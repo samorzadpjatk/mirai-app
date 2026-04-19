@@ -59,7 +59,7 @@ export class CreatePublicUrlUseCase {
 }
 
 /**
- * Get public URL base endpoint
+ * Get public URL base endpoint for SeaweedFS
  */
 function getPublicUrlBase(): Effect.Effect<
   string,
@@ -67,28 +67,26 @@ function getPublicUrlBase(): Effect.Effect<
   never
 > {
   return Effect.gen(function* () {
-    const baseUrl = process.env.SUPABASE_PUBLIC_URL ?? process.env.SUPABASE_URL;
+    const baseUrl = process.env.SEAWEEDFS_PUBLIC_URL ?? process.env.SEAWEEDFS_ENDPOINT;
 
     if (!baseUrl) {
       return yield* Effect.fail(
         new StorageConfigurationError({
-          configKey: "SUPABASE_URL or SUPABASE_PUBLIC_URL",
+          configKey: "SEAWEEDFS_ENDPOINT or SEAWEEDFS_PUBLIC_URL",
         }),
       );
     }
 
+    // SeaweedFS public URL format
     try {
       const url = new URL(baseUrl);
-      const host = url.host;
-      if (host.endsWith(".supabase.co") && !host.includes(".storage.")) {
-        url.host = host.replace(".supabase.co", ".storage.supabase.co");
-      }
-      url.pathname = "/storage/v1/object/public";
+      // SeaweedFS serves public files directly from the S3 endpoint
+      url.pathname = "";
       url.search = "";
       url.hash = "";
       return url.toString();
     } catch {
-      return `${baseUrl.replace(/\/$/, "")}/storage/v1/object/public`;
+      return baseUrl.replace(/\/$/, "");
     }
   });
 }

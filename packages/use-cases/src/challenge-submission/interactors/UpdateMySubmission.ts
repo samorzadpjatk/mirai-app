@@ -1,5 +1,5 @@
 import { Effect, Data } from "effect";
-import { ChallengeSubmissionId, TripId } from "@mirai-app/domain";
+import { ChallengeSubmissionId, TripId, ImageId, VideoId } from "@mirai-app/domain";
 import { UserId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import {
@@ -106,8 +106,8 @@ export class UpdateMySubmissionUseCase {
       // Update submission
       const updated: ChallengeSubmission = {
         ...submission,
-        imageIds: input.imageIds ?? submission.imageIds,
-        videoId: input.videoId ?? submission.videoId,
+        imageIds: input.imageIds?.map((id) => ImageId.unsafeCreate(id)) ?? submission.imageIds,
+        videoId: input.videoId ? VideoId.unsafeCreate(input.videoId) : submission.videoId,
         textContent: input.textContent ?? submission.textContent,
         latitude: input.latitude ?? submission.latitude,
         longitude: input.longitude ?? submission.longitude,

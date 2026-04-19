@@ -162,3 +162,20 @@ export interface DeleteActivityResultDTO {
   success: boolean;
   activityId: string;
 }
+
+/**
+ * DTO for paginated activities with reactions
+ */
+export interface PaginatedActivitiesDTO {
+  activities: ActivityWithReactionsDTO[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    hasNextPage: boolean;
+    currentPage: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+  };
+}

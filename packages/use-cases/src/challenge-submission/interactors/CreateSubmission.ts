@@ -1,6 +1,6 @@
 import { Effect, Data } from "effect";
 import type { ApplicationError, ChallengeSubmissionId, UserId, TripId } from "@mirai-app/domain";
-import { ChallengeId, GroupId, ChallengeSubmissionId as ChallengeSubmissionIdFactory, UserId as UserIdFactory, TripId as TripIdFactory } from "@mirai-app/domain";
+import { ChallengeId, GroupId, ChallengeSubmissionId as ChallengeSubmissionIdFactory, UserId as UserIdFactory, TripId as TripIdFactory, ImageId, VideoId } from "@mirai-app/domain";
 import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
 import {
   ChallengeSubmissionPort,
@@ -129,8 +129,8 @@ export class CreateSubmissionUseCase {
         id: ChallengeSubmissionIdFactory.create(ChallengeSubmissionIdFactory.generate()),
         challengeId: ChallengeId.create(input.challengeId),
         groupId: GroupId.create(participant.groupId),
-        imageIds: input.imageIds ?? [],
-        videoId: input.videoId ?? null,
+        imageIds: (input.imageIds ?? []).map((id) => ImageId.unsafeCreate(id)),
+        videoId: input.videoId ? VideoId.unsafeCreate(input.videoId) : null,
         textContent: input.textContent ?? null,
         latitude: input.latitude ?? null,
         longitude: input.longitude ?? null,

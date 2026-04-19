@@ -3,10 +3,16 @@ import { ActivityFeedPortTag } from "../ports/ActivityFeedPort";
 import { TripPortTag } from "../../trip/ports/TripPort";
 import { ActivityReactionPortTag } from "../ports/ActivityReactionPort";
 import { UserPortTag } from "../../user/ports/UserPort";
+import { ChallengeSubmissionPortTag } from "../../challenge-submission/ports/ChallengeSubmissionPort";
+import { ChallengePortTag } from "../../challenge/ports/ChallengePort";
+import { GroupPortTag } from "../../group/ports/GroupPort";
 import { TripId } from "@mirai-app/domain";
 import type {
   PaginatedActivitiesDTO,
   ActivityCursor,
+  SubmissionActivityDetailsDTO,
+  ChallengeActivityDetailsDTO,
+  RankChangeActivityDetailsDTO,
 } from "../dto/ActivityFeedDTOs";
 import {
   TripNotFoundError,
@@ -68,6 +74,11 @@ export class GetActivitiesByTripUseCase {
         },
       );
 
+      // Get additional ports for enrichment
+      const submissionPort = yield* ChallengeSubmissionPortTag;
+      const challengePort = yield* ChallengePortTag;
+      const groupPort = yield* GroupPortTag;
+
       // Get reactions for each activity and fetch related user data
       const activitiesWithReactions = yield* Effect.all(
         result.activities.map((activity) =>
@@ -111,9 +122,83 @@ export class GetActivitiesByTripUseCase {
               }
             }
 
-            // TODO: submissionDetails, challengeDetails, and rankChangeDetails
-            // require activity entity to expose submissionId, challengeId, and groupId
-            // Currently ActivityFeed entity doesn't store these foreign keys
+            // Enrich activity with submission, challenge, or group details
+            let submissionDetails: SubmissionActivityDetailsDTO | null = null;
+            let challengeDetails: ChallengeActivityDetailsDTO | null = null;
+            let rankChangeDetails: RankChangeActivityDetailsDTO | null = null;
+
+            if (activity.submissionId) {
+              const submission = yield* submissionPort.findById(activity.submissionId);
+              if (submission) {
+                submissionDetails = {
+                  submissionId: submission.id,
+                  challengeId: submission.challengeId,
+                  groupId: submission.groupId,
+                  hasVideo: !!submission.videoId,
+                  isWinner: submission.awardedPoints !== null && submission.awardedPoints > 0,
+                  ranking: submission.ranking,
+                };
+              }
+            }
+
+            if (activity.challengeId) {
+              const challenge = yield* challengePort.findById(activity.challengeId);
+              if (challenge) {
+                // Determine event type based on challenge status and timing
+                let eventType: "STARTED" | "ENDED" | "VOTING_STARTED" = "STARTED";
+                if (challenge.status === "VOTING_PHASE") {
+                  eventType = "VOTING_STARTED";
+                } else if (challenge.status === "COMPLETED") {
+                  eventType = "ENDED";
+                }
+
+                challengeDetails = {
+                  challengeId: challenge.id,
+                  challengeTitle: challenge.name,
+                  eventType,
+                };
+              }
+            }
+
+            // Calculate group rankings for rank change activities
+            if (activity.groupId && activity.activityType === "RANK_CHANGE") {
+              // Get all groups for this trip to calculate rankings
+              const allGroups = yield* groupPort.findByTripId(TripId.unsafeCreate(input.tripId));
+              
+              // Sort groups by coins descending to determine rank
+              const sortedGroups = [...allGroups].sort((a, b) => b.coins - a.coins);
+              
+              const currentRank = sortedGroups.findIndex((g) => g.id === activity.groupId) + 1;
+              
+              if (currentRank > 0) {
+                const group = sortedGroups[currentRank - 1];
+                
+                if (group) {
+                  // Try to extract previous rank from activity description or metadata
+                  // If not available, assume they moved up one position
+                  let previousRank = currentRank + 1;
+                  
+                  // Parse previous rank from description if it contains rank info
+                  // Format: "Group X moved from rank Y to rank Z"
+                  const rankMatch = activity.description?.match(/from rank (\d+) to rank (\d+)/);
+                  if (rankMatch && rankMatch[1]) {
+                    previousRank = parseInt(rankMatch[1], 10);
+                  } else {
+                    // Default: assume they moved up one position, but not below 1
+                    previousRank = Math.max(1, currentRank + 1);
+                  }
+                  
+                  rankChangeDetails = {
+                    groupId: group.id,
+                    groupName: group.name,
+                    previousRank,
+                    newRank: currentRank,
+                    coinsAtChange: group.coins,
+                  };
+                }
+              }
+            }
+
             return {
               id: activity.id,
               tripId: activity.tripId,
@@ -130,9 +215,9 @@ export class GetActivitiesByTripUseCase {
               updatedAt: activity.updatedAt,
               admin,
               hiddenBy,
-              submissionDetails: null,
-              challengeDetails: null,
-              rankChangeDetails: null,
+              submissionDetails,
+              challengeDetails,
+              rankChangeDetails,
               reactions: reactionCounts,
               userReactions: userReactions.map((r) => r.reactionType),
             };

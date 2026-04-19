@@ -8,7 +8,7 @@ import {
 export interface UpdateScheduleInput {
   id: NotificationScheduleId;
   name?: string;
-  tripId?: string | null;
+  tripId?: string;
   notificationType?: string;
   notificationTitle?: string | null;
   notificationBody?: string | null;
@@ -36,8 +36,8 @@ export class UpdateScheduleUseCase {
       const updated = yield* schedulePort.update({
         ...existing,
         name: input.name ?? existing.name,
-        tripId: input.tripId !== undefined 
-          ? (input.tripId ? TripId.create(input.tripId) : null) 
+        tripId: input.tripId !== undefined
+          ? TripId.create(input.tripId)
           : existing.tripId,
         notificationType: input.notificationType ?? existing.notificationType,
         notificationTitle:

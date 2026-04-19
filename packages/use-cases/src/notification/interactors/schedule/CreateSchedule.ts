@@ -59,7 +59,7 @@ export class CreateScheduleUseCase {
       const schedule = yield* schedulePort.create({
         id: NotificationScheduleId.create(crypto.randomUUID()),
         name: input.name,
-        tripId: input.tripId ? TripId.create(input.tripId) : null,
+        tripId: TripId.create(input.tripId),
         notificationType: input.notificationType,
         notificationTitle: input.notificationTitle,
         notificationBody: input.notificationBody,
@@ -77,9 +77,7 @@ export class CreateScheduleUseCase {
 
       // Fetch related data in parallel with error handling
       const userEffect = Effect.either(userPort.findById(input.createdById));
-      const tripEffect = schedule.tripId
-        ? Effect.either(tripPort.findById(schedule.tripId))
-        : Effect.succeed(null);
+      const tripEffect = Effect.either(tripPort.findById(schedule.tripId));
 
       const [userResult, tripResult] = yield* Effect.all([
         userEffect,
@@ -94,9 +92,9 @@ export class CreateScheduleUseCase {
       }
       const user = userResult.right;
 
-      // Handle optional trip
+      // Handle missing trip
       let trip = null;
-      if (tripResult && tripResult !== null && typeof tripResult === "object" && "_tag" in tripResult) {
+      if (tripResult && typeof tripResult === "object" && "_tag" in tripResult) {
         if (Either.isRight(tripResult) && tripResult.right) {
           const tripEntity = tripResult.right as { id: TripId; name: string };
           trip = {

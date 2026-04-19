@@ -3,6 +3,8 @@ import type {
   ChallengeSubmissionId,
   GroupId,
   UserId,
+  ImageId,
+  VideoId,
 } from "@mirai-app/domain";
 
 export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -15,8 +17,8 @@ export interface ChallengeSubmissionDTO {
   id: ChallengeSubmissionId;
   challengeId: ChallengeId;
   groupId: GroupId;
-  imageIds: string[];
-  videoId: string | null;
+  imageIds: ImageId[];
+  videoId: VideoId | null;
   textContent: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -96,6 +98,8 @@ export interface CreateSubmissionResultDTO {
  */
 export interface ReviewSubmissionResultDTO {
   id: ChallengeSubmissionId;
+  challengeId: ChallengeId;
+  groupId: GroupId;
   status: SubmissionStatus;
   awardedPoints: number;
   bonusPoints: number;

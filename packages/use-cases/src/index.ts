@@ -16,7 +16,12 @@ export * as trip from "./trip";
 export * as user from "./user";
 
 // Export shared service ports
-export { AuthPortTag, StoragePortTag, EventBusTag } from "./shared/ports";
+export {
+  AuthPortTag,
+  StoragePortTag,
+  EventBusTag,
+  EmailPortTag,
+} from "./shared/ports";
 
 // Export new AuthN and AuthZ port tags
 export { AuthNPortTag, AuthZPortTag } from "./auth/ports";

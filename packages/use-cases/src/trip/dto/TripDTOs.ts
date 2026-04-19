@@ -113,3 +113,20 @@ export interface TripWithStatsDTO {
   groupCount: number;
   challengeCount: number;
 }
+
+/**
+ * DTO for paginated trips
+ */
+export interface PaginatedTripsDTO {
+  trips: TripDTO[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    hasNextPage: boolean;
+    currentPage: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+  };
+}

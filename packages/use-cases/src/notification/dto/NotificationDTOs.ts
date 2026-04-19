@@ -117,7 +117,7 @@ export interface RetryNotificationResultDTO {
 export interface NotificationScheduleDTO {
   id: NotificationScheduleId;
   name: string;
-  tripId: TripId | null;
+  tripId: TripId;
   notificationType: string;
   notificationTitle: string | null;
   notificationBody: string | null;
@@ -146,7 +146,7 @@ export interface NotificationScheduleWithRelationsDTO extends NotificationSchedu
   trip: {
     id: TripId;
     name: string;
-  } | null;
+  };
   executionCount: number;
 }
 
@@ -178,7 +178,7 @@ export interface ScheduleExecutionHistoryDTO {
  */
 export interface CreateScheduleInputDTO {
   name: string;
-  tripId: string | null;
+  tripId: string;
   notificationType: string;
   notificationTitle: string | null;
   notificationBody: string | null;
@@ -196,7 +196,7 @@ export interface CreateScheduleInputDTO {
 export interface UpdateScheduleInputDTO {
   id: NotificationScheduleId;
   name?: string;
-  tripId?: string | null;
+  tripId?: string;
   notificationType?: string;
   notificationTitle?: string | null;
   notificationBody?: string | null;
@@ -403,7 +403,7 @@ export interface TrackDeliveryFailureInputDTO {
  * DTO for notification filter
  */
 export interface NotificationScheduleFilterDTO {
-  tripId?: string | null;
+  tripId?: string;
   notificationType?: string;
   isActive?: boolean;
   startDateFrom?: Date;

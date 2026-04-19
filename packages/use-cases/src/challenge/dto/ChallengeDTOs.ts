@@ -122,3 +122,16 @@ export interface ChallengeWithVotingStatsDTO extends ChallengeDTO {
   avgVoteScore: number | null;
   isVotingActive: boolean;
 }
+
+/**
+ * DTO for paginated challenges with stats
+ */
+export interface PaginatedChallengesDTO {
+  challenges: ChallengeWithStatsDTO[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}

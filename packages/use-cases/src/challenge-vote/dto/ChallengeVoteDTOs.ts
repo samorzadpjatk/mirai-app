@@ -3,6 +3,9 @@ import type {
   ChallengeSubmissionId,
   ChallengeVoteId,
   UserId,
+  ImageId,
+  VideoId,
+  GroupId,
 } from "@mirai-app/domain";
 
 /**
@@ -24,9 +27,9 @@ export interface VoteWithSubmissionDTO extends ChallengeVoteDTO {
   submission: {
     id: ChallengeSubmissionId;
     challengeId: ChallengeId;
-    groupId: string;
-    imageIds: string[];
-    videoId: string | null;
+    groupId: GroupId;
+    imageIds: ImageId[];
+    videoId: VideoId | null;
     voteCount: number;
     voteScore: number;
   } | null;

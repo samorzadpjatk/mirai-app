@@ -36,15 +36,18 @@ export interface BatchMigrationQueueResult {
 /**
  * Error for batch migration failures
  */
-export class BatchMigrationError extends Data.TaggedError("BatchMigrationError")<{
-  operation: string;
-  cause: IPortError;
-}>() {}
+export class BatchMigrationError extends Data.TaggedError("BatchMigrationError")<
+  {
+    operation: string;
+    cause: IPortError;
+  }
+> {}
 
 /**
  * Get Migration Statistics Use Case
  *
  * Retrieves statistics about the migration progress across all users.
+ * All users have been migrated to Better Auth.
  */
 export class GetMigrationStatsUseCase {
   execute() {
@@ -73,16 +76,14 @@ export class GetMigrationStatsUseCase {
 /**
  * Get Eligible Users Use Case
  *
- * Retrieves a list of users who are eligible for migration (still on Supabase).
+ * Legacy use case - no users are eligible for migration as all users
+ * have been migrated to Better Auth.
  */
 export class GetEligibleUsersUseCase {
   execute() {
     return Effect.gen(function* () {
-      const batchPort: IBatchMigrationPort = yield* BatchMigrationPortTag;
-
-      const emails = yield* batchPort.getEligibleUsers();
-
-      return { emails, count: emails.length };
+      // All users have been migrated - no eligible users remain
+      return { emails: [], count: 0 };
     });
   }
 }
@@ -90,34 +91,17 @@ export class GetEligibleUsersUseCase {
 /**
  * Queue Batch Migration Use Case
  *
- * Queues multiple users for migration. This initiates the OTP flow for each user.
+ * Legacy use case - batch migration is no longer supported.
+ * All users have been migrated to Better Auth.
  */
 export class QueueBatchMigrationUseCase {
-  execute(emails: string[]) {
+  execute(_emails: string[]) {
     return Effect.gen(function* () {
-      const batchPort: IBatchMigrationPort = yield* BatchMigrationPortTag;
-      const migrationPort: IUserMigrationPort = yield* UserMigrationPortTag;
-
-      // Filter out users that don't exist in source
-      const validEmails: string[] = [];
-      for (const email of emails) {
-        const exists = yield* migrationPort.userExistsInSource(email);
-        if (exists) {
-          validEmails.push(email);
-        }
-      }
-
-      // Queue the batch migration
-      const results = yield* batchPort.queueBatchMigration(validEmails);
-
-      const successful = results.filter((r) => r.success).length;
-      const failed = results.filter((r) => !r.success).length;
-
       return {
-        results,
-        totalQueued: validEmails.length,
-        successful,
-        failed,
+        results: [],
+        totalQueued: 0,
+        successful: 0,
+        failed: 0,
       };
     });
   }
@@ -126,39 +110,17 @@ export class QueueBatchMigrationUseCase {
 /**
  * Send Batch OTP Use Case
  *
- * Sends migration OTPs to multiple users at once.
+ * Legacy use case - batch OTP sending is no longer supported.
+ * All users have been migrated to Better Auth.
  */
 export class SendBatchMigrationOtpUseCase {
-  execute(emails: string[]) {
+  execute(_emails: string[]) {
     return Effect.gen(function* () {
-      const migrationPort: IUserMigrationPort = yield* UserMigrationPortTag;
-
-      const results: Array<{ email: string; success: boolean; error?: string }> =
-        [];
-
-      for (const email of emails) {
-        const result = yield* Effect.either(
-          migrationPort.sendMigrationOtp({ email }),
-        );
-
-        results.push({
-          email,
-          success: result._tag === "Right",
-          error:
-            result._tag === "Left"
-              ? String(result.left.message)
-              : undefined,
-        });
-      }
-
-      const successful = results.filter((r) => r.success).length;
-      const failed = results.filter((r) => !r.success).length;
-
       return {
-        results,
-        totalSent: emails.length,
-        successful,
-        failed,
+        results: [],
+        totalSent: 0,
+        successful: 0,
+        failed: 0,
       };
     });
   }

@@ -6,6 +6,7 @@ import type {
   INotificationScheduleExecutionPort,
   INotificationDeliveryPort,
   INotificationServicePort,
+  INotificationPreferencesPort,
   Notification,
   NotificationPush,
   PushSubscription,
@@ -20,6 +21,7 @@ export type { INotificationPort, Notification, NotificationPush };
 export type { IPushSubscriptionPort, PushSubscription };
 export type { NotificationDelivery, NotificationDeliveryStats };
 export type { NotificationSchedule, NotificationScheduleExecution };
+export type { INotificationPreferencesPort };
 
 /**
  * Notification Port - Context.Tag for Effect DI
@@ -63,3 +65,10 @@ export class NotificationDeliveryPortTag extends Context.Tag(
 export class NotificationServicePortTag extends Context.Tag(
   "NotificationServicePort",
 )<NotificationServicePortTag, INotificationServicePort>() {}
+
+/**
+ * NotificationPreferences Port - Context.Tag for Effect DI
+ */
+export class NotificationPreferencesPortTag extends Context.Tag(
+  "NotificationPreferencesPort",
+)<NotificationPreferencesPortTag, INotificationPreferencesPort>() {}

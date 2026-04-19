@@ -5,3 +5,4 @@ export {
 } from "./ports/GroupJoinRequestPort";
 export * from "./dto";
 export * from "./errors";
+export * from "./interactors";

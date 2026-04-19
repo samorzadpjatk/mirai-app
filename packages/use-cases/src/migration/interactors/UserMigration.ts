@@ -29,7 +29,7 @@ export interface VerifyMigrationOtpInput {
  * DTO for migration status response
  */
 export interface MigrationStatusDTO {
-  authProvider: "supabase" | "better-auth" | "migrating";
+  authProvider: "better-auth";
   migrationStartedAt?: string;
   migrationCompletedAt?: string;
   betterAuthUserId?: string;
@@ -49,40 +49,31 @@ export interface MigrationResultDTO {
 /**
  * Error when migration fails
  */
-export class MigrationFailedError extends Data.TaggedError("MigrationFailedError")<{
-  email: string;
-  cause: IPortError;
-}>() {}
+export class MigrationFailedError extends Data.TaggedError("MigrationFailedError")<
+  {
+    email: string;
+    cause: IPortError;
+  }
+> {}
 
 /**
  * Send Migration OTP Use Case
  *
- * Orchestrates the first step of user migration: sending an OTP to the user's email.
- * This verifies ownership of the email before allowing migration to proceed.
+ * Legacy migration use case - migration from legacy auth to Better Auth is complete.
+ * This use case is retained for reference but no longer functional.
  */
 export class SendMigrationOtpUseCase {
-  execute(input: SendMigrationOtpInput) {
+  execute(_input: SendMigrationOtpInput) {
     return Effect.gen(function* () {
-      const migrationPort: IUserMigrationPort = yield* UserMigrationPortTag;
-
-      // Check if user exists in source system
-      const exists = yield* migrationPort.userExistsInSource(input.email);
-      if (!exists) {
-        return yield* Effect.fail(
-          new MigrationFailedError({
-            email: input.email,
-            cause: {
-              _tag: "UserNotFoundInSourceError",
-              message: "User not found in source authentication system",
-            } as IPortError,
-          }),
-        );
-      }
-
-      // Send OTP
-      yield* migrationPort.sendMigrationOtp({ email: input.email });
-
-      return { success: true, email: input.email };
+      return yield* Effect.fail(
+        new MigrationFailedError({
+          email: _input.email,
+          cause: {
+            _tag: "MigrationNotSupportedError",
+            message: "Migration from legacy auth is no longer supported. All users are now on Better Auth.",
+          } as IPortError,
+        }),
+      );
     });
   }
 }
@@ -90,28 +81,21 @@ export class SendMigrationOtpUseCase {
 /**
  * Verify Migration OTP Use Case
  *
- * Orchestrates the migration completion: verifying OTP, creating Better Auth account,
- * and updating migration status.
+ * Legacy migration use case - migration from legacy auth to Better Auth is complete.
+ * This use case is retained for reference but no longer functional.
  */
 export class VerifyMigrationOtpUseCase {
-  execute(input: VerifyMigrationOtpInput) {
+  execute(_input: VerifyMigrationOtpInput) {
     return Effect.gen(function* () {
-      const migrationPort: IUserMigrationPort = yield* UserMigrationPortTag;
-
-      // Verify OTP and complete migration
-      const result: MigrationResult = yield* migrationPort.verifyMigrationOtp({
-        email: input.email,
-        otp: input.otp,
-        password: input.password,
-      });
-
-      return {
-        success: true,
-        userId: result.userId,
-        betterAuthUserId: result.betterAuthUserId,
-        email: result.email,
-        completedAt: result.completedAt.toISOString(),
-      };
+      return yield* Effect.fail(
+        new MigrationFailedError({
+          email: _input.email,
+          cause: {
+            _tag: "MigrationNotSupportedError",
+            message: "Migration from legacy auth is no longer supported. All users are now on Better Auth.",
+          } as IPortError,
+        }),
+      );
     });
   }
 }
@@ -120,6 +104,7 @@ export class VerifyMigrationOtpUseCase {
  * Get Migration Status Use Case
  *
  * Retrieves the current migration status for a user.
+ * All users are now on Better Auth.
  */
 export class GetMigrationStatusUseCase {
   execute(userId: string) {
@@ -147,16 +132,21 @@ export class GetMigrationStatusUseCase {
 /**
  * Rollback Migration Use Case
  *
- * Rolls back a migration, allowing the user to continue using Supabase Auth.
+ * Legacy rollback use case - rollback to legacy auth is no longer supported.
+ * All users are now permanently on Better Auth.
  */
 export class RollbackMigrationUseCase {
   execute(userId: string) {
     return Effect.gen(function* () {
-      const migrationPort: IUserMigrationPort = yield* UserMigrationPortTag;
-
-      yield* migrationPort.rollbackMigration(userId);
-
-      return { success: true, userId };
+      return yield* Effect.fail(
+        new MigrationFailedError({
+          email: userId,
+          cause: {
+            _tag: "RollbackNotSupportedError",
+            message: "Rollback to legacy auth is no longer supported. All users are now permanently on Better Auth.",
+          } as IPortError,
+        }),
+      );
     });
   }
 }

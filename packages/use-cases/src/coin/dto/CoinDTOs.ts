@@ -91,3 +91,16 @@ export interface TripCoinLeaderboardDTO {
     change: number | null;
   }>;
 }
+
+/**
+ * DTO for paginated coin transactions
+ */
+export interface PaginatedCoinTransactionsDTO {
+  transactions: CoinTransactionDTO[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}

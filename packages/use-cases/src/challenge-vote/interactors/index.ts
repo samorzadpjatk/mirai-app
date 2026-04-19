@@ -22,3 +22,6 @@ export type { SubmitVotesInput, VoteInput } from "./SubmitVotes";
 
 export { SubmitVoteUseCase } from "./SubmitVote";
 export type { SubmitVoteInput } from "./SubmitVote";
+
+export { RemoveVoteUseCase } from "./RemoveVote";
+export type { RemoveVoteInput } from "./RemoveVote";

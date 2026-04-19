@@ -56,7 +56,7 @@ export class AddCoinsUseCase {
       // Create transaction record
       const transactionId = CoinTransactionId.generate();
       const transaction = yield* coinPort.create({
-        id: CoinTransactionId.toString(transactionId),
+        id: transactionId,
         tripId: input.tripId,
         groupId: GroupId.toString(groupId),
         amount: input.amount,
