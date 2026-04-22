@@ -57,7 +57,7 @@ createWSClient({
 
 ### Authorization Flow
 
-1. **Client** (native/web application):
+1. **Client** (native application):
    - Gets `access_token` from Supabase session
    - Passes token in `connectionParams` (WebSocket) or `Authorization` header (HTTP)
 
