@@ -4,7 +4,7 @@
 <img width="1440" height="565" alt="mirai_app_banner" src="https://github.com/user-attachments/assets/88e9e651-ec6d-458f-b650-4a351b1bb534" />
 <div align="center">
 <h1>MIRAI</h1>
-<b>PJATK Student Government Mobile Application</b>
+<b>PJAIT Student Government Mobile Application</b>
 <p>also known as: Project <code>PJApp</code></p>
 <p>Currently a trip application prepared for integration trips<br>Will eventually become a general Student Government application for all students</p>
 </div>
