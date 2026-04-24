@@ -12,7 +12,7 @@
 <br>
 
 > [!NOTE]
-> Nasza aplikacja została ![nominowana](https://projuvenes.psrp.org.pl/wp-content/uploads/2025/09/XIII-Pro-Juvenes-nominowani.pdf) w XIII edycji konkursu „Pro Juvenes” o nagrody społeczności studenckiej, organizowanego przez Samorząd Studencki Rzeczypospolitej Polskiej, w kategoriach „Samorządowy Projekt Roku” oraz „Samorządowy Debiut Roku”
+> Nasza aplikacja została [nominowana](https://projuvenes.psrp.org.pl/wp-content/uploads/2025/09/XIII-Pro-Juvenes-nominowani.pdf) w XIII edycji konkursu „Pro Juvenes” o nagrody społeczności studenckiej, organizowanego przez Samorząd Studencki Rzeczypospolitej Polskiej, w kategoriach „Samorządowy Projekt Roku” oraz „Samorządowy Debiut Roku”
 > 
 > Prezentacje poprzednich wersji aplikacji: https://photos.app.goo.gl/BfrERv3qWQGbxV5T8
 
