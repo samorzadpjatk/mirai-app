@@ -11,6 +11,17 @@
 
 <br>
 
+> [!NOTE]
+> Nasza aplikacja została ![nominowana](https://projuvenes.psrp.org.pl/wp-content/uploads/2025/09/XIII-Pro-Juvenes-nominowani.pdf) w XIII edycji konkursu „Pro Juvenes” o nagrody społeczności studenckiej, organizowanego przez Samorząd Studencki Rzeczypospolitej Polskiej, w kategoriach „Samorządowy Projekt Roku” oraz „Samorządowy Debiut Roku”
+> 
+> Prezentacje poprzednich wersji aplikacji: https://photos.app.goo.gl/BfrERv3qWQGbxV5T8
+
+<br>
+
+|||||
+|---|---|---|---|
+|<video src="https://github.com/user-attachments/assets/e0d2a36c-f6f7-4a38-9c8f-f121197ef935" />|<img width="1080" height="2400" alt="Screenshot_1771530366" src="https://github.com/user-attachments/assets/dacca3a4-1231-4d25-aeb9-503ff4ac988a" />|<img width="1080" height="2400" alt="Screenshot_1771530348" src="https://github.com/user-attachments/assets/49bf6280-3afe-44f1-8789-4aa37a5e5923" />|<img width="1170" height="2532" alt="Simulator Screenshot - iPhone 16e - 2026-01-20 at 19 42 14" src="https://github.com/user-attachments/assets/49ba1e4e-f7bf-4ca5-b51a-588c219fd2dd" />|
+
 ## Chcesz dołączyć?
 
 Spójrz na [zasady współpracy wewnątrz repo](CONTRIBUTING.md)!
@@ -19,6 +30,7 @@ Spójrz na [zasady współpracy wewnątrz repo](CONTRIBUTING.md)!
 > **Call for Mainteiners**
 > 
 > Szukamy osób, którzy przejmą opiekę nad projektem.
+> 
 > Jeśli jesteś zainteresowany, prosimy o kontakt z Samorządem Studenckim PJATK.
 
 ## Struktura projektu
