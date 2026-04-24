@@ -10,7 +10,7 @@
 </div>
 
 > [!NOTE]
-> Our app was ![nominated](https://projuvenes.psrp.org.pl/wp-content/uploads/2025/09/XIII-Pro-Juvenes-nominowani.pdf) in XIII edition of "Pro Juvenes" Student Community Awards organized by Student Parliament of the Republic of Poland for "Student Council Project of the Year" and "Debut of the Year"
+> Our app was [nominated](https://projuvenes.psrp.org.pl/wp-content/uploads/2025/09/XIII-Pro-Juvenes-nominowani.pdf) in XIII edition of "Pro Juvenes" Student Community Awards organized by Student Parliament of the Republic of Poland for "Student Council Project of the Year" and "Debut of the Year"
 > 
 > Previous app iteration demos: https://photos.app.goo.gl/BfrERv3qWQGbxV5T8
 
