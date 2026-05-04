@@ -4,8 +4,20 @@
   "license": "AGPL-3.0",
   "module": "index.ts",
   "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./test-utils": "./src/test-utils/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@supabase/supabase-js": "^2.89.0",
+    "@types/bun": "latest",
+    "@vitest/coverage-v8": "^3.0.0",
+    "vitest": "^3.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"

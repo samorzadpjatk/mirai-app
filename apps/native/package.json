@@ -30,7 +30,10 @@
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx}\" --cache",
-    "clean": "rm -rf .expo .turbo node_modules dist"
+    "test": "jest --coverage",
+    "test:ci": "jest --passWithNoTests --ci --coverage",
+    "test:watch": "jest --watch",
+    "clean": "rm -rf .expo .turbo node_modules dist coverage"
   },
   "dependencies": {
     "@expo-google-fonts/ibm-plex-sans": "^0.4.1",
@@ -88,12 +91,20 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.17",
     "@types/react-dom": "~19.1.11",
+    "@types/react-test-renderer": "^19.1.0",
     "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "jest": "^30.3.0",
+    "jest-expo": "^55.0.16",
     "prettier": "^3.8.0",
+    "react-test-renderer": "19.1.0",
     "tailwindcss": "^3.4.17",
+    "ts-jest": "^29.4.9",
     "typescript": "^5.9.3"
   }
 }

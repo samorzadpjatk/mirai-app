@@ -12,6 +12,7 @@
       "~/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
-  "exclude": ["**/node_modules/**"]
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "jest.setup.js"],
+  "exclude": ["**/node_modules/**"],
+  "types": ["jest", "@testing-library/jest-native"]
 }

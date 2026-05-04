@@ -3,20 +3,6 @@
     {
       "type": "promptString",
       "password": true,
-      "id": "SUPABASE_PROJECT_REF",
-      "description": "Supabase Project Reference",
-      "default": ""
-    },
-    {
-      "type": "promptString",
-      "password": true,
-      "id": "SUPABASE_ACCESS_TOKEN",
-      "description": "Supabase Access Token",
-      "default": ""
-    },
-    {
-      "type": "promptString",
-      "password": true,
       "id": "STITCH_GOOGLE_API_KEY",
       "description": "Stitch Google API Key",
       "default": ""
@@ -46,13 +32,6 @@
     "fetcher": {
       "command": "npx",
       "args": ["-y", "fetcher-mcp"]
-    },
-    "supabase": {
-      "type": "http",
-      "url": "https://localhost:8000/mcp?project_ref=${input:SUPABASE_PROJECT_REF}",
-      "headers": {
-        "Authorization": "Bearer ${input:SUPABASE_ACCESS_TOKEN}"
-      }
     },
     "maestro": {
       "command": "maestro",

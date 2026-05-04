@@ -21,13 +21,6 @@
       "type": "local",
       "command": ["npx", "-y", "fetcher-mcp"]
     },
-    "supabase": {
-      "type": "remote",
-      "url": "https://localhost:8000/mcp?project_ref={env:SUPABASE_PROJECT_REF}",
-      "headers": {
-        "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
-      }
-    },
     "maestro": {
       "type": "local",
       "command": ["maestro", "mcp"]
