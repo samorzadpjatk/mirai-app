@@ -73,7 +73,7 @@ describe("Scheduler", () => {
     });
 
     it("should handle task errors gracefully", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
       const error = new Error("Task failed");
       const task = vi.fn().mockRejectedValue(error);
       const scheduler = new Scheduler(task, 5);
@@ -92,7 +92,7 @@ describe("Scheduler", () => {
 
   describe("edge cases", () => {
     it("should not start if already running", () => {
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 5);
 
@@ -141,7 +141,7 @@ describe("createInactivityScheduler", () => {
   });
 
   it("should run inactivity check and log results", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
     const checkFunction = vi.fn().mockResolvedValue({ inactiveUsers: 5 });
     const scheduler = createInactivityScheduler(checkFunction, 5);
 
