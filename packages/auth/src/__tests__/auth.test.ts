@@ -220,6 +220,61 @@ describe("authServer", () => {
 
       await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow("User is banned");
     });
+
+    it("should handle admin lookup error gracefully", async () => {
+      const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
+      const mockDbUser = {
+        id: "db-123",
+        authUserId: "auth-123",
+        role: "USER",
+      } as User;
+
+      vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+        data: { user: mockSupabaseUser },
+        error: null,
+      } as never);
+      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+        data: { user: null },
+        error: { message: "Admin lookup failed" },
+      } as never);
+
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const result = await requireAuth(mockDb, mockSupabase, "token");
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[Auth] Failed to check ban status for auth-123: Admin lookup failed"
+      );
+      expect(result.dbUser).toEqual(mockDbUser);
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should throw AuthenticationError when db user not found after auth", async () => {
+      const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
+      const mockDbUser = {
+        id: "db-123",
+        authUserId: "auth-123",
+        role: "USER",
+      } as User;
+
+      vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+        data: { user: mockSupabaseUser },
+        error: null,
+      } as never);
+      vi.mocked(mockDb.user.findFirst)
+        .mockResolvedValueOnce(mockDbUser as never)
+        .mockResolvedValueOnce(null as never);
+      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+        data: { user: null },
+        error: null,
+      } as never);
+
+      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(
+        "User not found in database"
+      );
+    });
   });
 
   describe("requireAdmin", () => {
@@ -521,6 +576,54 @@ describe("authServer", () => {
       expect(mockUpsertUser).toHaveBeenCalledWith(
         expect.objectContaining({
           firstName: "John",
+          lastName: null,
+        })
+      );
+    });
+
+    it("should fallback to email prefix when no name in metadata", async () => {
+      const mockSupabaseUser = {
+        id: "auth-123",
+        email: "john.doe@example.com",
+        user_metadata: {},
+        app_metadata: {},
+      } as SupabaseUser;
+
+      const mockUpsertUser = vi.fn().mockResolvedValue({
+        id: "db-123",
+        authUserId: "auth-123",
+        role: "USER",
+      } as User);
+
+      await syncUserToDatabase(mockSupabaseUser, mockUpsertUser);
+
+      expect(mockUpsertUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: "john.doe",
+          lastName: null,
+        })
+      );
+    });
+
+    it("should handle null email by using null firstName", async () => {
+      const mockSupabaseUser = {
+        id: "auth-123",
+        email: null,
+        user_metadata: {},
+        app_metadata: {},
+      } as unknown as SupabaseUser;
+
+      const mockUpsertUser = vi.fn().mockResolvedValue({
+        id: "db-123",
+        authUserId: "auth-123",
+        role: "USER",
+      } as User);
+
+      await syncUserToDatabase(mockSupabaseUser, mockUpsertUser);
+
+      expect(mockUpsertUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: null,
           lastName: null,
         })
       );
