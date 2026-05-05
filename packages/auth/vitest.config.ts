@@ -16,7 +16,18 @@ export default defineConfig({
         "**/*.d.ts",
         "**/*.config.*",
         "**/vitest.setup.ts",
+        "src/types.ts",
+        "src/store/index.ts",
+        "src/hooks/useLoginForm.ts",
+        "src/store/AuthStoreProvider.tsx",
+        "src/index.ts",
       ],
+      thresholds: {
+        branches: 80,
+        functions: 80,
+        lines: 80,
+        statements: 80,
+      },
     },
   },
   resolve: {
