@@ -1,0 +1,805 @@
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import type { ImagePickerAsset } from "expo-image-picker";
+
+// Mock expo-image-manipulator
+const mockManipulateAsync = jest.fn();
+const mockSaveAsync = jest.fn();
+const mockRenderAsync = jest.fn();
+const mockRelease = jest.fn();
+const mockManipulateContext = {
+  resize: jest.fn().mockReturnThis(),
+  rotate: jest.fn().mockReturnThis(),
+  flip: jest.fn().mockReturnThis(),
+  crop: jest.fn().mockReturnThis(),
+  extent: jest.fn().mockReturnThis(),
+  renderAsync: mockRenderAsync,
+  release: mockRelease,
+};
+
+jest.mock("expo-image-manipulator", () => ({
+  manipulateAsync: (...args: unknown[]) => mockManipulateAsync(...args),
+  ImageManipulator: {
+    manipulate: jest.fn().mockReturnValue(mockManipulateContext),
+  },
+  FlipType: {
+    Horizontal: "horizontal",
+    Vertical: "vertical",
+  },
+  SaveFormat: {
+    JPEG: "jpeg",
+    PNG: "png",
+    WEBP: "webp",
+  },
+}));
+
+// Mock react-native Platform
+jest.mock("react-native", () => ({
+  Platform: {
+    OS: "ios",
+    select: (obj: { ios?: unknown; android?: unknown; default?: unknown }) =>
+      obj.ios || obj.default,
+  },
+}));
+
+// Import after mocks
+import { normalizeCameraAsset } from "../camera";
+
+describe("Camera Utilities", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockManipulateAsync.mockResolvedValue({
+      uri: "manipulated://result.jpg",
+      width: 800,
+      height: 600,
+    });
+    mockRenderAsync.mockResolvedValue({
+      saveAsync: mockSaveAsync,
+      release: mockRelease,
+    });
+    mockSaveAsync.mockResolvedValue({
+      uri: "manipulated://result.jpg",
+      width: 800,
+      height: 600,
+    });
+  });
+
+  describe("normalizeCameraAsset - EXIF orientation handling", () => {
+    it("should return asset unchanged when no orientation manipulation needed", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 1 },
+      } as ImagePickerAsset;
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).not.toHaveBeenCalled();
+      expect(result).toBe(asset);
+    });
+
+    it("should return asset unchanged when exif is null", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: null,
+      } as ImagePickerAsset;
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).not.toHaveBeenCalled();
+      expect(result).toBe(asset);
+    });
+
+    it("should handle orientation 2 - flip horizontal", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 2 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ flip: "horizontal" }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle orientation 3 - rotate 180", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 3 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ rotate: 180 }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle orientation 4 - flip vertical", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 4 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ flip: "vertical" }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle orientation 5 - rotate 90 and flip horizontal", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 5 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ rotate: 90 }, { flip: "horizontal" }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle orientation 6 - rotate 90", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ rotate: 90 }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle orientation 7 - rotate 270 and flip horizontal", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 7 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ rotate: 270 }, { flip: "horizontal" }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle orientation 8 - rotate 270", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 8 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ rotate: 270 }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle string orientation values", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: "6" },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ rotate: 90 }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle lowercase orientation key", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { orientation: 6 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        "file://test.jpg",
+        [{ rotate: 90 }],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle invalid string orientation", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: "invalid" },
+      } as ImagePickerAsset;
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).not.toHaveBeenCalled();
+      expect(result).toBe(asset);
+    });
+  });
+
+  describe("normalizeCameraAsset - front camera detection", () => {
+    it("should detect front camera from 'front' in exif", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { LensModel: "front camera" },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should detect front camera from 'selfie' in exif", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { LensModel: "selfie mode" },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should detect front camera from 'true depth' in exif", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { LensModel: "True Depth Camera" },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should not flip for front camera when orientation is already mirrored", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { LensModel: "front camera", Orientation: 2 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        [{ flip: "horizontal" }],
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe("normalizeCameraAsset - explicit mirror flag", () => {
+    it("should flip when mirror flag is true", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { IsMirrored: true },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should flip when mirror flag is 1", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Mirror: 1 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should flip when mirror flag is 'true' string", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Mirror: "true" },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should flip when mirror flag is '1' string", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Mirror: "1" },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should flip when mirror flag is 'yes' string", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Mirror: "yes" },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should flip when mirror flag is boolean true", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { IsMirrored: true },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should not flip when mirror flag is false", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { IsMirrored: false },
+      } as ImagePickerAsset;
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).not.toHaveBeenCalled();
+      expect(result).toBe(asset);
+    });
+
+    it("should not flip when mirror flag is 0", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Mirror: 0 },
+      } as ImagePickerAsset;
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).not.toHaveBeenCalled();
+      expect(result).toBe(asset);
+    });
+
+    it("should not flip when mirror flag is an object", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Mirror: { value: true } },
+      } as ImagePickerAsset;
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).not.toHaveBeenCalled();
+      expect(result).toBe(asset);
+    });
+
+    it("should not flip when mirror flag is null", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Mirror: null },
+      } as ImagePickerAsset;
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).not.toHaveBeenCalled();
+      expect(result).toBe(asset);
+    });
+  });
+
+  describe("normalizeCameraAsset - forceUnmirror option", () => {
+    it("should flip when forceUnmirror is true", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 1 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset, { forceUnmirror: true });
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([{ flip: "horizontal" }]),
+        expect.any(Object)
+      );
+    });
+
+    it("should not flip when forceUnmirror is true but orientation is already mirrored", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 2 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset, { forceUnmirror: true });
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        [{ flip: "horizontal" }],
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe("normalizeCameraAsset - format handling", () => {
+    it("should use PNG format for image/png mimeType", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.png",
+        width: 100,
+        height: 100,
+        mimeType: "image/png",
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({ format: "png" })
+      );
+    });
+
+    it("should use WEBP format for image/webp mimeType", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.webp",
+        width: 100,
+        height: 100,
+        mimeType: "image/webp",
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({ format: "webp" })
+      );
+    });
+
+    it("should use JPEG format for image/jpeg mimeType", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        mimeType: "image/jpeg",
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({ format: "jpeg" })
+      );
+    });
+
+    it("should default to JPEG format when no mimeType", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({ format: "jpeg" })
+      );
+    });
+  });
+
+  describe("normalizeCameraAsset - result handling", () => {
+    it("should return manipulated asset with updated properties", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 6, Make: "Apple" },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync.mockResolvedValue({
+        uri: "file://manipulated.jpg",
+        width: 800,
+        height: 600,
+      });
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(result.uri).toBe("file://manipulated.jpg");
+      expect(result.width).toBe(800);
+      expect(result.height).toBe(600);
+      expect(result.exif).toEqual({
+        Make: "Apple",
+        Orientation: 1,
+      });
+    });
+
+    it("should preserve other asset properties", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        fileName: "photo.jpg",
+        mimeType: "image/jpeg",
+        base64: "base64data",
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync.mockResolvedValue({
+        uri: "file://manipulated.jpg",
+        width: 800,
+        height: 600,
+      });
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(result.fileName).toBe("photo.jpg");
+      expect(result.mimeType).toBe("image/jpeg");
+      expect(result.base64).toBe("base64data");
+    });
+  });
+
+  describe("normalizeCameraAsset - fallback handling", () => {
+    it("should use fallback manipulation when manipulateAsync fails", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        base64: "base64data",
+        mimeType: "image/jpeg",
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync
+        .mockRejectedValueOnce(new Error("Primary failed"))
+        .mockResolvedValueOnce({
+          uri: "file://fallback-result.jpg",
+          width: 1024,
+          height: 768,
+        });
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledTimes(2);
+      expect(result.uri).toBe("file://fallback-result.jpg");
+      expect(result.width).toBe(1024);
+      expect(result.height).toBe(768);
+    });
+
+    it("should use base64 fallback when uri manipulation fails", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        base64: "base64data",
+        mimeType: "image/jpeg",
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync
+        .mockRejectedValueOnce(new Error("Primary failed"))
+        .mockResolvedValueOnce({
+          uri: "file://base64-manipulated.jpg",
+          width: 1024,
+          height: 768,
+        });
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(mockManipulateAsync).toHaveBeenCalledTimes(2);
+      expect(mockManipulateAsync).toHaveBeenNthCalledWith(
+        2,
+        "data:image/jpeg;base64,base64data",
+        expect.any(Array),
+        expect.any(Object)
+      );
+      expect(result.uri).toBe("file://base64-manipulated.jpg");
+    });
+
+    it("should return original asset when all fallbacks fail", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        base64: "base64data",
+        mimeType: "image/jpeg",
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync.mockRejectedValue(new Error("All failed"));
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(result).toBe(asset);
+    });
+
+    it("should return original asset when no base64 and all fallbacks fail", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync.mockRejectedValue(new Error("Primary failed"));
+
+      const result = await normalizeCameraAsset(asset);
+
+      expect(result).toBe(asset);
+    });
+
+    it("should handle resize action in fallback manipulation", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync
+        .mockRejectedValueOnce(new Error("Primary failed"))
+        .mockResolvedValueOnce({
+          uri: "file://fallback-result.jpg",
+          width: 800,
+          height: 600,
+        });
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateContext.resize).not.toHaveBeenCalled();
+    });
+
+    it("should handle crop action in fallback manipulation", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync
+        .mockRejectedValueOnce(new Error("Primary failed"))
+        .mockResolvedValueOnce({
+          uri: "file://fallback-result.jpg",
+          width: 800,
+          height: 600,
+        });
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateContext.crop).not.toHaveBeenCalled();
+    });
+
+    it("should handle extent action in fallback manipulation when available", async () => {
+      const asset: ImagePickerAsset = {
+        uri: "file://test.jpg",
+        width: 100,
+        height: 100,
+        exif: { Orientation: 6 },
+      } as ImagePickerAsset;
+
+      mockManipulateAsync
+        .mockRejectedValueOnce(new Error("Primary failed"))
+        .mockResolvedValueOnce({
+          uri: "file://fallback-result.jpg",
+          width: 800,
+          height: 600,
+        });
+
+      await normalizeCameraAsset(asset);
+
+      expect(mockManipulateContext.extent).not.toHaveBeenCalled();
+    });
+  });
+});
