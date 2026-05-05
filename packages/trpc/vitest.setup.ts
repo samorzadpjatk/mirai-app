@@ -1,7 +1,19 @@
-import { vi } from "vitest";
+import { vi, mocked as vitestMocked } from "vitest";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
 import type { PrismaClient, User } from "@mirai-app/db";
 import type { TRPCContext } from "./src/api/trpc";
+
+// Add mocked as a standalone global for test compatibility
+declare global {
+  var mocked: typeof vitestMocked;
+}
+// @ts-expect-error - adding to globalThis for test compatibility
+globalThis.mocked = vitestMocked;
+// Also assign to window for Node.js environment compatibility
+if (typeof global !== 'undefined') {
+  // @ts-expect-error - adding to global for test compatibility
+  global.mocked = vitestMocked;
+}
 
 // Mock @mirai-app/supabase
 vi.mock("@mirai-app/supabase", () => {
@@ -206,7 +218,13 @@ vi.mock("@mirai-app/auth", () => {
 // Mock @mirai-app/shared
 vi.mock("@mirai-app/shared", () => {
   return {
-    // Add any shared utilities that need mocking
+    STANDARD_BUCKETS: {
+      IMAGES: 'images',
+      VIDEOS: 'videos',
+      PUBLIC: 'files-public'
+    },
+    normalizeStoragePath: vi.fn((path: string) => path.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '')),
+    normalizeBucketName: vi.fn((bucket: string) => bucket?.toLowerCase()),
   };
 });
 
