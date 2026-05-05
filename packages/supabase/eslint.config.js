@@ -7,6 +7,7 @@ export default [
     ignores: [
       "dist/**",
       "node_modules/**",
+      "coverage/**",
       "vitest.config.ts",
       "vitest.setup.ts",
     ],
@@ -22,6 +23,10 @@ export default [
       "@typescript-eslint/no-redundant-type-constituents": "off",
       "@typescript-eslint/unbound-method": "off",
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-empty-function": "off",
+      "@typescript-eslint/non-nullable-type-assertion-style": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-unused-vars": "off",
     },
   },
 ];

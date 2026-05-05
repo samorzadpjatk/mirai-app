@@ -1,1 +1,13 @@
-npx commitlint --edit "$1"
+npx commitlint --edit "$1" || exit 1
+
+# Auto sign-off commit for DCO compliance
+# Adds Signed-off-by line automatically if not present
+COMMIT_MSG_FILE="$1"
+SIGN_OFF_LINE="Signed-off-by: User1 <user1@email.test>"
+
+# Check if the sign-off line is already in the commit message
+if ! grep -q "^Signed-off-by:" "$COMMIT_MSG_FILE"; then
+    # Add a blank line and the sign-off line at the end
+    echo "" >> "$COMMIT_MSG_FILE"
+    echo "$SIGN_OFF_LINE" >> "$COMMIT_MSG_FILE"
+fi

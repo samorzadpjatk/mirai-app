@@ -17,7 +17,8 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "test:coverage": "turbo run test:coverage",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.28.6",
@@ -31,6 +32,7 @@
     "babel-jest": "^30.3.0",
     "babel-preset-expo": "^55.0.20",
     "eslint": "^9.39.3",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "prettier": "^3.8.1",
     "react-test-renderer": "19.1.0",
