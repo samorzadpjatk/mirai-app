@@ -1,21 +1,37 @@
 // Mock for react-native
+const React = require("react");
+const { forwardRef } = React;
+
+// Helper to create a mock component
+function createMockComponent(name) {
+  const MockComponent = forwardRef(function MockComponent(props, ref) {
+    return React.createElement(name, { ...props, ref });
+  });
+  MockComponent.displayName = name;
+  return MockComponent;
+}
+
 module.exports = {
-  View: "View",
-  Text: "Text",
-  Image: "Image",
-  TouchableOpacity: "TouchableOpacity",
-  TouchableHighlight: "TouchableHighlight",
-  TouchableWithoutFeedback: "TouchableWithoutFeedback",
-  ScrollView: "ScrollView",
-  FlatList: "FlatList",
-  SectionList: "SectionList",
-  TextInput: "TextInput",
-  Button: "Button",
-  ActivityIndicator: "ActivityIndicator",
-  Modal: "Modal",
-  RefreshControl: "RefreshControl",
-  SafeAreaView: "SafeAreaView",
-  StatusBar: "StatusBar",
+  Alert: {
+    alert: jest.fn(),
+  },
+  View: createMockComponent("View"),
+  Text: createMockComponent("Text"),
+  Image: createMockComponent("Image"),
+  Pressable: createMockComponent("Pressable"),
+  TouchableOpacity: createMockComponent("TouchableOpacity"),
+  TouchableHighlight: createMockComponent("TouchableHighlight"),
+  TouchableWithoutFeedback: createMockComponent("TouchableWithoutFeedback"),
+  ScrollView: createMockComponent("ScrollView"),
+  FlatList: createMockComponent("FlatList"),
+  SectionList: createMockComponent("SectionList"),
+  TextInput: createMockComponent("TextInput"),
+  Button: createMockComponent("Button"),
+  ActivityIndicator: createMockComponent("ActivityIndicator"),
+  Modal: createMockComponent("Modal"),
+  RefreshControl: createMockComponent("RefreshControl"),
+  SafeAreaView: createMockComponent("SafeAreaView"),
+  StatusBar: createMockComponent("StatusBar"),
   StyleSheet: {
     create: (styles) => styles,
     flatten: (style) => style,
@@ -49,12 +65,11 @@ module.exports = {
     removeChangeListener: jest.fn(),
   },
   Animated: {
-    View: "Animated.View",
-    Text: "Animated.Text",
-    Image: "Animated.Image",
-    ScrollView: "Animated.ScrollView",
-    FlatList: "Animated.FlatList",
-    SectionList: "Animated.SectionList",
+    View: createMockComponent("Animated.View"),
+    Text: createMockComponent("Animated.Text"),
+    Image: createMockComponent("Animated.Image"),
+    ScrollView: createMockComponent("Animated.ScrollView"),
+    FlatList: createMockComponent("Animated.FlatList"),
     Value: jest.fn(() => ({
       setValue: jest.fn(),
       interpolate: jest.fn(() => ({})),
@@ -205,6 +220,6 @@ module.exports = {
     CENTER: 1,
     BOTTOM: 2,
   },
-  Switch: "Switch",
-  KeyboardAvoidingView: "KeyboardAvoidingView",
+  Switch: createMockComponent("Switch"),
+  KeyboardAvoidingView: createMockComponent("KeyboardAvoidingView"),
 };

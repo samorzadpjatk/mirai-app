@@ -1,5 +1,39 @@
 import "@testing-library/jest-native/extend-expect";
 
+// Mock expo-image before other imports - must mock before expo-modules-core loads
+jest.mock("expo-image", () => ({
+  Image: jest.fn(() => null),
+  __esModule: true,
+  default: jest.fn(() => null)
+}));
+
+jest.mock("expo", () => ({
+  __esModule: true,
+  default: {},
+}));
+
+// Mock react-native-safe-area-context early (used by test helpers)
+jest.mock("react-native-safe-area-context", () => ({
+  SafeAreaProvider: "SafeAreaProvider",
+  SafeAreaView: "SafeAreaView",
+  useSafeAreaInsets: jest.fn(() => ({
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  })),
+  useSafeAreaFrame: jest.fn(() => ({
+    x: 0,
+    y: 0,
+    width: 375,
+    height: 812,
+  })),
+  initialWindowMetrics: {
+    frame: { x: 0, y: 0, width: 375, height: 812 },
+    insets: { top: 0, left: 0, right: 0, bottom: 0 },
+  },
+}));
+
 // Mock Expo modules
 jest.mock("expo-secure-store", () => ({
   getItemAsync: jest.fn(),
@@ -35,9 +69,7 @@ jest.mock("expo-linking", () => ({
   getLinkingURL: jest.fn(),
 }));
 
-jest.mock("expo-image", () => ({
-  Image: "Image",
-}));
+
 
 jest.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: jest.fn(),
@@ -57,10 +89,16 @@ jest.mock("expo-image-picker", () => ({
 
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(() =>
-    Promise.resolve({ granted: true })
+    Promise.resolve({ granted: true, status: "granted" })
   ),
   requestBackgroundPermissionsAsync: jest.fn(() =>
-    Promise.resolve({ granted: true })
+    Promise.resolve({ granted: true, status: "granted" })
+  ),
+  getForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: true, status: "granted" })
+  ),
+  getBackgroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: true, status: "granted" })
   ),
   getCurrentPositionAsync: jest.fn(() =>
     Promise.resolve({
@@ -78,6 +116,29 @@ jest.mock("expo-location", () => ({
   ),
   watchPositionAsync: jest.fn(() => Promise.resolve({ remove: jest.fn() })),
   hasServicesEnabledAsync: jest.fn(() => Promise.resolve(true)),
+  hasStartedLocationUpdatesAsync: jest.fn(() => Promise.resolve(false)),
+  startLocationUpdatesAsync: jest.fn(),
+  stopLocationUpdatesAsync: jest.fn(),
+  PermissionStatus: {
+    GRANTED: "granted",
+    DENIED: "denied",
+    UNDETERMINED: "undetermined",
+  },
+  Accuracy: {
+    Lowest: 1,
+    Low: 2,
+    Balanced: 3,
+    High: 4,
+    Highest: 5,
+    BestForNavigation: 6,
+  },
+  ActivityType: {
+    Other: 1,
+    AutomotiveNavigation: 2,
+    Fitness: 3,
+    OtherNavigation: 4,
+    Airborne: 5,
+  },
 }));
 
 jest.mock("expo-notifications", () => ({
@@ -114,26 +175,47 @@ jest.mock("expo-crypto", () => ({
   },
 }));
 
-jest.mock("expo-file-system", () => ({
-  documentDirectory: "file:///mock/documents/",
-  cacheDirectory: "file:///mock/cache/",
-  getInfoAsync: jest.fn(() =>
-    Promise.resolve({ exists: true, isDirectory: true })
-  ),
-  makeDirectoryAsync: jest.fn(),
-  readAsStringAsync: jest.fn(),
-  writeAsStringAsync: jest.fn(),
-  deleteAsync: jest.fn(),
-  copyAsync: jest.fn(),
-  moveAsync: jest.fn(),
-  downloadAsync: jest.fn(),
-  uploadAsync: jest.fn(),
-  createDownloadResumable: jest.fn(),
-  FileSystemUploadType: {
-    BINARY_CONTENT: 0,
-    MULTIPART: 1,
-  },
-}));
+jest.mock("expo-file-system", () => {
+  // Mock implementations for Directory and File classes
+  const mockDirectory = {
+    exists: true,
+    create: jest.fn(),
+  };
+
+  const mockFile = {
+    exists: false,
+    delete: jest.fn(),
+    copy: jest.fn(),
+    uri: "file://test.jpg",
+    size: 1024,
+  };
+
+  return {
+    documentDirectory: "file:///mock/documents/",
+    cacheDirectory: "file:///mock/cache/",
+    Paths: {
+      document: "file://documents/",
+    },
+    Directory: jest.fn(() => mockDirectory),
+    File: jest.fn(() => mockFile),
+    getInfoAsync: jest.fn(() =>
+      Promise.resolve({ exists: true, isDirectory: true })
+    ),
+    makeDirectoryAsync: jest.fn(),
+    readAsStringAsync: jest.fn(),
+    writeAsStringAsync: jest.fn(),
+    deleteAsync: jest.fn(),
+    copyAsync: jest.fn(),
+    moveAsync: jest.fn(),
+    downloadAsync: jest.fn(),
+    uploadAsync: jest.fn(),
+    createDownloadResumable: jest.fn(),
+    FileSystemUploadType: {
+      BINARY_CONTENT: 0,
+      MULTIPART: 1,
+    },
+  };
+});
 
 jest.mock("expo-camera", () => ({
   CameraView: "CameraView",
@@ -195,9 +277,70 @@ jest.mock("expo-task-manager", () => ({
 
 // Mock React Native modules
 jest.mock("react-native-reanimated", () => {
-  const Reanimated = require("react-native-reanimated/mock");
-  Reanimated.default.call = () => {};
-  return Reanimated;
+  const React = require("react");
+  return {
+    View: "View",
+    Text: "Text",
+    Image: "Image",
+    ScrollView: "ScrollView",
+    FlatList: "FlatList",
+    TouchableOpacity: "TouchableOpacity",
+    TouchableWithoutFeedback: "TouchableWithoutFeedback",
+    TouchableHighlight: "TouchableHighlight",
+    TouchableNativeFeedback: "TouchableNativeFeedback",
+    Animated: {
+      View: "Animated.View",
+      Text: "Animated.Text",
+      Image: "Animated.Image",
+      ScrollView: "Animated.ScrollView",
+      FlatList: "Animated.FlatList",
+    },
+    useSharedValue: jest.fn(() => ({ value: 0 })),
+    useAnimatedStyle: jest.fn(() => ({})),
+    useAnimatedProps: jest.fn(() => ({})),
+    useDerivedValue: jest.fn(() => ({ value: 0 })),
+    useAnimatedReaction: jest.fn(),
+    useAnimatedGestureHandler: jest.fn(),
+    useAnimatedScrollHandler: jest.fn(),
+    useAnimatedRef: jest.fn(() => React.useRef(null)),
+    createAnimatedComponent: jest.fn((component) => component),
+    runOnJS: jest.fn((fn) => fn),
+    runOnUI: jest.fn((fn) => fn),
+    withTiming: jest.fn((value) => value),
+    withSpring: jest.fn((value) => value),
+    withDecay: jest.fn((value) => value),
+    withDelay: jest.fn((_, value) => value),
+    withSequence: jest.fn((...args) => args[args.length - 1]),
+    withRepeat: jest.fn((value) => value),
+    interpolate: jest.fn(() => 0),
+    Extrapolate: { CLAMP: "clamp", EXTEND: "extend", IDENTITY: "identity" },
+    Easing: {
+      linear: jest.fn(),
+      ease: jest.fn(),
+      quad: jest.fn(),
+      cubic: jest.fn(),
+      poly: jest.fn(),
+      sin: jest.fn(),
+      circle: jest.fn(),
+      exp: jest.fn(),
+      elastic: jest.fn(),
+      back: jest.fn(),
+      bounce: jest.fn(),
+      bezier: jest.fn(),
+      in: jest.fn(),
+      out: jest.fn(),
+      inOut: jest.fn(),
+    },
+    FadeIn: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+    FadeOut: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+    SlideInRight: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+    SlideOutRight: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+    ZoomIn: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+    ZoomOut: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+    Layout: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+    EntryExitTransition: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+    Transition: { duration: jest.fn(() => ({ springify: jest.fn(() => ({ build: () => ({}) })) })) },
+  };
 });
 
 jest.mock("react-native-gesture-handler", () => ({
@@ -228,26 +371,17 @@ jest.mock("react-native-gesture-handler", () => ({
   createNativeWrapper: jest.fn((Component) => Component),
   Directions: {},
   Touchable: "Touchable",
-}));
-
-jest.mock("react-native-safe-area-context", () => ({
-  SafeAreaProvider: "SafeAreaProvider",
-  SafeAreaView: "SafeAreaView",
-  useSafeAreaInsets: jest.fn(() => ({
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  })),
-  useSafeAreaFrame: jest.fn(() => ({
-    x: 0,
-    y: 0,
-    width: 375,
-    height: 812,
-  })),
-  initialWindowMetrics: {
-    frame: { x: 0, y: 0, width: 375, height: 812 },
-    insets: { top: 0, left: 0, right: 0, bottom: 0 },
+  Gesture: {
+    Pan: jest.fn(() => ({
+      onBegin: jest.fn(function() { return this; }),
+      onUpdate: jest.fn(function() { return this; }),
+      onEnd: jest.fn(function() { return this; }),
+      enabled: jest.fn(function() { return this; }),
+    })),
+    Tap: jest.fn(() => ({
+      onBegin: jest.fn(function() { return this; }),
+      onEnd: jest.fn(function() { return this; }),
+    })),
   },
 }));
 
@@ -312,6 +446,11 @@ jest.mock("react-native-worklets", () => ({
   runOnUI: jest.fn((fn) => fn),
   createWorkletRuntime: jest.fn(),
   WorkletRuntime: jest.fn(),
+  __esModule: true,
+  default: {
+    runOnJS: jest.fn((fn) => fn),
+    runOnUI: jest.fn((fn) => fn),
+  }
 }));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
@@ -335,7 +474,7 @@ jest.mock("@react-native-picker/picker", () => ({
 }));
 
 jest.mock("@react-navigation/native", () => ({
-  ...jest.requireActual("@react-navigation/native"),
+  NavigationContainer: "NavigationContainer",
   useNavigation: jest.fn(() => ({
     navigate: jest.fn(),
     goBack: jest.fn(),
@@ -408,31 +547,35 @@ jest.mock("expo-router", () => ({
   },
 }));
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: "Ionicons",
-  MaterialIcons: "MaterialIcons",
-  MaterialCommunityIcons: "MaterialCommunityIcons",
-  FontAwesome: "FontAwesome",
-  FontAwesome5: "FontAwesome5",
-  Feather: "Feather",
-  AntDesign: "AntDesign",
-  Entypo: "Entypo",
-  EvilIcons: "EvilIcons",
-  Foundation: "Foundation",
-  Octicons: "Octicons",
-  SimpleLineIcons: "SimpleLineIcons",
-  Zocial: "Zocial",
+// @expo/vector-icons is mocked via __mocks__/@expo/vector-icons.js
+
+// Mock superjson before @mirai-app/trpc
+jest.mock("superjson", () => ({
+  __esModule: true,
+  default: {
+    serialize: jest.fn((data) => ({ json: data })),
+    deserialize: jest.fn((data) => data.json),
+    stringify: jest.fn(JSON.stringify),
+    parse: jest.fn(JSON.parse),
+  },
+  serialize: jest.fn((data) => ({ json: data })),
+  deserialize: jest.fn((data) => data.json),
 }));
 
-jest.mock("nativewind", () => ({
-  styled: jest.fn((Component) => Component),
-  useColorScheme: jest.fn(() => "light"),
-  vars: jest.fn(),
+// Mock @mirai-app/trpc to avoid superjson ES module issues
+jest.mock("@mirai-app/trpc", () => ({
+  trpc: {
+    useQuery: jest.fn(() => ({ data: null, isLoading: false, error: null })),
+    useMutation: jest.fn(() => ({ mutate: jest.fn(), isLoading: false, error: null })),
+    useInfiniteQuery: jest.fn(() => ({ data: null, isLoading: false, error: null, fetchNextPage: jest.fn() })),
+    useSubscription: jest.fn(),
+  },
+  TRPCProvider: ({ children }) => children,
 }));
 
 jest.mock("react-native-css-interop", () => ({
-  ...jest.requireActual("react-native-css-interop"),
   useColorScheme: jest.fn(() => "light"),
+  vars: jest.fn(),
 }));
 
 // Mock @mirai-app packages
@@ -527,33 +670,55 @@ jest.mock("@mirai-app/shared", () => ({
 }));
 
 // Mock @tanstack/react-query
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: jest.fn(() => ({ data: null, isLoading: false, error: null })),
-  useMutation: jest.fn(() => ({ mutate: jest.fn(), isLoading: false, error: null })),
-  useQueryClient: jest.fn(() => ({
-    invalidateQueries: jest.fn(),
-    refetchQueries: jest.fn(),
-    setQueryData: jest.fn(),
-    getQueryData: jest.fn(),
-    clear: jest.fn(),
-  })),
-  QueryClient: jest.fn(() => ({
-    invalidateQueries: jest.fn(),
-    refetchQueries: jest.fn(),
-    setQueryData: jest.fn(),
-    getQueryData: jest.fn(),
-    clear: jest.fn(),
-  })),
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
-  dehydrate: jest.fn(),
-  hydrate: jest.fn(),
-  focusManager: {
-    setEventListener: jest.fn(),
-  },
-  onlineManager: {
-    setEventListener: jest.fn(),
-  },
-}));
+jest.mock("@tanstack/react-query", () => {
+  const React = require("react");
+
+  // Create a proper QueryClient class mock
+  class MockQueryClient {
+    constructor(options?: any) {
+      this.invalidateQueries = jest.fn();
+      this.refetchQueries = jest.fn();
+      this.setQueryData = jest.fn();
+      this.getQueryData = jest.fn();
+      this.clear = jest.fn();
+    }
+    invalidateQueries: jest.Mock;
+    refetchQueries: jest.Mock;
+    setQueryData: jest.Mock;
+    getQueryData: jest.Mock;
+    clear: jest.Mock;
+  }
+
+  return {
+    useQuery: jest.fn(() => ({ data: null, isLoading: false, error: null })),
+    useMutation: jest.fn((options) => ({
+      mutate: jest.fn((args) => {
+        if (options?.onSuccess) {
+          options.onSuccess();
+        }
+      }),
+      isLoading: false,
+      error: null,
+    })),
+    useQueryClient: jest.fn(() => ({
+      invalidateQueries: jest.fn(),
+      refetchQueries: jest.fn(),
+      setQueryData: jest.fn(),
+      getQueryData: jest.fn(),
+      clear: jest.fn(),
+    })),
+    QueryClient: MockQueryClient,
+    QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
+    dehydrate: jest.fn(),
+    hydrate: jest.fn(),
+    focusManager: {
+      setEventListener: jest.fn(),
+    },
+    onlineManager: {
+      setEventListener: jest.fn(),
+    },
+  };
+});
 
 jest.mock("@tanstack/query-core", () => ({
   QueryClient: jest.fn(() => ({
@@ -565,7 +730,6 @@ jest.mock("@tanstack/query-core", () => ({
   })),
 }));
 
-// Mock zustand
 jest.mock("zustand", () => {
   const actual = jest.requireActual("zustand");
   return {
@@ -573,13 +737,19 @@ jest.mock("zustand", () => {
     ...actual,
     default: jest.fn((createState) => {
       const store = actual.default(createState);
-      const initialState = store.getState();
+      let currentState = store.getState();
       return Object.assign(
-        (...args: unknown[]) => store(...args),
+        (...args) => store(...args),
         store,
         {
-          getState: () => initialState,
-          setState: jest.fn(),
+          getState: () => currentState,
+          setState: (updater) => {
+            if (typeof updater === "function") {
+              currentState = updater(currentState);
+            } else {
+              currentState = { ...currentState, ...updater };
+            }
+          },
           subscribe: jest.fn(),
           destroy: jest.fn(),
         }
@@ -587,6 +757,8 @@ jest.mock("zustand", () => {
     }),
   };
 });
+
+
 
 // Mock tus-js-client
 jest.mock("tus-js-client", () => ({
@@ -636,10 +808,3 @@ jest.mock("@maplibre/maplibre-react-native", () => ({
 global.beforeEach(() => {
   jest.clearAllMocks();
 });
-
-// Silence console warnings during tests
-global.console = {
-  ...console,
-  warn: jest.fn(),
-  error: jest.fn(),
-};
