@@ -48,6 +48,8 @@ It contains:
   - [`@mirai-app/shared`](packages/shared/) - Shared utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Supabase client configuration
 
+📖 **Testing**: See [TESTING.md](TESTING.md) for comprehensive testing documentation. We use Vitest for most packages and Jest for the native app.
+
 All scripts can be called from the project root using `bun run <script>`. (You can also go to a specific package and run `bun run <script>`).
 
 To run a script assigned to a specific component, use `bun run` (or `cd <package> && bun run <script>`):
@@ -97,7 +99,17 @@ cd packages/seed && bun run db:studio
 
 > 📖 **More information about database commands**: See [packages/seed/README.md](packages/seed/README.md)
 
-### 5. Run the selected application
+### 5. Run tests (optional)
+
+Verify your setup by running the test suite:
+
+```bash
+bun run test
+```
+
+> 📖 See [TESTING.md](TESTING.md) for more details about the testing setup.
+
+### 6. Run the selected application
 
 Before running:
 - check the documentation of the [native application](apps/native/README.md) and [backend](apps/backend-server/README.md)

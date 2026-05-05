@@ -136,6 +136,21 @@ import { prisma } from "@mirai-app/db";
 const users = await prisma.user.findMany();
 ```
 
+## Testing
+
+This package follows an **integration-only testing approach**. We don't maintain unit tests here because:
+
+- Database schema changes require a real database to validate properly
+- Prisma client behavior depends on actual database state and responses
+- The package contains no business logic, only schema definitions and generated client exports
+
+Database commands serve as implicit integration tests:
+- `db:generate` validates schema syntax and generates the type-safe client
+- `db:push` and `db:migrate` verify migrations apply correctly
+- `db:studio` provides manual verification of schema changes
+
+For detailed testing rationale and patterns for consuming packages, see [TESTING.md](./TESTING.md). For general monorepo testing conventions, see the root [TESTING.md](../../TESTING.md).
+
 ## More Information
 
 - [Prisma Documentation](https://www.prisma.io/docs)

@@ -1,0 +1,44 @@
+# @mirai-app/[name] - Agent Guide
+
+> **Inherited Conventions**: See [root AGENTS.md](../../AGENTS.md)
+
+## Purpose
+
+Brief description of what this package/app does.
+
+## Tech Stack
+
+- **Tool 1**: version/purpose
+- **Tool 2**: version/purpose
+
+## Key Files
+
+```
+packages/[name]/
+├── src/
+│   └── index.ts
+├── package.json
+└── AGENTS.md
+```
+
+## Development Commands
+
+| Command | Purpose |
+|---------|---------|
+| `dev` | Start development |
+| `build` | Production build |
+| `test` | Run tests |
+
+## Dependencies
+
+### Internal
+
+- `@mirai-app/[dep]` - Purpose
+
+### External
+
+- `library` - Purpose
+
+## Links
+
+- [Root AGENTS.md](../../AGENTS.md)

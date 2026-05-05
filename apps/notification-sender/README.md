@@ -47,6 +47,32 @@ bun run dev
 grep "ERROR" logs/notification-sender.log
 ```
 
+## Testing
+
+This package uses [Vitest](https://vitest.dev/) for testing. See [root TESTING.md](../../TESTING.md) for repo-wide testing conventions.
+
+### Test Commands
+
+```bash
+# Run tests once
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Run tests with coverage report
+bun run test:coverage
+```
+
+### Testing Approach
+
+Tests cover:
+
+- Notification delivery logic
+- Expo Push Notification service integration
+- Error handling and retry mechanisms
+- Mock Supabase Realtime for testing
+
 ## More Information
 
 - [Expo Push Notifications](https://docs.expo.dev/push-notifications/)

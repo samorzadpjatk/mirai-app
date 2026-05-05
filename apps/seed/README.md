@@ -225,3 +225,32 @@ bun run prod
 bun run db:seed:dev
 bun run db:seed:prod
 ```
+
+## Testing
+
+This package uses [Vitest](https://vitest.dev/) for testing. See [root TESTING.md](../../TESTING.md) for repo-wide testing conventions and best practices.
+
+### Test Commands
+
+```bash
+# Run tests once
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Run tests with coverage report
+bun run test:coverage
+```
+
+### Testing Scope
+
+Tests cover the following areas:
+
+- **Seed logic validation** - Core seeding orchestration and flow control
+- **Configuration parsing** - YAML and CSV file parsing and validation
+- **File upload handling** - Supabase Storage bucket operations and file uploads
+- **User/trip creation logic** - Database operations for creating trips, users, and participant relationships
+- **Integration tests** - End-to-end workflows with Supabase Storage and Prisma
+
+Tests use mocked external dependencies (Supabase, Prisma) to run without requiring live services.
