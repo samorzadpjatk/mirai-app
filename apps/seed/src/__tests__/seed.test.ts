@@ -1,165 +1,255 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fileExists, dirExists, readTextFile } from "~/utils/fs";
-import { joinPath } from "~/utils/path";
-import { assetsRoot } from "~/constants";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { runSeed } from "../seed";
+import type { TripConfig } from "../types";
 
-// Mock the dependencies
-vi.mock("~/utils/fs", () => ({
-  fileExists: vi.fn(),
+vi.mock("../config/env", () => ({
+  env: {
+    databaseUrl: "postgresql://localhost:5432/test",
+    supabaseUrl: "http://localhost:8000",
+    supabaseServiceRoleKey: "test-key",
+    publicBucket: "files-public",
+    imageBucket: "image",
+    videoBucket: "video",
+  },
+}));
+
+vi.mock("../storage", () => ({
+  ensureBuckets: vi.fn().mockResolvedValue(undefined),
+  ensurePlaceholderImage: vi.fn().mockResolvedValue(undefined),
+  uploadAssets: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../auth", () => ({
+  loadAuthUsers: vi.fn().mockResolvedValue(new Map()),
+}));
+
+vi.mock("../tripConfigs", () => ({
+  loadTripConfigs: vi.fn(),
+}));
+
+vi.mock("../trips", () => ({
+  seedTrip: vi.fn(),
+}));
+
+vi.mock("../sponsors", () => ({
+  loadSponsorConfigs: vi.fn().mockResolvedValue([]),
+  seedSponsors: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../rewards", () => ({
+  loadRewardConfigs: vi.fn().mockResolvedValue([]),
+  seedRewards: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../tripInfo", () => ({
+  loadTripInfoConfig: vi.fn().mockResolvedValue({}),
+  seedTripInfo: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../utils/fs", () => ({
   dirExists: vi.fn(),
-  readFile: vi.fn(),
-  readTextFile: vi.fn(),
-  listFilesRecursive: vi.fn(),
 }));
 
-vi.mock("~/utils/path", () => ({
-  joinPath: vi.fn((...parts: string[]) => parts.join("/")),
+vi.mock("../constants", () => ({
+  assetsRoot: "/test/assets",
 }));
 
-describe("Seed CLI", () => {
-  beforeEach(() => {
+const mockTrips: TripConfig[] = [
+  {
+    key: "test-trip",
+    name: "Test Trip",
+    description: "A test trip",
+    startDate: "2026-01-01",
+    endDate: "2026-01-10",
+    users: "users/test.csv",
+  },
+];
+
+describe("runSeed", () => {
+  const originalArgv = process.argv;
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { dirExists } = await import("../utils/fs");
+    (dirExists as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    const { loadTripConfigs } = await import("../tripConfigs");
+    (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValue(mockTrips);
+    const { seedTrip } = await import("../trips");
+    (seedTrip as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "trip-123", name: "Test Trip" });
   });
 
-  describe("File System Utilities", () => {
-    it("should check if file exists", async () => {
-      vi.mocked(fileExists).mockResolvedValue(true);
-
-      const result = await fileExists("/path/to/file.txt");
-
-      expect(result).toBe(true);
-      expect(fileExists).toHaveBeenCalledWith("/path/to/file.txt");
-    });
-
-    it("should check if directory exists", async () => {
-      vi.mocked(dirExists).mockResolvedValue(true);
-
-      const result = await dirExists("/path/to/dir");
-
-      expect(result).toBe(true);
-      expect(dirExists).toHaveBeenCalledWith("/path/to/dir");
-    });
-
-    it("should read text file content", async () => {
-      const mockContent = "test content";
-      vi.mocked(readTextFile).mockResolvedValue(mockContent);
-
-      const result = await readTextFile("/path/to/file.txt");
-
-      expect(result).toBe(mockContent);
-      expect(readTextFile).toHaveBeenCalledWith("/path/to/file.txt");
-    });
+  afterEach(() => {
+    process.argv = originalArgv;
   });
 
-  describe("Path Utilities", () => {
-    it("should join paths correctly", () => {
-      const result = joinPath("assets", "dev", "config");
+  it("should seed development environment by default", async () => {
+    process.argv = [];
+    const { ensureBuckets, ensurePlaceholderImage, uploadAssets } = await import("../storage");
+    const { loadAuthUsers } = await import("../auth");
+    const { loadTripConfigs } = await import("../tripConfigs");
+    
+    await runSeed();
 
-      expect(result).toBe("assets/dev/config");
-    });
+    expect(ensureBuckets).toHaveBeenCalled();
+    expect(ensurePlaceholderImage).toHaveBeenCalledWith("dev");
+    expect(uploadAssets).toHaveBeenCalledWith("dev");
+    expect(loadAuthUsers).toHaveBeenCalled();
+    expect(loadTripConfigs).toHaveBeenCalled();
   });
 
-  describe("Constants", () => {
-    it("should have correct assets root path", () => {
-      expect(assetsRoot).toBeDefined();
-      expect(typeof assetsRoot).toBe("string");
-    });
+  it("should seed production environment with --prod flag", async () => {
+    process.argv = ["--prod"];
+    const { ensurePlaceholderImage, uploadAssets } = await import("../storage");
+    
+    await runSeed();
+
+    expect(ensurePlaceholderImage).toHaveBeenCalledWith("prod");
+    expect(uploadAssets).toHaveBeenCalledWith("prod");
   });
 
-  describe("Environment Configuration", () => {
-    it("should validate required environment variables", () => {
-      const requiredEnvVars = [
-        "SUPABASE_URL",
-        "SUPABASE_SERVICE_ROLE_KEY",
-        "SUPABASE_STORAGE_IMAGE_BUCKET",
-        "SUPABASE_STORAGE_VIDEO_BUCKET",
-        "SUPABASE_STORAGE_PUBLIC_BUCKET",
-        "SEED_GHOST_EMAIL",
-        "SEED_GHOST_PASSWORD",
-        "DATABASE_URL",
-      ];
+  it("should throw error if assets directory does not exist", async () => {
+    const { dirExists } = await import("../utils/fs");
+    (dirExists as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    process.argv = [];
 
-      // Check that all required env vars are defined in the env module
-      for (const envVar of requiredEnvVars) {
-        expect(process.env[envVar] || "mock-value").toBeDefined();
-      }
-    });
+    await expect(runSeed()).rejects.toThrow("Missing assets directory for environment");
   });
 
-  describe("Seed Logic", () => {
-    it("should handle missing assets directory", async () => {
-      vi.mocked(dirExists).mockResolvedValue(false);
+  it("should seed each trip from config", async () => {
+    process.argv = [];
+    const { seedTrip } = await import("../trips");
+    
+    await runSeed();
 
-      const envRoot = joinPath(assetsRoot, "dev");
-      const exists = await dirExists(envRoot);
-
-      expect(exists).toBe(false);
-    });
-
-    it("should process trip configurations", async () => {
-      const mockTripConfig = {
-        key: "test-trip",
-        name: "Test Trip",
-        description: "A test trip for unit testing",
-        startDate: "2026-01-01",
-        endDate: "2026-01-10",
-        users: "users/test-users.csv",
-      };
-
-      // Verify trip config structure
-      expect(mockTripConfig.key).toBe("test-trip");
-      expect(mockTripConfig.name).toBe("Test Trip");
-      expect(mockTripConfig.users).toBe("users/test-users.csv");
-    });
-
-    it("should validate CSV user data format", async () => {
-      const mockCsvContent = `email,firstName,lastName,role,password,ghost,wristNumber,houseNumber
-test@example.com,John,Doe,USER,password123,false,1,101`;
-
-      vi.mocked(readTextFile).mockResolvedValue(mockCsvContent);
-
-      const content = await readTextFile("users/test-users.csv");
-      const lines = content.split("\n");
-      const headers = lines[0].split(",");
-
-      expect(headers).toContain("email");
-      expect(headers).toContain("firstName");
-      expect(headers).toContain("lastName");
-      expect(headers).toContain("role");
-    });
+    expect(seedTrip).toHaveBeenCalledWith(
+      expect.objectContaining({ key: "test-trip" }),
+      "users/test.csv",
+      expect.stringContaining("dev"),
+      expect.any(Map)
+    );
   });
 
-  describe("Storage Operations", () => {
-    it("should mock storage bucket operations", async () => {
-      const mockEnsureBuckets = vi.fn().mockResolvedValue(undefined);
-      const mockUploadAssets = vi.fn().mockResolvedValue(undefined);
+  it("should skip sponsors if trip seeding fails", async () => {
+    const { seedTrip } = await import("../trips");
+    (seedTrip as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    const { seedSponsors } = await import("../sponsors");
+    process.argv = [];
 
-      await mockEnsureBuckets();
-      await mockUploadAssets("dev");
+    await runSeed();
 
-      expect(mockEnsureBuckets).toHaveBeenCalled();
-      expect(mockUploadAssets).toHaveBeenCalledWith("dev");
-    });
+    expect(seedSponsors).not.toHaveBeenCalled();
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("✗ Failed to seed trip:")
+    );
   });
 
-  describe("Database Operations", () => {
-    it("should mock database seeding operations", async () => {
-      const mockSeedTrip = vi.fn().mockResolvedValue({
-        id: "trip-123",
-        key: "test-trip",
-        name: "Test Trip",
-      });
+  it("should handle sponsor seeding errors gracefully", async () => {
+    const tripWithSponsors: TripConfig = { ...mockTrips[0], sponsors: "sponsors/test.yaml" };
+    const { loadTripConfigs } = await import("../tripConfigs");
+    (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce([tripWithSponsors]);
+    const { seedSponsors } = await import("../sponsors");
+    (seedSponsors as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Sponsor error"));
+    process.argv = [];
 
-      const result = await mockSeedTrip(
-        { key: "test-trip", name: "Test Trip" },
-        "users/test.csv",
-        "assets/dev",
-        new Map()
-      );
+    await runSeed();
 
-      expect(result).toHaveProperty("id");
-      expect(result).toHaveProperty("key");
-      expect(mockSeedTrip).toHaveBeenCalled();
-    });
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Failed to seed sponsors"),
+      expect.any(Error)
+    );
+  });
+
+  it("should handle reward seeding errors gracefully", async () => {
+    const tripWithRewards: TripConfig = { ...mockTrips[0], rewards: "rewards/test.yaml" };
+    const { loadTripConfigs } = await import("../tripConfigs");
+    (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce([tripWithRewards]);
+    const { seedRewards } = await import("../rewards");
+    (seedRewards as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Reward error"));
+    process.argv = [];
+
+    await runSeed();
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Failed to seed rewards"),
+      expect.any(Error)
+    );
+  });
+
+  it("should handle trip info seeding errors gracefully", async () => {
+    const tripWithInfo: TripConfig = { ...mockTrips[0], info: "info/test.yaml" };
+    const { loadTripConfigs } = await import("../tripConfigs");
+    (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce([tripWithInfo]);
+    const { seedTripInfo } = await import("../tripInfo");
+    (seedTripInfo as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Info error"));
+    process.argv = [];
+
+    await runSeed();
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Failed to seed trip info"),
+      expect.any(Error)
+    );
+  });
+
+  it("should seed multiple trips", async () => {
+    const multipleTrips: TripConfig[] = [
+      { key: "trip-1", name: "Trip 1", description: "Desc 1", startDate: "2026-01-01", endDate: "2026-01-05", users: "users/trip1.csv" },
+      { key: "trip-2", name: "Trip 2", description: "Desc 2", startDate: "2026-02-01", endDate: "2026-02-05", users: "users/trip2.csv" },
+    ];
+    const { loadTripConfigs } = await import("../tripConfigs");
+    (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce(multipleTrips);
+    const { seedTrip } = await import("../trips");
+    (seedTrip as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ id: "trip-1", name: "Trip 1" })
+      .mockResolvedValueOnce({ id: "trip-2", name: "Trip 2" });
+    process.argv = [];
+
+    await runSeed();
+
+    expect(seedTrip).toHaveBeenCalledTimes(2);
+    expect(consoleLogSpy).toHaveBeenCalledWith("Seeding completed");
+  });
+
+  it("should continue seeding even if one trip fails", async () => {
+    const multipleTrips: TripConfig[] = [
+      { key: "trip-1", name: "Trip 1", description: "Desc 1", startDate: "2026-01-01", endDate: "2026-01-05", users: "users/trip1.csv" },
+      { key: "trip-2", name: "Trip 2", description: "Desc 2", startDate: "2026-02-01", endDate: "2026-02-05", users: "users/trip2.csv" },
+    ];
+    const { loadTripConfigs } = await import("../tripConfigs");
+    (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce(multipleTrips);
+    const { seedTrip } = await import("../trips");
+    (seedTrip as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "trip-2", name: "Trip 2" });
+    process.argv = [];
+
+    await runSeed();
+
+    expect(seedTrip).toHaveBeenCalledTimes(2);
+    expect(consoleLogSpy).toHaveBeenCalledWith("Seeding completed");
+  });
+
+  it("should skip rewards seeding if no rewards config", async () => {
+    process.argv = [];
+    const { loadRewardConfigs, seedRewards } = await import("../rewards");
+
+    await runSeed();
+
+    expect(loadRewardConfigs).not.toHaveBeenCalled();
+    expect(seedRewards).not.toHaveBeenCalled();
+  });
+
+  it("should skip trip info seeding if no info config", async () => {
+    process.argv = [];
+    const { loadTripInfoConfig, seedTripInfo } = await import("../tripInfo");
+
+    await runSeed();
+
+    expect(loadTripInfoConfig).not.toHaveBeenCalled();
+    expect(seedTripInfo).not.toHaveBeenCalled();
   });
 });
