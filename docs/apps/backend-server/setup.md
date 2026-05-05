@@ -195,7 +195,7 @@ fastify.get('/api/data', {
 ### Docker
 
 ```dockerfile
-FROM oven/bun:1.3.6
+FROM oven/bun:1.3.13
 
 WORKDIR /app
 COPY package.json bun.lock ./
