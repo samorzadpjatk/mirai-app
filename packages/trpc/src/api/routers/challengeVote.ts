@@ -167,9 +167,10 @@ const recomputeSubmissionVotes = async (
     );
   } else {
     // TransactionClient - execute updates sequentially within the existing transaction
+    const txDb = ctx.db as Prisma.TransactionClient;
     for (const submission of submissions) {
       const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
-      await ctx.db.challengeSubmission.update({
+      await txDb.challengeSubmission.update({
         where: { id: submission.id },
         data: { voteCount: stats.count, voteScore: stats.score },
       });

@@ -12,6 +12,7 @@ interface GroupCardProps {
 export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps) {
   return (
     <TouchableOpacity
+      testID="group-card"
       style={[styles.groupCard, isMyGroup ? styles.groupCardMine : null]}
       activeOpacity={0.8}
       onPress={() => onPress(group)}
@@ -19,12 +20,13 @@ export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps)
       <View style={styles.groupImageContainer}>
         {group.image ? (
           <Image
+            testID="group-image"
             source={{ uri: group.image }}
             style={styles.groupImage}
             resizeMode="cover"
           />
         ) : (
-          <View style={styles.groupImagePlaceholder}>
+          <View testID="image-placeholder" style={styles.groupImagePlaceholder}>
             <Ionicons name="images-outline" size={20} color={colors.primary} />
           </View>
         )}

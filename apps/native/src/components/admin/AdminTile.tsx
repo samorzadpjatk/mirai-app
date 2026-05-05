@@ -49,6 +49,7 @@ export function AdminTile({
 
   return (
     <TouchableOpacity
+      testID="admin-tile"
       style={styles.tile}
       activeOpacity={0.9}
       onPress={handlePress}

@@ -90,6 +90,15 @@ let _onUserFetch:
   | ((authUserId: string) => Promise<AuthUser | null>)
   | undefined;
 
+/**
+ * Reset internal state for testing purposes.
+ * @internal - Do not use in production code
+ */
+export function _resetAuthStoreForTests(): void {
+  _supabaseClient = null;
+  _onUserFetch = undefined;
+}
+
 const fetchAndSetUser = async (
   authUserId: string,
   set: (partial: Partial<AuthState>) => void,

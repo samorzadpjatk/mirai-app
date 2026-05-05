@@ -2,7 +2,7 @@ import { type FastifyRequest } from "fastify";
 
 // Normalizes Fastify (Node) headers to Fetch API headers expected by downstream utilities.
 export const fastifyHeadersToFetchHeaders = (
-  headers: FastifyRequest["headers"],
+  headers: FastifyRequest["headers"] | undefined,
 ): Headers => {
   const fetchHeaders = new Headers();
 

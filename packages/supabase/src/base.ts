@@ -18,6 +18,7 @@ export default function createBaseSupabaseClient(
     realtime: {
       params: {
         eventsPerSecond: 10,
+        ...options?.realtime?.params,
       },
     },
   }) as SupabaseClient;

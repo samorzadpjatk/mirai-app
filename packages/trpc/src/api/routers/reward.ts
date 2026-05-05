@@ -760,7 +760,7 @@ export const rewardRouter = createTRPCRouter({
           });
         }
 
-        const currentStatus = purchase.status as RewardPurchaseStatus;
+        const currentStatus = purchase.status;
 
         if (input.status === "IN_DELIVERY") {
           if (currentStatus !== "ACCEPTED") {
@@ -896,7 +896,7 @@ export const rewardRouter = createTRPCRouter({
           throw new TRPCError({ code: "NOT_FOUND", message: "Purchase not found" });
         }
 
-        const currentStatus = purchase.status as RewardPurchaseStatus;
+        const currentStatus = purchase.status;
         const nextStatus = input.status;
 
         if (!canTransitionPurchaseStatus(currentStatus, nextStatus)) {

@@ -59,7 +59,7 @@ const resolveInstanceStatus = (now: Date, start: Date, end: Date) => {
   return "ACTIVE";
 };
 
-interface RecurringTemplate {
+export interface RecurringTemplate {
   id: string;
   tripId: string;
   name: string;
@@ -202,6 +202,10 @@ export const ensureRecurringInstanceForTemplate = async (params: {
     select: { id: true, status: true },
   });
 
+  if (!created) {
+    return null;
+  }
+
   return { id: created.id, status: created.status, created: true };
 };
 
@@ -306,7 +310,7 @@ export const ensureRecurringInstancesForTrip = async (params: {
   for (const template of templates) {
     const ensured = await precreateRecurringInstancesForTemplate({
       tx: params.tx,
-      template: template as RecurringTemplate,
+      template,
       now: params.now,
     });
     if (ensured.length > 0) {
@@ -340,7 +344,7 @@ export const resolveRecurringChallengeIdForTrip = async (params: {
 
   const ensured = await ensureRecurringInstanceForTemplate({
     tx: params.tx,
-    template: challenge as RecurringTemplate,
+    template: challenge,
     now: params.now,
   });
 

@@ -7,8 +7,9 @@
       "~/*": ["./src/*"]
     },
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "types": ["@testing-library/jest-dom", "@testing-library/react"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"]
+  "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts", "**/__tests__/**/*", "**/*.test.ts", "**/*.test.tsx"]
 }

@@ -127,23 +127,23 @@ try {
         return;
       }
 
-      if (!(await shouldSendBackgroundLocation())) {
-        return;
-      }
-
-      const taskData = data as
-        | {
-            locations?: LocationObject[];
-          }
-        | undefined;
-
-      const latestLocation = taskData?.locations?.at(-1);
-      if (!latestLocation) {
-        return;
-      }
-
       isSending = true;
       try {
+        if (!(await shouldSendBackgroundLocation())) {
+          return;
+        }
+
+        const taskData = data as
+          | {
+              locations?: LocationObject[];
+            }
+          | undefined;
+
+        const latestLocation = taskData?.locations?.at(-1);
+        if (!latestLocation) {
+          return;
+        }
+
         await sendLocationUpdate(latestLocation);
       } catch (taskError) {
         console.error(

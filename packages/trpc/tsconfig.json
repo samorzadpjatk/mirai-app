@@ -10,5 +10,5 @@
     "lib": ["DOM", "ES2022"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"]
+  "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts", "src/**/__tests__/**/*"]
 }

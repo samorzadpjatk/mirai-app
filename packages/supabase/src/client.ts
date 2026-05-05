@@ -54,9 +54,8 @@ export const createSupabaseClient = (
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      ...(options?.auth ?? {}),
+      ...options?.auth,
     },
-    ...(options ?? {}),
   };
 
   return createBaseSupabaseClient(supabaseUrl, supabaseKey, mergedOptions);
