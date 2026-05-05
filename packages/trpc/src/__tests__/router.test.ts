@@ -184,21 +184,16 @@ describe("tRPC Router Testing Patterns", () => {
     it("should return user data when authenticated", async () => {
       const mockUser = {
         id: "auth-123",
-        email: "test@example.com",
       };
 
       const mockDbUser: User = {
         id: "db-123",
         authUserId: "auth-123",
-        email: "test@example.com",
         firstName: "Test",
         lastName: "User",
         role: "USER",
         hasAvatar: false,
-        wristNumber: null,
-        houseNumber: null,
-        groupId: null,
-        emailVerified: new Date(),
+        lastSeenOn: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -209,7 +204,7 @@ describe("tRPC Router Testing Patterns", () => {
         error: null,
       } as never);
 
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -293,36 +288,28 @@ describe("tRPC Router Testing Patterns", () => {
         {
           id: "user-1",
           authUserId: "auth-1",
-          email: "user1@example.com",
           firstName: "User",
           lastName: "One",
           role: "USER",
           hasAvatar: false,
-          wristNumber: null,
-          houseNumber: null,
-          groupId: null,
-          emailVerified: new Date(),
+          lastSeenOn: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
           id: "user-2",
           authUserId: "auth-2",
-          email: "user2@example.com",
           firstName: "User",
           lastName: "Two",
           role: "ADMIN",
           hasAvatar: false,
-          wristNumber: null,
-          houseNumber: null,
-          groupId: null,
-          emailVerified: new Date(),
+          lastSeenOn: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
       ];
 
-      vi.mocked(mockDb.user.findMany).mockResolvedValue(mockUsers as never);
+      vi.mocked(mockDb.user.findMany).mockResolvedValue(mockUsers);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -359,7 +346,7 @@ describe("tRPC Router Testing Patterns", () => {
       expect(ctx.supabase).toBeDefined();
     });
 
-    it("should have access to headers in context", async () => {
+    it("should have access to headers in context", () => {
       const headers = new Headers({
         "User-Agent": "test-agent",
         "X-Custom-Header": "custom-value",
