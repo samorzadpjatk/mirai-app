@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ensureBuckets, ensurePlaceholderImage, uploadAssets, BUCKET_MAP } from "../storage";
-import type { SeedEnv } from "../types";
 
 vi.mock("../config/env", () => ({
   env: {
@@ -18,11 +17,11 @@ const mockUpload = vi.fn();
 vi.mock("../config/supabase", () => ({
   supabase: {
     storage: {
-      listBuckets: () => mockListBuckets(),
-      createBucket: (name: string, options: object) => mockCreateBucket(name, options),
+      listBuckets: () => mockListBuckets() as Promise<{ data: { name: string }[] | null; error: { message: string } | null }>,
+      createBucket: (name: string, options: object) => mockCreateBucket(name, options) as Promise<{ error: { message: string } | null }>,
       from: (bucket: string) => ({
-        list: (path: string, options: object) => mockList(path, options),
-        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options),
+        list: (path: string, options: object) => mockList(path, options) as Promise<{ data: unknown[]; error: null }>,
+        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
       }),
     },
   },
@@ -35,8 +34,8 @@ const mockNormalizePath = vi.fn((p: string) => p);
 const mockRelativePath = vi.fn((from: string, to: string) => to.replace(from + "/", ""));
 
 vi.mock("../utils/fs", () => ({
-  listFilesRecursive: (...args: unknown[]) => mockListFilesRecursive(...args),
-  readFile: (path: string) => mockReadFile(path),
+  listFilesRecursive: (...args: unknown[]) => mockListFilesRecursive(...args) as Promise<string[]>,
+  readFile: (path: string) => mockReadFile(path) as { stream: () => unknown; stat: () => Promise<{ size: number }> },
 }));
 
 vi.mock("../utils/path", () => ({
@@ -150,8 +149,8 @@ describe("ensurePlaceholderImage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
   });
 
   it("should skip if placeholder already exists", async () => {
@@ -216,13 +215,12 @@ describe("ensurePlaceholderImage", () => {
 });
 
 describe("uploadAssets", () => {
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
   });
 
   it("should upload files to correct buckets", async () => {

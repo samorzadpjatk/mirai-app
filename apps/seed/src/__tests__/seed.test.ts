@@ -72,8 +72,8 @@ describe("runSeed", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
     const { dirExists } = await import("../utils/fs");
     (dirExists as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     const { loadTripConfigs } = await import("../tripConfigs");

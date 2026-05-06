@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { seedTrip } from "../trips";
+import type { AuthUserByEmail, CsvUser } from "../types";
+import type { SupabaseUser } from "@mirai-app/supabase";
 
 const mockReadTextFile = vi.fn();
 const mockReadFile = vi.fn();
@@ -19,8 +21,8 @@ const mockTripParticipantUpsert = vi.fn();
 const mockUpload = vi.fn();
 
 vi.mock("../utils/fs", () => ({
-  readTextFile: (path: string) => mockReadTextFile(path),
-  readFile: (path: string) => mockReadFile(path),
+  readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
+  readFile: (path: string) => mockReadFile(path) as { stream: () => unknown; stat: () => Promise<{ size: number }> },
 }));
 
 vi.mock("../utils/path", () => ({
@@ -28,28 +30,28 @@ vi.mock("../utils/path", () => ({
 }));
 
 vi.mock("../users", () => ({
-  parseUsersCsv: (csv: string) => mockParseUsersCsv(csv),
+  parseUsersCsv: (csv: string) => mockParseUsersCsv(csv) as CsvUser[],
 }));
 
 vi.mock("../auth", () => ({
-  createAuthUserByEmail: (...args: unknown[]) => mockCreateAuthUserByEmail(...args),
-  ensureGhostAuthUser: (authUsers: Map<string, unknown>) => mockEnsureGhostAuthUser(authUsers),
+  createAuthUserByEmail: (...args: unknown[]) => mockCreateAuthUserByEmail(...args) as Promise<SupabaseUser | null>,
+  ensureGhostAuthUser: (authUsers: AuthUserByEmail) => mockEnsureGhostAuthUser(authUsers) as Promise<SupabaseUser | null>,
 }));
 
 vi.mock("../config/db", () => ({
   prisma: {
     trip: {
-      findFirst: (...args: unknown[]) => mockTripFindFirst(...args),
-      create: (...args: unknown[]) => mockTripCreate(...args),
-      update: (...args: unknown[]) => mockTripUpdate(...args),
+      findFirst: (...args: unknown[]) => mockTripFindFirst(...args) as Promise<{ id: string; name: string } | null>,
+      create: (...args: unknown[]) => mockTripCreate(...args) as Promise<{ id: string; name: string }>,
+      update: (...args: unknown[]) => mockTripUpdate(...args) as Promise<{ id: string; name: string }>,
     },
     user: {
-      findFirst: (...args: unknown[]) => mockUserFindFirst(...args),
-      create: (...args: unknown[]) => mockUserCreate(...args),
-      update: (...args: unknown[]) => mockUserUpdate(...args),
+      findFirst: (...args: unknown[]) => mockUserFindFirst(...args) as Promise<{ id: string; authUserId: string; role: string } | null>,
+      create: (...args: unknown[]) => mockUserCreate(...args) as Promise<{ id: string; authUserId: string; role: string }>,
+      update: (...args: unknown[]) => mockUserUpdate(...args) as Promise<{ id: string; authUserId: string; role: string }>,
     },
     tripParticipant: {
-      upsert: (...args: unknown[]) => mockTripParticipantUpsert(...args),
+      upsert: (...args: unknown[]) => mockTripParticipantUpsert(...args) as Promise<unknown>,
     },
   },
 }));
@@ -58,7 +60,7 @@ vi.mock("../config/supabase", () => ({
   supabase: {
     storage: {
       from: (bucket: string) => ({
-        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options),
+        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
       }),
     },
   },
@@ -92,7 +94,7 @@ describe("trips", () => {
       mockTripCreate.mockResolvedValue({ id: "trip-1", name: "New Trip" });
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
+      const authUsers: AuthUserByEmail = new Map();
 
       const result = await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -126,7 +128,7 @@ describe("trips", () => {
       mockTripUpdate.mockResolvedValue({ ...existingTrip, description: "Updated description" });
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
+      const authUsers: AuthUserByEmail = new Map();
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -164,8 +166,8 @@ describe("trips", () => {
       mockTripCreate.mockResolvedValue({ id: "trip-1", name: "Trip With Background" });
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -205,7 +207,7 @@ describe("trips", () => {
       mockTripCreate.mockResolvedValue({ id: "trip-1", name: "Trip With Empty Background" });
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
+      const authUsers: AuthUserByEmail = new Map();
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -235,8 +237,8 @@ describe("trips", () => {
       mockTripCreate.mockResolvedValue({ id: "trip-1", name: "Trip With Background" });
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -266,8 +268,8 @@ describe("trips", () => {
       mockTripCreate.mockResolvedValue({ id: "trip-1", name: "Trip With Background" });
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -306,8 +308,8 @@ describe("trips", () => {
       mockUserFindFirst.mockResolvedValueOnce(dbUser1).mockResolvedValueOnce(dbUser2);
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -341,7 +343,7 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers = new Map([["existing@test.com", existingAuthUser]]);
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -383,9 +385,9 @@ describe("trips", () => {
       mockUserCreate.mockResolvedValue(newDbUser);
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -461,7 +463,7 @@ describe("trips", () => {
       mockUserFindFirst.mockResolvedValue(dbUser);
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
+      const authUsers: AuthUserByEmail = new Map();
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -494,8 +496,8 @@ describe("trips", () => {
       mockCreateAuthUserByEmail.mockResolvedValue(null);
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -524,8 +526,8 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(ghostAuthUser);
       mockUserFindFirst.mockResolvedValue(ghostDbUser);
 
-      const authUsers = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -562,9 +564,9 @@ describe("trips", () => {
       mockUserFindFirst.mockResolvedValue(null);
       mockUserCreate.mockResolvedValue(newGhostDbUser);
 
-      const authUsers = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -596,8 +598,8 @@ describe("trips", () => {
       mockTripCreate.mockResolvedValue({ id: "trip-1", name: "Trip With Failed Ghost" });
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const result = await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -627,22 +629,22 @@ describe("trips", () => {
       mockParseUsersCsv.mockReturnValue(users);
       mockTripFindFirst.mockResolvedValue(null);
       mockTripCreate.mockResolvedValue({ id: "trip-1", name: "Trip With Roles" });
-      mockCreateAuthUserByEmail.mockImplementation((email) =>
-        Promise.resolve({ id: `auth-${email}`, email })
+      mockCreateAuthUserByEmail.mockImplementation((email: string) =>
+        Promise.resolve({ id: `auth-${email}`, email } as SupabaseUser)
       );
       mockUserFindFirst.mockResolvedValue(null);
-      mockUserCreate.mockImplementation((data) => Promise.resolve({ id: "db-new", ...data.data }));
+      mockUserCreate.mockImplementation((data: { data: { authUserId: string; firstName: string; lastName: string; role: string } }) => Promise.resolve({ id: "db-new", ...data.data }));
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
-      const authUsers = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const authUsers: AuthUserByEmail = new Map();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
       expect(mockUserCreate).toHaveBeenCalledTimes(5);
 
-      const roles = mockUserCreate.mock.calls.map((call) => call[0].data.role);
+      const roles = (mockUserCreate.mock.calls as [{ data: { role: string } }][]).map((call) => call[0].data.role);
       expect(roles).toContain("ADMIN");
       expect(roles).toContain("MODERATOR");
       expect(roles).toContain("SERVICE");

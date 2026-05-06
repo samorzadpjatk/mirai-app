@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { assetsRoot } from "../constants";
 
 describe("constants", () => {
-  const originalCwd = process.cwd;
+  const originalCwd: () => string = () => process.cwd();
 
   beforeEach(() => {
     // Reset modules to ensure fresh import

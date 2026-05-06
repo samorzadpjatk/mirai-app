@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { SupabaseClient } from "@mirai-app/supabase";
 
 describe("config/supabase", () => {
   const mockCreateSupabaseClient = vi.fn();
@@ -13,7 +14,7 @@ describe("config/supabase", () => {
     });
 
     vi.doMock("@mirai-app/supabase", () => ({
-      createSupabaseClient: mockCreateSupabaseClient,
+      createSupabaseClient: (...args: unknown[]) => mockCreateSupabaseClient(...args) as SupabaseClient,
     }));
   });
 
@@ -53,7 +54,7 @@ describe("config/supabase", () => {
 
     await import("../../config/supabase");
 
-    const callArgs = mockCreateSupabaseClient.mock.calls[0];
+    const callArgs = mockCreateSupabaseClient.mock.calls[0] as [string, string, undefined, { auth: { autoRefreshToken: boolean; persistSession: boolean } }];
     const options = callArgs[3];
 
     expect(options.auth.autoRefreshToken).toBe(false);

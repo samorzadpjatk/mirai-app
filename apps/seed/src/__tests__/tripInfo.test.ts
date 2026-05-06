@@ -1,16 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { loadTripInfoConfig, seedTripInfo } from "../tripInfo";
+import type { TripInfoConfig } from "../types";
 
 const mockReadTextFile = vi.fn();
 const mockReadFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
-const mockCreateDb = vi.fn();
+const mockCreateDb: ReturnType<typeof vi.fn> = vi.fn();
 const mockUpload = vi.fn();
 const mockGetPublicUrl = vi.fn();
 
 vi.mock("../utils/fs", () => ({
-  readTextFile: (path: string) => mockReadTextFile(path),
-  readFile: (path: string) => mockReadFile(path),
+  readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
+  readFile: (path: string) => mockReadFile(path) as { stream: () => unknown },
 }));
 
 vi.mock("../utils/path", () => ({
@@ -19,10 +20,10 @@ vi.mock("../utils/path", () => ({
 
 vi.mock("yaml", () => ({
   default: {
-    parse: (content: string) => {
+    parse: (content: string): TripInfoConfig => {
       if (!content.trim()) return { resources: [] };
       try {
-        return JSON.parse(content);
+        return JSON.parse(content) as TripInfoConfig;
       } catch {
         return { resources: [] };
       }
@@ -34,8 +35,8 @@ vi.mock("../config/supabase", () => ({
   supabase: {
     storage: {
       from: (bucket: string) => ({
-        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options),
-        getPublicUrl: (path: string) => mockGetPublicUrl(bucket, path),
+        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
+        getPublicUrl: (path: string) => mockGetPublicUrl(bucket, path) as { data: { publicUrl: string } },
       }),
     },
   },
@@ -54,7 +55,7 @@ vi.mock("../constants", () => ({
 }));
 
 vi.mock("@mirai-app/db", () => ({
-  createDb: (...args: unknown[]) => mockCreateDb(...args),
+  createDb: (...args: unknown[]) => mockCreateDb(...args) as { tripResource: { create: ReturnType<typeof vi.fn>; deleteMany: ReturnType<typeof vi.fn> }; tripInsurance: { create: ReturnType<typeof vi.fn>; deleteMany: ReturnType<typeof vi.fn> }; tripInsuranceStep: { create: ReturnType<typeof vi.fn>; deleteMany: ReturnType<typeof vi.fn> } },
 }));
 
 describe("tripInfo", () => {
@@ -108,7 +109,7 @@ describe("tripInfo", () => {
   describe("seedTripInfo", () => {
     const mockTripResourceCreate = vi.fn();
     const mockTripResourceDeleteMany = vi.fn();
-    const mockTripInsuranceCreate = vi.fn();
+    const mockTripInsuranceCreate: ReturnType<typeof vi.fn> = vi.fn();
     const mockTripInsuranceDeleteMany = vi.fn();
     const mockTripInsuranceStepDeleteMany = vi.fn();
     const mockTripInsuranceStepCreate = vi.fn();
@@ -131,7 +132,7 @@ describe("tripInfo", () => {
     });
 
     it("should skip if no resources configured", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", { resources: [] });
 
@@ -142,11 +143,11 @@ describe("tripInfo", () => {
     });
 
     it("should delete existing resources before creating new ones", async () => {
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [{ type: "hero_image", label: "Hero", sortOrder: 0 }],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -158,7 +159,7 @@ describe("tripInfo", () => {
     });
 
     it("should create resources with correct data", async () => {
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [
           {
             type: "hero_image",
@@ -174,7 +175,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -197,7 +198,7 @@ describe("tripInfo", () => {
     });
 
     it("should handle resources with null/undefined optional fields", async () => {
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [
           {
             type: "simple",
@@ -206,7 +207,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -233,7 +234,7 @@ describe("tripInfo", () => {
       mockReadFile.mockReturnValue(mockFile);
       mockUpload.mockResolvedValue({ error: null });
 
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [
           {
             type: "pdf_map",
@@ -244,7 +245,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -264,7 +265,7 @@ describe("tripInfo", () => {
       mockReadFile.mockReturnValue(mockFile);
       mockUpload.mockResolvedValue({ error: null });
 
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [
           {
             type: "hero_image",
@@ -275,7 +276,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -294,7 +295,7 @@ describe("tripInfo", () => {
       mockReadFile.mockReturnValue(mockFile);
       mockUpload.mockResolvedValue({ error: null });
 
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [
           {
             type: "infopack",
@@ -305,7 +306,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -319,7 +320,7 @@ describe("tripInfo", () => {
       mockReadFile.mockReturnValue(mockFile);
       mockUpload.mockResolvedValue({ error: { message: "Upload failed" } });
 
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [
           {
             type: "pdf_map",
@@ -330,8 +331,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -348,7 +349,7 @@ describe("tripInfo", () => {
         throw new Error("File not found");
       });
 
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [
           {
             type: "pdf_map",
@@ -359,8 +360,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -378,7 +379,7 @@ describe("tripInfo", () => {
       mockReadFile.mockReturnValue(mockFile);
       mockUpload.mockResolvedValue({ error: null });
 
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [
           {
             type: "unknown",
@@ -389,8 +390,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -403,7 +404,7 @@ describe("tripInfo", () => {
     });
 
     it("should create insurance with steps", async () => {
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [{ type: "simple", label: "Simple", sortOrder: 0 }],
         insurance: {
           label: "Insurance Info",
@@ -431,7 +432,7 @@ describe("tripInfo", () => {
       const createdInsurance = { id: "ins-1" };
       mockTripInsuranceCreate.mockResolvedValue(createdInsurance);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -471,7 +472,7 @@ describe("tripInfo", () => {
     });
 
     it("should handle insurance without optional fields", async () => {
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [{ type: "simple", label: "Simple", sortOrder: 0 }],
         insurance: {
           label: "Basic Insurance",
@@ -486,11 +487,12 @@ describe("tripInfo", () => {
 
       mockTripInsuranceCreate.mockResolvedValue({ id: "ins-1" });
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
       expect(mockTripInsuranceCreate).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           hospitalName: null,
           hospitalAddress: null,
@@ -502,13 +504,13 @@ describe("tripInfo", () => {
     });
 
     it("should throw and log error on database failure", async () => {
-      const infoConfig = {
+      const infoConfig: TripInfoConfig = {
         resources: [{ type: "simple", label: "Simple", sortOrder: 0 }],
       };
 
       mockTripResourceDeleteMany.mockRejectedValue(new Error("DB Error"));
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
 
       await expect(seedTripInfo("db-url", "trip-1", "dev", infoConfig)).rejects.toThrow("DB Error");
       expect(consoleSpy).toHaveBeenCalledWith("✗ Failed to seed trip info:", expect.any(Error));

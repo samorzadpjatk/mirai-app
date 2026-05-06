@@ -6,8 +6,8 @@ const mockReadTextFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
 
 vi.mock("../utils/fs", () => ({
-  listFilesRecursive: (...args: unknown[]) => mockListFilesRecursive(...args),
-  readTextFile: (path: string) => mockReadTextFile(path),
+  listFilesRecursive: (...args: unknown[]) => mockListFilesRecursive(...args) as Promise<string[]>,
+  readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
 }));
 
 vi.mock("../utils/path", () => ({

@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { SponsorConfig } from "../types";
 
 const mockReadTextFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
 
 vi.mock("../utils/fs", () => ({
-  readTextFile: (path: string) => mockReadTextFile(path),
+  readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
 }));
 
 vi.mock("../utils/path", () => ({
@@ -13,10 +14,10 @@ vi.mock("../utils/path", () => ({
 
 vi.mock("yaml", () => ({
   default: {
-    parse: (content: string) => {
+    parse: (content: string): unknown[] | null => {
       if (!content.trim()) return null;
       try {
-        return JSON.parse(content);
+        return JSON.parse(content) as unknown[];
       } catch {
         return [];
       }
@@ -25,8 +26,8 @@ vi.mock("yaml", () => ({
 }));
 
 describe("sponsors", () => {
-  const mockSponsorUpsert = vi.fn();
-  const mockTripSponsorUpsert = vi.fn();
+  const mockSponsorUpsert: ReturnType<typeof vi.fn> = vi.fn();
+  const mockTripSponsorUpsert: ReturnType<typeof vi.fn> = vi.fn();
   const mockCreateDb = vi.fn();
 
   beforeEach(() => {
@@ -41,7 +42,7 @@ describe("sponsors", () => {
     });
 
     vi.doMock("@mirai-app/db", () => ({
-      createDb: (...args: unknown[]) => mockCreateDb(...args),
+      createDb: (...args: unknown[]) => mockCreateDb(...args) as { sponsor: { upsert: typeof mockSponsorUpsert }; tripSponsor: { upsert: typeof mockTripSponsorUpsert } },
     }));
   });
 
@@ -116,7 +117,7 @@ describe("sponsors", () => {
 
   describe("seedSponsors", () => {
     it("should skip if no sponsors configured", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", []);
@@ -128,7 +129,7 @@ describe("sponsors", () => {
     });
 
     it("should upsert sponsors", async () => {
-      const sponsorConfigs = [
+      const sponsorConfigs: SponsorConfig[] = [
         {
           id: "sponsor-1",
           name: "Acme Corp",
@@ -140,7 +141,7 @@ describe("sponsors", () => {
         },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
@@ -172,7 +173,7 @@ describe("sponsors", () => {
     });
 
     it("should handle null optional fields", async () => {
-      const sponsorConfigs = [
+      const sponsorConfigs: SponsorConfig[] = [
         {
           id: "sponsor-1",
           name: "Simple Sponsor",
@@ -181,18 +182,20 @@ describe("sponsors", () => {
         },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
 
       expect(mockSponsorUpsert).toHaveBeenCalledWith({
         where: { id: "sponsor-1" },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         update: expect.objectContaining({
           height: null,
           offsetX: null,
           offsetY: null,
         }),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         create: expect.objectContaining({
           height: null,
           offsetX: null,
@@ -204,7 +207,7 @@ describe("sponsors", () => {
     });
 
     it("should associate sponsors with trip", async () => {
-      const sponsorConfigs = [
+      const sponsorConfigs: SponsorConfig[] = [
         {
           id: "sponsor-1",
           name: "Acme Corp",
@@ -213,7 +216,7 @@ describe("sponsors", () => {
         },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
@@ -239,13 +242,13 @@ describe("sponsors", () => {
     });
 
     it("should handle multiple sponsors", async () => {
-      const sponsorConfigs = [
+      const sponsorConfigs: SponsorConfig[] = [
         { id: "sponsor-1", name: "Sponsor 1", description: "Desc 1", logoPath: "img1.png" },
         { id: "sponsor-2", name: "Sponsor 2", description: "Desc 2", logoPath: "img2.png" },
         { id: "sponsor-3", name: "Sponsor 3", description: "Desc 3", logoPath: "img3.png" },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
@@ -257,13 +260,13 @@ describe("sponsors", () => {
     });
 
     it("should throw and log error on database failure", async () => {
-      const sponsorConfigs = [
+      const sponsorConfigs: SponsorConfig[] = [
         { id: "sponsor-1", name: "Sponsor 1", description: "Desc 1", logoPath: "img.png" },
       ];
 
       mockSponsorUpsert.mockRejectedValue(new Error("DB Error"));
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
 
       const { seedSponsors } = await import("../sponsors");
       await expect(seedSponsors("db-url", "trip-1", "dev", sponsorConfigs)).rejects.toThrow("DB Error");
@@ -273,11 +276,11 @@ describe("sponsors", () => {
     });
 
     it("should create database client with provided URL", async () => {
-      const sponsorConfigs = [
+      const sponsorConfigs: SponsorConfig[] = [
         { id: "sponsor-1", name: "Sponsor 1", description: "Desc 1", logoPath: "img.png" },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("postgresql://test:5432/db", "trip-1", "dev", sponsorConfigs);

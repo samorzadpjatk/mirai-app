@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { loadAuthUsers, createAuthUserByEmail, ensureGhostAuthUser } from "../auth";
+import type { AuthUserByEmail } from "../types";
+import type { SupabaseUser } from "@mirai-app/supabase";
 
 const mockListUsers = vi.fn();
 const mockCreateUser = vi.fn();
@@ -8,8 +10,8 @@ vi.mock("../config/supabase", () => ({
   supabase: {
     auth: {
       admin: {
-        listUsers: (...args: unknown[]) => mockListUsers(...args),
-        createUser: (...args: unknown[]) => mockCreateUser(...args),
+        listUsers: (...args: unknown[]) => mockListUsers(...args) as Promise<{ data: { users: SupabaseUser[] } | null; error: { message: string } | null }>,
+        createUser: (...args: unknown[]) => mockCreateUser(...args) as Promise<{ data: { user: SupabaseUser | null } | null; error: { message: string } | null }>,
       },
     },
   },
@@ -143,7 +145,7 @@ describe("auth", () => {
         error: { message: "Email already exists" },
       });
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       const result = await createAuthUserByEmail(
         "existing@test.com",
@@ -163,7 +165,7 @@ describe("auth", () => {
     it("should return null when no user in response", async () => {
       mockCreateUser.mockResolvedValue({ data: { user: null }, error: null });
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       const result = await createAuthUserByEmail(
         "test@test.com",
@@ -206,8 +208,8 @@ describe("auth", () => {
 
   describe("ensureGhostAuthUser", () => {
     it("should return existing ghost user from map", async () => {
-      const existingGhost = { id: "ghost-1", email: "ghost@test.com" };
-      const authUsers = new Map([["ghost@test.com", existingGhost]]);
+      const existingGhost: SupabaseUser = { id: "ghost-1", email: "ghost@test.com" } as SupabaseUser;
+      const authUsers: AuthUserByEmail = new Map([["ghost@test.com", existingGhost]]);
 
       const result = await ensureGhostAuthUser(authUsers);
 
@@ -216,10 +218,10 @@ describe("auth", () => {
     });
 
     it("should create ghost user if not exists", async () => {
-      const newGhost = { id: "ghost-new", email: "ghost@test.com" };
+      const newGhost: SupabaseUser = { id: "ghost-new", email: "ghost@test.com" } as SupabaseUser;
       mockCreateUser.mockResolvedValue({ data: { user: newGhost }, error: null });
 
-      const authUsers = new Map();
+      const authUsers: AuthUserByEmail = new Map();
       const result = await ensureGhostAuthUser(authUsers);
 
       expect(result).toEqual(newGhost);
@@ -241,8 +243,8 @@ describe("auth", () => {
         error: { message: "Creation failed" },
       });
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-      const authUsers = new Map();
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const authUsers: AuthUserByEmail = new Map();
 
       const result = await ensureGhostAuthUser(authUsers);
 
@@ -262,11 +264,11 @@ describe("auth", () => {
         },
       }));
 
-      const newGhost = { id: "ghost-1", email: "GHOST@TEST.COM" };
+      const newGhost: SupabaseUser = { id: "ghost-1", email: "GHOST@TEST.COM" } as SupabaseUser;
       mockCreateUser.mockResolvedValue({ data: { user: newGhost }, error: null });
 
       const { ensureGhostAuthUser: ensureGhostWithUppercase } = await import("../auth");
-      const authUsers = new Map();
+      const authUsers: AuthUserByEmail = new Map();
 
       await ensureGhostWithUppercase(authUsers);
 

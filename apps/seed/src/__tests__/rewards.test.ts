@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { RewardConfig } from "../types";
+import type { SupabaseUser } from "@mirai-app/supabase";
 
 const mockReadTextFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
 
 vi.mock("../utils/fs", () => ({
-  readTextFile: (path: string) => mockReadTextFile(path),
+  readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
 }));
 
 vi.mock("../utils/path", () => ({
@@ -13,10 +15,10 @@ vi.mock("../utils/path", () => ({
 
 vi.mock("yaml", () => ({
   default: {
-    parse: (content: string) => {
+    parse: (content: string): unknown[] => {
       if (!content.trim()) return [];
       try {
-        return JSON.parse(content);
+        return JSON.parse(content) as unknown[];
       } catch {
         return [];
       }
@@ -31,8 +33,8 @@ vi.mock("../config/env", () => ({
 }));
 
 describe("rewards", () => {
-  const mockRewardCreate = vi.fn();
-  const mockUserFindFirst = vi.fn();
+  const mockRewardCreate: ReturnType<typeof vi.fn> = vi.fn();
+  const mockUserFindFirst: ReturnType<typeof vi.fn> = vi.fn();
   const mockCreateDb = vi.fn();
 
   beforeEach(() => {
@@ -44,7 +46,7 @@ describe("rewards", () => {
     });
 
     vi.doMock("@mirai-app/db", () => ({
-      createDb: (...args: unknown[]) => mockCreateDb(...args),
+      createDb: (...args: unknown[]) => mockCreateDb(...args) as { reward: { create: typeof mockRewardCreate }; user: { findFirst: typeof mockUserFindFirst } },
     }));
   });
 
@@ -135,20 +137,21 @@ describe("rewards", () => {
       const mockAdminUser = { id: "admin-1", role: "ADMIN" };
       mockUserFindFirst.mockResolvedValue(mockAdminUser);
 
-      const rewardConfigs = [
+      const rewardConfigs: RewardConfig[] = [
         { name: "Reward 1", description: "Desc 1", availableQuantity: 10, coinCost: 50 },
         { name: "Reward 2", description: "Desc 2", availableQuantity: 5, coinCost: 100, image: "img.jpg" },
       ];
 
-      const authUsers = new Map([["admin@test.com", { id: "auth-1" }]]);
+      const authUsers = new Map<string, SupabaseUser>([["admin@test.com", { id: "auth-1" } as SupabaseUser]]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockRewardCreate).toHaveBeenCalledTimes(2);
       expect(mockRewardCreate).toHaveBeenNthCalledWith(1, {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           name: "Reward 1",
           description: "Desc 1",
@@ -164,28 +167,29 @@ describe("rewards", () => {
     });
 
     it("should prefer admin users over regular users", async () => {
-      const mockRegularUser = { id: "user-1", role: "USER" };
-      const mockAdminUser = { id: "admin-1", role: "ADMIN" };
+      const mockRegularUser: { id: string; role: string } = { id: "user-1", role: "USER" };
+      const mockAdminUser: { id: string; role: string } = { id: "admin-1", role: "ADMIN" };
 
       mockUserFindFirst
         .mockResolvedValueOnce(mockRegularUser)
         .mockResolvedValueOnce(mockAdminUser);
 
-      const rewardConfigs = [
+      const rewardConfigs: RewardConfig[] = [
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
       ];
 
-      const authUsers = new Map([
-        ["user@test.com", { id: "auth-1" }],
-        ["admin@test.com", { id: "auth-2" }],
+      const authUsers = new Map<string, SupabaseUser>([
+        ["user@test.com", { id: "auth-1" } as SupabaseUser],
+        ["admin@test.com", { id: "auth-2" } as SupabaseUser],
       ]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockRewardCreate).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           createdById: "admin-1",
         }),
@@ -195,21 +199,22 @@ describe("rewards", () => {
     });
 
     it("should use moderator users if no admin available", async () => {
-      const mockModerator = { id: "mod-1", role: "MODERATOR" };
+      const mockModerator: { id: string; role: string } = { id: "mod-1", role: "MODERATOR" };
       mockUserFindFirst.mockResolvedValue(mockModerator);
 
-      const rewardConfigs = [
+      const rewardConfigs: RewardConfig[] = [
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
       ];
 
-      const authUsers = new Map([["mod@test.com", { id: "auth-1" }]]);
+      const authUsers = new Map<string, SupabaseUser>([["mod@test.com", { id: "auth-1" } as SupabaseUser]]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockRewardCreate).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           createdById: "mod-1",
         }),
@@ -221,13 +226,13 @@ describe("rewards", () => {
     it("should warn and skip if no valid user found", async () => {
       mockUserFindFirst.mockResolvedValue(null);
 
-      const rewardConfigs = [
+      const rewardConfigs: RewardConfig[] = [
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
       ];
 
-      const authUsers = new Map([["user@test.com", { id: "auth-1" }]]);
+      const authUsers = new Map<string, SupabaseUser>([["user@test.com", { id: "auth-1" } as SupabaseUser]]);
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
@@ -239,10 +244,10 @@ describe("rewards", () => {
     });
 
     it("should handle empty reward configs", async () => {
-      const mockUser = { id: "user-1", role: "USER" };
+      const mockUser: { id: string; role: string } = { id: "user-1", role: "USER" };
       mockUserFindFirst.mockResolvedValue(mockUser);
 
-      const authUsers = new Map([["user@test.com", { id: "auth-1" }]]);
+      const authUsers = new Map<string, SupabaseUser>([["user@test.com", { id: "auth-1" } as SupabaseUser]]);
 
       const { seedRewards } = await import("../rewards");
       await seedRewards([], "trip-1", authUsers);
@@ -251,28 +256,30 @@ describe("rewards", () => {
     });
 
     it("should normalize image paths", async () => {
-      const mockUser = { id: "user-1", role: "USER" };
+      const mockUser: { id: string; role: string } = { id: "user-1", role: "USER" };
       mockUserFindFirst.mockResolvedValue(mockUser);
 
-      const rewardConfigs = [
+      const rewardConfigs: RewardConfig[] = [
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10, image: "path/to/image.jpg" },
         { name: "Reward 2", description: "Desc 2", availableQuantity: 1, coinCost: 10, image: "rewards/image.jpg" },
       ];
 
-      const authUsers = new Map([["user@test.com", { id: "auth-1" }]]);
+      const authUsers = new Map<string, SupabaseUser>([["user@test.com", { id: "auth-1" } as SupabaseUser]]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockRewardCreate).toHaveBeenNthCalledWith(1, {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           image: "rewards/image.jpg",
         }),
       });
 
       expect(mockRewardCreate).toHaveBeenNthCalledWith(2, {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           image: "rewards/image.jpg",
         }),
@@ -282,17 +289,17 @@ describe("rewards", () => {
     });
 
     it("should handle database errors gracefully", async () => {
-      const mockUser = { id: "user-1", role: "USER" };
+      const mockUser: { id: string; role: string } = { id: "user-1", role: "USER" };
       mockUserFindFirst.mockResolvedValue(mockUser);
       mockRewardCreate.mockRejectedValue(new Error("DB Error"));
 
-      const rewardConfigs = [
+      const rewardConfigs: RewardConfig[] = [
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
       ];
 
-      const authUsers = new Map([["user@test.com", { id: "auth-1" }]]);
+      const authUsers = new Map<string, SupabaseUser>([["user@test.com", { id: "auth-1" } as SupabaseUser]]);
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
@@ -306,21 +313,21 @@ describe("rewards", () => {
     });
 
     it("should skip users that throw errors during lookup", async () => {
-      const mockUser = { id: "user-1", role: "USER" };
+      const mockUser: { id: string; role: string } = { id: "user-1", role: "USER" };
       mockUserFindFirst
         .mockRejectedValueOnce(new Error("Lookup error"))
         .mockResolvedValueOnce(mockUser);
 
-      const rewardConfigs = [
+      const rewardConfigs: RewardConfig[] = [
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
       ];
 
-      const authUsers = new Map([
-        ["bad@test.com", { id: "auth-1" }],
-        ["good@test.com", { id: "auth-2" }],
+      const authUsers = new Map<string, SupabaseUser>([
+        ["bad@test.com", { id: "auth-1" } as SupabaseUser],
+        ["good@test.com", { id: "auth-2" } as SupabaseUser],
       ]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);

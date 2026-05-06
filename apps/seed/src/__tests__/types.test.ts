@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { SupabaseUser } from "@mirai-app/supabase";
 import type {
   SeedEnv,
   TripConfig,
@@ -365,7 +366,7 @@ describe("types", () => {
         id: "user-123",
         email: "test@example.com",
         created_at: new Date().toISOString(),
-      } as any;
+      } as unknown as SupabaseUser;
 
       authUsers.set("test@example.com", mockUser);
 
