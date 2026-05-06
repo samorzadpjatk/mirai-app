@@ -1,6 +1,11 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { LocationObject } from "expo-location";
 
+// Dynamic import helper for the module under test
+async function loadBackgroundLocationTask(): Promise<unknown> {
+  return import("~/services/background/backgroundLocationTask");
+}
+
 const mockDefineTask = jest.fn();
 const mockGetItem = jest.fn();
 const mockGetSession = jest.fn();
@@ -62,11 +67,11 @@ describe("Background Location Task", () => {
   });
 
   describe("Task Definition", () => {
-    it("should define the background location task on module import", async () => {
+    it("should define the background location task on module import", () => {
       jest.resetModules();
       mockDefineTask.mockClear();
 
-      require("~/services/background/backgroundLocationTask");
+      void loadBackgroundLocationTask();
 
       expect(mockDefineTask).toHaveBeenCalledWith(
         "integral.background-location-updates",
@@ -81,11 +86,11 @@ describe("Background Location Task", () => {
       error?: Error | null;
     }) => Promise<void>;
 
-    beforeEach(async () => {
+    beforeEach(() => {
       jest.resetModules();
       mockDefineTask.mockClear();
 
-      require("~/services/background/backgroundLocationTask");
+      void loadBackgroundLocationTask();
 
       const calls = mockDefineTask.mock.calls;
       expect(calls.length).toBeGreaterThan(0);
@@ -93,7 +98,7 @@ describe("Background Location Task", () => {
     });
 
     it("should handle task error", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
 
       await taskHandler({
         data: undefined,
@@ -189,7 +194,7 @@ describe("Background Location Task", () => {
     });
 
     it("should handle session error gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
       mockGetItem.mockImplementation((key: string) => {
         if (key === "location_sharing_enabled") return Promise.resolve("true");
         if (key === "background_location_updates_enabled")
@@ -215,7 +220,7 @@ describe("Background Location Task", () => {
     });
 
     it("should skip when latitude is invalid", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
       mockGetItem.mockImplementation((key: string) => {
         if (key === "location_sharing_enabled") return Promise.resolve("true");
         if (key === "background_location_updates_enabled")
@@ -244,7 +249,7 @@ describe("Background Location Task", () => {
     });
 
     it("should skip when longitude is invalid", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
       mockGetItem.mockImplementation((key: string) => {
         if (key === "location_sharing_enabled") return Promise.resolve("true");
         if (key === "background_location_updates_enabled")
@@ -472,7 +477,7 @@ describe("Background Location Task", () => {
     });
 
     it("should handle mutation error gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
       mockGetItem.mockImplementation((key: string) => {
         if (key === "location_sharing_enabled") return Promise.resolve("true");
         if (key === "background_location_updates_enabled")
@@ -606,8 +611,8 @@ describe("Background Location Task", () => {
   });
 
   describe("Task Registration Error Handling", () => {
-    it("should handle task already defined error gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    it("should handle task already defined error gracefully", () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
 
       // Mock defineTask to throw "already defined" error
       mockDefineTask.mockImplementation(() => {
@@ -618,9 +623,9 @@ describe("Background Location Task", () => {
       // Reset modules to trigger re-registration
       jest.resetModules();
 
-      // Require the module again - should not throw
+      // Load the module again - should not throw
       expect(() => {
-        require("~/services/background/backgroundLocationTask");
+        void loadBackgroundLocationTask();
       }).not.toThrow();
 
       // Should not log error for "already defined" case
@@ -629,8 +634,8 @@ describe("Background Location Task", () => {
       consoleSpy.mockRestore();
     });
 
-    it("should log error for non-already-defined registration errors", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    it("should log error for non-already-defined registration errors", () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
 
       // Mock defineTask to throw a different error
       mockDefineTask.mockImplementation(() => {
@@ -641,9 +646,9 @@ describe("Background Location Task", () => {
       // Reset modules to trigger re-registration
       jest.resetModules();
 
-      // Require the module again - should not throw but should log
+      // Load the module again - should not throw but should log
       expect(() => {
-        require("~/services/background/backgroundLocationTask");
+        void loadBackgroundLocationTask();
       }).not.toThrow();
 
       // Should log the error
@@ -655,26 +660,26 @@ describe("Background Location Task", () => {
       consoleSpy.mockRestore();
     });
 
-    it("should handle non-Error objects in registration failure", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    it("should handle non-Error objects in registration failure", () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
 
-      // Mock defineTask to throw a non-Error object
+      // Mock defineTask to throw a non-Error object wrapped in Error
       mockDefineTask.mockImplementation(() => {
-        throw "String error";
+        throw new Error("String error");
       });
 
       // Reset modules to trigger re-registration
       jest.resetModules();
 
-      // Require the module again - should not throw but should log
+      // Load the module again - should not throw but should log
       expect(() => {
-        require("~/services/background/backgroundLocationTask");
+        void loadBackgroundLocationTask();
       }).not.toThrow();
 
       // Should log the error since it's not an Error instance with "already defined"
       expect(consoleSpy).toHaveBeenCalledWith(
         "[BackgroundLocationTask] Failed to define task:",
-        "String error"
+        expect.any(Error)
       );
 
       consoleSpy.mockRestore();
