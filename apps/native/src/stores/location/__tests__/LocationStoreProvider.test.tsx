@@ -8,7 +8,7 @@ import { locationStore, setLocationServerUpdater } from "../locationStore";
 const mockAlert = jest.fn();
 
 jest.mock("react-native", () => {
-  const actual: typeof import("react-native") = jest.requireActual("react-native");
+  const actual = jest.requireActual("react-native");
   return {
     ...actual,
     Alert: {
@@ -72,7 +72,7 @@ describe("LocationStoreProvider", () => {
       error: null,
     });
 
-    mockUseMutation.mockImplementation((options: { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void }) => ({
+    mockUseMutation.mockImplementation((options: { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void | Promise<void> }) => ({
       mutateAsync: jest.fn(async (input: unknown) => {
         if (options.onSuccess) {
           await options.onSuccess(undefined, input, undefined);

@@ -135,7 +135,7 @@ export default function EditProfileScreen() {
       await upload({
         storagePath: avatarStoragePath,
         fileUri: asset.uri,
-        fileName: asset.fileName ?? `avatar-${currentUser.id}.jpg`,
+        fileName: asset.fileName ?? `avatar-${currentUser?.id}.jpg`,
         contentType: asset.mimeType ?? "image/jpeg",
         upsert: true,
       });
