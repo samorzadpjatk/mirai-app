@@ -285,7 +285,7 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   it("should remove channel and cleanup on SIGINT", async () => {
     const processOnSpy = vi.spyOn(process, "on");
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null | undefined) => never);
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null) => never);
     let sigintHandler: (() => Promise<void>) | undefined;
     const capturedChannel = { on: mockChannelOn, subscribe: mockChannelSubscribe };
 
@@ -337,7 +337,7 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   it("should log shutdown message on SIGINT", async () => {
     const processOnSpy = vi.spyOn(process, "on");
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null | undefined) => never);
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null) => never);
     const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
     let sigintHandler: (() => Promise<void>) | undefined;
 
@@ -375,7 +375,7 @@ describe("Notification Sender - Notification Processing", () => {
     vi.resetModules();
     vi.clearAllMocks();
 
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null | undefined) => never);
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null) => never);
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
     const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
