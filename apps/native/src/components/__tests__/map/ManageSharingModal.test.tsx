@@ -1,6 +1,6 @@
 import React from "react";
 import { ActivityIndicator } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ManageSharingModal } from "../../map/modals/ManageSharingModal";
 
@@ -80,38 +80,38 @@ describe("ManageSharingModal", () => {
   });
 
   it("should render modal with title", () => {
-    const { getByTestId } = renderWithProviders(<ManageSharingModal />);
+    renderWithProviders(<ManageSharingModal />);
 
-    expect(getByTestId("modal-title").children[0]).toBe("Manage Location Sharing");
+    expect(screen.getByTestId("modal-title").children[0]).toBe("Manage Location Sharing");
   });
 
   it("should render list of users", () => {
-    const { getAllByTestId } = renderWithProviders(<ManageSharingModal />);
+    renderWithProviders(<ManageSharingModal />);
 
-    const userItems = getAllByTestId("user-item");
+    const userItems = screen.getAllByTestId("user-item");
     expect(userItems.length).toBe(2);
   });
 
   it("should render user names", () => {
-    const { getAllByTestId } = renderWithProviders(<ManageSharingModal />);
+    renderWithProviders(<ManageSharingModal />);
 
-    const userNames = getAllByTestId("user-name");
+    const userNames = screen.getAllByTestId("user-name");
     expect(userNames[0].children[0]).toBe("John Doe");
     expect(userNames[1].children[0]).toBe("Jane Smith");
   });
 
   it("should render remove buttons for each user", () => {
-    const { getAllByText } = renderWithProviders(<ManageSharingModal />);
+    renderWithProviders(<ManageSharingModal />);
 
-    const removeButtons = getAllByText("Remove");
+    const removeButtons = screen.getAllByText("Remove");
     expect(removeButtons.length).toBe(2);
   });
 
-  it("should call handleRemoveUser when remove button is pressed", () => {
-    const { getAllByText } = renderWithProviders(<ManageSharingModal />);
+  it("should call handleRemoveUser when remove button is pressed", async () => {
+    renderWithProviders(<ManageSharingModal />);
 
-    const removeButtons = getAllByText("Remove");
-    fireEvent.press(removeButtons[0]);
+    const user = userEvent.setup();
+    await user.press(screen.getAllByText("Remove")[0]);
 
     expect(mockHandleRemoveUser).toHaveBeenCalledWith("user-1");
   });
@@ -125,9 +125,9 @@ describe("ManageSharingModal", () => {
       handleRemoveUser: mockHandleRemoveUser,
     });
 
-    const { getByText } = renderWithProviders(<ManageSharingModal />);
+    renderWithProviders(<ManageSharingModal />);
 
-    expect(getByText("You're not sharing your location with anyone")).toBeTruthy();
+    expect(screen.getByText("You're not sharing your location with anyone")).toBeOnTheScreen();
   });
 
   it("should show loading indicator when removing user", () => {
@@ -141,9 +141,9 @@ describe("ManageSharingModal", () => {
       handleRemoveUser: mockHandleRemoveUser,
     });
 
-    const { UNSAFE_getAllByType } = renderWithProviders(<ManageSharingModal />);
+    renderWithProviders(<ManageSharingModal />);
 
-    const activityIndicators = UNSAFE_getAllByType(ActivityIndicator);
+    const activityIndicators = screen.UNSAFE_getAllByType(ActivityIndicator);
     expect(activityIndicators.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -161,9 +161,9 @@ describe("ManageSharingModal", () => {
       handleRemoveUser: mockHandleRemoveUser,
     });
 
-    const { getAllByTestId } = renderWithProviders(<ManageSharingModal />);
+    renderWithProviders(<ManageSharingModal />);
 
-    const userNames = getAllByTestId("user-name");
+    const userNames = screen.getAllByTestId("user-name");
     expect(userNames.length).toBe(2);
   });
 
@@ -176,8 +176,8 @@ describe("ManageSharingModal", () => {
       handleRemoveUser: mockHandleRemoveUser,
     });
 
-    const { queryByTestId } = renderWithProviders(<ManageSharingModal />);
+    renderWithProviders(<ManageSharingModal />);
 
-    expect(queryByTestId("modal-shell")).toBeNull();
+    expect(screen.queryByTestId("modal-shell")).toBeNull();
   });
 });

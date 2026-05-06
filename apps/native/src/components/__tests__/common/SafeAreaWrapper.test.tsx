@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, type ViewProps, type ViewStyle } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SafeAreaTop } from "../../SafeAreaWrapper";
@@ -42,23 +43,23 @@ describe("SafeAreaTop", () => {
   });
 
   it("should render children", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop>
         <Text>Content</Text>
       </SafeAreaTop>
     );
 
-    expect(getByText("Content")).toBeTruthy();
+    expect(screen.getByText("Content")).toBeOnTheScreen();
   });
 
   it("should apply safe area top padding", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop>
         <Text>Content</Text>
       </SafeAreaTop>
     );
 
-    const view = UNSAFE_getByType(View);
+    const view = screen.UNSAFE_getByType(View);
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ paddingTop: 44 }),
@@ -67,13 +68,13 @@ describe("SafeAreaTop", () => {
   });
 
   it("should combine with existing paddingTop", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop style={{ paddingTop: 10 }}>
         <Text>Content</Text>
       </SafeAreaTop>
     );
 
-    const view = UNSAFE_getByType(View);
+    const view = screen.UNSAFE_getByType(View);
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ paddingTop: 54 }),
@@ -89,13 +90,13 @@ describe("SafeAreaTop", () => {
       left: 0,
     });
 
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop>
         <Text>Content</Text>
       </SafeAreaTop>
     );
 
-    const view = UNSAFE_getByType(View);
+    const view = screen.UNSAFE_getByType(View);
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ paddingTop: 0 }),
@@ -111,13 +112,13 @@ describe("SafeAreaTop", () => {
       left: 0,
     });
 
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop>
         <Text>Content</Text>
       </SafeAreaTop>
     );
 
-    const view = UNSAFE_getByType(View);
+    const view = screen.UNSAFE_getByType(View);
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ paddingTop: 59 }),
@@ -127,13 +128,13 @@ describe("SafeAreaTop", () => {
 
   it("should apply additional custom styles", () => {
     const customStyle = { backgroundColor: "red", marginBottom: 10 };
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop style={customStyle}>
         <Text>Content</Text>
       </SafeAreaTop>
     );
 
-    const view = UNSAFE_getByType(View);
+    const view = screen.UNSAFE_getByType(View);
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ backgroundColor: "red" }),
@@ -143,18 +144,18 @@ describe("SafeAreaTop", () => {
   });
 
   it("should handle array style prop", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop style={[{ backgroundColor: "blue" }, { marginTop: 5 }]}>
         <Text>Content</Text>
       </SafeAreaTop>
     );
 
-    const view = UNSAFE_getByType(View);
+    const view = screen.UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 
   it("should render complex children", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop>
         <View>
           <Text>Header</Text>
@@ -163,18 +164,18 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    expect(getByText("Header")).toBeTruthy();
-    expect(getByText("Subheader")).toBeTruthy();
+    expect(screen.getByText("Header")).toBeOnTheScreen();
+    expect(screen.getByText("Subheader")).toBeOnTheScreen();
   });
 
   it("should preserve other style properties", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <SafeAreaTop style={{ backgroundColor: "blue", paddingHorizontal: 20 }}>
         <Text>Content</Text>
       </SafeAreaTop>
     );
 
-    const view = UNSAFE_getByType(View) as ViewElement;
+    const view = screen.UNSAFE_getByType(View) as ViewElement;
     const styles = view.props.style as ViewStyleWithPadding[];
     expect(styles).toEqual(
       expect.arrayContaining([

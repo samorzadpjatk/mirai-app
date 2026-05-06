@@ -1,6 +1,23 @@
+/**
+ * Jest configuration for Expo React Native testing
+ * 
+ * This configuration follows Expo's testing documentation guidelines:
+ * - Uses transformIgnorePatterns that allow transpiling Expo and React Native packages
+ * - Configured for TypeScript and React Native Testing Library
+ * - Includes setup for monorepo workspace aliases
+ * 
+ * Note: Using manual config instead of jest-expo preset due to ES module compatibility
+ * with the project's "type": "module" configuration. The transformIgnorePatterns
+ * follow the official Expo documentation recommendations.
+ * 
+ * @see https://docs.expo.dev/develop/unit-testing/
+ */
 module.exports = {
   rootDir: __dirname,
   testEnvironment: "node",
+  // Expo-recommended transformIgnorePatterns
+  // Allows transpiling of react-native, expo, and related packages
+  // @see https://docs.expo.dev/develop/unit-testing/#configuration
   transformIgnorePatterns: [
     "node_modules/(?!((@expo|expo|expo-modules-core|expo-location|@react-navigation|react-native-reanimated|react-native-gesture-handler|react-native-safe-area-context|react-native-screens|react-native-svg|react-native-webview|react-native-pdf|react-native-worklets|@maplibre|nativewind|react-native-css-interop|tus-js-client|superjson)/))",
   ],

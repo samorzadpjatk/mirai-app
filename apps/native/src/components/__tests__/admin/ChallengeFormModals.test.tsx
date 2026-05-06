@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeFormModals } from "../../admin/challenges/ChallengeFormModals";
 
@@ -125,7 +125,7 @@ describe("ChallengeFormModals", () => {
   });
 
   it("renders the supported modals when their state is active", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeFormModals
         formState={{
           ...baseFormState,
@@ -137,14 +137,14 @@ describe("ChallengeFormModals", () => {
       />
     );
 
-    expect(getByText("DateTimePickerModal")).toBeTruthy();
-    expect(getByText("QrScannerModal")).toBeTruthy();
-    expect(getByText("LocationPicker")).toBeTruthy();
-    expect(getByText("Published")).toBeTruthy();
+    expect(screen.getByText("DateTimePickerModal")).toBeTruthy();
+    expect(screen.getByText("QrScannerModal")).toBeTruthy();
+    expect(screen.getByText("LocationPicker")).toBeTruthy();
+    expect(screen.getByText("Published")).toBeTruthy();
   });
 
   it("wires picker, scanner, and location callbacks", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeFormModals
         formState={{
           ...baseFormState,
@@ -155,14 +155,14 @@ describe("ChallengeFormModals", () => {
       />
     );
 
-    fireEvent.press(getByText("Confirm date"));
+    fireEvent.press(screen.getByText("Confirm date"));
     expect(updateForm).toHaveBeenCalledWith("startTime", new Date("2024-01-01T12:00:00.000Z"));
     expect(setActivePicker).toHaveBeenCalledWith(null);
 
-    fireEvent.press(getByText("Scan QR"));
+    fireEvent.press(screen.getByText("Scan QR"));
     expect(updateForm).toHaveBeenCalledWith("qrCodeValue", "QR-123");
 
-    fireEvent.press(getByText("Select location"));
+    fireEvent.press(screen.getByText("Select location"));
     expect(updateForm).toHaveBeenCalledWith("targetLocation", {
       latitude: 50,
       longitude: 20,
@@ -171,7 +171,7 @@ describe("ChallengeFormModals", () => {
   });
 
   it("updates the selected option and closes the picker", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeFormModals
         formState={{
           ...baseFormState,
@@ -180,7 +180,7 @@ describe("ChallengeFormModals", () => {
       />
     );
 
-    fireEvent.press(getByText("Published"));
+    fireEvent.press(screen.getByText("Published"));
     expect(updateForm).toHaveBeenCalledWith("status", "PUBLISHED");
     expect(setActiveSelect).toHaveBeenCalledWith(null);
   });

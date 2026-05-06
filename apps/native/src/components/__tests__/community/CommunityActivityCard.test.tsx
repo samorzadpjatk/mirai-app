@@ -26,9 +26,9 @@ describe("CommunityActivityCard", () => {
   it("renders with basic activity data", () => {
     render(<CommunityActivityCard activity={baseActivity} />);
 
-    expect(screen.getByText("Test Activity")).toBeTruthy();
-    expect(screen.getByText("John Doe")).toBeTruthy();
-    expect(screen.getByText("Official post")).toBeTruthy();
+    expect(screen.getByText("Test Activity")).toBeOnTheScreen();
+    expect(screen.getByText("John Doe")).toBeOnTheScreen();
+    expect(screen.getByText("Official post")).toBeOnTheScreen();
   });
 
   it("renders with user post activity type", () => {
@@ -53,9 +53,9 @@ describe("CommunityActivityCard", () => {
 
     render(<CommunityActivityCard activity={userPostActivity} />);
 
-    expect(screen.getByText("User Post Title")).toBeTruthy();
-    expect(screen.getByText("Jane Smith")).toBeTruthy();
-    expect(screen.getByText("Team Alpha")).toBeTruthy();
+    expect(screen.getByText("User Post Title")).toBeOnTheScreen();
+    expect(screen.getByText("Jane Smith")).toBeOnTheScreen();
+    expect(screen.getByText("Team Alpha")).toBeOnTheScreen();
   });
 
   it("renders with submission activity type", () => {
@@ -82,9 +82,9 @@ describe("CommunityActivityCard", () => {
 
     render(<CommunityActivityCard activity={submissionActivity} />);
 
-    expect(screen.getByText("Submission Title")).toBeTruthy();
-    expect(screen.getByText("Team Beta")).toBeTruthy();
-    expect(screen.getByText("Miejsce w rankingu: #3")).toBeTruthy();
+    expect(screen.getByText("Submission Title")).toBeOnTheScreen();
+    expect(screen.getByText("Team Beta")).toBeOnTheScreen();
+    expect(screen.getByText("Miejsce w rankingu: #3")).toBeOnTheScreen();
   });
 
   it("renders with rank change activity type", () => {
@@ -106,11 +106,11 @@ describe("CommunityActivityCard", () => {
 
     render(<CommunityActivityCard activity={rankChangeActivity} />);
 
-    expect(screen.getByText("Rank Change")).toBeTruthy();
+    expect(screen.getByText("Rank Change")).toBeOnTheScreen();
     // Team name appears in both owner section and rank change message
     const teamElements = screen.getAllByText("Ranked Team");
     expect(teamElements.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Now #1")).toBeTruthy();
+    expect(screen.getByText("Now #1")).toBeOnTheScreen();
   });
 
   it("renders with challenge event activity type", () => {
@@ -130,8 +130,8 @@ describe("CommunityActivityCard", () => {
 
     render(<CommunityActivityCard activity={challengeEventActivity} />);
 
-    expect(screen.getByText("Challenge Event")).toBeTruthy();
-    expect(screen.getByText("Challenge started")).toBeTruthy();
+    expect(screen.getByText("Challenge Event")).toBeOnTheScreen();
+    expect(screen.getByText("Challenge started")).toBeOnTheScreen();
   });
 
   it("renders with image when imageUrl is provided", () => {
@@ -142,7 +142,7 @@ describe("CommunityActivityCard", () => {
 
     render(<CommunityActivityCard activity={activityWithImage} />);
     
-    expect(screen.getByText("Test Activity")).toBeTruthy();
+    expect(screen.getByText("Test Activity")).toBeOnTheScreen();
   });
 
   it("renders without description when description is null", () => {
@@ -153,19 +153,19 @@ describe("CommunityActivityCard", () => {
 
     render(<CommunityActivityCard activity={activityWithoutDescription} />);
 
-    expect(screen.getByText("Test Activity")).toBeTruthy();
+    expect(screen.getByText("Test Activity")).toBeOnTheScreen();
   });
 
   it("displays correct activity type label", () => {
     render(<CommunityActivityCard activity={baseActivity} />);
 
-    expect(screen.getByText("news")).toBeTruthy();
+    expect(screen.getByText("news")).toBeOnTheScreen();
   });
 
   it("displays reaction count", () => {
     render(<CommunityActivityCard activity={baseActivity} />);
 
-    expect(screen.getByText("5")).toBeTruthy();
+    expect(screen.getByText("5")).toBeOnTheScreen();
   });
 
   it("calls onPress when card is pressed", () => {
@@ -202,13 +202,13 @@ describe("CommunityActivityCard", () => {
 
     render(<CommunityActivityCard activity={activityWithHeartReaction} />);
 
-    expect(screen.getByText("5")).toBeTruthy();
+    expect(screen.getByText("5")).toBeOnTheScreen();
   });
 
   it("renders with focused state styling", () => {
     render(<CommunityActivityCard activity={baseActivity} isFocused={true} />);
 
-    expect(screen.getByText("Test Activity")).toBeTruthy();
+    expect(screen.getByText("Test Activity")).toBeOnTheScreen();
   });
 
   it("renders with unknown admin when admin is null", () => {
@@ -219,7 +219,7 @@ describe("CommunityActivityCard", () => {
 
     render(<CommunityActivityCard activity={activityWithoutAdmin} />);
 
-    expect(screen.getByText("MIRAI Admin")).toBeTruthy();
+    expect(screen.getByText("MIRAI Admin")).toBeOnTheScreen();
   });
 
   it("renders with avatarUri when provided", () => {
@@ -227,6 +227,6 @@ describe("CommunityActivityCard", () => {
       <CommunityActivityCard activity={baseActivity} avatarUri="https://example.com/avatar.jpg" />
     );
 
-    expect(screen.getByText("Test Activity")).toBeTruthy();
+    expect(screen.getByText("Test Activity")).toBeOnTheScreen();
   });
 });

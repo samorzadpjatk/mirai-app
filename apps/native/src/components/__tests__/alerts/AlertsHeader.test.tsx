@@ -1,23 +1,24 @@
 import React from "react";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AlertsHeader } from "../../alerts/AlertsHeader";
 
 describe("AlertsHeader", () => {
   it("should render title and subtitle", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AlertsHeader title="Notifications" subtitle="View your alerts" />
     );
 
-    expect(getByText("Notifications")).toBeTruthy();
-    expect(getByText("View your alerts")).toBeTruthy();
+    expect(screen.getByText("Notifications")).toBeOnTheScreen();
+    expect(screen.getByText("View your alerts")).toBeOnTheScreen();
   });
 
   it("should render different copy", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AlertsHeader title="Alert Center" subtitle="Manage your notifications" />
     );
 
-    expect(getByText("Alert Center")).toBeTruthy();
-    expect(getByText("Manage your notifications")).toBeTruthy();
+    expect(screen.getByText("Alert Center")).toBeOnTheScreen();
+    expect(screen.getByText("Manage your notifications")).toBeOnTheScreen();
   });
 });

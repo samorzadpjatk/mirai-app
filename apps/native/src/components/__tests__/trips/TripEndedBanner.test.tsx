@@ -1,5 +1,6 @@
 import React from "react";
 import { Text } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TripEndedBanner } from "../../trips/TripEndedBanner";
 
@@ -15,30 +16,30 @@ jest.mock("@expo/vector-icons", () => {
 
 describe("TripEndedBanner", () => {
   it("renders with warning icon and text when visible=true", () => {
-    const { getByText, getByTestId } = renderWithProviders(<TripEndedBanner visible={true} />);
+    renderWithProviders(<TripEndedBanner visible={true} />);
 
-    expect(getByTestId("icon-information-circle-outline")).toBeTruthy();
-    expect(getByText("This trip has ended — view only")).toBeTruthy();
+    expect(screen.getByTestId("icon-information-circle-outline")).toBeOnTheScreen();
+    expect(screen.getByText("This trip has ended — view only")).toBeOnTheScreen();
   });
 
   it("returns null when visible=false", () => {
-    const { queryByText, queryByTestId } = renderWithProviders(<TripEndedBanner visible={false} />);
+    renderWithProviders(<TripEndedBanner visible={false} />);
 
-    expect(queryByText("This trip has ended — view only")).toBeNull();
-    expect(queryByTestId("icon-information-circle-outline")).toBeNull();
+    expect(screen.queryByText("This trip has ended — view only")).toBeNull();
+    expect(screen.queryByTestId("icon-information-circle-outline")).toBeNull();
   });
 
   it("renders by default when visible prop is not provided", () => {
-    const { getByText, getByTestId } = renderWithProviders(<TripEndedBanner />);
+    renderWithProviders(<TripEndedBanner />);
 
-    expect(getByText("This trip has ended — view only")).toBeTruthy();
-    expect(getByTestId("icon-information-circle-outline")).toBeTruthy();
+    expect(screen.getByText("This trip has ended — view only")).toBeOnTheScreen();
+    expect(screen.getByTestId("icon-information-circle-outline")).toBeOnTheScreen();
   });
 
   it("has correct styling", () => {
-    const { getByText, getByTestId } = renderWithProviders(<TripEndedBanner visible={true} />);
+    renderWithProviders(<TripEndedBanner visible={true} />);
 
-    expect(getByText("This trip has ended — view only")).toBeTruthy();
-    expect(getByTestId("icon-information-circle-outline")).toBeTruthy();
+    expect(screen.getByText("This trip has ended — view only")).toBeOnTheScreen();
+    expect(screen.getByTestId("icon-information-circle-outline")).toBeOnTheScreen();
   });
 });

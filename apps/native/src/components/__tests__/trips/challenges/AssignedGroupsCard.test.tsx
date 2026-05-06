@@ -1,6 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
+import { screen } from "@testing-library/react-native";
 import { AssignedGroupsCard } from "../../../trips/challenges/AssignedGroupsCard";
 
 describe("AssignedGroupsCard", () => {
@@ -35,40 +36,30 @@ describe("AssignedGroupsCard", () => {
   ];
 
   it("should render null when groups array is empty", () => {
-    const { queryByText } = renderWithProviders(
-      <AssignedGroupsCard groups={[]} />
-    );
-    expect(queryByText("Assigned to Groups")).toBeNull();
+    renderWithProviders(<AssignedGroupsCard groups={[]} />);
+    expect(screen.queryByText("Assigned to Groups")).toBeNull();
   });
 
   it("should render the title", () => {
-    const { getByText } = renderWithProviders(
-      <AssignedGroupsCard groups={mockGroups} />
-    );
-    expect(getByText("Assigned to Groups")).toBeTruthy();
+    renderWithProviders(<AssignedGroupsCard groups={mockGroups} />);
+    expect(screen.getByText("Assigned to Groups")).toBeOnTheScreen();
   });
 
   it("should render all group names", () => {
-    const { getByText } = renderWithProviders(
-      <AssignedGroupsCard groups={mockGroups} />
-    );
-    expect(getByText("Test Group 1")).toBeTruthy();
-    expect(getByText("Test Group 2")).toBeTruthy();
-    expect(getByText("Test Group 3")).toBeTruthy();
+    renderWithProviders(<AssignedGroupsCard groups={mockGroups} />);
+    expect(screen.getByText("Test Group 1")).toBeOnTheScreen();
+    expect(screen.getByText("Test Group 2")).toBeOnTheScreen();
+    expect(screen.getByText("Test Group 3")).toBeOnTheScreen();
   });
 
   it("should render leader info when organizer exists with full name", () => {
-    const { getByText } = renderWithProviders(
-      <AssignedGroupsCard groups={[mockGroups[0]]} />
-    );
-    expect(getByText("Leader: John Doe")).toBeTruthy();
+    renderWithProviders(<AssignedGroupsCard groups={[mockGroups[0]]} />);
+    expect(screen.getByText("Leader: John Doe")).toBeOnTheScreen();
   });
 
   it("should render leader info when organizer exists with partial name", () => {
-    const { getByText } = renderWithProviders(
-      <AssignedGroupsCard groups={[mockGroups[2]]} />
-    );
-    expect(getByText("Leader: Jane")).toBeTruthy();
+    renderWithProviders(<AssignedGroupsCard groups={[mockGroups[2]]} />);
+    expect(screen.getByText("Leader: Jane")).toBeOnTheScreen();
   });
 
   it("should not render leader info when organizer is null", () => {
@@ -79,20 +70,16 @@ describe("AssignedGroupsCard", () => {
   });
 
   it("should render with correct container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <AssignedGroupsCard groups={mockGroups} />
-    );
+    const { UNSAFE_getByType } = renderWithProviders(<AssignedGroupsCard groups={mockGroups} />);
     const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 
   it("should handle single group", () => {
     const singleGroup = [mockGroups[0]];
-    const { getByText } = renderWithProviders(
-      <AssignedGroupsCard groups={singleGroup} />
-    );
-    expect(getByText("Test Group 1")).toBeTruthy();
-    expect(getByText("Assigned to Groups")).toBeTruthy();
+    renderWithProviders(<AssignedGroupsCard groups={singleGroup} />);
+    expect(screen.getByText("Test Group 1")).toBeOnTheScreen();
+    expect(screen.getByText("Assigned to Groups")).toBeOnTheScreen();
   });
 
   it("should handle organizer with null first and last name", () => {
@@ -108,10 +95,8 @@ describe("AssignedGroupsCard", () => {
         },
       },
     ];
-    const { getByText, queryByText } = renderWithProviders(
-      <AssignedGroupsCard groups={groupWithNullOrganizer} />
-    );
-    expect(getByText("Test Group 4")).toBeTruthy();
-    expect(queryByText(/Leader: null/)).toBeFalsy();
+    renderWithProviders(<AssignedGroupsCard groups={groupWithNullOrganizer} />);
+    expect(screen.getByText("Test Group 4")).toBeOnTheScreen();
+    expect(screen.queryByText(/Leader: null/)).toBeFalsy();
   });
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ShareLocationModal } from "../../map/modals/ShareLocationModal";
 
@@ -129,28 +129,27 @@ describe("ShareLocationModal", () => {
   });
 
   it("should render modal when open", () => {
-    const { getByTestId } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByTestId("modal-shell")).toBeTruthy();
+    expect(screen.getByTestId("modal-shell")).toBeOnTheScreen();
   });
 
   it("should render search input", () => {
-    const { getByTestId } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByTestId("search-input")).toBeTruthy();
+    expect(screen.getByTestId("search-input")).toBeOnTheScreen();
   });
 
   it("should show empty state when search query is too short", () => {
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByText("Type at least 2 characters to search for a person.")).toBeTruthy();
+    expect(screen.getByText("Type at least 2 characters to search for a person.")).toBeOnTheScreen();
   });
 
   it("should call setSearchQuery when typing", () => {
-    const { getByTestId } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    const searchInput = getByTestId("search-input");
-    fireEvent.changeText(searchInput, "Jo");
+    fireEvent.changeText(screen.getByTestId("search-input"), "Jo");
 
     expect(mockSetSearchQuery).toHaveBeenCalledWith("Jo");
   });
@@ -176,9 +175,9 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getAllByTestId } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    const userItems = getAllByTestId("user-item");
+    const userItems = screen.getAllByTestId("user-item");
     expect(userItems.length).toBeGreaterThan(0);
   });
 
@@ -200,9 +199,9 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByText("No matching users found.")).toBeTruthy();
+    expect(screen.getByText("No matching users found.")).toBeOnTheScreen();
   });
 
   it("should show selected count when users are selected", () => {
@@ -223,12 +222,12 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByText("1 selected")).toBeTruthy();
+    expect(screen.getByText("1 selected")).toBeOnTheScreen();
   });
 
-  it("should call reset when clear button is pressed", () => {
+  it("should call reset when clear button is pressed", async () => {
     mockGetMapOverlayStore.mockReturnValue(
       createMockStore({
         shareModal: {
@@ -246,9 +245,10 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    const user = userEvent.setup();
+    renderWithProviders(<ShareLocationModal />);
 
-    fireEvent.press(getByText("Clear"));
+    await user.press(screen.getByText("Clear"));
     expect(mockReset).toHaveBeenCalled();
   });
 
@@ -270,12 +270,12 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByText("Add 1 person")).toBeTruthy();
+    expect(screen.getByText("Add 1 person")).toBeOnTheScreen();
   });
 
-  it("should call confirm when confirm button is pressed", () => {
+  it("should call confirm when confirm button is pressed", async () => {
     mockGetMapOverlayStore.mockReturnValue(
       createMockStore({
         shareModal: {
@@ -293,9 +293,10 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    const user = userEvent.setup();
+    renderWithProviders(<ShareLocationModal />);
 
-    fireEvent.press(getByText("Add 1 person"));
+    await user.press(screen.getByText("Add 1 person"));
     expect(mockConfirm).toHaveBeenCalled();
   });
 
@@ -317,9 +318,9 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByText("Already sharing")).toBeTruthy();
+    expect(screen.getByText("Already sharing")).toBeOnTheScreen();
   });
 
   it("should show checkmark for already sharing users", () => {
@@ -340,9 +341,9 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByText("✓")).toBeTruthy();
+    expect(screen.getByText("✓")).toBeOnTheScreen();
   });
 
   it("should show checkmark for selected users", () => {
@@ -363,12 +364,12 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByText("✓")).toBeTruthy();
+    expect(screen.getByText("✓")).toBeOnTheScreen();
   });
 
-  it("should not allow selecting already sharing users", () => {
+  it("should not allow selecting already sharing users", async () => {
     mockGetMapOverlayStore.mockReturnValue(
       createMockStore({
         shareModal: {
@@ -386,10 +387,11 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getAllByTestId } = renderWithProviders(<ShareLocationModal />);
+    const user = userEvent.setup();
+    renderWithProviders(<ShareLocationModal />);
 
-    const userItem = getAllByTestId("user-item")[0];
-    fireEvent.press(userItem);
+    const userItem = screen.getAllByTestId("user-item")[0];
+    await user.press(userItem);
 
     expect(mockToggleSelectedUser).not.toHaveBeenCalled();
   });
@@ -412,9 +414,9 @@ describe("ShareLocationModal", () => {
       })
     );
 
-    const { getByText } = renderWithProviders(<ShareLocationModal />);
+    renderWithProviders(<ShareLocationModal />);
 
-    expect(getByText("2 selected")).toBeTruthy();
-    expect(getByText("Add 2 people")).toBeTruthy();
+    expect(screen.getByText("2 selected")).toBeOnTheScreen();
+    expect(screen.getByText("Add 2 people")).toBeOnTheScreen();
   });
 });

@@ -1,18 +1,19 @@
 import React from "react";
 import { Image } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeDescriptionCard } from "../../../trips/challenges/ChallengeDescriptionCard";
 
 describe("ChallengeDescriptionCard", () => {
   it("renders the provided description", () => {
     const description = "This is a test challenge description";
-    const { getByText } = renderWithProviders(<ChallengeDescriptionCard description={description} />);
-    expect(getByText(description)).toBeTruthy();
+    renderWithProviders(<ChallengeDescriptionCard description={description} />);
+    expect(screen.getByText(description)).toBeOnTheScreen();
   });
 
   it("renders the default description when none is provided", () => {
-    const { getByText } = renderWithProviders(<ChallengeDescriptionCard description={null} />);
-    expect(getByText("Complete this challenge to earn points for your group!")).toBeTruthy();
+    renderWithProviders(<ChallengeDescriptionCard description={null} />);
+    expect(screen.getByText("Complete this challenge to earn points for your group!")).toBeOnTheScreen();
   });
 
   it("renders an image when imageUrl is provided", () => {

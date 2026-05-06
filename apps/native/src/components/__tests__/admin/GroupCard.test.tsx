@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { GroupCard } from "../../admin/groups/GroupCard";
 
@@ -28,7 +28,7 @@ describe("GroupCard", () => {
   });
 
   it("renders group name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={mockGroup}
         onAddCoins={mockOnAddCoins}
@@ -36,11 +36,11 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("Test Group")).toBeTruthy();
+    expect(screen.getByText("Test Group")).toBeTruthy();
   });
 
   it("renders organizer name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={mockGroup}
         onAddCoins={mockOnAddCoins}
@@ -48,11 +48,11 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("Organizer: John Doe")).toBeTruthy();
+    expect(screen.getByText("Organizer: John Doe")).toBeTruthy();
   });
 
   it("renders coin count", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={mockGroup}
         onAddCoins={mockOnAddCoins}
@@ -60,11 +60,11 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("150")).toBeTruthy();
+    expect(screen.getByText("150")).toBeTruthy();
   });
 
   it("renders member count", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={mockGroup}
         onAddCoins={mockOnAddCoins}
@@ -72,11 +72,11 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("5 members")).toBeTruthy();
+    expect(screen.getByText("5 members")).toBeTruthy();
   });
 
   it("calls onAddCoins when add button is pressed", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={mockGroup}
         onAddCoins={mockOnAddCoins}
@@ -84,12 +84,12 @@ describe("GroupCard", () => {
       />
     );
 
-    fireEvent.press(getByText("Add Coins"));
+    fireEvent.press(screen.getByText("Add Coins"));
     expect(mockOnAddCoins).toHaveBeenCalledWith(mockGroup);
   });
 
   it("calls onRemoveCoins when remove button is pressed", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={mockGroup}
         onAddCoins={mockOnAddCoins}
@@ -97,13 +97,13 @@ describe("GroupCard", () => {
       />
     );
 
-    fireEvent.press(getByText("Remove Coins"));
+    fireEvent.press(screen.getByText("Remove Coins"));
     expect(mockOnRemoveCoins).toHaveBeenCalledWith(mockGroup);
   });
 
   it("renders with zero coins", () => {
     const groupWithZeroCoins = { ...mockGroup, coins: 0 };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={groupWithZeroCoins}
         onAddCoins={mockOnAddCoins}
@@ -111,12 +111,12 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("0")).toBeTruthy();
+    expect(screen.getByText("0")).toBeTruthy();
   });
 
   it("renders with single member", () => {
     const groupWithOneMember = { ...mockGroup, _count: { participants: 1 } };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={groupWithOneMember}
         onAddCoins={mockOnAddCoins}
@@ -124,12 +124,12 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("1 members")).toBeTruthy();
+    expect(screen.getByText("1 members")).toBeTruthy();
   });
 
   it("renders without organizer", () => {
     const groupWithoutOrganizer = { ...mockGroup, organizer: null };
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={groupWithoutOrganizer}
         onAddCoins={mockOnAddCoins}
@@ -137,7 +137,7 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(queryByText(/Organizer:/)).toBeNull();
+    expect(screen.queryByText(/Organizer:/)).toBeNull();
   });
 
   it("renders organizer with only first name", () => {
@@ -145,7 +145,7 @@ describe("GroupCard", () => {
       ...mockGroup,
       organizer: { id: "user-1", firstName: "Jane", lastName: null },
     };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={groupWithPartialOrganizer}
         onAddCoins={mockOnAddCoins}
@@ -153,7 +153,7 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("Organizer: Jane")).toBeTruthy();
+    expect(screen.getByText("Organizer: Jane")).toBeTruthy();
   });
 
   it("renders organizer with only last name", () => {
@@ -161,7 +161,7 @@ describe("GroupCard", () => {
       ...mockGroup,
       organizer: { id: "user-1", firstName: null, lastName: "Smith" },
     };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={groupWithPartialOrganizer}
         onAddCoins={mockOnAddCoins}
@@ -169,12 +169,12 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("Organizer: Smith")).toBeTruthy();
+    expect(screen.getByText("Organizer: Smith")).toBeTruthy();
   });
 
   it("renders with large coin count", () => {
     const groupWithManyCoins = { ...mockGroup, coins: 999999 };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupCard
         group={groupWithManyCoins}
         onAddCoins={mockOnAddCoins}
@@ -182,6 +182,6 @@ describe("GroupCard", () => {
       />
     );
 
-    expect(getByText("999999")).toBeTruthy();
+    expect(screen.getByText("999999")).toBeTruthy();
   });
 });

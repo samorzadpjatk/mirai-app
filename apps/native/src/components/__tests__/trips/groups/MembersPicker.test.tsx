@@ -1,6 +1,6 @@
 import React from "react";
 import { ActivityIndicator, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { MembersPicker } from "../../../trips/groups/create/MembersPicker";
 
@@ -39,7 +39,7 @@ describe("MembersPicker", () => {
   });
 
   it("should render all participant names", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -47,13 +47,13 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    expect(getByText("John Doe")).toBeTruthy();
-    expect(getByText("Jane Smith")).toBeTruthy();
-    expect(getByText("Bob")).toBeTruthy();
+    expect(screen.getByText("John Doe")).toBeOnTheScreen();
+    expect(screen.getByText("Jane Smith")).toBeOnTheScreen();
+    expect(screen.getByText("Bob")).toBeOnTheScreen();
   });
 
   it("should render all participant emails", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -61,13 +61,13 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    expect(getByText("john@example.com")).toBeTruthy();
-    expect(getByText("jane@example.com")).toBeTruthy();
-    expect(getByText("bob@example.com")).toBeTruthy();
+    expect(screen.getByText("john@example.com")).toBeOnTheScreen();
+    expect(screen.getByText("jane@example.com")).toBeOnTheScreen();
+    expect(screen.getByText("bob@example.com")).toBeOnTheScreen();
   });
 
   it("should render initials for each participant", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -75,13 +75,13 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    expect(getByText("JD")).toBeTruthy();
-    expect(getByText("JS")).toBeTruthy();
-    expect(getByText("B")).toBeTruthy();
+    expect(screen.getByText("JD")).toBeOnTheScreen();
+    expect(screen.getByText("JS")).toBeOnTheScreen();
+    expect(screen.getByText("B")).toBeOnTheScreen();
   });
 
   it("should render ActivityIndicator when isLoading is true", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={[]}
         selectedMembers={new Set()}
@@ -89,12 +89,12 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    const activityIndicator = UNSAFE_getByType(ActivityIndicator);
+    const activityIndicator = screen.UNSAFE_getByType(ActivityIndicator);
     expect(activityIndicator).toBeTruthy();
   });
 
   it("should call onToggleMember when a member is pressed", () => {
-    const { getAllByText } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -102,14 +102,14 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    const memberItems = getAllByText(/JD|JS|B/);
+    const memberItems = screen.getAllByText(/JD|JS|B/);
     fireEvent.press(memberItems[0].parent?.parent?.parent ?? memberItems[0]);
     expect(mockOnToggleMember).toHaveBeenCalled();
   });
 
   it("should show selected checkbox for selected members", () => {
     const selectedMembers = new Set(["1"]);
-    const { UNSAFE_getAllByType } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={mockParticipants}
         selectedMembers={selectedMembers}
@@ -117,12 +117,12 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    const views = UNSAFE_getAllByType(View);
+    const views = screen.UNSAFE_getAllByType(View);
     expect(views.length).toBeGreaterThan(0);
   });
 
   it("should render empty state when no participants", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={[]}
         selectedMembers={new Set()}
@@ -130,7 +130,7 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    expect(getByText("No participants found")).toBeTruthy();
+    expect(screen.getByText("No participants found")).toBeOnTheScreen();
   });
 
   it("should handle participant with null first and last name", () => {
@@ -144,7 +144,7 @@ describe("MembersPicker", () => {
         },
       },
     ];
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={participantsWithNullNames}
         selectedMembers={new Set()}
@@ -152,13 +152,13 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    expect(getByText("?")).toBeTruthy();
-    expect(getByText("unknown@example.com")).toBeTruthy();
+    expect(screen.getByText("?")).toBeOnTheScreen();
+    expect(screen.getByText("unknown@example.com")).toBeOnTheScreen();
   });
 
   it("should handle single participant", () => {
     const singleParticipant = [mockParticipants[0]];
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MembersPicker
         participants={singleParticipant}
         selectedMembers={new Set()}
@@ -166,6 +166,6 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    expect(getByText("John Doe")).toBeTruthy();
+    expect(screen.getByText("John Doe")).toBeOnTheScreen();
   });
 });

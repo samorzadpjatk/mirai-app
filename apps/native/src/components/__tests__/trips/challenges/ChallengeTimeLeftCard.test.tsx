@@ -1,4 +1,5 @@
 import React from "react";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeTimeLeftCard } from "../../../trips/challenges/ChallengeTimeLeftCard";
 
@@ -17,25 +18,23 @@ describe("ChallengeTimeLeftCard", () => {
   });
 
   it("renders nothing visible when no timing data is provided", () => {
-    const { queryByText } = renderWithProviders(
-      <ChallengeTimeLeftCard phaseLabel="Submission" />
-    );
+    renderWithProviders(<ChallengeTimeLeftCard phaseLabel="Submission" />);
 
-    expect(queryByText("Time left")).toBeNull();
-    expect(queryByText("Schedule")).toBeNull();
+    expect(screen.queryByText("Time left")).toBeNull();
+    expect(screen.queryByText("Schedule")).toBeNull();
   });
 
   it("renders schedule view when status is VISIBLE", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeTimeLeftCard phaseLabel="Submission" status="VISIBLE" />
     );
 
-    expect(getByText("Schedule")).toBeTruthy();
-    expect(getByText("Not active yet")).toBeTruthy();
+    expect(screen.getByText("Schedule")).toBeOnTheScreen();
+    expect(screen.getByText("Not active yet")).toBeOnTheScreen();
   });
 
   it("renders the recurring countdown and reset text", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeTimeLeftCard
         phaseLabel="Submission"
         isRecurring={true}
@@ -46,13 +45,13 @@ describe("ChallengeTimeLeftCard", () => {
       />
     );
 
-    expect(getByText("Time left")).toBeTruthy();
-    expect(getByText("Submission")).toBeTruthy();
-    expect(getByText("Daily reset at 17:00")).toBeTruthy();
+    expect(screen.getByText("Time left")).toBeOnTheScreen();
+    expect(screen.getByText("Submission")).toBeOnTheScreen();
+    expect(screen.getByText("Daily reset at 17:00")).toBeOnTheScreen();
   });
 
   it("renders voting-specific countdown text", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeTimeLeftCard
         phaseLabel="Voting"
         startTime={new Date("2024-01-15T10:00:00Z")}
@@ -60,8 +59,8 @@ describe("ChallengeTimeLeftCard", () => {
       />
     );
 
-    expect(getByText("Voting")).toBeTruthy();
-    expect(getByText(/Duration-based voting/)).toBeTruthy();
+    expect(screen.getByText("Voting")).toBeOnTheScreen();
+    expect(screen.getByText(/Duration-based voting/)).toBeOnTheScreen();
   });
 
   it("updates on an interval", () => {

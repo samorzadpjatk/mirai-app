@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { TripCard } from "../../../trips/list/TripCard";
 import type { TripListItem } from "../../../trips/list/types";
@@ -46,28 +46,28 @@ const mockFutureTrip: TripListItem = {
 
 describe("TripCard", () => {
   it("should render trip name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockTrip} onPress={noop} />
     );
 
-    expect(getByText("Summer Adventure")).toBeTruthy();
+    expect(screen.getByText("Summer Adventure")).toBeOnTheScreen();
   });
 
   it("should render trip description", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockTrip} onPress={noop} />
     );
 
-    expect(getByText("An amazing summer trip")).toBeTruthy();
+    expect(screen.getByText("An amazing summer trip")).toBeOnTheScreen();
   });
 
   it("should render trip dates", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockTrip} onPress={noop} />
     );
 
-    expect(getByText(/Jul 1, 2024/)).toBeTruthy();
-    expect(getByText(/Jul 7, 2024/)).toBeTruthy();
+    expect(screen.getByText(/Jul 1, 2024/)).toBeOnTheScreen();
+    expect(screen.getByText(/Jul 7, 2024/)).toBeOnTheScreen();
   });
 
   it("should display correct status for ongoing trip", () => {
@@ -77,69 +77,69 @@ describe("TripCard", () => {
       endDate: new Date(Date.now() + 86400000),
     };
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={ongoingTrip} onPress={noop} />
     );
 
-    expect(getByText("Ongoing")).toBeTruthy();
+    expect(screen.getByText("Ongoing")).toBeOnTheScreen();
   });
 
   it("should display correct status for past trip", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockPastTrip} onPress={noop} />
     );
 
-    expect(getByText("Past")).toBeTruthy();
+    expect(screen.getByText("Past")).toBeOnTheScreen();
   });
 
   it("should display correct status for upcoming trip", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockFutureTrip} onPress={noop} />
     );
 
-    expect(getByText("Upcoming")).toBeTruthy();
+    expect(screen.getByText("Upcoming")).toBeOnTheScreen();
   });
 
   it("should display group count", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockTrip} onPress={noop} />
     );
 
-    expect(getByText("2 groups")).toBeTruthy();
+    expect(screen.getByText("2 groups")).toBeOnTheScreen();
   });
 
   it("should display singular group text when only one group", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockPastTrip} onPress={noop} />
     );
 
-    expect(getByText("1 group")).toBeTruthy();
+    expect(screen.getByText("1 group")).toBeOnTheScreen();
   });
 
   it("should call onPress when card is pressed", () => {
     const onPress = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockTrip} onPress={onPress} />
     );
 
-    fireEvent.press(getByText("Summer Adventure"));
+    fireEvent.press(screen.getByText("Summer Adventure"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should not render description when not provided", () => {
     const tripWithoutDescription = { ...mockTrip, description: undefined };
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={tripWithoutDescription} onPress={noop} />
     );
 
-    expect(queryByText("An amazing summer trip")).toBeNull();
+    expect(screen.queryByText("An amazing summer trip")).toBeNull();
   });
 
   it("should not render groups text when no groups", () => {
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <TripCard trip={mockFutureTrip} onPress={noop} />
     );
 
-    expect(queryByText(/group/)).toBeNull();
+    expect(screen.queryByText(/group/)).toBeNull();
   });
 });

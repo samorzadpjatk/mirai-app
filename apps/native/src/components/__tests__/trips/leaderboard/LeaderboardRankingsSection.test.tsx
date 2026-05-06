@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardRankingsSection } from "../../../trips/leaderboard/LeaderboardRankingsSection";
 import type { RankedGroup } from "../../../trips/leaderboard/types";
@@ -43,68 +43,64 @@ describe("LeaderboardRankingsSection", () => {
   });
 
   it("should render section title", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
-    expect(getByText("Full Rankings")).toBeTruthy();
+    expect(screen.getByText("Full Rankings")).toBeOnTheScreen();
   });
 
   it("should render subtitle", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
-    expect(getByText("Global Standings")).toBeTruthy();
+    expect(screen.getByText("Global Standings")).toBeOnTheScreen();
   });
 
   it("should render all group names", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
-    expect(getByText("Group 1")).toBeTruthy();
-    expect(getByText("Group 2")).toBeTruthy();
-    expect(getByText("Group 3")).toBeTruthy();
+    expect(screen.getByText("Group 1")).toBeOnTheScreen();
+    expect(screen.getByText("Group 2")).toBeOnTheScreen();
+    expect(screen.getByText("Group 3")).toBeOnTheScreen();
   });
 
   it("should render all group ranks", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
-    expect(getByText("4")).toBeTruthy();
-    expect(getByText("5")).toBeTruthy();
-    expect(getByText("6")).toBeTruthy();
+    expect(screen.getByText("4")).toBeOnTheScreen();
+    expect(screen.getByText("5")).toBeOnTheScreen();
+    expect(screen.getByText("6")).toBeOnTheScreen();
   });
 
   it("should call onPressGroup when a group is pressed", () => {
-    const { getAllByText } = renderWithProviders(
+    renderWithProviders(
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
-    const groupElements = getAllByText(/Group \d/);
+    const groupElements = screen.getAllByText(/Group \d/);
     fireEvent.press(groupElements[0]);
     expect(mockOnPressGroup).toHaveBeenCalledWith(mockGroups[0]);
   });
 
   it("should render empty state when no groups", () => {
-    const { getByText } = renderWithProviders(
-      <LeaderboardRankingsSection groups={[]} onPressGroup={mockOnPressGroup} />
-    );
-    expect(getByText("No groups yet")).toBeTruthy();
-    expect(getByText("Groups will appear here as they join the trip")).toBeTruthy();
+    renderWithProviders(<LeaderboardRankingsSection groups={[]} onPressGroup={mockOnPressGroup} />);
+    expect(screen.getByText("No groups yet")).toBeOnTheScreen();
+    expect(screen.getByText("Groups will appear here as they join the trip")).toBeOnTheScreen();
   });
 
   it("should render without onPressGroup handler", () => {
-    const { getByText } = renderWithProviders(
-      <LeaderboardRankingsSection groups={mockGroups} />
-    );
-    expect(getByText("Group 1")).toBeTruthy();
+    renderWithProviders(<LeaderboardRankingsSection groups={mockGroups} />);
+    expect(screen.getByText("Group 1")).toBeOnTheScreen();
   });
 
   it("should handle single group", () => {
     const singleGroup = [mockGroups[0]];
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <LeaderboardRankingsSection groups={singleGroup} onPressGroup={mockOnPressGroup} />
     );
-    expect(getByText("Group 1")).toBeTruthy();
-    expect(getByText("4")).toBeTruthy();
+    expect(screen.getByText("Group 1")).toBeOnTheScreen();
+    expect(screen.getByText("4")).toBeOnTheScreen();
   });
 
   it("should render with container styling", () => {
@@ -116,9 +112,9 @@ describe("LeaderboardRankingsSection", () => {
   });
 
   it("should mark current user group with YOUR GROUP badge", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
-    expect(getByText("YOUR GROUP")).toBeTruthy();
+    expect(screen.getByText("YOUR GROUP")).toBeOnTheScreen();
   });
 });

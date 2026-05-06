@@ -1,5 +1,6 @@
 import React from "react";
 import { Text } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalShell } from "../../map/modals/MapModalShell";
 
@@ -33,47 +34,47 @@ const noop = (): void => undefined;
 
 describe("MapModalShell", () => {
   it("should render with title", () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <MapModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text testID="child-content">Child Content</Text>
       </MapModalShell>
     );
 
-    expect(getByTestId("modal-title").children[0]).toBe("Test Modal");
+    expect(screen.getByTestId("modal-title").children[0]).toBe("Test Modal");
   });
 
   it("should render children", () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <MapModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text testID="child-content">Child Content</Text>
       </MapModalShell>
     );
 
-    expect(getByTestId("child-content")).toBeTruthy();
+    expect(screen.getByTestId("child-content")).toBeOnTheScreen();
   });
 
   it("should not render when not visible", () => {
-    const { queryByTestId } = renderWithProviders(
+    renderWithProviders(
       <MapModalShell visible={false} title="Test Modal" onClose={noop}>
         <Text testID="child-content">Child Content</Text>
       </MapModalShell>
     );
 
-    expect(queryByTestId("app-modal-shell")).toBeNull();
+    expect(screen.queryByTestId("app-modal-shell")).toBeNull();
   });
 
   it("should pass maxHeight prop", () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <MapModalShell visible={true} title="Test Modal" onClose={noop} maxHeight="70%">
         <Text testID="child-content">Child Content</Text>
       </MapModalShell>
     );
 
-    expect(getByTestId("app-modal-shell")).toBeTruthy();
+    expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();
   });
 
   it("should pass contentStyle prop", () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <MapModalShell
         visible={true}
         title="Test Modal"
@@ -84,16 +85,16 @@ describe("MapModalShell", () => {
       </MapModalShell>
     );
 
-    expect(getByTestId("app-modal-shell")).toBeTruthy();
+    expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();
   });
 
   it("should use default maxHeight when not specified", () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <MapModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text testID="child-content">Child Content</Text>
       </MapModalShell>
     );
 
-    expect(getByTestId("app-modal-shell")).toBeTruthy();
+    expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();
   });
 });

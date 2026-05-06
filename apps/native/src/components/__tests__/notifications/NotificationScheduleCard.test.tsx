@@ -1,6 +1,6 @@
 import React from "react";
 import { TouchableOpacity } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { NotificationScheduleCard } from "../../notifications/NotificationScheduleCard";
 
@@ -113,103 +113,79 @@ describe("NotificationScheduleCard", () => {
   });
 
   it("should render schedule name", () => {
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(getByText("Test Schedule")).toBeTruthy();
+    expect(screen.getByText("Test Schedule")).toBeTruthy();
   });
 
   it("should render creator information", () => {
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(getByText(/Created by/)).toBeTruthy();
-    expect(getByText(/John Doe/)).toBeTruthy();
+    expect(screen.getByText(/Created by/)).toBeTruthy();
+    expect(screen.getByText(/John Doe/)).toBeTruthy();
   });
 
   it("should render active status tag", () => {
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(getByText("Active")).toBeTruthy();
+    expect(screen.getByText("Active")).toBeTruthy();
   });
 
   it("should render notification type tag", () => {
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(getByText("REMINDER")).toBeTruthy();
+    expect(screen.getByText("REMINDER")).toBeTruthy();
   });
 
   it("should render trip name tag when trip exists", () => {
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(getByText("Summer Trip 2024")).toBeTruthy();
+    expect(screen.getByText("Summer Trip 2024")).toBeTruthy();
   });
 
   it("should render time tag with correct format", () => {
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(getByText("09:30")).toBeTruthy();
+    expect(screen.getByText("09:30")).toBeTruthy();
   });
 
   it("should render period information", () => {
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(getByText(/Period:/)).toBeTruthy();
+    expect(screen.getByText(/Period:/)).toBeTruthy();
   });
 
   it("should render last run information when lastRun exists", () => {
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(getByText(/Last run:/)).toBeTruthy();
+    expect(screen.getByText(/Last run:/)).toBeTruthy();
   });
 
   it("should render toggle button when active", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
   });
 
   it("should render delete button", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
   });
 
   it("should call toggle mutation when toggle button is pressed", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    const buttons = UNSAFE_getAllByType(TouchableOpacity);
+    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
     fireEvent.press(buttons[0]);
 
     expect(buttons[0]).toBeTruthy();
   });
 
   it("should show delete confirmation when delete button is pressed", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(
-      <NotificationScheduleCard schedule={mockSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    const buttons = UNSAFE_getAllByType(TouchableOpacity);
+    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
     fireEvent.press(buttons[1]);
 
     expect(mockAlert).toHaveBeenCalledWith(
@@ -230,11 +206,9 @@ describe("NotificationScheduleCard - conditional states", () => {
       isActive: false,
     };
 
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={inactiveSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={inactiveSchedule} />);
 
-    expect(getByText("Inactive")).toBeTruthy();
+    expect(screen.getByText("Inactive")).toBeTruthy();
   });
 
   it("should render toggle button when inactive", () => {
@@ -243,11 +217,9 @@ describe("NotificationScheduleCard - conditional states", () => {
       isActive: false,
     };
 
-    const { UNSAFE_getAllByType } = renderWithProviders(
-      <NotificationScheduleCard schedule={inactiveSchedule} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={inactiveSchedule} />);
 
-    expect(UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
   });
 
   it("should not render trip tag when trip is null", () => {
@@ -256,11 +228,9 @@ describe("NotificationScheduleCard - conditional states", () => {
       trip: null,
     };
 
-    const { queryByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={scheduleWithoutTrip} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithoutTrip} />);
 
-    expect(queryByText("Summer Trip 2024")).toBeNull();
+    expect(screen.queryByText("Summer Trip 2024")).toBeNull();
   });
 
   it("should not render last run info when lastRun is null", () => {
@@ -269,11 +239,9 @@ describe("NotificationScheduleCard - conditional states", () => {
       lastRun: null,
     };
 
-    const { queryByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={scheduleWithoutLastRun} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithoutLastRun} />);
 
-    expect(queryByText(/Last run:/)).toBeNull();
+    expect(screen.queryByText(/Last run:/)).toBeNull();
   });
 
   it("should handle unknown creator", () => {
@@ -282,11 +250,9 @@ describe("NotificationScheduleCard - conditional states", () => {
       createdBy: null,
     };
 
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={scheduleWithUnknownCreator} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithUnknownCreator} />);
 
-    expect(getByText(/Unknown/)).toBeTruthy();
+    expect(screen.getByText(/Unknown/)).toBeTruthy();
   });
 
   it("should handle creator with partial name", () => {
@@ -298,11 +264,9 @@ describe("NotificationScheduleCard - conditional states", () => {
       },
     };
 
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={scheduleWithPartialName} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithPartialName} />);
 
-    expect(getByText(/Jane/)).toBeTruthy();
+    expect(screen.getByText(/Jane/)).toBeTruthy();
   });
 
   it("should pad single digit hours and minutes", () => {
@@ -312,11 +276,9 @@ describe("NotificationScheduleCard - conditional states", () => {
       minute: 5,
     };
 
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={scheduleWithSingleDigits} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithSingleDigits} />);
 
-    expect(getByText("05:05")).toBeTruthy();
+    expect(screen.getByText("05:05")).toBeTruthy();
   });
 
   it("should handle midnight time correctly", () => {
@@ -326,11 +288,9 @@ describe("NotificationScheduleCard - conditional states", () => {
       minute: 0,
     };
 
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={scheduleAtMidnight} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={scheduleAtMidnight} />);
 
-    expect(getByText("00:00")).toBeTruthy();
+    expect(screen.getByText("00:00")).toBeTruthy();
   });
 
   it("should handle end of day time correctly", () => {
@@ -340,10 +300,8 @@ describe("NotificationScheduleCard - conditional states", () => {
       minute: 59,
     };
 
-    const { getByText } = renderWithProviders(
-      <NotificationScheduleCard schedule={scheduleAtEndOfDay} />
-    );
+    renderWithProviders(<NotificationScheduleCard schedule={scheduleAtEndOfDay} />);
 
-    expect(getByText("23:59")).toBeTruthy();
+    expect(screen.getByText("23:59")).toBeTruthy();
   });
 });

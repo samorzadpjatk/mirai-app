@@ -1,6 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import type { ViewProps } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ProgressBar } from "../../challenges/ProgressBar";
 
@@ -26,7 +27,7 @@ jest.mock("react-native-reanimated", () => {
 
 describe("ProgressBar", () => {
   it("renders the progress fill", () => {
-    const { getByTestId } = renderWithProviders(<ProgressBar progress={50} />);
-    expect(getByTestId("progress-fill")).toBeTruthy();
+    renderWithProviders(<ProgressBar progress={50} />);
+    expect(screen.getByTestId("progress-fill")).toBeTruthy();
   });
 });

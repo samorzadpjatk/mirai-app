@@ -1,7 +1,6 @@
 import React from "react";
 import { ActivityIndicator, Image, TouchableOpacity, View } from "react-native";
-import type { ReactTestInstance } from "react-test-renderer";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupImagePicker } from "../../../trips/groups/GroupImagePicker";
 
@@ -13,41 +12,41 @@ describe("GroupImagePicker", () => {
   });
 
   it("should render label", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    expect(getByText("Group Image")).toBeTruthy();
+    expect(screen.getByText("Group Image")).toBeOnTheScreen();
   });
 
   it("should render placeholder when no image", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    expect(getByText("No image selected")).toBeTruthy();
+    expect(screen.getByText("No image selected")).toBeOnTheScreen();
   });
 
   it("should render placeholder icon", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    expect(getByText("images-outline")).toBeTruthy();
+    expect(screen.getByText("images-outline")).toBeOnTheScreen();
   });
 
   it("should render 'Add Photo' button when no image", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    expect(getByText("Add Photo")).toBeTruthy();
+    expect(screen.getByText("Add Photo")).toBeOnTheScreen();
   });
 
   it("should render 'Change Photo' button when image exists", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker
         imageUri="https://example.com/image.jpg"
         onPickImage={mockOnPickImage}
       />
     );
-    expect(getByText("Change Photo")).toBeTruthy();
+    expect(screen.getByText("Change Photo")).toBeOnTheScreen();
   });
 
   it("should render image when imageUri is provided", () => {
@@ -57,19 +56,17 @@ describe("GroupImagePicker", () => {
         onPickImage={mockOnPickImage}
       />
     );
-    const image = UNSAFE_getByType(Image) as ReactTestInstance & {
-      props: { source: { uri: string } };
-    };
+    const image = UNSAFE_getByType(Image);
+    type ImageElement = { props: { source: { uri: string } } };
     expect(image).toBeTruthy();
-    expect(image.props.source.uri).toBe("https://example.com/image.jpg");
+    expect((image as unknown as ImageElement).props.source.uri).toBe("https://example.com/image.jpg");
   });
 
   it("should call onPickImage when pressed", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    const touchable = UNSAFE_getByType(TouchableOpacity);
-    fireEvent.press(touchable);
+    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
     expect(mockOnPickImage).toHaveBeenCalledTimes(1);
   });
 
@@ -86,18 +83,18 @@ describe("GroupImagePicker", () => {
   });
 
   it("should show uploading text when isUploading is true", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker
         imageUri={null}
         onPickImage={mockOnPickImage}
         isUploading={true}
       />
     );
-    expect(getByText("Uploading...")).toBeTruthy();
+    expect(screen.getByText("Uploading...")).toBeOnTheScreen();
   });
 
   it("should show upload percentage when provided", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker
         imageUri={null}
         onPickImage={mockOnPickImage}
@@ -105,7 +102,7 @@ describe("GroupImagePicker", () => {
         uploadPercent={50}
       />
     );
-    expect(getByText("Uploading 50%")).toBeTruthy();
+    expect(screen.getByText("Uploading 50%")).toBeOnTheScreen();
   });
 
   it("should disable touchable when isUploading is true", () => {
@@ -117,14 +114,15 @@ describe("GroupImagePicker", () => {
       />
     );
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    expect(touchable.props.disabled).toBe(true);
+    type TouchableElement = { props: { disabled: boolean } };
+    expect((touchable as unknown as TouchableElement).props.disabled).toBe(true);
   });
 
   it("should render camera icon in badge", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    expect(getByText("camera-outline")).toBeTruthy();
+    expect(screen.getByText("camera-outline")).toBeOnTheScreen();
   });
 
   it("should render with correct container styling", () => {

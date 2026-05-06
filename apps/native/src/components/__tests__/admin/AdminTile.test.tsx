@@ -1,6 +1,6 @@
 import React from "react";
 import { Text } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminTile } from "../../admin/AdminTile";
 
@@ -31,7 +31,7 @@ describe("AdminTile", () => {
   });
 
   it("renders with title and subtitle", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AdminTile
         title="Users"
         subtitle="Manage users"
@@ -41,12 +41,12 @@ describe("AdminTile", () => {
       />
     );
 
-    expect(getByText("Users")).toBeTruthy();
-    expect(getByText("Manage users")).toBeTruthy();
+    expect(screen.getByText("Users")).toBeOnTheScreen();
+    expect(screen.getByText("Manage users")).toBeOnTheScreen();
   });
 
   it("renders icon", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AdminTile
         title="Users"
         subtitle="Manage users"
@@ -56,12 +56,14 @@ describe("AdminTile", () => {
       />
     );
 
-    expect(getByText("people")).toBeTruthy();
+    expect(screen.getByText("people")).toBeOnTheScreen();
   });
 
-  it("calls onPress when provided instead of navigation", () => {
+  it("calls onPress when provided instead of navigation", async () => {
     const onPress = jest.fn();
-    const { getByTestId } = renderWithProviders(
+    const user = userEvent.setup();
+
+    renderWithProviders(
       <AdminTile
         title="Users"
         subtitle="Manage users"
@@ -72,13 +74,15 @@ describe("AdminTile", () => {
       />
     );
 
-    fireEvent.press(getByTestId("admin-tile"));
+    await user.press(screen.getByTestId("admin-tile"));
     expect(onPress).toHaveBeenCalled();
     expect(getMockPush()).not.toHaveBeenCalled();
   });
 
-  it("navigates to route when pressed with route and tripId", () => {
-    const { getByTestId } = renderWithProviders(
+  it("navigates to route when pressed with route and tripId", async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(
       <AdminTile
         title="Users"
         subtitle="Manage users"
@@ -90,15 +94,17 @@ describe("AdminTile", () => {
       />
     );
 
-    fireEvent.press(getByTestId("admin-tile"));
+    await user.press(screen.getByTestId("admin-tile"));
     expect(getMockPush()).toHaveBeenCalledWith({
       pathname: "/users",
       params: { tripId: "trip-123" },
     });
   });
 
-  it("does not navigate when route is not provided", () => {
-    const { getByTestId } = renderWithProviders(
+  it("does not navigate when route is not provided", async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(
       <AdminTile
         title="Users"
         subtitle="Manage users"
@@ -108,12 +114,14 @@ describe("AdminTile", () => {
       />
     );
 
-    fireEvent.press(getByTestId("admin-tile"));
+    await user.press(screen.getByTestId("admin-tile"));
     expect(getMockPush()).not.toHaveBeenCalled();
   });
 
-  it("does not navigate when tripId is not provided", () => {
-    const { getByTestId } = renderWithProviders(
+  it("does not navigate when tripId is not provided", async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(
       <AdminTile
         title="Users"
         subtitle="Manage users"
@@ -124,12 +132,12 @@ describe("AdminTile", () => {
       />
     );
 
-    fireEvent.press(getByTestId("admin-tile"));
+    await user.press(screen.getByTestId("admin-tile"));
     expect(getMockPush()).not.toHaveBeenCalled();
   });
 
   it("applies custom accent colors", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AdminTile
         title="Challenges"
         subtitle="Manage challenges"
@@ -139,12 +147,12 @@ describe("AdminTile", () => {
       />
     );
 
-    expect(getByText("Challenges")).toBeTruthy();
-    expect(getByText("trophy")).toBeTruthy();
+    expect(screen.getByText("Challenges")).toBeOnTheScreen();
+    expect(screen.getByText("trophy")).toBeOnTheScreen();
   });
 
   it("handles different icon names", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AdminTile
         title="Settings"
         subtitle="App settings"
@@ -154,6 +162,6 @@ describe("AdminTile", () => {
       />
     );
 
-    expect(getByText("settings")).toBeTruthy();
+    expect(screen.getByText("settings")).toBeOnTheScreen();
   });
 });

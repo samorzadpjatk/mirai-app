@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { LocationPicker } from "../../map/LocationPicker";
 
@@ -89,46 +89,47 @@ describe("LocationPicker", () => {
   };
 
   it("renders the dialog chrome", () => {
-    const { getByText } = renderWithProviders(<LocationPicker {...defaultProps} />);
+    renderWithProviders(<LocationPicker {...defaultProps} />);
 
-    expect(getByText("Select Location")).toBeTruthy();
-    expect(getByText("Cancel")).toBeTruthy();
-    expect(getByText("Confirm")).toBeTruthy();
+    expect(screen.getByText("Select Location")).toBeOnTheScreen();
+    expect(screen.getByText("Cancel")).toBeOnTheScreen();
+    expect(screen.getByText("Confirm")).toBeOnTheScreen();
   });
 
-  it("calls onClose when cancel is pressed", () => {
-    const { getByText } = renderWithProviders(<LocationPicker {...defaultProps} />);
+  it("calls onClose when cancel is pressed", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LocationPicker {...defaultProps} />);
 
-    fireEvent.press(getByText("Cancel"));
+    await user.press(screen.getByText("Cancel"));
     expect(mockOnClose).toHaveBeenCalled();
   });
 
   it("renders confirm button in the initial state", () => {
-    const { getByText } = renderWithProviders(<LocationPicker {...defaultProps} />);
+    renderWithProviders(<LocationPicker {...defaultProps} />);
 
-    expect(getByText("Confirm")).toBeTruthy();
+    expect(screen.getByText("Confirm")).toBeOnTheScreen();
   });
 
   it("renders the map and overlay layers", () => {
-    const { getByTestId, getByText } = renderWithProviders(<LocationPicker {...defaultProps} />);
+    renderWithProviders(<LocationPicker {...defaultProps} />);
 
-    expect(getByTestId("map-view")).toBeTruthy();
-    expect(getByTestId("marker-view")).toBeTruthy();
-    expect(getByTestId("raster-source")).toBeTruthy();
-    expect(getByTestId("raster-layer")).toBeTruthy();
-    expect(getByText("Loading map...")).toBeTruthy();
-    expect(getByText("Tap on the map to select a location")).toBeTruthy();
+    expect(screen.getByTestId("map-view")).toBeOnTheScreen();
+    expect(screen.getByTestId("marker-view")).toBeOnTheScreen();
+    expect(screen.getByTestId("raster-source")).toBeOnTheScreen();
+    expect(screen.getByTestId("raster-layer")).toBeOnTheScreen();
+    expect(screen.getByText("Loading map...")).toBeOnTheScreen();
+    expect(screen.getByText("Tap on the map to select a location")).toBeOnTheScreen();
   });
 
   it("renders the location button icon", () => {
-    const { getByTestId } = renderWithProviders(<LocationPicker {...defaultProps} />);
+    renderWithProviders(<LocationPicker {...defaultProps} />);
 
-    expect(getByTestId("icon-location-sharp")).toBeTruthy();
+    expect(screen.getByTestId("icon-location-sharp")).toBeOnTheScreen();
   });
 
   it("supports light theme", () => {
-    const { getByTestId } = renderWithProviders(<LocationPicker {...defaultProps} mapTheme="light" />);
+    renderWithProviders(<LocationPicker {...defaultProps} mapTheme="light" />);
 
-    expect(getByTestId("map-view")).toBeTruthy();
+    expect(screen.getByTestId("map-view")).toBeOnTheScreen();
   });
 });

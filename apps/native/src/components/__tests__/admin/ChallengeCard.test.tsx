@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import ChallengeCard from "../../admin/challenges/ChallengeCard";
 
@@ -36,32 +36,32 @@ describe("Admin ChallengeCard", () => {
   };
 
   it("renders challenge data", () => {
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={baseChallenge} />);
-    expect(getByText("Test Challenge")).toBeTruthy();
-    expect(getByText("100 PTS")).toBeTruthy();
-    expect(getByText(/Campus/)).toBeTruthy();
-    expect(getByText("star")).toBeTruthy();
+    renderWithProviders(<ChallengeCard challenge={baseChallenge} />);
+    expect(screen.getByText("Test Challenge")).toBeTruthy();
+    expect(screen.getByText("100 PTS")).toBeTruthy();
+    expect(screen.getByText(/Campus/)).toBeTruthy();
+    expect(screen.getByText("star")).toBeTruthy();
   });
 
   it("shows draft label", () => {
     const draft: Challenge = { ...baseChallenge, status: "draft" };
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={draft} />);
-    expect(getByText(/DRAFT/)).toBeTruthy();
+    renderWithProviders(<ChallengeCard challenge={draft} />);
+    expect(screen.getByText(/DRAFT/)).toBeTruthy();
   });
 
   it("maps special icons", () => {
     const wintegral: Challenge = { ...baseChallenge, category: "wintegral", icon: "eco" };
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={wintegral} />);
-    expect(getByText("leaf")).toBeTruthy();
-    expect(getByText(/Trip/)).toBeTruthy();
+    renderWithProviders(<ChallengeCard challenge={wintegral} />);
+    expect(screen.getByText("leaf")).toBeTruthy();
+    expect(screen.getByText(/Trip/)).toBeTruthy();
   });
 
   it("calls edit and delete handlers", () => {
     const onEdit = jest.fn();
     const onDelete = jest.fn();
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={baseChallenge} onEdit={onEdit} onDelete={onDelete} />);
-    fireEvent.press(getByText("create"));
-    fireEvent.press(getByText("trash"));
+    renderWithProviders(<ChallengeCard challenge={baseChallenge} onEdit={onEdit} onDelete={onDelete} />);
+    fireEvent.press(screen.getByText("create"));
+    fireEvent.press(screen.getByText("trash"));
     expect(onEdit).toHaveBeenCalledWith(baseChallenge);
     expect(onDelete).toHaveBeenCalledWith("challenge-1", "trip-1");
   });

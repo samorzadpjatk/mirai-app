@@ -1,6 +1,6 @@
 import React from "react";
 import { TouchableOpacity, Pressable, ActivityIndicator } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapActionButtons } from "../../map/MapActionButtons";
 
@@ -53,61 +53,61 @@ describe("MapActionButtons", () => {
   });
 
   it("should render location toggle button", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    expect(UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
   });
 
   it("should render theme toggle button", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    expect(UNSAFE_getAllByType(Pressable).length).toBeGreaterThanOrEqual(1);
+    expect(screen.UNSAFE_getAllByType(Pressable).length).toBeGreaterThanOrEqual(1);
   });
 
   it("should render recenter button when location sharing is enabled", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    expect(UNSAFE_getAllByType(Pressable).length).toBeGreaterThanOrEqual(2);
+    expect(screen.UNSAFE_getAllByType(Pressable).length).toBeGreaterThanOrEqual(2);
   });
 
   it("should render background toggle with correct status", () => {
-    const { getByText, UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    expect(getByText("Background")).toBeTruthy();
-    expect(UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Background")).toBeOnTheScreen();
+    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
   });
 
   it("should call toggleLocationSharing when location toggle is pressed", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    const buttons = UNSAFE_getAllByType(TouchableOpacity);
+    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
     fireEvent.press(buttons[1]);
 
     expect(mockToggleLocationSharing).toHaveBeenCalled();
   });
 
   it("should call toggleBackgroundLocationUpdates when background toggle is pressed", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    const buttons = UNSAFE_getAllByType(TouchableOpacity);
+    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
     fireEvent.press(buttons[0]);
 
     expect(mockToggleBackgroundLocation).toHaveBeenCalled();
   });
 
   it("should call toggleTheme when theme button is pressed", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    const pressables = UNSAFE_getAllByType(Pressable);
+    const pressables = screen.UNSAFE_getAllByType(Pressable);
     fireEvent.press(pressables[0]);
 
     expect(mockToggleTheme).toHaveBeenCalled();
   });
 
   it("should call onRecenter when recenter button is pressed", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    const pressables = UNSAFE_getAllByType(Pressable);
+    const pressables = screen.UNSAFE_getAllByType(Pressable);
     fireEvent.press(pressables[1]);
 
     expect(mockOnRecenter).toHaveBeenCalled();
@@ -124,9 +124,9 @@ describe("MapActionButtons", () => {
       toggleBackgroundLocationUpdates: mockToggleBackgroundLocation,
     });
 
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    const activityIndicators = UNSAFE_getAllByType(ActivityIndicator);
+    const activityIndicators = screen.UNSAFE_getAllByType(ActivityIndicator);
     expect(activityIndicators.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -141,9 +141,9 @@ describe("MapActionButtons", () => {
       toggleBackgroundLocationUpdates: mockToggleBackgroundLocation,
     });
 
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    const activityIndicators = UNSAFE_getAllByType(ActivityIndicator);
+    const activityIndicators = screen.UNSAFE_getAllByType(ActivityIndicator);
     expect(activityIndicators.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -158,11 +158,11 @@ describe("MapActionButtons", () => {
       toggleBackgroundLocationUpdates: mockToggleBackgroundLocation,
     });
 
-    const { getByText, UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    expect(getByText("Background")).toBeTruthy();
+    expect(screen.getByText("Background")).toBeOnTheScreen();
 
-    const buttons = UNSAFE_getAllByType(TouchableOpacity);
+    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
     const backgroundButton = buttons[0];
     expect(backgroundButton.props.disabled).toBe(true);
   });
@@ -178,10 +178,10 @@ describe("MapActionButtons", () => {
       toggleBackgroundLocationUpdates: mockToggleBackgroundLocation,
     });
 
-    const { getByText } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    expect(getByText("Background")).toBeTruthy();
-    expect(getByText("Off")).toBeTruthy();
+    expect(screen.getByText("Background")).toBeOnTheScreen();
+    expect(screen.getByText("Off")).toBeOnTheScreen();
   });
 
   it("should disable location toggle when loading", () => {
@@ -195,9 +195,9 @@ describe("MapActionButtons", () => {
       toggleBackgroundLocationUpdates: mockToggleBackgroundLocation,
     });
 
-    const { UNSAFE_getAllByType } = renderWithProviders(<MapActionButtons />);
+    renderWithProviders(<MapActionButtons />);
 
-    const buttons = UNSAFE_getAllByType(TouchableOpacity);
+    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
     const locationButton = buttons[1];
     expect(locationButton.props.disabled).toBe(true);
   });

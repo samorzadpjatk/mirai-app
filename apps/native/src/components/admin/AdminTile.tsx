@@ -53,6 +53,8 @@ export function AdminTile({
       style={styles.tile}
       activeOpacity={0.9}
       onPress={handlePress}
+      role="button"
+      aria-label={`${title}: ${subtitle}`}
     >
       <View style={[styles.tileIcon, { backgroundColor: accentBg, borderColor: accent }]}
       >

@@ -1,6 +1,5 @@
 // Suppress specific console noise during tests without breaking spies
 const suppressPatterns = [
-  /react-test-renderer is deprecated/,
   /act\(\) is not supported/,
 ];
 

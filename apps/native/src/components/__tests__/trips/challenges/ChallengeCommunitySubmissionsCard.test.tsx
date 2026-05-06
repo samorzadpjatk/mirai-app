@@ -1,4 +1,5 @@
 import React from "react";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeCommunitySubmissionsCard } from "../../../trips/challenges/ChallengeCommunitySubmissionsCard";
 
@@ -49,34 +50,34 @@ describe("ChallengeCommunitySubmissionsCard", () => {
   ];
 
   it("renders the empty state when there are no submissions", () => {
-    const { getAllByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeCommunitySubmissionsCard submissions={[]} showPodium={false} />
     );
 
-    expect(getAllByText("Groups submissions").length).toBeGreaterThan(0);
-    expect(getAllByText("No photos yet. Submit first and set the pace.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Groups submissions").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("No photos yet. Submit first and set the pace.").length).toBeGreaterThan(0);
   });
 
   it("renders podium and gallery sections when enabled", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeCommunitySubmissionsCard submissions={mockSubmissions} showPodium={true} />
     );
 
-    expect(getByText("4 photos uploaded")).toBeTruthy();
-    expect(getByText("Top 3")).toBeTruthy();
-    expect(getByText("More photos")).toBeTruthy();
-    expect(getByText("View all (4)")).toBeTruthy();
-    expect(getByText("2nd Place")).toBeTruthy();
-    expect(getByText("3rd Place")).toBeTruthy();
+    expect(screen.getByText("4 photos uploaded")).toBeOnTheScreen();
+    expect(screen.getByText("Top 3")).toBeOnTheScreen();
+    expect(screen.getByText("More photos")).toBeOnTheScreen();
+    expect(screen.getByText("View all (4)")).toBeOnTheScreen();
+    expect(screen.getByText("2nd Place")).toBeOnTheScreen();
+    expect(screen.getByText("3rd Place")).toBeOnTheScreen();
   });
 
   it("renders a gallery section when podium is disabled", () => {
-    const { getByText, queryByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeCommunitySubmissionsCard submissions={mockSubmissions} showPodium={false} />
     );
 
-    expect(getByText("Gallery")).toBeTruthy();
-    expect(queryByText("Top 3")).toBeNull();
+    expect(screen.getByText("Gallery")).toBeOnTheScreen();
+    expect(screen.queryByText("Top 3")).toBeNull();
   });
 
   it("filters out non-approved submissions and submissions without images", () => {
@@ -100,10 +101,10 @@ describe("ChallengeCommunitySubmissionsCard", () => {
       },
     ];
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeCommunitySubmissionsCard submissions={mixedSubmissions} showPodium={false} />
     );
 
-    expect(getByText("4 photos uploaded")).toBeTruthy();
+    expect(screen.getByText("4 photos uploaded")).toBeOnTheScreen();
   });
 });

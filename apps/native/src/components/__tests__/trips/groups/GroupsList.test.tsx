@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsList } from "../../../trips/groups/GroupsList";
 import type { GroupListItem } from "../../../trips/groups/types";
@@ -37,69 +37,69 @@ describe("GroupsList", () => {
   });
 
   it("should render all group names", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupsList groups={mockGroups} onSelectGroup={mockOnSelectGroup} />
     );
-    expect(getByText("Group 1")).toBeTruthy();
-    expect(getByText("Group 2")).toBeTruthy();
-    expect(getByText("Group 3")).toBeTruthy();
+    expect(screen.getByText("Group 1")).toBeOnTheScreen();
+    expect(screen.getByText("Group 2")).toBeOnTheScreen();
+    expect(screen.getByText("Group 3")).toBeOnTheScreen();
   });
 
   it("should render empty state when no groups", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupsList groups={[]} onSelectGroup={mockOnSelectGroup} />
     );
-    expect(getByText("No groups found")).toBeTruthy();
+    expect(screen.getByText("No groups found")).toBeOnTheScreen();
   });
 
   it("should call onSelectGroup when a group is pressed", () => {
-    const { getAllByText } = renderWithProviders(
+    renderWithProviders(
       <GroupsList groups={mockGroups} onSelectGroup={mockOnSelectGroup} />
     );
-    const groupCards = getAllByText(/Group \d/);
+    const groupCards = screen.getAllByText(/Group \d/);
     fireEvent.press(groupCards[0]);
     expect(mockOnSelectGroup).toHaveBeenCalledTimes(1);
   });
 
   it("should mark group as my group when myGroupId matches", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupsList
         groups={mockGroups}
         onSelectGroup={mockOnSelectGroup}
         myGroupId="1"
       />
     );
-    expect(getByText("Your group")).toBeTruthy();
+    expect(screen.getByText("Your group")).toBeOnTheScreen();
   });
 
   it("should not mark any group as my group when myGroupId is null", () => {
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <GroupsList
         groups={mockGroups}
         onSelectGroup={mockOnSelectGroup}
         myGroupId={null}
       />
     );
-    expect(queryByText("Your group")).toBeNull();
+    expect(screen.queryByText("Your group")).toBeNull();
   });
 
   it("should not mark any group as my group when myGroupId is undefined", () => {
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <GroupsList
         groups={mockGroups}
         onSelectGroup={mockOnSelectGroup}
       />
     );
-    expect(queryByText("Your group")).toBeNull();
+    expect(screen.queryByText("Your group")).toBeNull();
   });
 
   it("should handle single group", () => {
     const singleGroup = [mockGroups[0]];
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupsList groups={singleGroup} onSelectGroup={mockOnSelectGroup} />
     );
-    expect(getByText("Group 1")).toBeTruthy();
-    expect(getByText("CODE1")).toBeTruthy();
+    expect(screen.getByText("Group 1")).toBeOnTheScreen();
+    expect(screen.getByText("CODE1")).toBeOnTheScreen();
   });
 
   it("should render with correct list styling", () => {

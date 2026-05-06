@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeListItem } from "../../admin/challenges/ChallengeListItem";
 
@@ -21,7 +21,7 @@ describe("ChallengeListItem", () => {
   });
 
   it("renders challenge title", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeListItem
         challenge={mockChallenge}
         onDelete={mockOnDelete}
@@ -29,11 +29,11 @@ describe("ChallengeListItem", () => {
       />
     );
 
-    expect(getByText("Test Challenge")).toBeTruthy();
+    expect(screen.getByText("Test Challenge")).toBeTruthy();
   });
 
   it("renders challenge points", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeListItem
         challenge={mockChallenge}
         onDelete={mockOnDelete}
@@ -41,11 +41,11 @@ describe("ChallengeListItem", () => {
       />
     );
 
-    expect(getByText("100 PTS")).toBeTruthy();
+    expect(screen.getByText("100 PTS")).toBeTruthy();
   });
 
   it("renders challenge status", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeListItem
         challenge={mockChallenge}
         onDelete={mockOnDelete}
@@ -53,11 +53,11 @@ describe("ChallengeListItem", () => {
       />
     );
 
-    expect(getByText("active")).toBeTruthy();
+    expect(screen.getByText("active")).toBeTruthy();
   });
 
   it("renders challenge description", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeListItem
         challenge={mockChallenge}
         onDelete={mockOnDelete}
@@ -65,11 +65,11 @@ describe("ChallengeListItem", () => {
       />
     );
 
-    expect(getByText("Test description")).toBeTruthy();
+    expect(screen.getByText("Test description")).toBeTruthy();
   });
 
   it("calls onDeletePress when delete button is pressed", () => {
-    const { getAllByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeListItem
         challenge={mockChallenge}
         onDelete={mockOnDelete}
@@ -77,14 +77,14 @@ describe("ChallengeListItem", () => {
       />
     );
 
-    const deleteButtons = getAllByText("trash");
+    const deleteButtons = screen.getAllByText("trash");
     fireEvent.press(deleteButtons[0]);
     expect(mockOnDeletePress).toHaveBeenCalledWith(mockChallenge.id);
   });
 
   it("renders with different point values", () => {
     const highPointChallenge = { ...mockChallenge, basePoints: 500 };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeListItem
         challenge={highPointChallenge}
         onDelete={mockOnDelete}
@@ -92,12 +92,12 @@ describe("ChallengeListItem", () => {
       />
     );
 
-    expect(getByText("500 PTS")).toBeTruthy();
+    expect(screen.getByText("500 PTS")).toBeTruthy();
   });
 
   it("renders without description", () => {
     const challengeWithoutDesc = { ...mockChallenge, description: null };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeListItem
         challenge={challengeWithoutDesc}
         onDelete={mockOnDelete}
@@ -105,6 +105,6 @@ describe("ChallengeListItem", () => {
       />
     );
 
-    expect(getByText("Test Challenge")).toBeTruthy();
+    expect(screen.getByText("Test Challenge")).toBeTruthy();
   });
 });

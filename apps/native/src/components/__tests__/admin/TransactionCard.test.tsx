@@ -1,4 +1,5 @@
 import React from "react";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import TransactionCard from "../../admin/transactions/TransactionCard";
 
@@ -24,23 +25,21 @@ describe("TransactionCard", () => {
   };
 
   it("renders transaction details", () => {
-    const { getByText } = renderWithProviders(
-      <TransactionCard transaction={mockTransaction} />
-    );
+    renderWithProviders(<TransactionCard transaction={mockTransaction} />);
 
-    expect(getByText("Test Group")).toBeTruthy();
-    expect(getByText("Test reason")).toBeTruthy();
-    expect(getByText("Admin: John Doe")).toBeTruthy();
-    expect(getByText("+50")).toBeTruthy();
+    expect(screen.getByText("Test Group")).toBeOnTheScreen();
+    expect(screen.getByText("Test reason")).toBeOnTheScreen();
+    expect(screen.getByText("Admin: John Doe")).toBeOnTheScreen();
+    expect(screen.getByText("+50")).toBeOnTheScreen();
   });
 
   it("renders negative amounts with a minus sign", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionCard
         transaction={{ ...mockTransaction, amount: -25 }}
       />
     );
 
-    expect(getByText("-25")).toBeTruthy();
+    expect(screen.getByText("-25")).toBeOnTheScreen();
   });
 });

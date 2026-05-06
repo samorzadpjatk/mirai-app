@@ -220,7 +220,7 @@ describe("useMapSharing", () => {
       onErrorCallback(error);
     }
 
-    // Filter out react-test-renderer warnings and find expected call
+    // Find the expected error log call
     const expectedCall = consoleErrorSpy.mock.calls.find(
       (call) => call[0] === "[Map] Failed to update sharing:"
     );

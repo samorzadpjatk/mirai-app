@@ -1,13 +1,12 @@
 import React from "react";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
+import { screen } from "@testing-library/react-native";
 import { LeaderboardEmptyState } from "../../../trips/leaderboard/LeaderboardEmptyState";
 
 describe("LeaderboardEmptyState", () => {
   it("should render message", () => {
-    const { getByText } = renderWithProviders(
-      <LeaderboardEmptyState message="No groups available" />
-    );
-    expect(getByText("No groups available")).toBeTruthy();
+    renderWithProviders(<LeaderboardEmptyState message="No groups available" />);
+    expect(screen.getByText("No groups available")).toBeOnTheScreen();
   });
 
   it("should render different messages", () => {
@@ -17,25 +16,21 @@ describe("LeaderboardEmptyState", () => {
       "No data to display",
     ];
     messages.forEach((message) => {
-      const { getByText, unmount } = renderWithProviders(
+      const { unmount } = renderWithProviders(
         <LeaderboardEmptyState message={message} />
       );
-      expect(getByText(message)).toBeTruthy();
+      expect(screen.getByText(message)).toBeOnTheScreen();
       unmount();
     });
   });
 
   it("should render with centered layout", () => {
-    const { getByText } = renderWithProviders(
-      <LeaderboardEmptyState message="Test message" />
-    );
-    expect(getByText("Test message")).toBeTruthy();
+    renderWithProviders(<LeaderboardEmptyState message="Test message" />);
+    expect(screen.getByText("Test message")).toBeOnTheScreen();
   });
 
   it("should render with flex container styling", () => {
-    const { getByText } = renderWithProviders(
-      <LeaderboardEmptyState message="Test message" />
-    );
-    expect(getByText("Test message")).toBeTruthy();
+    renderWithProviders(<LeaderboardEmptyState message="Test message" />);
+    expect(screen.getByText("Test message")).toBeOnTheScreen();
   });
 });

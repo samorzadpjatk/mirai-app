@@ -4,7 +4,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditMembersPicker } from "../../../../trips/groups/edit/EditMembersPicker";
 
@@ -37,7 +37,7 @@ const mockParticipants = [
 
 describe("EditMembersPicker", () => {
   it("should show loading indicator when isLoading is true", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={[]}
         selectedMembers={new Set()}
@@ -46,11 +46,11 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
   it("should render participants list when not loading", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -59,13 +59,13 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(getByText("John Doe")).toBeTruthy();
-    expect(getByText("Jane Smith")).toBeTruthy();
-    expect(getByText("Bob Johnson")).toBeTruthy();
+    expect(screen.getByText("John Doe")).toBeOnTheScreen();
+    expect(screen.getByText("Jane Smith")).toBeOnTheScreen();
+    expect(screen.getByText("Bob Johnson")).toBeOnTheScreen();
   });
 
   it("should render participant emails", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -74,13 +74,13 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(getByText("john@example.com")).toBeTruthy();
-    expect(getByText("jane@example.com")).toBeTruthy();
-    expect(getByText("bob@example.com")).toBeTruthy();
+    expect(screen.getByText("john@example.com")).toBeOnTheScreen();
+    expect(screen.getByText("jane@example.com")).toBeOnTheScreen();
+    expect(screen.getByText("bob@example.com")).toBeOnTheScreen();
   });
 
   it("should show empty state when no participants", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={[]}
         selectedMembers={new Set()}
@@ -89,12 +89,12 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(getByText("No participants found")).toBeTruthy();
+    expect(screen.getByText("No participants found")).toBeOnTheScreen();
   });
 
   it("should call onToggleMember when a participant is pressed", () => {
     const onToggleMember = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -103,14 +103,14 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    fireEvent.press(getByText("John Doe"));
+    fireEvent.press(screen.getByText("John Doe"));
     expect(onToggleMember).toHaveBeenCalledWith("user-1");
     expect(onToggleMember).toHaveBeenCalledTimes(1);
   });
 
   it("should show selected state for selected members", () => {
     const selectedMembers = new Set(["user-1", "user-3"]);
-    const { UNSAFE_getAllByType } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={selectedMembers}
@@ -119,13 +119,13 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    const touchables = UNSAFE_getAllByType(TouchableOpacity);
+    const touchables = screen.UNSAFE_getAllByType(TouchableOpacity);
     expect(touchables.length).toBe(3);
   });
 
   it("should disable organizer from being toggled", () => {
     const onToggleMember = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -135,12 +135,12 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(getByText("john@example.com (Organizer)")).toBeTruthy();
+    expect(screen.getByText("john@example.com (Organizer)")).toBeOnTheScreen();
   });
 
   it("should not call onToggleMember when organizer is pressed", () => {
     const onToggleMember = jest.fn();
-    const { UNSAFE_getAllByType } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -150,14 +150,14 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    const touchables = UNSAFE_getAllByType(TouchableOpacity);
+    const touchables = screen.UNSAFE_getAllByType(TouchableOpacity);
     const organizerTouchable = touchables[0];
 
     expect(organizerTouchable.props.disabled).toBe(true);
   });
 
   it("should display initials for participants", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -166,9 +166,9 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(getByText("JD")).toBeTruthy();
-    expect(getByText("JS")).toBeTruthy();
-    expect(getByText("BJ")).toBeTruthy();
+    expect(screen.getByText("JD")).toBeOnTheScreen();
+    expect(screen.getByText("JS")).toBeOnTheScreen();
+    expect(screen.getByText("BJ")).toBeOnTheScreen();
   });
 
   it("should show question mark for participants without names", () => {
@@ -183,7 +183,7 @@ describe("EditMembersPicker", () => {
       },
     ];
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={participantsWithNoNames}
         selectedMembers={new Set()}
@@ -192,7 +192,7 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(getByText("?")).toBeTruthy();
+    expect(screen.getByText("?")).toBeOnTheScreen();
   });
 
   it("should handle single name participants", () => {
@@ -207,7 +207,7 @@ describe("EditMembersPicker", () => {
       },
     ];
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={participantsWithSingleName}
         selectedMembers={new Set()}
@@ -216,12 +216,12 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(getByText("A")).toBeTruthy();
+    expect(screen.getByText("A")).toBeOnTheScreen();
   });
 
   it("should allow toggling multiple members", () => {
     const onToggleMember = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -230,9 +230,9 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    fireEvent.press(getByText("John Doe"));
-    fireEvent.press(getByText("Jane Smith"));
-    fireEvent.press(getByText("Bob Johnson"));
+    fireEvent.press(screen.getByText("John Doe"));
+    fireEvent.press(screen.getByText("Jane Smith"));
+    fireEvent.press(screen.getByText("Bob Johnson"));
 
     expect(onToggleMember).toHaveBeenCalledTimes(3);
     expect(onToggleMember).toHaveBeenNthCalledWith(1, "user-1");
@@ -242,7 +242,7 @@ describe("EditMembersPicker", () => {
 
   it("should handle rapid toggling of same member", () => {
     const onToggleMember = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -251,9 +251,9 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    fireEvent.press(getByText("John Doe"));
-    fireEvent.press(getByText("John Doe"));
-    fireEvent.press(getByText("John Doe"));
+    fireEvent.press(screen.getByText("John Doe"));
+    fireEvent.press(screen.getByText("John Doe"));
+    fireEvent.press(screen.getByText("John Doe"));
 
     expect(onToggleMember).toHaveBeenCalledTimes(3);
     expect(onToggleMember).toHaveBeenNthCalledWith(1, "user-1");
@@ -262,7 +262,7 @@ describe("EditMembersPicker", () => {
   });
 
   it("should render ScrollView for participant list", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
@@ -271,7 +271,7 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(UNSAFE_getByType(ScrollView)).toBeTruthy();
+    expect(screen.UNSAFE_getByType(ScrollView)).toBeTruthy();
   });
 
   it("should handle participants with undefined names", () => {
@@ -286,7 +286,7 @@ describe("EditMembersPicker", () => {
       },
     ];
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditMembersPicker
         participants={participantsWithUndefined}
         selectedMembers={new Set()}
@@ -295,7 +295,7 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(getByText("?")).toBeTruthy();
-    expect(getByText("undefined@example.com")).toBeTruthy();
+    expect(screen.getByText("?")).toBeOnTheScreen();
+    expect(screen.getByText("undefined@example.com")).toBeOnTheScreen();
   });
 });

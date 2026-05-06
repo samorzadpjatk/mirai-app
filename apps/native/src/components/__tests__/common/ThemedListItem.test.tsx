@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text, View, type PressableProps, type ViewStyle } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ThemedListItem } from "../../common/ui/ThemedListItem";
 
@@ -11,28 +11,24 @@ interface PressableStyle extends ViewStyle {
 
 describe("ThemedListItem", () => {
   it("should render with title", () => {
-    const { getByText } = renderWithProviders(
-      <ThemedListItem title="Item Title" />
-    );
+    renderWithProviders(<ThemedListItem title="Item Title" />);
 
-    expect(getByText("Item Title")).toBeTruthy();
+    expect(screen.getByText("Item Title")).toBeOnTheScreen();
   });
 
   it("should render with subtitle when provided", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem title="Item Title" subtitle="Item Subtitle" />
     );
 
-    expect(getByText("Item Title")).toBeTruthy();
-    expect(getByText("Item Subtitle")).toBeTruthy();
+    expect(screen.getByText("Item Title")).toBeOnTheScreen();
+    expect(screen.getByText("Item Subtitle")).toBeOnTheScreen();
   });
 
   it("should not render subtitle when not provided", () => {
-    const { queryByText } = renderWithProviders(
-      <ThemedListItem title="Item Title" />
-    );
+    renderWithProviders(<ThemedListItem title="Item Title" />);
 
-    expect(queryByText("Item Subtitle")).toBeNull();
+    expect(screen.queryByText("Item Subtitle")).toBeNull();
   });
 
   it("should call onPress when pressed", () => {
@@ -114,25 +110,25 @@ describe("ThemedListItem", () => {
   });
 
   it("should render left avatar without image", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem
         title="User Item"
         leftAvatar={{ name: "John Doe" }}
       />
     );
 
-    expect(getByText("JD")).toBeTruthy();
+    expect(screen.getByText("JD")).toBeOnTheScreen();
   });
 
   it("should render right element when provided", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem
         title="Item with Action"
         rightElement={<Text>Action</Text>}
       />
     );
 
-    expect(getByText("Action")).toBeTruthy();
+    expect(screen.getByText("Action")).toBeOnTheScreen();
   });
 
   it("should apply custom style", () => {
@@ -153,7 +149,7 @@ describe("ThemedListItem", () => {
 
   it("should render with all props combined", () => {
     const onPress = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem
         title="Complete Item"
         subtitle="With all features"
@@ -165,10 +161,10 @@ describe("ThemedListItem", () => {
       />
     );
 
-    expect(getByText("Complete Item")).toBeTruthy();
-    expect(getByText("With all features")).toBeTruthy();
-    expect(getByText("JS")).toBeTruthy();
-    expect(getByText("Details")).toBeTruthy();
+    expect(screen.getByText("Complete Item")).toBeOnTheScreen();
+    expect(screen.getByText("With all features")).toBeOnTheScreen();
+    expect(screen.getByText("JS")).toBeOnTheScreen();
+    expect(screen.getByText("Details")).toBeOnTheScreen();
   });
 
   it("should handle press in state", () => {
@@ -182,7 +178,7 @@ describe("ThemedListItem", () => {
   });
 
   it("should render multiple list items", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <>
         <ThemedListItem title="Item 1" />
         <ThemedListItem title="Item 2" />
@@ -190,30 +186,30 @@ describe("ThemedListItem", () => {
       </>
     );
 
-    expect(getByText("Item 1")).toBeTruthy();
-    expect(getByText("Item 2")).toBeTruthy();
-    expect(getByText("Item 3")).toBeTruthy();
+    expect(screen.getByText("Item 1")).toBeOnTheScreen();
+    expect(screen.getByText("Item 2")).toBeOnTheScreen();
+    expect(screen.getByText("Item 3")).toBeOnTheScreen();
   });
 
   it("should handle avatar with null imageUrl", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem
         title="User Item"
         leftAvatar={{ name: "Alice Wonderland", imageUrl: null }}
       />
     );
 
-    expect(getByText("AW")).toBeTruthy();
+    expect(screen.getByText("AW")).toBeOnTheScreen();
   });
 
   it("should handle single name for avatar initials", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem
         title="User Item"
         leftAvatar={{ name: "Alice" }}
       />
     );
 
-    expect(getByText("A")).toBeTruthy();
+    expect(screen.getByText("A")).toBeOnTheScreen();
   });
 });

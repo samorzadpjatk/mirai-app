@@ -1,46 +1,46 @@
 import React from "react";
 import { View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeNotFoundState } from "../../../trips/challenges/ChallengeNotFoundState";
 
 describe("ChallengeNotFoundState", () => {
   it("should render title", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeNotFoundState onGoBack={jest.fn()} />
     );
-    expect(getByText("Challenge not found")).toBeTruthy();
+    expect(screen.getByText("Challenge not found")).toBeOnTheScreen();
   });
 
   it("should render go back button", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeNotFoundState onGoBack={jest.fn()} />
     );
-    expect(getByText("Go Back")).toBeTruthy();
+    expect(screen.getByText("Go Back")).toBeOnTheScreen();
   });
 
   it("should call onGoBack when button is pressed", () => {
     const onGoBack = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeNotFoundState onGoBack={onGoBack} />
     );
-    fireEvent.press(getByText("Go Back"));
+    fireEvent.press(screen.getByText("Go Back"));
     expect(onGoBack).toHaveBeenCalledTimes(1);
   });
 
   it("should render with centered layout", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ChallengeNotFoundState onGoBack={jest.fn()} />
     );
-    const view = UNSAFE_getByType(View);
+    const view = screen.UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 
   it("should render button with correct styling", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeNotFoundState onGoBack={jest.fn()} />
     );
-    const button = getByText("Go Back");
-    expect(button).toBeTruthy();
+    const button = screen.getByText("Go Back");
+    expect(button).toBeOnTheScreen();
   });
 });

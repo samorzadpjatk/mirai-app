@@ -1,15 +1,13 @@
 import React from "react";
-import type { ReactTestInstance } from "react-test-renderer";
+import { screen } from "@testing-library/react-native";
 import { Image, View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupDetailsHero } from "../../../trips/groups/details/GroupDetailsHero";
 
 describe("GroupDetailsHero", () => {
   it("should render group name", () => {
-    const { getByText } = renderWithProviders(
-      <GroupDetailsHero name="Test Group" />
-    );
-    expect(getByText("Test Group")).toBeTruthy();
+    renderWithProviders(<GroupDetailsHero name="Test Group" />);
+    expect(screen.getByText("Test Group")).toBeOnTheScreen();
   });
 
   it("should render image when imageUrl is provided", () => {
@@ -19,33 +17,26 @@ describe("GroupDetailsHero", () => {
         imageUrl="https://example.com/group-image.jpg"
       />
     );
-    const image = UNSAFE_getByType(Image) as ReactTestInstance & {
-      props: { source: { uri: string } };
-    };
+    const image = UNSAFE_getByType(Image);
+    type ImageElement = { props: { source: { uri: string } } };
     expect(image).toBeTruthy();
-    expect(image.props.source.uri).toBe("https://example.com/group-image.jpg");
+    expect((image as unknown as ImageElement).props.source.uri).toBe("https://example.com/group-image.jpg");
   });
 
   it("should render placeholder when no imageUrl", () => {
-    const { getByText } = renderWithProviders(
-      <GroupDetailsHero name="Test Group" />
-    );
-    expect(getByText("No group image")).toBeTruthy();
+    renderWithProviders(<GroupDetailsHero name="Test Group" />);
+    expect(screen.getByText("No group image")).toBeOnTheScreen();
   });
 
   it("should render placeholder icon", () => {
-    const { getByText } = renderWithProviders(
-      <GroupDetailsHero name="Test Group" />
-    );
-    expect(getByText("images-outline")).toBeTruthy();
+    renderWithProviders(<GroupDetailsHero name="Test Group" />);
+    expect(screen.getByText("images-outline")).toBeOnTheScreen();
   });
 
   it("should handle long group names", () => {
     const longName = "This is a very long group name that might wrap";
-    const { getByText } = renderWithProviders(
-      <GroupDetailsHero name={longName} />
-    );
-    expect(getByText(longName)).toBeTruthy();
+    renderWithProviders(<GroupDetailsHero name={longName} />);
+    expect(screen.getByText(longName)).toBeOnTheScreen();
   });
 
   it("should render with hero card styling", () => {
@@ -57,9 +48,7 @@ describe("GroupDetailsHero", () => {
   });
 
   it("should handle null imageUrl", () => {
-    const { getByText } = renderWithProviders(
-      <GroupDetailsHero name="Test Group" imageUrl={null} />
-    );
-    expect(getByText("No group image")).toBeTruthy();
+    renderWithProviders(<GroupDetailsHero name="Test Group" imageUrl={null} />);
+    expect(screen.getByText("No group image")).toBeOnTheScreen();
   });
 });

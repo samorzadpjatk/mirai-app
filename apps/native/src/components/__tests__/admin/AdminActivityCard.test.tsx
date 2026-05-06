@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminActivityCard } from "../../admin/activity/AdminActivityCard";
 
@@ -59,26 +59,22 @@ describe("AdminActivityCard", () => {
   });
 
   it("renders activity content and group name", () => {
-    const { getByText } = renderWithProviders(
-      <AdminActivityCard item={baseActivity} canDelete isBusy={false} {...callbacks} />
-    );
+    renderWithProviders(<AdminActivityCard item={baseActivity} canDelete isBusy={false} {...callbacks} />);
 
-    expect(getByText("Test Activity")).toBeTruthy();
-    expect(getByText("submission")).toBeTruthy();
-    expect(getByText("Group: Test Group")).toBeTruthy();
-    expect(getByText("This is a test description")).toBeTruthy();
-    expect(getByText("5m ago")).toBeTruthy();
+    expect(screen.getByText("Test Activity")).toBeTruthy();
+    expect(screen.getByText("submission")).toBeTruthy();
+    expect(screen.getByText("Group: Test Group")).toBeTruthy();
+    expect(screen.getByText("This is a test description")).toBeTruthy();
+    expect(screen.getByText("5m ago")).toBeTruthy();
   });
 
   it("invokes callbacks from action buttons", () => {
-    const { getByText } = renderWithProviders(
-      <AdminActivityCard item={baseActivity} canDelete isBusy={false} {...callbacks} />
-    );
+    renderWithProviders(<AdminActivityCard item={baseActivity} canDelete isBusy={false} {...callbacks} />);
 
-    fireEvent.press(getByText("Edit"));
-    fireEvent.press(getByText("Pin"));
-    fireEvent.press(getByText("Hide"));
-    fireEvent.press(getByText("Delete"));
+    fireEvent.press(screen.getByText("Edit"));
+    fireEvent.press(screen.getByText("Pin"));
+    fireEvent.press(screen.getByText("Hide"));
+    fireEvent.press(screen.getByText("Delete"));
 
     expect(callbacks.onEdit).toHaveBeenCalledWith(baseActivity);
     expect(callbacks.onPin).toHaveBeenCalledWith(baseActivity);
@@ -87,7 +83,7 @@ describe("AdminActivityCard", () => {
   });
 
   it("shows pinned and hidden labels when needed", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AdminActivityCard
         item={{ ...baseActivity, isPinned: true, isHidden: true, createdAt: new Date(now) }}
         canDelete={false}
@@ -96,9 +92,9 @@ describe("AdminActivityCard", () => {
       />
     );
 
-    expect(getByText("Pinned")).toBeTruthy();
-    expect(getByText("Hidden")).toBeTruthy();
-    expect(getByText("Unpin")).toBeTruthy();
-    expect(getByText("Unhide")).toBeTruthy();
+    expect(screen.getByText("Pinned")).toBeTruthy();
+    expect(screen.getByText("Hidden")).toBeTruthy();
+    expect(screen.getByText("Unpin")).toBeTruthy();
+    expect(screen.getByText("Unhide")).toBeTruthy();
   });
 });

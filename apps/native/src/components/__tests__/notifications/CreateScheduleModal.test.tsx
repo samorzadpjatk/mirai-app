@@ -10,7 +10,7 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateScheduleModal } from "../../notifications/CreateScheduleModal";
 
@@ -219,101 +219,101 @@ describe("CreateScheduleModal", () => {
   };
 
   it("should render modal with title", () => {
-    const { getByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    expect(getByTestId("modal-title").children[0]).toBe("Create Notification Schedule");
+    expect(screen.getByTestId("modal-title").children[0]).toBe("Create Notification Schedule");
   });
 
   it("should render description text", () => {
-    const { getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    expect(getByText("Schedule a notification to be sent at specific times")).toBeTruthy();
+    expect(screen.getByText("Schedule a notification to be sent at specific times")).toBeTruthy();
   });
 
   it("should render schedule name field", () => {
-    const { getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    expect(getByText("Schedule Name *")).toBeTruthy();
+    expect(screen.getByText("Schedule Name *")).toBeTruthy();
   });
 
   it("should render notification type selection", () => {
-    const { getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    expect(getByText("Notification Type")).toBeTruthy();
-    expect(getByText("Custom Message")).toBeTruthy();
-    expect(getByText("Ranking Update")).toBeTruthy();
+    expect(screen.getByText("Notification Type")).toBeTruthy();
+    expect(screen.getByText("Custom Message")).toBeTruthy();
+    expect(screen.getByText("Ranking Update")).toBeTruthy();
   });
 
   it("should render custom message fields when custom type is selected", () => {
-    const { getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    expect(getByText("Notification Title *")).toBeTruthy();
-    expect(getByText("Notification Body *")).toBeTruthy();
+    expect(screen.getByText("Notification Title *")).toBeTruthy();
+    expect(screen.getByText("Notification Body *")).toBeTruthy();
   });
 
   it("should render trip selection when ranking type is selected", () => {
-    const { getByText, getByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    fireEvent.press(getByTestId("segment-Ranking Update"));
+    fireEvent.press(screen.getByTestId("segment-Ranking Update"));
 
-    expect(getByText("Trip *")).toBeTruthy();
-    expect(getByText("Summer Trip 2024")).toBeTruthy();
-    expect(getByText("Winter Trip 2024")).toBeTruthy();
+    expect(screen.getByText("Trip *")).toBeTruthy();
+    expect(screen.getByText("Summer Trip 2024")).toBeTruthy();
+    expect(screen.getByText("Winter Trip 2024")).toBeTruthy();
   });
 
   it("should render date fields", () => {
-    const { getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    expect(getByText("Start Date *")).toBeTruthy();
-    expect(getByText("End Date *")).toBeTruthy();
+    expect(screen.getByText("Start Date *")).toBeTruthy();
+    expect(screen.getByText("End Date *")).toBeTruthy();
   });
 
   it("should render time fields", () => {
-    const { getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    expect(getByText("Hour (0-23) *")).toBeTruthy();
-    expect(getByText("Minute (0-59) *")).toBeTruthy();
+    expect(screen.getByText("Hour (0-23) *")).toBeTruthy();
+    expect(screen.getByText("Minute (0-59) *")).toBeTruthy();
   });
 
   it("should render footer buttons", () => {
-    const { getByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    expect(getByTestId("primary-button")).toBeTruthy();
-    expect(getByTestId("secondary-button")).toBeTruthy();
+    expect(screen.getByTestId("primary-button")).toBeTruthy();
+    expect(screen.getByTestId("secondary-button")).toBeTruthy();
   });
 
   it("should call onClose when cancel button is pressed", () => {
-    const { getByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    fireEvent.press(getByTestId("secondary-button"));
+    fireEvent.press(screen.getByTestId("secondary-button"));
 
     expect(mockOnClose).toHaveBeenCalled();
   });
 
   it("should update schedule name when typing", () => {
-    const { getAllByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    const inputs = getAllByTestId("text-input");
+    const inputs = screen.getAllByTestId("text-input");
     fireEvent.changeText(inputs[0], "Daily Reminder");
 
     expect(inputs[0].props.value).toBe("Daily Reminder");
   });
 
   it("should switch notification type", () => {
-    const { getByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    fireEvent.press(getByTestId("segment-Ranking Update"));
+    fireEvent.press(screen.getByTestId("segment-Ranking Update"));
 
-    expect(getByTestId("segment-Ranking Update").props["data-selected"]).toBe(true);
+    expect(screen.getByTestId("segment-Ranking Update").props["data-selected"]).toBe(true);
   });
 
   it("should select trip when ranking type is active", () => {
-    const { getByTestId, getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    fireEvent.press(getByTestId("segment-Ranking Update"));
+    fireEvent.press(screen.getByTestId("segment-Ranking Update"));
 
-    expect(getByText("Summer Trip 2024")).toBeTruthy();
-    expect(getByText("Winter Trip 2024")).toBeTruthy();
+    expect(screen.getByText("Summer Trip 2024")).toBeTruthy();
+    expect(screen.getByText("Winter Trip 2024")).toBeTruthy();
   });
 
   it("should show no trips message when trips array is empty", () => {
@@ -324,11 +324,11 @@ describe("CreateScheduleModal", () => {
       fetchNextPage: mockFetchNextPage,
     });
 
-    const { getByTestId, getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    fireEvent.press(getByTestId("segment-Ranking Update"));
+    fireEvent.press(screen.getByTestId("segment-Ranking Update"));
 
-    expect(getByText("(No trips available)")).toBeTruthy();
+    expect(screen.getByText("(No trips available)")).toBeTruthy();
   });
 
   it("should show load more button when hasNextPage is true", () => {
@@ -339,11 +339,11 @@ describe("CreateScheduleModal", () => {
       fetchNextPage: mockFetchNextPage,
     });
 
-    const { getByTestId, getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    fireEvent.press(getByTestId("segment-Ranking Update"));
+    fireEvent.press(screen.getByTestId("segment-Ranking Update"));
 
-    expect(getByText("Load more trips")).toBeTruthy();
+    expect(screen.getByText("Load more trips")).toBeTruthy();
   });
 
   it("should call fetchNextPage when load more is pressed", () => {
@@ -354,10 +354,10 @@ describe("CreateScheduleModal", () => {
       fetchNextPage: mockFetchNextPage,
     });
 
-    const { getByTestId, getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    fireEvent.press(getByTestId("segment-Ranking Update"));
-    fireEvent.press(getByText("Load more trips"));
+    fireEvent.press(screen.getByTestId("segment-Ranking Update"));
+    fireEvent.press(screen.getByText("Load more trips"));
 
     expect(mockFetchNextPage).toHaveBeenCalled();
   });
@@ -370,49 +370,47 @@ describe("CreateScheduleModal", () => {
       fetchNextPage: mockFetchNextPage,
     });
 
-    const { getByTestId, UNSAFE_getAllByType } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    fireEvent.press(getByTestId("segment-Ranking Update"));
+    fireEvent.press(screen.getByTestId("segment-Ranking Update"));
 
-    const activityIndicators = UNSAFE_getAllByType(ActivityIndicator);
+    const activityIndicators = screen.UNSAFE_getAllByType(ActivityIndicator);
     expect(activityIndicators.length).toBeGreaterThanOrEqual(1);
   });
 
   it("should disable submit when required fields are empty", () => {
-    const { getByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    const primaryButton = getByTestId("primary-button");
+    const primaryButton = screen.getByTestId("primary-button");
     expect(primaryButton.props.disabled).toBe(true);
   });
 
   it("should not render when modal is closed", () => {
-    const { queryByTestId } = renderWithProviders(
-      <CreateScheduleModal {...defaultProps} isOpen={false} />
-    );
+    renderWithProviders(<CreateScheduleModal {...defaultProps} isOpen={false} />);
 
-    expect(queryByTestId("modal-shell")).toBeNull();
+    expect(screen.queryByTestId("modal-shell")).toBeNull();
   });
 
   it("should render scroll view for content", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    const scrollView = UNSAFE_getByType(ScrollView);
+    const scrollView = screen.UNSAFE_getByType(ScrollView);
     expect(scrollView).toBeTruthy();
   });
 
   it("should handle numeric input for hour", () => {
-    const { getAllByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    const inputs = getAllByTestId("text-input");
+    const inputs = screen.getAllByTestId("text-input");
     const hourInput = inputs.find((input) => input.props.keyboardType === "numeric");
 
     expect(hourInput).toBeTruthy();
   });
 
   it("should handle numeric input for minute", () => {
-    const { getAllByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
-    const inputs = getAllByTestId("text-input");
+    const inputs = screen.getAllByTestId("text-input");
     const numericInputs = inputs.filter((input) => input.props.keyboardType === "numeric");
 
     expect(numericInputs.length).toBeGreaterThanOrEqual(2);

@@ -2,6 +2,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { Image } from "expo-image";
 import { renderWithProviders } from "../helpers/renderWithProviders";
+import { screen } from "@testing-library/react-native";
 import { UserAvatar } from "../../map/ui/UserAvatar";
 
 interface AvatarStyle {
@@ -56,57 +57,57 @@ describe("UserAvatar", () => {
   });
 
   it("should render initials when imageUrl is not provided", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <UserAvatar name="John Doe" size={50} />
     );
 
-    expect(getByText("JD")).toBeTruthy();
+    expect(screen.getByText("JD")).toBeOnTheScreen();
   });
 
   it("should render initials when imageUrl is null", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <UserAvatar imageUrl={null} name="Jane Smith" size={50} />
     );
 
-    expect(getByText("JS")).toBeTruthy();
+    expect(screen.getByText("JS")).toBeOnTheScreen();
   });
 
   it("should render initials when imageUrl is empty string", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <UserAvatar imageUrl="" name="Bob Johnson" size={50} />
     );
 
-    expect(getByText("BJ")).toBeTruthy();
+    expect(screen.getByText("BJ")).toBeOnTheScreen();
   });
 
   it("should render single initial for single name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <UserAvatar name="Alice" size={50} />
     );
 
-    expect(getByText("A")).toBeTruthy();
+    expect(screen.getByText("A")).toBeOnTheScreen();
   });
 
   it("should render initials for multi-part name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <UserAvatar name="Bob Smith Johnson" size={50} />
     );
 
-    expect(getByText("BJ")).toBeTruthy();
+    expect(screen.getByText("BJ")).toBeOnTheScreen();
   });
 
   it("should render question mark for empty name", () => {
-    const { getByText } = renderWithProviders(<UserAvatar name="" size={50} />);
+    renderWithProviders(<UserAvatar name="" size={50} />);
 
-    expect(getByText("?")).toBeTruthy();
+    expect(screen.getByText("?")).toBeOnTheScreen();
   });
 
   it("should render question mark for whitespace-only name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <UserAvatar name="   " size={50} />
     );
 
-    expect(getByText("?")).toBeTruthy();
+    expect(screen.getByText("?")).toBeOnTheScreen();
   });
 
   it("should apply correct size to image", () => {

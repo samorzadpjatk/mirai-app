@@ -1,14 +1,13 @@
 import React from "react";
 import { ActivityIndicator, View } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeUploadProgressCard } from "../../../trips/challenges/ChallengeUploadProgressCard";
 
 describe("ChallengeUploadProgressCard", () => {
   it("should render title", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeUploadProgressCard />
-    );
-    expect(getByText("Uploading submission")).toBeTruthy();
+    renderWithProviders(<ChallengeUploadProgressCard />);
+    expect(screen.getByText("Uploading submission")).toBeOnTheScreen();
   });
 
   it("should render ActivityIndicator", () => {
@@ -20,52 +19,38 @@ describe("ChallengeUploadProgressCard", () => {
   });
 
   it("should show 'Preparing upload...' when progress is null", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeUploadProgressCard progress={null} />
-    );
-    expect(getByText("Preparing upload...")).toBeTruthy();
+    renderWithProviders(<ChallengeUploadProgressCard progress={null} />);
+    expect(screen.getByText("Preparing upload...")).toBeOnTheScreen();
   });
 
   it("should show 'Preparing upload...' when progress is undefined", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeUploadProgressCard />
-    );
-    expect(getByText("Preparing upload...")).toBeTruthy();
+    renderWithProviders(<ChallengeUploadProgressCard />);
+    expect(screen.getByText("Preparing upload...")).toBeOnTheScreen();
   });
 
   it("should show percentage when progress is 0", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeUploadProgressCard progress={0} />
-    );
-    expect(getByText("0%")).toBeTruthy();
+    renderWithProviders(<ChallengeUploadProgressCard progress={0} />);
+    expect(screen.getByText("0%")).toBeOnTheScreen();
   });
 
   it("should show percentage when progress is 0.5", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeUploadProgressCard progress={0.5} />
-    );
-    expect(getByText("50%")).toBeTruthy();
+    renderWithProviders(<ChallengeUploadProgressCard progress={0.5} />);
+    expect(screen.getByText("50%")).toBeOnTheScreen();
   });
 
   it("should show 100% when progress is 1", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeUploadProgressCard progress={1} />
-    );
-    expect(getByText("100%")).toBeTruthy();
+    renderWithProviders(<ChallengeUploadProgressCard progress={1} />);
+    expect(screen.getByText("100%")).toBeOnTheScreen();
   });
 
   it("should clamp progress to 0 when negative", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeUploadProgressCard progress={-0.5} />
-    );
-    expect(getByText("0%")).toBeTruthy();
+    renderWithProviders(<ChallengeUploadProgressCard progress={-0.5} />);
+    expect(screen.getByText("0%")).toBeOnTheScreen();
   });
 
   it("should clamp progress to 100% when greater than 1", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeUploadProgressCard progress={1.5} />
-    );
-    expect(getByText("100%")).toBeTruthy();
+    renderWithProviders(<ChallengeUploadProgressCard progress={1.5} />);
+    expect(screen.getByText("100%")).toBeOnTheScreen();
   });
 
   it("should render progress bar track", () => {

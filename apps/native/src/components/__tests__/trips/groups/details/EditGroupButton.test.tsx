@@ -1,112 +1,96 @@
 import React from "react";
 import { TouchableOpacity } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditGroupButton } from "../../../../trips/groups/details/EditGroupButton";
 
 describe("EditGroupButton", () => {
   it("should render floating action button", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={jest.fn()} />
-    );
+    renderWithProviders(<EditGroupButton onPress={jest.fn()} />);
 
-    expect(UNSAFE_getByType(TouchableOpacity)).toBeTruthy();
+    expect(screen.getByLabelText("Edit group")).toBeOnTheScreen();
   });
 
-  it("should call onPress when pressed", () => {
+  it("should call onPress when pressed", async () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={onPress} />
-    );
+    renderWithProviders(<EditGroupButton onPress={onPress} />);
+    const user = userEvent.setup();
 
-    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
+    await user.press(screen.getByLabelText("Edit group"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should have correct accessibility label", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={jest.fn()} />
-    );
+    renderWithProviders(<EditGroupButton onPress={jest.fn()} />);
 
-    const button = UNSAFE_getByType(TouchableOpacity);
+    const button = screen.getByLabelText("Edit group");
     expect(button.props.accessibilityLabel).toBe("Edit group");
   });
 
   it("should have correct accessibility role", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={jest.fn()} />
-    );
+    renderWithProviders(<EditGroupButton onPress={jest.fn()} />);
 
-    const button = UNSAFE_getByType(TouchableOpacity);
+    const button = screen.getByLabelText("Edit group");
     expect(button.props.accessibilityRole).toBe("button");
   });
 
   it("should use correct activeOpacity", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={jest.fn()} />
-    );
+    renderWithProviders(<EditGroupButton onPress={jest.fn()} />);
 
-    const button = UNSAFE_getByType(TouchableOpacity);
+    const button = screen.getByLabelText("Edit group");
     expect(button.props.activeOpacity).toBe(0.7);
   });
 
-  it("should not call onPress when disabled", () => {
+  it("should not call onPress when disabled", async () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={onPress} />
-    );
+    renderWithProviders(<EditGroupButton onPress={onPress} />);
+    const user = userEvent.setup();
 
-    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
+    await user.press(screen.getByLabelText("Edit group"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should render with create icon", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={jest.fn()} />
-    );
+    renderWithProviders(<EditGroupButton onPress={jest.fn()} />);
 
-    const button = UNSAFE_getByType(TouchableOpacity);
-    expect(button).toBeTruthy();
+    expect(screen.getByLabelText("Edit group")).toBeOnTheScreen();
   });
 
   it("should use correct icon size", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={jest.fn()} />
-    );
+    renderWithProviders(<EditGroupButton onPress={jest.fn()} />);
 
-    const button = UNSAFE_getByType(TouchableOpacity);
-    expect(button).toBeTruthy();
+    expect(screen.getByLabelText("Edit group")).toBeOnTheScreen();
   });
 
-  it("should handle multiple rapid presses", () => {
+  it("should handle multiple rapid presses", async () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={onPress} />
-    );
+    renderWithProviders(<EditGroupButton onPress={onPress} />);
+    const user = userEvent.setup();
+    const button = screen.getByLabelText("Edit group");
 
-    const button = UNSAFE_getByType(TouchableOpacity);
-    fireEvent.press(button);
-    fireEvent.press(button);
-    fireEvent.press(button);
+    await user.press(button);
+    await user.press(button);
+    await user.press(button);
 
     expect(onPress).toHaveBeenCalledTimes(3);
   });
 
-  it("should maintain button state across re-renders", () => {
+  it("should maintain button state across re-renders", async () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType, rerender } = renderWithProviders(
+    const { rerender } = renderWithProviders(
       <EditGroupButton onPress={onPress} />
     );
+    const user = userEvent.setup();
 
-    let button = UNSAFE_getByType(TouchableOpacity);
-    expect(button).toBeTruthy();
+    let button = screen.getByLabelText("Edit group");
+    expect(button).toBeOnTheScreen();
 
     rerender(<EditGroupButton onPress={onPress} />);
-    
-    button = UNSAFE_getByType(TouchableOpacity);
-    expect(button).toBeTruthy();
-    
-    fireEvent.press(button);
+
+    button = screen.getByLabelText("Edit group");
+    expect(button).toBeOnTheScreen();
+
+    await user.press(button);
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

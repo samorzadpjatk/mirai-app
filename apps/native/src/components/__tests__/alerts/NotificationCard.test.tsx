@@ -1,6 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
+import { screen } from "@testing-library/react-native";
 import { NotificationCard } from "../../alerts/NotificationCard";
 import type { NotificationItem } from "~/types/notifications";
 
@@ -47,65 +48,65 @@ const mockNotificationWithoutAuthor: NotificationItem = {
 
 describe("NotificationCard", () => {
   it("should render notification title", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={mockNotification} timeLabel="2 hours ago" />
     );
 
-    expect(getByText("Test Notification")).toBeTruthy();
+    expect(screen.getByText("Test Notification")).toBeOnTheScreen();
   });
 
   it("should render notification body", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={mockNotification} timeLabel="2 hours ago" />
     );
 
-    expect(getByText("This is a test notification body")).toBeTruthy();
+    expect(screen.getByText("This is a test notification body")).toBeOnTheScreen();
   });
 
   it("should render author name when createdBy is provided", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={mockNotification} timeLabel="2 hours ago" />
     );
 
-    expect(getByText(/From: John Doe/)).toBeTruthy();
+    expect(screen.getByText(/From: John Doe/)).toBeOnTheScreen();
   });
 
   it("should not render author when createdBy is null", () => {
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={mockNotificationWithoutAuthor} timeLabel="1 hour ago" />
     );
 
-    expect(queryByText(/From:/)).toBeNull();
+    expect(screen.queryByText(/From:/)).toBeNull();
   });
 
   it("should render time label", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={mockNotification} timeLabel="Just now" />
     );
 
-    expect(getByText("Just now")).toBeTruthy();
+    expect(screen.getByText("Just now")).toBeOnTheScreen();
   });
 
   it("should render different time labels", () => {
-    const { getByText, rerender } = renderWithProviders(
+    const { rerender } = renderWithProviders(
       <NotificationCard notification={mockNotification} timeLabel="5 minutes ago" />
     );
 
-    expect(getByText("5 minutes ago")).toBeTruthy();
+    expect(screen.getByText("5 minutes ago")).toBeOnTheScreen();
 
     rerender(
       <NotificationCard notification={mockNotification} timeLabel="Yesterday" />
     );
 
-    expect(getByText("Yesterday")).toBeTruthy();
+    expect(screen.getByText("Yesterday")).toBeOnTheScreen();
   });
 
   it("should render notification icon", () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={mockNotification} timeLabel="2 hours ago" />
     );
 
-    expect(getByTestId("icon-notifications")).toBeTruthy();
+    expect(screen.getByTestId("icon-notifications")).toBeOnTheScreen();
   });
 
   it("should handle author with partial name (only firstName)", () => {
@@ -118,11 +119,11 @@ describe("NotificationCard", () => {
       },
     };
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={notificationWithPartialName} timeLabel="3 hours ago" />
     );
 
-    expect(getByText(/From: Jane/)).toBeTruthy();
+    expect(screen.getByText(/From: Jane/)).toBeOnTheScreen();
   });
 
   it("should handle author with partial name (only lastName)", () => {
@@ -135,11 +136,11 @@ describe("NotificationCard", () => {
       },
     };
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={notificationWithPartialName} timeLabel="4 hours ago" />
     );
 
-    expect(getByText(/From:.*Smith/)).toBeTruthy();
+    expect(screen.getByText(/From:.*Smith/)).toBeOnTheScreen();
   });
 
   it("should render long notification content", () => {
@@ -149,11 +150,11 @@ describe("NotificationCard", () => {
       body: "This is a very long notification body that contains a lot of information about the notification and might also wrap to multiple lines in the UI",
     };
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <NotificationCard notification={longNotification} timeLabel="Today" />
     );
 
-    expect(getByText(longNotification.title)).toBeTruthy();
-    expect(getByText(longNotification.body)).toBeTruthy();
+    expect(screen.getByText(longNotification.title)).toBeOnTheScreen();
+    expect(screen.getByText(longNotification.body)).toBeOnTheScreen();
   });
 });

@@ -1,5 +1,6 @@
 import React from "react";
 import { View, type ViewProps, type ViewStyle } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { EmptyState } from "../../common/ui/EmptyState";
 
@@ -13,70 +14,56 @@ interface ViewStyleWithOpacity extends ViewStyle {
 
 describe("EmptyState", () => {
   it("should render with title", () => {
-    const { getByText } = renderWithProviders(
-      <EmptyState title="No Data" />
-    );
+    renderWithProviders(<EmptyState title="No Data" />);
 
-    expect(getByText("No Data")).toBeTruthy();
+    expect(screen.getByText("No Data")).toBeOnTheScreen();
   });
 
   it("should render with subtitle when provided", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EmptyState title="No Data" subtitle="Try refreshing the page" />
     );
 
-    expect(getByText("No Data")).toBeTruthy();
-    expect(getByText("Try refreshing the page")).toBeTruthy();
+    expect(screen.getByText("No Data")).toBeOnTheScreen();
+    expect(screen.getByText("Try refreshing the page")).toBeOnTheScreen();
   });
 
   it("should not render subtitle when not provided", () => {
-    const { queryByText } = renderWithProviders(
-      <EmptyState title="No Data" />
-    );
+    renderWithProviders(<EmptyState title="No Data" />);
 
-    expect(queryByText("Some subtitle")).toBeNull();
+    expect(screen.queryByText("Some subtitle")).toBeNull();
   });
 
   it("should render icon when provided", () => {
-    const { getByText } = renderWithProviders(
-      <EmptyState title="No Data" icon="search" />
-    );
+    renderWithProviders(<EmptyState title="No Data" icon="search" />);
 
-    expect(getByText("search")).toBeTruthy();
+    expect(screen.getByText("search")).toBeOnTheScreen();
   });
 
   it("should not render icon when not provided", () => {
-    const { queryByText } = renderWithProviders(
-      <EmptyState title="No Data" />
-    );
+    renderWithProviders(<EmptyState title="No Data" />);
 
-    expect(queryByText("search")).toBeNull();
+    expect(screen.queryByText("search")).toBeNull();
   });
 
   it("should apply custom icon size", () => {
-    const { getByText } = renderWithProviders(
-      <EmptyState title="No Data" icon="search" iconSize={64} />
-    );
+    renderWithProviders(<EmptyState title="No Data" icon="search" iconSize={64} />);
 
-    const icon = getByText("search");
-    expect(icon).toBeTruthy();
+    const icon = screen.getByText("search");
+    expect(icon).toBeOnTheScreen();
   });
 
   it("should apply custom icon color", () => {
-    const { getByText } = renderWithProviders(
-      <EmptyState title="No Data" icon="search" iconColor="#FF0000" />
-    );
+    renderWithProviders(<EmptyState title="No Data" icon="search" iconColor="#FF0000" />);
 
-    const icon = getByText("search");
-    expect(icon).toBeTruthy();
+    const icon = screen.getByText("search");
+    expect(icon).toBeOnTheScreen();
   });
 
   it("should apply custom icon opacity", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(
-      <EmptyState title="No Data" icon="search" iconOpacity={0.8} />
-    );
+    renderWithProviders(<EmptyState title="No Data" icon="search" iconOpacity={0.8} />);
 
-    const views = UNSAFE_getAllByType(View) as ViewElement[];
+    const views = screen.UNSAFE_getAllByType(View) as ViewElement[];
     const iconWrapper = views.find((v) => {
       const styles = v.props.style as ViewStyleWithOpacity | ViewStyleWithOpacity[];
       if (Array.isArray(styles)) {
@@ -88,11 +75,9 @@ describe("EmptyState", () => {
   });
 
   it("should apply default icon opacity when not specified", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(
-      <EmptyState title="No Data" icon="search" />
-    );
+    renderWithProviders(<EmptyState title="No Data" icon="search" />);
 
-    const views = UNSAFE_getAllByType(View) as ViewElement[];
+    const views = screen.UNSAFE_getAllByType(View) as ViewElement[];
     const iconWrapper = views.find((v) => {
       const styles = v.props.style as ViewStyleWithOpacity | ViewStyleWithOpacity[];
       if (Array.isArray(styles)) {
@@ -105,24 +90,22 @@ describe("EmptyState", () => {
 
   it("should apply custom container style", () => {
     const customStyle = { marginTop: 50 };
-    const { UNSAFE_getByType } = renderWithProviders(
-      <EmptyState title="No Data" style={customStyle} />
-    );
+    renderWithProviders(<EmptyState title="No Data" style={customStyle} />);
 
-    const container = UNSAFE_getByType(View);
+    const container = screen.UNSAFE_getByType(View);
     expect(container.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
   });
 
   it("should render with different icon names", () => {
-    const { getByText, rerender } = renderWithProviders(
+    const { rerender } = renderWithProviders(
       <EmptyState title="No Data" icon="home" />
     );
 
-    expect(getByText("home")).toBeTruthy();
+    expect(screen.getByText("home")).toBeOnTheScreen();
 
     rerender(<EmptyState title="No Data" icon="person" />);
-    expect(getByText("person")).toBeTruthy();
+    expect(screen.getByText("person")).toBeOnTheScreen();
   });
 });

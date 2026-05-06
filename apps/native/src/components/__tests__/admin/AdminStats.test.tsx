@@ -1,48 +1,39 @@
 import React from "react";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import AdminStats from "../../admin/AdminStats";
 
 describe("AdminStats", () => {
   it("renders with stats", () => {
-    const { getByText } = renderWithProviders(
-      <AdminStats stats={{ activeChallenges: 5, wintegralChallenges: 3 }} />
-    );
+    renderWithProviders(<AdminStats stats={{ activeChallenges: 5, wintegralChallenges: 3 }} />);
 
-    expect(getByText("Active")).toBeTruthy();
-    expect(getByText("5")).toBeTruthy();
-    expect(getByText("Wintegral")).toBeTruthy();
-    expect(getByText("3")).toBeTruthy();
+    expect(screen.getByText("Active")).toBeTruthy();
+    expect(screen.getByText("5")).toBeTruthy();
+    expect(screen.getByText("Wintegral")).toBeTruthy();
+    expect(screen.getByText("3")).toBeTruthy();
   });
 
   it("renders with zero stats", () => {
-    const { getAllByText } = renderWithProviders(
-      <AdminStats stats={{ activeChallenges: 0, wintegralChallenges: 0 }} />
-    );
+    renderWithProviders(<AdminStats stats={{ activeChallenges: 0, wintegralChallenges: 0 }} />);
 
-    expect(getAllByText("Active")).toBeTruthy();
-    const zeroValues = getAllByText("0");
+    expect(screen.getAllByText("Active")).toBeTruthy();
+    const zeroValues = screen.getAllByText("0");
     expect(zeroValues.length).toBeGreaterThanOrEqual(2);
-    expect(getAllByText("Wintegral")).toBeTruthy();
+    expect(screen.getAllByText("Wintegral")).toBeTruthy();
   });
 
   it("renders with large numbers", () => {
-    const { getByText } = renderWithProviders(
-      <AdminStats
-        stats={{ activeChallenges: 999, wintegralChallenges: 888 }}
-      />
-    );
+    renderWithProviders(<AdminStats stats={{ activeChallenges: 999, wintegralChallenges: 888 }} />);
 
-    expect(getByText("999")).toBeTruthy();
-    expect(getByText("888")).toBeTruthy();
+    expect(screen.getByText("999")).toBeTruthy();
+    expect(screen.getByText("888")).toBeTruthy();
   });
 
   it("displays correct labels", () => {
-    const { getByText } = renderWithProviders(
-      <AdminStats stats={{ activeChallenges: 10, wintegralChallenges: 5 }} />
-    );
+    renderWithProviders(<AdminStats stats={{ activeChallenges: 10, wintegralChallenges: 5 }} />);
 
-    const activeLabel = getByText("Active");
-    const wintegralLabel = getByText("Wintegral");
+    const activeLabel = screen.getByText("Active");
+    const wintegralLabel = screen.getByText("Wintegral");
 
     expect(activeLabel).toBeTruthy();
     expect(wintegralLabel).toBeTruthy();

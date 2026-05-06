@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeFormFields } from "../../admin/challenges/ChallengeFormFields";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
@@ -88,41 +88,41 @@ describe("ChallengeFormFields", () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
   it("renders the current form values", () => {
-    const { getByText, getByDisplayValue } = renderWithProviders(
+    renderWithProviders(
       <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
     );
 
-    expect(getByText("Edit Challenge")).toBeTruthy();
-    expect(getByDisplayValue("Existing Title")).toBeTruthy();
-    expect(getByDisplayValue("Existing Description")).toBeTruthy();
-    expect(getByDisplayValue("50")).toBeTruthy();
+    expect(screen.getByText("Edit Challenge")).toBeOnTheScreen();
+    expect(screen.getByDisplayValue("Existing Title")).toBeOnTheScreen();
+    expect(screen.getByDisplayValue("Existing Description")).toBeOnTheScreen();
+    expect(screen.getByDisplayValue("50")).toBeOnTheScreen();
   });
 
   it("updates base points through updateForm", () => {
-    const { getByDisplayValue } = renderWithProviders(
+    renderWithProviders(
       <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
     );
 
-    fireEvent.changeText(getByDisplayValue("50"), "120");
+    fireEvent.changeText(screen.getByDisplayValue("50"), "120");
     expect(mockUpdateForm).toHaveBeenCalledWith("basePoints", "120");
   });
 
   it("opens the submission type selector", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
     );
 
-    fireEvent.press(getByText("Text"));
+    fireEvent.press(screen.getByText("Text"));
     expect(mockSetActiveSelect).toHaveBeenCalledWith("submissionType");
   });
 
   it("calls onSave from the primary button", () => {
     const onSave = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeFormFields formState={mockFormState} onSave={onSave} saveButtonText="Save Changes" isSaving={false} />
     );
 
-    fireEvent.press(getByText("Save Changes"));
+    fireEvent.press(screen.getByText("Save Changes"));
     expect(onSave).toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, TouchableOpacity } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { PrimaryAddButton } from "../../common/buttons/PrimaryAddButton";
 
@@ -8,64 +8,61 @@ const noop = (): void => undefined;
 
 describe("PrimaryAddButton", () => {
   it("should render with default label", () => {
-    const { getByText } = renderWithProviders(
-      <PrimaryAddButton onPress={noop} />
-    );
+    renderWithProviders(<PrimaryAddButton onPress={noop} />);
 
-    expect(getByText("Add New")).toBeTruthy();
+    expect(screen.getByText("Add New")).toBeTruthy();
   });
 
   it("should render with custom label", () => {
-    const { getByText } = renderWithProviders(
-      <PrimaryAddButton onPress={noop} label="Create Item" />
-    );
+    renderWithProviders(<PrimaryAddButton onPress={noop} label="Create Item" />);
 
-    expect(getByText("Create Item")).toBeTruthy();
+    expect(screen.getByText("Create Item")).toBeTruthy();
   });
 
   it("should call onPress when pressed", () => {
     const onPress = jest.fn();
-    const { getByText } = renderWithProviders(
-      <PrimaryAddButton onPress={onPress} label="Add" />
-    );
+    renderWithProviders(<PrimaryAddButton onPress={onPress} label="Add" />);
 
-    fireEvent.press(getByText("Add"));
+    fireEvent.press(screen.getByText("Add"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should have disabled prop when disabled is true", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const view = renderWithProviders(
       <PrimaryAddButton onPress={noop} label="Disabled" disabled={true} />
     );
 
-    const button = UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = view.UNSAFE_getByType(TouchableOpacity);
+    type ButtonElement = { props: { disabled: boolean } };
+    expect((button as unknown as ButtonElement).props.disabled).toBe(true);
   });
 
   it("should not have disabled prop when disabled is false", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const view = renderWithProviders(
       <PrimaryAddButton onPress={noop} label="Enabled" disabled={false} />
     );
 
-    const button = UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(false);
+    const button = view.UNSAFE_getByType(TouchableOpacity);
+    type ButtonElement = { props: { disabled: boolean } };
+    expect((button as unknown as ButtonElement).props.disabled).toBe(false);
   });
 
   it("should apply custom style", () => {
     const customStyle = { marginTop: 20 };
-    const { UNSAFE_getByType } = renderWithProviders(
+    const view = renderWithProviders(
       <PrimaryAddButton onPress={noop} label="Styled" style={customStyle} />
     );
 
-    const button = UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.style).toEqual(
+    const button = view.UNSAFE_getByType(TouchableOpacity);
+    type ButtonElement = { props: { style: unknown } };
+    expect((button as unknown as ButtonElement).props.style).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
   });
 
   it("should apply custom text style", () => {
     const customTextStyle = { fontSize: 18 };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <PrimaryAddButton
         onPress={noop}
         label="Styled Text"
@@ -73,14 +70,14 @@ describe("PrimaryAddButton", () => {
       />
     );
 
-    const text = getByText("Styled Text");
+    const text = screen.getByText("Styled Text");
     expect(text.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining(customTextStyle)])
     );
   });
 
   it("should use custom activeOpacity", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const view = renderWithProviders(
       <PrimaryAddButton
         onPress={noop}
         label="Opacity"
@@ -88,25 +85,25 @@ describe("PrimaryAddButton", () => {
       />
     );
 
-    const button = UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.activeOpacity).toBe(0.5);
+    const button = view.UNSAFE_getByType(TouchableOpacity);
+    type ButtonElement = { props: { activeOpacity: number } };
+    expect((button as unknown as ButtonElement).props.activeOpacity).toBe(0.5);
   });
 
   it("should use default activeOpacity when not specified", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const view = renderWithProviders(
       <PrimaryAddButton onPress={noop} label="Default" />
     );
 
-    const button = UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.activeOpacity).toBe(0.9);
+    const button = view.UNSAFE_getByType(TouchableOpacity);
+    type ButtonElement = { props: { activeOpacity: number } };
+    expect((button as unknown as ButtonElement).props.activeOpacity).toBe(0.9);
   });
 
   it("should render with add-circle icon", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(
-      <PrimaryAddButton onPress={noop} label="Add" />
-    );
+    const view = renderWithProviders(<PrimaryAddButton onPress={noop} label="Add" />);
 
-    const icons = UNSAFE_getAllByType(Text);
+    const icons = view.UNSAFE_getAllByType(Text);
     expect(icons.length).toBeGreaterThan(0);
   });
 });

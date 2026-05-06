@@ -1,12 +1,12 @@
 import React from "react";
 import { Modal, Pressable, Text, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FullScreenModal } from "../../common/ui/FullScreenModal";
 
 describe("FullScreenModal", () => {
   it("should render when visible is true", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -16,8 +16,8 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    expect(getByText("Test Modal")).toBeTruthy();
-    expect(getByText("Modal Content")).toBeTruthy();
+    expect(screen.getByText("Test Modal")).toBeOnTheScreen();
+    expect(screen.getByText("Modal Content")).toBeOnTheScreen();
   });
 
   it("should call onClose when close button is pressed", () => {
@@ -57,7 +57,7 @@ describe("FullScreenModal", () => {
   });
 
   it("should render close button with icon", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -67,11 +67,11 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    expect(getByText("close")).toBeTruthy();
+    expect(screen.getByText("close")).toBeOnTheScreen();
   });
 
   it("should render children content", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -84,12 +84,12 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    expect(getByText("Child 1")).toBeTruthy();
-    expect(getByText("Child 2")).toBeTruthy();
+    expect(screen.getByText("Child 1")).toBeOnTheScreen();
+    expect(screen.getByText("Child 2")).toBeOnTheScreen();
   });
 
   it("should render header with title", () => {
-    const { getByText, UNSAFE_getByType } = renderWithProviders(
+    const { UNSAFE_getByType } = renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -99,7 +99,7 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    expect(getByText("Test Modal")).toBeTruthy();
+    expect(screen.getByText("Test Modal")).toBeOnTheScreen();
     const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
@@ -151,7 +151,7 @@ describe("FullScreenModal", () => {
   });
 
   it("should render complex nested content", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Complex Modal"
@@ -167,8 +167,8 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    expect(getByText("Section 1")).toBeTruthy();
-    expect(getByText("Nested Content")).toBeTruthy();
-    expect(getByText("Section 2")).toBeTruthy();
+    expect(screen.getByText("Section 1")).toBeOnTheScreen();
+    expect(screen.getByText("Nested Content")).toBeOnTheScreen();
+    expect(screen.getByText("Section 2")).toBeOnTheScreen();
   });
 });

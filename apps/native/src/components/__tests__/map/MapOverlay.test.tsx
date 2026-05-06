@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapOverlay } from "../../map/overlays/MapOverlay";
 
@@ -19,44 +19,44 @@ describe("MapOverlay", () => {
   };
 
   it("renders title and subtitle", () => {
-    const { getByText } = renderWithProviders(<MapOverlay {...defaultProps} />);
+    renderWithProviders(<MapOverlay {...defaultProps} />);
 
-    expect(getByText("Live map")).toBeTruthy();
-    expect(getByText("Tap avatar to inspect user")).toBeTruthy();
+    expect(screen.getByText("Live map")).toBeOnTheScreen();
+    expect(screen.getByText("Tap avatar to inspect user")).toBeOnTheScreen();
   });
 
   it("renders the counts and labels", () => {
-    const { getByText } = renderWithProviders(<MapOverlay {...defaultProps} />);
+    renderWithProviders(<MapOverlay {...defaultProps} />);
 
-    expect(getByText("5")).toBeTruthy();
-    expect(getByText("Active")).toBeTruthy();
-    expect(getByText("2")).toBeTruthy();
-    expect(getByText("Faded")).toBeTruthy();
+    expect(screen.getByText("5")).toBeOnTheScreen();
+    expect(screen.getByText("Active")).toBeOnTheScreen();
+    expect(screen.getByText("2")).toBeOnTheScreen();
+    expect(screen.getByText("Faded")).toBeOnTheScreen();
   });
 
   it("renders the recenter action when provided", () => {
     const mockOnRecenter = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MapOverlay {...defaultProps} onRecenter={mockOnRecenter} />
     );
 
-    fireEvent.press(getByText("Center"));
+    fireEvent.press(screen.getByText("Center"));
     expect(mockOnRecenter).toHaveBeenCalled();
   });
 
   it("does not render recenter action by default", () => {
-    const { queryByText } = renderWithProviders(<MapOverlay {...defaultProps} />);
+    renderWithProviders(<MapOverlay {...defaultProps} />);
 
-    expect(queryByText("Center")).toBeNull();
+    expect(screen.queryByText("Center")).toBeNull();
   });
 
   it("supports custom title and subtitle", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <MapOverlay {...defaultProps} title="Custom Title" subtitle="Custom subtitle" />
     );
 
-    expect(getByText("Custom Title")).toBeTruthy();
-    expect(getByText("Custom subtitle")).toBeTruthy();
+    expect(screen.getByText("Custom Title")).toBeOnTheScreen();
+    expect(screen.getByText("Custom subtitle")).toBeOnTheScreen();
   });
 
   it("renders zero counts twice", () => {
@@ -66,15 +66,15 @@ describe("MapOverlay", () => {
   });
 
   it("renders the gradient background", () => {
-    const { getByTestId } = renderWithProviders(<MapOverlay {...defaultProps} />);
+    renderWithProviders(<MapOverlay {...defaultProps} />);
 
-    expect(getByTestId("linear-gradient")).toBeTruthy();
+    expect(screen.getByTestId("linear-gradient")).toBeOnTheScreen();
   });
 
   it("handles large counts", () => {
-    const { getByText } = renderWithProviders(<MapOverlay activeCount={999} fadedCount={1000} />);
+    renderWithProviders(<MapOverlay activeCount={999} fadedCount={1000} />);
 
-    expect(getByText("999")).toBeTruthy();
-    expect(getByText("1000")).toBeTruthy();
+    expect(screen.getByText("999")).toBeOnTheScreen();
+    expect(screen.getByText("1000")).toBeOnTheScreen();
   });
 });

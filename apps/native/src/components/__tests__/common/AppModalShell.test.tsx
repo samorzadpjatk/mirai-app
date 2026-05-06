@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, Pressable, Text, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AppModalShell } from "../../common/ui/AppModalShell";
 
@@ -8,7 +8,7 @@ const noop = (): void => undefined;
 
 describe("AppModalShell", () => {
   it("should render when visible is true", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -18,13 +18,13 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    expect(getByText("Test Modal")).toBeTruthy();
-    expect(getByText("Modal Content")).toBeTruthy();
+    expect(screen.getByText("Test Modal")).toBeOnTheScreen();
+    expect(screen.getByText("Modal Content")).toBeOnTheScreen();
   });
 
   it("should call onClose when close button is pressed", () => {
     const onClose = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -34,7 +34,7 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    fireEvent.press(getByText("✕"));
+    fireEvent.press(screen.getByText("✕"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -183,7 +183,7 @@ describe("AppModalShell", () => {
   });
 
   it("should render complex children", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Complex Modal"
@@ -197,9 +197,9 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    expect(getByText("Header")).toBeTruthy();
-    expect(getByText("Body")).toBeTruthy();
-    expect(getByText("Footer")).toBeTruthy();
+    expect(screen.getByText("Header")).toBeOnTheScreen();
+    expect(screen.getByText("Body")).toBeOnTheScreen();
+    expect(screen.getByText("Footer")).toBeOnTheScreen();
   });
 
   it("should render with default maxHeight", () => {
@@ -218,7 +218,7 @@ describe("AppModalShell", () => {
   });
 
   it("should render close button with correct styling", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -228,8 +228,8 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const closeButton = getByText("✕");
-    expect(closeButton).toBeTruthy();
+    const closeButton = screen.getByText("✕");
+    expect(closeButton).toBeOnTheScreen();
     expect(closeButton.props.style).toEqual(
       expect.objectContaining({
         fontSize: 24,

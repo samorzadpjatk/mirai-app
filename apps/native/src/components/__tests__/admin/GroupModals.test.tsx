@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateGroupModal, EditGroupModal, DeleteGroupModal, AssignOrganizerModal } from "../../admin/groups/GroupModals";
 import type { Group, User } from "~/hooks/admin/useAdminGroups";
@@ -105,49 +105,47 @@ const users: User[] = [
 ];
 
 describe("Group modals", () => {
-  it("creates a group", () => {
+  it("creates a group", async () => {
     const onCreateGroup = jest.fn();
-    const { getByPlaceholderText, getByText } = renderWithProviders(
-      <CreateGroupModal visible={true} onClose={jest.fn()} onCreateGroup={onCreateGroup} isCreating={false} />,
-    );
+    const user = userEvent.setup();
+    renderWithProviders(<CreateGroupModal visible={true} onClose={jest.fn()} onCreateGroup={onCreateGroup} isCreating={false} />);
 
-    fireEvent.changeText(getByPlaceholderText("Enter group name..."), "New Group");
-    fireEvent.press(getByText("Create"));
+    await user.type(screen.getByPlaceholderText("Enter group name..."), "New Group");
+    await user.press(screen.getByText("Create"));
 
     expect(onCreateGroup).toHaveBeenCalledWith("New Group");
   });
 
-  it("updates a group", () => {
+  it("updates a group", async () => {
     const onUpdateGroup = jest.fn();
-    const { getByPlaceholderText, getByText } = renderWithProviders(
-      <EditGroupModal visible={true} onClose={jest.fn()} group={group} onUpdateGroup={onUpdateGroup} isUpdating={false} />,
-    );
+    const user = userEvent.setup();
+    renderWithProviders(<EditGroupModal visible={true} onClose={jest.fn()} group={group} onUpdateGroup={onUpdateGroup} isUpdating={false} />);
 
-    fireEvent.changeText(getByPlaceholderText("Enter group name..."), "Updated Group");
-    fireEvent.press(getByText("Update"));
+    const input = screen.getByPlaceholderText("Enter group name...");
+    await user.clear(input);
+    await user.type(input, "Updated Group");
+    await user.press(screen.getByText("Update"));
 
     expect(onUpdateGroup).toHaveBeenCalledWith("group-1", "Updated Group");
   });
 
-  it("deletes a group", () => {
+  it("deletes a group", async () => {
     const onDeleteGroup = jest.fn();
-    const { getByText } = renderWithProviders(
-      <DeleteGroupModal visible={true} onClose={jest.fn()} group={group} onDeleteGroup={onDeleteGroup} isDeleting={false} />,
-    );
+    const user = userEvent.setup();
+    renderWithProviders(<DeleteGroupModal visible={true} onClose={jest.fn()} group={group} onDeleteGroup={onDeleteGroup} isDeleting={false} />);
 
-    fireEvent.press(getByText("Delete"));
+    await user.press(screen.getByText("Delete"));
 
     expect(onDeleteGroup).toHaveBeenCalledWith("group-1");
   });
 
-  it("assigns an organizer", () => {
+  it("assigns an organizer", async () => {
     const onAssignOrganizer = jest.fn();
-    const { getByText } = renderWithProviders(
-      <AssignOrganizerModal visible={true} onClose={jest.fn()} group={group} users={users} onAssignOrganizer={onAssignOrganizer} isAssigning={false} />,
-    );
+    const user = userEvent.setup();
+    renderWithProviders(<AssignOrganizerModal visible={true} onClose={jest.fn()} group={group} users={users} onAssignOrganizer={onAssignOrganizer} isAssigning={false} />);
 
-    fireEvent.press(getByText("Jane Doe"));
-    fireEvent.press(getByText("Assign"));
+    await user.press(screen.getByText("Jane Doe"));
+    await user.press(screen.getByText("Assign"));
 
     expect(onAssignOrganizer).toHaveBeenCalledWith("group-1", "user-1");
   });

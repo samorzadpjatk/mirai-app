@@ -1,5 +1,6 @@
 import React from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapScreenOverlay } from "../../map/overlays/MapScreenOverlay";
 
@@ -110,11 +111,11 @@ describe("MapScreenOverlay", () => {
   });
 
   it("renders the always-visible controls", () => {
-    const { getByTestId } = renderWithProviders(<MapScreenOverlay />);
+    renderWithProviders(<MapScreenOverlay />);
 
-    expect(getByTestId("map-action-buttons")).toBeTruthy();
-    expect(getByTestId("share-location-modal")).toBeTruthy();
-    expect(getByTestId("manage-sharing-modal")).toBeTruthy();
+    expect(screen.getByTestId("map-action-buttons")).toBeOnTheScreen();
+    expect(screen.getByTestId("share-location-modal")).toBeOnTheScreen();
+    expect(screen.getByTestId("manage-sharing-modal")).toBeOnTheScreen();
   });
 
   it("renders selected user card when a user is selected", () => {
@@ -125,10 +126,10 @@ describe("MapScreenOverlay", () => {
       panGesture: { active: false },
     });
 
-    const { getByTestId, queryByTestId } = renderWithProviders(<MapScreenOverlay />);
+    renderWithProviders(<MapScreenOverlay />);
 
-    expect(getByTestId("selected-user-card")).toBeTruthy();
-    expect(queryByTestId("users-list-panel")).toBeNull();
+    expect(screen.getByTestId("selected-user-card")).toBeOnTheScreen();
+    expect(screen.queryByTestId("users-list-panel")).toBeNull();
   });
 
   it("renders users list when requested", () => {
@@ -139,9 +140,9 @@ describe("MapScreenOverlay", () => {
       panGesture: { active: false },
     });
 
-    const { getByTestId } = renderWithProviders(<MapScreenOverlay />);
+    renderWithProviders(<MapScreenOverlay />);
 
-    expect(getByTestId("users-list-panel")).toBeTruthy();
+    expect(screen.getByTestId("users-list-panel")).toBeOnTheScreen();
   });
 
   it("hides the overlay when location viewing is disabled", () => {
@@ -149,10 +150,10 @@ describe("MapScreenOverlay", () => {
       canViewOthersLocations: false,
     });
 
-    const { queryByTestId } = renderWithProviders(<MapScreenOverlay />);
+    renderWithProviders(<MapScreenOverlay />);
 
-    expect(queryByTestId("gesture-detector")).toBeNull();
-    expect(queryByTestId("animated-view")).toBeNull();
+    expect(screen.queryByTestId("gesture-detector")).toBeNull();
+    expect(screen.queryByTestId("animated-view")).toBeNull();
   });
 
   it("applies panel styles from the store", () => {
@@ -163,9 +164,9 @@ describe("MapScreenOverlay", () => {
       panGesture: { active: false },
     });
 
-    const { getByTestId } = renderWithProviders(<MapScreenOverlay />);
+    renderWithProviders(<MapScreenOverlay />);
 
-    const animatedView = getByTestId("animated-view");
+    const animatedView = screen.getByTestId("animated-view");
     // Style is an array: [styles.detailCard, panelStyle]
     expect(animatedView.props.style[1]).toMatchObject({
       backgroundColor: "red",

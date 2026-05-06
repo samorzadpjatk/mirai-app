@@ -1,5 +1,6 @@
 import React from "react";
 import { Text as mockText } from "react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TripBanner } from "../../trips/TripBanner";
 
@@ -26,10 +27,10 @@ describe("TripBanner", () => {
       isTripPast: false,
     });
 
-    const { queryByText, queryByTestId } = renderWithProviders(<TripBanner />);
+    renderWithProviders(<TripBanner />);
 
-    expect(queryByText("This trip has ended — view only")).toBeNull();
-    expect(queryByTestId("icon-information-circle-outline")).toBeNull();
+    expect(screen.queryByText("This trip has ended — view only")).toBeNull();
+    expect(screen.queryByTestId("icon-information-circle-outline")).toBeNull();
   });
 
   it("returns null when trip is not past", () => {
@@ -38,10 +39,10 @@ describe("TripBanner", () => {
       isTripPast: false,
     });
 
-    const { queryByText, queryByTestId } = renderWithProviders(<TripBanner />);
+    renderWithProviders(<TripBanner />);
 
-    expect(queryByText("This trip has ended — view only")).toBeNull();
-    expect(queryByTestId("icon-information-circle-outline")).toBeNull();
+    expect(screen.queryByText("This trip has ended — view only")).toBeNull();
+    expect(screen.queryByTestId("icon-information-circle-outline")).toBeNull();
   });
 
   it("returns null when selectedTripId is undefined", () => {
@@ -50,10 +51,10 @@ describe("TripBanner", () => {
       isTripPast: true,
     });
 
-    const { queryByText, queryByTestId } = renderWithProviders(<TripBanner />);
+    renderWithProviders(<TripBanner />);
 
-    expect(queryByText("This trip has ended — view only")).toBeNull();
-    expect(queryByTestId("icon-information-circle-outline")).toBeNull();
+    expect(screen.queryByText("This trip has ended — view only")).toBeNull();
+    expect(screen.queryByTestId("icon-information-circle-outline")).toBeNull();
   });
 
   it("renders TripEndedBanner when trip is selected and past", () => {
@@ -62,10 +63,10 @@ describe("TripBanner", () => {
       isTripPast: true,
     });
 
-    const { getByText, getByTestId } = renderWithProviders(<TripBanner />);
+    renderWithProviders(<TripBanner />);
 
-    expect(getByText("This trip has ended — view only")).toBeTruthy();
-    expect(getByTestId("icon-information-circle-outline")).toBeTruthy();
+    expect(screen.getByText("This trip has ended — view only")).toBeOnTheScreen();
+    expect(screen.getByTestId("icon-information-circle-outline")).toBeOnTheScreen();
   });
 
   it("renders TripEndedBanner with correct visible prop", () => {
@@ -74,10 +75,10 @@ describe("TripBanner", () => {
       isTripPast: true,
     });
 
-    const { getByText, getByTestId } = renderWithProviders(<TripBanner />);
+    renderWithProviders(<TripBanner />);
 
-    expect(getByText("This trip has ended — view only")).toBeTruthy();
-    expect(getByTestId("icon-information-circle-outline")).toBeTruthy();
+    expect(screen.getByText("This trip has ended — view only")).toBeOnTheScreen();
+    expect(screen.getByTestId("icon-information-circle-outline")).toBeOnTheScreen();
   });
 
   it("handles edge case when isTripPast is undefined", () => {
@@ -86,9 +87,9 @@ describe("TripBanner", () => {
       isTripPast: undefined,
     });
 
-    const { queryByText, queryByTestId } = renderWithProviders(<TripBanner />);
+    renderWithProviders(<TripBanner />);
 
-    expect(queryByText("This trip has ended — view only")).toBeNull();
-    expect(queryByTestId("icon-information-circle-outline")).toBeNull();
+    expect(screen.queryByText("This trip has ended — view only")).toBeNull();
+    expect(screen.queryByTestId("icon-information-circle-outline")).toBeNull();
   });
 });

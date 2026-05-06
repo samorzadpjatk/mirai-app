@@ -1,43 +1,44 @@
 import React from "react";
-import { TextInput } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditGroupFormFields } from "../../../../trips/groups/edit/EditGroupFormFields";
 
 describe("EditGroupFormFields", () => {
   it("should render group name label", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
-    expect(getByText("Group Name")).toBeTruthy();
+    expect(screen.getByText("Group Name")).toBeOnTheScreen();
   });
 
   it("should render with empty group name", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
-    expect(input.props.value).toBe("");
+    const input = screen.getByPlaceholderText("Enter group name");
+    type InputElement = { props: { value: string } };
+    expect((input as unknown as InputElement).props.value).toBe("");
   });
 
   it("should render with provided group name", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="Existing Group" onChangeName={jest.fn()} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
-    expect(input.props.value).toBe("Existing Group");
+    const input = screen.getByPlaceholderText("Enter group name");
+    type InputElement = { props: { value: string } };
+    expect((input as unknown as InputElement).props.value).toBe("Existing Group");
   });
 
   it("should call onChangeName when text changes", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     fireEvent.changeText(input, "Updated Group Name");
 
     expect(onChangeName).toHaveBeenCalledWith("Updated Group Name");
@@ -46,37 +47,38 @@ describe("EditGroupFormFields", () => {
 
   it("should update value when groupName prop changes", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType, rerender } = renderWithProviders(
+    const view = renderWithProviders(
       <EditGroupFormFields groupName="Old Name" onChangeName={onChangeName} />
     );
 
-    let input = UNSAFE_getByType(TextInput);
-    expect(input.props.value).toBe("Old Name");
+    let input = screen.getByPlaceholderText("Enter group name");
+    type InputElement = { props: { value: string } };
+    expect((input as unknown as InputElement).props.value).toBe("Old Name");
 
-    rerender(
+    view.rerender(
       <EditGroupFormFields groupName="New Name" onChangeName={onChangeName} />
     );
 
-    input = UNSAFE_getByType(TextInput);
-    expect(input.props.value).toBe("New Name");
+    input = screen.getByPlaceholderText("Enter group name");
+    expect((input as unknown as InputElement).props.value).toBe("New Name");
   });
 
   it("should have correct placeholder text", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
-    expect(input.props.placeholder).toBe("Enter group name");
+    const input = screen.getByPlaceholderText("Enter group name");
+    expect(input).toBeTruthy();
   });
 
   it("should handle special characters in group name", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     const specialName = "Group @#$%^&*()_+-=[]{}|;':\",./<>?";
     fireEvent.changeText(input, specialName);
 
@@ -85,11 +87,11 @@ describe("EditGroupFormFields", () => {
 
   it("should handle unicode characters in group name", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     const unicodeName = "Grupa Testowa 🎉 日本語";
     fireEvent.changeText(input, unicodeName);
 
@@ -98,11 +100,11 @@ describe("EditGroupFormFields", () => {
 
   it("should handle very long group names", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     const longName = "A".repeat(200);
     fireEvent.changeText(input, longName);
 
@@ -111,11 +113,11 @@ describe("EditGroupFormFields", () => {
 
   it("should handle empty string input", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="Existing Name" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     fireEvent.changeText(input, "");
 
     expect(onChangeName).toHaveBeenCalledWith("");
@@ -123,11 +125,11 @@ describe("EditGroupFormFields", () => {
 
   it("should handle whitespace-only input correctly", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     fireEvent.changeText(input, "   ");
 
     expect(onChangeName).toHaveBeenCalledWith("   ");
@@ -135,11 +137,11 @@ describe("EditGroupFormFields", () => {
 
   it("should maintain focus state during editing", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <EditGroupFormFields groupName="Initial" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     fireEvent.changeText(input, "A");
     fireEvent.changeText(input, "AB");
     fireEvent.changeText(input, "ABC");

@@ -1,6 +1,6 @@
 import React from "react";
 import { Alert, Image } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ExistingSubmissionCard } from "../../../trips/challenges/ExistingSubmissionCard";
 
@@ -33,25 +33,25 @@ describe("ExistingSubmissionCard", () => {
   });
 
   it("renders submission details and withdraw action", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ExistingSubmissionCard submission={mockSubmission} isWithdrawing={false} onWithdraw={mockOnWithdraw} />
     );
 
-    expect(getByText("Submission sent")).toBeTruthy();
-    expect(getByText("Pending Review")).toBeTruthy();
-    expect(getByText(/Submitted:/)).toBeTruthy();
-    expect(getByText("Withdraw submission")).toBeTruthy();
+    expect(screen.getByText("Submission sent")).toBeOnTheScreen();
+    expect(screen.getByText("Pending Review")).toBeOnTheScreen();
+    expect(screen.getByText(/Submitted:/)).toBeOnTheScreen();
+    expect(screen.getByText("Withdraw submission")).toBeOnTheScreen();
   });
 
   it("shows the approved state instead of withdraw action", () => {
     const approvedSubmission = { ...mockSubmission, status: "APPROVED" as const };
-    const { getByText, queryByText } = renderWithProviders(
+    renderWithProviders(
       <ExistingSubmissionCard submission={approvedSubmission} isWithdrawing={false} onWithdraw={mockOnWithdraw} />
     );
 
-    expect(getByText("Approved")).toBeTruthy();
-    expect(getByText("Approved submissions cannot be withdrawn.")).toBeTruthy();
-    expect(queryByText("Withdraw submission")).toBeNull();
+    expect(screen.getByText("Approved")).toBeOnTheScreen();
+    expect(screen.getByText("Approved submissions cannot be withdrawn.")).toBeOnTheScreen();
+    expect(screen.queryByText("Withdraw submission")).toBeNull();
   });
 
   it("renders rejection reason for rejected submissions", () => {
@@ -60,12 +60,12 @@ describe("ExistingSubmissionCard", () => {
       status: "REJECTED" as const,
       rejectionReason: "Image quality too low",
     };
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ExistingSubmissionCard submission={rejectedSubmission} isWithdrawing={false} onWithdraw={mockOnWithdraw} />
     );
 
-    expect(getByText("Rejected")).toBeTruthy();
-    expect(getByText("Rejection reason: Image quality too low")).toBeTruthy();
+    expect(screen.getByText("Rejected")).toBeOnTheScreen();
+    expect(screen.getByText("Rejection reason: Image quality too low")).toBeOnTheScreen();
   });
 
   it("renders the local preview when download file is missing", () => {
@@ -85,11 +85,11 @@ describe("ExistingSubmissionCard", () => {
   });
 
   it("asks for confirmation before withdrawing", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ExistingSubmissionCard submission={mockSubmission} isWithdrawing={false} onWithdraw={mockOnWithdraw} />
     );
 
-    fireEvent.press(getByText("Withdraw submission"));
+    fireEvent.press(screen.getByText("Withdraw submission"));
     expect(Alert.alert).toHaveBeenCalled();
   });
 });

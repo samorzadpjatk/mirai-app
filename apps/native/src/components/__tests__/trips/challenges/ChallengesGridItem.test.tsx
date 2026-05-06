@@ -1,6 +1,6 @@
 import React from "react";
 import type * as ReactNative from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { TouchableOpacity } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengesGridItem } from "../../../trips/challenges/ChallengesGridItem";
@@ -40,16 +40,16 @@ describe("ChallengesGridItem", () => {
   });
 
   it("renders the main labels", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengesGridItem challenge={baseChallenge} onPress={mockOnPress} />
     );
 
-    expect(getByText("Test Challenge")).toBeTruthy();
-    expect(getByText("+100 MAX")).toBeTruthy();
-    expect(getByText("5")).toBeTruthy();
-    expect(getByText("Active")).toBeTruthy();
-    expect(getByText("Photo")).toBeTruthy();
-    expect(getByText("Speed")).toBeTruthy();
+    expect(screen.getByText("Test Challenge")).toBeOnTheScreen();
+    expect(screen.getByText("+100 MAX")).toBeOnTheScreen();
+    expect(screen.getByText("5")).toBeOnTheScreen();
+    expect(screen.getByText("Active")).toBeOnTheScreen();
+    expect(screen.getByText("Photo")).toBeOnTheScreen();
+    expect(screen.getByText("Speed")).toBeOnTheScreen();
   });
 
   it("calls onPress with the challenge", () => {
@@ -63,12 +63,12 @@ describe("ChallengesGridItem", () => {
 
   it("is disabled and shows a lock icon when locked", () => {
     const lockedChallenge = { ...baseChallenge, status: "locked" as const };
-    const { UNSAFE_getByType, getByText } = renderWithProviders(
+    const { UNSAFE_getByType } = renderWithProviders(
       <ChallengesGridItem challenge={lockedChallenge} onPress={mockOnPress} />
     );
 
     expect(UNSAFE_getByType(TouchableOpacity).props.disabled).toBe(true);
-    expect(getByText("Locked")).toBeTruthy();
+    expect(screen.getByText("Locked")).toBeOnTheScreen();
   });
 
   it("renders mapped labels for challenge metadata", () => {
@@ -82,14 +82,13 @@ describe("ChallengesGridItem", () => {
     ] as const;
 
     variants.forEach(({ submissionType, label }) => {
-      const { getByText, unmount } = renderWithProviders(
+      renderWithProviders(
         <ChallengesGridItem
           challenge={{ ...baseChallenge, submissionType }}
           onPress={mockOnPress}
         />
       );
-      expect(getByText(label)).toBeTruthy();
-      unmount();
+      expect(screen.getByText(label)).toBeOnTheScreen();
     });
   });
 
@@ -101,14 +100,13 @@ describe("ChallengesGridItem", () => {
     ] as const;
 
     variants.forEach(({ scoringCategory, label }) => {
-      const { getByText, unmount } = renderWithProviders(
+      renderWithProviders(
         <ChallengesGridItem
           challenge={{ ...baseChallenge, scoringCategory }}
           onPress={mockOnPress}
         />
       );
-      expect(getByText(label)).toBeTruthy();
-      unmount();
+      expect(screen.getByText(label)).toBeOnTheScreen();
     });
   });
 });

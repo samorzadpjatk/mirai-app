@@ -1,5 +1,5 @@
 import { TouchableOpacity } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeCard } from "../../challenges/ChallengeCard";
 import { ChallengeStatus, type Challenge } from "../../../types/challenges";
@@ -28,26 +28,33 @@ const mockCompletedChallenge: Challenge = { ...mockChallenge, id: "6", status: C
 
 describe("ChallengeCard", () => {
   it("renders the challenge title and icon", () => {
-    const { getByText, getByTestId } = renderWithProviders(<ChallengeCard challenge={mockChallenge} />);
-    expect(getByText("Test Challenge")).toBeTruthy();
-    expect(getByTestId("icon-trophy")).toBeTruthy();
+    renderWithProviders(<ChallengeCard challenge={mockChallenge} />);
+    expect(screen.getByText("Test Challenge")).toBeTruthy();
+    expect(screen.getByTestId("icon-trophy")).toBeTruthy();
   });
 
   it("renders the wide description", () => {
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={mockWideChallenge} />);
-    expect(getByText("A test challenge description")).toBeTruthy();
+    renderWithProviders(<ChallengeCard challenge={mockWideChallenge} />);
+    expect(screen.getByText("A test challenge description")).toBeTruthy();
   });
 
   it("renders the correct status text", () => {
-    expect(renderWithProviders(<ChallengeCard challenge={mockChallenge} />).getByText("Incomplete")).toBeTruthy();
-    expect(renderWithProviders(<ChallengeCard challenge={mockSelectedChallenge} />).getByText("Selected")).toBeTruthy();
-    expect(renderWithProviders(<ChallengeCard challenge={mockCompletedChallenge} />).getByText("Completed")).toBeTruthy();
-    expect(renderWithProviders(<ChallengeCard challenge={mockLockedChallenge} />).getByText("Locked")).toBeTruthy();
+    renderWithProviders(<ChallengeCard challenge={mockChallenge} />);
+    expect(screen.getByText("Incomplete")).toBeTruthy();
+    
+    renderWithProviders(<ChallengeCard challenge={mockSelectedChallenge} />);
+    expect(screen.getByText("Selected")).toBeTruthy();
+    
+    renderWithProviders(<ChallengeCard challenge={mockCompletedChallenge} />);
+    expect(screen.getByText("Completed")).toBeTruthy();
+    
+    renderWithProviders(<ChallengeCard challenge={mockLockedChallenge} />);
+    expect(screen.getByText("Locked")).toBeTruthy();
   });
 
   it("renders the locked icon", () => {
-    const { getByTestId } = renderWithProviders(<ChallengeCard challenge={mockLockedChallenge} />);
-    expect(getByTestId("icon-lock-closed")).toBeTruthy();
+    renderWithProviders(<ChallengeCard challenge={mockLockedChallenge} />);
+    expect(screen.getByTestId("icon-lock-closed")).toBeTruthy();
   });
 
   it("calls onPress when unlocked", () => {
@@ -65,7 +72,7 @@ describe("ChallengeCard", () => {
   });
 
   it("renders tall layout extras", () => {
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={mockTallChallenge} />);
-    expect(getByText("+2")).toBeTruthy();
+    renderWithProviders(<ChallengeCard challenge={mockTallChallenge} />);
+    expect(screen.getByText("+2")).toBeTruthy();
   });
 });

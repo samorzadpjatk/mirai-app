@@ -1,6 +1,6 @@
 import React from "react";
 import { Text } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminSearchBar } from "../../admin/AdminSearchBar";
 
@@ -19,7 +19,7 @@ describe("AdminSearchBar", () => {
   ];
 
   it("renders search input with placeholder", () => {
-    const { getByPlaceholderText } = renderWithProviders(
+    renderWithProviders(
       <AdminSearchBar
         searchTerm=""
         onSearchChange={jest.fn()}
@@ -29,11 +29,11 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    expect(getByPlaceholderText("Search by first name...")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search by first name...")).toBeTruthy();
   });
 
   it("renders with custom placeholder", () => {
-    const { getByPlaceholderText } = renderWithProviders(
+    renderWithProviders(
       <AdminSearchBar
         searchTerm=""
         onSearchChange={jest.fn()}
@@ -44,11 +44,11 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    expect(getByPlaceholderText("Custom placeholder")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Custom placeholder")).toBeTruthy();
   });
 
   it("displays current search term", () => {
-    const { getByDisplayValue } = renderWithProviders(
+    renderWithProviders(
       <AdminSearchBar
         searchTerm="John"
         onSearchChange={jest.fn()}
@@ -58,12 +58,12 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    expect(getByDisplayValue("John")).toBeTruthy();
+    expect(screen.getByDisplayValue("John")).toBeTruthy();
   });
 
   it("calls onSearchChange when text changes", () => {
     const onSearchChange = jest.fn();
-    const { getByPlaceholderText } = renderWithProviders(
+    renderWithProviders(
       <AdminSearchBar
         searchTerm=""
         onSearchChange={onSearchChange}
@@ -73,13 +73,13 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    const input = getByPlaceholderText("Search by first name...");
+    const input = screen.getByPlaceholderText("Search by first name...");
     fireEvent.changeText(input, "Jane");
     expect(onSearchChange).toHaveBeenCalledWith("Jane");
   });
 
   it("renders all field options", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AdminSearchBar
         searchTerm=""
         onSearchChange={jest.fn()}
@@ -89,14 +89,14 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    expect(getByText("First Name")).toBeTruthy();
-    expect(getByText("Last Name")).toBeTruthy();
-    expect(getByText("Email")).toBeTruthy();
+    expect(screen.getByText("First Name")).toBeTruthy();
+    expect(screen.getByText("Last Name")).toBeTruthy();
+    expect(screen.getByText("Email")).toBeTruthy();
   });
 
   it("calls onFieldChange when field option is pressed", () => {
     const onFieldChange = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AdminSearchBar
         searchTerm=""
         onSearchChange={jest.fn()}
@@ -106,12 +106,12 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    fireEvent.press(getByText("Last Name"));
+    fireEvent.press(screen.getByText("Last Name"));
     expect(onFieldChange).toHaveBeenCalledWith("lastName");
   });
 
   it("updates placeholder when selected field changes", () => {
-    const { getByPlaceholderText, rerender } = renderWithProviders(
+    const { rerender } = renderWithProviders(
       <AdminSearchBar
         searchTerm=""
         onSearchChange={jest.fn()}
@@ -121,7 +121,7 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    expect(getByPlaceholderText("Search by first name...")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search by first name...")).toBeTruthy();
 
     rerender(
       <AdminSearchBar
@@ -133,11 +133,11 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    expect(getByPlaceholderText("Search by email...")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search by email...")).toBeTruthy();
   });
 
   it("handles empty fields array", () => {
-    const { getByPlaceholderText } = renderWithProviders(
+    renderWithProviders(
       <AdminSearchBar
         searchTerm=""
         onSearchChange={jest.fn()}
@@ -147,11 +147,11 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    expect(getByPlaceholderText("Search by items...")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search by items...")).toBeTruthy();
   });
 
   it("renders search icon", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <AdminSearchBar
         searchTerm=""
         onSearchChange={jest.fn()}
@@ -161,6 +161,6 @@ describe("AdminSearchBar", () => {
       />
     );
 
-    expect(getByText("search")).toBeTruthy();
+    expect(screen.getByText("search")).toBeTruthy();
   });
 });

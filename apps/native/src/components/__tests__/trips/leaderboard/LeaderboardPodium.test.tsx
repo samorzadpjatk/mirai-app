@@ -1,6 +1,6 @@
 import React from "react";
 import type { Text as TextType } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardPodium } from "../../../trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "../../../trips/leaderboard/types";
@@ -25,24 +25,24 @@ describe("LeaderboardPodium", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("renders the podium groups", () => {
-    const { getByText } = renderWithProviders(<LeaderboardPodium topThree={mockTopThree} onPressGroup={mockOnPressGroup} />);
-    expect(getByText("First Place Group")).toBeTruthy();
-    expect(getByText("Second Place Group")).toBeTruthy();
-    expect(getByText("Third Place Group")).toBeTruthy();
+    renderWithProviders(<LeaderboardPodium topThree={mockTopThree} onPressGroup={mockOnPressGroup} />);
+    expect(screen.getByText("First Place Group")).toBeOnTheScreen();
+    expect(screen.getByText("Second Place Group")).toBeOnTheScreen();
+    expect(screen.getByText("Third Place Group")).toBeOnTheScreen();
   });
 
   it("renders podium icons and badges", () => {
-    const { getByTestId, getByText, getAllByTestId } = renderWithProviders(<LeaderboardPodium topThree={mockTopThree} onPressGroup={mockOnPressGroup} />);
-    expect(getByTestId("icon-ribbon")).toBeTruthy();
-    expect(getAllByTestId("icon-trophy").length).toBeGreaterThanOrEqual(3);
-    expect(getByText("1ST")).toBeTruthy();
-    expect(getByText("2ND")).toBeTruthy();
-    expect(getByText("3RD")).toBeTruthy();
+    renderWithProviders(<LeaderboardPodium topThree={mockTopThree} onPressGroup={mockOnPressGroup} />);
+    expect(screen.getByTestId("icon-ribbon")).toBeOnTheScreen();
+    expect(screen.getAllByTestId("icon-trophy").length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByText("1ST")).toBeOnTheScreen();
+    expect(screen.getByText("2ND")).toBeOnTheScreen();
+    expect(screen.getByText("3RD")).toBeOnTheScreen();
   });
 
   it("calls onPressGroup for the first place group", () => {
-    const { getByText } = renderWithProviders(<LeaderboardPodium topThree={mockTopThree} onPressGroup={mockOnPressGroup} />);
-    fireEvent.press(getByText("First Place Group"));
+    renderWithProviders(<LeaderboardPodium topThree={mockTopThree} onPressGroup={mockOnPressGroup} />);
+    fireEvent.press(screen.getByText("First Place Group"));
     expect(mockOnPressGroup).toHaveBeenCalledWith(mockTopThree[0]);
   });
 });

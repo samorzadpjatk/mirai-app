@@ -1,19 +1,17 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeActionButton } from "../../../trips/challenges/ChallengeActionButton";
 
 describe("ChallengeActionButton", () => {
   it("should render with default label when not loading", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={false} onPress={jest.fn()} />
-    );
+    renderWithProviders(<ChallengeActionButton isLoading={false} onPress={jest.fn()} />);
 
-    expect(getByText("Take Challenge Photo")).toBeTruthy();
+    expect(screen.getByText("Take Challenge Photo")).toBeOnTheScreen();
   });
 
   it("should render with custom label", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeActionButton
         isLoading={false}
         onPress={jest.fn()}
@@ -21,37 +19,33 @@ describe("ChallengeActionButton", () => {
       />
     );
 
-    expect(getByText("Submit Challenge")).toBeTruthy();
+    expect(screen.getByText("Submit Challenge")).toBeOnTheScreen();
   });
 
   it("should show loading label when isLoading is true", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={true} onPress={jest.fn()} />
-    );
+    renderWithProviders(<ChallengeActionButton isLoading={true} onPress={jest.fn()} />);
 
-    expect(getByText("Loading...")).toBeTruthy();
+    expect(screen.getByText("Loading...")).toBeOnTheScreen();
   });
 
-  it("should call onPress when pressed", () => {
+  it("should call onPress when pressed", async () => {
     const onPress = jest.fn();
-    const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={false} onPress={onPress} />
-    );
+    const user = userEvent.setup();
 
-    fireEvent.press(getByText("Take Challenge Photo"));
+    renderWithProviders(<ChallengeActionButton isLoading={false} onPress={onPress} />);
+
+    await user.press(screen.getByText("Take Challenge Photo"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should render loading state correctly", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={true} onPress={jest.fn()} />
-    );
+    renderWithProviders(<ChallengeActionButton isLoading={true} onPress={jest.fn()} />);
 
-    expect(getByText("Loading...")).toBeTruthy();
+    expect(screen.getByText("Loading...")).toBeOnTheScreen();
   });
 
   it("should render disabled state correctly", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeActionButton
         isLoading={false}
         onPress={jest.fn()}
@@ -59,11 +53,11 @@ describe("ChallengeActionButton", () => {
       />
     );
 
-    expect(getByText("Take Challenge Photo")).toBeTruthy();
+    expect(screen.getByText("Take Challenge Photo")).toBeOnTheScreen();
   });
 
   it("should render with custom icon name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeActionButton
         isLoading={false}
         onPress={jest.fn()}
@@ -71,19 +65,17 @@ describe("ChallengeActionButton", () => {
       />
     );
 
-    expect(getByText("Take Challenge Photo")).toBeTruthy();
+    expect(screen.getByText("Take Challenge Photo")).toBeOnTheScreen();
   });
 
   it("should apply loading styles when isLoading is true", () => {
-    const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={true} onPress={jest.fn()} />
-    );
+    renderWithProviders(<ChallengeActionButton isLoading={true} onPress={jest.fn()} />);
 
-    expect(getByText("Loading...")).toBeTruthy();
+    expect(screen.getByText("Loading...")).toBeOnTheScreen();
   });
 
   it("should apply disabled styles when disabled prop is true", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <ChallengeActionButton
         isLoading={false}
         onPress={jest.fn()}
@@ -91,7 +83,6 @@ describe("ChallengeActionButton", () => {
       />
     );
 
-    const text = getByText("Take Challenge Photo");
-    expect(text).toBeTruthy();
+    expect(screen.getByText("Take Challenge Photo")).toBeOnTheScreen();
   });
 });

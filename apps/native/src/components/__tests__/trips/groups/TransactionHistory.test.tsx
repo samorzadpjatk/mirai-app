@@ -1,4 +1,5 @@
 import React from "react";
+import { render, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { TransactionHistory } from "../../../trips/groups/details/TransactionHistory";
 
@@ -40,55 +41,55 @@ describe("TransactionHistory", () => {
   ];
 
   it("should render title", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={mockTransactions} />
     );
-    expect(getByText("Coin Transactions")).toBeTruthy();
+    expect(screen.getByText("Coin Transactions")).toBeOnTheScreen();
   });
 
   it("should render positive amount with plus sign", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={mockTransactions} />
     );
-    expect(getByText("+100")).toBeTruthy();
+    expect(screen.getByText("+100")).toBeOnTheScreen();
   });
 
   it("should render negative amount with minus sign", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={mockTransactions} />
     );
-    expect(getByText("-50")).toBeTruthy();
+    expect(screen.getByText("-50")).toBeOnTheScreen();
   });
 
   it("should render 'coins' label", () => {
-    const { getAllByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={mockTransactions} />
     );
-    const coinLabels = getAllByText("coins");
+    const coinLabels = screen.getAllByText("coins");
     expect(coinLabels.length).toBeGreaterThan(0);
   });
 
   it("should render admin name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={mockTransactions} />
     );
-    expect(getByText(/John Doe/)).toBeTruthy();
+    expect(screen.getByText(/John Doe/)).toBeOnTheScreen();
   });
 
   it("should render 'Unknown Admin' when admin name is null", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={mockTransactions} />
     );
-    expect(getByText(/Unknown Admin/)).toBeTruthy();
+    expect(screen.getByText(/Unknown Admin/)).toBeOnTheScreen();
   });
 
   it("should render reason when provided", () => {
-    const { getAllByText, getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={mockTransactions} />
     );
-    const reasonLabels = getAllByText("Reason:");
+    const reasonLabels = screen.getAllByText("Reason:");
     expect(reasonLabels.length).toBeGreaterThanOrEqual(1);
-    expect(getByText("Challenge completion bonus")).toBeTruthy();
+    expect(screen.getByText("Challenge completion bonus")).toBeOnTheScreen();
   });
 
   it("should not render reason section when reason is null", () => {
@@ -105,24 +106,24 @@ describe("TransactionHistory", () => {
         },
       },
     ];
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={transactionsWithNullReason} />
     );
-    expect(queryByText("Reason:")).toBeNull();
+    expect(screen.queryByText("Reason:")).toBeNull();
   });
 
   it("should render empty state when no transactions", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={[]} />
     );
-    expect(getByText("No transactions yet")).toBeTruthy();
+    expect(screen.getByText("No transactions yet")).toBeOnTheScreen();
   });
 
   it("should render empty state subtitle", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={[]} />
     );
-    expect(getByText("Coin transactions will appear here once coins are added or removed")).toBeTruthy();
+    expect(screen.getByText("Coin transactions will appear here once coins are added or removed")).toBeOnTheScreen();
   });
 
   it("should handle Date object for createdAt", () => {
@@ -139,10 +140,10 @@ describe("TransactionHistory", () => {
         },
       },
     ];
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={transactionsWithDate} />
     );
-    expect(getByText("Coin Transactions")).toBeTruthy();
+    expect(screen.getByText("Coin Transactions")).toBeOnTheScreen();
   });
 
   it("should handle partial admin name (firstName only)", () => {
@@ -159,10 +160,10 @@ describe("TransactionHistory", () => {
         },
       },
     ];
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={transactionsWithPartialName} />
     );
-    expect(getByText(/John/)).toBeTruthy();
+    expect(screen.getByText(/John/)).toBeOnTheScreen();
   });
 
   it("should handle partial admin name (lastName only)", () => {
@@ -179,18 +180,18 @@ describe("TransactionHistory", () => {
         },
       },
     ];
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={transactionsWithPartialName} />
     );
-    expect(getByText(/Doe/)).toBeTruthy();
+    expect(screen.getByText(/Doe/)).toBeOnTheScreen();
   });
 
   it("should render multiple transactions", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TransactionHistory transactions={mockTransactions} />
     );
-    expect(getByText("+100")).toBeTruthy();
-    expect(getByText("-50")).toBeTruthy();
-    expect(getByText("+200")).toBeTruthy();
+    expect(screen.getByText("+100")).toBeOnTheScreen();
+    expect(screen.getByText("-50")).toBeOnTheScreen();
+    expect(screen.getByText("+200")).toBeOnTheScreen();
   });
 });

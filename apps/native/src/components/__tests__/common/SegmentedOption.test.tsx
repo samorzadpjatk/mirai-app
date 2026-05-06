@@ -1,6 +1,6 @@
 import React from "react";
 import { Text } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SegmentedOption } from "../../common/ui/SegmentedOption";
 
@@ -10,25 +10,26 @@ const noop = (): void => {
 
 describe("SegmentedOption", () => {
   it("should render with label", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <SegmentedOption label="Option 1" selected={false} onPress={noop} />
     );
 
-    expect(getByText("Option 1")).toBeTruthy();
+    expect(screen.getByText("Option 1")).toBeOnTheScreen();
   });
 
-  it("should call onPress when pressed", () => {
+  it("should call onPress when pressed", async () => {
     const onPress = jest.fn();
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <SegmentedOption label="Option 1" selected={false} onPress={onPress} />
     );
 
-    fireEvent.press(getByText("Option 1"));
+    const user = userEvent.setup();
+    await user.press(screen.getByText("Option 1"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should render selected and custom-styled options", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <>
         <SegmentedOption label="Selected" selected onPress={noop} />
         <SegmentedOption
@@ -41,8 +42,8 @@ describe("SegmentedOption", () => {
       </>
     );
 
-    expect(getByText("Selected")).toBeTruthy();
-    expect(getByText("With Custom Content")).toBeTruthy();
-    expect(getByText("Extra")).toBeTruthy();
+    expect(screen.getByText("Selected")).toBeOnTheScreen();
+    expect(screen.getByText("With Custom Content")).toBeOnTheScreen();
+    expect(screen.getByText("Extra")).toBeOnTheScreen();
   });
 });

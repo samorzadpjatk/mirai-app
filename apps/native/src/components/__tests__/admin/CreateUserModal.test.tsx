@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateUserModal } from "../../admin/users/CreateUserModal";
 
@@ -41,15 +41,14 @@ describe("CreateUserModal", () => {
     jest.clearAllMocks();
   });
 
-  it("creates a user with trimmed values", () => {
-    const { getByPlaceholderText, getByText } = renderWithProviders(
-      <CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />
-    );
+  it("creates a user with trimmed values", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />);
 
-    fireEvent.changeText(getByPlaceholderText("Enter first name..."), "  Jane  ");
-    fireEvent.changeText(getByPlaceholderText("Enter last name..."), "  Smith  ");
-    fireEvent.changeText(getByPlaceholderText("Enter email..."), "  jane@example.com  ");
-    fireEvent.press(getByText("Create"));
+    await user.type(screen.getByPlaceholderText("Enter first name..."), "  Jane  ");
+    await user.type(screen.getByPlaceholderText("Enter last name..."), "  Smith  ");
+    await user.type(screen.getByPlaceholderText("Enter email..."), "  jane@example.com  ");
+    await user.press(screen.getByText("Create"));
 
     expect(onCreate).toHaveBeenCalledWith({
       firstName: "Jane",
@@ -58,25 +57,25 @@ describe("CreateUserModal", () => {
     });
   });
 
-  it("resets fields when cancelled", () => {
-    const { getByPlaceholderText, getByText, rerender } = renderWithProviders(
+  it("resets fields when cancelled", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderWithProviders(
       <CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />
     );
 
-    fireEvent.changeText(getByPlaceholderText("Enter first name..."), "Jane");
-    fireEvent.press(getByText("Cancel"));
+    await user.type(screen.getByPlaceholderText("Enter first name..."), "Jane");
+    await user.press(screen.getByText("Cancel"));
 
     rerender(<CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />);
 
-    expect(getByPlaceholderText("Enter first name...").props.value).toBe("");
+    expect(screen.getByPlaceholderText("Enter first name...").props.value).toBe("");
   });
 
-  it("does not create when fields are empty", () => {
-    const { getByText } = renderWithProviders(
-      <CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />
-    );
+  it("does not create when fields are empty", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />);
 
-    fireEvent.press(getByText("Create"));
+    await user.press(screen.getByText("Create"));
     expect(onCreate).not.toHaveBeenCalled();
   });
 });

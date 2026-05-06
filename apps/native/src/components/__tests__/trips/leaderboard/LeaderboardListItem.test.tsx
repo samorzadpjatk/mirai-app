@@ -1,6 +1,6 @@
 import React from "react";
 import { Image, TouchableOpacity } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardListItem } from "../../../trips/leaderboard/LeaderboardListItem";
 import type { RankedGroup } from "../../../trips/leaderboard/types";
@@ -12,12 +12,12 @@ describe("LeaderboardListItem", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("renders group details", () => {
-    const { getByText } = renderWithProviders(<LeaderboardListItem group={mockGroup} onPress={mockOnPress} />);
-    expect(getByText("3")).toBeTruthy();
-    expect(getByText("Test Group")).toBeTruthy();
-    expect(getByText("5 Members active")).toBeTruthy();
-    expect(getByText("1000 pts")).toBeTruthy();
-    expect(getByText("T")).toBeTruthy();
+    renderWithProviders(<LeaderboardListItem group={mockGroup} onPress={mockOnPress} />);
+    expect(screen.getByText("3")).toBeOnTheScreen();
+    expect(screen.getByText("Test Group")).toBeOnTheScreen();
+    expect(screen.getByText("5 Members active")).toBeOnTheScreen();
+    expect(screen.getByText("1000 pts")).toBeOnTheScreen();
+    expect(screen.getByText("T")).toBeOnTheScreen();
   });
 
   it("renders an image when available", () => {
@@ -36,7 +36,7 @@ describe("LeaderboardListItem", () => {
 
   it("shows the current user badge", () => {
     const userGroup = { ...mockGroup, isCurrentUserGroup: true };
-    const { getByText } = renderWithProviders(<LeaderboardListItem group={userGroup} onPress={mockOnPress} />);
-    expect(getByText("YOUR GROUP")).toBeTruthy();
+    renderWithProviders(<LeaderboardListItem group={userGroup} onPress={mockOnPress} />);
+    expect(screen.getByText("YOUR GROUP")).toBeOnTheScreen();
   });
 });

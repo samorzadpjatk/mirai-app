@@ -1,6 +1,6 @@
 import React from "react";
 import { Alert, Pressable, Text, TextInput, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import AddChallengeModal from "../../admin/challenges/AddChallengeModal";
 
@@ -112,33 +112,37 @@ jest.mock("../../map/LocationPicker", () => {
 describe("AddChallengeModal", () => {
   beforeEach(() => { jest.clearAllMocks(); mockAlert.mockClear(); });
 
-  it("renders and closes", () => {
+  it("renders and closes", async () => {
+    const user = userEvent.setup();
     const onClose = jest.fn();
-    const { getByText } = renderWithProviders(<AddChallengeModal visible={true} onClose={onClose} />);
-    fireEvent.press(getByText("Cancel"));
+    renderWithProviders(<AddChallengeModal visible={true} onClose={onClose} />);
+    await user.press(screen.getByText("Cancel"));
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("validates required fields on save", () => {
-    const { getByText } = renderWithProviders(<AddChallengeModal visible={true} onClose={jest.fn()} />);
-    fireEvent.press(getByText("Save Challenge"));
+  it("validates required fields on save", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AddChallengeModal visible={true} onClose={jest.fn()} />);
+    await user.press(screen.getByText("Save Challenge"));
     expect(mockAlert).toHaveBeenCalledWith("Error", "Please fill in required fields (including Trip)");
   });
 
-  it("lets the user pick and clear a location", () => {
-    const { getByText, queryByText } = renderWithProviders(<AddChallengeModal visible={true} onClose={jest.fn()} />);
-    fireEvent.press(getByText("Tap to select location"));
-    fireEvent.press(getByText("Select Location"));
-    expect(getByText("52.2297, 21.0122")).toBeTruthy();
-    expect(getByText("Clear location")).toBeTruthy();
-    fireEvent.press(getByText("Clear location"));
-    expect(queryByText("52.2297, 21.0122")).toBeNull();
+  it("lets the user pick and clear a location", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AddChallengeModal visible={true} onClose={jest.fn()} />);
+    await user.press(screen.getByText("Tap to select location"));
+    await user.press(screen.getByText("Select Location"));
+    expect(screen.getByText("52.2297, 21.0122")).toBeOnTheScreen();
+    expect(screen.getByText("Clear location")).toBeOnTheScreen();
+    await user.press(screen.getByText("Clear location"));
+    expect(screen.queryByText("52.2297, 21.0122")).toBeNull();
   });
 
-  it("filters trips and selects a trip id", () => {
-    const { getByPlaceholderText, getByText } = renderWithProviders(<AddChallengeModal visible={true} onClose={jest.fn()} />);
-    fireEvent.changeText(getByPlaceholderText("Trip ID or search"), "Trip One");
-    fireEvent.press(getByText("Trip One (trip-1)"));
-    expect(getByPlaceholderText("Trip ID or search").props.value).toBe("trip-1");
+  it("filters trips and selects a trip id", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AddChallengeModal visible={true} onClose={jest.fn()} />);
+    await user.type(screen.getByPlaceholderText("Trip ID or search"), "Trip One");
+    await user.press(screen.getByText("Trip One (trip-1)"));
+    expect(screen.getByPlaceholderText("Trip ID or search").props.value).toBe("trip-1");
   });
 });

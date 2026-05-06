@@ -1,43 +1,43 @@
 import React from "react";
 import { TextInput } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { GroupFormFields } from "../../../../trips/groups/create/GroupFormFields";
 
 describe("GroupFormFields", () => {
   it("should render group name label", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
-    expect(getByText("Group Name")).toBeTruthy();
+    expect(screen.getByText("Group Name")).toBeOnTheScreen();
   });
 
   it("should render with empty group name", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     expect(input.props.value).toBe("");
   });
 
   it("should render with provided group name", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="Test Group" onChangeName={jest.fn()} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     expect(input.props.value).toBe("Test Group");
   });
 
   it("should call onChangeName when text changes", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     fireEvent.changeText(input, "New Group Name");
 
     expect(onChangeName).toHaveBeenCalledWith("New Group Name");
@@ -46,37 +46,37 @@ describe("GroupFormFields", () => {
 
   it("should update value when groupName prop changes", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType, rerender } = renderWithProviders(
+    const { rerender } = renderWithProviders(
       <GroupFormFields groupName="Initial Name" onChangeName={onChangeName} />
     );
 
-    let input = UNSAFE_getByType(TextInput);
+    let input = screen.getByPlaceholderText("Enter group name");
     expect(input.props.value).toBe("Initial Name");
 
     rerender(
       <GroupFormFields groupName="Updated Name" onChangeName={onChangeName} />
     );
 
-    input = UNSAFE_getByType(TextInput);
+    input = screen.getByPlaceholderText("Enter group name");
     expect(input.props.value).toBe("Updated Name");
   });
 
   it("should have correct placeholder text", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     expect(input.props.placeholder).toBe("Enter group name");
   });
 
   it("should handle special characters in group name", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     const specialName = "Group @#$%^&*()_+-=[]{}|;':\",./<>?";
     fireEvent.changeText(input, specialName);
 
@@ -85,11 +85,11 @@ describe("GroupFormFields", () => {
 
   it("should handle unicode characters in group name", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     const unicodeName = "Grupa Testowa 🎉 日本語";
     fireEvent.changeText(input, unicodeName);
 
@@ -98,11 +98,11 @@ describe("GroupFormFields", () => {
 
   it("should handle very long group names", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     const longName = "A".repeat(200);
     fireEvent.changeText(input, longName);
 
@@ -111,11 +111,11 @@ describe("GroupFormFields", () => {
 
   it("should handle empty string input", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="Existing Name" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     fireEvent.changeText(input, "");
 
     expect(onChangeName).toHaveBeenCalledWith("");
@@ -123,11 +123,11 @@ describe("GroupFormFields", () => {
 
   it("should trim whitespace-only input correctly", () => {
     const onChangeName = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupFormFields groupName="" onChangeName={onChangeName} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter group name");
     fireEvent.changeText(input, "   ");
 
     expect(onChangeName).toHaveBeenCalledWith("   ");

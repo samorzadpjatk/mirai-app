@@ -1,6 +1,6 @@
 import React from "react";
-import { Text, TextInput, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { Text, View } from "react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsSearchBar } from "../../../trips/groups/GroupsSearchBar";
 
@@ -24,61 +24,63 @@ describe("GroupsSearchBar", () => {
   });
 
   it("should render search input", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
 
-    expect(UNSAFE_getByType(TextInput)).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search groups by name...")).toBeTruthy();
   });
 
   it("should render with placeholder text", () => {
-    const { getByPlaceholderText } = renderWithProviders(
+    renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
 
-    expect(getByPlaceholderText("Search groups by name...")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search groups by name...")).toBeTruthy();
   });
 
   it("should display current value", () => {
-    const { getByDisplayValue } = renderWithProviders(
+    renderWithProviders(
       <GroupsSearchBar value="test query" onChangeText={mockOnChangeText} />
     );
 
-    expect(getByDisplayValue("test query")).toBeTruthy();
+    expect(screen.getByDisplayValue("test query")).toBeTruthy();
   });
 
   it("should call onChangeText when text changes", () => {
-    const { getByPlaceholderText } = renderWithProviders(
+    renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
 
-    fireEvent.changeText(getByPlaceholderText("Search groups by name..."), "new search");
+    fireEvent.changeText(screen.getByPlaceholderText("Search groups by name..."), "new search");
 
     expect(mockOnChangeText).toHaveBeenCalledTimes(1);
     expect(mockOnChangeText).toHaveBeenCalledWith("new search");
   });
 
   it("should handle empty value", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
 
-    expect(UNSAFE_getByType(TextInput).props.value).toBe("");
+    const input = screen.getByPlaceholderText("Search groups by name...");
+    type InputElement = { props: { value: string } };
+    expect((input as unknown as InputElement).props.value).toBe("");
   });
 
   it("should handle search icon", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
 
-    expect(getByText("search")).toBeTruthy();
+    expect(screen.getByText("search")).toBeTruthy();
   });
 
   it("should render with correct container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const view = renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
 
-    expect(UNSAFE_getByType(View)).toBeTruthy();
+    expect(view.UNSAFE_getByType(View)).toBeTruthy();
   });
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, Pressable, Platform } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { DateTimePickerModal } from "../../common/ui/DateTimePickerModal";
 
@@ -26,7 +26,7 @@ describe("DateTimePickerModal", () => {
   const mockDate = new Date("2024-01-15T10:30:00");
 
   it("should return null when not visible", () => {
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <DateTimePickerModal
         visible={false}
         value={mockDate}
@@ -36,8 +36,8 @@ describe("DateTimePickerModal", () => {
       />
     );
 
-    expect(queryByText("Cancel")).toBeNull();
-    expect(queryByText("Done")).toBeNull();
+    expect(screen.queryByText("Cancel")).toBeNull();
+    expect(screen.queryByText("Done")).toBeNull();
   });
 
   it("should render on Android without modal", () => {
@@ -60,7 +60,7 @@ describe("DateTimePickerModal", () => {
   it("should render modal on iOS", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     
-    const { getByText, UNSAFE_getByType } = renderWithProviders(
+    const { UNSAFE_getByType } = renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
@@ -70,19 +70,19 @@ describe("DateTimePickerModal", () => {
       />
     );
 
-    expect(getByText("Cancel")).toBeTruthy();
-    expect(getByText("Done")).toBeTruthy();
+    expect(screen.getByText("Cancel")).toBeOnTheScreen();
+    expect(screen.getByText("Done")).toBeOnTheScreen();
     
     const modal = UNSAFE_getByType(Modal);
     expect(modal.props.transparent).toBe(true);
     expect(modal.props.animationType).toBe("fade");
   });
 
-  it("should call onCancel when Cancel button is pressed on iOS", () => {
+  it("should call onCancel when Cancel button is pressed on iOS", async () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     const onCancel = jest.fn();
     
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
@@ -92,15 +92,16 @@ describe("DateTimePickerModal", () => {
       />
     );
 
-    fireEvent.press(getByText("Cancel"));
+    const user = userEvent.setup();
+    await user.press(screen.getByText("Cancel"));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("should call onConfirm when Done button is pressed on iOS", () => {
+  it("should call onConfirm when Done button is pressed on iOS", async () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     const onConfirm = jest.fn();
     
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
@@ -110,7 +111,8 @@ describe("DateTimePickerModal", () => {
       />
     );
 
-    fireEvent.press(getByText("Done"));
+    const user = userEvent.setup();
+    await user.press(screen.getByText("Done"));
     expect(onConfirm).toHaveBeenCalledWith(mockDate);
   });
 

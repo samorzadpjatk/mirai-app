@@ -1,5 +1,6 @@
 import React from "react";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
+import { screen } from "@testing-library/react-native";
 import { TripHeroCard } from "../../../trips/details/TripHeroCard";
 
 jest.mock("~/hooks/trips/useTripBackgroundImageDownload", () => ({
@@ -8,7 +9,7 @@ jest.mock("~/hooks/trips/useTripBackgroundImageDownload", () => ({
 
 describe("TripHeroCard", () => {
   it("should render trip name", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Summer Adventure"
         startDate={new Date("2024-07-01")}
@@ -16,11 +17,11 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(getByText("Summer Adventure")).toBeTruthy();
+    expect(screen.getByText("Summer Adventure")).toBeOnTheScreen();
   });
 
   it("should render trip description when provided", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Summer Adventure"
         description="An amazing summer trip"
@@ -29,11 +30,11 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(getByText("An amazing summer trip")).toBeTruthy();
+    expect(screen.getByText("An amazing summer trip")).toBeOnTheScreen();
   });
 
   it("should not render description when not provided", () => {
-    const { queryByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Summer Adventure"
         startDate={new Date("2024-07-01")}
@@ -41,14 +42,14 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(queryByText("An amazing summer trip")).toBeNull();
+    expect(screen.queryByText("An amazing summer trip")).toBeNull();
   });
 
   it("should display correct status for ongoing trip", () => {
     const ongoingStart = new Date(Date.now() - 86400000);
     const ongoingEnd = new Date(Date.now() + 86400000);
 
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Current Trip"
         startDate={ongoingStart}
@@ -56,11 +57,11 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(getByText("Ongoing Trip")).toBeTruthy();
+    expect(screen.getByText("Ongoing Trip")).toBeOnTheScreen();
   });
 
   it("should display correct status for past trip", () => {
-    const { getAllByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Past Trip"
         startDate={new Date("2023-01-01")}
@@ -68,12 +69,12 @@ describe("TripHeroCard", () => {
       />
     );
 
-    const pastTripElements = getAllByText("Past Trip");
+    const pastTripElements = screen.getAllByText("Past Trip");
     expect(pastTripElements.length).toBeGreaterThanOrEqual(1);
   });
 
   it("should display correct status for future trip", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Future Trip"
         startDate={new Date("2025-01-01")}
@@ -81,11 +82,11 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(getByText("Future Trip")).toBeTruthy();
+    expect(screen.getByText("Future Trip")).toBeOnTheScreen();
   });
 
   it("should handle string dates", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="String Date Trip"
         startDate="2024-07-01"
@@ -93,11 +94,11 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(getByText("String Date Trip")).toBeTruthy();
+    expect(screen.getByText("String Date Trip")).toBeOnTheScreen();
   });
 
   it("should render with imageUrl prop", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Trip With Image"
         startDate={new Date("2024-07-01")}
@@ -106,11 +107,11 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(getByText("Trip With Image")).toBeTruthy();
+    expect(screen.getByText("Trip With Image")).toBeOnTheScreen();
   });
 
   it("should render with backgroundImagePath prop", () => {
-    const { getByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Trip With Background"
         startDate={new Date("2024-07-01")}
@@ -119,11 +120,11 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(getByText("Trip With Background")).toBeTruthy();
+    expect(screen.getByText("Trip With Background")).toBeOnTheScreen();
   });
 
   it("should handle null description", () => {
-    const { queryByText, getByText } = renderWithProviders(
+    renderWithProviders(
       <TripHeroCard
         name="Trip With Null Description"
         description={null}
@@ -132,7 +133,7 @@ describe("TripHeroCard", () => {
       />
     );
 
-    expect(queryByText("Some description")).toBeNull();
-    expect(getByText("Trip With Null Description")).toBeTruthy();
+    expect(screen.queryByText("Some description")).toBeNull();
+    expect(screen.getByText("Trip With Null Description")).toBeOnTheScreen();
   });
 });

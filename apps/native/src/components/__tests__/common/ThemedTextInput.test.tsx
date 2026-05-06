@@ -1,5 +1,6 @@
 import React from "react";
 import { TextInput, type TextInputProps } from "react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ThemedTextInput } from "../../common/ui/ThemedTextInput";
 
@@ -9,29 +10,23 @@ interface TextInputStyle {
 
 describe("ThemedTextInput", () => {
   it("should render with placeholder", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" />
-    );
+    renderWithProviders(<ThemedTextInput placeholder="Enter text" />);
 
-    const input = UNSAFE_getByType(TextInput);
-    expect(input.props.placeholder).toBe("Enter text");
+    const input = screen.getByPlaceholderText("Enter text");
+    expect(input).toBeOnTheScreen();
   });
 
   it("should render with value", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ThemedTextInput value="Test value" />
-    );
+    renderWithProviders(<ThemedTextInput value="Test value" />);
 
-    const input = UNSAFE_getByType(TextInput);
-    expect(input.props.value).toBe("Test value");
+    const input = screen.getByDisplayValue("Test value");
+    expect(input).toBeOnTheScreen();
   });
 
   it("should apply error style when error is true", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" error={true} />
-    );
+    renderWithProviders(<ThemedTextInput placeholder="Enter text" error={true} />);
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter text");
     const inputProps = input.props as TextInputProps;
     const inputStyle = inputProps.style as TextInputStyle[];
     expect(inputStyle).toEqual(
@@ -42,11 +37,9 @@ describe("ThemedTextInput", () => {
   });
 
   it("should not apply error style when error is false", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" error={false} />
-    );
+    renderWithProviders(<ThemedTextInput placeholder="Enter text" error={false} />);
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter text");
     const styles = input.props.style as TextInputStyle[];
     const hasErrorBorder = styles.some(
       (s: TextInputStyle) => s?.borderColor === "danger"
@@ -56,39 +49,37 @@ describe("ThemedTextInput", () => {
 
   it("should apply custom style", () => {
     const customStyle = { fontSize: 20 };
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedTextInput placeholder="Enter text" style={customStyle} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter text");
     expect(input.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
   });
 
-  it("should call onChangeText when text changes", () => {
+  it("should call onChangeText when text changes", async () => {
     const onChangeText = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    const user = userEvent.setup();
+    renderWithProviders(
       <ThemedTextInput placeholder="Enter text" onChangeText={onChangeText} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
-    const inputProps = input.props as TextInputProps;
-    inputProps.onChangeText?.("new text");
+    const input = screen.getByPlaceholderText("Enter text");
+    await user.type(input, "new text");
     expect(onChangeText).toHaveBeenCalledWith("new text");
   });
 
   it("should apply placeholderTextColor", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" />
-    );
+    renderWithProviders(<ThemedTextInput placeholder="Enter text" />);
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter text");
     expect(input.props.placeholderTextColor).toBeDefined();
   });
 
   it("should pass through additional TextInput props", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedTextInput
         placeholder="Enter text"
         keyboardType="email-address"
@@ -98,7 +89,7 @@ describe("ThemedTextInput", () => {
       />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter text");
     expect(input.props.keyboardType).toBe("email-address");
     expect(input.props.autoCapitalize).toBe("none");
     expect(input.props.secureTextEntry).toBe(true);
@@ -106,30 +97,26 @@ describe("ThemedTextInput", () => {
   });
 
   it("should handle multiline prop", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedTextInput placeholder="Enter text" multiline={true} numberOfLines={4} />
     );
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter text");
     expect(input.props.multiline).toBe(true);
     expect(input.props.numberOfLines).toBe(4);
   });
 
   it("should handle editable prop", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" editable={false} />
-    );
+    renderWithProviders(<ThemedTextInput placeholder="Enter text" editable={false} />);
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter text");
     expect(input.props.editable).toBe(false);
   });
 
   it("should handle autoFocus prop", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" autoFocus={true} />
-    );
+    renderWithProviders(<ThemedTextInput placeholder="Enter text" autoFocus={true} />);
 
-    const input = UNSAFE_getByType(TextInput);
+    const input = screen.getByPlaceholderText("Enter text");
     expect(input.props.autoFocus).toBe(true);
   });
 });
