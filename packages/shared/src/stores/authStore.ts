@@ -3,25 +3,33 @@
 import { createStore } from "zustand/vanilla";
 
 // Supabase types - will be injected at runtime
+export type AuthChangeEvent =
+  | "SIGNED_IN"
+  | "SIGNED_OUT"
+  | "TOKEN_REFRESHED"
+  | "USER_UPDATED"
+  | "PASSWORD_RECOVERY"
+  | "INITIAL_SESSION";
+
 export interface SupabaseClient {
   auth: {
     getSession(): Promise<{ data: { session: SupabaseSession | null } }>;
     onAuthStateChange(
-      callback: (event: any, session: SupabaseSession | null) => void,
+      callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void,
     ): { data: { subscription: { unsubscribe(): void } } };
     signInWithOtp(params: {
       email: string;
       options?: { shouldCreateUser?: boolean };
-    }): Promise<{ error?: any }>;
+    }): Promise<{ error?: Error | null }>;
     signInWithPassword(params: {
       email: string;
       password: string;
-    }): Promise<{ data?: { session?: SupabaseSession | null }; error?: any }>;
-    verifyOtp(params: unknown): Promise<{ error?: any }>;
-    signOut(): Promise<{ error?: any }>;
+    }): Promise<{ data?: { session?: SupabaseSession | null }; error?: Error | null }>;
+    verifyOtp(params: unknown): Promise<{ error?: Error | null }>;
+    signOut(): Promise<{ error?: Error | null }>;
     refreshSession(): Promise<{
       data?: { session?: SupabaseSession | null };
-      error?: any;
+      error?: Error | null;
     }>;
   };
 }
@@ -143,7 +151,7 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     // Subscribe to auth state changes
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange((_event: any, session) => {
+    } = client.auth.onAuthStateChange((_event: AuthChangeEvent, session) => {
       set({ session });
 
       if (session?.user && onUserFetch) {

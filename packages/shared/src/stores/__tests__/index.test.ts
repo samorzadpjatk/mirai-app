@@ -172,15 +172,12 @@ describe("Stores Index Exports", () => {
         mapStore, 
         judgementStore, 
         authStore,
-        MapStore,
-        JudgementStore,
-        AuthStore,
       } = await import("../index");
 
       // Verify stores implement their respective types
-      const mapState: MapStore = mapStore.getState();
-      const judgementState: JudgementStore = judgementStore.getState();
-      const authState: AuthStore = authStore.getState();
+      const mapState = mapStore.getState();
+      const judgementState = judgementStore.getState();
+      const authState = authStore.getState();
 
       expect(mapState).toBeDefined();
       expect(judgementState).toBeDefined();

@@ -1,5 +1,3 @@
-import { vi } from "vitest";
-
 /**
  * Builder pattern for creating test data objects.
  * Provides a fluent API for constructing complex test data.
@@ -114,7 +112,7 @@ export function createApiResponseBuilder<T>() {
     error: null as Error | null,
     status: 200,
     statusText: "OK",
-    headers: {} as Record<string, string>,
+    headers: {},
   });
 }
 

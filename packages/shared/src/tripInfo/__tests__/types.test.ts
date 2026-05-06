@@ -49,7 +49,7 @@ describe("TripInfo Types", () => {
     });
 
     it("should have string values only", () => {
-      for (const [key, value] of Object.entries(TRIP_RESOURCE_TYPES)) {
+      for (const [, value] of Object.entries(TRIP_RESOURCE_TYPES)) {
         expect(typeof value).toBe("string");
         expect(value).not.toBe("");
       }
@@ -274,11 +274,11 @@ describe("TripInfo Types", () => {
       interface Trip {
         id: string;
         name: string;
-        resources: Array<{
+        resources: {
           type: TripResourceType;
           url: string;
           metadata?: Record<string, unknown>;
-        }>;
+        }[];
       }
 
       const trip: Trip = {
@@ -302,12 +302,10 @@ describe("TripInfo Types", () => {
     });
 
     it("should work with utility types", () => {
-      type ResourceConfig = {
-        [K in TripResourceType]?: {
-          enabled: boolean;
-          required: boolean;
-        };
-      };
+      type ResourceConfig = Partial<Record<TripResourceType, {
+        enabled: boolean;
+        required: boolean;
+      }>>;
 
       const config: ResourceConfig = {
         hero_image: { enabled: true, required: true },

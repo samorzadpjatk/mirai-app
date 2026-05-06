@@ -7,6 +7,7 @@ export {
 
 // Export test helpers
 export {
+  noop,
   resetMocks,
   mockConsole,
   delay,

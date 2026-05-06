@@ -5,7 +5,6 @@ import {
   normalizeBucketName,
   createStoragePath,
   parseStoragePath,
-  type StandardBucket,
 } from "../../storage/standard";
 
 describe("Storage Standard Utilities", () => {

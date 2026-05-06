@@ -3,10 +3,11 @@ import {
   authStore,
   _resetAuthStoreForTests,
   type AuthUser,
+  type AuthChangeEvent,
   type SupabaseClient,
   type SupabaseSession,
 } from "../authStore";
-import { createMockUser } from "../../test-utils/mock-factories";
+
 import { mockConsole, flushPromises } from "../../test-utils/test-helpers";
 
 describe("Auth Store", () => {
@@ -149,6 +150,7 @@ describe("Auth Store", () => {
 
       await flushPromises();
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.getSession).toHaveBeenCalled();
       expect(onUserFetch).toHaveBeenCalledWith("auth-1");
 
@@ -212,7 +214,7 @@ describe("Auth Store", () => {
       expect(state.isLoading).toBe(false);
     });
 
-    it("should subscribe to auth state changes", async () => {
+    it("should subscribe to auth state changes", () => {
       const unsubscribeMock = vi.fn();
       const mockClient = {
         auth: {
@@ -227,6 +229,7 @@ describe("Auth Store", () => {
         client: mockClient,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.onAuthStateChange).toHaveBeenCalled();
 
       // Test cleanup function
@@ -246,12 +249,12 @@ describe("Auth Store", () => {
         role: "USER",
       };
 
-      let authStateCallback: ((event: any, session: SupabaseSession | null) => void) | null = null;
+      let authStateCallback: ((event: AuthChangeEvent, session: SupabaseSession | null) => void) | null = null;
 
       const mockClient = {
         auth: {
           getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockImplementation((callback) => {
+          onAuthStateChange: vi.fn().mockImplementation((callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void) => {
             authStateCallback = callback;
             return {
               data: { subscription: { unsubscribe: vi.fn() } },
@@ -284,12 +287,12 @@ describe("Auth Store", () => {
     });
 
     it("should handle auth state change with null session", async () => {
-      let authStateCallback: ((event: any, session: SupabaseSession | null) => void) | null = null;
+      let authStateCallback: ((event: AuthChangeEvent, session: SupabaseSession | null) => void) | null = null;
 
       const mockClient = {
         auth: {
           getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockImplementation((callback) => {
+          onAuthStateChange: vi.fn().mockImplementation((callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void) => {
             authStateCallback = callback;
             return {
               data: { subscription: { unsubscribe: vi.fn() } },
@@ -365,6 +368,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().signInWithOtp("test@example.com");
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.signInWithOtp).toHaveBeenCalledWith({
         email: "test@example.com",
         options: { shouldCreateUser: false },
@@ -436,6 +440,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().signInWithPassword("test@example.com", "password");
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.signInWithPassword).toHaveBeenCalledWith({
         email: "test@example.com",
         password: "password",
@@ -531,6 +536,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().verifyOtp("test@example.com", "123456");
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.verifyOtp).toHaveBeenCalledWith({
         email: "test@example.com",
         token: "123456",
@@ -604,6 +610,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().signOut();
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.signOut).toHaveBeenCalled();
       const state = authStore.getState();
       expect(state.user).toBeNull();
@@ -661,6 +668,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().refreshSession();
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.refreshSession).toHaveBeenCalled();
       expect(authStore.getState().session).toEqual(newSession);
     });
@@ -711,7 +719,7 @@ describe("Auth Store", () => {
 
   describe("AuthUser interface", () => {
     it("should support all role types", () => {
-      const roles: Array<"USER" | "ADMIN" | "MODERATOR" | "SERVICE"> = [
+      const roles: ("USER" | "ADMIN" | "MODERATOR" | "SERVICE")[] = [
         "USER",
         "ADMIN",
         "MODERATOR",
