@@ -46,7 +46,7 @@ import { PrismaClient } from "../prisma/lib/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 describe("Database Client", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
     // Reset call tracking arrays
     prismaClientCalls.length = 0;
@@ -161,7 +161,7 @@ describe("Database Client", () => {
       const { createDb } = await import("../client");
       createDb(databaseUrl);
 
-      const mockAdapter = (PrismaPg as unknown as { mock: { results: Array<{ value: unknown }> } }).mock.results[0]?.value;
+      const mockAdapter = (PrismaPg as unknown as { mock: { results: { value: unknown }[] } }).mock.results[0]?.value;
 
       expect(PrismaClient).toHaveBeenCalledWith({
         adapter: mockAdapter,

@@ -30,7 +30,7 @@ vi.mock("@prisma/adapter-pg", () => ({
 }));
 
 describe("Database Index Exports", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
   });
@@ -111,7 +111,6 @@ describe("Database Index Exports", () => {
     });
 
     it("should maintain singleton behavior through index export", async () => {
-      const { createDb } = await import("../index");
       const databaseUrl = "postgresql://localhost:5432/test";
 
       // Reset modules to get fresh singleton state
