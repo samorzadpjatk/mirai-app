@@ -37,6 +37,14 @@ export default tseslint.config(
       "@typescript-eslint/no-unnecessary-type-assertion": "off",
       "@typescript-eslint/consistent-type-imports": "off",
       "@typescript-eslint/no-explicit-any": "off",
+      // Allow require() in tests for mocking patterns
+      "@typescript-eslint/no-require-imports": "off",
+      // Allow unused vars in tests (often needed for type inference)
+      "@typescript-eslint/no-unused-vars": "off",
+      // Allow floating promises in tests (intentional for async state testing)
+      "@typescript-eslint/no-floating-promises": "off",
+      // Allow async functions without await (for test isolation patterns)
+      "@typescript-eslint/require-await": "off",
     },
   },
   {

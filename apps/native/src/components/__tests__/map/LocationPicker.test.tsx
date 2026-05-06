@@ -7,9 +7,7 @@ const mockOnLocationSelected = jest.fn();
 const mockOnClose = jest.fn();
 
 jest.mock("@maplibre/maplibre-react-native", () => {
-  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
-       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
-       @typescript-eslint/no-unsafe-member-access */
+   
   const { forwardRef, useImperativeHandle, createElement } = require("react");
   const { View } = require("react-native");
 
@@ -30,7 +28,7 @@ jest.mock("@maplibre/maplibre-react-native", () => {
     RasterSource,
     RasterLayer,
   };
-  /* eslint-enable */
+   
 });
 
 jest.mock("expo-location", () => ({
@@ -43,9 +41,7 @@ jest.mock("expo-location", () => ({
 }));
 
 jest.mock("react-native-safe-area-context", () => {
-  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
-       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
-       @typescript-eslint/no-unsafe-member-access */
+   
   const { createElement } = require("react");
   const { View } = require("react-native");
 
@@ -55,13 +51,11 @@ jest.mock("react-native-safe-area-context", () => {
     SafeAreaProvider,
     useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
   };
-  /* eslint-enable */
+   
 });
 
 jest.mock("@expo/vector-icons", () => {
-  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
-       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
-       @typescript-eslint/no-unsafe-member-access */
+   
   const { createElement } = require("react");
   const { View } = require("react-native");
 
@@ -72,7 +66,7 @@ jest.mock("@expo/vector-icons", () => {
         style: { width: props.size, height: props.size, color: props.color },
       }),
   };
-  /* eslint-enable */
+   
 });
 
 describe("LocationPicker", () => {

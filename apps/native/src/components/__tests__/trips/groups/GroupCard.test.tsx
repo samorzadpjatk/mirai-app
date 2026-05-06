@@ -98,7 +98,7 @@ describe("GroupCard", () => {
     );
     const image = screen.getByTestId("group-image");
     expect(image).toBeTruthy();
-    type ImageElement = { props: { source: { uri: string } } };
+    interface ImageElement { props: { source: { uri: string } } }
     expect((image as unknown as ImageElement).props.source.uri).toBe("https://example.com/image.jpg");
   });
 

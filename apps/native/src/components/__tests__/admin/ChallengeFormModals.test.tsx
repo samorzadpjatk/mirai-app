@@ -12,9 +12,9 @@ interface DateTimePickerModalProps {
 
 jest.mock("~/components/common/ui/DateTimePickerModal", () => ({
   DateTimePickerModal: ({ visible, onConfirm, onCancel }: DateTimePickerModalProps) => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const React = require("react");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { View, Text, TouchableOpacity } = require("react-native");
     if (!visible) return null;
     return React.createElement(
@@ -43,9 +43,9 @@ interface QrScannerModalProps {
 
 jest.mock("~/components/common/QrScannerModal", () => ({
   QrScannerModal: ({ visible, onClose, onScan }: QrScannerModalProps) => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const React = require("react");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { View, Text, TouchableOpacity } = require("react-native");
     if (!visible) return null;
     return React.createElement(
@@ -74,9 +74,9 @@ interface LocationPickerProps {
 
 jest.mock("~/components/map/LocationPicker", () => ({
   LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const React = require("react");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { View, Text, TouchableOpacity } = require("react-native");
     if (!visible) return null;
     return React.createElement(

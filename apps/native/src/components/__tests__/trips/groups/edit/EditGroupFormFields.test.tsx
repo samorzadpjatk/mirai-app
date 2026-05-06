@@ -18,7 +18,7 @@ describe("EditGroupFormFields", () => {
     );
 
     const input = screen.getByPlaceholderText("Enter group name");
-    type InputElement = { props: { value: string } };
+    interface InputElement { props: { value: string } }
     expect((input as unknown as InputElement).props.value).toBe("");
   });
 
@@ -28,7 +28,7 @@ describe("EditGroupFormFields", () => {
     );
 
     const input = screen.getByPlaceholderText("Enter group name");
-    type InputElement = { props: { value: string } };
+    interface InputElement { props: { value: string } }
     expect((input as unknown as InputElement).props.value).toBe("Existing Group");
   });
 
@@ -52,7 +52,7 @@ describe("EditGroupFormFields", () => {
     );
 
     let input = screen.getByPlaceholderText("Enter group name");
-    type InputElement = { props: { value: string } };
+    interface InputElement { props: { value: string } }
     expect((input as unknown as InputElement).props.value).toBe("Old Name");
 
     view.rerender(

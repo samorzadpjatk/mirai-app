@@ -33,7 +33,7 @@ describe("PrimaryAddButton", () => {
     );
 
     const button = view.UNSAFE_getByType(TouchableOpacity);
-    type ButtonElement = { props: { disabled: boolean } };
+    interface ButtonElement { props: { disabled: boolean } }
     expect((button as unknown as ButtonElement).props.disabled).toBe(true);
   });
 
@@ -43,7 +43,7 @@ describe("PrimaryAddButton", () => {
     );
 
     const button = view.UNSAFE_getByType(TouchableOpacity);
-    type ButtonElement = { props: { disabled: boolean } };
+    interface ButtonElement { props: { disabled: boolean } }
     expect((button as unknown as ButtonElement).props.disabled).toBe(false);
   });
 
@@ -54,7 +54,7 @@ describe("PrimaryAddButton", () => {
     );
 
     const button = view.UNSAFE_getByType(TouchableOpacity);
-    type ButtonElement = { props: { style: unknown } };
+    interface ButtonElement { props: { style: unknown } }
     expect((button as unknown as ButtonElement).props.style).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
@@ -86,7 +86,7 @@ describe("PrimaryAddButton", () => {
     );
 
     const button = view.UNSAFE_getByType(TouchableOpacity);
-    type ButtonElement = { props: { activeOpacity: number } };
+    interface ButtonElement { props: { activeOpacity: number } }
     expect((button as unknown as ButtonElement).props.activeOpacity).toBe(0.5);
   });
 
@@ -96,7 +96,7 @@ describe("PrimaryAddButton", () => {
     );
 
     const button = view.UNSAFE_getByType(TouchableOpacity);
-    type ButtonElement = { props: { activeOpacity: number } };
+    interface ButtonElement { props: { activeOpacity: number } }
     expect((button as unknown as ButtonElement).props.activeOpacity).toBe(0.9);
   });
 

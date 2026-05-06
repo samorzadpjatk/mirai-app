@@ -57,7 +57,7 @@ describe("GroupImagePicker", () => {
       />
     );
     const image = UNSAFE_getByType(Image);
-    type ImageElement = { props: { source: { uri: string } } };
+    interface ImageElement { props: { source: { uri: string } } }
     expect(image).toBeTruthy();
     expect((image as unknown as ImageElement).props.source.uri).toBe("https://example.com/image.jpg");
   });
@@ -114,7 +114,7 @@ describe("GroupImagePicker", () => {
       />
     );
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    type TouchableElement = { props: { disabled: boolean } };
+    interface TouchableElement { props: { disabled: boolean } }
     expect((touchable as unknown as TouchableElement).props.disabled).toBe(true);
   });
 

@@ -44,9 +44,9 @@ interface ThemedTextInputProps {
 }
 
 jest.mock("~/components/common/ui", () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+   
   const React = jest.requireActual<typeof import("react")>("react");
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+   
   const { View, Text, TouchableOpacity, TextInput } = jest.requireActual<typeof import("react-native")>("react-native");
 
   return {

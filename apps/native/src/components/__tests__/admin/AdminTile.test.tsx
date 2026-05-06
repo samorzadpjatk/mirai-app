@@ -20,14 +20,14 @@ jest.mock("@expo/vector-icons", () => {
   };
 });
 
-const getMockPush = () => {
+const useMockPush = () => {
   const { useRouter } = jest.requireMock("expo-router");
   return useRouter().push;
 };
 
 describe("AdminTile", () => {
   beforeEach(() => {
-    getMockPush().mockClear();
+    useMockPush().mockClear();
   });
 
   it("renders with title and subtitle", () => {
@@ -76,7 +76,7 @@ describe("AdminTile", () => {
 
     await user.press(screen.getByTestId("admin-tile"));
     expect(onPress).toHaveBeenCalled();
-    expect(getMockPush()).not.toHaveBeenCalled();
+    expect(useMockPush()).not.toHaveBeenCalled();
   });
 
   it("navigates to route when pressed with route and tripId", async () => {
@@ -95,7 +95,7 @@ describe("AdminTile", () => {
     );
 
     await user.press(screen.getByTestId("admin-tile"));
-    expect(getMockPush()).toHaveBeenCalledWith({
+    expect(useMockPush()).toHaveBeenCalledWith({
       pathname: "/users",
       params: { tripId: "trip-123" },
     });
@@ -115,7 +115,7 @@ describe("AdminTile", () => {
     );
 
     await user.press(screen.getByTestId("admin-tile"));
-    expect(getMockPush()).not.toHaveBeenCalled();
+    expect(useMockPush()).not.toHaveBeenCalled();
   });
 
   it("does not navigate when tripId is not provided", async () => {
@@ -133,7 +133,7 @@ describe("AdminTile", () => {
     );
 
     await user.press(screen.getByTestId("admin-tile"));
-    expect(getMockPush()).not.toHaveBeenCalled();
+    expect(useMockPush()).not.toHaveBeenCalled();
   });
 
   it("applies custom accent colors", () => {

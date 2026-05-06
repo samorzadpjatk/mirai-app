@@ -5,9 +5,7 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalShell } from "../../map/modals/MapModalShell";
 
 jest.mock("~/components/common/ui", () => {
-  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
-       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
-       @typescript-eslint/no-unsafe-member-access */
+   
   const { createElement } = require("react");
   const { View, Text, Pressable } = require("react-native");
 
@@ -27,7 +25,7 @@ jest.mock("~/components/common/ui", () => {
             props.children
           ),
   };
-  /* eslint-enable */
+   
 });
 
 const noop = (): void => undefined;

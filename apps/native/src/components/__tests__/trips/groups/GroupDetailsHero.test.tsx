@@ -18,7 +18,7 @@ describe("GroupDetailsHero", () => {
       />
     );
     const image = UNSAFE_getByType(Image);
-    type ImageElement = { props: { source: { uri: string } } };
+    interface ImageElement { props: { source: { uri: string } } }
     expect(image).toBeTruthy();
     expect((image as unknown as ImageElement).props.source.uri).toBe("https://example.com/group-image.jpg");
   });

@@ -25,9 +25,7 @@ jest.mock("~/stores/map", () => ({
 }));
 
 jest.mock("~/components/map/modals/MapModalShell", () => {
-  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
-       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
-       @typescript-eslint/no-unsafe-member-access */
+   
   const { createElement } = require("react");
   const { View, Text } = require("react-native");
 
@@ -40,13 +38,11 @@ jest.mock("~/components/map/modals/MapModalShell", () => {
       );
     },
   };
-  /* eslint-enable */
+   
 });
 
 jest.mock("~/components/map/modals/MapModalUserItem", () => {
-  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
-       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
-       @typescript-eslint/no-unsafe-member-access */
+   
   const { createElement } = require("react");
   const { View, Text } = require("react-native");
 
@@ -59,7 +55,7 @@ jest.mock("~/components/map/modals/MapModalUserItem", () => {
       );
     },
   };
-  /* eslint-enable */
+   
 });
 
 describe("ManageSharingModal", () => {

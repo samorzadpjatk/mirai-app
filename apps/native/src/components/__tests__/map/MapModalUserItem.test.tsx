@@ -5,9 +5,7 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalUserItem } from "../../map/modals/MapModalUserItem";
 
 jest.mock("~/components/common/ui", () => {
-  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
-       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
-       @typescript-eslint/no-unsafe-member-access */
+   
   const { createElement } = require("react");
   const { TouchableOpacity, Text } = require("react-native");
 
@@ -32,7 +30,7 @@ jest.mock("~/components/common/ui", () => {
         props.rightElement
       ),
   };
-  /* eslint-enable */
+   
 });
 
 describe("MapModalUserItem", () => {

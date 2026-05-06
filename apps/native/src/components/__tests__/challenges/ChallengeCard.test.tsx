@@ -9,9 +9,9 @@ interface IoniconsProps {
 }
 
 jest.mock("@expo/vector-icons", () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+   
   const React = jest.requireActual<typeof import("react")>("react");
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+   
   const { Text } = jest.requireActual<typeof import("react-native")>("react-native");
 
   return {

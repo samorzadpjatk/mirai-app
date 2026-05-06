@@ -13,7 +13,7 @@ const mockUpload = jest.fn();
 const mockOnClose = jest.fn();
 
 jest.mock("react-native", () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+   
   const actualRN = jest.requireActual<typeof import("react-native")>("react-native");
   return {
     ...actualRN,
@@ -230,9 +230,9 @@ interface ThemedTextInputProps {
 }
 
 jest.mock("~/components/common/ui", () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+   
   const mockReact = jest.requireActual<typeof import("react")>("react");
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+   
   const mockRN = jest.requireActual<typeof import("react-native")>("react-native");
   return {
     AppModalShell: function MockAppModalShell(props: AppModalShellProps) {
@@ -913,7 +913,7 @@ describe("AdminRewardDetailModal", () => {
       await waitFor(() => {
         expect(mockUpload).toHaveBeenCalledWith(
           expect.objectContaining({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+             
             storagePath: expect.stringContaining("rewards/"),
             fileUri: "file:///new/image.jpg",
             contentType: "image/jpeg",
@@ -1019,7 +1019,7 @@ describe("AdminRewardDetailModal", () => {
     });
 
     it("should handle purchase with unknown group", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       const mockRewardUnknownGroup = {
         ...mockReward,
         purchases: [

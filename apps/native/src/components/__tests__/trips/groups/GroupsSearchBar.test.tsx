@@ -64,7 +64,7 @@ describe("GroupsSearchBar", () => {
     );
 
     const input = screen.getByPlaceholderText("Search groups by name...");
-    type InputElement = { props: { value: string } };
+    interface InputElement { props: { value: string } }
     expect((input as unknown as InputElement).props.value).toBe("");
   });
 
