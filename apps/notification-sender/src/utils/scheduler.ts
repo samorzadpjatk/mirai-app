@@ -31,13 +31,15 @@ export class Scheduler {
       this.runTask();
     }, 0);
 
-    // Then run at regular intervals
-    this.intervalId = setInterval(
-      () => {
-        this.runTask();
-      },
-      this.intervalMinutes * 60 * 1000,
-    );
+    // Then run at regular intervals (only if interval > 0)
+    if (this.intervalMinutes > 0) {
+      this.intervalId = setInterval(
+        () => {
+          this.runTask();
+        },
+        this.intervalMinutes * 60 * 1000,
+      );
+    }
   }
 
   /**

@@ -673,7 +673,7 @@ jest.mock("@mirai-app/shared", () => ({
 jest.mock("@tanstack/react-query", () => {
   const React = require("react");
 
-  // Create a proper QueryClient class mock
+  // Create a proper QueryClient class mock with mount method for v5 compatibility
   class MockQueryClient {
     constructor(options?: any) {
       this.invalidateQueries = jest.fn();
@@ -681,13 +681,36 @@ jest.mock("@tanstack/react-query", () => {
       this.setQueryData = jest.fn();
       this.getQueryData = jest.fn();
       this.clear = jest.fn();
+      this.mount = jest.fn(() => () => {}); // Returns cleanup function
+      this.unmount = jest.fn();
+      this.isFetching = jest.fn(() => 0);
+      this.isMutating = jest.fn(() => 0);
+      this.getQueryCache = jest.fn(() => ({ onSuccess: jest.fn(), onError: jest.fn() }));
+      this.getMutationCache = jest.fn(() => ({ onSuccess: jest.fn(), onError: jest.fn() }));
     }
     invalidateQueries: jest.Mock;
     refetchQueries: jest.Mock;
     setQueryData: jest.Mock;
     getQueryData: jest.Mock;
     clear: jest.Mock;
+    mount: jest.Mock;
+    unmount: jest.Mock;
+    isFetching: jest.Mock;
+    isMutating: jest.Mock;
+    getQueryCache: jest.Mock;
+    getMutationCache: jest.Mock;
   }
+
+  const QueryClientProvider = ({ children, client }: { children: React.ReactNode; client: any }) => {
+    // Call mount when provider mounts (v5 requirement)
+    React.useEffect(() => {
+      if (client?.mount) {
+        const cleanup = client.mount();
+        return cleanup;
+      }
+    }, [client]);
+    return children;
+  };
 
   return {
     useQuery: jest.fn(() => ({ data: null, isLoading: false, error: null })),
@@ -706,9 +729,10 @@ jest.mock("@tanstack/react-query", () => {
       setQueryData: jest.fn(),
       getQueryData: jest.fn(),
       clear: jest.fn(),
+      mount: jest.fn(() => () => {}),
     })),
     QueryClient: MockQueryClient,
-    QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
+    QueryClientProvider,
     dehydrate: jest.fn(),
     hydrate: jest.fn(),
     focusManager: {

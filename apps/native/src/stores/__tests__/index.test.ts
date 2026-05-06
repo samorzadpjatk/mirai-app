@@ -153,8 +153,9 @@ describe("stores/index exports", () => {
       expect(typeof useJudgement).toBe("function");
     });
 
-    it("should maintain consistent export structure", async () => {
-      const indexModule: Record<string, unknown> = await import("../index");
+    it("should maintain consistent export structure", () => {
+      // Use require instead of dynamic import for CommonJS compatibility
+      const indexModule: Record<string, unknown> = require("../index");
       const exportKeys = Object.keys(indexModule);
       expect(exportKeys).toContain("mapStore");
       expect(exportKeys).toContain("judgementStore");
