@@ -15,14 +15,15 @@ const mockChannelSubscribe = vi.fn();
 // Setup hoisted mocks - these are evaluated once when the test file loads
 vi.mock("@mirai-app/supabase", async () => {
   const { vi } = await import("vitest");
+  mockChannelOn.mockReturnValue({
+    subscribe: mockChannelSubscribe,
+  });
   return {
     createSupabaseClient: (...args: unknown[]) => {
       mockCreateSupabaseClient(...args);
       return {
         channel: vi.fn().mockReturnValue({
-          on: mockChannelOn.mockReturnValue({
-            subscribe: mockChannelSubscribe,
-          }),
+          on: mockChannelOn,
         }),
         removeChannel: mockRemoveChannel.mockResolvedValue(undefined),
       };
@@ -397,8 +398,14 @@ describe("Notification Sender - Notification Processing", () => {
     // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
-    type PayloadHandler = (payload: { new: { id: string | number } }) => void;
-    const payloadHandler = mockChannelOn.mock.calls[0]?.[2] as PayloadHandler | undefined;
+    type PayloadHandler = (payload: { new: { id: string | number } }) => Promise<void> | void;
+    const rawHandler = mockChannelOn.mock.calls[0]?.[2] as PayloadHandler | undefined;
+
+    const payloadHandler = async (payload: { new: { id: string | number } }) => {
+      if (!rawHandler) return;
+      rawHandler(payload);
+      await new Promise((resolve) => setImmediate(resolve));
+    };
 
     return { payloadHandler, processExitSpy, consoleErrorSpy, consoleLogSpy };
   }
@@ -412,7 +419,6 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: "notif-123" });
   });
@@ -421,7 +427,6 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockSendMobileNotifications).toHaveBeenCalledWith({ notificationId: "notif-123" });
   });
@@ -430,7 +435,6 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest({ total: 10, sent: 8, failed: 2, success: false });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryComplete).toHaveBeenCalledWith({
       notificationId: "notif-123",
@@ -445,7 +449,6 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler, consoleLogSpy } = await setupTest({ total: 10, sent: 8, failed: 2, success: false });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(consoleLogSpy).toHaveBeenCalledWith("Delivery summary:", {
       mobile: {
@@ -461,7 +464,6 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest({ total: 10, sent: 10, failed: 0, success: true });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryComplete).toHaveBeenCalledWith({
       notificationId: "notif-123",
@@ -476,7 +478,6 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest({ total: 10, sent: 5, failed: 5, success: false });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryComplete).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -493,7 +494,6 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockTrackDeliveryStart.mockRejectedValueOnce(new Error("Start failed"));
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
     interface TrackFailureCall { notificationId: string; error: Error }
@@ -507,7 +507,6 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockSendMobileNotifications.mockRejectedValueOnce(new Error("Send failed"));
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
     interface TrackFailureCall { notificationId: string; error: Error }
@@ -521,7 +520,6 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockTrackDeliveryComplete.mockRejectedValueOnce(new Error("Complete failed"));
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
     interface TrackFailureCall { notificationId: string; error: Error }
@@ -535,7 +533,6 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockSendMobileNotifications.mockRejectedValueOnce("string error");
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryFailure).toHaveBeenCalledWith({
       notificationId: "notif-123",
@@ -548,7 +545,6 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockSendMobileNotifications.mockRejectedValueOnce(null);
     const mockPayload = { new: { id: "notif-123" } };
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryFailure).toHaveBeenCalledWith({
       notificationId: "notif-123",
@@ -562,18 +558,15 @@ describe("Notification Sender - Notification Processing", () => {
     mockSendMobileNotifications.mockRejectedValueOnce(new Error("Send failed"));
     mockTrackDeliveryFailure.mockRejectedValueOnce(new Error("Track failed"));
     const mockPayload = { new: { id: "notif-123" } };
-    await expect(payloadHandler(mockPayload)).resolves.not.toThrow();
+    await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("should handle multiple notifications in sequence", async () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-1" } });
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-2" } });
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-3" } });
     expect(mockTrackDeliveryStart).toHaveBeenCalledTimes(3);
     expect(mockSendMobileNotifications).toHaveBeenCalledTimes(3);
@@ -587,11 +580,8 @@ describe("Notification Sender - Notification Processing", () => {
       .mockResolvedValueOnce({ total: 10, sent: 10, failed: 0, success: true })
       .mockRejectedValueOnce(new Error("Second failed"))
       .mockResolvedValueOnce({ total: 10, sent: 5, failed: 5, success: false });
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-1" } });
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-2" } });
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-3" } });
     expect(mockTrackDeliveryComplete).toHaveBeenCalledTimes(2);
     expect(mockTrackDeliveryFailure).toHaveBeenCalledTimes(1);
@@ -600,10 +590,8 @@ describe("Notification Sender - Notification Processing", () => {
   it("should handle payload with different ID formats", async () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: 123 } });
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: 123 });
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "uuid-string" } });
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: "uuid-string" });
   });
@@ -611,7 +599,6 @@ describe("Notification Sender - Notification Processing", () => {
   it("should handle empty payload gracefully", async () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: {} });
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: undefined });
   });

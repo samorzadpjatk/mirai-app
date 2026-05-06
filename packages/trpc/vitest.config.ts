@@ -26,12 +26,13 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "~": path.resolve(__dirname, "./src"),
-      "@mirai-app/auth": path.resolve(__dirname, "../auth/src"),
-      "@mirai-app/db": path.resolve(__dirname, "../db/src"),
-      "@mirai-app/supabase": path.resolve(__dirname, "../supabase/src"),
-      "@mirai-app/shared": path.resolve(__dirname, "../shared"),
-    },
+    alias: [
+      { find: "@mirai-app/shared/test-utils", replacement: path.resolve(__dirname, "../shared/src/test-utils/index.ts") },
+      { find: "@mirai-app/shared", replacement: path.resolve(__dirname, "../shared/index.ts") },
+      { find: "@mirai-app/auth", replacement: path.resolve(__dirname, "../auth/src") },
+      { find: "@mirai-app/db", replacement: path.resolve(__dirname, "../db/src") },
+      { find: "@mirai-app/supabase", replacement: path.resolve(__dirname, "../supabase/src") },
+      { find: "~", replacement: path.resolve(__dirname, "./src") },
+    ],
   },
 });

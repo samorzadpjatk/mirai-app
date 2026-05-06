@@ -12,6 +12,8 @@ interface DateTimePickerModalProps {
 
 jest.mock("~/components/common/ui/DateTimePickerModal", () => ({
   DateTimePickerModal: ({ visible, onConfirm, onCancel }: DateTimePickerModalProps) => {
+    const React = require("react");
+    const { View, Text, TouchableOpacity } = require("react-native");
     if (!visible) return null;
     return React.createElement(
       View,
@@ -39,6 +41,8 @@ interface QrScannerModalProps {
 
 jest.mock("~/components/common/QrScannerModal", () => ({
   QrScannerModal: ({ visible, onClose, onScan }: QrScannerModalProps) => {
+    const React = require("react");
+    const { View, Text, TouchableOpacity } = require("react-native");
     if (!visible) return null;
     return React.createElement(
       View,
@@ -66,6 +70,8 @@ interface LocationPickerProps {
 
 jest.mock("~/components/map/LocationPicker", () => ({
   LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) => {
+    const React = require("react");
+    const { View, Text, TouchableOpacity } = require("react-native");
     if (!visible) return null;
     return React.createElement(
       View,
