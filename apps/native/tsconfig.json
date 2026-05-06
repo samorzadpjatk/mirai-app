@@ -10,9 +10,10 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
-    }
+    },
+    "types": ["jest", "@testing-library/jest-native"],
+    "allowJs": true
   },
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "jest.setup.js"],
-  "exclude": ["**/node_modules/**"],
-  "types": ["jest", "@testing-library/jest-native"]
+  "include": ["**/*.ts", "**/*.tsx", "**/*.test.ts", "**/*.test.tsx", "**/__tests__/**/*.ts", "**/__tests__/**/*.tsx", "nativewind-env.d.ts"],
+  "exclude": ["**/node_modules/**"]
 }

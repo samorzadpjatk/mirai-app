@@ -1,6 +1,14 @@
 import { vi } from "vitest";
 
 /**
+ * No-op function for use as a placeholder callback.
+ * Use this instead of empty arrow functions to satisfy ESLint rules.
+ */
+export function noop(): void {
+  // intentionally empty
+}
+
+/**
  * Resets all mocks between tests.
  * Call this in beforeEach or afterEach hooks.
  */
@@ -13,7 +21,7 @@ export function resetMocks(): void {
  * Useful for suppressing expected warnings/errors in tests.
  */
 export function mockConsole(
-  methods: Array<"log" | "error" | "warn" | "info" | "debug"> = ["error", "warn"]
+  methods: ("log" | "error" | "warn" | "info" | "debug")[] = ["error", "warn"]
 ): { restore: () => void } {
   const originals: Partial<Record<typeof methods[number], typeof console.log>> = {};
 

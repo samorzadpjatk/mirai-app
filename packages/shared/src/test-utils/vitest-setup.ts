@@ -63,8 +63,8 @@ export function setupPrismaMocks(): void {
       user: createMockPrismaModel(),
       trip: createMockPrismaModel(),
       event: createMockPrismaModel(),
-      $transaction: vi.fn((cb: unknown) =>
-        typeof cb === "function" ? cb(mockPrismaClient) : Promise.resolve([])
+      $transaction: vi.fn((cb: (client: typeof mockPrismaClient) => Promise<unknown[]>) =>
+        cb(mockPrismaClient)
       ),
     };
 
