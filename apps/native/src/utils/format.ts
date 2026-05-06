@@ -1,4 +1,11 @@
 /**
+ * Format a number with thousands separators (deterministic en-US locale)
+ */
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat('en-US').format(value);
+}
+
+/**
  * Format a date to a localized string
  */
 export function formatDate(date: Date | string): string {

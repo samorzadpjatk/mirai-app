@@ -14,7 +14,7 @@ describe("GroupStatsGrid", () => {
   it("formats values correctly", () => {
     renderWithProviders(<GroupStatsGrid membersCount={5} coins={1000} rankingPosition={3} />);
     expect(screen.getByText("5")).toBeOnTheScreen();
-    expect(screen.getByText("1000")).toBeOnTheScreen();
+    expect(screen.getByText("1,000")).toBeOnTheScreen();
     expect(screen.getByText("#3")).toBeOnTheScreen();
   });
 

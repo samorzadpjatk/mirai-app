@@ -1,5 +1,6 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { formatNumber } from "~/utils/format";
 import type { RankedGroup } from "./types";
 
 interface LeaderboardListItemProps {
@@ -56,7 +57,7 @@ export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps
             group.isCurrentUserGroup && styles.scoreTextActive,
           ]}
         >
-          {group.coins.toLocaleString()} pts
+          {formatNumber(group.coins)} pts
         </Text>
       </View>
     </TouchableOpacity>

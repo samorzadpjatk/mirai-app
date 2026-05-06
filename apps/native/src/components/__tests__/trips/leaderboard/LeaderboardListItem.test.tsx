@@ -16,7 +16,7 @@ describe("LeaderboardListItem", () => {
     expect(screen.getByText("3")).toBeOnTheScreen();
     expect(screen.getByText("Test Group")).toBeOnTheScreen();
     expect(screen.getByText("5 Members active")).toBeOnTheScreen();
-    expect(screen.getByText("1000 pts")).toBeOnTheScreen();
+    expect(screen.getByText("1,000 pts")).toBeOnTheScreen();
     expect(screen.getByText("T")).toBeOnTheScreen();
   });
 
