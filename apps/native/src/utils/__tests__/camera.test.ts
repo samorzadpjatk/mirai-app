@@ -37,7 +37,7 @@ jest.mock("react-native", () => ({
   Platform: {
     OS: "ios",
     select: (obj: { ios?: unknown; android?: unknown; default?: unknown }) =>
-      obj.ios || obj.default,
+      obj.ios ?? obj.default,
   },
 }));
 
@@ -70,7 +70,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 1 },
-      } as ImagePickerAsset;
+      };
 
       const result = await normalizeCameraAsset(asset);
 
@@ -84,7 +84,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: null,
-      } as ImagePickerAsset;
+      };
 
       const result = await normalizeCameraAsset(asset);
 
@@ -98,7 +98,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 2 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -115,7 +115,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 3 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -132,7 +132,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 4 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -149,7 +149,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 5 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -166,7 +166,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -183,7 +183,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 7 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -200,7 +200,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 8 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -217,7 +217,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: "6" },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -234,7 +234,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -251,7 +251,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: "invalid" },
-      } as ImagePickerAsset;
+      };
 
       const result = await normalizeCameraAsset(asset);
 
@@ -267,7 +267,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { LensModel: "front camera" },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -284,7 +284,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { LensModel: "selfie mode" },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -301,7 +301,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { LensModel: "True Depth Camera" },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -318,7 +318,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { LensModel: "front camera", Orientation: 2 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -337,7 +337,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { IsMirrored: true },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -354,7 +354,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Mirror: 1 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -371,7 +371,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Mirror: "true" },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -388,7 +388,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Mirror: "1" },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -405,7 +405,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Mirror: "yes" },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -422,7 +422,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { IsMirrored: true },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -439,7 +439,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { IsMirrored: false },
-      } as ImagePickerAsset;
+      };
 
       const result = await normalizeCameraAsset(asset);
 
@@ -453,7 +453,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Mirror: 0 },
-      } as ImagePickerAsset;
+      };
 
       const result = await normalizeCameraAsset(asset);
 
@@ -467,7 +467,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Mirror: { value: true } },
-      } as ImagePickerAsset;
+      };
 
       const result = await normalizeCameraAsset(asset);
 
@@ -481,7 +481,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Mirror: null },
-      } as ImagePickerAsset;
+      };
 
       const result = await normalizeCameraAsset(asset);
 
@@ -497,7 +497,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 1 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset, { forceUnmirror: true });
 
@@ -514,7 +514,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 2 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset, { forceUnmirror: true });
 
@@ -534,7 +534,7 @@ describe("Camera Utilities", () => {
         height: 100,
         mimeType: "image/png",
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -552,7 +552,7 @@ describe("Camera Utilities", () => {
         height: 100,
         mimeType: "image/webp",
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -570,7 +570,7 @@ describe("Camera Utilities", () => {
         height: 100,
         mimeType: "image/jpeg",
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -587,7 +587,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       await normalizeCameraAsset(asset);
 
@@ -606,7 +606,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 6, Make: "Apple" },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync.mockResolvedValue({
         uri: "file://manipulated.jpg",
@@ -634,7 +634,7 @@ describe("Camera Utilities", () => {
         mimeType: "image/jpeg",
         base64: "base64data",
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync.mockResolvedValue({
         uri: "file://manipulated.jpg",
@@ -659,7 +659,7 @@ describe("Camera Utilities", () => {
         base64: "base64data",
         mimeType: "image/jpeg",
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync
         .mockRejectedValueOnce(new Error("Primary failed"))
@@ -685,7 +685,7 @@ describe("Camera Utilities", () => {
         base64: "base64data",
         mimeType: "image/jpeg",
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync
         .mockRejectedValueOnce(new Error("Primary failed"))
@@ -715,7 +715,7 @@ describe("Camera Utilities", () => {
         base64: "base64data",
         mimeType: "image/jpeg",
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync.mockRejectedValue(new Error("All failed"));
 
@@ -730,7 +730,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync.mockRejectedValue(new Error("Primary failed"));
 
@@ -745,7 +745,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync
         .mockRejectedValueOnce(new Error("Primary failed"))
@@ -766,7 +766,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync
         .mockRejectedValueOnce(new Error("Primary failed"))
@@ -787,7 +787,7 @@ describe("Camera Utilities", () => {
         width: 100,
         height: 100,
         exif: { Orientation: 6 },
-      } as ImagePickerAsset;
+      };
 
       mockManipulateAsync
         .mockRejectedValueOnce(new Error("Primary failed"))

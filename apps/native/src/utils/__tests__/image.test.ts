@@ -11,7 +11,7 @@ describe("Image Utilities", () => {
         mimeType: "image/jpeg",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("png");
     });
@@ -23,7 +23,7 @@ describe("Image Utilities", () => {
         mimeType: "image/jpeg",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("webp");
     });
@@ -35,7 +35,7 @@ describe("Image Utilities", () => {
         mimeType: "image/jpeg",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("png");
     });
@@ -47,7 +47,7 @@ describe("Image Utilities", () => {
         mimeType: "image/png",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("png");
     });
@@ -58,7 +58,7 @@ describe("Image Utilities", () => {
         mimeType: "image/webp",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("webp");
     });
@@ -69,7 +69,7 @@ describe("Image Utilities", () => {
         mimeType: "image/heic",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("heic");
     });
@@ -80,7 +80,7 @@ describe("Image Utilities", () => {
         mimeType: "image/heif",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("heic");
     });
@@ -90,7 +90,7 @@ describe("Image Utilities", () => {
         uri: "file://test",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("jpg");
     });
@@ -101,7 +101,7 @@ describe("Image Utilities", () => {
         mimeType: "image/gif",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("jpg");
     });
@@ -113,7 +113,7 @@ describe("Image Utilities", () => {
         mimeType: "image/png",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("png");
     });
@@ -125,7 +125,7 @@ describe("Image Utilities", () => {
         mimeType: "image/jpeg",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       // Current behavior: returns empty string for trailing dot (not null/undefined, so ?? doesn't trigger)
       expect(getImageExtension(asset)).toBe("");
@@ -138,7 +138,7 @@ describe("Image Utilities", () => {
         mimeType: "image/png",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("");
     });
@@ -150,7 +150,7 @@ describe("Image Utilities", () => {
         mimeType: "image/webp",
         width: 100,
         height: 100,
-      } as ImagePickerAsset;
+      };
 
       expect(getImageExtension(asset)).toBe("");
     });
