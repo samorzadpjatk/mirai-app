@@ -6,7 +6,6 @@ import type { TripConfig, AuthUserByEmail } from "./types";
 import { parseUsersCsv } from "./users";
 import { joinPath } from "./utils/path";
 import { readTextFile, readFile } from "./utils/fs";
-import { normalizePath, relativePath } from "./utils/path";
 
 export const seedTrip = async (
   tripConfig: TripConfig,
@@ -27,7 +26,7 @@ export const seedTrip = async (
       
       if (size > 0) {
         // Generate storage path: trips/{trip-key}/background.{ext}
-        const ext = tripConfig.background.split('.').pop()?.toLowerCase() || 'jpg';
+        const ext = tripConfig.background.split('.').pop()?.toLowerCase() ?? 'jpg';
         const storagePath = `trips/${tripConfig.key}/background.${ext}`;
         
         const { error } = await supabase.storage
@@ -97,14 +96,14 @@ export const seedTrip = async (
     if (!dbUser) {
       console.warn(`✗ DB user not yet created for ${email} (auth id ${authUser.id}). Creating manually...`);
       
-      const roleMapping: Record<string, any> = {
+      const roleMapping: Record<string, string> = {
         'admin': 'ADMIN',
         'moderator': 'MODERATOR', 
         'service': 'SERVICE',
         'user': 'USER'
       };
       
-      const dbRole = roleMapping[row.role?.toLowerCase() || 'user'] || 'USER';
+      const dbRole = roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER';
       
       try {
         dbUser = await prisma.user.create({
@@ -122,14 +121,14 @@ export const seedTrip = async (
       }
     } else {
       // Update the role if it doesn't match what we expect from CSV
-      const roleMapping: Record<string, any> = {
+      const roleMapping: Record<string, string> = {
         'admin': 'ADMIN',
         'moderator': 'MODERATOR', 
         'service': 'SERVICE',
         'user': 'USER'
       };
       
-      const expectedRole = roleMapping[row.role?.toLowerCase() || 'user'] || 'USER';
+      const expectedRole = roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER';
       
       if (dbUser.role !== expectedRole) {
         dbUser = await prisma.user.update({

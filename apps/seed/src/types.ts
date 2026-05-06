@@ -2,7 +2,7 @@ import type { SupabaseUser } from "@mirai-app/supabase";
 
 export type SeedEnv = "dev" | "prod";
 
-export type TripConfig = {
+export interface TripConfig {
   key: string;
   name: string;
   description?: string;
@@ -13,24 +13,24 @@ export type TripConfig = {
   rewards?: string;
   sponsors?: string;
   info?: string;
-};
+}
 
-export type CsvUser = {
+export interface CsvUser {
   email: string;
   firstName: string;
   lastName: string;
   role?: string;
-};
+}
 
-export type RewardConfig = {
+export interface RewardConfig {
   name: string;
   description: string;
   availableQuantity: number;
   coinCost: number;
   image?: string;
-};
+}
 
-export type SponsorConfig = {
+export interface SponsorConfig {
   id: string;
   name: string;
   description: string;
@@ -38,9 +38,9 @@ export type SponsorConfig = {
   height?: number;
   offsetX?: number;
   offsetY?: number;
-};
+}
 
-export type TripResourceConfig = {
+export interface TripResourceConfig {
   type: string;
   label: string;
   description?: string;
@@ -51,18 +51,18 @@ export type TripResourceConfig = {
   iconName?: string;
   value?: string;
   sortOrder?: number;
-};
+}
 
-export type TripInsuranceStepConfig = {
+export interface TripInsuranceStepConfig {
   stepNumber: number;
   title: string;
   text: string;
   requiredInfo?: string[];
   exampleCall?: string;
   additionalText?: string;
-};
+}
 
-export type TripInsuranceConfig = {
+export interface TripInsuranceConfig {
   label: string;
   phoneNumber: string;
   phoneDisplay: string;
@@ -73,11 +73,11 @@ export type TripInsuranceConfig = {
   hospitalAddress?: string;
   hospitalDistance?: string;
   steps: TripInsuranceStepConfig[];
-};
+}
 
-export type TripInfoConfig = {
+export interface TripInfoConfig {
   resources: TripResourceConfig[];
   insurance?: TripInsuranceConfig;
-};
+}
 
 export type AuthUserByEmail = Map<string, SupabaseUser>;

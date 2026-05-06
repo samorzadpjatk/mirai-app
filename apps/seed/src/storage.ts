@@ -60,7 +60,7 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
     } else {
       console.log(`✓ Uploaded placeholder image: ${placeholderPath}`);
     }
-  } catch (err) {
+  } catch {
     console.warn(`✗ Placeholder image file not found at ${placeholderAbsPath}`);
     console.log(`  Note: Add a placeholder image at apps/seed/assets/${seedEnv}/images/placeholder/trip-background.png`);
   }

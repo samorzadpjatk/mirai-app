@@ -33,7 +33,7 @@ export const seedRewards = async (
   // First try to find an admin user, then any user
   let dbUser = null;
   
-  for (const [email, authUser] of authUsers.entries()) {
+  for (const [, authUser] of authUsers.entries()) {
     try {
       const user = await db.user.findFirst({ 
         where: { authUserId: authUser.id },
@@ -47,11 +47,9 @@ export const seedRewards = async (
           break;
         }
         // Use first available user if no admin found
-        if (!dbUser) {
-          dbUser = user;
-        }
+        dbUser ??= user;
       }
-    } catch (error) {
+    } catch {
       // Continue trying other users
       continue;
     }
@@ -78,7 +76,7 @@ export const seedRewards = async (
           description: rewardConfig.description,
           availableQuantity: rewardConfig.availableQuantity,
           coinCost: rewardConfig.coinCost,
-          image: imagePath || null,
+          image: imagePath ?? null,
           tripId,
           createdById: dbUser.id,
         },

@@ -43,7 +43,7 @@ export const createAuthUserByEmail = async (
 export const ensureGhostAuthUser = async (authUsers: AuthUserByEmail) => {
   if (!env.seedGhostEmail) return null;
   const email = env.seedGhostEmail.trim();
-  let user = authUsers.get(email.toLowerCase()) ?? null;
+  const user = authUsers.get(email.toLowerCase()) ?? null;
   if (user) return user;
   if (!env.seedGhostPassword) {
     console.warn(`Ghost user ${email} missing and SEED_GHOST_PASSWORD not set; skipping ghost auth creation.`);
