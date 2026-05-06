@@ -9,8 +9,8 @@ export default [
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parserOptions: {
-        project: "./packages/trpc/tsconfig.eslint.json",
-        tsconfigRootDir: "/Users/rafalopilowski/Projekty/migration/pjapp",
+        project: "./tsconfig.eslint.json",
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
