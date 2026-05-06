@@ -74,7 +74,7 @@ jobs:
           cat typecheck.log | reviewdog -f=tsc -name="TypeScript" -reporter=github-pr-review -filter-mode=nofilter -fail-on-error=true
 
       - name: Run tests
-        run: bun run test:ci
+        run: bun run test
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5
