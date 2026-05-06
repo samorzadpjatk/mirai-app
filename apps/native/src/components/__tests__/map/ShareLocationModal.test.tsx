@@ -66,6 +66,7 @@ interface MapModalShellProps {
 
 jest.mock("~/components/map/modals/MapModalShell", () => ({
   MapModalShell: function MockMapModalShell({ children, visible }: MapModalShellProps) {
+    const { View } = jest.requireActual("react-native");
     return visible ? <View testID="modal-shell">{children}</View> : null;
   },
 }));
@@ -86,6 +87,7 @@ jest.mock("~/components/map/modals/MapModalUserItem", () => ({
     onPress,
     rightElement,
   }: MapModalUserItemProps) {
+    const { Pressable, Text } = jest.requireActual("react-native");
     return (
       <Pressable testID="user-item" onPress={onPress} data-selected={selected}>
         <Text testID="user-name">{name}</Text>
@@ -108,6 +110,7 @@ jest.mock("~/components/common/ui", () => ({
     value,
     onChangeText,
   }: ThemedTextInputProps) {
+    const { TextInput } = jest.requireActual("react-native");
     return (
       <TextInput
         testID="search-input"

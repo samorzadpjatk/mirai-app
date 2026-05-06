@@ -28,7 +28,7 @@ jest.mock("expo-file-system", () => {
     })),
     File: Object.assign(
       jest.fn().mockImplementation(() => ({
-        exists: mockFileExists,
+        get exists() { return mockFileExists(); },
         delete: mockFileDelete,
         type: "image/jpeg",
         size: 1024,
@@ -64,7 +64,7 @@ jest.mock("@mirai-app/trpc/client", () => {
     useTRPCClient: jest.fn(() => ({
       storage: {
         createDownloadUrl: {
-          query: mockCreateDownloadUrl,
+          query: (...args: unknown[]) => mockCreateDownloadUrl(...args),
         },
       },
     })),

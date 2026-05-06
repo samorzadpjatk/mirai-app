@@ -40,9 +40,12 @@ const mockOnUsePhoto: jest.MockedFunction<UsePhotoHandler> = jest.fn();
 const mockOnClose = jest.fn<void, []>();
 
 jest.mock("expo-camera", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+
   const MockCameraView = React.forwardRef<CameraViewHandle, CameraViewProps>(function MockCameraView(
-    _props,
-    ref,
+    _props: CameraViewProps,
+    ref: React.Ref<CameraViewHandle>,
   ) {
     React.useImperativeHandle(
       ref,
@@ -52,7 +55,7 @@ jest.mock("expo-camera", () => {
       [],
     );
 
-    return <View testID="camera-view" />;
+    return React.createElement(View, { testID: "camera-view" });
   });
 
   return {
@@ -60,18 +63,21 @@ jest.mock("expo-camera", () => {
   };
 });
 
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ visible, title, children, onClose: _onClose }: AppModalShellProps) => {
-    if (!visible) return null;
+jest.mock("~/components/common/ui", () => {
+  const React = require("react");
+  const { View, Text } = require("react-native");
 
-    return (
-      <View testID="modal-shell">
-        <Text testID="modal-title">{title}</Text>
-        {children}
-      </View>
-    );
-  },
-}));
+  return {
+    AppModalShell: ({ visible, title, children, onClose: _onClose }: AppModalShellProps) => {
+      if (!visible) return null;
+
+      return React.createElement(View, { testID: "modal-shell" },
+        React.createElement(Text, { testID: "modal-title" }, title),
+        children
+      );
+    },
+  };
+});
 
 describe("PhotoCaptureModal", () => {
   beforeEach(() => {

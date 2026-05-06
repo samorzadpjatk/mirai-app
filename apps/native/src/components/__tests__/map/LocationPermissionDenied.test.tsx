@@ -3,11 +3,18 @@ import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { LocationPermissionDenied } from "../../map/LocationPermissionDenied";
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
-  },
-}));
+jest.mock("@expo/vector-icons", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
+      return React.createElement(View, {
+        testID: `icon-${name}`,
+        style: { width: size, height: size, color }
+      });
+    },
+  };
+});
 
 describe("LocationPermissionDenied", () => {
   it("should render full message by default", () => {

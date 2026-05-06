@@ -75,11 +75,14 @@ interface PrimaryLoadingButtonProps {
   disabled?: boolean;
 }
 
-jest.mock("~/components/common/ui", () => ({
-  FormField: ({ children, label }: FormFieldProps) => (<View><Text>{label}</Text>{children}</View>),
-  ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (<TextInput value={value} placeholder={placeholder} keyboardType={keyboardType} multiline={multiline} onChangeText={onChangeText} />),
-  PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (<TouchableOpacity onPress={onPress} disabled={(isLoading ?? false) || (disabled ?? false)}><Text>{label}</Text></TouchableOpacity>),
-}));
+jest.mock("~/components/common/ui", () => {
+  const ReactNative = require("react-native");
+  return {
+    FormField: ({ children, label }: FormFieldProps) => (<ReactNative.View><ReactNative.Text>{label}</ReactNative.Text>{children}</ReactNative.View>),
+    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (<ReactNative.TextInput value={value} placeholder={placeholder} keyboardType={keyboardType} multiline={multiline} onChangeText={onChangeText} />),
+    PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (<ReactNative.TouchableOpacity onPress={onPress} disabled={(isLoading ?? false) || (disabled ?? false)}><ReactNative.Text>{label}</ReactNative.Text></ReactNative.TouchableOpacity>),
+  };
+});
 
 describe("ChallengeFormFields", () => {
   beforeEach(() => { jest.clearAllMocks(); });

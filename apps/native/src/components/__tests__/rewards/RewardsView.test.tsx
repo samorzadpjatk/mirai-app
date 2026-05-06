@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, Modal, ScrollView } from "react-native";
+import { ActivityIndicator, Modal, ScrollView, View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardsView from "../../rewards/RewardsView";
@@ -119,13 +119,14 @@ jest.mock("~/hooks/trips", () => ({
   useTripDetails: (tripId: string) => mockUseTripDetails(tripId),
 }));
 
-import { View } from "react-native";
-
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
-  },
-}));
+jest.mock("@expo/vector-icons", () => {
+  const { View } = jest.requireActual("react-native") as typeof import("react-native");
+  return {
+    Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
+      return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
+    },
+  };
+});
 
 jest.mock("react-native", () => {
   const actual = jest.requireActual("react-native") as typeof import("react-native");

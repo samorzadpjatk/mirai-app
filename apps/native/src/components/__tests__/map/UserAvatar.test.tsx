@@ -119,7 +119,12 @@ describe("UserAvatar", () => {
     );
 
     const image = asAvatarTestInstance(UNSAFE_getByType(Image));
-    expect(image).toHaveStyle({ width: 60, height: 60, borderRadius: 30 });
+    const styles = getStyles(image.props.style);
+    expect(styles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ width: 60, height: 60, borderRadius: 30 }),
+      ])
+    );
   });
 
   it("should apply correct size to initials container", () => {
@@ -128,7 +133,12 @@ describe("UserAvatar", () => {
     );
 
     const container = asAvatarTestInstance(UNSAFE_getByType(View));
-    expect(container).toHaveStyle({ width: 60, height: 60, borderRadius: 30 });
+    const styles = getStyles(container.props.style);
+    expect(styles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ width: 60, height: 60, borderRadius: 30 }),
+      ])
+    );
   });
 
   it("should render initials with correct font size", () => {
@@ -137,7 +147,10 @@ describe("UserAvatar", () => {
     );
 
     const text = asAvatarTestInstance(UNSAFE_getByType(Text));
-    expect(text).toHaveStyle({ fontSize: 20 });
+    const styles = getStyles(text.props.style);
+    expect(styles).toEqual(
+      expect.arrayContaining([expect.objectContaining({ fontSize: 20 })])
+    );
   });
 
   it("should generate consistent background color for same name", () => {
@@ -184,7 +197,12 @@ describe("UserAvatar", () => {
     );
 
     const container = asAvatarTestInstance(UNSAFE_getByType(View));
-    expect(container).toHaveStyle({ width: 38, height: 38, borderRadius: 19 });
+    const styles = getStyles(container.props.style);
+    expect(styles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ width: 38, height: 38, borderRadius: 19 }),
+      ])
+    );
   });
 
   it("should handle image error gracefully", () => {

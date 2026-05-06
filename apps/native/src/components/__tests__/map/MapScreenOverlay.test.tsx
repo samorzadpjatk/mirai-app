@@ -32,44 +32,68 @@ jest.mock("~/stores/location", () => ({
   useLocationContext: () => mockGetLocationContext(),
 }));
 
-jest.mock("react-native-reanimated", () => ({
-  __esModule: true,
-  default: {
-    View: ({ children, style }: MockAnimatedViewProps) => (
-      <View testID="animated-view" style={style}>
+jest.mock("react-native-reanimated", () => {
+  const { View, StyleSheet } = require("react-native");
+  return {
+    __esModule: true,
+    default: {
+      View: ({ children, style }: MockAnimatedViewProps) => {
+        const flattenedStyle = StyleSheet.flatten(style);
+        return (
+          <View testID="animated-view" style={flattenedStyle}>
+            {children}
+          </View>
+        );
+      },
+    },
+  };
+});
+
+jest.mock("react-native-gesture-handler", () => {
+  const { View } = require("react-native");
+  return {
+    GestureDetector: ({ children, gesture }: MockGestureDetectorProps) => (
+      <View testID="gesture-detector" accessibilityLabel={String(gesture)}>
         {children}
       </View>
     ),
-  },
-}));
+  };
+});
 
-jest.mock("react-native-gesture-handler", () => ({
-  GestureDetector: ({ children, gesture }: MockGestureDetectorProps) => (
-    <View testID="gesture-detector" accessibilityLabel={String(gesture)}>
-      {children}
-    </View>
-  ),
-}));
+jest.mock("~/components/map/MapActionButtons", () => {
+  const { View } = require("react-native");
+  return {
+    MapActionButtons: () => <View testID="map-action-buttons" />,
+  };
+});
 
-jest.mock("~/components/map/MapActionButtons", () => ({
-  MapActionButtons: () => <View testID="map-action-buttons" />,
-}));
+jest.mock("~/components/map/modals/ManageSharingModal", () => {
+  const { View } = require("react-native");
+  return {
+    ManageSharingModal: () => <View testID="manage-sharing-modal" />,
+  };
+});
 
-jest.mock("~/components/map/modals/ManageSharingModal", () => ({
-  ManageSharingModal: () => <View testID="manage-sharing-modal" />,
-}));
+jest.mock("~/components/map/modals/ShareLocationModal", () => {
+  const { View } = require("react-native");
+  return {
+    ShareLocationModal: () => <View testID="share-location-modal" />,
+  };
+});
 
-jest.mock("~/components/map/modals/ShareLocationModal", () => ({
-  ShareLocationModal: () => <View testID="share-location-modal" />,
-}));
+jest.mock("~/components/map/ui/SelectedUserCard", () => {
+  const { View } = require("react-native");
+  return {
+    SelectedUserCard: () => <View testID="selected-user-card" />,
+  };
+});
 
-jest.mock("~/components/map/ui/SelectedUserCard", () => ({
-  SelectedUserCard: () => <View testID="selected-user-card" />,
-}));
-
-jest.mock("~/components/map/panels/UsersListPanel", () => ({
-  UsersListPanel: () => <View testID="users-list-panel" />,
-}));
+jest.mock("~/components/map/panels/UsersListPanel", () => {
+  const { View } = require("react-native");
+  return {
+    UsersListPanel: () => <View testID="users-list-panel" />,
+  };
+});
 
 describe("MapScreenOverlay", () => {
   beforeEach(() => {
@@ -141,6 +165,10 @@ describe("MapScreenOverlay", () => {
 
     const { getByTestId } = renderWithProviders(<MapScreenOverlay />);
 
-    expect(getByTestId("animated-view")).toHaveStyle({ backgroundColor: "red" });
+    const animatedView = getByTestId("animated-view");
+    // Style is an array: [styles.detailCard, panelStyle]
+    expect(animatedView.props.style[1]).toMatchObject({
+      backgroundColor: "red",
+    });
   });
 });

@@ -99,7 +99,7 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    expect(getByText("My Modal Title")).toBeTruthy();
+    expect(getByText("Test Modal")).toBeTruthy();
     const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });

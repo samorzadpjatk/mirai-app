@@ -1,12 +1,15 @@
 import React from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ActionBar } from "../../judgement/ActionBar";
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
-}));
+jest.mock("@expo/vector-icons", () => {
+  const { Text } = require("react-native");
+  return {
+    Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
+  };
+});
 
 describe("ActionBar", () => {
   const mockOnReject = jest.fn();

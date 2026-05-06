@@ -43,23 +43,26 @@ interface ThemedTextInputProps {
   multiline?: boolean;
 }
 
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => visible ? (
-    <View>
-      <Text>{title}</Text>
-      <TouchableOpacity onPress={onClose}><Text>Close</Text></TouchableOpacity>
-      {children}
-    </View>
-  ) : null,
-  AppModalFooter: ({ primaryLabel, onPrimary, secondaryLabel, onSecondary, isPrimaryLoading }: AppModalFooterProps) => (
-    <View>
-      <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}><Text>{primaryLabel}</Text></TouchableOpacity>
-      <TouchableOpacity onPress={onSecondary}><Text>{secondaryLabel}</Text></TouchableOpacity>
-    </View>
-  ),
-  FormField: ({ children, label, required }: FormFieldProps) => (<View><Text>{label}{required ? "*" : ""}</Text>{children}</View>),
-  ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (<TextInput value={value} placeholder={placeholder} keyboardType={keyboardType as "default" | "numeric" | "email-address" | "phone-pad"} multiline={multiline} onChangeText={onChangeText} />),
-}));
+jest.mock("~/components/common/ui", () => {
+  const { View, Text, TouchableOpacity, TextInput } = jest.requireActual("react-native");
+  return {
+    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => visible ? (
+      <View>
+        <Text>{title}</Text>
+        <TouchableOpacity onPress={onClose}><Text>Close</Text></TouchableOpacity>
+        {children}
+      </View>
+    ) : null,
+    AppModalFooter: ({ primaryLabel, onPrimary, secondaryLabel, onSecondary, isPrimaryLoading }: AppModalFooterProps) => (
+      <View>
+        <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}><Text>{primaryLabel}</Text></TouchableOpacity>
+        <TouchableOpacity onPress={onSecondary}><Text>{secondaryLabel}</Text></TouchableOpacity>
+      </View>
+    ),
+    FormField: ({ children, label, required }: FormFieldProps) => (<View><Text>{label}{required ? "*" : ""}</Text>{children}</View>),
+    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (<TextInput value={value} placeholder={placeholder} keyboardType={keyboardType as "default" | "numeric" | "email-address" | "phone-pad"} multiline={multiline} onChangeText={onChangeText} />),
+  };
+});
 
 describe("EditChallengeModal", () => {
   const mockChallenge = { id: "challenge-1", tripId: "trip-1", title: "Test Challenge", description: "Test description", points: 100, icon: "star", category: "standard" as const, status: "draft" as const, createdAt: new Date(), updatedAt: new Date() };

@@ -27,8 +27,12 @@ interface DownloadState {
   abort: jest.Mock<void, []>;
 }
 
-const mockedUseFileDownload = jest.mocked(useFileDownload);
-const mockedUseVideoPlayer = jest.fn<VideoPlayerMock, [unknown, (player: VideoPlayerMock) => void]>(() => ({
+const mockReact = React;
+const mockText = Text;
+const mockView = View;
+
+const mockUseFileDownload = jest.fn();
+const mockUseVideoPlayer = jest.fn<VideoPlayerMock, [unknown, (player: VideoPlayerMock) => void]>(() => ({
   play: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
   pause: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
   muted: false,
@@ -36,21 +40,21 @@ const mockedUseVideoPlayer = jest.fn<VideoPlayerMock, [unknown, (player: VideoPl
 }));
 
 jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: IconProps) => <Text>{name}</Text>,
+  Ionicons: ({ name }: IconProps) => mockReact.createElement(mockText, null, name),
 }));
 
 jest.mock("expo-image", () => ({
-  Image: ({ source }: ImageProps) => <Text testID="image">{source.uri}</Text>,
+  Image: ({ source }: ImageProps) => mockReact.createElement(mockText, { testID: "image" }, source.uri),
 }));
 
 jest.mock("expo-video", () => ({
-  VideoView: () => <View testID="video-view" />,
-  useVideoPlayer: mockedUseVideoPlayer,
+  VideoView: () => mockReact.createElement(mockView, { testID: "video-view" }),
+  useVideoPlayer: (...args: unknown[]) => mockUseVideoPlayer(...args),
 }));
 
 jest.mock("~/hooks/files", () => ({
   __esModule: true,
-  useFileDownload: jest.fn(),
+  useFileDownload: (...args: unknown[]) => mockUseFileDownload(...args),
 }));
 
 const createState = (status: string, file: { uri: string } | null): DownloadState => ({
@@ -69,10 +73,17 @@ const mockSubmissionWithVideo = { id: "sub-4", imageIds: [], videoId: "video-1.m
 describe("SubmissionAssetPreview", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseFileDownload.mockReturnValue(createState("idle", null));
+    mockUseVideoPlayer.mockReturnValue({
+      play: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
+      pause: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
+      muted: false,
+      loop: false,
+    });
   });
 
   it("should render nothing when no assets exist", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("idle", null));
 
     const { queryByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionNoAssets} />);
     expect(queryByText("Image unavailable")).toBeNull();
@@ -80,21 +91,21 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should render image loading state", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("loading", null)).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("loading", null)).mockReturnValueOnce(createState("idle", null));
 
     const { UNSAFE_getByType } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
     expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
   it("should render image when file is available", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
 
     const { getAllByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
     expect(getAllByTestId("image").length).toBeGreaterThan(0);
   });
 
   it("should render image unavailable state", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("error", null)).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("error", null)).mockReturnValueOnce(createState("idle", null));
 
     const { getAllByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
     expect(getAllByText("Image unavailable").length).toBeGreaterThan(0);
@@ -102,7 +113,7 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should render image count badge for multiple images", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
 
     const { getByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithMultipleImages} />);
     expect(getByText("3")).toBeTruthy();
@@ -110,28 +121,28 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should not render badge for single image", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
 
     const { queryByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
     expect(queryByText("images")).toBeNull();
   });
 
   it("should render video player when video is available", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("success", { uri: "file://downloaded-video.mp4" }));
+    mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("success", { uri: "file://downloaded-video.mp4" }));
 
     const { getByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithVideo} />);
     expect(getByTestId("video-view")).toBeTruthy();
   });
 
   it("should render video loading state", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("loading", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("loading", null));
 
     const { UNSAFE_getByType } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithVideo} />);
     expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
   it("should render video placeholder when no video file", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("idle", null));
 
     const { getByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithVideo} />);
     expect(getByText("Video submission")).toBeTruthy();
@@ -139,7 +150,7 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should open fullscreen image when image is pressed", () => {
-    mockedUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
 
     const { getAllByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
     const pressable = getAllByTestId("image")[0]?.parent;

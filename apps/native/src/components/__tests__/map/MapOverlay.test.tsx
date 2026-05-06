@@ -3,11 +3,14 @@ import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapOverlay } from "../../map/overlays/MapOverlay";
 
-jest.mock("expo-linear-gradient", () => ({
-  LinearGradient: function MockLinearGradient({ children }: { children: React.ReactNode; colors: string[] }) {
-    return <View testID="linear-gradient">{children}</View>;
-  },
-}));
+jest.mock("expo-linear-gradient", () => {
+  const { createElement } = jest.requireActual("react");
+  return {
+    LinearGradient: function MockLinearGradient({ children }: { children: React.ReactNode; colors: string[] }) {
+      return createElement("View", { testID: "linear-gradient" }, children);
+    },
+  };
+});
 
 describe("MapOverlay", () => {
   const defaultProps = {

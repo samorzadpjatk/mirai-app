@@ -68,12 +68,17 @@ const mockAlert = jest.fn((title: string, message: string, buttons: AlertButton[
   }
 });
 
-jest.mock("react-native", () => ({
-  TouchableOpacity: jest.fn(),
-  Alert: {
-    alert: mockAlert,
-  },
-}));
+jest.mock("react-native", () => {
+  const actual = jest.requireActual("react-native") as typeof import("react-native");
+  return {
+    ...actual,
+    Alert: {
+      alert: (title: string, message: string, buttons: AlertButton[]) => {
+        mockAlert(title, message, buttons);
+      },
+    },
+  };
+});
 
 jest.mock("~/utils/format", () => ({
   formatRelativeTime: () => "2 hours ago",
@@ -102,7 +107,9 @@ const mockSchedule = {
 
 describe("NotificationScheduleCard", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockMutateDelete.mockClear();
+    mockMutateToggle.mockClear();
+    mockAlert.mockClear();
   });
 
   it("should render schedule name", () => {

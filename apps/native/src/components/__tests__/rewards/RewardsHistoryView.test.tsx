@@ -64,10 +64,9 @@ jest.mock("~/hooks/rewards", () => ({
   useUpdateMyRewardPurchaseStatus: () => mockUseUpdateMyRewardPurchaseStatus(),
 }));
 
-import { View } from "react-native";
-
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
+    const { View } = jest.requireActual("react-native");
     return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
   },
 }));

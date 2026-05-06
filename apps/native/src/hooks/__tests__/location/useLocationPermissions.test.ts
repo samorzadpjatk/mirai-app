@@ -372,10 +372,12 @@ describe("useLocationPermissions", () => {
 
     const initialState = result.current.isLocationSharingEnabled;
 
-    await act(async () => {
-      await result.current.toggleLocationSharing(true);
+    // Fire toggle without awaiting - it should hang since mock never resolves
+    act(() => {
+      result.current.toggleLocationSharing(true);
     });
 
+    // State should not have changed while waiting for server
     expect(result.current.isLocationSharingEnabled).toBe(initialState);
   });
 });

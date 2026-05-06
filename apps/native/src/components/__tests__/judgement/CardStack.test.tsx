@@ -3,6 +3,10 @@ import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CardStack } from "../../judgement/CardStack";
 
+// Mock variables for jest.mock factories (must be prefixed with "mock")
+const mockReact = React;
+const mockView = View;
+
 jest.mock("~/stores/judgement", () => ({
   useJudgement: jest.fn().mockReturnValue({
     currentSubmission: null,
@@ -60,19 +64,19 @@ jest.mock("@expo/vector-icons", () => ({
 }));
 
 jest.mock("~/components/judgement/QueuedSubmissionCard", () => ({
-  QueuedSubmissionCard: () => <View testID="queued-card" />,
+  QueuedSubmissionCard: () => <mockView testID="queued-card" />,
 }));
 
 jest.mock("~/components/judgement/CurrentSubmissionCard", () => ({
-  CurrentSubmissionCard: () => <View testID="current-card" />,
+  CurrentSubmissionCard: () => <mockView testID="current-card" />,
 }));
 
 jest.mock("~/components/judgement/EmptyStateCard", () => ({
-  EmptyStateCard: () => <View testID="empty-card" />,
+  EmptyStateCard: () => <mockView testID="empty-card" />,
 }));
 
 jest.mock("~/components/judgement/ActionBar", () => ({
-  ActionBar: () => <View testID="action-bar" />,
+  ActionBar: () => <mockView testID="action-bar" />,
 }));
 
 describe("CardStack", () => {

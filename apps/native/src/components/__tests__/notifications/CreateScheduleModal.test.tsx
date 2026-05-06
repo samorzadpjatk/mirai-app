@@ -143,57 +143,60 @@ jest.mock("@tanstack/react-query", () => {
   };
 });
 
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title }: AppModalShellProps) =>
-    !visible ? null : (
-      <View testID="modal-shell">
-        <Text testID="modal-title">{title}</Text>
+jest.mock("~/components/common/ui", () => {
+  const { View, Text, TouchableOpacity, TextInput } = jest.requireActual("react-native");
+  return {
+    AppModalShell: ({ children, visible, title }: AppModalShellProps) =>
+      !visible ? null : (
+        <View testID="modal-shell">
+          <Text testID="modal-title">{title}</Text>
+          {children}
+        </View>
+      ),
+    AppModalFooter: ({
+      primaryLabel,
+      onPrimary,
+      isPrimaryLoading,
+      isPrimaryDisabled,
+      secondaryLabel,
+      onSecondary,
+    }: AppModalFooterProps) => (
+      <View testID="modal-footer">
+        <TouchableOpacity testID="primary-button" onPress={onPrimary} disabled={isPrimaryDisabled}>
+          <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
+          <Text>{secondaryLabel}</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    FormField: ({ children, label, required, style }: FormFieldProps) => (
+      <View testID="form-field" style={style}>
+        <Text testID="field-label">{`${label}${required ? " *" : ""}`}</Text>
         {children}
       </View>
     ),
-  AppModalFooter: ({
-    primaryLabel,
-    onPrimary,
-    isPrimaryLoading,
-    isPrimaryDisabled,
-    secondaryLabel,
-    onSecondary,
-  }: AppModalFooterProps) => (
-    <View testID="modal-footer">
-      <TouchableOpacity testID="primary-button" onPress={onPrimary} disabled={isPrimaryDisabled}>
-        <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
+    ThemedTextInput: ({ placeholder, value, onChangeText, keyboardType }: ThemedTextInputProps) => (
+      <TextInput
+        testID="text-input"
+        placeholder={placeholder}
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+      />
+    ),
+    SegmentedOption: ({ label, selected, onPress, style }: SegmentedOptionProps) => (
+      <TouchableOpacity
+        testID={`segment-${label}`}
+        onPress={onPress}
+        data-selected={selected}
+        style={style}
+      >
+        <Text>{label}</Text>
       </TouchableOpacity>
-      <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
-        <Text>{secondaryLabel}</Text>
-      </TouchableOpacity>
-    </View>
-  ),
-  FormField: ({ children, label, required, style }: FormFieldProps) => (
-    <View testID="form-field" style={style}>
-      <Text testID="field-label">{`${label}${required ? " *" : ""}`}</Text>
-      {children}
-    </View>
-  ),
-  ThemedTextInput: ({ placeholder, value, onChangeText, keyboardType }: ThemedTextInputProps) => (
-    <TextInput
-      testID="text-input"
-      placeholder={placeholder}
-      value={value}
-      onChangeText={onChangeText}
-      keyboardType={keyboardType}
-    />
-  ),
-  SegmentedOption: ({ label, selected, onPress, style }: SegmentedOptionProps) => (
-    <TouchableOpacity
-      testID={`segment-${label}`}
-      onPress={onPress}
-      data-selected={selected}
-      style={style}
-    >
-      <Text>{label}</Text>
-    </TouchableOpacity>
-  ),
-}));
+    ),
+  };
+});
 
 describe("CreateScheduleModal", () => {
   beforeEach(() => {

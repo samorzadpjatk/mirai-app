@@ -1,5 +1,5 @@
 import React from "react";
-import { Text } from "react-native";
+import { Text as mockText } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TripBanner } from "../../trips/TripBanner";
 
@@ -11,7 +11,7 @@ jest.mock("~/stores/tripStore", () => ({
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: function MockIonicons({ name }: { name: string; size: number; color: string }) {
-    return <Text testID={`icon-${name}`}>{name}</Text>;
+    return <mockText testID={`icon-${name}`}>{name}</mockText>;
   },
 }));
 

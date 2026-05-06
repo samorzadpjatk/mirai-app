@@ -1,6 +1,6 @@
 import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Text as MockText, View as MockView, type StyleProp, type ViewStyle } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { UsersListPanel } from "../../map/panels/UsersListPanel";
 
@@ -46,9 +46,9 @@ interface UserAvatarProps {
 
 jest.mock("~/components/map/ui/UserAvatar", () => ({
   UserAvatar: ({ name, size }: UserAvatarProps) => (
-    <View testID="user-avatar" style={{ width: size, height: size }}>
-      <Text>{name.charAt(0)}</Text>
-    </View>
+    <MockView testID="user-avatar" style={{ width: size, height: size }}>
+      <MockText>{name.charAt(0)}</MockText>
+    </MockView>
   ),
 }));
 
@@ -65,9 +65,9 @@ jest.mock("react-native-reanimated", () => ({
   __esModule: true,
   default: {
     View: ({ children, style }: MockAnimatedViewProps) => (
-      <View testID="animated-view" style={style}>
+      <MockView testID="animated-view" style={style}>
         {children}
-      </View>
+      </MockView>
     ),
   },
 }));
@@ -80,7 +80,7 @@ interface MockIoniconsProps {
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: ({ name, size, color }: MockIoniconsProps) => (
-    <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />
+    <MockView testID={`icon-${name}`} style={{ width: size, height: size, color }} />
   ),
 }));
 

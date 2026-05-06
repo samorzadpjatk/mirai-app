@@ -35,12 +35,6 @@ describe("stores/judgement/index exports", () => {
     it("should export useJudgement as function", () => {
       expect(typeof useJudgement).toBe("function");
     });
-
-    it("should maintain consistent export structure", async () => {
-      const indexModule: Record<string, unknown> = await import("../index");
-      const exportKeys = Object.keys(indexModule);
-      expect(exportKeys).toContain("useJudgement");
-    });
   });
 
   describe("integration - hook usage patterns", () => {

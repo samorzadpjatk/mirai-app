@@ -8,9 +8,13 @@ interface IoniconsProps {
   name: string;
 }
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: IoniconsProps) => React.createElement(Text, null, name),
-}));
+jest.mock("@expo/vector-icons", () => {
+  const React = jest.requireActual("react");
+  const { Text } = jest.requireActual("react-native");
+  return {
+    Ionicons: ({ name }: IoniconsProps) => React.createElement(Text, null, name),
+  };
+});
 
 describe("GroupsSearchBar", () => {
   const mockOnChangeText = jest.fn();

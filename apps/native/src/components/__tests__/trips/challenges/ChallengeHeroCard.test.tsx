@@ -16,7 +16,7 @@ jest.mock("react-native", () => {
   const actual: typeof ReactNative = jest.requireActual("react-native");
 
   function ImageBackgroundMock({ children }: ImageBackgroundMockProps) {
-    return <View>{children}</View>;
+    return <actual.View>{children}</actual.View>;
   }
 
   return {
@@ -25,10 +25,13 @@ jest.mock("react-native", () => {
   };
 });
 
-jest.mock("expo-linear-gradient", () => ({
-  __esModule: true,
-  LinearGradient: ({ children }: LinearGradientMockProps) => <View>{children}</View>,
-}));
+jest.mock("expo-linear-gradient", () => {
+  const { View } = jest.requireActual("react-native");
+  return {
+    __esModule: true,
+    LinearGradient: ({ children }: LinearGradientMockProps) => <View>{children}</View>,
+  };
+});
 
 describe("ChallengeHeroCard", () => {
   const baseProps = {

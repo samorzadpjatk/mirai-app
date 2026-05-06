@@ -229,64 +229,70 @@ interface ThemedTextInputProps {
   editable?: boolean;
 }
 
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: function MockAppModalShell(props: AppModalShellProps) {
-    if (!props.visible) return null;
-    return React.createElement(
-      View,
-      { testID: "modal-shell" },
-      React.createElement(Text, { testID: "modal-title" }, props.title),
-      props.children
-    );
-  },
-  AppModalFooter: function MockAppModalFooter(props: AppModalFooterProps) {
-    return React.createElement(
-      View,
-      { testID: "modal-footer" },
-      React.createElement(
-        TouchableOpacity,
-        {
-          testID: "primary-button",
-          onPress: props.onPrimary,
-          disabled: props.isPrimaryDisabled,
-        },
-        React.createElement(
-          Text,
-          null,
-          props.isPrimaryLoading ? "Loading..." : props.primaryLabel
+jest.mock("~/components/common/ui", () => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const mockReact = jest.requireActual<typeof import("react")>("react");
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const mockRN = jest.requireActual<typeof import("react-native")>("react-native");
+  return {
+    AppModalShell: function MockAppModalShell(props: AppModalShellProps) {
+      if (!props.visible) return null;
+      return mockReact.createElement(
+        mockRN.View,
+        { testID: "modal-shell" },
+        mockReact.createElement(mockRN.Text, { testID: "modal-title" }, props.title),
+        props.children
+      );
+    },
+    AppModalFooter: function MockAppModalFooter(props: AppModalFooterProps) {
+      return mockReact.createElement(
+        mockRN.View,
+        { testID: "modal-footer" },
+        mockReact.createElement(
+          mockRN.TouchableOpacity,
+          {
+            testID: "primary-button",
+            onPress: props.onPrimary,
+            disabled: props.isPrimaryDisabled,
+          },
+          mockReact.createElement(
+            mockRN.Text,
+            null,
+            props.isPrimaryLoading ? "Loading..." : props.primaryLabel
+          )
+        ),
+        mockReact.createElement(
+          mockRN.TouchableOpacity,
+          { testID: "secondary-button", onPress: props.onSecondary },
+          mockReact.createElement(mockRN.Text, null, props.secondaryLabel)
         )
-      ),
-      React.createElement(
-        TouchableOpacity,
-        { testID: "secondary-button", onPress: props.onSecondary },
-        React.createElement(Text, null, props.secondaryLabel)
-      )
-    );
-  },
-  FormField: function MockFormField(props: FormFieldProps) {
-    return React.createElement(
-      View,
-      { testID: "form-field", style: props.style },
-      React.createElement(
-        Text,
-        { testID: "field-label" },
-        `${props.label}${props.required ? " *" : ""}`
-      ),
-      props.children
-    );
-  },
-  ThemedTextInput: function MockThemedTextInput(props: ThemedTextInputProps) {
-    return React.createElement(TextInput, {
-      testID: "text-input",
-      placeholder: props.placeholder,
-      value: props.value,
-      onChangeText: props.onChangeText,
-      keyboardType: props.keyboardType,
-      multiline: props.multiline,
-      editable: props.editable,
-    });
-  },
-}));
+      );
+    },
+    FormField: function MockFormField(props: FormFieldProps) {
+      return mockReact.createElement(
+        mockRN.View,
+        { testID: "form-field", style: props.style },
+        mockReact.createElement(
+          mockRN.Text,
+          { testID: "field-label" },
+          `${props.label}${props.required ? " *" : ""}`
+        ),
+        props.children
+      );
+    },
+    ThemedTextInput: function MockThemedTextInput(props: ThemedTextInputProps) {
+      return mockReact.createElement(mockRN.TextInput, {
+        testID: "text-input",
+        placeholder: props.placeholder,
+        value: props.value,
+        onChangeText: props.onChangeText,
+        keyboardType: props.keyboardType,
+        multiline: props.multiline,
+        editable: props.editable,
+      });
+    },
+  };
+});
 
 describe("AdminRewardDetailModal", () => {
   beforeEach(() => {

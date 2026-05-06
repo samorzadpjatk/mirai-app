@@ -1,9 +1,9 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { LocationObject } from "expo-location";
 
-// Dynamic import helper for the module under test
-async function loadBackgroundLocationTask(): Promise<unknown> {
-  return import("~/services/background/backgroundLocationTask");
+// Require helper for the module under test (using require for Jest compatibility)
+function loadBackgroundLocationTask(): unknown {
+  return require("~/services/background/backgroundLocationTask");
 }
 
 const mockDefineTask = jest.fn();
@@ -71,7 +71,7 @@ describe("Background Location Task", () => {
       jest.resetModules();
       mockDefineTask.mockClear();
 
-      void loadBackgroundLocationTask();
+      loadBackgroundLocationTask();
 
       expect(mockDefineTask).toHaveBeenCalledWith(
         "integral.background-location-updates",
@@ -90,7 +90,7 @@ describe("Background Location Task", () => {
       jest.resetModules();
       mockDefineTask.mockClear();
 
-      void loadBackgroundLocationTask();
+      loadBackgroundLocationTask();
 
       const calls = mockDefineTask.mock.calls;
       expect(calls.length).toBeGreaterThan(0);
@@ -625,7 +625,7 @@ describe("Background Location Task", () => {
 
       // Load the module again - should not throw
       expect(() => {
-        void loadBackgroundLocationTask();
+        loadBackgroundLocationTask();
       }).not.toThrow();
 
       // Should not log error for "already defined" case
@@ -648,7 +648,7 @@ describe("Background Location Task", () => {
 
       // Load the module again - should not throw but should log
       expect(() => {
-        void loadBackgroundLocationTask();
+        loadBackgroundLocationTask();
       }).not.toThrow();
 
       // Should log the error
@@ -673,7 +673,7 @@ describe("Background Location Task", () => {
 
       // Load the module again - should not throw but should log
       expect(() => {
-        void loadBackgroundLocationTask();
+        loadBackgroundLocationTask();
       }).not.toThrow();
 
       // Should log the error since it's not an Error instance with "already defined"

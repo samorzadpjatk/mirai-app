@@ -7,19 +7,14 @@ import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import AdminRewardsModal from "../../../admin/rewards/AdminRewardsModal";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 
-const mockMutateAsync: jest.MockedFunction<() => Promise<unknown>> = jest.fn();
-const uploadedArgs: UploadArgs[] = [];
-const mockUpload: jest.MockedFunction<(args: UploadArgs) => Promise<unknown>> = jest.fn((args) => {
-  uploadedArgs.push(args);
-  return Promise.resolve({});
-});
-const mockOnClose = jest.fn();
-
 interface UploadArgs {
   storagePath: string;
   fileUri: string;
   contentType: string;
 }
+
+const uploadedArgs: UploadArgs[] = [];
+const mockOnClose = jest.fn();
 
 jest.mock("react-native", () => {
   const actual: typeof ReactNative = jest.requireActual("react-native");
@@ -32,20 +27,27 @@ jest.mock("react-native", () => {
   };
 });
 
-jest.mock("~/hooks/rewards", () => ({
-  useCreateReward: () => ({
-    mutateAsync: mockMutateAsync,
-    isPending: false,
-  }),
-}));
+const mockMutateAsync = jest.fn();
+const mockUpload = jest.fn();
 
-jest.mock("~/hooks/files", () => ({
-  useFileUpload: () => ({
-    upload: mockUpload,
-    status: "idle",
-    progress: { percent: null, bytesUploaded: 0, bytesTotal: null },
-  }),
-}));
+jest.mock("~/hooks/rewards", () => {
+  return {
+    useCreateReward: () => ({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    }),
+  };
+});
+
+jest.mock("~/hooks/files", () => {
+  return {
+    useFileUpload: () => ({
+      upload: mockUpload,
+      status: "idle",
+      progress: { percent: null, bytesUploaded: 0, bytesTotal: null },
+    }),
+  };
+});
 
 jest.mock("~/utils/image", () => ({
   getImageExtension: () => "jpg",
@@ -93,66 +95,80 @@ interface LocationPickerProps {
 
 const mockLaunchImageLibraryAsync = jest.mocked(ImagePicker.launchImageLibraryAsync);
 
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
-    !visible ? null : (
-      <View testID="modal-shell">
-        <Text testID="modal-title">{title}</Text>
-        <TouchableOpacity testID="close-button" onPress={onClose}>
-          <Text>Close</Text>
+jest.mock("~/components/common/ui", () => {
+  const React = require("react");
+  const { View, Text, TouchableOpacity, TextInput } = require("react-native");
+
+  return {
+    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
+      !visible ? null : (
+        <View testID="modal-shell">
+          <Text testID="modal-title">{title}</Text>
+          <TouchableOpacity testID="close-button" onPress={onClose}>
+            <Text>Close</Text>
+          </TouchableOpacity>
+          {children}
+        </View>
+      ),
+    AppModalFooter: ({ primaryLabel, onPrimary, isPrimaryLoading, secondaryLabel, onSecondary }: AppModalFooterProps) => (
+      <View testID="modal-footer">
+        <TouchableOpacity testID="primary-button" onPress={onPrimary}>
+          <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
         </TouchableOpacity>
+        <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
+          <Text>{secondaryLabel}</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    FormField: ({ children, label, required }: FormFieldProps) => (
+      <View testID="form-field">
+        <Text testID="field-label">{`${label}${required ? " *" : ""}`}</Text>
         {children}
       </View>
     ),
-  AppModalFooter: ({ primaryLabel, onPrimary, isPrimaryLoading, secondaryLabel, onSecondary }: AppModalFooterProps) => (
-    <View testID="modal-footer">
-      <TouchableOpacity testID="primary-button" onPress={onPrimary}>
-        <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
-        <Text>{secondaryLabel}</Text>
-      </TouchableOpacity>
-    </View>
-  ),
-  FormField: ({ children, label, required }: FormFieldProps) => (
-    <View testID="form-field">
-      <Text testID="field-label">{`${label}${required ? " *" : ""}`}</Text>
-      {children}
-    </View>
-  ),
-  ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (
-    <TextInput
-      testID="text-input"
-      placeholder={placeholder}
-      value={value}
-      onChangeText={onChangeText}
-      keyboardType={keyboardType}
-      multiline={multiline}
-    />
-  ),
-}));
-
-jest.mock("../../map/LocationPicker", () => ({
-  LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) =>
-    !visible ? null : (
-      <View>
-        <TouchableOpacity
-          onPress={() => onLocationSelected({ latitude: 52.2297, longitude: 21.0122 })}
-        >
-          <Text>Select Location</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onClose}>
-          <Text>Close Location Picker</Text>
-        </TouchableOpacity>
-      </View>
+    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (
+      <TextInput
+        testID="text-input"
+        placeholder={placeholder}
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        multiline={multiline}
+      />
     ),
-}));
+  };
+});
+
+jest.mock("~/components/map/LocationPicker", () => {
+  const React = require("react");
+  const { View, Text, TouchableOpacity } = require("react-native");
+
+  return {
+    LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) =>
+      !visible ? null : (
+        <View>
+          <TouchableOpacity
+            onPress={() => onLocationSelected({ latitude: 52.2297, longitude: 21.0122 })}
+          >
+            <Text>Select Location</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onClose}>
+            <Text>Close Location Picker</Text>
+          </TouchableOpacity>
+        </View>
+      ),
+  };
+});
 
 describe("AdminRewardsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    uploadedArgs.length = 0;
     mockMutateAsync.mockResolvedValue({});
-    mockUpload.mockResolvedValue({});
+    mockUpload.mockImplementation((args: UploadArgs) => {
+      uploadedArgs.push(args);
+      return Promise.resolve({});
+    });
   });
 
   const defaultProps = {

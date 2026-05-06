@@ -1,12 +1,11 @@
 import React from "react";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { JudgementHeader } from "../../judgement/JudgementHeader";
+import { useJudgement } from "~/stores/judgement";
 
-jest.mock("~/stores/judgement", () => ({
-  useJudgement: jest.fn(),
-}));
+jest.mock("~/stores/judgement");
 
-const mockUseJudgement = jest.fn();
+const mockUseJudgement = useJudgement as jest.MockedFunction<typeof useJudgement>;
 
 describe("JudgementHeader", () => {
   const defaultProps = { tripId: "trip-1", challengeId: "challenge-1" };

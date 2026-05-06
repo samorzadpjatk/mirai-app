@@ -1,6 +1,5 @@
 import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { Pressable, Text, TextInput, View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateGroupModal, EditGroupModal, DeleteGroupModal, AssignOrganizerModal } from "../../admin/groups/GroupModals";
 import type { Group, User } from "~/hooks/admin/useAdminGroups";
@@ -20,24 +19,27 @@ interface AdminModalButtonProps {
   loading?: boolean;
 }
 
-jest.mock("~/components/admin/AdminModal", () => ({
-  AdminModal: ({ children, visible, title, onClose, actions }: AdminModalProps) =>
-    !visible ? null : (
-      <View>
-        <Text>{title}</Text>
-        <Pressable onPress={onClose}>
-          <Text>Close</Text>
-        </Pressable>
-        {children}
-        {actions}
-      </View>
+jest.mock("~/components/admin/AdminModal", () => {
+  const { View, Text, Pressable } = jest.requireActual("react-native");
+  return {
+    AdminModal: ({ children, visible, title, onClose, actions }: AdminModalProps) =>
+      !visible ? null : (
+        <View>
+          <Text>{title}</Text>
+          <Pressable onPress={onClose}>
+            <Text>Close</Text>
+          </Pressable>
+          {children}
+          {actions}
+        </View>
+      ),
+    AdminModalButton: ({ title, onPress, disabled, loading }: AdminModalButtonProps) => (
+      <Pressable onPress={onPress} disabled={(disabled ?? false) || (loading ?? false)}>
+        <Text>{loading ? "Loading..." : title}</Text>
+      </Pressable>
     ),
-  AdminModalButton: ({ title, onPress, disabled, loading }: AdminModalButtonProps) => (
-    <Pressable onPress={onPress} disabled={(disabled ?? false) || (loading ?? false)}>
-      <Text>{loading ? "Loading..." : title}</Text>
-    </Pressable>
-  ),
-}));
+  };
+});
 
 interface FormFieldProps {
   children: React.ReactNode;
@@ -51,17 +53,20 @@ interface ThemedTextInputProps {
   placeholder: string;
 }
 
-jest.mock("~/components/common/ui", () => ({
-  FormField: ({ children, label, required }: FormFieldProps) => (
-    <View>
-      <Text>{`${label}${required ? "*" : ""}`}</Text>
-      {children}
-    </View>
-  ),
-  ThemedTextInput: ({ value, onChangeText, placeholder }: ThemedTextInputProps) => (
-    <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} />
-  ),
-}));
+jest.mock("~/components/common/ui", () => {
+  const { View, Text, TextInput } = jest.requireActual("react-native");
+  return {
+    FormField: ({ children, label, required }: FormFieldProps) => (
+      <View>
+        <Text>{`${label}${required ? "*" : ""}`}</Text>
+        {children}
+      </View>
+    ),
+    ThemedTextInput: ({ value, onChangeText, placeholder }: ThemedTextInputProps) => (
+      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} />
+    ),
+  };
+});
 
 const group: Group = {
   id: "group-1",

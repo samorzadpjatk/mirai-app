@@ -49,6 +49,7 @@ jest.mock("~/hooks/files", () => ({
 
 jest.mock("expo-image", () => ({
   Image: function MockImage(props: { source: { uri: string }; style: Record<string, unknown> }) {
+    const { View } = require("react-native");
     return (
       <View
         testID="profile-image"

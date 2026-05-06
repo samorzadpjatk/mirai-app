@@ -26,11 +26,14 @@ jest.mock("@tanstack/react-query", () => ({
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
-  },
-}));
+jest.mock("@expo/vector-icons", () => {
+  const { View } = require("react-native");
+  return {
+    Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
+      return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
+    },
+  };
+});
 
 describe("AccountInfoSection", () => {
   beforeEach(() => {
