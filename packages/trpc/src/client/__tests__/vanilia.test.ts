@@ -1,31 +1,40 @@
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { noop } from "@mirai-app/shared/test-utils";
 
 // Set up console spy BEFORE importing the module under test
-const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+const consoleSpy = vi.spyOn(console, "log").mockImplementation(noop);
 
 // Mock the @trpc/client module
 vi.mock("@trpc/client", () => ({
+   
   createTRPCClient: vi.fn(() => ({
     query: vi.fn(),
     mutation: vi.fn(),
     subscription: vi.fn(),
   })),
   createWSClient: vi.fn(() => ({
+     
     close: vi.fn().mockResolvedValue(undefined),
   })),
+   
   httpLink: vi.fn(() => ({ type: "httpLink" })),
+   
   wsLink: vi.fn(() => ({ type: "wsLink" })),
+   
   retryLink: vi.fn(() => ({ type: "retryLink" })),
-  splitLink: vi.fn(({ true: trueLink, false: falseLink }) => ({
+   
+  splitLink: vi.fn(({ true: trueLink, false: falseLink }: { true: unknown; false: unknown }) => ({
     type: "splitLink",
     trueLink,
     falseLink,
   })),
 }));
 
-// Import mocked functions for assertions
+// Import mocked functions for assertions - createTRPCClient not used directly in tests
 import {
-  createTRPCClient,
   createWSClient,
   httpLink,
   wsLink,
@@ -36,8 +45,10 @@ import {
 // Mock SuperJSON
 vi.mock("superjson", () => ({
   default: {
-    serialize: vi.fn((data) => data),
-    deserialize: vi.fn((data) => data),
+     
+    serialize: vi.fn(<T,>(data: T): T => data),
+     
+    deserialize: vi.fn(<T,>(data: T): T => data),
   },
 }));
 
@@ -46,11 +57,14 @@ import { getTRPCClient } from "../vanilia";
 
 describe("getTRPCClient", () => {
   beforeEach(() => {
+     
     vi.clearAllMocks();
+     
     consoleSpy.mockClear();
   });
 
   afterEach(() => {
+     
     consoleSpy.mockClear();
   });
 
@@ -72,6 +86,7 @@ describe("getTRPCClient", () => {
     const result = getTRPCClient(httpUrl, wsUrl);
 
     expect(result.client).toBeDefined();
+     
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Creating WebSocket client with token:",
       "NO"
@@ -86,12 +101,15 @@ describe("getTRPCClient", () => {
     const result = getTRPCClient(httpUrl, wsUrl, token);
 
     expect(result.client).toBeDefined();
+     
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Creating WebSocket client with token:",
       "YES"
     );
+     
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Token preview:",
+       
       expect.stringContaining("...")
     );
   });
@@ -103,6 +121,7 @@ describe("getTRPCClient", () => {
 
     getTRPCClient(httpUrl, wsUrl, token);
 
+     
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Token preview:",
       "test-auth-token-1234..."
@@ -145,6 +164,7 @@ describe("getTRPCClient", () => {
     const result = getTRPCClient(httpUrl, wsUrl, longToken);
 
     expect(result.client).toBeDefined();
+     
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Token preview:",
       "a".repeat(20) + "..."
@@ -159,6 +179,7 @@ describe("getTRPCClient", () => {
     const result = getTRPCClient(httpUrl, wsUrl, emptyToken);
 
     expect(result.client).toBeDefined();
+     
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Creating WebSocket client with token:",
       "NO"
@@ -178,11 +199,14 @@ describe("getTRPCClient", () => {
 
 describe("WebSocket Client Creation", () => {
   beforeEach(() => {
+     
     vi.clearAllMocks();
+     
     consoleSpy.mockClear();
   });
 
   afterEach(() => {
+     
     consoleSpy.mockClear();
   });
 
@@ -193,6 +217,7 @@ describe("WebSocket Client Creation", () => {
 
     getTRPCClient(httpUrl, wsUrl, token);
 
+     
     expect(createWSClient).toHaveBeenCalled();
     const callArgs = vi.mocked(createWSClient).mock.calls[0]?.[0];
     expect(callArgs?.url).toContain("authorization=");
@@ -241,8 +266,9 @@ describe("Retry Link Configuration", () => {
 
     getTRPCClient(httpUrl, wsUrl);
 
+     
     expect(retryLink).toHaveBeenCalled();
-    
+
     const callArgs = vi.mocked(retryLink).mock.calls[0]?.[0];
     expect(callArgs).toHaveProperty("retry");
     expect(callArgs).toHaveProperty("retryDelayMs");
@@ -259,12 +285,12 @@ describe("Retry Link Configuration", () => {
     const callArgs = vi.mocked(retryLink).mock.calls[0]?.[0];
     const retryFn = callArgs?.retry;
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+
     const fetchError = { name: "FetchError", data: {}, cause: undefined, shape: null, meta: undefined, message: "Fetch error" } as const;
     const mockOp = { id: 1, type: "query" as const, input: undefined, path: "test", context: {}, signal: undefined };
-    expect(retryFn?.({ op: mockOp, attempts: 1, error: fetchError as never })).toBe(true);
-    expect(retryFn?.({ op: mockOp, attempts: 4, error: fetchError as never })).toBe(true);
-    expect(retryFn?.({ op: mockOp, attempts: 5, error: fetchError as never })).toBe(false);
+    expect(retryFn?.({ op: mockOp, attempts: 1, error: fetchError })).toBe(true);
+    expect(retryFn?.({ op: mockOp, attempts: 4, error: fetchError })).toBe(true);
+    expect(retryFn?.({ op: mockOp, attempts: 5, error: fetchError })).toBe(false);
   });
 
   it("should retry on 5xx server errors", () => {
@@ -277,17 +303,15 @@ describe("Retry Link Configuration", () => {
     const retryFn = callArgs?.retry;
 
     const mockOp = { id: 1, type: "query" as const, input: undefined, path: "test", context: {}, signal: undefined };
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const serverError = { data: { httpStatus: 500 }, cause: undefined, shape: null, meta: undefined, message: "Server error", name: "TRPCClientError" } as const;
-    expect(retryFn?.({ op: mockOp, attempts: 1, error: serverError as never })).toBe(true);
-    
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const serverError502 = { data: { httpStatus: 502 }, cause: undefined, shape: null, meta: undefined, message: "Server error", name: "TRPCClientError" } as const;
-    expect(retryFn?.({ op: mockOp, attempts: 2, error: serverError502 as never })).toBe(true);
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const serverError = { data: { httpStatus: 500 }, cause: undefined, shape: null, meta: undefined, message: "Server error", name: "TRPCClientError" } as const;
+    expect(retryFn?.({ op: mockOp, attempts: 1, error: serverError })).toBe(true);
+
+    const serverError502 = { data: { httpStatus: 502 }, cause: undefined, shape: null, meta: undefined, message: "Server error", name: "TRPCClientError" } as const;
+    expect(retryFn?.({ op: mockOp, attempts: 2, error: serverError502 })).toBe(true);
+
     const clientError = { data: { httpStatus: 400 }, cause: undefined, shape: null, meta: undefined, message: "Client error", name: "TRPCClientError" } as const;
-    expect(retryFn?.({ op: mockOp, attempts: 1, error: clientError as never })).toBe(false);
+    expect(retryFn?.({ op: mockOp, attempts: 1, error: clientError })).toBe(false);
   });
 
   it("should use exponential backoff with max 30 second delay", () => {
@@ -304,7 +328,7 @@ describe("Retry Link Configuration", () => {
     expect(retryDelayMsFn?.(2)).toBe(4000);
     expect(retryDelayMsFn?.(3)).toBe(8000);
     expect(retryDelayMsFn?.(4)).toBe(16000);
-    
+
     expect(retryDelayMsFn?.(5)).toBe(30000);
     expect(retryDelayMsFn?.(10)).toBe(30000);
   });
@@ -319,11 +343,11 @@ describe("Retry Link Configuration", () => {
     const retryFn = callArgs?.retry;
 
     const mockOp = { id: 1, type: "query" as const, input: undefined, path: "test", context: {}, signal: undefined };
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+
     const fetchError = { name: "FetchError", cause: undefined, shape: null, data: null, meta: undefined, message: "Fetch error" } as const;
-    
-    expect(retryFn?.({ op: mockOp, attempts: 5, error: fetchError as never })).toBe(false);
-    expect(retryFn?.({ op: mockOp, attempts: 6, error: fetchError as never })).toBe(false);
+
+    expect(retryFn?.({ op: mockOp, attempts: 5, error: fetchError })).toBe(false);
+    expect(retryFn?.({ op: mockOp, attempts: 6, error: fetchError })).toBe(false);
   });
 });
 
@@ -334,6 +358,7 @@ describe("Split Link Configuration", () => {
 
     getTRPCClient(httpUrl, wsUrl);
 
+     
     expect(splitLink).toHaveBeenCalled();
 
     const callArgs = vi.mocked(splitLink).mock.calls[0]?.[0];
@@ -351,11 +376,11 @@ describe("Split Link Configuration", () => {
     const callArgs = vi.mocked(splitLink).mock.calls[0]?.[0];
     const conditionFn = callArgs?.condition;
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+
     const subscriptionOp = { type: "subscription" } as { type: "subscription" };
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+
     const queryOp = { type: "query" } as { type: "query" };
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+
     const mutationOp = { type: "mutation" } as { type: "mutation" };
 
     expect(conditionFn?.(subscriptionOp as never)).toBe(true);
@@ -371,6 +396,7 @@ describe("HTTP Link Configuration", () => {
 
     getTRPCClient(httpUrl, wsUrl);
 
+     
     expect(httpLink).toHaveBeenCalled();
 
     const callArgs = vi.mocked(httpLink).mock.calls[0]?.[0];
@@ -423,6 +449,7 @@ describe("WebSocket Link Configuration", () => {
 
     getTRPCClient(httpUrl, wsUrl);
 
+     
     expect(wsLink).toHaveBeenCalled();
 
     const callArgs = vi.mocked(wsLink).mock.calls[0]?.[0];

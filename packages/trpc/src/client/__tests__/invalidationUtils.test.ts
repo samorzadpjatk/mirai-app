@@ -1,3 +1,6 @@
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   invalidateCascadingQueries,
@@ -16,9 +19,9 @@ import {
 } from "../invalidationUtils";
 import type { useQueryClient } from "@tanstack/react-query";
 
-type MockQueryClient = {
+interface MockQueryClient {
   invalidateQueries: ReturnType<typeof vi.fn>;
-};
+}
 
 const createMockQueryClient = (): MockQueryClient => ({
   invalidateQueries: vi.fn().mockResolvedValue(undefined),

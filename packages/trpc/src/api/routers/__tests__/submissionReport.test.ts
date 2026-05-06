@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { submissionReportRouter } from "../../routers/submissionReport";
 import { createCallerFactory } from "../../trpc";
@@ -5,11 +8,13 @@ import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { PrismaClient, User, TripParticipant, ChallengeSubmission, SubmissionReport } from "@mirai-app/db";
 import { TRPCError } from "@trpc/server";
+import * as authEmails from "../../../utils/authEmails";
+import * as tripGuards from "../../../utils/tripGuards";
 
 // Mock utility modules
 vi.mock("../../../utils/authEmails", () => ({
-  buildAuthEmailLookup: vi.fn().mockResolvedValue(new Map([["auth-user-1", "user@example.com"]])),
-  resolveAuthEmail: vi.fn((lookup: Map<string, string | null>, authUserId: string | null | undefined) => {
+  buildAuthEmailLookup: vi.fn(),
+  resolveAuthEmail: vi.fn((lookup: Map<string, string | null>, authUserId: string | null | undefined): string | null => {
     if (!authUserId) return null;
     return lookup.get(authUserId) ?? null;
   }),
@@ -29,12 +34,15 @@ describe("submissionReportRouter", () => {
   let mockParticipant: TripParticipant;
   let mockSubmission: ChallengeSubmission;
   let mockReport: SubmissionReport;
+  let mockBuildAuthEmailLookup: ReturnType<typeof vi.mocked<typeof authEmails.buildAuthEmailLookup>>;
+  let mockEnsureTripNotEnded: ReturnType<typeof vi.mocked<typeof tripGuards.ensureTripNotEnded>>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
 
-    const { ensureTripNotEnded } = await import("../../../utils/tripGuards");
-    ensureTripNotEnded.mockResolvedValue(undefined);
+    mockBuildAuthEmailLookup = vi.mocked(authEmails.buildAuthEmailLookup);
+    mockEnsureTripNotEnded = vi.mocked(tripGuards.ensureTripNotEnded);
+    mockEnsureTripNotEnded.mockResolvedValue(undefined);
 
     mockUser = {
       id: "user-db-id",
@@ -193,14 +201,13 @@ describe("submissionReportRouter", () => {
         delete: vi.fn().mockResolvedValue(mockUser),
         count: vi.fn().mockResolvedValue(1),
       },
-      $transaction: vi.fn((cb) => cb(mockDb)),
+      $transaction: vi.fn(<T>(cb: (db: typeof mockDb) => T): T => cb(mockDb)),
     } as unknown as PrismaClient;
   });
 
   describe("create (protectedProcedure)", () => {
     it("should create a submission report successfully", async () => {
-      const { buildAuthEmailLookup } = await import("../../../utils/authEmails");
-      buildAuthEmailLookup.mockResolvedValue(
+      mockBuildAuthEmailLookup.mockResolvedValue(
         new Map([["auth-user-1", "user@example.com"]])
       );
 
@@ -225,6 +232,7 @@ describe("submissionReportRouter", () => {
       expect(result.submissionId).toBe("submission-1");
       expect(result.reporter).toBeDefined();
       expect(result.reporter.user.email).toBe("user@example.com");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.submissionReport.create).toHaveBeenCalledWith({
         data: {
           submissionId: "submission-1",
@@ -232,6 +240,7 @@ describe("submissionReportRouter", () => {
           reason: "Inappropriate content",
           details: "This submission contains offensive material",
         },
+         
         select: expect.any(Object),
       });
     });
@@ -257,6 +266,7 @@ describe("submissionReportRouter", () => {
     });
 
     it("should throw FORBIDDEN when user is not a trip participant", async () => {
+       
       mockDb.tripParticipant.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
@@ -278,6 +288,7 @@ describe("submissionReportRouter", () => {
     });
 
     it("should throw NOT_FOUND when submission does not exist", async () => {
+       
       mockDb.challengeSubmission.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
@@ -299,8 +310,7 @@ describe("submissionReportRouter", () => {
     });
 
     it("should throw error when trip has ended", async () => {
-      const { ensureTripNotEnded } = await import("../../../utils/tripGuards");
-      ensureTripNotEnded.mockImplementation(() => {
+      mockEnsureTripNotEnded.mockImplementation(() => {
         throw new TRPCError({ code: "FORBIDDEN", message: "Trip has ended" });
       });
 
@@ -380,6 +390,7 @@ describe("submissionReportRouter", () => {
     });
 
     it("should handle database errors gracefully", async () => {
+       
       mockDb.submissionReport.create.mockRejectedValue(new Error("Database error"));
 
       const ctx: TRPCContext = {
@@ -401,8 +412,7 @@ describe("submissionReportRouter", () => {
     });
 
     it("should handle missing auth email gracefully", async () => {
-      const { buildAuthEmailLookup } = await import("../../../utils/authEmails");
-      buildAuthEmailLookup.mockResolvedValue(new Map());
+      mockBuildAuthEmailLookup.mockResolvedValue(new Map());
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -456,10 +466,10 @@ describe("submissionReportRouter", () => {
         },
       ];
 
+       
       mockDb.submissionReport.findMany.mockResolvedValue(mockReports);
 
-      const { buildAuthEmailLookup } = await import("../../../utils/authEmails");
-      buildAuthEmailLookup.mockResolvedValue(
+      mockBuildAuthEmailLookup.mockResolvedValue(
         new Map([
           ["auth-user-1", "user1@example.com"],
           ["auth-user-2", "user2@example.com"],
@@ -481,18 +491,20 @@ describe("submissionReportRouter", () => {
       expect(result[1].reason).toBe("Inappropriate content");
       expect(result[0].reporter.user.email).toBe("user1@example.com");
       expect(result[1].reporter.user.email).toBe("user2@example.com");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.submissionReport.findMany).toHaveBeenCalledWith({
         where: { submissionId: "submission-1" },
+         
         select: expect.any(Object),
         orderBy: { createdAt: "desc" },
       });
     });
 
     it("should return empty array when no reports exist", async () => {
+       
       mockDb.submissionReport.findMany.mockResolvedValue([]);
 
-      const { buildAuthEmailLookup } = await import("../../../utils/authEmails");
-      buildAuthEmailLookup.mockResolvedValue(new Map());
+      mockBuildAuthEmailLookup.mockResolvedValue(new Map());
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -539,10 +551,10 @@ describe("submissionReportRouter", () => {
         },
       ];
 
+       
       mockDb.submissionReport.findMany.mockResolvedValue(mockReports);
 
-      const { buildAuthEmailLookup } = await import("../../../utils/authEmails");
-      buildAuthEmailLookup.mockResolvedValue(new Map());
+      mockBuildAuthEmailLookup.mockResolvedValue(new Map());
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -552,9 +564,12 @@ describe("submissionReportRouter", () => {
       };
 
       const caller = createCaller(ctx);
-      const result = await caller.getBySubmission({ submissionId: "submission-1" });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _result = await caller.getBySubmission({ submissionId: "submission-1" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.submissionReport.findMany).toHaveBeenCalledWith(
+         
         expect.objectContaining({
           orderBy: { createdAt: "desc" },
         })
@@ -578,6 +593,7 @@ describe("submissionReportRouter", () => {
     });
 
     it("should handle database errors gracefully", async () => {
+       
       mockDb.submissionReport.findMany.mockRejectedValue(new Error("Database error"));
 
       const ctx: TRPCContext = {
@@ -610,10 +626,10 @@ describe("submissionReportRouter", () => {
         },
       ];
 
+       
       mockDb.submissionReport.findMany.mockResolvedValue(mockReports);
 
-      const { buildAuthEmailLookup } = await import("../../../utils/authEmails");
-      buildAuthEmailLookup.mockResolvedValue(new Map());
+      mockBuildAuthEmailLookup.mockResolvedValue(new Map());
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -644,10 +660,10 @@ describe("submissionReportRouter", () => {
         },
       ];
 
+       
       mockDb.submissionReport.findMany.mockResolvedValue(mockReports);
 
-      const { buildAuthEmailLookup } = await import("../../../utils/authEmails");
-      buildAuthEmailLookup.mockResolvedValue(new Map());
+      mockBuildAuthEmailLookup.mockResolvedValue(new Map());
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -669,6 +685,7 @@ describe("submissionReportRouter", () => {
         ...mockParticipant,
         groupId: null,
       };
+       
       mockDb.tripParticipant.findUnique.mockResolvedValue(participantWithoutGroup);
 
       const ctx: TRPCContext = {
@@ -689,6 +706,7 @@ describe("submissionReportRouter", () => {
     });
 
     it("should handle database errors during create", async () => {
+       
       mockDb.submissionReport.create.mockRejectedValue(new Error("Database error"));
 
       const ctx: TRPCContext = {

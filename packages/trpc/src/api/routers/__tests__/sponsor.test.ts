@@ -1,9 +1,12 @@
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sponsorRouter } from "../sponsor";
 import { createCallerFactory } from "../../../api/trpc";
 import type { TRPCContext } from "../../../api/trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, Sponsor, TripSponsor, Trip } from "@mirai-app/db";
+import type { PrismaClient, Sponsor, TripSponsor, Trip, User } from "@mirai-app/db";
 import { TRPCError } from "@trpc/server";
 import * as auth from "@mirai-app/auth";
 
@@ -86,7 +89,8 @@ describe("sponsorRouter", () => {
         createMockSponsor({ id: "sponsor-1", name: "Sponsor One" }),
         createMockSponsor({ id: "sponsor-2", name: "Sponsor Two" }),
       ];
-      mockDb.sponsor.findMany.mockResolvedValue(mockSponsors);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.findMany).mockResolvedValue(mockSponsors);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -99,6 +103,7 @@ describe("sponsorRouter", () => {
       const result = await caller.getAll();
 
       expect(result).toEqual(mockSponsors);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.sponsor.findMany).toHaveBeenCalledWith({
         where: { isActive: true },
         orderBy: { createdAt: "asc" },
@@ -109,7 +114,8 @@ describe("sponsorRouter", () => {
   describe("getById", () => {
     it("should return sponsor by id", async () => {
       const mockSponsor = createMockSponsor({ id: "sponsor-123" });
-      mockDb.sponsor.findUnique.mockResolvedValue(mockSponsor);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(mockSponsor);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -125,7 +131,8 @@ describe("sponsorRouter", () => {
     });
 
     it("should throw NOT_FOUND when sponsor doesn't exist", async () => {
-      mockDb.sponsor.findUnique.mockResolvedValue(null);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -149,7 +156,8 @@ describe("sponsorRouter", () => {
           sponsor: createMockSponsor({ id: "sponsor-2", name: "Sponsor Two" }),
         }),
       ];
-      mockDb.tripSponsor.findMany.mockResolvedValue(mockTripSponsors as never);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.tripSponsor.findMany).mockResolvedValue(mockTripSponsors);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -175,10 +183,11 @@ describe("sponsorRouter", () => {
         description: "New Description",
         logoPath: "https://example.com/new-logo.png",
       });
-      mockDb.sponsor.create.mockResolvedValue(newSponsor);
-      auth.requireAdmin.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.create).mockResolvedValue(newSponsor);
+      vi.mocked(auth.requireAdmin).mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
-        dbUser: { id: "admin-123", role: "ADMIN" } as any,
+        dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
 
       const ctx: TRPCContext = {
@@ -196,6 +205,7 @@ describe("sponsorRouter", () => {
       });
 
       expect(result.name).toBe("New Sponsor");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.sponsor.create).toHaveBeenCalledWith({
         data: {
           name: "New Sponsor",
@@ -214,11 +224,13 @@ describe("sponsorRouter", () => {
         id: "sponsor-123",
         name: "Updated Name",
       });
-      mockDb.sponsor.findUnique.mockResolvedValue(existingSponsor);
-      mockDb.sponsor.update.mockResolvedValue(updatedSponsor);
-      auth.requireAdmin.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(existingSponsor);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.update).mockResolvedValue(updatedSponsor);
+      vi.mocked(auth.requireAdmin).mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
-        dbUser: { id: "admin-123", role: "ADMIN" } as any,
+        dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
 
       const ctx: TRPCContext = {
@@ -238,10 +250,11 @@ describe("sponsorRouter", () => {
     });
 
     it("should throw NOT_FOUND when updating non-existent sponsor", async () => {
-      mockDb.sponsor.findUnique.mockResolvedValue(null);
-      auth.requireAdmin.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(null);
+      vi.mocked(auth.requireAdmin).mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
-        dbUser: { id: "admin-123", role: "ADMIN" } as any,
+        dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
 
       const ctx: TRPCContext = {
@@ -261,10 +274,11 @@ describe("sponsorRouter", () => {
   describe("delete", () => {
     it("should delete a sponsor as admin", async () => {
       const sponsorToDelete = createMockSponsor({ id: "sponsor-123" });
-      mockDb.sponsor.delete.mockResolvedValue(sponsorToDelete);
-      auth.requireAdmin.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.delete).mockResolvedValue(sponsorToDelete);
+      vi.mocked(auth.requireAdmin).mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
-        dbUser: { id: "admin-123", role: "ADMIN" } as any,
+        dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
 
       const ctx: TRPCContext = {
@@ -278,6 +292,7 @@ describe("sponsorRouter", () => {
       const result = await caller.delete({ id: "sponsor-123" });
 
       expect(result.id).toBe("sponsor-123");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.sponsor.delete).toHaveBeenCalledWith({
         where: { id: "sponsor-123" },
       });
@@ -290,13 +305,17 @@ describe("sponsorRouter", () => {
       const mockSponsor = createMockSponsor();
       const mockTripSponsor = createMockTripSponsor();
       
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-      mockDb.sponsor.findUnique.mockResolvedValue(mockSponsor);
-      mockDb.tripSponsor.findUnique.mockResolvedValue(null);
-      mockDb.tripSponsor.create.mockResolvedValue(mockTripSponsor);
-      auth.requireAdmin.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.trip.findUnique).mockResolvedValue(mockTrip);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(mockSponsor);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.tripSponsor.findUnique).mockResolvedValue(null);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.tripSponsor.create).mockResolvedValue(mockTripSponsor);
+      vi.mocked(auth.requireAdmin).mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
-        dbUser: { id: "admin-123", role: "ADMIN" } as any,
+        dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
 
       const ctx: TRPCContext = {
@@ -320,12 +339,15 @@ describe("sponsorRouter", () => {
       const mockSponsor = createMockSponsor();
       const existingTripSponsor = createMockTripSponsor();
       
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-      mockDb.sponsor.findUnique.mockResolvedValue(mockSponsor);
-      mockDb.tripSponsor.findUnique.mockResolvedValue(existingTripSponsor);
-      auth.requireAdmin.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.trip.findUnique).mockResolvedValue(mockTrip);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(mockSponsor);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.tripSponsor.findUnique).mockResolvedValue(existingTripSponsor);
+      vi.mocked(auth.requireAdmin).mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
-        dbUser: { id: "admin-123", role: "ADMIN" } as any,
+        dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
 
       const ctx: TRPCContext = {
@@ -345,10 +367,11 @@ describe("sponsorRouter", () => {
   describe("removeFromTrip", () => {
     it("should remove sponsor from trip as admin", async () => {
       const mockTripSponsor = createMockTripSponsor();
-      mockDb.tripSponsor.delete.mockResolvedValue(mockTripSponsor);
-      auth.requireAdmin.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.tripSponsor.delete).mockResolvedValue(mockTripSponsor);
+      vi.mocked(auth.requireAdmin).mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
-        dbUser: { id: "admin-123", role: "ADMIN" } as any,
+        dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
 
       const ctx: TRPCContext = {
@@ -365,6 +388,7 @@ describe("sponsorRouter", () => {
       });
 
       expect(result).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.tripSponsor.delete).toHaveBeenCalledWith({
         where: {
           tripId_sponsorId: {

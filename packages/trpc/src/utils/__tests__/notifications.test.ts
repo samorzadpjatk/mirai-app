@@ -1,14 +1,22 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { sendNotification, sendRankingUpdate } from "../notifications";
 import type { Prisma } from "@mirai-app/db";
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const noop = (): void => {};
+
+type RetryFunction<T> = () => Promise<T>;
+
 // Mock the resilience module to simulate retry behavior without delays
 vi.mock("../resilience", () => ({
-  executeWithRetry: vi.fn(async (fn: () => Promise<unknown>) => {
+  executeWithRetry: vi.fn(async <T>(fn: RetryFunction<T>): Promise<T> => {
     try {
       return await fn();
-    } catch (error) {
+    } catch {
       return await fn();
     }
   }),
@@ -35,19 +43,19 @@ describe("notifications", () => {
       },
     } as unknown as Prisma.TransactionClient;
 
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(noop);
   });
 
   describe("sendNotification", () => {
     it("should create notification successfully", async () => {
-      vi.mocked(mockDb.notification.create).mockResolvedValue({
+      mockDb.notification.create.mockResolvedValue({
         id: "notif-1",
         title: "Test Title",
         body: "Test Body",
         url: "/test",
         createdById: "user-1",
         tripId: "trip-1",
-      } as never);
+      });
 
       const result = await sendNotification({
         db: mockDb,
@@ -63,6 +71,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       expect(result.notificationId).toBe("notif-1");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notification.create).toHaveBeenCalledWith({
         data: {
           title: "Test Title",
@@ -75,9 +84,9 @@ describe("notifications", () => {
     });
 
     it("should deduplicate user IDs", async () => {
-      vi.mocked(mockDb.notification.create).mockResolvedValue({
+      mockDb.notification.create.mockResolvedValue({
         id: "notif-1",
-      } as never);
+      });
 
       await sendNotification({
         db: mockDb,
@@ -91,6 +100,7 @@ describe("notifications", () => {
         },
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationPush.createMany).toHaveBeenCalledWith({
         data: [
           {
@@ -106,9 +116,9 @@ describe("notifications", () => {
     });
 
     it("should create notification pushes for all users", async () => {
-      vi.mocked(mockDb.notification.create).mockResolvedValue({
+      mockDb.notification.create.mockResolvedValue({
         id: "notif-1",
-      } as never);
+      });
 
       await sendNotification({
         db: mockDb,
@@ -122,6 +132,7 @@ describe("notifications", () => {
         },
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationPush.createMany).toHaveBeenCalledWith({
         data: [
           {
@@ -151,9 +162,9 @@ describe("notifications", () => {
     });
 
     it("should handle empty userIds array", async () => {
-      vi.mocked(mockDb.notification.create).mockResolvedValue({
+      mockDb.notification.create.mockResolvedValue({
         id: "notif-1",
-      } as never);
+      });
 
       const result = await sendNotification({
         db: mockDb,
@@ -169,13 +180,14 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       // When userIds is empty, createMany is not called (implementation skips it)
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationPush.createMany).not.toHaveBeenCalled();
     });
 
     it("should handle null tripId", async () => {
-      vi.mocked(mockDb.notification.create).mockResolvedValue({
+      mockDb.notification.create.mockResolvedValue({
         id: "notif-1",
-      } as never);
+      });
 
       await sendNotification({
         db: mockDb,
@@ -189,7 +201,9 @@ describe("notifications", () => {
         },
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notification.create).toHaveBeenCalledWith({
+         
         data: expect.objectContaining({
           tripId: null,
         }),
@@ -197,7 +211,7 @@ describe("notifications", () => {
     });
 
     it("should throw TRPCError when notification creation fails", async () => {
-      vi.mocked(mockDb.notification.create).mockRejectedValue(
+      mockDb.notification.create.mockRejectedValue(
         new Error("Database error")
       );
 
@@ -231,9 +245,9 @@ describe("notifications", () => {
     }, 30000); // Increase timeout for retry logic
 
     it("should retry on transient failures", async () => {
-      vi.mocked(mockDb.notification.create)
+      mockDb.notification.create
         .mockRejectedValueOnce(new Error("Transient error"))
-        .mockResolvedValueOnce({ id: "notif-1" } as never);
+        .mockResolvedValueOnce({ id: "notif-1" });
 
       const result = await sendNotification({
         db: mockDb,
@@ -248,19 +262,20 @@ describe("notifications", () => {
       });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notification.create).toHaveBeenCalledTimes(2);
     });
   });
 
   describe("sendRankingUpdate", () => {
     it("should send notifications to all groups", async () => {
-      vi.mocked(mockDb.group.findMany).mockResolvedValue([
+      mockDb.group.findMany.mockResolvedValue([
         { id: "group-1", name: "Group A", coins: 100 },
         { id: "group-2", name: "Group B", coins: 80 },
         { id: "group-3", name: "Group C", coins: 60 },
       ] as never);
 
-      vi.mocked(mockDb.tripParticipant.findMany)
+      mockDb.tripParticipant.findMany
         .mockResolvedValueOnce([
           { userId: "user-1" },
           { userId: "user-2" },
@@ -268,10 +283,10 @@ describe("notifications", () => {
         .mockResolvedValueOnce([{ userId: "user-3" }] as never)
         .mockResolvedValueOnce([{ userId: "user-4" }, { userId: "user-5" }] as never);
 
-      vi.mocked(mockDb.notification.create)
-        .mockResolvedValueOnce({ id: "notif-1" } as never)
-        .mockResolvedValueOnce({ id: "notif-2" } as never)
-        .mockResolvedValueOnce({ id: "notif-3" } as never);
+      mockDb.notification.create
+        .mockResolvedValueOnce({ id: "notif-1" })
+        .mockResolvedValueOnce({ id: "notif-2" })
+        .mockResolvedValueOnce({ id: "notif-3" });
 
       const result = await sendRankingUpdate({
         db: mockDb,
@@ -281,6 +296,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       expect(result.notificationIds).toHaveLength(3);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.findMany).toHaveBeenCalledWith({
         where: { tripId: "trip-1", isDeleted: false },
         orderBy: { coins: "desc" },
@@ -288,7 +304,7 @@ describe("notifications", () => {
     });
 
     it("should return empty success when no groups exist", async () => {
-      vi.mocked(mockDb.group.findMany).mockResolvedValue([]);
+      mockDb.group.findMany.mockResolvedValue([]);
 
       const result = await sendRankingUpdate({
         db: mockDb,
@@ -301,18 +317,18 @@ describe("notifications", () => {
     });
 
     it("should include correct ranking position in notification", async () => {
-      vi.mocked(mockDb.group.findMany).mockResolvedValue([
+      mockDb.group.findMany.mockResolvedValue([
         { id: "group-1", name: "First Place", coins: 200 },
         { id: "group-2", name: "Second Place", coins: 100 },
       ] as never);
 
-      vi.mocked(mockDb.tripParticipant.findMany)
+      mockDb.tripParticipant.findMany
         .mockResolvedValueOnce([{ userId: "user-1" }] as never)
         .mockResolvedValueOnce([{ userId: "user-2" }] as never);
 
-      vi.mocked(mockDb.notification.create)
-        .mockResolvedValueOnce({ id: "notif-1" } as never)
-        .mockResolvedValueOnce({ id: "notif-2" } as never);
+      mockDb.notification.create
+        .mockResolvedValueOnce({ id: "notif-1" })
+        .mockResolvedValueOnce({ id: "notif-2" });
 
       await sendRankingUpdate({
         db: mockDb,
@@ -320,24 +336,26 @@ describe("notifications", () => {
         tripId: "trip-1",
       });
 
-      const firstCall = vi.mocked(mockDb.notification.create).mock.calls[0];
+      const firstCall = mockDb.notification.create.mock.calls[0] as
+        | [{ data: { title: string; body: string } }]
+        | undefined;
       expect(firstCall?.[0].data.title).toContain("Ranking");
       expect(firstCall?.[0].data.body).toContain("First Place");
     });
 
     it("should query participants for each group", async () => {
-      vi.mocked(mockDb.group.findMany).mockResolvedValue([
+      mockDb.group.findMany.mockResolvedValue([
         { id: "group-1", name: "Group A", coins: 100 },
       ] as never);
 
-      vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+      mockDb.tripParticipant.findMany.mockResolvedValue([
         { userId: "user-1" },
         { userId: "user-2" },
       ] as never);
 
-      vi.mocked(mockDb.notification.create).mockResolvedValue({
+      mockDb.notification.create.mockResolvedValue({
         id: "notif-1",
-      } as never);
+      });
 
       await sendRankingUpdate({
         db: mockDb,
@@ -345,6 +363,7 @@ describe("notifications", () => {
         tripId: "trip-1",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.tripParticipant.findMany).toHaveBeenCalledWith({
         where: { tripId: "trip-1", groupId: "group-1" },
         select: { userId: true },
@@ -352,15 +371,15 @@ describe("notifications", () => {
     });
 
     it("should handle groups with no participants", async () => {
-      vi.mocked(mockDb.group.findMany).mockResolvedValue([
+      mockDb.group.findMany.mockResolvedValue([
         { id: "group-1", name: "Group A", coins: 100 },
       ] as never);
 
-      vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([]);
+      mockDb.tripParticipant.findMany.mockResolvedValue([]);
 
-      vi.mocked(mockDb.notification.create).mockResolvedValue({
+      mockDb.notification.create.mockResolvedValue({
         id: "notif-1",
-      } as never);
+      });
 
       const result = await sendRankingUpdate({
         db: mockDb,
@@ -370,21 +389,22 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       // When there are no participants, createMany is not called (implementation skips it)
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationPush.createMany).not.toHaveBeenCalled();
     });
 
     it("should return partial success when some notifications fail", async () => {
-      vi.mocked(mockDb.group.findMany).mockResolvedValue([
+      mockDb.group.findMany.mockResolvedValue([
         { id: "group-1", name: "Group A", coins: 100 },
         { id: "group-2", name: "Group B", coins: 80 },
       ] as never);
 
-      vi.mocked(mockDb.tripParticipant.findMany)
+      mockDb.tripParticipant.findMany
         .mockResolvedValueOnce([{ userId: "user-1" }] as never)
         .mockResolvedValueOnce([{ userId: "user-2" }] as never);
 
-      vi.mocked(mockDb.notification.create)
-        .mockResolvedValueOnce({ id: "notif-1" } as never)
+      mockDb.notification.create
+        .mockResolvedValueOnce({ id: "notif-1" })
         .mockRejectedValueOnce(new Error("Database error"));
 
       const result = await sendRankingUpdate({

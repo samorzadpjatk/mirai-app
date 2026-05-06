@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { challengeSubmissionRouter } from "../challengeSubmission";
 import { createCallerFactory, type TRPCContext } from "../../trpc";
@@ -259,7 +262,7 @@ describe("challengeSubmissionRouter", () => {
       trip: {
         findUnique: vi.fn().mockResolvedValue(null),
       },
-      $transaction: vi.fn((cb) => cb(mockTx)),
+      $transaction: vi.fn((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
     } as unknown as PrismaClient;
 
     // Setup mock Supabase client
@@ -301,6 +304,7 @@ describe("challengeSubmissionRouter", () => {
       const result = await caller.getByChallengeForAdmin({ challengeId: "challenge-1", tripId: "trip-1" });
 
       expect(result).toHaveLength(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challengeSubmission.findMany).toHaveBeenCalledWith({
         where: { challengeId: "challenge-1" },
         select: expect.any(Object),
@@ -453,6 +457,7 @@ describe("challengeSubmissionRouter", () => {
       const result = await caller.getById({ id: "submission-1", tripId: "trip-1" });
 
       expect(result.id).toBe("submission-1");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challengeSubmission.findFirst).toHaveBeenCalledWith({
         where: { id: "submission-1", challenge: { tripId: "trip-1" } },
         select: expect.any(Object),
@@ -1134,6 +1139,7 @@ describe("challengeSubmissionRouter", () => {
       });
 
       expect(result.id).toBe("submission-1");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.challengeSubmission.update).toHaveBeenCalled();
     });
 
@@ -1342,6 +1348,7 @@ describe("challengeSubmissionRouter", () => {
       const result = await caller.deleteMine({ id: "submission-1", tripId: "trip-1" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challengeSubmission.delete).toHaveBeenCalledWith({
         where: { id: "submission-1" },
       });
@@ -1442,6 +1449,7 @@ describe("challengeSubmissionRouter", () => {
       });
 
       expect(result.status).toBe("APPROVED");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.challengeSubmission.update).toHaveBeenCalledWith({
         where: { id: "submission-1" },
         data: expect.objectContaining({
@@ -1480,6 +1488,7 @@ describe("challengeSubmissionRouter", () => {
       });
 
       expect(result.status).toBe("REJECTED");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.challengeSubmission.update).toHaveBeenCalledWith({
         where: { id: "submission-1" },
         data: expect.objectContaining({
@@ -1589,10 +1598,12 @@ describe("challengeSubmissionRouter", () => {
         bonusPoints: 5,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.group.update).toHaveBeenCalledWith({
         where: { id: "group-1" },
         data: { coins: { increment: 25 } },
       });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.coinTransaction.create).toHaveBeenCalled();
     });
 
@@ -1636,6 +1647,7 @@ describe("challengeSubmissionRouter", () => {
       });
 
       // Should update submission with ranking
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.challengeSubmission.update).toHaveBeenCalled();
     });
 
@@ -1682,6 +1694,7 @@ describe("challengeSubmissionRouter", () => {
         awardedPoints: 10,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.activityFeed.create).toHaveBeenCalled();
     });
 
@@ -1767,6 +1780,7 @@ describe("challengeSubmissionRouter", () => {
       });
 
       // For SPEED challenges, awardedPoints should not be set directly
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.challengeSubmission.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -1807,6 +1821,7 @@ describe("challengeSubmissionRouter", () => {
         status: "APPROVED",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.activityFeed.create).not.toHaveBeenCalled();
     });
 
@@ -1838,7 +1853,9 @@ describe("challengeSubmissionRouter", () => {
         awardedPoints: 10,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.group.update).not.toHaveBeenCalled();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockTx.coinTransaction.create).not.toHaveBeenCalled();
     });
   });
@@ -1858,6 +1875,7 @@ describe("challengeSubmissionRouter", () => {
       const result = await caller.adminDelete({ id: "submission-1" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challengeSubmission.delete).toHaveBeenCalledWith({
         where: { id: "submission-1" },
       });

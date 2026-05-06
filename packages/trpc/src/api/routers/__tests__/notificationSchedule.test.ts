@@ -1,3 +1,6 @@
+ 
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { notificationScheduleRouter } from "../../routers/notificationSchedule";
@@ -232,6 +235,7 @@ describe("notificationScheduleRouter", () => {
       });
 
       expect(result.schedules).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ tripId: "trip-123" }),
@@ -253,6 +257,7 @@ describe("notificationScheduleRouter", () => {
       });
 
       expect(result.schedules).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ notificationType: "ranking" }),
@@ -274,6 +279,7 @@ describe("notificationScheduleRouter", () => {
       });
 
       expect(result.schedules).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ isActive: true }),
@@ -295,6 +301,7 @@ describe("notificationScheduleRouter", () => {
       });
 
       expect(result.schedules).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -323,6 +330,7 @@ describe("notificationScheduleRouter", () => {
       const result = await caller.getActiveSchedules();
 
       expect(result).toHaveLength(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -347,6 +355,7 @@ describe("notificationScheduleRouter", () => {
 
       await caller.getActiveSchedules();
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: [{ hour: "asc" }, { minute: "asc" }],
@@ -367,6 +376,7 @@ describe("notificationScheduleRouter", () => {
       const result = await caller.getUpcoming();
 
       expect(result).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -491,6 +501,7 @@ describe("notificationScheduleRouter", () => {
       });
 
       expect(result.id).toBe("new-schedule");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.create).toHaveBeenCalled();
     });
 
@@ -594,6 +605,7 @@ describe("notificationScheduleRouter", () => {
       });
 
       expect(result.id).toBe("schedule-123");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationSchedule.update).toHaveBeenCalled();
     });
 

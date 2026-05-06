@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { rewardRouter } from "../../routers/reward";
@@ -81,7 +84,7 @@ const createMockReward = (overrides: Partial<Reward> & { _count?: { purchases: n
     updatedAt: new Date(),
     _count: { purchases: 0 },
     ...overrides,
-  }) as unknown as Reward;
+  });
 
 // Helper to create mock reward purchase
 const createMockRewardPurchase = (overrides: Partial<RewardPurchase> = {}): RewardPurchase =>
@@ -143,9 +146,12 @@ describe("rewardRouter", () => {
     mockReward = createMockReward({ id: "reward-123", tripId: "trip-123", coinCost: 50 });
 
     const { requireAuth, requireModerator, requireAdmin } = await import("@mirai-app/auth");
-    requireAuth.mockResolvedValue({ user: { id: mockUser.authUserId, email: mockUser.email }, dbUser: mockUser });
-    requireModerator.mockResolvedValue(mockModeratorUser);
-    requireAdmin.mockResolvedValue(mockAdminUser);
+     
+    vi.mocked(requireAuth).mockResolvedValue({ user: { id: mockUser.authUserId, email: mockUser.email }, dbUser: mockUser });
+     
+    vi.mocked(requireModerator).mockResolvedValue(mockModeratorUser);
+     
+    vi.mocked(requireAdmin).mockResolvedValue(mockAdminUser);
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -220,40 +226,48 @@ describe("rewardRouter", () => {
       coinTransaction: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn(async (callback) => {
-        if (typeof callback === "function") {
-          const tx = {
-            ...mockDb,
-            reward: {
-              ...mockDb.reward,
-              findUnique: vi.fn().mockImplementation((...args: [unknown]) => mockDb.reward.findUnique(...args)),
-              update: vi.fn().mockImplementation((...args: [unknown]) => mockDb.reward.update(...args)),
-            },
-            tripParticipant: {
-              ...mockDb.tripParticipant,
-              findFirst: vi.fn().mockImplementation((...args: [unknown]) => mockDb.tripParticipant.findFirst(...args)),
-            },
-            group: {
-              ...mockDb.group,
-              update: vi.fn().mockImplementation((...args: [unknown]) => mockDb.group.update(...args)),
-            },
-            rewardPurchase: {
-              ...mockDb.rewardPurchase,
-              create: vi.fn().mockImplementation((...args: [unknown]) => mockDb.rewardPurchase.create(...args)),
-            },
-            coinTransaction: {
-              ...mockDb.coinTransaction,
-              create: vi.fn().mockImplementation((...args: [unknown]) => mockDb.coinTransaction.create(...args)),
-            },
-            challenge: {
-              ...mockDb.challenge,
-              findMany: vi.fn().mockImplementation((...args: [unknown]) => mockDb.challenge.findMany(...args)),
-            },
-          };
-          return await callback(tx);
+      $transaction: vi.fn(
+        async <T>(
+          callback: T extends (tx: unknown) => Promise<unknown>
+            ? (tx: typeof mockDb) => Promise<unknown>
+            : Promise<unknown>[]
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ): Promise<any> => {
+          if (typeof callback === "function") {
+            const tx = {
+              ...mockDb,
+              reward: {
+                ...mockDb.reward,
+                findUnique: vi.fn().mockImplementation((...args: [unknown]) => mockDb.reward.findUnique(...args)),
+                update: vi.fn().mockImplementation((...args: [unknown]) => mockDb.reward.update(...args)),
+              },
+              tripParticipant: {
+                ...mockDb.tripParticipant,
+                findFirst: vi.fn().mockImplementation((...args: [unknown]) => mockDb.tripParticipant.findFirst(...args)),
+              },
+              group: {
+                ...mockDb.group,
+                update: vi.fn().mockImplementation((...args: [unknown]) => mockDb.group.update(...args)),
+              },
+              rewardPurchase: {
+                ...mockDb.rewardPurchase,
+                create: vi.fn().mockImplementation((...args: [unknown]) => mockDb.rewardPurchase.create(...args)),
+              },
+              coinTransaction: {
+                ...mockDb.coinTransaction,
+                create: vi.fn().mockImplementation((...args: [unknown]) => mockDb.coinTransaction.create(...args)),
+              },
+              challenge: {
+                ...mockDb.challenge,
+                findMany: vi.fn().mockImplementation((...args: [unknown]) => mockDb.challenge.findMany(...args)),
+              },
+            };
+             
+            return await callback(tx);
+          }
+          return Promise.all(callback);
         }
-        return Promise.all(callback);
-      }),
+      ),
     } as unknown as PrismaClient;
   });
 
@@ -263,7 +277,7 @@ describe("rewardRouter", () => {
     supabase: mockSupabase,
     headers: new Headers({ Authorization: `Bearer ${token}` }),
     accessToken: token,
-    user: { id: user.authUserId || "auth-123", email: user.email || "test@example.com" },
+    user: { id: user.authUserId ?? "auth-123", email: user.email ?? "test@example.com" },
     dbUser: user,
   });
 
@@ -318,8 +332,10 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await caller.getByTrip({ tripId: "all" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.reward.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { isHidden: false },
@@ -471,7 +487,8 @@ describe("rewardRouter", () => {
 
       // Override requireAuth to return moderator user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValue({
+       
+      vi.mocked(requireAuth).mockResolvedValue({
         user: { id: mockModeratorUser.authUserId, email: mockModeratorUser.email },
         dbUser: mockModeratorUser,
       });
@@ -492,6 +509,7 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
 
+       
       const result = await caller.create({
         tripId: "trip-123",
         name: "New Reward",
@@ -501,6 +519,7 @@ describe("rewardRouter", () => {
       });
 
       expect(result.name).toBe("Test Reward");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -523,6 +542,7 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await caller.create({
         tripId: "trip-123",
         name: "Reward with Images",
@@ -532,6 +552,7 @@ describe("rewardRouter", () => {
         coinCost: 50,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -556,6 +577,7 @@ describe("rewardRouter", () => {
         coinCost: 50,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -594,6 +616,7 @@ describe("rewardRouter", () => {
         images: ["new-image.jpg"],
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.reward.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -614,6 +637,7 @@ describe("rewardRouter", () => {
         image: null,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.reward.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -665,6 +689,7 @@ describe("rewardRouter", () => {
       const result = await caller.delete({ id: "reward-123" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.reward.delete).toHaveBeenCalledWith({
         where: { id: "reward-123" },
       });
@@ -683,7 +708,8 @@ describe("rewardRouter", () => {
   describe("purchase (protectedProcedure)", () => {
     it("should purchase reward as group leader", async () => {
       const { ensureTripNotEnded } = await import("../../../utils/tripGuards");
-      ensureTripNotEnded.mockResolvedValue(undefined);
+       
+      vi.mocked(ensureTripNotEnded).mockResolvedValue(undefined);
 
       mockDb.reward.findUnique.mockResolvedValue(mockReward);
       mockDb.tripParticipant.findFirst.mockResolvedValue({
@@ -706,6 +732,7 @@ describe("rewardRouter", () => {
       });
 
       expect(result.quantity).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.reward.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -826,8 +853,10 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await caller.getPurchaseHistory({ tripId: "trip-123" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.rewardPurchase.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({

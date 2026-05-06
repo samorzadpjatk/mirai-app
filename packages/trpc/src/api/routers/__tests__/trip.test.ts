@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { tripRouter } from "../trip";
@@ -18,11 +21,50 @@ import { requireAuth, requireAdmin, AuthenticationError, AuthorizationError } fr
  * - Edge cases (pagination, image resolution, email lookup)
  */
 
+// Type for mock PrismaClient - uses vi.MockedFn for all methods
+ 
+type MockFn = ReturnType<typeof vi.fn> & ((...args: unknown[]) => unknown);
+
+interface MockPrismaClient {
+  trip: {
+    findMany: MockFn;
+    findUnique: MockFn;
+    count: MockFn;
+    create: MockFn;
+    update: MockFn;
+    delete: MockFn;
+  };
+  tripParticipant: {
+    findUnique: MockFn;
+    findMany: MockFn;
+  };
+  tripGroup: {
+    findMany: MockFn;
+  };
+  tripResource: {
+    findMany: MockFn;
+  };
+  tripInsurance: {
+    findUnique: MockFn;
+  };
+  tripSponsor: {
+    findMany: MockFn;
+  };
+  user: {
+    findFirst: MockFn;
+    findUnique: MockFn;
+  };
+  userAgent: {
+    create: MockFn;
+  };
+  $transaction: MockFn;
+}
+
 const createCaller = createCallerFactory(tripRouter);
 
 describe("tripRouter", () => {
-let mockDb: any;
-let mockSupabase: any;
+  let mockDb: MockPrismaClient;
+  let mockSupabase: SupabaseClient;
   let mockUser: { id: string; email: string };
   let mockDbUser: User;
   let mockAdminUser: User;
@@ -87,8 +129,8 @@ let mockSupabase: any;
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn((cb) => cb(mockDb)),
-    } as unknown as PrismaClient;
+      $transaction: vi.fn((cb: (arg: PrismaClient) => unknown) => cb(mockDb as unknown as PrismaClient)),
+    };
 
     // Setup mock Supabase client - need to return user that matches mockDbUser
     mockSupabase = {
@@ -157,17 +199,15 @@ let mockSupabase: any;
         },
       ];
 
-      const mockGroups = [
-        { id: "group-1", name: "Group A" },
-        { id: "group-2", name: "Group B" },
-      ];
-
-      mockDb.trip.findMany.mockResolvedValue(mockTrips as any);
+       
+      mockDb.trip.findMany.mockResolvedValue(mockTrips);
+       
       mockDb.trip.count.mockResolvedValue(2);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -181,6 +221,7 @@ let mockSupabase: any;
       expect(result.pagination.limit).toBe(10);
       expect(result.pagination.offset).toBe(0);
       expect(result.pagination.hasMore).toBe(false);
+       
       expect(mockDb.trip.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           participants: {
@@ -194,12 +235,15 @@ let mockSupabase: any;
     });
 
     it("should use default pagination when not provided", async () => {
-      mockDb.trip.findMany.mockResolvedValue([] as any);
+       
+      mockDb.trip.findMany.mockResolvedValue([]);
+       
       mockDb.trip.count.mockResolvedValue(0);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -213,12 +257,15 @@ let mockSupabase: any;
     });
 
     it("should return hasMore=true when there are more trips", async () => {
-      mockDb.trip.findMany.mockResolvedValue([] as any);
+       
+      mockDb.trip.findMany.mockResolvedValue([]);
+       
       mockDb.trip.count.mockResolvedValue(100);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -262,12 +309,15 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.trip.findMany.mockResolvedValue([mockTrip] as any);
+       
+      mockDb.trip.findMany.mockResolvedValue([mockTrip]);
+       
       mockDb.trip.count.mockResolvedValue(1);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -309,13 +359,22 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue([]);
+
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
+
+       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -330,11 +389,13 @@ let mockSupabase: any;
     });
 
     it("should throw FORBIDDEN when user is not a participant", async () => {
+       
       mockDb.tripParticipant.findUnique.mockResolvedValue(null);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -347,12 +408,15 @@ let mockSupabase: any;
     });
 
     it("should throw NOT_FOUND when trip does not exist", async () => {
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
       mockDb.trip.findUnique.mockResolvedValue(null);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -394,6 +458,7 @@ let mockSupabase: any;
             createdAt: new Date(),
             updatedAt: new Date(),
             user: mockDbUser,
+             
             group: {
               id: "group-1",
               name: "Group A",
@@ -406,13 +471,21 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue(mockTrip.groups);
+       
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
+       
+       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -422,6 +495,7 @@ let mockSupabase: any;
       const result = await caller.getById({ id: "trip-1" });
 
       expect(result.groups[0]?.image).toBe("https://signed-url.example.com/image.jpg");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 
@@ -446,6 +520,7 @@ let mockSupabase: any;
             createdAt: new Date(),
             updatedAt: new Date(),
             user: mockDbUser,
+             
             group: {
               id: "group-1",
               name: "Group A",
@@ -458,13 +533,21 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue([]);
+       
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
+       
+       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -502,13 +585,22 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue([]);
+       
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
+       
+       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "resolved@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -537,11 +629,13 @@ let mockSupabase: any;
         participants: [] as TripParticipant[],
       };
 
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+       
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -551,15 +645,18 @@ let mockSupabase: any;
       const result = await caller.getByIdAdmin({ id: "trip-1" });
 
       expect(result.id).toBe("trip-1");
+       
       expect(mockDb.tripParticipant.findUnique).not.toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when trip does not exist", async () => {
+       
       mockDb.trip.findUnique.mockResolvedValue(null);
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -572,10 +669,11 @@ let mockSupabase: any;
     });
 
     it("should throw FORBIDDEN for non-admin users", async () => {
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -600,11 +698,13 @@ let mockSupabase: any;
         updatedAt: new Date(),
       };
 
-      mockDb.trip.create.mockResolvedValue(newTrip as any);
+       
+      mockDb.trip.create.mockResolvedValue(newTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -621,11 +721,14 @@ let mockSupabase: any;
 
       expect(result.name).toBe("New Trip");
       expect(result.description).toBe("New Description");
+       
       expect(mockDb.trip.create).toHaveBeenCalledWith({
         data: {
           name: "New Trip",
           description: "New Description",
+           
           startDate: expect.any(Date),
+           
           endDate: expect.any(Date),
           backgroundImagePath: "images/trips/new-trip.jpg",
         },
@@ -644,11 +747,13 @@ let mockSupabase: any;
         updatedAt: new Date(),
       };
 
-      mockDb.trip.create.mockResolvedValue(newTrip as any);
+       
+      mockDb.trip.create.mockResolvedValue(newTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -666,10 +771,11 @@ let mockSupabase: any;
     });
 
     it("should throw error for invalid input (empty name)", async () => {
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -686,10 +792,11 @@ let mockSupabase: any;
 
     it("should throw FORBIDDEN for non-admin users", async () => {
       // Mock requireAdmin to throw AuthorizationError for non-admin users
-      requireAdmin.mockRejectedValueOnce(new AuthorizationError("Admin access required"));
+       
+      vi.mocked(requireAdmin).mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -724,12 +831,15 @@ let mockSupabase: any;
         description: "Updated Description",
       };
 
-      mockDb.trip.findUnique.mockResolvedValue(existingTrip as any);
-      mockDb.trip.update.mockResolvedValue(updatedTrip as any);
+       
+      mockDb.trip.findUnique.mockResolvedValue(existingTrip);
+       
+      mockDb.trip.update.mockResolvedValue(updatedTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -744,6 +854,7 @@ let mockSupabase: any;
 
       expect(result.name).toBe("Updated Name");
       expect(result.description).toBe("Updated Description");
+       
       expect(mockDb.trip.update).toHaveBeenCalledWith({
         where: { id: "trip-1" },
         data: {
@@ -771,12 +882,15 @@ let mockSupabase: any;
         endDate: new Date("2025-07-10"),
       };
 
-      mockDb.trip.findUnique.mockResolvedValue(existingTrip as any);
-      mockDb.trip.update.mockResolvedValue(updatedTrip as any);
+       
+      mockDb.trip.findUnique.mockResolvedValue(existingTrip);
+       
+      mockDb.trip.update.mockResolvedValue(updatedTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -794,11 +908,13 @@ let mockSupabase: any;
     });
 
     it("should throw NOT_FOUND when trip does not exist", async () => {
+       
       mockDb.trip.findUnique.mockResolvedValue(null);
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -817,10 +933,11 @@ let mockSupabase: any;
     });
 
     it("should throw FORBIDDEN for non-admin users", async () => {
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -889,13 +1006,17 @@ let mockSupabase: any;
         },
       ];
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
       mockDb.tripResource.findMany.mockResolvedValue(mockResources);
-      mockDb.tripInsurance.findUnique.mockResolvedValue({ ...mockInsurance, steps: mockSteps } as any);
+       
+      mockDb.tripInsurance.findUnique.mockResolvedValue({ ...mockInsurance, steps: mockSteps });
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -913,13 +1034,17 @@ let mockSupabase: any;
     });
 
     it("should return empty resources when none exist", async () => {
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
       mockDb.tripResource.findMany.mockResolvedValue([]);
+       
       mockDb.tripInsurance.findUnique.mockResolvedValue(null);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -933,11 +1058,13 @@ let mockSupabase: any;
     });
 
     it("should throw FORBIDDEN when user is not a participant", async () => {
+       
       mockDb.tripParticipant.findUnique.mockResolvedValue(null);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -980,21 +1107,27 @@ let mockSupabase: any;
         },
       ];
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
       mockDb.tripResource.findMany.mockResolvedValue(mockResources);
+       
       mockDb.tripInsurance.findUnique.mockResolvedValue(null);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
       };
 
       const caller = createCaller(ctx);
-      const result = await caller.getResources({ tripId: "trip-1" });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _result = await caller.getResources({ tripId: "trip-1" });
 
+       
       expect(mockDb.tripResource.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { tripId: "trip-1" },
         orderBy: { sortOrder: "asc" },
@@ -1015,11 +1148,13 @@ let mockSupabase: any;
         updatedAt: new Date(),
       };
 
-      mockDb.trip.delete.mockResolvedValue(deletedTrip as any);
+       
+      mockDb.trip.delete.mockResolvedValue(deletedTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -1029,6 +1164,7 @@ let mockSupabase: any;
       const result = await caller.delete({ id: "trip-1" });
 
       expect(result.id).toBe("trip-1");
+       
       expect(mockDb.trip.delete).toHaveBeenCalledWith({
         where: { id: "trip-1" },
       });
@@ -1036,10 +1172,11 @@ let mockSupabase: any;
 
     it("should throw FORBIDDEN for non-admin users", async () => {
       // Simulate non-admin user by making requireAdmin throw AuthorizationError
-      requireAdmin.mockRejectedValueOnce(new AuthorizationError("Admin access required"));
+       
+      vi.mocked(requireAdmin).mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -1087,13 +1224,22 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue(mockTrip.groups);
+       
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
+       
+       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1140,13 +1286,22 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue(mockTrip.groups);
+       
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
+       
+       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1194,12 +1349,22 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue(mockTrip.groups);
+       
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
+       
+       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       // Mock failed signed URL creation
+       
       mockSupabase.storage.from = vi.fn().mockReturnValue({
         createSignedUrl: vi.fn().mockResolvedValue({
           data: null,
@@ -1208,7 +1373,7 @@ let mockSupabase: any;
       });
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1248,13 +1413,22 @@ let mockSupabase: any;
         ],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue([]);
+       
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
+       
+       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1281,12 +1455,19 @@ let mockSupabase: any;
         participants: [],
       };
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id } as any);
-      mockDb.trip.findUnique.mockResolvedValue(mockTrip as any);
+       
+      mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
+       
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
+       
+      mockDb.tripGroup.findMany.mockResolvedValue([]);
+       
+      mockDb.tripSponsor.findMany.mockResolvedValue([]);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1302,10 +1483,11 @@ let mockSupabase: any;
   describe("Authentication error handling", () => {
     it("should throw UNAUTHORIZED when no token provided for protected procedure", async () => {
       // Force requireAuth to always throw AuthenticationError for this test
-      requireAuth.mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
+       
+      vi.mocked(requireAuth).mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers(),
         accessToken: null,
@@ -1319,10 +1501,11 @@ let mockSupabase: any;
 
     it("should throw UNAUTHORIZED when token is invalid", async () => {
       // Force requireAuth to always throw AuthenticationError for this test
-      requireAuth.mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
+       
+      vi.mocked(requireAuth).mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer invalid-token" }),
         accessToken: "invalid-token",
@@ -1337,10 +1520,11 @@ let mockSupabase: any;
 
   describe("Input validation", () => {
     it("should validate trip id format in getById", async () => {
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1353,10 +1537,11 @@ let mockSupabase: any;
     });
 
     it("should validate pagination limits", async () => {
+       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1372,10 +1557,11 @@ let mockSupabase: any;
     });
 
     it("should validate required fields in create", async () => {
+       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb,
+        db: mockDb as unknown as PrismaClient,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",

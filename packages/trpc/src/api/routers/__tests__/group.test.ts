@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { groupRouter } from "../../routers/group";
@@ -9,14 +12,14 @@ import type { PrismaClient, User, Group, TripParticipant, GroupJoinRequest, Coin
 // Mock the utility modules
 vi.mock("../../../utils/authEmails", () => ({
   buildAuthEmailLookup: vi.fn().mockResolvedValue(new Map()),
-  resolveAuthEmail: vi.fn().mockImplementation((emailMap, authUserId) => {
+  resolveAuthEmail: vi.fn().mockImplementation((emailMap: Map<string, string>, authUserId: string | null): string | null => {
     if (!authUserId) return null;
     return emailMap.get(authUserId) ?? null;
   }),
 }));
 
 vi.mock("../../../utils/storage", () => ({
-  normalizeSupabaseStoragePath: vi.fn().mockImplementation((value: string) => {
+  normalizeSupabaseStoragePath: vi.fn().mockImplementation((value: string): { bucket: string; path: string; storagePath: string } | null => {
     if (!value) return null;
     if (value.startsWith("http")) return null;
     return { bucket: "images", path: value, storagePath: `images/${value}` };
@@ -143,7 +146,7 @@ describe("groupRouter", () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
-    } as unknown as SupabaseClient;
+    } as SupabaseClient;
 
     // Setup mock database client
     mockDb = {
@@ -198,14 +201,14 @@ describe("groupRouter", () => {
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn(async (callback) => {
+      $transaction: vi.fn(async (callback: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]): Promise<unknown> => {
         if (typeof callback === "function") {
           return await callback(mockDb);
         }
         // Handle array of promises
         return Promise.all(callback);
       }),
-    } as unknown as PrismaClient;
+    } as PrismaClient;
   });
 
   // Helper to create authenticated context
@@ -224,7 +227,7 @@ describe("groupRouter", () => {
         { id: "group-1", name: "Group One" },
         { id: "group-2", name: "Group Two" },
       ];
-      mockDb.group.findMany.mockResolvedValue(mockGroups as never);
+      mockDb.group.findMany.mockResolvedValue(mockGroups);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -232,6 +235,7 @@ describe("groupRouter", () => {
       const result = await caller.getAllNames({ tripId: "trip-123" });
 
       expect(result).toEqual(mockGroups);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.findMany).toHaveBeenCalledWith({
         select: { id: true, name: true },
         where: { tripId: "trip-123", isDeleted: false },
@@ -292,8 +296,8 @@ describe("groupRouter", () => {
         coinTransactions: [],
       });
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -326,7 +330,7 @@ describe("groupRouter", () => {
         createMockGroup({ id: "group-2", name: "Group Two", participants: [], organizer: { id: "user-2", firstName: "Test", lastName: "User", authUserId: "auth-2", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() }, coinTransactions: [] }),
       ];
 
-      mockDb.group.findMany.mockResolvedValue(mockGroups as never);
+      mockDb.group.findMany.mockResolvedValue(mockGroups);
       mockDb.group.count.mockResolvedValue(2);
 
       const ctx = createAuthContext(mockUser);
@@ -342,7 +346,7 @@ describe("groupRouter", () => {
     it("should respect pagination parameters", async () => {
       const mockGroups = [createMockGroup({ id: "group-1", name: "Group One", participants: [], organizer: { id: "user-1", firstName: "Test", lastName: "User", authUserId: "auth-1", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() }, coinTransactions: [] })];
 
-      mockDb.group.findMany.mockResolvedValue(mockGroups as never);
+      mockDb.group.findMany.mockResolvedValue(mockGroups);
       mockDb.group.count.mockResolvedValue(2);
 
       const ctx = createAuthContext(mockUser);
@@ -378,7 +382,7 @@ describe("groupRouter", () => {
         },
       ];
 
-      mockDb.group.findMany.mockResolvedValue(mockGroups as never);
+      mockDb.group.findMany.mockResolvedValue(mockGroups);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -432,7 +436,7 @@ describe("groupRouter", () => {
         challengeSubmissions: [],
       });
 
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -480,7 +484,7 @@ describe("groupRouter", () => {
         organizer: { id: "user-123", firstName: "Test", lastName: "User", authUserId: "auth-123", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() },
       };
 
-      mockDb.group.findFirst.mockResolvedValue(mockGroup as never);
+      mockDb.group.findFirst.mockResolvedValue(mockGroup);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -516,6 +520,7 @@ describe("groupRouter", () => {
       });
 
       expect(result.name).toBe("New Group");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.create).toHaveBeenCalled();
     });
 
@@ -601,7 +606,7 @@ describe("groupRouter", () => {
       const prismaError = new Error("Unique constraint failed on the fields: (`code`)");
       (prismaError as { code?: string }).code = "P2002";
       mockDb.group.create.mockRejectedValueOnce(prismaError)
-        .mockResolvedValueOnce(newGroup as never);
+        .mockResolvedValueOnce(newGroup);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -612,6 +617,7 @@ describe("groupRouter", () => {
       });
 
       expect(result.name).toBe("New Group");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.create).toHaveBeenCalledTimes(2);
     });
 
@@ -653,12 +659,12 @@ describe("groupRouter", () => {
         },
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.group.update.mockResolvedValue(updatedGroup as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValue({
+      vi.mocked(requireAuth).mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -700,12 +706,12 @@ describe("groupRouter", () => {
         },
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.group.update.mockResolvedValue(updatedGroup as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValue({
+      vi.mocked(requireAuth).mockResolvedValue({
         user: { id: "auth-admin-123", email: "admin@example.com" },
         dbUser: mockAdminUser,
       });
@@ -746,12 +752,12 @@ describe("groupRouter", () => {
         },
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.group.update.mockResolvedValue(updatedGroup as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValue({
+      vi.mocked(requireAuth).mockResolvedValue({
         user: { id: "auth-admin-123", email: "admin@example.com" },
         dbUser: mockAdminUser,
       });
@@ -857,12 +863,12 @@ describe("groupRouter", () => {
       const existingGroup = createMockGroup({ id: "group-123" });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -870,6 +876,7 @@ describe("groupRouter", () => {
       const result = await caller.delete({ id: "group-123" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { isDeleted: true },
@@ -905,17 +912,17 @@ describe("groupRouter", () => {
         tripId: "trip-123",
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValue({
+      vi.mocked(requireAuth).mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -966,12 +973,12 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -979,6 +986,7 @@ describe("groupRouter", () => {
       const result = await caller.join({ id: "group-123", tripId: "trip-123" });
 
       expect(result).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.tripParticipant.upsert).toHaveBeenCalled();
     });
 
@@ -1038,7 +1046,7 @@ describe("groupRouter", () => {
         organizerId: "organizer-123",
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
       // User must be a trip participant (not in any group) to request joining
       mockDb.tripParticipant.findUnique.mockResolvedValue({
         id: "participant-123",
@@ -1047,7 +1055,7 @@ describe("groupRouter", () => {
         groupId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as never);
+      });
       mockDb.groupJoinRequest.findUnique.mockResolvedValue(null);
 
       const mockRequest = createMockJoinRequest({
@@ -1055,11 +1063,11 @@ describe("groupRouter", () => {
         groupId: "group-123",
         userId: "user-123",
       });
-      mockDb.groupJoinRequest.create.mockResolvedValue(mockRequest as never);
+      mockDb.groupJoinRequest.create.mockResolvedValue(mockRequest);
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValue({
+      vi.mocked(requireAuth).mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -1070,6 +1078,7 @@ describe("groupRouter", () => {
       const result = await caller.requestToJoin({ groupId: "group-123" });
 
       expect(result.id).toBe("request-123");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.groupJoinRequest.create).toHaveBeenCalled();
     });
 
@@ -1162,8 +1171,8 @@ describe("groupRouter", () => {
         userId: "user-123",
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.groupJoinRequest.findFirst.mockResolvedValue(mockRequest as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.groupJoinRequest.findFirst.mockResolvedValue(mockRequest);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -1211,6 +1220,7 @@ describe("groupRouter", () => {
       const result = await caller.cancelMyJoinRequest({ groupId: "group-123" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.groupJoinRequest.delete).toHaveBeenCalledWith({
         where: { id: "request-123" },
       });
@@ -1256,12 +1266,12 @@ describe("groupRouter", () => {
         }),
       ];
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.groupJoinRequest.findMany.mockResolvedValue(mockRequests as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.groupJoinRequest.findMany.mockResolvedValue(mockRequests);
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValue({
+      vi.mocked(requireAuth).mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -1314,7 +1324,7 @@ describe("groupRouter", () => {
         },
       };
 
-      mockDb.groupJoinRequest.findUnique.mockResolvedValue(mockRequest as never);
+      mockDb.groupJoinRequest.findUnique.mockResolvedValue(mockRequest);
       // The requesting user must be a trip participant without a group
       mockDb.tripParticipant.findUnique.mockResolvedValue({
         id: "participant-456",
@@ -1323,17 +1333,17 @@ describe("groupRouter", () => {
         groupId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
       });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValue({
+      vi.mocked(requireAuth).mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -1372,13 +1382,13 @@ describe("groupRouter", () => {
         },
       };
 
-      mockDb.groupJoinRequest.findUnique.mockResolvedValue(mockRequest as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.groupJoinRequest.findUnique.mockResolvedValue(mockRequest);
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -1470,12 +1480,12 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -1487,6 +1497,7 @@ describe("groupRouter", () => {
       });
 
       expect(result).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.tripParticipant.upsert).toHaveBeenCalled();
     });
 
@@ -1564,13 +1575,13 @@ describe("groupRouter", () => {
         organizerId: "user-123",
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       const mockParticipants = [
         {
@@ -1613,7 +1624,7 @@ describe("groupRouter", () => {
         },
       ];
 
-      mockDb.tripParticipant.findMany.mockResolvedValue(mockParticipants as never);
+      mockDb.tripParticipant.findMany.mockResolvedValue(mockParticipants);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -1635,13 +1646,13 @@ describe("groupRouter", () => {
         organizerId: "user-123",
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       mockDb.tripParticipant.findMany.mockResolvedValue([]);
 
@@ -1655,6 +1666,7 @@ describe("groupRouter", () => {
       });
 
       // Should only call upsert twice (once per unique user)
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.tripParticipant.upsert).toHaveBeenCalledTimes(2);
     });
 
@@ -1707,16 +1719,16 @@ describe("groupRouter", () => {
       const mockParticipant = createMockParticipant({ userId: "user-456" });
       const mockGroup = createMockGroup({ organizerId: "user-123" });
 
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
-      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null } as never);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
+      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null });
       mockDb.tripParticipant.count.mockResolvedValue(1);
 
       const ctx = createAuthContext(mockUser);
@@ -1735,21 +1747,21 @@ describe("groupRouter", () => {
       const mockParticipant = createMockParticipant({ userId: "user-456" });
       const mockGroup = createMockGroup({ organizerId: "user-456" });
 
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
-      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null } as never);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
+      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null });
       mockDb.tripParticipant.count.mockResolvedValue(1);
 
       // Mock requireAuth to return admin user
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValueOnce({
+      vi.mocked(requireAuth).mockResolvedValueOnce({
         user: { id: "auth-admin-123", email: "admin@example.com" },
         dbUser: mockAdminUser,
       });
@@ -1770,16 +1782,16 @@ describe("groupRouter", () => {
       const mockParticipant = createMockParticipant({ userId: "user-456" });
       const mockGroup = createMockGroup({ organizerId: "user-123" });
 
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
-      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null } as never);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
+      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null });
       // No members left after removal
       mockDb.tripParticipant.count.mockResolvedValue(0);
 
@@ -1792,6 +1804,7 @@ describe("groupRouter", () => {
       });
 
       expect(result.groupId).toBeNull();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { isDeleted: true },
@@ -1811,23 +1824,23 @@ describe("groupRouter", () => {
         updatedAt: new Date(),
       };
 
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
-      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null } as never);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
+      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null });
       // Still members left
       mockDb.tripParticipant.count.mockResolvedValue(1);
-      mockDb.tripParticipant.findFirst.mockResolvedValue(nextOrganizerParticipant as never);
+      mockDb.tripParticipant.findFirst.mockResolvedValue(nextOrganizerParticipant);
 
       // Mock requireAuth to return admin user - middleware overwrites ctx.dbUser
       const { requireAuth } = await import("@mirai-app/auth");
-      requireAuth.mockResolvedValueOnce({
+      vi.mocked(requireAuth).mockResolvedValueOnce({
         user: { id: "auth-admin-123", email: "admin@example.com" },
         dbUser: mockAdminUser,
       });
@@ -1840,6 +1853,7 @@ describe("groupRouter", () => {
         tripId: "trip-123",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { organizerId: "user-789" },
@@ -1847,12 +1861,12 @@ describe("groupRouter", () => {
     });
 
     it("should throw NOT_FOUND when participant not found", async () => {
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       mockDb.tripParticipant.findUnique.mockResolvedValue(null);
 
@@ -1868,12 +1882,12 @@ describe("groupRouter", () => {
     });
 
     it("should throw FORBIDDEN when non-organizer tries to remove member", async () => {
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockParticipant());
 
@@ -1891,12 +1905,12 @@ describe("groupRouter", () => {
     });
 
     it("should throw FORBIDDEN when organizer tries to remove themselves", async () => {
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockParticipant());
 
@@ -1923,15 +1937,15 @@ describe("groupRouter", () => {
       });
       const mockParticipant = createMockParticipant();
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
-      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null } as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
+      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null });
       // 1 member remaining after leaving (the organizer)
       mockDb.tripParticipant.count.mockResolvedValue(1);
 
@@ -1955,16 +1969,16 @@ describe("groupRouter", () => {
         { ...createMockParticipant(), id: "participant-456", userId: "next-organizer-123" },
       ];
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.tripParticipant.findMany.mockResolvedValue(otherParticipants as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
-      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null } as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.tripParticipant.findMany.mockResolvedValue(otherParticipants);
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
+      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null });
       // 1 member remaining after organizer leaves
       mockDb.tripParticipant.count.mockResolvedValue(1);
 
@@ -1986,16 +2000,16 @@ describe("groupRouter", () => {
       });
       const mockParticipant = createMockParticipant({ userId: "user-123" });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
       mockDb.tripParticipant.findMany.mockResolvedValue([]);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
-      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null } as never);
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
+      mockDb.tripParticipant.update.mockResolvedValue({ ...mockParticipant, groupId: null });
       // No members remaining after organizer leaves
       mockDb.tripParticipant.count.mockResolvedValue(0);
 
@@ -2050,7 +2064,7 @@ describe("groupRouter", () => {
         tripId: "trip-123",
       });
 
-      mockDb.group.findUnique.mockResolvedValue(existingGroup as never);
+      mockDb.group.findUnique.mockResolvedValue(existingGroup);
 
       const mockTransaction = createMockCoinTransaction({
         id: "transaction-123",
@@ -2072,14 +2086,14 @@ describe("groupRouter", () => {
         },
       });
 
-      mockDb.coinTransaction.create.mockResolvedValue(mockTransaction as never);
+      mockDb.coinTransaction.create.mockResolvedValue(mockTransaction);
 
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -2091,6 +2105,7 @@ describe("groupRouter", () => {
       });
 
       expect(result.amount).toBe(100);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { coins: { increment: 100 } },
@@ -2105,12 +2120,12 @@ describe("groupRouter", () => {
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
 
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+              if (typeof fn === "function") {
+                return await fn(mockDb);
+              }
+              return Promise.all(fn);
+            });
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -2207,7 +2222,7 @@ describe("groupRouter", () => {
         }),
       ];
 
-      mockDb.group.findMany.mockResolvedValue(mockGroups as never);
+      mockDb.group.findMany.mockResolvedValue(mockGroups);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -2230,6 +2245,7 @@ describe("groupRouter", () => {
       const result = await caller.ranking({ tripId: "trip-123" });
 
       expect(result.data).toHaveLength(0);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { tripId: "trip-123", isDeleted: false },
@@ -2260,7 +2276,7 @@ describe("groupRouter", () => {
         }),
       ];
 
-      mockDb.group.findMany.mockResolvedValue(mockGroups as never);
+      mockDb.group.findMany.mockResolvedValue(mockGroups);
       mockDb.group.count.mockResolvedValue(1);
 
       const ctx = createAuthContext(mockUser);
@@ -2295,7 +2311,7 @@ describe("groupRouter", () => {
         coinTransactions: [],
       });
 
-      mockDb.group.findMany.mockResolvedValue([mockGroup] as never);
+      mockDb.group.findMany.mockResolvedValue([mockGroup] as unknown);
       mockDb.group.count.mockResolvedValue(1);
 
       const ctx = createAuthContext(mockUser);
@@ -2328,7 +2344,7 @@ describe("groupRouter", () => {
         coinTransactions: [],
       });
 
-      mockDb.group.findMany.mockResolvedValue([mockGroup] as never);
+      mockDb.group.findMany.mockResolvedValue([mockGroup] as unknown);
       mockDb.group.count.mockResolvedValue(1);
 
       const ctx = createAuthContext(mockUser);
@@ -2358,7 +2374,7 @@ describe("groupRouter", () => {
         coinTransactions: [],
       });
 
-      mockDb.group.findMany.mockResolvedValue([mockGroup] as never);
+      mockDb.group.findMany.mockResolvedValue([mockGroup] as unknown);
       mockDb.group.count.mockResolvedValue(1);
 
       const ctx = createAuthContext(mockUser);
@@ -2398,7 +2414,7 @@ describe("groupRouter", () => {
         coinTransactions: [],
       });
 
-      mockDb.group.findMany.mockResolvedValue([mockGroup] as never);
+      mockDb.group.findMany.mockResolvedValue([mockGroup] as unknown);
       mockDb.group.count.mockResolvedValue(1);
 
       const ctx = createAuthContext(mockUser);
@@ -2499,7 +2515,7 @@ describe("groupRouter", () => {
     it("should handle missing user in context", async () => {
       const { requireAuth } = await import("@mirai-app/auth");
       // Use mockRejectedValueOnce so it only affects this test
-      requireAuth.mockRejectedValueOnce(new Error("Unauthorized"));
+      vi.mocked(requireAuth).mockRejectedValueOnce(new Error("Unauthorized"));
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -2526,8 +2542,8 @@ describe("groupRouter", () => {
         coinTransactions: [],
       });
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -2542,14 +2558,14 @@ describe("groupRouter", () => {
       const mockParticipant = createMockParticipant({ groupId: "group-123" });
       const mockGroup = createMockGroup({
         id: "group-123",
-        organizerId: null as unknown as undefined,
-        organizer: null as unknown as undefined,
+        organizerId: null as unknown as string | undefined,
+        organizer: null as unknown as User | undefined,
         participants: [],
         coinTransactions: [],
       });
 
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -2595,7 +2611,7 @@ describe("groupRouter", () => {
         ],
       });
 
-      mockDb.group.findUnique.mockResolvedValue(mockGroup as never);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

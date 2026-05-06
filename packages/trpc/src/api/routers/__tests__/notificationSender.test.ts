@@ -1,3 +1,6 @@
+ 
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { notificationSenderRouter } from "../../routers/notificationSender";
 import { createCallerFactory } from "../../trpc";
@@ -160,11 +163,13 @@ describe("notificationSenderRouter", () => {
         notificationId: "notification-123",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.create).toHaveBeenCalledWith({
         data: {
           tripId: "trip-123",
           notificationId: "notification-123",
           scheduleId: "schedule-123",
+           
           deliveryStartedAt: expect.any(Date),
           status: "pending",
         },
@@ -227,9 +232,11 @@ describe("notificationSenderRouter", () => {
         errors: null,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.update).toHaveBeenCalledWith({
         where: { notificationId: "notification-123" },
         data: {
+           
           deliveryCompletedAt: expect.any(Date),
           totalRecipients: 10,
           successCount: 10,
@@ -261,8 +268,11 @@ describe("notificationSenderRouter", () => {
         errors: null,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.update).toHaveBeenCalledWith(
+         
         expect.objectContaining({
+           
           data: expect.objectContaining({
             status: "partial_failure",
           }),
@@ -291,8 +301,11 @@ describe("notificationSenderRouter", () => {
         errors: "All tokens invalid",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.update).toHaveBeenCalledWith(
+         
         expect.objectContaining({
+           
           data: expect.objectContaining({
             status: "failure",
             errors: "All tokens invalid",
@@ -339,9 +352,11 @@ describe("notificationSenderRouter", () => {
         error: "Network error",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.update).toHaveBeenCalledWith({
         where: { notificationId: "notification-123" },
         data: {
+           
           deliveryCompletedAt: expect.any(Date),
           errors: "Network error",
           status: "failure",
@@ -375,12 +390,15 @@ describe("notificationSenderRouter", () => {
         error: "Service unavailable",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.create).toHaveBeenCalledWith({
         data: {
           notificationId: "notification-123",
           scheduleId: "schedule-123",
           tripId: "trip-123",
+           
           deliveryStartedAt: expect.any(Date),
+           
           deliveryCompletedAt: expect.any(Date),
           errors: "Service unavailable",
           status: "failure",
@@ -407,8 +425,11 @@ describe("notificationSenderRouter", () => {
         error: new Error("Custom error message"),
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.update).toHaveBeenCalledWith(
+         
         expect.objectContaining({
+           
           data: expect.objectContaining({
             errors: "Custom error message",
           }),

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { challengeVoteRouter } from "../../routers/challengeVote";
@@ -229,11 +232,11 @@ describe("challengeVoteRouter", () => {
           endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
         }),
       },
-      $transaction: vi.fn(async (callback) => {
+      $transaction: vi.fn(async (callback: unknown) => {
         if (typeof callback === "function") {
-          return await callback(mockDb);
+          return await (callback as (db: PrismaClient) => Promise<unknown>)(mockDb);
         }
-        return Promise.all(callback);
+        return Promise.all(callback as unknown[]);
       }),
     } as unknown as PrismaClient;
   });
@@ -254,8 +257,8 @@ describe("challengeVoteRouter", () => {
         createMockVote({ id: "vote-1", votePosition: 1, votePoints: 3 }),
         createMockVote({ id: "vote-2", votePosition: 2, votePoints: 2 }),
       ];
-      mockDb.challengeVote.findMany.mockResolvedValue(mockVotes as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.challengeVote.findMany.mockResolvedValue(mockVotes);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -285,8 +288,8 @@ describe("challengeVoteRouter", () => {
     });
 
     it("should return empty array when user has no votes", async () => {
-      mockDb.challengeVote.findMany.mockResolvedValue([] as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.challengeVote.findMany.mockResolvedValue([]);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -306,7 +309,7 @@ describe("challengeVoteRouter", () => {
         createMockVote({ id: "vote-1", voterId: "participant-1" }),
         createMockVote({ id: "vote-2", voterId: "participant-2" }),
       ];
-      mockDb.challengeVote.findMany.mockResolvedValue(mockVotes as never);
+      mockDb.challengeVote.findMany.mockResolvedValue(mockVotes);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -316,6 +319,7 @@ describe("challengeVoteRouter", () => {
       });
 
       expect(result).toHaveLength(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challengeVote.findMany).toHaveBeenCalledWith({
         where: { challengeId: "challenge-123" },
         select: expect.any(Object),
@@ -329,7 +333,7 @@ describe("challengeVoteRouter", () => {
         createMockVote({ id: "vote-2", voterId: "participant-1", votePosition: 2 }),
         createMockVote({ id: "vote-3", voterId: "participant-2", votePosition: 1 }),
       ];
-      mockDb.challengeVote.findMany.mockResolvedValue(mockVotes as never);
+      mockDb.challengeVote.findMany.mockResolvedValue(mockVotes);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -352,17 +356,17 @@ describe("challengeVoteRouter", () => {
         status: "ACTIVE",
         endTime: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
       });
-      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge as never);
+      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
       mockDb.challengeSubmission.count.mockResolvedValue(5);
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({ id: "admin-participant-1", userId: "admin-1" }),
         createMockParticipant({ id: "admin-participant-2", userId: "admin-2" }),
-      ] as never);
+      ]);
       mockDb.challengeVote.findMany.mockResolvedValue([
         createMockVote({ voterId: "admin-participant-1", votePosition: 1 }),
         createMockVote({ voterId: "admin-participant-1", votePosition: 2 }),
         createMockVote({ voterId: "admin-participant-1", votePosition: 3 }),
-      ] as never);
+      ]);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -383,7 +387,7 @@ describe("challengeVoteRouter", () => {
         id: "challenge-123",
         scoringCategory: "PEER_VOTING",
       });
-      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge as never);
+      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -405,14 +409,14 @@ describe("challengeVoteRouter", () => {
         status: "ACTIVE",
         endTime: new Date(Date.now() - 60 * 60 * 1000),
       });
-      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
+      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
+      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
         if (typeof fn === "function") {
-          return await fn(mockDb);
+          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
         }
-        return Promise.all(fn);
+        return Promise.all(fn as unknown[]);
       });
-      mockDb.challenge.updateMany.mockResolvedValue({ count: 1 } as never);
+      mockDb.challenge.updateMany.mockResolvedValue({ count: 1 });
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -434,7 +438,7 @@ describe("challengeVoteRouter", () => {
         status: "CANCELLED",
         endTime: new Date(Date.now() - 60 * 60 * 1000),
       });
-      mockDb.challenge.findFirst.mockResolvedValue(cancelledChallenge as never);
+      mockDb.challenge.findFirst.mockResolvedValue(cancelledChallenge);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -454,7 +458,7 @@ describe("challengeVoteRouter", () => {
         status: "ACTIVE",
         endTime: new Date(Date.now() + 60 * 60 * 1000), // 1 hour in future
       });
-      mockDb.challenge.findFirst.mockResolvedValue(futureChallenge as never);
+      mockDb.challenge.findFirst.mockResolvedValue(futureChallenge);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -480,23 +484,23 @@ describe("challengeVoteRouter", () => {
         createMockVote({ id: "vote-2", submissionId: "submission-2", votePosition: 2, votePoints: 2 }),
         createMockVote({ id: "vote-3", submissionId: "submission-3", votePosition: 3, votePoints: 1 }),
       ];
-      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge as never);
+      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge);
       mockDb.tripParticipant.findUnique.mockResolvedValue({
         ...mockParticipant,
         groupId: "different-group-123",
-      } as never);
+      });
       mockDb.challengeSubmission.findMany.mockResolvedValue([
         createMockSubmission({ id: "submission-1", groupId: "group-1" }),
         createMockSubmission({ id: "submission-2", groupId: "group-2" }),
         createMockSubmission({ id: "submission-3", groupId: "group-3" }),
-      ] as never);
-      mockDb.challengeVote.findMany.mockResolvedValue([] as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
+      ]);
+      mockDb.challengeVote.findMany.mockResolvedValue([]);
+      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
         if (typeof fn === "function") {
-          await fn(mockDb);
+          await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
           return createdVotes;
         }
-        return Promise.all(fn);
+        return Promise.all(fn as unknown[]);
       });
 
       const ctx = createAuthContext(mockUser);
@@ -521,8 +525,8 @@ describe("challengeVoteRouter", () => {
         scoringCategory: "PEER_VOTING",
         status: "VOTING_PHASE",
       });
-      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -545,8 +549,8 @@ describe("challengeVoteRouter", () => {
         scoringCategory: "PEER_VOTING",
         status: "VOTING_PHASE",
       });
-      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -569,14 +573,14 @@ describe("challengeVoteRouter", () => {
         scoringCategory: "PEER_VOTING",
         status: "VOTING_PHASE",
       });
-      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge as never);
+      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge);
       mockDb.tripParticipant.findUnique.mockResolvedValue({
         ...mockParticipant,
         groupId: "group-123",
-      } as never);
+      });
       mockDb.challengeSubmission.findMany.mockResolvedValue([
         createMockSubmission({ id: "submission-1", groupId: "group-123" }), // Same as participant's group
-      ] as never);
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -596,14 +600,14 @@ describe("challengeVoteRouter", () => {
         scoringCategory: "PEER_VOTING",
         status: "VOTING_PHASE",
       });
-      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
       mockDb.challengeSubmission.findMany.mockResolvedValue([
         createMockSubmission({ id: "submission-1", groupId: "group-1" }),
-      ] as never);
+      ]);
       mockDb.challengeVote.findMany.mockResolvedValue([
         createMockVote({ voterId: "participant-123" }),
-      ] as never);
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -625,22 +629,22 @@ describe("challengeVoteRouter", () => {
         scoringCategory: "PEER_VOTING",
         status: "VOTING_PHASE",
       });
-      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge as never);
+      mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge);
       mockDb.tripParticipant.findUnique.mockResolvedValue({
         ...mockParticipant,
         groupId: "different-group-123",
-      } as never);
-      mockDb.challengeSubmission.findFirst.mockResolvedValue(
-        createMockSubmission({ id: "submission-123", groupId: "group-1" }) as never
-      );
-      mockDb.challengeVote.findMany.mockResolvedValue([] as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
       });
-      mockDb.challengeVote.create.mockResolvedValue(mockVote as never);
+      mockDb.challengeSubmission.findFirst.mockResolvedValue(
+        createMockSubmission({ id: "submission-123", groupId: "group-1" })
+      );
+      mockDb.challengeVote.findMany.mockResolvedValue([]);
+      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
+        if (typeof fn === "function") {
+          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
+        }
+        return Promise.all(fn as unknown[]);
+      });
+      mockDb.challengeVote.create.mockResolvedValue(mockVote);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -664,23 +668,23 @@ describe("challengeVoteRouter", () => {
         status: "ACTIVE",
         endTime: new Date(Date.now() - 60 * 60 * 1000),
       });
-      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge as never);
+      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
       mockDb.tripParticipant.findUnique.mockResolvedValue({
         ...mockParticipant,
         groupId: "admin-group-123",
-      } as never);
-      mockDb.challengeSubmission.findFirst.mockResolvedValue(
-        createMockSubmission({ id: "submission-123", groupId: "different-group-456" }) as never
-      );
-      mockDb.challengeVote.findMany.mockResolvedValue([] as never);
-      mockDb.challengeSubmission.count.mockResolvedValue(5);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
-        if (typeof fn === "function") {
-          return await fn(mockDb);
-        }
-        return Promise.all(fn);
       });
-      mockDb.challengeVote.create.mockResolvedValue(mockVote as never);
+      mockDb.challengeSubmission.findFirst.mockResolvedValue(
+        createMockSubmission({ id: "submission-123", groupId: "different-group-456" })
+      );
+      mockDb.challengeVote.findMany.mockResolvedValue([]);
+      mockDb.challengeSubmission.count.mockResolvedValue(5);
+      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
+        if (typeof fn === "function") {
+          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
+        }
+        return Promise.all(fn as unknown[]);
+      });
+      mockDb.challengeVote.create.mockResolvedValue(mockVote);
 
       const { requireAuth } = await import("@mirai-app/auth");
       requireAuth.mockResolvedValue({
@@ -709,8 +713,8 @@ describe("challengeVoteRouter", () => {
         status: "ACTIVE",
         endTime: new Date(Date.now() - 60 * 60 * 1000),
       });
-      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -733,12 +737,12 @@ describe("challengeVoteRouter", () => {
         status: "ACTIVE",
         endTime: new Date(Date.now() - 60 * 60 * 1000),
       });
-      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
       mockDb.challengeSubmission.findFirst.mockResolvedValue(
-        createMockSubmission({ id: "submission-123" }) as never
+        createMockSubmission({ id: "submission-123" })
       );
-      mockDb.challengeVote.findMany.mockResolvedValue([] as never);
+      mockDb.challengeVote.findMany.mockResolvedValue([]);
       mockDb.challengeSubmission.count.mockResolvedValue(2); // Only 2 submissions, so positions 1-2 allowed
 
       const ctx = createAuthContext(mockAdminUser);
@@ -762,14 +766,14 @@ describe("challengeVoteRouter", () => {
         status: "ACTIVE",
         endTime: new Date(Date.now() - 60 * 60 * 1000),
       });
-      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge as never);
-      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant as never);
+      mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
       mockDb.challengeSubmission.findFirst.mockResolvedValue(
-        createMockSubmission({ id: "submission-123" }) as never
+        createMockSubmission({ id: "submission-123" })
       );
       mockDb.challengeVote.findMany.mockResolvedValue([
         createMockVote({ voterId: "participant-123", votePosition: 1, submissionId: "submission-other" }),
-      ] as never);
+      ]);
       mockDb.challengeSubmission.count.mockResolvedValue(5);
 
       const ctx = createAuthContext(mockAdminUser);

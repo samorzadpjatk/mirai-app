@@ -1,3 +1,6 @@
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { storageRouter } from "../../routers/storage";
@@ -156,12 +159,13 @@ describe("storageRouter", () => {
       });
 
       expect(result.token).toBe("upload-token-123");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
+      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -287,7 +291,7 @@ describe("storageRouter", () => {
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
+      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -328,7 +332,7 @@ describe("storageRouter", () => {
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
+      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -464,7 +468,7 @@ describe("storageRouter", () => {
 
     it("should handle URL-based storage paths gracefully", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
+      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

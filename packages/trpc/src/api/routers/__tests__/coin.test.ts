@@ -1,3 +1,6 @@
+ 
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { coinRouter } from "../../routers/coin";
@@ -130,11 +133,11 @@ describe("coinRouter", () => {
       coinTransaction: {
         create: vi.fn().mockResolvedValue(createMockCoinTransaction()),
       },
-      $transaction: vi.fn(async (callback) => {
+      $transaction: vi.fn(async (callback: unknown): Promise<unknown> => {
         if (typeof callback === "function") {
-          return await callback(mockDb);
+          return await (callback as (db: typeof mockDb) => unknown)(mockDb);
         }
-        return Promise.all(callback);
+        return Promise.all(callback as unknown[]);
       }),
     } as unknown as PrismaClient;
   });
@@ -170,9 +173,12 @@ describe("coinRouter", () => {
         },
       });
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn> as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
-      (mockDb.group.update as ReturnType<typeof vi.fn> as ReturnType<typeof vi.fn>).mockResolvedValue(updatedGroup);
-      (mockDb.coinTransaction.create as ReturnType<typeof vi.fn> as ReturnType<typeof vi.fn>).mockResolvedValue(transaction);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.group.findUnique).mockResolvedValue(mockGroup);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.group.update).mockResolvedValue(updatedGroup);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.coinTransaction.create).mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -186,10 +192,12 @@ describe("coinRouter", () => {
 
       expect(result.amount).toBe(50);
       expect(result.group.coins).toBe(150);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { coins: { increment: 50 } },
       });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.create).toHaveBeenCalled();
     });
 
@@ -258,6 +266,7 @@ describe("coinRouter", () => {
       expect(createRankChangeActivities).toHaveBeenCalledWith({
         tx: mockDb,
         tripId: "trip-123",
+         
         previousSnapshot: expect.any(Map),
         createdByAdmin: "moderator-123",
       });
@@ -326,6 +335,7 @@ describe("coinRouter", () => {
 
       expect(result.amount).toBe(-50);
       expect(result.group.coins).toBe(50);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { coins: { decrement: 50 } },
@@ -430,6 +440,7 @@ describe("coinRouter", () => {
       expect(createRankChangeActivities).toHaveBeenCalledWith({
         tx: mockDb,
         tripId: "trip-123",
+         
         previousSnapshot: expect.any(Map),
         createdByAdmin: "moderator-123",
       });

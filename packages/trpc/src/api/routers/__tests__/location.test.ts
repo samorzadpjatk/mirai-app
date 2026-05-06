@@ -1,14 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { locationRouter } from "../../routers/location";
 import { createCallerFactory } from "../../trpc";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { PrismaClient, User, Location, TripParticipant, LocationSharingRequest } from "@mirai-app/db";
+import type * as locationValidationModule from "../../../utils/location-validation";
 
 vi.mock("../../../utils/location-validation", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../utils/location-validation")>();
+  const actual = await importOriginal<typeof locationValidationModule>();
   return {
     ...actual,
     calculateDistance: vi.fn().mockReturnValue(5.0),
@@ -127,11 +130,13 @@ describe("locationRouter", () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-      $transaction: vi.fn().mockImplementation(async (fn: Function) => {
+      $transaction: vi.fn().mockImplementation(<T>(
+        fn: ((client: typeof mockDb) => Promise<T>) | Promise<T>[]
+      ): Promise<T | T[]> => {
         if (typeof fn === "function") {
-          return await fn(mockDb);
+          return fn(mockDb);
         }
-        return fn;
+        return Promise.all(fn);
       }),
     } as unknown as PrismaClient;
 
@@ -175,7 +180,7 @@ describe("locationRouter", () => {
         longitude: 21.0122,
         accuracy: 5,
       });
-      mockDb.location.upsert.mockResolvedValue(updatedLocation as never);
+      mockDb.location.upsert.mockResolvedValue(updatedLocation);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -188,6 +193,7 @@ describe("locationRouter", () => {
 
       expect(result.latitude).toBe(52.2297);
       expect(result.longitude).toBe(21.0122);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.location.upsert).toHaveBeenCalledWith({
         where: { userId: "user-123" },
         update: {
@@ -215,7 +221,7 @@ describe("locationRouter", () => {
     });
 
     it("should create new location if none exists", async () => {
-      mockDb.location.upsert.mockResolvedValue(mockLocation as never);
+      mockDb.location.upsert.mockResolvedValue(mockLocation);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -226,6 +232,7 @@ describe("locationRouter", () => {
       });
 
       expect(result).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.location.upsert).toHaveBeenCalled();
     });
 
@@ -239,7 +246,7 @@ describe("locationRouter", () => {
         heading: 90,
         speed: 5.5,
       });
-      mockDb.location.upsert.mockResolvedValue(fullLocation as never);
+      mockDb.location.upsert.mockResolvedValue(fullLocation);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -262,7 +269,7 @@ describe("locationRouter", () => {
 
   describe("getMyLocation", () => {
     it("should return current user's location", async () => {
-      mockDb.location.findUnique.mockResolvedValue(mockLocation as never);
+      mockDb.location.findUnique.mockResolvedValue(mockLocation);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -270,13 +277,14 @@ describe("locationRouter", () => {
       const result = await caller.getMyLocation();
 
       expect(result).toEqual(mockLocation);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.location.findUnique).toHaveBeenCalledWith({
         where: { userId: "user-123" },
       });
     });
 
     it("should return null when user has no location", async () => {
-      mockDb.location.findUnique.mockResolvedValue(null as never);
+      mockDb.location.findUnique.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -304,7 +312,7 @@ describe("locationRouter", () => {
       mockDb.location.findMany.mockResolvedValue([{
         ...friendLocation,
         user: friendUser,
-      }] as never);
+      }]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -316,7 +324,7 @@ describe("locationRouter", () => {
     });
 
     it("should only return locations where user is in sharing list", async () => {
-      mockDb.location.findMany.mockResolvedValue([] as never);
+      mockDb.location.findMany.mockResolvedValue([]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -324,6 +332,7 @@ describe("locationRouter", () => {
       const result = await caller.getFriendsLocations();
 
       expect(result).toEqual([]);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.location.findMany).toHaveBeenCalledWith({
         where: {
           isSharingLocation: true,
@@ -349,7 +358,7 @@ describe("locationRouter", () => {
           createMockUser({ id: "user-789", firstName: "Friend", lastName: "Two" }),
         ],
       };
-      mockDb.location.findUnique.mockResolvedValue(locationWithUsers as never);
+      mockDb.location.findUnique.mockResolvedValue(locationWithUsers);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -361,7 +370,7 @@ describe("locationRouter", () => {
     });
 
     it("should return default settings when no location exists", async () => {
-      mockDb.location.findUnique.mockResolvedValue(null as never);
+      mockDb.location.findUnique.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -382,11 +391,11 @@ describe("locationRouter", () => {
           createMockUser({ id: "user-456", firstName: "Friend", lastName: "One" }),
         ],
       };
-      mockDb.location.upsert.mockResolvedValue(updatedLocation as never);
-      mockDb.tripParticipant.findFirst.mockResolvedValue(mockParticipant as never);
+      mockDb.location.upsert.mockResolvedValue(updatedLocation);
+      mockDb.tripParticipant.findFirst.mockResolvedValue(mockParticipant);
       mockDb.tripParticipant.findMany.mockResolvedValue([
         { userId: "user-456" },
-      ] as never);
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -398,11 +407,12 @@ describe("locationRouter", () => {
       });
 
       expect(result.isSharingLocation).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.location.upsert).toHaveBeenCalled();
     });
 
     it("should throw FORBIDDEN when user is not in active trip", async () => {
-      mockDb.tripParticipant.findMany.mockResolvedValue([] as never);
+      mockDb.tripParticipant.findMany.mockResolvedValue([]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -415,17 +425,17 @@ describe("locationRouter", () => {
     });
 
     it("should validate shareable targets when userIds provided", async () => {
-      mockDb.tripParticipant.findFirst.mockResolvedValue(mockParticipant as never);
+      mockDb.tripParticipant.findFirst.mockResolvedValue(mockParticipant);
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({ userId: "user-456", tripId: "trip-123" }),
-      ] as never);
+      ]);
 
       const updatedLocation = {
         ...mockLocation,
         isSharingLocation: true,
         usersToShareWith: [createMockUser({ id: "user-456" })],
       };
-      mockDb.location.upsert.mockResolvedValue(updatedLocation as never);
+      mockDb.location.upsert.mockResolvedValue(updatedLocation);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -449,8 +459,8 @@ describe("locationRouter", () => {
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({ userId: "user-456", tripId: "trip-123" }),
         createMockParticipant({ userId: "user-789", tripId: "trip-123" }),
-      ] as never);
-      mockDb.user.findMany.mockResolvedValue(shareableUsers as never);
+      ]);
+      mockDb.user.findMany.mockResolvedValue(shareableUsers);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -461,7 +471,7 @@ describe("locationRouter", () => {
     });
 
     it("should return empty array when user has no trips", async () => {
-      mockDb.tripParticipant.findMany.mockResolvedValue([] as never);
+      mockDb.tripParticipant.findMany.mockResolvedValue([]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -475,11 +485,11 @@ describe("locationRouter", () => {
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({ userId: "user-456", tripId: "trip-123" }),
         createMockParticipant({ userId: "user-789", tripId: "trip-456" }),
-      ] as never);
+      ]);
       mockDb.user.findMany.mockResolvedValue([
         createMockUser({ id: "user-456" }),
         createMockUser({ id: "user-789" }),
-      ] as never);
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -496,7 +506,7 @@ describe("locationRouter", () => {
         ...mockLocation,
         usersToShareWith: [createMockUser({ id: "user-456", firstName: "Friend", lastName: "One" })],
       };
-      mockDb.location.upsert.mockResolvedValue(updatedLocation as never);
+      mockDb.location.upsert.mockResolvedValue(updatedLocation);
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
         callCount++;
@@ -507,9 +517,9 @@ describe("locationRouter", () => {
               tripId: "trip-123",
               trip: { id: "trip-123", endDate: new Date(Date.now() + 24 * 60 * 60 * 1000) },
             },
-          ] as never);
+          ]);
         }
-        return Promise.resolve([{ userId: "user-456" }] as never);
+        return Promise.resolve([{ userId: "user-456" }]);
       });
 
       const ctx = createAuthContext(mockUser);
@@ -531,7 +541,7 @@ describe("locationRouter", () => {
     });
 
     it("should throw BAD_REQUEST when user is outside sharing scope", async () => {
-      mockDb.tripParticipant.findMany.mockResolvedValue([] as never);
+      mockDb.tripParticipant.findMany.mockResolvedValue([]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -548,14 +558,14 @@ describe("locationRouter", () => {
         ...mockLocation,
         usersToShareWith: [],
       };
-      mockDb.location.update.mockResolvedValue(updatedLocation as never);
+      mockDb.location.update.mockResolvedValue(updatedLocation);
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({
           userId: "user-123",
           tripId: "trip-123",
           trip: { id: "trip-123", endDate: new Date(Date.now() + 24 * 60 * 60 * 1000) },
         }),
-      ] as never);
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -563,6 +573,7 @@ describe("locationRouter", () => {
       const result = await caller.removeUserFromSharing({ userId: "user-456" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.location.update).toHaveBeenCalledWith({
         where: { userId: "user-123" },
         data: {
@@ -586,9 +597,9 @@ describe("locationRouter", () => {
 
   describe("requestLocationSharing", () => {
     it("should create new sharing request", async () => {
-      mockDb.locationSharingRequest.findFirst.mockResolvedValue(null as never);
+      mockDb.locationSharingRequest.findFirst.mockResolvedValue(null);
       mockDb.locationSharingRequest.create.mockResolvedValue(
-        createMockSharingRequest({ id: "new-request-123" }) as never
+        createMockSharingRequest({ id: "new-request-123" })
       );
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
@@ -600,9 +611,9 @@ describe("locationRouter", () => {
               tripId: "trip-123",
               trip: { id: "trip-123", endDate: new Date(Date.now() + 24 * 60 * 60 * 1000) },
             },
-          ] as never);
+          ]);
         }
-        return Promise.resolve([{ userId: "user-456" }] as never);
+        return Promise.resolve([{ userId: "user-456" }]);
       });
 
       const ctx = createAuthContext(mockUser);
@@ -625,7 +636,7 @@ describe("locationRouter", () => {
 
     it("should throw BAD_REQUEST when request already pending", async () => {
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(
-        createMockSharingRequest({ status: "PENDING" }) as never
+        createMockSharingRequest({ status: "PENDING" })
       );
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
@@ -637,9 +648,9 @@ describe("locationRouter", () => {
               tripId: "trip-123",
               trip: { id: "trip-123", endDate: new Date(Date.now() + 24 * 60 * 60 * 1000) },
             },
-          ] as never);
+          ]);
         }
-        return Promise.resolve([{ userId: "user-456" }] as never);
+        return Promise.resolve([{ userId: "user-456" }]);
       });
 
       const ctx = createAuthContext(mockUser);
@@ -652,7 +663,7 @@ describe("locationRouter", () => {
 
     it("should throw BAD_REQUEST when already sharing", async () => {
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(
-        createMockSharingRequest({ status: "ACCEPTED" }) as never
+        createMockSharingRequest({ status: "ACCEPTED" })
       );
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
@@ -664,9 +675,9 @@ describe("locationRouter", () => {
               tripId: "trip-123",
               trip: { id: "trip-123", endDate: new Date(Date.now() + 24 * 60 * 60 * 1000) },
             },
-          ] as never);
+          ]);
         }
-        return Promise.resolve([{ userId: "user-456" }] as never);
+        return Promise.resolve([{ userId: "user-456" }]);
       });
 
       const ctx = createAuthContext(mockUser);
@@ -679,10 +690,10 @@ describe("locationRouter", () => {
 
     it("should update rejected request to pending", async () => {
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(
-        createMockSharingRequest({ status: "REJECTED" }) as never
+        createMockSharingRequest({ status: "REJECTED" })
       );
       mockDb.locationSharingRequest.update.mockResolvedValue(
-        createMockSharingRequest({ status: "PENDING" }) as never
+        createMockSharingRequest({ status: "PENDING" })
       );
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
@@ -694,9 +705,9 @@ describe("locationRouter", () => {
               tripId: "trip-123",
               trip: { id: "trip-123", endDate: new Date(Date.now() + 24 * 60 * 60 * 1000) },
             },
-          ] as never);
+          ]);
         }
-        return Promise.resolve([{ userId: "user-456" }] as never);
+        return Promise.resolve([{ userId: "user-456" }]);
       });
 
       const ctx = createAuthContext(mockUser);
@@ -705,6 +716,7 @@ describe("locationRouter", () => {
       const result = await caller.requestLocationSharing({ receiverId: "user-456" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.locationSharingRequest.update).toHaveBeenCalled();
     });
   });
@@ -717,15 +729,17 @@ describe("locationRouter", () => {
         receiverId: "user-123",
         status: "PENDING",
       });
-      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request as never);
-      mockDb.$transaction.mockImplementation(async (fn: Function) => {
+      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request);
+      mockDb.$transaction.mockImplementation(<T>(
+        fn: ((client: typeof mockDb) => Promise<T>) | Promise<T>[]
+      ): Promise<T | T[]> => {
         if (typeof fn === "function") {
-          return await fn(mockDb);
+          return fn(mockDb);
         }
         return Promise.all(fn);
       });
       mockDb.locationSharingRequest.update.mockResolvedValue(
-        createMockSharingRequest({ status: "ACCEPTED" }) as never
+        createMockSharingRequest({ status: "ACCEPTED" })
       );
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({
@@ -733,7 +747,7 @@ describe("locationRouter", () => {
           tripId: "trip-123",
           trip: { id: "trip-123", endDate: new Date(Date.now() + 24 * 60 * 60 * 1000) },
         }),
-      ] as never);
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -745,7 +759,7 @@ describe("locationRouter", () => {
     });
 
     it("should throw NOT_FOUND when request doesn't exist", async () => {
-      mockDb.locationSharingRequest.findUnique.mockResolvedValue(null as never);
+      mockDb.locationSharingRequest.findUnique.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -761,7 +775,7 @@ describe("locationRouter", () => {
         receiverId: "user-789", // Different from current user
         status: "PENDING",
       });
-      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request as never);
+      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -777,7 +791,7 @@ describe("locationRouter", () => {
         receiverId: "user-123",
         status: "ACCEPTED",
       });
-      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request as never);
+      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -796,9 +810,9 @@ describe("locationRouter", () => {
         receiverId: "user-123",
         status: "PENDING",
       });
-      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request as never);
+      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request);
       mockDb.locationSharingRequest.update.mockResolvedValue(
-        createMockSharingRequest({ status: "REJECTED" }) as never
+        createMockSharingRequest({ status: "REJECTED" })
       );
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({
@@ -806,7 +820,7 @@ describe("locationRouter", () => {
           tripId: "trip-123",
           trip: { id: "trip-123", endDate: new Date(Date.now() + 24 * 60 * 60 * 1000) },
         }),
-      ] as never);
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -818,7 +832,7 @@ describe("locationRouter", () => {
     });
 
     it("should throw NOT_FOUND when request doesn't exist", async () => {
-      mockDb.locationSharingRequest.findUnique.mockResolvedValue(null as never);
+      mockDb.locationSharingRequest.findUnique.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -834,7 +848,7 @@ describe("locationRouter", () => {
         receiverId: "user-789",
         status: "PENDING",
       });
-      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request as never);
+      mockDb.locationSharingRequest.findUnique.mockResolvedValue(request);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -861,7 +875,7 @@ describe("locationRouter", () => {
           sender: createMockUser({ id: "user-789", firstName: "Sender", lastName: "Two" }),
         }),
       ];
-      mockDb.locationSharingRequest.findMany.mockResolvedValue(pendingRequests as never);
+      mockDb.locationSharingRequest.findMany.mockResolvedValue(pendingRequests);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -869,6 +883,7 @@ describe("locationRouter", () => {
       const result = await caller.getPendingLocationSharingRequests();
 
       expect(result).toHaveLength(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.locationSharingRequest.findMany).toHaveBeenCalledWith({
         where: {
           receiverId: "user-123",
@@ -889,7 +904,7 @@ describe("locationRouter", () => {
     });
 
     it("should return empty array when no pending requests", async () => {
-      mockDb.locationSharingRequest.findMany.mockResolvedValue([] as never);
+      mockDb.locationSharingRequest.findMany.mockResolvedValue([]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -918,8 +933,8 @@ describe("locationRouter", () => {
           sender: createMockUser({ id: "user-789", firstName: "Sender", lastName: "One" }),
         }),
       ];
-      mockDb.locationSharingRequest.findMany.mockResolvedValueOnce(sentRequests as never)
-        .mockResolvedValueOnce(receivedRequests as never);
+      mockDb.locationSharingRequest.findMany.mockResolvedValueOnce(sentRequests)
+        .mockResolvedValueOnce(receivedRequests);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -931,8 +946,8 @@ describe("locationRouter", () => {
     });
 
     it("should return empty arrays when no requests exist", async () => {
-      mockDb.locationSharingRequest.findMany.mockResolvedValueOnce([] as never)
-        .mockResolvedValueOnce([] as never);
+      mockDb.locationSharingRequest.findMany.mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

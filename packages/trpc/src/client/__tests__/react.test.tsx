@@ -85,7 +85,7 @@ describe("useTRPC", () => {
 
   it("should throw error when used outside of provider", () => {
     // Suppress console.error for this test since we expect an error
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* suppress expected error */ });
 
     expect(() => {
       renderHook(() => useTRPC());
@@ -250,7 +250,7 @@ describe("useTRPCClient", () => {
 
   it("should throw error when used outside of provider", () => {
     // Suppress console.error for this test since we expect an error
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* suppress expected error */ });
 
     expect(() => {
       renderHook(() => useTRPCClient());
@@ -496,7 +496,7 @@ describe("Integration with React patterns", () => {
 
 describe("Error boundary scenarios", () => {
   it("should throw with correct error message when context is null", () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* suppress expected error */ });
 
     // Test useTRPC
     expect(() => {
@@ -512,7 +512,7 @@ describe("Error boundary scenarios", () => {
   });
 
   it("should throw immediately without attempting to access properties", () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* suppress expected error */ });
 
     let errorThrown = false;
     let attemptedAccess = false;

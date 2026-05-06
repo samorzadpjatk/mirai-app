@@ -1,3 +1,6 @@
+ 
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { notificationDeliveryRouter } from "../../routers/notificationDelivery";
@@ -203,8 +206,10 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.deliveries).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
+           
           where: expect.objectContaining({
             tripId: "trip-123",
             deliveryStartedAt: {
@@ -231,8 +236,10 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.deliveries).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
+           
           where: expect.objectContaining({
             tripId: "trip-123",
             scheduleId: "schedule-123",
@@ -436,8 +443,10 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.totalDeliveries).toBe(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.aggregate).toHaveBeenCalledWith(
         expect.objectContaining({
+           
           where: expect.objectContaining({
             tripId: "trip-123",
             deliveryStartedAt: {
@@ -468,8 +477,10 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.totalDeliveries).toBe(3);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.aggregate).toHaveBeenCalledWith(
         expect.objectContaining({
+           
           where: expect.objectContaining({
             tripId: "trip-123",
             scheduleId: "schedule-123",
@@ -498,8 +509,10 @@ describe("notificationDeliveryRouter", () => {
 
       expect(result.deliveries).toHaveLength(2);
       expect(result.total).toBe(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
+           
           where: expect.objectContaining({
             tripId: "trip-123",
             OR: [{ status: "failure" }, { status: "partial_failure" }],

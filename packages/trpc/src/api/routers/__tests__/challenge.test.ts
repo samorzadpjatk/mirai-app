@@ -1,3 +1,6 @@
+ 
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { challengeRouter } from "../../routers/challenge";
 import { createCallerFactory } from "../../trpc";
@@ -238,7 +241,7 @@ describe("challengeRouter", () => {
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn((cb) => cb(mockDb)),
+      $transaction: vi.fn((cb: (prisma: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
     } as unknown as PrismaClient;
   });
 
@@ -260,8 +263,10 @@ describe("challengeRouter", () => {
         name: mockChallenge.name,
         qrCodeValue: mockChallenge.expectedValue,
       });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challenge.findMany).toHaveBeenCalledWith({
         where: { isRecurring: false },
+         
         select: expect.any(Object),
         orderBy: { createdAt: "desc" },
       });
@@ -278,6 +283,7 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
       await caller.getAll();
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 
@@ -292,6 +298,7 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
       await caller.getAll();
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challenge.updateMany).toHaveBeenCalled();
     });
   });
@@ -321,7 +328,9 @@ describe("challengeRouter", () => {
     });
 
     it("should include participant submission counts", async () => {
-      mockDb.challengeSubmission.groupBy.mockResolvedValue([
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challengeSubmission.groupBy).mockResolvedValue([
         { challengeId: "challenge-1", _count: { _all: 5 } }
       ]);
 
@@ -339,7 +348,9 @@ describe("challengeRouter", () => {
     });
 
     it("should include my group submission status", async () => {
-      mockDb.challengeSubmission.findMany.mockResolvedValue([
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challengeSubmission.findMany).mockResolvedValue([
         { challengeId: "challenge-1", status: "PENDING" }
       ]);
 
@@ -357,7 +368,9 @@ describe("challengeRouter", () => {
     });
 
     it("should handle empty challenges list", async () => {
-      mockDb.challenge.findMany.mockResolvedValue([]);
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findMany).mockResolvedValue([]);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -407,7 +420,9 @@ describe("challengeRouter", () => {
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue(null);
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -425,9 +440,12 @@ describe("challengeRouter", () => {
 
     it("should resolve recurring challenge id for non-admin users", async () => {
       const { resolveRecurringChallengeIdForTrip } = await import("../../../utils/recurringChallenges");
-      resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
+       
+      vi.mocked(resolveRecurringChallengeIdForTrip).mockResolvedValue(null);
 
-      mockDb.user.findFirst.mockResolvedValue(null);
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.user.findFirst).mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -439,14 +457,18 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
       await caller.getById({ id: "challenge-1", tripId: "trip-1" });
 
+       
       expect(resolveRecurringChallengeIdForTrip).toHaveBeenCalled();
     });
 
     it("should use original id for admin/moderator users", async () => {
       const { resolveRecurringChallengeIdForTrip } = await import("../../../utils/recurringChallenges");
 
-      mockDb.challenge.findFirst.mockResolvedValue(mockChallenge);
-      resolveRecurringChallengeIdForTrip.mockResolvedValue("recurring-challenge-id");
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(mockChallenge);
+       
+      vi.mocked(resolveRecurringChallengeIdForTrip).mockResolvedValue("recurring-challenge-id");
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -481,6 +503,7 @@ describe("challengeRouter", () => {
       });
 
       expect(result.name).toBe("Test Challenge");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challenge.create).toHaveBeenCalled();
     });
 
@@ -856,13 +879,16 @@ describe("challengeRouter", () => {
 
       // Should create activity for challenge start
       const { createChallengeStatusActivityById } = await import("../../../utils/activityFeed");
+       
       expect(createChallengeStatusActivityById).toHaveBeenCalled();
     });
 
     it("should precreate recurring instances for recurring challenge", async () => {
       const { precreateRecurringInstancesForTemplate } = await import("../../../utils/recurringChallenges");
 
-      mockDb.challenge.create.mockResolvedValue({
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.create).mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
       });
@@ -887,6 +913,7 @@ describe("challengeRouter", () => {
         startTime: new Date("2025-01-01"),
       });
 
+       
       expect(precreateRecurringInstancesForTemplate).toHaveBeenCalled();
     });
 
@@ -912,7 +939,8 @@ describe("challengeRouter", () => {
 
     it("should reject invalid image URL", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValue(null);
+       
+      vi.mocked(normalizeSupabaseStoragePath).mockReturnValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -952,11 +980,14 @@ describe("challengeRouter", () => {
       });
 
       expect(result.name).toBe("Test Challenge");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challenge.update).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue(null);
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -993,11 +1024,14 @@ describe("challengeRouter", () => {
         status: "ACTIVE",
       });
 
+       
       expect(createChallengeStatusActivityFromTransition).toHaveBeenCalled();
     });
 
     it("should validate peer voting transition to voting phase", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue({
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1006,9 +1040,11 @@ describe("challengeRouter", () => {
         votingStartTime: new Date("2025-12-31"),
         votingEndTime: new Date("2026-01-01"),
         endTime: new Date("2025-12-31"),
-      });
+      } as unknown as Challenge);
 
-      mockDb.challengeSubmission.count.mockResolvedValueOnce(1)
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challengeSubmission.count).mockResolvedValueOnce(1)
         .mockResolvedValueOnce(0);
 
       const ctx: TRPCContext = {
@@ -1029,14 +1065,18 @@ describe("challengeRouter", () => {
     });
 
     it("should throw error when transitioning to voting phase with no submissions", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue({
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
         status: "ACTIVE",
-      });
+      } as unknown as Challenge);
 
-      mockDb.challengeSubmission.count.mockResolvedValue(0);
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challengeSubmission.count).mockResolvedValue(0);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1057,14 +1097,18 @@ describe("challengeRouter", () => {
     });
 
     it("should throw error when transitioning to voting phase with pending submissions", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue({
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
         status: "ACTIVE",
-      });
+      } as unknown as Challenge);
 
-      mockDb.challengeSubmission.count.mockResolvedValueOnce(5) // total submissions
+       
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challengeSubmission.count).mockResolvedValueOnce(5) // total submissions
         .mockResolvedValueOnce(2); // pending submissions
 
       const ctx: TRPCContext = {
@@ -1086,7 +1130,8 @@ describe("challengeRouter", () => {
     });
 
     it("should update recurring challenge with inferred days", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
         dailyStartTime: "09:00",
@@ -1149,11 +1194,12 @@ describe("challengeRouter", () => {
     });
 
     it("should validate peer voting timeline on update", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
-      });
+      } as unknown as Challenge);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1216,14 +1262,16 @@ describe("challengeRouter", () => {
     it("should precreate recurring instances on update", async () => {
       const { precreateRecurringInstancesForTemplate } = await import("../../../utils/recurringChallenges");
 
-      mockDb.challenge.findFirst.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
         dailyStartTime: "09:00",
         dailyEndTime: "18:00",
         startTime: new Date("2025-01-01"),
       });
-      mockDb.challenge.update.mockResolvedValue(createMockChallenge({ isRecurring: true }));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.update).mockResolvedValue(createMockChallenge({ isRecurring: true }));
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1240,6 +1288,7 @@ describe("challengeRouter", () => {
         recurringDays: 7,
       });
 
+       
       expect(precreateRecurringInstancesForTemplate).toHaveBeenCalled();
     });
   });
@@ -1257,13 +1306,15 @@ describe("challengeRouter", () => {
       const result = await caller.delete({ id: "challenge-1", tripId: "trip-1" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challenge.delete).toHaveBeenCalledWith({
         where: { id: "challenge-1" },
       });
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue(null);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1282,12 +1333,13 @@ describe("challengeRouter", () => {
 
   describe("forceCloseVoting (adminProcedure)", () => {
     it("should force close voting for peer voting challenge", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
         status: "VOTING_PHASE",
-      });
+      } as unknown as Challenge);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1300,8 +1352,11 @@ describe("challengeRouter", () => {
       const result = await caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" });
 
       expect(result).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.challenge.update).toHaveBeenCalledWith(
+         
         expect.objectContaining({
+           
           data: expect.objectContaining({
             status: "COMPLETED",
           }),
@@ -1310,7 +1365,8 @@ describe("challengeRouter", () => {
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue(null);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1327,10 +1383,11 @@ describe("challengeRouter", () => {
     });
 
     it("should throw BAD_REQUEST for non-peer voting challenge", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "SPEED",
-      });
+      } as unknown as Challenge);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1347,12 +1404,13 @@ describe("challengeRouter", () => {
     });
 
     it("should throw BAD_REQUEST when challenge is not in voting phase", async () => {
-      mockDb.challenge.findFirst.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
         status: "ACTIVE",
-      });
+      } as unknown as Challenge);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1371,12 +1429,13 @@ describe("challengeRouter", () => {
     it("should create activity on force close", async () => {
       const { createChallengeStatusActivityFromTransition } = await import("../../../utils/activityFeed");
 
-      mockDb.challenge.findFirst.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
         status: "VOTING_PHASE",
-      });
+      } as unknown as Challenge);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1388,6 +1447,7 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
       await caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" });
 
+       
       expect(createChallengeStatusActivityFromTransition).toHaveBeenCalled();
     });
   });
@@ -1514,7 +1574,8 @@ describe("challengeRouter", () => {
 
   describe("Edge cases and error handling", () => {
     it("should handle database errors gracefully", async () => {
-      mockDb.challenge.findMany.mockRejectedValue(new Error("Test error"));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findMany).mockRejectedValue(new Error("Test error"));
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1530,7 +1591,8 @@ describe("challengeRouter", () => {
 
     it("should handle missing supabase storage signed URL", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValue(null);
+       
+      vi.mocked(normalizeSupabaseStoragePath).mockReturnValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1547,7 +1609,8 @@ describe("challengeRouter", () => {
     });
 
     it("should handle participant without group", async () => {
-      mockDb.tripParticipant.findUnique.mockResolvedValue(null);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.tripParticipant.findUnique).mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1563,7 +1626,8 @@ describe("challengeRouter", () => {
     });
 
     it("should handle challenge with external URL image", async () => {
-      mockDb.challenge.findMany.mockResolvedValue([
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findMany).mockResolvedValue([
         { ...mockChallenge, id: "challenge-external", image: "https://external.com/image.jpg" }
       ]);
 
@@ -1581,7 +1645,8 @@ describe("challengeRouter", () => {
     });
 
     it("should handle challenge without image", async () => {
-      mockDb.challenge.findMany.mockResolvedValue([
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.challenge.findMany).mockResolvedValue([
         { ...mockChallenge, id: "challenge-no-image", image: null }
       ]);
 
@@ -1599,7 +1664,8 @@ describe("challengeRouter", () => {
     });
 
     it("should handle transaction errors", async () => {
-      mockDb.$transaction.mockRejectedValue(new Error("Test error"));
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.$transaction).mockRejectedValue(new Error("Test error"));
 
       const ctx: TRPCContext = {
         db: mockDb,

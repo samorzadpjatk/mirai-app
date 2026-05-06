@@ -1,3 +1,6 @@
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { coinTransactionRouter } from "../../routers/coinTransaction";
@@ -135,7 +138,7 @@ describe("coinTransactionRouter", () => {
   describe("getStatistics (moderatorProcedure)", () => {
     it("should return transaction statistics for trip", async () => {
       (mockDb.coinTransaction.count as ReturnType<typeof vi.fn>).mockResolvedValue(10);
-      (mockDb.coinTransaction.aggregate)
+      (mockDb.coinTransaction.aggregate as unknown as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ _sum: { amount: 500 } }) // addedCoins
         .mockResolvedValueOnce({ _sum: { amount: -200 } }); // removedCoins
 
@@ -153,7 +156,7 @@ describe("coinTransactionRouter", () => {
 
     it("should handle zero transactions", async () => {
       (mockDb.coinTransaction.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      (mockDb.coinTransaction.aggregate)
+      (mockDb.coinTransaction.aggregate as unknown as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ _sum: { amount: null } })
         .mockResolvedValueOnce({ _sum: { amount: null } });
 
@@ -174,6 +177,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getStatistics({ tripId: "trip-123" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.count).toHaveBeenCalledWith({
         where: { group: { tripId: "trip-123" } },
       });
@@ -214,6 +218,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getMostActiveAdminStats({ tripId: "trip-123" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.groupBy).toHaveBeenCalledWith({
         by: ["adminId"],
         _sum: { amount: true },
@@ -259,6 +264,7 @@ describe("coinTransactionRouter", () => {
 
       expect(result.transactions).toHaveLength(1);
       expect(result.pagination.hasMore).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 1,
@@ -276,6 +282,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAll({ tripId: "trip-123" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 50,
@@ -293,6 +300,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAll({ tripId: "trip-123" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { createdAt: "desc" },
@@ -443,6 +451,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAdditionalInsights({ tripId: "trip-123" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 5,
@@ -467,6 +476,7 @@ describe("coinTransactionRouter", () => {
       const result = await caller.getCoinTransactions({ tripId: "trip-123" });
 
       expect(result).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { group: { tripId: "trip-123" } },
@@ -489,6 +499,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { groupId: "group-123", group: { tripId: "trip-123" } },
@@ -576,6 +587,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getCoinTransactions({ tripId: "trip-123" });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 50,

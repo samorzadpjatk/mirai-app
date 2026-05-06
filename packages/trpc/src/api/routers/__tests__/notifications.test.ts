@@ -1,3 +1,6 @@
+ 
+ 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { notificationRouter } from "../../routers/notifications";
@@ -264,6 +267,7 @@ describe("notificationRouter", () => {
 
       expect(result.success).toBe(true);
       expect(result.id).toBe("new-sub-123");
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.pushSubscription.upsert).toHaveBeenCalledWith({
         where: {
           userId_token: {
@@ -272,6 +276,7 @@ describe("notificationRouter", () => {
           },
         },
         update: {
+           
           updatedAt: expect.any(Date),
         },
         create: {
@@ -296,6 +301,7 @@ describe("notificationRouter", () => {
       const result = await caller.subscribe({ token: "existing-token" });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.pushSubscription.upsert).toHaveBeenCalled();
     });
 
@@ -320,6 +326,7 @@ describe("notificationRouter", () => {
 
       expect(result.success).toBe(true);
       expect(result.deletedCount).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.pushSubscription.deleteMany).toHaveBeenCalledWith({
         where: {
           userId: "user-123",
@@ -349,6 +356,7 @@ describe("notificationRouter", () => {
 
       expect(result.success).toBe(true);
       expect(result.deletedCount).toBe(3);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.pushSubscription.deleteMany).toHaveBeenCalledWith({
         where: {
           userId: "user-123",
@@ -456,6 +464,7 @@ describe("notificationRouter", () => {
       const result = await caller.getAll({ tripId: "trip-123" });
 
       expect(result.notifications).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notification.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { tripId: "trip-123" },
@@ -557,6 +566,7 @@ describe("notificationRouter", () => {
 
       expect(sendNotification).toHaveBeenCalledWith(
         expect.objectContaining({
+           
           input: expect.objectContaining({
             userIds: ["user-1", "user-2", "user-3"],
             title: "All Users",
@@ -610,6 +620,7 @@ describe("notificationRouter", () => {
         reason: "Bonus",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(NotificationService.createCoinsAddedNotification).toHaveBeenCalledWith("Test Group", 50, "Bonus");
       expect(sendNotification).toHaveBeenCalled();
     });
@@ -653,6 +664,7 @@ describe("notificationRouter", () => {
         reason: "Penalty",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(NotificationService.createCoinsRemovedNotification).toHaveBeenCalledWith("Test Group", 20, "Penalty");
       expect(sendNotification).toHaveBeenCalled();
     });
@@ -680,6 +692,7 @@ describe("notificationRouter", () => {
         userId: "new-user-123",
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(NotificationService.createNewMemberNotification).toHaveBeenCalledWith("Test Group", "John Doe");
       expect(sendNotification).toHaveBeenCalled();
     });
@@ -726,6 +739,7 @@ describe("notificationRouter", () => {
 
       expect(sendNotification).toHaveBeenCalledWith(
         expect.objectContaining({
+           
           input: expect.objectContaining({
             title: "Custom Title",
             body: "Custom Body",
@@ -760,6 +774,7 @@ describe("notificationRouter", () => {
       expect(result.success).toBe(true);
       expect(result.notificationId).toBe("notification-123");
       expect(result.retriedCount).toBe(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notificationPush.updateMany).toHaveBeenCalled();
       expect(sendMobileNotifications).toHaveBeenCalled();
     });
@@ -806,6 +821,7 @@ describe("notificationRouter", () => {
       });
 
       expect(result.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.notification.delete).toHaveBeenCalledWith({
         where: { id: "notification-123" },
       });

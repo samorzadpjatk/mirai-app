@@ -1,51 +1,88 @@
+ 
+ 
+ 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { appRouter } from "../../root";
 import { createCallerFactory } from "../../trpc";
+import type { TRPCContext } from "../../trpc";
+import type { SupabaseClient } from "@mirai-app/supabase";
+import type { PrismaClient } from "@mirai-app/db";
 
 const createCaller = createCallerFactory(appRouter);
 
-const createMockDb = () => ({
-  user: {
-    findFirst: vi.fn(() => Promise.resolve(null)),
-  },
-  tripParticipant: {
-    findUnique: vi.fn(() => Promise.resolve(null)),
-    findFirst: vi.fn(() => Promise.resolve(null)),
-    findMany: vi.fn(() => Promise.resolve([])),
-  },
-  trip: {
-    findUnique: vi.fn(() => Promise.resolve(null)),
-    findMany: vi.fn(() => Promise.resolve([])),
-  },
-  activityFeed: {
-    findMany: vi.fn(() => Promise.resolve([])),
-    findUnique: vi.fn(() => Promise.resolve(null)),
-    create: vi.fn(() => Promise.resolve({})),
-    update: vi.fn(() => Promise.resolve({})),
-    delete: vi.fn(() => Promise.resolve({})),
-    count: vi.fn(() => Promise.resolve(0)),
-  },
-  activityReaction: {
-    groupBy: vi.fn(() => Promise.resolve([])),
-    findMany: vi.fn(() => Promise.resolve([])),
-    findUnique: vi.fn(() => Promise.resolve(null)),
-    create: vi.fn(() => Promise.resolve({})),
-    delete: vi.fn(() => Promise.resolve({})),
-  },
-  group: {
-    findMany: vi.fn(() => Promise.resolve([])),
-    findFirst: vi.fn(() => Promise.resolve(null)),
-    findUnique: vi.fn(() => Promise.resolve(null)),
-  },
-  challengeSubmission: {
-    findFirst: vi.fn(() => Promise.resolve(null)),
-  },
-  challenge: {
-    findFirst: vi.fn(() => Promise.resolve(null)),
-    findMany: vi.fn(() => Promise.resolve([])),
-  },
-});
+// Type for the mock context with vi.fn() methods
+type MockedFunction<T = unknown> = ReturnType<typeof vi.fn> & T;
+
+interface MockedDb {
+  user: { findFirst: MockedFunction };
+  tripParticipant: { findUnique: MockedFunction; findFirst: MockedFunction; findMany: MockedFunction };
+  trip: { findUnique: MockedFunction; findMany: MockedFunction };
+  activityFeed: { findMany: MockedFunction; findUnique: MockedFunction; create: MockedFunction; update: MockedFunction; delete: MockedFunction; count: MockedFunction };
+  activityReaction: { groupBy: MockedFunction; findMany: MockedFunction; findUnique: MockedFunction; create: MockedFunction; delete: MockedFunction };
+  group: { findMany: MockedFunction; findFirst: MockedFunction; findUnique: MockedFunction };
+  challengeSubmission: { findFirst: MockedFunction };
+  challenge: { findFirst: MockedFunction; findMany: MockedFunction };
+  $executeRaw?: MockedFunction;
+}
+
+interface MockedSupabase {
+  auth: {
+    getUser: MockedFunction;
+    admin: { getUserById: MockedFunction };
+  };
+  storage: {
+    from: MockedFunction;
+  };
+}
+
+interface MockContext extends Omit<TRPCContext, "db" | "supabase"> {
+  db: MockedDb;
+  supabase: MockedSupabase;
+}
+
+const createMockDb = () =>
+  ({
+    user: {
+      findFirst: vi.fn(() => Promise.resolve(null)),
+    },
+    tripParticipant: {
+      findUnique: vi.fn(() => Promise.resolve(null)),
+      findFirst: vi.fn(() => Promise.resolve(null)),
+      findMany: vi.fn(() => Promise.resolve([])),
+    },
+    trip: {
+      findUnique: vi.fn(() => Promise.resolve(null)),
+      findMany: vi.fn(() => Promise.resolve([])),
+    },
+    activityFeed: {
+      findMany: vi.fn(() => Promise.resolve([])),
+      findUnique: vi.fn(() => Promise.resolve(null)),
+      create: vi.fn(() => Promise.resolve({})),
+      update: vi.fn(() => Promise.resolve({})),
+      delete: vi.fn(() => Promise.resolve({})),
+      count: vi.fn(() => Promise.resolve(0)),
+    },
+    activityReaction: {
+      groupBy: vi.fn(() => Promise.resolve([])),
+      findMany: vi.fn(() => Promise.resolve([])),
+      findUnique: vi.fn(() => Promise.resolve(null)),
+      create: vi.fn(() => Promise.resolve({})),
+      delete: vi.fn(() => Promise.resolve({})),
+    },
+    group: {
+      findMany: vi.fn(() => Promise.resolve([])),
+      findFirst: vi.fn(() => Promise.resolve(null)),
+      findUnique: vi.fn(() => Promise.resolve(null)),
+    },
+    challengeSubmission: {
+      findFirst: vi.fn(() => Promise.resolve(null)),
+    },
+    challenge: {
+      findFirst: vi.fn(() => Promise.resolve(null)),
+      findMany: vi.fn(() => Promise.resolve([])),
+    },
+  }) as unknown as PrismaClient;
 
 const createMockSupabase = () => {
   const getUserMock = vi.fn(() =>
@@ -72,11 +109,11 @@ const createMockSupabase = () => {
         }),
       }),
     },
-  };
+  } as unknown as SupabaseClient;
 };
 
 describe("activityFeed router", () => {
-  let mockCtx: any;
+  let mockCtx: MockContext;
 
   const setupUserMocks = (userId = "user-1", role = "USER") => {
     mockCtx.supabase.auth.getUser.mockResolvedValueOnce({

@@ -1,3 +1,6 @@
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   createCallerFactory,
@@ -86,35 +89,47 @@ describe("tRPC Router Testing Patterns", () => {
     // Setup mock database client
     mockDb = {
       user: {
-        findMany: vi.fn().mockResolvedValue([]),
-        findUnique: vi.fn().mockResolvedValue(null),
-        findFirst: vi.fn().mockResolvedValue(null),
-        update: vi.fn().mockResolvedValue({}),
-        create: vi.fn().mockResolvedValue({}),
-        upsert: vi.fn().mockResolvedValue({}),
-        delete: vi.fn().mockResolvedValue({}),
-        count: vi.fn().mockResolvedValue(0),
+        findMany: vi.fn<() => Promise<User[]>>().mockResolvedValue([]),
+        findUnique: vi.fn<() => Promise<User | null>>().mockResolvedValue(null),
+        findFirst: vi.fn<() => Promise<User | null>>().mockResolvedValue(null),
+        update: vi.fn<() => Promise<User>>().mockResolvedValue({} as User),
+        create: vi.fn<() => Promise<User>>().mockResolvedValue({} as User),
+        upsert: vi.fn<() => Promise<User>>().mockResolvedValue({} as User),
+        delete: vi.fn<() => Promise<User>>().mockResolvedValue({} as User),
+        count: vi.fn<() => Promise<number>>().mockResolvedValue(0),
       },
-      $transaction: vi.fn((cb) => cb(mockDb)),
+      $transaction: vi.fn<(cb: (prisma: PrismaClient) => Promise<unknown>) => Promise<unknown>>((cb) => cb(mockDb)),
     } as unknown as PrismaClient;
 
     // Setup mock Supabase client
+    interface MockQueryBuilder {
+      select: ReturnType<typeof vi.fn>;
+      insert: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+      delete: ReturnType<typeof vi.fn>;
+      eq: ReturnType<typeof vi.fn>;
+      single: ReturnType<typeof vi.fn>;
+    }
+    const createMockQueryBuilder = (): MockQueryBuilder => {
+      const builder: MockQueryBuilder = {
+        select: vi.fn(() => builder),
+        insert: vi.fn(() => builder),
+        update: vi.fn(() => builder),
+        delete: vi.fn(() => builder),
+        eq: vi.fn(() => builder),
+        single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      };
+      return builder;
+    };
     mockSupabase = {
       auth: {
-        getUser: vi.fn(),
-        getSession: vi.fn(),
+        getUser: vi.fn<() => Promise<{ data: { user: { id: string } | null }; error: null }>>(),
+        getSession: vi.fn<() => Promise<{ data: { session: { access_token: string } | null }; error: null }>>(),
         admin: {
-          getUserById: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+          getUserById: vi.fn<() => Promise<{ data: { user: null }; error: null }>>().mockResolvedValue({ data: { user: null }, error: null }),
         },
       },
-      from: vi.fn(() => ({
-        select: vi.fn().mockReturnThis(),
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      })),
+      from: vi.fn<(table: string) => MockQueryBuilder>(() => createMockQueryBuilder()),
     } as unknown as SupabaseClient;
   });
 
@@ -199,12 +214,15 @@ describe("tRPC Router Testing Patterns", () => {
       };
 
       // Mock successful auth
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       } as never);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -222,6 +240,7 @@ describe("tRPC Router Testing Patterns", () => {
       try {
         await caller.getMe();
       } catch {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(mockSupabase.auth.getUser).toHaveBeenCalledWith("test-token");
       }
     });
@@ -233,7 +252,8 @@ describe("tRPC Router Testing Patterns", () => {
         lastName: "Name",
       };
 
-      vi.mocked(mockDb.user.update).mockResolvedValue(mockUpdatedUser as never);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      vi.mocked(mockDb.user.update).mockResolvedValue(mockUpdatedUser as unknown as User);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -251,6 +271,7 @@ describe("tRPC Router Testing Patterns", () => {
       }
 
       // Verify the mock was set up correctly
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.user.update).toBeDefined();
     });
   });
@@ -265,11 +286,12 @@ describe("tRPC Router Testing Patterns", () => {
       };
 
       // Mock non-admin user
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       vi.mocked(mockDb.user.findFirst).mockResolvedValue({
         id: "db-123",
         authUserId: "auth-123",
         role: "USER",
-      } as never);
+      } as unknown as User);
 
       const caller = createCaller(ctx);
 
@@ -280,6 +302,7 @@ describe("tRPC Router Testing Patterns", () => {
       }
 
       // The procedure should attempt to verify admin status
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.user.findFirst).toBeDefined();
     });
 
@@ -309,6 +332,7 @@ describe("tRPC Router Testing Patterns", () => {
         },
       ];
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       vi.mocked(mockDb.user.findMany).mockResolvedValue(mockUsers);
 
       const ctx: TRPCContext = {
@@ -366,6 +390,7 @@ describe("tRPC Router Testing Patterns", () => {
 
   describe("Error Handling", () => {
     it("should handle database errors gracefully", async () => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       vi.mocked(mockDb.user.findMany).mockRejectedValue(
         new Error("Database connection failed")
       );
